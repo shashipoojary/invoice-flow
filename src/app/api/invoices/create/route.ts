@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     } = body
 
     // Calculate totals
-    const subtotal = items.reduce((sum: number, item: any) => sum + item.amount, 0)
+    const subtotal = items.reduce((sum: number, item: { amount: number }) => sum + item.amount, 0)
     const taxAmount = subtotal * (taxRate / 100)
     const total = subtotal + taxAmount
 
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create invoice items
-    const invoiceItems = items.map((item: any) => ({
+    const invoiceItems = items.map((item: { description: string; quantity: number; rate: number; amount: number }) => ({
       invoice_id: invoice.id,
       description: item.description,
       quantity: item.quantity,

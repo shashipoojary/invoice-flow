@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Plus, FileText, DollarSign, Users, Calendar, Download, Send, Zap, TrendingUp, Clock, CheckCircle, AlertCircle, X, Sun, Moon, Upload, Database } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { Plus, FileText, DollarSign, Users, Calendar, Download, Send, Zap, TrendingUp, Clock, CheckCircle, AlertCircle, X, Sun, Moon, Upload, Database, CreditCard, ExternalLink } from 'lucide-react';
 
 interface Project {
   id: string;
@@ -46,13 +45,13 @@ interface Invoice {
   description: string;
 }
 
-interface RecurringInvoice {
-  id: string;
-  baseInvoice: Invoice;
-  frequency: string;
-  nextDue: string;
-  isActive: boolean;
-}
+// interface RecurringInvoice {
+//   id: string;
+//   baseInvoice: Invoice;
+//   frequency: string;
+//   nextDue: string;
+//   isActive: boolean;
+// }
 
 const QUICK_TEMPLATES = [
   { name: 'Web Development', description: 'Website Development Services', rate: 75 },
@@ -254,7 +253,7 @@ export default function InvoiceGenerator() {
   });
 
   // Smart Assistant Features
-  const [recurringInvoices, setRecurringInvoices] = useState<RecurringInvoice[]>([]);
+  // const [recurringInvoices, setRecurringInvoices] = useState<RecurringInvoice[]>([]);
 
   // Dark Mode State
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -433,7 +432,7 @@ InvoiceFlow Team`;
       nextDue: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       isActive: true
     };
-    setRecurringInvoices(prev => [...prev, recurring]);
+    // setRecurringInvoices(prev => [...prev, recurring]);
   };
 
   const autoFillFromMemory = (email: string) => {

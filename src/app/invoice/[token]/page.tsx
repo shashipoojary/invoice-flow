@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Download, CreditCard, ExternalLink, CheckCircle, Clock, AlertCircle } from 'lucide-react'
+import { Download, CreditCard, CheckCircle, Clock, AlertCircle } from 'lucide-react'
 
 interface Invoice {
   id: string
@@ -44,10 +44,6 @@ export default function HostedInvoicePage() {
   const [loading, setLoading] = useState(true)
   const [processingPayment, setProcessingPayment] = useState(false)
 
-  useEffect(() => {
-    fetchInvoice()
-  }, [token])
-
   const fetchInvoice = async () => {
     try {
       const { data, error } = await supabase
@@ -76,6 +72,10 @@ export default function HostedInvoicePage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchInvoice()
+  }, [token])
 
   const handleStripePayment = async () => {
     if (!invoice) return
@@ -168,7 +168,7 @@ export default function HostedInvoicePage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Invoice Not Found</h1>
-          <p className="text-gray-600">The invoice you're looking for doesn't exist or has been removed.</p>
+          <p className="text-gray-600">The invoice you&apos;re looking for doesn&apos;t exist or has been removed.</p>
         </div>
       </div>
     )

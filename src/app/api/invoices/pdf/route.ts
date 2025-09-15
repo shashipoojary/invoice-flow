@@ -170,7 +170,7 @@ export async function GET(request: NextRequest) {
     yPosition -= 30
 
     // Items
-    invoice.invoice_items.forEach((item: any) => {
+    invoice.invoice_items.forEach((item: { description: string; quantity: number; rate: number; amount: number }) => {
       page.drawText(item.description, {
         x: 50,
         y: yPosition,
@@ -279,7 +279,7 @@ export async function GET(request: NextRequest) {
       console.error('Error uploading PDF:', uploadError)
     }
 
-    return new NextResponse(pdfBytes, {
+    return new NextResponse(Buffer.from(pdfBytes), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${fileName}"`

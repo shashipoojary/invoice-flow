@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = new Resend(process.env.RESEND_API_KEY || 'demo_key')
 
 export async function POST(request: NextRequest) {
   try {
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
         {
           filename: `invoice-${invoice.invoice_number}.pdf`,
           content: pdfBase64,
-          contentType: 'application/pdf'
+          content_type: 'application/pdf'
         }
       ]
     })
