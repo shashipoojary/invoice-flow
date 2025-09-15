@@ -394,27 +394,27 @@ export default function InvoiceDashboard() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm hidden lg:table-cell" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                             {invoice.dueDate}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex flex-wrap gap-2">
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                            <div className="flex flex-col sm:flex-row gap-2">
                               <button 
                                 onClick={() => setSelectedInvoice(invoice)}
-                                className="flex items-center space-x-1.5 px-3 py-1.5 text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-all duration-200 font-medium"
+                                className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
                               >
-                                <Eye className="h-3.5 w-3.5" />
-                                <span className="hidden sm:inline">View</span>
+                                <Eye className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                                <span>View</span>
                               </button>
                               <button 
-                                className="flex items-center space-x-1.5 px-3 py-1.5 text-xs bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all duration-200 font-medium"
+                                className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
                               >
-                                <Download className="h-3.5 w-3.5" />
-                                <span className="hidden sm:inline">PDF</span>
+                                <Download className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                                <span>PDF</span>
                               </button>
                               {invoice.status !== 'paid' && (
                                 <button 
-                                  className="flex items-center space-x-1.5 px-3 py-1.5 text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-500/30 transition-all duration-200 font-medium"
+                                  className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
                                 >
-                                  <Send className="h-3.5 w-3.5" />
-                                  <span className="hidden sm:inline">Send</span>
+                                  <Send className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                                  <span>Send</span>
                                 </button>
                               )}
                             </div>
@@ -519,32 +519,32 @@ export default function InvoiceDashboard() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm hidden lg:table-cell" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                           {invoice.dueDate}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex flex-wrap gap-2">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="flex flex-col sm:flex-row gap-2">
                             <button 
                               onClick={() => setSelectedInvoice(invoice)}
-                              className="flex items-center space-x-1.5 px-3 py-1.5 text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-all duration-200 font-medium"
+                              className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
                             >
-                              <Eye className="h-3.5 w-3.5" />
-                              <span className="hidden sm:inline">View</span>
+                              <Eye className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                              <span>View</span>
                             </button>
                             <button 
-                              className="flex items-center space-x-1.5 px-3 py-1.5 text-xs bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all duration-200 font-medium"
+                              className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
                             >
-                              <Download className="h-3.5 w-3.5" />
-                              <span className="hidden sm:inline">PDF</span>
+                              <Download className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                              <span>PDF</span>
                             </button>
                             <button 
-                              className="flex items-center space-x-1.5 px-3 py-1.5 text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-500/30 transition-all duration-200 font-medium"
+                              className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
                             >
-                              <Send className="h-3.5 w-3.5" />
-                              <span className="hidden sm:inline">Send</span>
+                              <Send className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                              <span>Send</span>
                             </button>
                             <button 
-                              className="flex items-center space-x-1.5 px-3 py-1.5 text-xs bg-gray-100 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500/30 transition-all duration-200 font-medium"
+                              className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-gray-100 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
                             >
-                              <Edit className="h-3.5 w-3.5" />
-                              <span className="hidden sm:inline">Edit</span>
+                              <Edit className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+                              <span>Edit</span>
                             </button>
                           </div>
                         </td>
@@ -582,11 +582,11 @@ export default function InvoiceDashboard() {
                       <Building2 className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                     </div>
                     <div className="flex space-x-2">
-                      <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                        <Edit className="h-4 w-4" />
+                      <button className="p-3 sm:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] sm:min-h-auto">
+                        <Edit className="h-5 w-5 sm:h-4 sm:w-4" />
                       </button>
-                      <button className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors">
-                        <Trash2 className="h-4 w-4" />
+                      <button className="p-3 sm:p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors min-h-[44px] sm:min-h-auto">
+                        <Trash2 className="h-5 w-5 sm:h-4 sm:w-4" />
                       </button>
                     </div>
                   </div>
@@ -605,7 +605,7 @@ export default function InvoiceDashboard() {
                     <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                       {invoices.filter(inv => inv.clientId === client.id).length} invoices
                     </div>
-                    <button className="flex items-center space-x-1 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">
+                    <button className="flex items-center justify-center space-x-1 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors px-3 py-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-500/10 min-h-[44px] sm:min-h-auto">
                       <Mail className="h-4 w-4" />
                       <span>Contact</span>
                     </button>
