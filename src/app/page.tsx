@@ -657,76 +657,84 @@ InvoiceFlow Team`;
                     <tbody className={`divide-y ${isDarkMode ? 'divide-slate-700' : 'divide-slate-200'}`}>
                       {invoices.slice(0, 5).map((invoice) => (
                         <tr key={invoice.id} className={`transition-all duration-200 ${isDarkMode ? 'hover:bg-slate-800/30' : 'hover:bg-slate-50/50'}`}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="space-y-1">
-                              <div className="font-heading text-sm font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                                {invoice.invoiceNumber}
+                          <td colSpan={5} className="px-6 py-4">
+                            <div className="space-y-4">
+                              {/* Invoice Info Row */}
+                              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-center">
+                                <div className="space-y-1">
+                                  <div className="font-heading text-sm font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                                    {invoice.invoiceNumber}
+                                  </div>
+                                  <div className="text-xs" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                                    {invoice.createdAt}
+                                  </div>
+                                </div>
+                                <div className="hidden sm:block">
+                                  <div className="text-sm font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                                    {invoice.client.name}
+                                  </div>
+                                  <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                                    {invoice.client.company}
+                                  </div>
+                                </div>
+                                <div className="font-heading text-lg font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                                  ${invoice.total.toLocaleString()}
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${
+                                    invoice.status === 'paid' 
+                                      ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400'
+                                      : invoice.status === 'sent'
+                                      ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400'
+                                      : invoice.status === 'overdue'
+                                      ? 'bg-red-100 dark:bg-red-500/20 text-red-800 dark:text-red-400'
+                                      : 'bg-gray-100 dark:bg-gray-500/20 text-gray-800 dark:text-gray-300'
+                                  }`}>
+                                    {invoice.status === 'paid' && <CheckCircle className="h-3 w-3 mr-1.5" />}
+                                    {invoice.status === 'sent' && <Clock className="h-3 w-3 mr-1.5" />}
+                                    {invoice.status === 'overdue' && <AlertCircle className="h-3 w-3 mr-1.5" />}
+                                    {invoice.status === 'draft' && <FileText className="h-3 w-3 mr-1.5" />}
+                                    {invoice.status}
+                                  </span>
+                                  <div className="text-sm hidden lg:block" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                                    Due: {invoice.dueDate}
+                                  </div>
+                                </div>
                               </div>
-                              <div className="text-xs" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                                {invoice.createdAt}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap hidden sm:table-cell">
-                            <div className="space-y-1">
-                              <div className="text-sm font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                                {invoice.client.name}
-                              </div>
-                              <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                                {invoice.client.company}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="font-heading text-lg font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                              ${invoice.total.toLocaleString()}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
-                            <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${
-                              invoice.status === 'paid' 
-                                ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400'
-                                : invoice.status === 'sent'
-                                ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400'
-                                : invoice.status === 'overdue'
-                                ? 'bg-red-100 dark:bg-red-500/20 text-red-800 dark:text-red-400'
-                                : 'bg-gray-100 dark:bg-gray-500/20 text-gray-800 dark:text-gray-300'
-                            }`}>
-                              {invoice.status === 'paid' && <CheckCircle className="h-3 w-3 mr-1.5" />}
-                              {invoice.status === 'sent' && <Clock className="h-3 w-3 mr-1.5" />}
-                              {invoice.status === 'overdue' && <AlertCircle className="h-3 w-3 mr-1.5" />}
-                              {invoice.status === 'draft' && <FileText className="h-3 w-3 mr-1.5" />}
-                              {invoice.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm hidden lg:table-cell" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                            {invoice.dueDate}
-                          </td>
-                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                            <div className="flex flex-row gap-1 sm:gap-2">
-                              <button 
-                                onClick={() => handleViewInvoice(invoice)}
-                                className="flex items-center justify-center space-x-1 px-2 py-2 sm:px-3 sm:py-1.5 text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-all duration-200 font-medium min-h-[36px] sm:min-h-auto"
-                              >
-                                <Eye className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-                                <span>View</span>
-                              </button>
-                              <button 
-                                onClick={() => handleDownloadPDF(invoice)}
-                                className="flex items-center justify-center space-x-1 px-2 py-2 sm:px-3 sm:py-1.5 text-xs bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all duration-200 font-medium min-h-[36px] sm:min-h-auto"
-                              >
-                                <Download className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-                                <span>PDF</span>
-                              </button>
-                              {invoice.status !== 'paid' && (
+                              
+                              {/* Action Buttons Row */}
+                              <div className="flex flex-wrap gap-2">
                                 <button 
-                                  onClick={() => handleSendInvoice(invoice)}
-                                  className="flex items-center justify-center space-x-1 px-2 py-2 sm:px-3 sm:py-1.5 text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-500/30 transition-all duration-200 font-medium min-h-[36px] sm:min-h-auto"
+                                  onClick={() => handleViewInvoice(invoice)}
+                                  className="flex items-center space-x-2 px-3 py-2 text-sm bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-all duration-200 font-medium"
                                 >
-                                  <Send className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-                                  <span>Send</span>
+                                  <Eye className="h-4 w-4" />
+                                  <span>View</span>
                                 </button>
-                              )}
+                                <button 
+                                  onClick={() => handleDownloadPDF(invoice)}
+                                  className="flex items-center space-x-2 px-3 py-2 text-sm bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all duration-200 font-medium"
+                                >
+                                  <Download className="h-4 w-4" />
+                                  <span>Download PDF</span>
+                                </button>
+                                {invoice.status !== 'paid' && (
+                                  <button 
+                                    onClick={() => handleSendInvoice(invoice)}
+                                    className="flex items-center space-x-2 px-3 py-2 text-sm bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-500/30 transition-all duration-200 font-medium"
+                                  >
+                                    <Send className="h-4 w-4" />
+                                    <span>Send Invoice</span>
+                                  </button>
+                                )}
+                                <button 
+                                  onClick={() => handleEditInvoice(invoice)}
+                                  className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500/30 transition-all duration-200 font-medium"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                  <span>Edit</span>
+                                </button>
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -784,81 +792,82 @@ InvoiceFlow Team`;
                   <tbody className={`divide-y ${isDarkMode ? 'divide-slate-700' : 'divide-slate-200'}`}>
                     {invoices.map((invoice) => (
                       <tr key={invoice.id} className={`transition-all duration-200 ${isDarkMode ? 'hover:bg-slate-800/30' : 'hover:bg-slate-50/50'}`}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="space-y-1">
-                            <div className="font-heading text-sm font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                              {invoice.invoiceNumber}
+                        <td colSpan={5} className="px-6 py-4">
+                          <div className="space-y-4">
+                            {/* Invoice Info Row */}
+                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-center">
+                              <div className="space-y-1">
+                                <div className="font-heading text-sm font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                                  {invoice.invoiceNumber}
+                                </div>
+                                <div className="text-xs" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                                  {invoice.createdAt}
+                                </div>
+                              </div>
+                              <div className="hidden sm:block">
+                                <div className="text-sm font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                                  {invoice.client.name}
+                                </div>
+                                <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                                  {invoice.client.company}
+                                </div>
+                              </div>
+                              <div className="font-heading text-lg font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                                ${invoice.total.toLocaleString()}
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${
+                                  invoice.status === 'paid' 
+                                    ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400'
+                                    : invoice.status === 'sent'
+                                    ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400'
+                                    : invoice.status === 'overdue'
+                                    ? 'bg-red-100 dark:bg-red-500/20 text-red-800 dark:text-red-400'
+                                    : 'bg-gray-100 dark:bg-gray-500/20 text-gray-800 dark:text-gray-300'
+                                }`}>
+                                  {invoice.status === 'paid' && <CheckCircle className="h-3 w-3 mr-1.5" />}
+                                  {invoice.status === 'sent' && <Clock className="h-3 w-3 mr-1.5" />}
+                                  {invoice.status === 'overdue' && <AlertCircle className="h-3 w-3 mr-1.5" />}
+                                  {invoice.status === 'draft' && <FileText className="h-3 w-3 mr-1.5" />}
+                                  {invoice.status}
+                                </span>
+                                <div className="text-sm hidden lg:block" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                                  Due: {invoice.dueDate}
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-xs" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                              {invoice.createdAt}
+                            
+                            {/* Action Buttons Row */}
+                            <div className="flex flex-wrap gap-2">
+                              <button 
+                                onClick={() => handleViewInvoice(invoice)}
+                                className="flex items-center space-x-2 px-3 py-2 text-sm bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-all duration-200 font-medium"
+                              >
+                                <Eye className="h-4 w-4" />
+                                <span>View</span>
+                              </button>
+                              <button 
+                                onClick={() => handleDownloadPDF(invoice)}
+                                className="flex items-center space-x-2 px-3 py-2 text-sm bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all duration-200 font-medium"
+                              >
+                                <Download className="h-4 w-4" />
+                                <span>Download PDF</span>
+                              </button>
+                              <button 
+                                onClick={() => handleSendInvoice(invoice)}
+                                className="flex items-center space-x-2 px-3 py-2 text-sm bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-500/30 transition-all duration-200 font-medium"
+                              >
+                                <Send className="h-4 w-4" />
+                                <span>Send Invoice</span>
+                              </button>
+                              <button 
+                                onClick={() => handleEditInvoice(invoice)}
+                                className="flex items-center space-x-2 px-3 py-2 text-sm bg-gray-100 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500/30 transition-all duration-200 font-medium"
+                              >
+                                <Edit className="h-4 w-4" />
+                                <span>Edit</span>
+                              </button>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap hidden sm:table-cell">
-                          <div className="space-y-1">
-                            <div className="text-sm font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                              {invoice.client.name}
-                            </div>
-                            <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                              {invoice.client.company}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="font-heading text-lg font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                            ${invoice.total.toLocaleString()}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
-                          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${
-                            invoice.status === 'paid' 
-                              ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400'
-                              : invoice.status === 'sent'
-                              ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400'
-                              : invoice.status === 'overdue'
-                              ? 'bg-red-100 dark:bg-red-500/20 text-red-800 dark:text-red-400'
-                              : 'bg-gray-100 dark:bg-gray-500/20 text-gray-800 dark:text-gray-300'
-                          }`}>
-                            {invoice.status === 'paid' && <CheckCircle className="h-3 w-3 mr-1.5" />}
-                            {invoice.status === 'sent' && <Clock className="h-3 w-3 mr-1.5" />}
-                            {invoice.status === 'overdue' && <AlertCircle className="h-3 w-3 mr-1.5" />}
-                            {invoice.status === 'draft' && <FileText className="h-3 w-3 mr-1.5" />}
-                            {invoice.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm hidden lg:table-cell" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                          {invoice.dueDate}
-                        </td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="flex flex-row gap-1 sm:gap-2">
-                            <button 
-                              onClick={() => handleViewInvoice(invoice)}
-                              className="flex items-center justify-center space-x-1 px-2 py-2 sm:px-3 sm:py-1.5 text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-all duration-200 font-medium min-h-[36px] sm:min-h-auto"
-                            >
-                              <Eye className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-                              <span>View</span>
-                            </button>
-                            <button 
-                              onClick={() => handleDownloadPDF(invoice)}
-                              className="flex items-center justify-center space-x-1 px-2 py-2 sm:px-3 sm:py-1.5 text-xs bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all duration-200 font-medium min-h-[36px] sm:min-h-auto"
-                            >
-                              <Download className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-                              <span>PDF</span>
-                            </button>
-                            <button 
-                              onClick={() => handleSendInvoice(invoice)}
-                              className="flex items-center justify-center space-x-1 px-2 py-2 sm:px-3 sm:py-1.5 text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-500/30 transition-all duration-200 font-medium min-h-[36px] sm:min-h-auto"
-                            >
-                              <Send className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-                              <span>Send</span>
-                            </button>
-                            <button 
-                              onClick={() => handleEditInvoice(invoice)}
-                              className="flex items-center justify-center space-x-1 px-2 py-2 sm:px-3 sm:py-1.5 text-xs bg-gray-100 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500/30 transition-all duration-200 font-medium min-h-[36px] sm:min-h-auto"
-                            >
-                              <Edit className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-                              <span>Edit</span>
-                            </button>
                           </div>
                         </td>
                       </tr>
