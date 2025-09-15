@@ -363,7 +363,7 @@ InvoiceFlow Team`;
               {/* Theme Toggle */}
               <button
                 onClick={toggleDarkMode}
-                className={`flex items-center justify-center w-12 h-12 sm:w-13 sm:h-13 rounded-xl transition-all duration-200 ${isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                className={`flex items-center justify-center w-12 h-12 sm:w-13 sm:h-13 rounded-xl transition-all duration-200 ${isDarkMode ? 'bg-slate-800 text-slate-200 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
                 aria-label="Toggle dark mode"
               >
                 {isDarkMode ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
@@ -402,7 +402,7 @@ InvoiceFlow Team`;
               <h2 className="font-heading text-2xl font-semibold text-slate-900 dark:text-slate-100">
                 Dashboard Overview
               </h2>
-              <p className="text-slate-700 dark:text-slate-300 mt-1">
+              <p className="text-slate-800 dark:text-slate-200 mt-1">
                 Monitor your business performance and invoice metrics
               </p>
             </div>
@@ -413,7 +413,7 @@ InvoiceFlow Team`;
             <div className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Total Revenue</p>
+                  <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Total Revenue</p>
                   <p className="font-heading text-3xl font-bold text-slate-900 dark:text-slate-100">
                     ${totalRevenue.toLocaleString()}
                   </p>
@@ -431,7 +431,7 @@ InvoiceFlow Team`;
             <div className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Pending Payments</p>
+                  <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Pending Payments</p>
                   <p className="font-heading text-3xl font-bold text-slate-900 dark:text-slate-100">
                     ${pendingAmount.toLocaleString()}
                   </p>
@@ -451,7 +451,7 @@ InvoiceFlow Team`;
             <div className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Total Invoices</p>
+                  <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Total Invoices</p>
                   <p className="font-heading text-3xl font-bold text-slate-900 dark:text-slate-100">
                     {invoices.length}
                   </p>
@@ -471,7 +471,7 @@ InvoiceFlow Team`;
             <div className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Active Clients</p>
+                  <p className="text-sm font-medium text-slate-800 dark:text-slate-200">Active Clients</p>
                   <p className="font-heading text-3xl font-bold text-slate-900 dark:text-slate-100">
                     {new Set(invoices.map(inv => inv.clientName)).size}
                   </p>
@@ -685,7 +685,7 @@ InvoiceFlow Team`;
               <h2 className="font-heading text-2xl font-semibold text-slate-900 dark:text-slate-100">
                 Invoice Management
               </h2>
-              <p className="text-slate-700 dark:text-slate-300 mt-1">
+              <p className="text-slate-800 dark:text-slate-200 mt-1">
                 Track and manage all your invoices in one place
               </p>
             </div>
@@ -696,7 +696,7 @@ InvoiceFlow Team`;
               <h3 className="font-heading text-lg font-semibold text-slate-900 dark:text-slate-100">
                 Recent Invoices
               </h3>
-              <p className="text-sm text-slate-700 dark:text-slate-300 mt-1">
+              <p className="text-sm text-slate-800 dark:text-slate-200 mt-1">
                 Manage your latest invoice transactions
               </p>
             </div>
@@ -705,22 +705,22 @@ InvoiceFlow Team`;
               <table className="w-full">
                 <thead className={isDarkMode ? 'bg-slate-800/30' : 'bg-slate-50/50'}>
                   <tr>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
                       Invoice
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden sm:table-cell ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden sm:table-cell ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
                       Client
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
                       Amount
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden md:table-cell ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden md:table-cell ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
                       Status
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
                       Due Date
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
                       Actions
                     </th>
                   </tr>
@@ -733,7 +733,7 @@ InvoiceFlow Team`;
                           <div className={`font-heading text-sm font-semibold ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>
                             {invoice.invoiceNumber}
                           </div>
-                          <div className={`text-xs ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                          <div className={`text-xs ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
                             {invoice.createdAt}
                           </div>
                           {/* Mobile: Show client info under invoice number */}
@@ -741,7 +741,7 @@ InvoiceFlow Team`;
                             <div className={`text-xs font-medium ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>
                               {invoice.clientName}
                             </div>
-                            <div className={`text-xs ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                            <div className={`text-xs ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
                               {invoice.clientEmail}
                             </div>
                           </div>
@@ -752,7 +752,7 @@ InvoiceFlow Team`;
                           <div className={`text-sm font-medium ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>
                             {invoice.clientName}
                           </div>
-                          <div className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                          <div className={`text-sm ${isDarkMode ? 'text-slate-200' : 'text-slate-700'}`}>
                             {invoice.clientEmail}
                           </div>
                         </div>
@@ -768,7 +768,7 @@ InvoiceFlow Team`;
                             ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400'
                             : invoice.status === 'sent'
                             ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400'
-                            : 'bg-slate-100 dark:bg-slate-500/20 text-slate-800 dark:text-slate-400'
+                            : 'bg-slate-100 dark:bg-slate-500/20 text-slate-800 dark:text-slate-300'
                         }`}>
                           {invoice.status === 'paid' && <CheckCircle className="h-3 w-3 mr-1.5" />}
                           {invoice.status === 'sent' && <Clock className="h-3 w-3 mr-1.5" />}
