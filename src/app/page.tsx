@@ -703,17 +703,17 @@ InvoiceFlow Team`;
                             {invoice.dueDate}
                           </td>
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                            <div className="flex flex-col sm:flex-row gap-2">
+                            <div className="flex flex-row gap-1 sm:gap-2">
                               <button 
                                 onClick={() => handleViewInvoice(invoice)}
-                                className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
+                                className="flex items-center justify-center space-x-1 px-2 py-2 sm:px-3 sm:py-1.5 text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-all duration-200 font-medium min-h-[36px] sm:min-h-auto"
                               >
                                 <Eye className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                                 <span>View</span>
                               </button>
                               <button 
                                 onClick={() => handleDownloadPDF(invoice)}
-                                className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
+                                className="flex items-center justify-center space-x-1 px-2 py-2 sm:px-3 sm:py-1.5 text-xs bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all duration-200 font-medium min-h-[36px] sm:min-h-auto"
                               >
                                 <Download className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                                 <span>PDF</span>
@@ -721,7 +721,7 @@ InvoiceFlow Team`;
                               {invoice.status !== 'paid' && (
                                 <button 
                                   onClick={() => handleSendInvoice(invoice)}
-                                  className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
+                                  className="flex items-center justify-center space-x-1 px-2 py-2 sm:px-3 sm:py-1.5 text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-500/30 transition-all duration-200 font-medium min-h-[36px] sm:min-h-auto"
                                 >
                                   <Send className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                                   <span>Send</span>
@@ -830,31 +830,31 @@ InvoiceFlow Team`;
                           {invoice.dueDate}
                         </td>
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="flex flex-col sm:flex-row gap-2">
+                          <div className="flex flex-row gap-1 sm:gap-2">
                             <button 
                               onClick={() => handleViewInvoice(invoice)}
-                              className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
+                              className="flex items-center justify-center space-x-1 px-2 py-2 sm:px-3 sm:py-1.5 text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-all duration-200 font-medium min-h-[36px] sm:min-h-auto"
                             >
                               <Eye className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                               <span>View</span>
                             </button>
                             <button 
                               onClick={() => handleDownloadPDF(invoice)}
-                              className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
+                              className="flex items-center justify-center space-x-1 px-2 py-2 sm:px-3 sm:py-1.5 text-xs bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all duration-200 font-medium min-h-[36px] sm:min-h-auto"
                             >
                               <Download className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                               <span>PDF</span>
                             </button>
                             <button 
                               onClick={() => handleSendInvoice(invoice)}
-                              className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
+                              className="flex items-center justify-center space-x-1 px-2 py-2 sm:px-3 sm:py-1.5 text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-500/30 transition-all duration-200 font-medium min-h-[36px] sm:min-h-auto"
                             >
                               <Send className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                               <span>Send</span>
                             </button>
                             <button 
                               onClick={() => handleEditInvoice(invoice)}
-                              className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-gray-100 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
+                              className="flex items-center justify-center space-x-1 px-2 py-2 sm:px-3 sm:py-1.5 text-xs bg-gray-100 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500/30 transition-all duration-200 font-medium min-h-[36px] sm:min-h-auto"
                             >
                               <Edit className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                               <span>Edit</span>
