@@ -24,7 +24,7 @@ interface Milestone {
   description: string;
   amount: number;
   dueDate: string;
-  status: 'pending' | 'completed' | 'paid';
+  status: 'pending' | 'in-progress' | 'completed' | 'paid';
   completedDate?: string;
   paidDate?: string;
 }
@@ -94,7 +94,7 @@ const SMART_PRICING = {
 };
 
 export default function InvoiceGenerator() {
-  const [projects, setProjects] = useState<Project[]>([
+  const [projects] = useState<Project[]>([
     {
       id: '1',
       name: 'E-commerce Website Development',
@@ -253,14 +253,6 @@ export default function InvoiceGenerator() {
   });
 
   // Smart Assistant Features
-  const [smartSuggestions, setSmartSuggestions] = useState<{
-    name: string;
-    company: string;
-    suggestedRate: number;
-    suggestedAmount: number;
-    paymentTerms: string;
-    lastProject: string;
-  } | null>(null);
   const [recurringInvoices, setRecurringInvoices] = useState<RecurringInvoice[]>([]);
 
   // Dark Mode State
@@ -298,18 +290,17 @@ export default function InvoiceGenerator() {
     const invoice: Invoice = {
       id: String(invoices.length + 1),
       invoiceNumber,
+      projectId: 'quick-project',
+      projectName: 'Quick Invoice Project',
       clientName: quickInvoice.clientName,
       clientEmail: quickInvoice.clientEmail,
-      items: [{
-        description: template?.description || quickInvoice.template,
-        quantity: 1,
-        rate: total,
-        amount: total
-      }],
-      total,
+      milestoneId: 'quick-milestone',
+      milestoneName: template?.description || quickInvoice.template,
+      amount: total,
       status: 'draft',
       dueDate: quickInvoice.dueDate,
-      createdAt: new Date().toISOString().split('T')[0]
+      createdAt: new Date().toISOString().split('T')[0],
+      description: `Quick invoice for ${template?.description || quickInvoice.template}`
     };
 
     setInvoices(prev => [invoice, ...prev]);
@@ -364,26 +355,24 @@ export default function InvoiceGenerator() {
           <table class="items-table">
             <thead>
               <tr>
+                <th>Project</th>
+                <th>Milestone</th>
                 <th>Description</th>
-                <th>Quantity</th>
-                <th>Rate</th>
                 <th>Amount</th>
               </tr>
             </thead>
             <tbody>
-              ${invoice.items.map(item => `
-                <tr>
-                  <td>${item.description}</td>
-                  <td>${item.quantity}</td>
-                  <td>$${item.rate.toFixed(2)}</td>
-                  <td>$${item.amount.toFixed(2)}</td>
-                </tr>
-              `).join('')}
+              <tr>
+                <td>${invoice.projectName}</td>
+                <td>${invoice.milestoneName}</td>
+                <td>${invoice.description}</td>
+                <td>$${invoice.amount.toFixed(2)}</td>
+              </tr>
             </tbody>
           </table>
           
           <div class="total">
-            <p>Total: $${invoice.total.toFixed(2)}</p>
+            <p>Total: $${invoice.amount.toFixed(2)}</p>
           </div>
           
           <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px;">
@@ -403,11 +392,13 @@ export default function InvoiceGenerator() {
     const subject = `Invoice ${invoice.invoiceNumber} from InvoiceFlow`;
     const body = `Dear ${invoice.clientName},
 
-Please find attached your invoice ${invoice.invoiceNumber} for $${invoice.total.toFixed(2)}.
+Please find attached your invoice ${invoice.invoiceNumber} for $${invoice.amount.toFixed(2)}.
 
 Invoice Details:
 - Invoice Number: ${invoice.invoiceNumber}
-- Amount: $${invoice.total.toFixed(2)}
+- Project: ${invoice.projectName}
+- Milestone: ${invoice.milestoneName}
+- Amount: $${invoice.amount.toFixed(2)}
 - Due Date: ${invoice.dueDate}
 - Status: ${invoice.status}
 
@@ -432,19 +423,6 @@ InvoiceFlow Team`;
   };
 
   // Smart Assistant Functions
-  const getSmartSuggestions = (email: string) => {
-    const client = CLIENT_MEMORY[email as keyof typeof CLIENT_MEMORY];
-    if (client) {
-      setSmartSuggestions({
-        name: client.name,
-        company: client.company,
-        suggestedRate: client.preferredRate,
-        suggestedAmount: client.avgProjectValue,
-        paymentTerms: client.paymentTerms,
-        lastProject: client.lastProject
-      });
-    }
-  };
 
   const createRecurringInvoice = (invoice: Invoice) => {
     const recurring = {
