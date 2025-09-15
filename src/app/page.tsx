@@ -363,7 +363,8 @@ InvoiceFlow Team`;
               {/* Theme Toggle */}
               <button
                 onClick={toggleDarkMode}
-                className={`flex items-center justify-center w-12 h-12 sm:w-13 sm:h-13 rounded-xl transition-all duration-200 ${isDarkMode ? 'bg-slate-800 text-gray-200 hover:bg-slate-700' : 'bg-slate-100 text-gray-700 hover:bg-slate-200'}`}
+                className={`flex items-center justify-center w-12 h-12 sm:w-13 sm:h-13 rounded-xl transition-all duration-200 ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'}`}
+                style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}
                 aria-label="Toggle dark mode"
               >
                 {isDarkMode ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
@@ -399,10 +400,10 @@ InvoiceFlow Team`;
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="font-heading text-2xl font-semibold text-gray-900 dark:text-gray-100">
+              <h2 className="font-heading text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                 Dashboard Overview
               </h2>
-              <p className="text-gray-800 dark:text-gray-200 mt-1">
+              <p className="mt-1" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                 Monitor your business performance and invoice metrics
               </p>
             </div>
@@ -413,8 +414,8 @@ InvoiceFlow Team`;
             <div className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Total Revenue</p>
-                  <p className="font-heading text-3xl font-bold text-gray-900 dark:text-gray-100">
+                  <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Revenue</p>
+                  <p className="font-heading text-3xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                     ${totalRevenue.toLocaleString()}
                   </p>
                   <div className="flex items-center space-x-1">
@@ -431,8 +432,8 @@ InvoiceFlow Team`;
             <div className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Pending Payments</p>
-                  <p className="font-heading text-3xl font-bold text-gray-900 dark:text-gray-100">
+                  <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Pending Payments</p>
+                  <p className="font-heading text-3xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                     ${pendingAmount.toLocaleString()}
                   </p>
                   <div className="flex items-center space-x-1">
@@ -451,8 +452,8 @@ InvoiceFlow Team`;
             <div className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Total Invoices</p>
-                  <p className="font-heading text-3xl font-bold text-gray-900 dark:text-gray-100">
+                  <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Invoices</p>
+                  <p className="font-heading text-3xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                     {invoices.length}
                   </p>
                   <div className="flex items-center space-x-1">
@@ -471,8 +472,8 @@ InvoiceFlow Team`;
             <div className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Active Clients</p>
-                  <p className="font-heading text-3xl font-bold text-gray-900 dark:text-gray-100">
+                  <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Active Clients</p>
+                  <p className="font-heading text-3xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                     {new Set(invoices.map(inv => inv.clientName)).size}
                   </p>
                   <div className="flex items-center space-x-1">
@@ -682,10 +683,10 @@ InvoiceFlow Team`;
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-heading text-2xl font-semibold text-gray-900 dark:text-gray-100">
+              <h2 className="font-heading text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                 Invoice Management
               </h2>
-              <p className="text-gray-800 dark:text-gray-200 mt-1">
+              <p className="mt-1" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                 Track and manage all your invoices in one place
               </p>
             </div>
@@ -693,10 +694,10 @@ InvoiceFlow Team`;
           
           <div className={`rounded-2xl shadow-enterprise-lg border transition-all duration-300 ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white/70 border-slate-200'} backdrop-blur-sm`}>
             <div className={`p-6 border-b ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
-              <h3 className="font-heading text-lg font-semibold text-gray-900 dark:text-gray-100">
+              <h3 className="font-heading text-lg font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                 Recent Invoices
               </h3>
-              <p className="text-sm text-gray-800 dark:text-gray-200 mt-1">
+              <p className="text-sm mt-1" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                 Manage your latest invoice transactions
               </p>
             </div>
@@ -705,22 +706,22 @@ InvoiceFlow Team`;
               <table className="w-full">
                 <thead className={isDarkMode ? 'bg-slate-800/30' : 'bg-slate-50/50'}>
                   <tr>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                       Invoice
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden sm:table-cell ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden sm:table-cell" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                       Client
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                       Amount
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden md:table-cell ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden md:table-cell" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                       Status
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                       Due Date
                     </th>
-                    <th className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                       Actions
                     </th>
                   </tr>
@@ -730,18 +731,18 @@ InvoiceFlow Team`;
                     <tr key={invoice.id} className={`transition-all duration-200 ${isDarkMode ? 'hover:bg-slate-800/30' : 'hover:bg-slate-50/50'}`}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="space-y-1">
-                          <div className={`font-heading text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                          <div className="font-heading text-sm font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                             {invoice.invoiceNumber}
                           </div>
-                          <div className={`text-xs ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                          <div className="text-xs" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                             {invoice.createdAt}
                           </div>
                           {/* Mobile: Show client info under invoice number */}
                           <div className="sm:hidden mt-2 space-y-1">
-                            <div className={`text-xs font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                            <div className="text-xs font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                               {invoice.clientName}
                             </div>
-                            <div className={`text-xs ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                            <div className="text-xs" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                               {invoice.clientEmail}
                             </div>
                           </div>
@@ -749,16 +750,16 @@ InvoiceFlow Team`;
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap hidden sm:table-cell">
                         <div className="space-y-1">
-                          <div className={`text-sm font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                          <div className="text-sm font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                             {invoice.clientName}
                           </div>
-                          <div className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                          <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                             {invoice.clientEmail}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className={`font-heading text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                        <div className="font-heading text-lg font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                           ${invoice.total.toLocaleString()}
                         </div>
                       </td>
@@ -776,7 +777,7 @@ InvoiceFlow Team`;
                           {invoice.status}
                         </span>
                       </td>
-                      <td className={`px-6 py-4 whitespace-nowrap text-sm hidden lg:table-cell ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm hidden lg:table-cell" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                         {invoice.dueDate}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
