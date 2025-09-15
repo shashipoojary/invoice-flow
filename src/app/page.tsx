@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Plus, FileText, DollarSign, Users, Calendar, Download, Send, Zap, TrendingUp, Clock, CheckCircle, AlertCircle, X, Sun, Moon } from 'lucide-react';
+import { Plus, FileText, DollarSign, Users, Calendar, Download, Send, Zap, TrendingUp, Clock, CheckCircle, AlertCircle, X, Sun, Moon, Upload, Database } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface Project {
   id: string;
@@ -797,6 +798,136 @@ InvoiceFlow Team`;
             </div>
           </div>
         )}
+
+        {/* Enhanced Features Section */}
+        <div className="space-y-6 mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-heading text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                Professional Features
+              </h2>
+              <p className="mt-1" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                Complete invoicing system with payments, PDFs, and email automation
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* PDF Generation */}
+            <div className={`p-6 rounded-2xl border transition-all duration-300 ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white/70 border-slate-200'} backdrop-blur-sm`}>
+              <div className="flex items-center mb-4">
+                <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-blue-500/20' : 'bg-blue-50'}`}>
+                  <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h3 className="font-heading text-lg font-semibold ml-3" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  PDF Generation
+                </h3>
+              </div>
+              <p className="text-sm mb-4" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                Professional PDF invoices with @react-pdf/renderer. Auto-stored in Supabase Storage.
+              </p>
+              <div className="flex items-center text-xs" style={{color: isDarkMode ? '#94a3b8' : '#6b7280'}}>
+                <Database className="h-4 w-4 mr-1" />
+                Supabase Storage Integration
+              </div>
+            </div>
+
+            {/* Payment Processing */}
+            <div className={`p-6 rounded-2xl border transition-all duration-300 ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white/70 border-slate-200'} backdrop-blur-sm`}>
+              <div className="flex items-center mb-4">
+                <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-green-500/20' : 'bg-green-50'}`}>
+                  <CreditCard className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <h3 className="font-heading text-lg font-semibold ml-3" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  Payment Processing
+                </h3>
+              </div>
+              <p className="text-sm mb-4" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                Stripe Checkout integration with webhook handling. Automatic status updates.
+              </p>
+              <div className="flex items-center text-xs" style={{color: isDarkMode ? '#94a3b8' : '#6b7280'}}>
+                <CreditCard className="h-4 w-4 mr-1" />
+                Stripe + PayPal Support
+              </div>
+            </div>
+
+            {/* Email Automation */}
+            <div className={`p-6 rounded-2xl border transition-all duration-300 ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white/70 border-slate-200'} backdrop-blur-sm`}>
+              <div className="flex items-center mb-4">
+                <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-purple-500/20' : 'bg-purple-50'}`}>
+                  <Send className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <h3 className="font-heading text-lg font-semibold ml-3" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  Email Automation
+                </h3>
+              </div>
+              <p className="text-sm mb-4" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                Resend integration for transactional emails. PDF attachments and hosted links.
+              </p>
+              <div className="flex items-center text-xs" style={{color: isDarkMode ? '#94a3b8' : '#6b7280'}}>
+                <Send className="h-4 w-4 mr-1" />
+                Resend API Integration
+              </div>
+            </div>
+
+            {/* Hosted Invoice Pages */}
+            <div className={`p-6 rounded-2xl border transition-all duration-300 ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white/70 border-slate-200'} backdrop-blur-sm`}>
+              <div className="flex items-center mb-4">
+                <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-orange-500/20' : 'bg-orange-50'}`}>
+                  <ExternalLink className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                </div>
+                <h3 className="font-heading text-lg font-semibold ml-3" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  Hosted Pages
+                </h3>
+              </div>
+              <p className="text-sm mb-4" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                Public invoice pages with payment options. Secure token-based access.
+              </p>
+              <div className="flex items-center text-xs" style={{color: isDarkMode ? '#94a3b8' : '#6b7280'}}>
+                <ExternalLink className="h-4 w-4 mr-1" />
+                /invoice/[token] Routes
+              </div>
+            </div>
+
+            {/* Export & Reports */}
+            <div className={`p-6 rounded-2xl border transition-all duration-300 ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white/70 border-slate-200'} backdrop-blur-sm`}>
+              <div className="flex items-center mb-4">
+                <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
+                  <Upload className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <h3 className="font-heading text-lg font-semibold ml-3" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  Export & Reports
+                </h3>
+              </div>
+              <p className="text-sm mb-4" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                CSV exports with PapaParse. Bulk PDF downloads. Automated backups.
+              </p>
+              <div className="flex items-center text-xs" style={{color: isDarkMode ? '#94a3b8' : '#6b7280'}}>
+                <Upload className="h-4 w-4 mr-1" />
+                CSV + Bulk PDF Export
+              </div>
+            </div>
+
+            {/* Reminders & Late Fees */}
+            <div className={`p-6 rounded-2xl border transition-all duration-300 ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white/70 border-slate-200'} backdrop-blur-sm`}>
+              <div className="flex items-center mb-4">
+                <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-red-500/20' : 'bg-red-50'}`}>
+                  <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                </div>
+                <h3 className="font-heading text-lg font-semibold ml-3" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  Auto Reminders
+                </h3>
+              </div>
+              <p className="text-sm mb-4" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                Supabase Edge Functions with cron jobs. Automatic late fees and reminders.
+              </p>
+              <div className="flex items-center text-xs" style={{color: isDarkMode ? '#94a3b8' : '#6b7280'}}>
+                <AlertCircle className="h-4 w-4 mr-1" />
+                Edge Functions + Cron
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Enterprise Invoice Management */}
         <div className="space-y-6">
