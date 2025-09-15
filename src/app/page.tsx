@@ -342,7 +342,7 @@ InvoiceFlow Team`;
         alt="InvoiceFlow Logo" 
         width={160}
         height={160}
-        className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 xl:w-40 xl:h-40"
+        className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 xl:w-32 xl:h-32"
       />
     </div>
   );
@@ -351,38 +351,43 @@ InvoiceFlow Team`;
     <div className={`min-h-screen transition-all duration-300 ${isDarkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
       {/* Enterprise Header */}
       <header className={`sticky top-0 z-40 backdrop-blur-xl border-b transition-all duration-300 ${isDarkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-slate-200'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-14 sm:h-16">
+            {/* Logo Section */}
+            <div className="flex items-center">
               <Logo />
             </div>
             
-            <div className="flex items-center space-x-3">
+            {/* Mobile Navigation */}
+            <div className="flex items-center space-x-2 sm:space-x-3">
               {/* Theme Toggle */}
               <button
                 onClick={toggleDarkMode}
-                className={`p-2.5 rounded-xl transition-all duration-200 ${isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                className={`flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl transition-all duration-200 ${isDarkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                aria-label="Toggle dark mode"
               >
                 {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
               
-              {/* Action Buttons */}
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setShowSmartAssistant(true)}
-                  className="flex items-center space-x-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-200 shadow-enterprise hover:shadow-enterprise-lg font-medium text-sm"
-                >
-                  <Zap className="h-4 w-4" />
-                  <span className="hidden sm:inline">Smart Assistant</span>
-                </button>
-                <button
-                  onClick={() => setShowQuickCreate(true)}
-                  className="flex items-center space-x-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-enterprise hover:shadow-enterprise-lg font-medium text-sm"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span className="hidden sm:inline">New Invoice</span>
-                </button>
-              </div>
+              {/* Smart Assistant Button */}
+              <button
+                onClick={() => setShowSmartAssistant(true)}
+                className="flex items-center justify-center w-10 h-10 sm:w-auto sm:h-11 sm:px-4 sm:py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-200 shadow-enterprise hover:shadow-enterprise-lg font-medium text-sm"
+                aria-label="Smart Assistant"
+              >
+                <Zap className="h-4 w-4" />
+                <span className="hidden sm:inline sm:ml-2">Smart Assistant</span>
+              </button>
+              
+              {/* New Invoice Button */}
+              <button
+                onClick={() => setShowQuickCreate(true)}
+                className="flex items-center justify-center w-10 h-10 sm:w-auto sm:h-11 sm:px-4 sm:py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-enterprise hover:shadow-enterprise-lg font-medium text-sm"
+                aria-label="New Invoice"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline sm:ml-2">New Invoice</span>
+              </button>
             </div>
           </div>
         </div>
