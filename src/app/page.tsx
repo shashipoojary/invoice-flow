@@ -4,23 +4,45 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Plus, FileText, DollarSign, Users, Calendar, Download, Send, Zap, TrendingUp, Clock, CheckCircle, AlertCircle, X, Sun, Moon } from 'lucide-react';
 
-interface Invoice {
+interface Project {
   id: string;
-  invoiceNumber: string;
+  name: string;
+  description: string;
   clientName: string;
   clientEmail: string;
-  items: InvoiceItem[];
-  total: number;
-  status: 'draft' | 'sent' | 'paid';
-  dueDate: string;
+  startDate: string;
+  endDate: string;
+  totalBudget: number;
+  status: 'planning' | 'in-progress' | 'completed' | 'on-hold';
+  milestones: Milestone[];
   createdAt: string;
 }
 
-interface InvoiceItem {
+interface Milestone {
+  id: string;
+  name: string;
   description: string;
-  quantity: number;
-  rate: number;
   amount: number;
+  dueDate: string;
+  status: 'pending' | 'completed' | 'paid';
+  completedDate?: string;
+  paidDate?: string;
+}
+
+interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  projectId: string;
+  projectName: string;
+  clientName: string;
+  clientEmail: string;
+  milestoneId: string;
+  milestoneName: string;
+  amount: number;
+  status: 'draft' | 'sent' | 'paid';
+  dueDate: string;
+  createdAt: string;
+  description: string;
 }
 
 interface RecurringInvoice {
@@ -72,33 +94,151 @@ const SMART_PRICING = {
 };
 
 export default function InvoiceGenerator() {
+  const [projects, setProjects] = useState<Project[]>([
+    {
+      id: '1',
+      name: 'E-commerce Website Development',
+      description: 'Complete e-commerce platform with payment integration, inventory management, and admin dashboard',
+      clientName: 'Acme Corporation',
+      clientEmail: 'billing@acme.com',
+      startDate: '2024-01-01',
+      endDate: '2024-03-15',
+      totalBudget: 15000,
+      status: 'in-progress',
+      createdAt: '2024-01-01',
+      milestones: [
+        {
+          id: 'm1',
+          name: 'Project Setup & Design',
+          description: 'Initial project setup, wireframes, and UI/UX design',
+          amount: 3000,
+          dueDate: '2024-01-15',
+          status: 'paid',
+          completedDate: '2024-01-14',
+          paidDate: '2024-01-20'
+        },
+        {
+          id: 'm2',
+          name: 'Frontend Development',
+          description: 'Complete frontend development with responsive design',
+          amount: 5000,
+          dueDate: '2024-02-15',
+          status: 'completed',
+          completedDate: '2024-02-14'
+        },
+        {
+          id: 'm3',
+          name: 'Backend & Database',
+          description: 'Backend API development and database setup',
+          amount: 4000,
+          dueDate: '2024-03-01',
+          status: 'pending'
+        },
+        {
+          id: 'm4',
+          name: 'Testing & Launch',
+          description: 'Final testing, bug fixes, and deployment',
+          amount: 3000,
+          dueDate: '2024-03-15',
+          status: 'pending'
+        }
+      ]
+    },
+    {
+      id: '2',
+      name: 'Mobile App Development',
+      description: 'iOS and Android mobile application for food delivery service',
+      clientName: 'TechStart LLC',
+      clientEmail: 'finance@techstart.com',
+      startDate: '2024-01-10',
+      endDate: '2024-04-30',
+      totalBudget: 25000,
+      status: 'in-progress',
+      createdAt: '2024-01-10',
+      milestones: [
+        {
+          id: 'm5',
+          name: 'App Design & Prototype',
+          description: 'UI/UX design and interactive prototype',
+          amount: 5000,
+          dueDate: '2024-02-01',
+          status: 'paid',
+          completedDate: '2024-01-30',
+          paidDate: '2024-02-05'
+        },
+        {
+          id: 'm6',
+          name: 'Core Features Development',
+          description: 'User authentication, menu browsing, and cart functionality',
+          amount: 8000,
+          dueDate: '2024-03-15',
+          status: 'in-progress'
+        },
+        {
+          id: 'm7',
+          name: 'Payment Integration',
+          description: 'Payment gateway integration and order processing',
+          amount: 6000,
+          dueDate: '2024-04-01',
+          status: 'pending'
+        },
+        {
+          id: 'm8',
+          name: 'Testing & App Store Submission',
+          description: 'Final testing and app store submission',
+          amount: 6000,
+          dueDate: '2024-04-30',
+          status: 'pending'
+        }
+      ]
+    }
+  ]);
+
   const [invoices, setInvoices] = useState<Invoice[]>([
     {
       id: '1',
       invoiceNumber: 'INV-001',
+      projectId: '1',
+      projectName: 'E-commerce Website Development',
       clientName: 'Acme Corporation',
       clientEmail: 'billing@acme.com',
-      items: [
-        { description: 'Website Development', quantity: 40, rate: 75, amount: 3000 },
-        { description: 'UI/UX Design', quantity: 20, rate: 50, amount: 1000 }
-      ],
-      total: 4000,
-      status: 'sent',
-      dueDate: '2024-02-15',
-      createdAt: '2024-01-15'
+      milestoneId: 'm1',
+      milestoneName: 'Project Setup & Design',
+      amount: 3000,
+      status: 'paid',
+      dueDate: '2024-01-15',
+      createdAt: '2024-01-15',
+      description: 'Payment for project setup, wireframes, and UI/UX design milestone'
     },
     {
       id: '2',
       invoiceNumber: 'INV-002',
+      projectId: '1',
+      projectName: 'E-commerce Website Development',
+      clientName: 'Acme Corporation',
+      clientEmail: 'billing@acme.com',
+      milestoneId: 'm2',
+      milestoneName: 'Frontend Development',
+      amount: 5000,
+      status: 'sent',
+      dueDate: '2024-02-15',
+      createdAt: '2024-02-14',
+      description: 'Payment for frontend development milestone'
+    },
+    {
+      id: '3',
+      invoiceNumber: 'INV-003',
+      projectId: '2',
+      projectName: 'Mobile App Development',
       clientName: 'TechStart LLC',
       clientEmail: 'finance@techstart.com',
-      items: [
-        { description: 'Business Consulting', quantity: 10, rate: 100, amount: 1000 }
-      ],
-      total: 1000,
+      milestoneId: 'm5',
+      milestoneName: 'App Design & Prototype',
+      amount: 5000,
       status: 'paid',
-      dueDate: '2024-01-30',
-      createdAt: '2024-01-10'
+      dueDate: '2024-02-01',
+      createdAt: '2024-01-30',
+      description: 'Payment for app design and prototype milestone'
     }
   ]);
 
@@ -330,9 +470,10 @@ InvoiceFlow Team`;
     }
   };
 
-  const totalRevenue = invoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + inv.total, 0);
-  const pendingAmount = invoices.filter(inv => inv.status === 'sent').reduce((sum, inv) => sum + inv.total, 0);
-  const draftCount = invoices.filter(inv => inv.status === 'draft').length;
+  const totalRevenue = invoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + inv.amount, 0);
+  const pendingAmount = invoices.filter(inv => inv.status === 'sent').reduce((sum, inv) => sum + inv.amount, 0);
+  const activeProjects = projects.filter(p => p.status === 'in-progress').length;
+  const completedMilestones = projects.reduce((sum, p) => sum + p.milestones.filter(m => m.status === 'completed' || m.status === 'paid').length, 0);
 
   // Professional Logo Component
   const Logo = () => (
@@ -401,10 +542,10 @@ InvoiceFlow Team`;
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="font-heading text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                Dashboard Overview
+                Project Dashboard
               </h2>
               <p className="mt-1" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                Monitor your business performance and invoice metrics
+                Track your projects, milestones, and revenue in real-time
               </p>
             </div>
           </div>
@@ -420,7 +561,7 @@ InvoiceFlow Team`;
                   </p>
                   <div className="flex items-center space-x-1">
                     <TrendingUp className="h-4 w-4 text-emerald-500" />
-                    <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">+12% this month</span>
+                    <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">From {completedMilestones} milestones</span>
                   </div>
                 </div>
                 <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-emerald-500/20' : 'bg-emerald-50'}`}>
@@ -439,7 +580,7 @@ InvoiceFlow Team`;
                   <div className="flex items-center space-x-1">
                     <Clock className="h-4 w-4 text-amber-500" />
                     <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                      {invoices.filter(inv => inv.status === 'sent').length} invoices
+                      {invoices.filter(inv => inv.status === 'sent').length} pending
                     </span>
                   </div>
                 </div>
@@ -452,14 +593,14 @@ InvoiceFlow Team`;
             <div className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Invoices</p>
+                  <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Active Projects</p>
                   <p className="font-heading text-3xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                    {invoices.length}
+                    {activeProjects}
                   </p>
                   <div className="flex items-center space-x-1">
                     <FileText className="h-4 w-4 text-blue-500" />
                     <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                      {draftCount} drafts
+                      {projects.length} total projects
                     </span>
                   </div>
                 </div>
@@ -472,14 +613,14 @@ InvoiceFlow Team`;
             <div className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Active Clients</p>
+                  <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Completed Milestones</p>
                   <p className="font-heading text-3xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                    {new Set(invoices.map(inv => inv.clientName)).size}
+                    {completedMilestones}
                   </p>
                   <div className="flex items-center space-x-1">
                     <Users className="h-4 w-4 text-indigo-500" />
                     <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
-                      Growing network
+                      {new Set(projects.map(p => p.clientName)).size} clients
                     </span>
                   </div>
                 </div>
@@ -684,10 +825,10 @@ InvoiceFlow Team`;
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-heading text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                Invoice Management
+                Project & Invoice Management
               </h2>
               <p className="mt-1" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                Track and manage all your invoices in one place
+                Track projects, milestones, and invoices in one place
               </p>
             </div>
           </div>
@@ -695,10 +836,10 @@ InvoiceFlow Team`;
           <div className={`rounded-2xl shadow-enterprise-lg border transition-all duration-300 ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white/70 border-slate-200'} backdrop-blur-sm`}>
             <div className={`p-6 border-b ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
               <h3 className="font-heading text-lg font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                Recent Invoices
+                Milestone Invoices
               </h3>
               <p className="text-sm mt-1" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                Manage your latest invoice transactions
+                Track payments for completed project milestones
               </p>
             </div>
           
@@ -710,16 +851,16 @@ InvoiceFlow Team`;
                       Invoice
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden sm:table-cell" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                      Client
+                      Project
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden md:table-cell" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                      Milestone
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                       Amount
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden md:table-cell" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                      Status
-                    </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider hidden lg:table-cell" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                      Due Date
+                      Status
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                       Actions
@@ -737,13 +878,13 @@ InvoiceFlow Team`;
                           <div className="text-xs" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                             {invoice.createdAt}
                           </div>
-                          {/* Mobile: Show client info under invoice number */}
+                          {/* Mobile: Show project info under invoice number */}
                           <div className="sm:hidden mt-2 space-y-1">
                             <div className="text-xs font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                              {invoice.clientName}
+                              {invoice.projectName}
                             </div>
                             <div className="text-xs" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                              {invoice.clientEmail}
+                              {invoice.milestoneName}
                             </div>
                           </div>
                         </div>
@@ -751,16 +892,26 @@ InvoiceFlow Team`;
                       <td className="px-6 py-4 whitespace-nowrap hidden sm:table-cell">
                         <div className="space-y-1">
                           <div className="text-sm font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                            {invoice.clientName}
+                            {invoice.projectName}
                           </div>
                           <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                            {invoice.clientEmail}
+                            {invoice.clientName}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                            {invoice.milestoneName}
+                          </div>
+                          <div className="text-xs" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                            {invoice.description}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="font-heading text-lg font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                          ${invoice.total.toLocaleString()}
+                          ${invoice.amount.toLocaleString()}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
