@@ -342,7 +342,7 @@ InvoiceFlow Team`;
         alt="InvoiceFlow Logo" 
         width={160}
         height={160}
-        className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 xl:w-32 xl:h-32"
+        className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 xl:w-36 xl:h-36"
       />
     </div>
   );
