@@ -348,21 +348,13 @@ InvoiceFlow Team`;
   );
 
   return (
-    <div className={`min-h-screen transition-all duration-300 ${isDarkMode ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20'}`}>
+    <div className={`min-h-screen transition-all duration-300 ${isDarkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
       {/* Enterprise Header */}
       <header className={`sticky top-0 z-40 backdrop-blur-xl border-b transition-all duration-300 ${isDarkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white/80 border-slate-200'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <Logo />
-              <div className="hidden md:block">
-                <h1 className="font-heading text-xl font-semibold text-slate-900 dark:text-slate-100">
-                  InvoiceFlow Pro
-                </h1>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Enterprise Invoice Management
-                </p>
-              </div>
             </div>
             
             <div className="flex items-center space-x-3">
@@ -378,7 +370,7 @@ InvoiceFlow Team`;
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setShowSmartAssistant(true)}
-                  className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-enterprise hover:shadow-enterprise-lg font-medium text-sm"
+                  className="flex items-center space-x-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-200 shadow-enterprise hover:shadow-enterprise-lg font-medium text-sm"
                 >
                   <Zap className="h-4 w-4" />
                   <span className="hidden sm:inline">Smart Assistant</span>
