@@ -399,7 +399,7 @@ InvoiceFlow Team`;
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="font-heading text-2xl font-semibold text-slate-900 dark:text-slate-100">
+              <h2 className="font-heading text-2xl font-semibold text-gray-900 dark:text-gray-100">
                 Dashboard Overview
               </h2>
               <p className="text-gray-800 dark:text-gray-200 mt-1">
@@ -414,7 +414,7 @@ InvoiceFlow Team`;
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Total Revenue</p>
-                  <p className="font-heading text-3xl font-bold text-slate-900 dark:text-slate-100">
+                  <p className="font-heading text-3xl font-bold text-gray-900 dark:text-gray-100">
                     ${totalRevenue.toLocaleString()}
                   </p>
                   <div className="flex items-center space-x-1">
@@ -432,7 +432,7 @@ InvoiceFlow Team`;
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Pending Payments</p>
-                  <p className="font-heading text-3xl font-bold text-slate-900 dark:text-slate-100">
+                  <p className="font-heading text-3xl font-bold text-gray-900 dark:text-gray-100">
                     ${pendingAmount.toLocaleString()}
                   </p>
                   <div className="flex items-center space-x-1">
@@ -452,7 +452,7 @@ InvoiceFlow Team`;
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Total Invoices</p>
-                  <p className="font-heading text-3xl font-bold text-slate-900 dark:text-slate-100">
+                  <p className="font-heading text-3xl font-bold text-gray-900 dark:text-gray-100">
                     {invoices.length}
                   </p>
                   <div className="flex items-center space-x-1">
@@ -472,7 +472,7 @@ InvoiceFlow Team`;
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Active Clients</p>
-                  <p className="font-heading text-3xl font-bold text-slate-900 dark:text-slate-100">
+                  <p className="font-heading text-3xl font-bold text-gray-900 dark:text-gray-100">
                     {new Set(invoices.map(inv => inv.clientName)).size}
                   </p>
                   <div className="flex items-center space-x-1">
@@ -682,7 +682,7 @@ InvoiceFlow Team`;
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-heading text-2xl font-semibold text-slate-900 dark:text-slate-100">
+              <h2 className="font-heading text-2xl font-semibold text-gray-900 dark:text-gray-100">
                 Invoice Management
               </h2>
               <p className="text-gray-800 dark:text-gray-200 mt-1">
@@ -693,7 +693,7 @@ InvoiceFlow Team`;
           
           <div className={`rounded-2xl shadow-enterprise-lg border transition-all duration-300 ${isDarkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-white/70 border-slate-200'} backdrop-blur-sm`}>
             <div className={`p-6 border-b ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
-              <h3 className="font-heading text-lg font-semibold text-slate-900 dark:text-slate-100">
+              <h3 className="font-heading text-lg font-semibold text-gray-900 dark:text-gray-100">
                 Recent Invoices
               </h3>
               <p className="text-sm text-gray-800 dark:text-gray-200 mt-1">
@@ -730,7 +730,7 @@ InvoiceFlow Team`;
                     <tr key={invoice.id} className={`transition-all duration-200 ${isDarkMode ? 'hover:bg-slate-800/30' : 'hover:bg-slate-50/50'}`}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="space-y-1">
-                          <div className={`font-heading text-sm font-semibold ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>
+                          <div className={`font-heading text-sm font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                             {invoice.invoiceNumber}
                           </div>
                           <div className={`text-xs ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
@@ -738,7 +738,7 @@ InvoiceFlow Team`;
                           </div>
                           {/* Mobile: Show client info under invoice number */}
                           <div className="sm:hidden mt-2 space-y-1">
-                            <div className={`text-xs font-medium ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>
+                            <div className={`text-xs font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                               {invoice.clientName}
                             </div>
                             <div className={`text-xs ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
@@ -749,7 +749,7 @@ InvoiceFlow Team`;
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap hidden sm:table-cell">
                         <div className="space-y-1">
-                          <div className={`text-sm font-medium ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>
+                          <div className={`text-sm font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                             {invoice.clientName}
                           </div>
                           <div className={`text-sm ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
@@ -758,7 +758,7 @@ InvoiceFlow Team`;
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className={`font-heading text-lg font-bold ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>
+                        <div className={`font-heading text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                           ${invoice.total.toLocaleString()}
                         </div>
                       </td>
@@ -768,7 +768,7 @@ InvoiceFlow Team`;
                             ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400'
                             : invoice.status === 'sent'
                             ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400'
-                            : 'bg-slate-100 dark:bg-slate-500/20 text-slate-800 dark:text-slate-300'
+                            : 'bg-gray-100 dark:bg-gray-500/20 text-gray-800 dark:text-gray-300'
                         }`}>
                           {invoice.status === 'paid' && <CheckCircle className="h-3 w-3 mr-1.5" />}
                           {invoice.status === 'sent' && <Clock className="h-3 w-3 mr-1.5" />}
