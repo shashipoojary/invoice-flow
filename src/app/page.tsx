@@ -45,7 +45,28 @@ export default function InvoiceDashboard() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'invoices' | 'clients'>('dashboard');
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   const [showCreateClient, setShowCreateClient] = useState(false);
+  const [showViewInvoice, setShowViewInvoice] = useState(false);
+  const [showEditClient, setShowEditClient] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+
+  // Form states
+  const [newInvoice, setNewInvoice] = useState({
+    clientId: '',
+    dueDate: '',
+    items: [{ id: '1', description: '', quantity: 1, rate: 0, amount: 0 }],
+    taxRate: 0.1,
+    notes: ''
+  });
+
+  const [newClient, setNewClient] = useState({
+    name: '',
+    email: '',
+    company: '',
+    phone: '',
+    address: ''
+  });
 
   // Sample data (in real app, this would come from Supabase)
   const [clients, setClients] = useState<Client[]>([
@@ -126,6 +147,293 @@ export default function InvoiceDashboard() {
       document.documentElement.classList.add('dark');
       localStorage.setItem('theme', 'dark');
     }
+  };
+
+  // Invoice functions
+  const handleCreateInvoice = () => {
+    if (!newInvoice.clientId || !newInvoice.dueDate || newInvoice.items.some(item => !item.description || item.rate <= 0)) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    const client = clients.find(c => c.id === newInvoice.clientId);
+    if (!client) return;
+
+    const subtotal = newInvoice.items.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
+    const taxAmount = subtotal * newInvoice.taxRate;
+    const total = subtotal + taxAmount;
+
+    const invoice: Invoice = {
+      id: Date.now().toString(),
+      invoiceNumber: `INV-${String(invoices.length + 1).padStart(3, '0')}`,
+      clientId: newInvoice.clientId,
+      client: client,
+      items: newInvoice.items.map(item => ({
+        ...item,
+        amount: item.quantity * item.rate
+      })),
+      subtotal,
+      taxRate: newInvoice.taxRate,
+      taxAmount,
+      total,
+      status: 'draft',
+      dueDate: newInvoice.dueDate,
+      createdAt: new Date().toISOString().split('T')[0],
+      notes: newInvoice.notes
+    };
+
+    setInvoices(prev => [invoice, ...prev]);
+    setShowCreateInvoice(false);
+    setNewInvoice({
+      clientId: '',
+      dueDate: '',
+      items: [{ id: '1', description: '', quantity: 1, rate: 0, amount: 0 }],
+      taxRate: 0.1,
+      notes: ''
+    });
+    alert('Invoice created successfully!');
+  };
+
+  const handleViewInvoice = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setShowViewInvoice(true);
+  };
+
+  const handleDownloadPDF = (invoice: Invoice) => {
+    // Generate PDF content
+    const pdfContent = `
+      <html>
+        <head>
+          <title>Invoice ${invoice.invoiceNumber}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .invoice-details { margin-bottom: 30px; }
+            .client-info { margin-bottom: 30px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            .total { text-align: right; font-weight: bold; }
+            .notes { margin-top: 30px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>INVOICE</h1>
+            <h2>${invoice.invoiceNumber}</h2>
+          </div>
+          
+          <div class="invoice-details">
+            <p><strong>Date:</strong> ${invoice.createdAt}</p>
+            <p><strong>Due Date:</strong> ${invoice.dueDate}</p>
+            <p><strong>Status:</strong> ${invoice.status.toUpperCase()}</p>
+          </div>
+
+          <div class="client-info">
+            <h3>Bill To:</h3>
+            <p><strong>${invoice.client.name}</strong></p>
+            <p>${invoice.client.company}</p>
+            <p>${invoice.client.email}</p>
+            ${invoice.client.address ? `<p>${invoice.client.address}</p>` : ''}
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Quantity</th>
+                <th>Rate</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${invoice.items.map(item => `
+                <tr>
+                  <td>${item.description}</td>
+                  <td>${item.quantity}</td>
+                  <td>$${item.rate.toFixed(2)}</td>
+                  <td>$${item.amount.toFixed(2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="total">
+            <p>Subtotal: $${invoice.subtotal.toFixed(2)}</p>
+            <p>Tax (${(invoice.taxRate * 100).toFixed(1)}%): $${invoice.taxAmount.toFixed(2)}</p>
+            <p><strong>Total: $${invoice.total.toFixed(2)}</strong></p>
+          </div>
+
+          ${invoice.notes ? `
+            <div class="notes">
+              <h3>Notes:</h3>
+              <p>${invoice.notes}</p>
+            </div>
+          ` : ''}
+        </body>
+      </html>
+    `;
+
+    // Open PDF in new window
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.document.write(pdfContent);
+      newWindow.document.close();
+      newWindow.print();
+    }
+  };
+
+  const handleSendInvoice = (invoice: Invoice) => {
+    const subject = `Invoice ${invoice.invoiceNumber} from InvoiceFlow`;
+    const body = `Dear ${invoice.client.name},
+
+Please find attached your invoice ${invoice.invoiceNumber} for the amount of $${invoice.total.toFixed(2)}.
+
+Invoice Details:
+- Invoice Number: ${invoice.invoiceNumber}
+- Due Date: ${invoice.dueDate}
+- Total Amount: $${invoice.total.toFixed(2)}
+
+${invoice.notes ? `Notes: ${invoice.notes}` : ''}
+
+Thank you for your business!
+
+Best regards,
+InvoiceFlow Team`;
+
+    const mailtoLink = `mailto:${invoice.client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailtoLink);
+    
+    // Update invoice status to sent
+    setInvoices(prev => prev.map(inv => 
+      inv.id === invoice.id ? { ...inv, status: 'sent' as const } : inv
+    ));
+    alert('Invoice email opened!');
+  };
+
+  const handleEditInvoice = (invoice: Invoice) => {
+    setEditingInvoice(invoice);
+    setNewInvoice({
+      clientId: invoice.clientId,
+      dueDate: invoice.dueDate,
+      items: invoice.items,
+      taxRate: invoice.taxRate,
+      notes: invoice.notes || ''
+    });
+    setShowCreateInvoice(true);
+  };
+
+  // Client functions
+  const handleCreateClient = () => {
+    if (!newClient.name || !newClient.email || !newClient.company) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    const client: Client = {
+      id: Date.now().toString(),
+      name: newClient.name,
+      email: newClient.email,
+      company: newClient.company,
+      phone: newClient.phone,
+      address: newClient.address,
+      createdAt: new Date().toISOString().split('T')[0]
+    };
+
+    setClients(prev => [client, ...prev]);
+    setShowCreateClient(false);
+    setNewClient({
+      name: '',
+      email: '',
+      company: '',
+      phone: '',
+      address: ''
+    });
+    alert('Client added successfully!');
+  };
+
+  const handleEditClient = (client: Client) => {
+    setSelectedClient(client);
+    setNewClient({
+      name: client.name,
+      email: client.email,
+      company: client.company,
+      phone: client.phone || '',
+      address: client.address || ''
+    });
+    setShowEditClient(true);
+  };
+
+  const handleUpdateClient = () => {
+    if (!selectedClient) return;
+
+    setClients(prev => prev.map(client => 
+      client.id === selectedClient.id 
+        ? { ...client, ...newClient }
+        : client
+    ));
+    setShowEditClient(false);
+    setSelectedClient(null);
+    setNewClient({
+      name: '',
+      email: '',
+      company: '',
+      phone: '',
+      address: ''
+    });
+    alert('Client updated successfully!');
+  };
+
+  const handleDeleteClient = (clientId: string) => {
+    if (confirm('Are you sure you want to delete this client?')) {
+      setClients(prev => prev.filter(client => client.id !== clientId));
+      setInvoices(prev => prev.filter(invoice => invoice.clientId !== clientId));
+      alert('Client deleted successfully!');
+    }
+  };
+
+  const handleContactClient = (client: Client) => {
+    const subject = 'Message from InvoiceFlow';
+    const body = `Dear ${client.name},
+
+I hope this message finds you well.
+
+Best regards,
+InvoiceFlow Team`;
+
+    const mailtoLink = `mailto:${client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailtoLink);
+  };
+
+  // Invoice item functions
+  const addInvoiceItem = () => {
+    setNewInvoice(prev => ({
+      ...prev,
+      items: [...prev.items, { id: Date.now().toString(), description: '', quantity: 1, rate: 0, amount: 0 }]
+    }));
+  };
+
+  const removeInvoiceItem = (itemId: string) => {
+    setNewInvoice(prev => ({
+      ...prev,
+      items: prev.items.filter(item => item.id !== itemId)
+    }));
+  };
+
+  const updateInvoiceItem = (itemId: string, field: string, value: string | number) => {
+    setNewInvoice(prev => ({
+      ...prev,
+      items: prev.items.map(item => {
+        if (item.id === itemId) {
+          const updatedItem = { ...item, [field]: value };
+          if (field === 'quantity' || field === 'rate') {
+            updatedItem.amount = updatedItem.quantity * updatedItem.rate;
+          }
+          return updatedItem;
+        }
+        return item;
+      })
+    }));
   };
 
   // Dashboard stats
@@ -397,13 +705,14 @@ export default function InvoiceDashboard() {
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                             <div className="flex flex-col sm:flex-row gap-2">
                               <button 
-                                onClick={() => setSelectedInvoice(invoice)}
+                                onClick={() => handleViewInvoice(invoice)}
                                 className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
                               >
                                 <Eye className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                                 <span>View</span>
                               </button>
                               <button 
+                                onClick={() => handleDownloadPDF(invoice)}
                                 className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
                               >
                                 <Download className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
@@ -411,6 +720,7 @@ export default function InvoiceDashboard() {
                               </button>
                               {invoice.status !== 'paid' && (
                                 <button 
+                                  onClick={() => handleSendInvoice(invoice)}
                                   className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
                                 >
                                   <Send className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
@@ -522,25 +832,28 @@ export default function InvoiceDashboard() {
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-col sm:flex-row gap-2">
                             <button 
-                              onClick={() => setSelectedInvoice(invoice)}
+                              onClick={() => handleViewInvoice(invoice)}
                               className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
                             >
                               <Eye className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                               <span>View</span>
                             </button>
                             <button 
+                              onClick={() => handleDownloadPDF(invoice)}
                               className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
                             >
                               <Download className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                               <span>PDF</span>
                             </button>
                             <button 
+                              onClick={() => handleSendInvoice(invoice)}
                               className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
                             >
                               <Send className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                               <span>Send</span>
                             </button>
                             <button 
+                              onClick={() => handleEditInvoice(invoice)}
                               className="flex items-center justify-center space-x-1.5 px-4 py-3 sm:px-3 sm:py-1.5 text-sm sm:text-xs bg-gray-100 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500/30 transition-all duration-200 font-medium min-h-[44px] sm:min-h-auto"
                             >
                               <Edit className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
@@ -582,10 +895,16 @@ export default function InvoiceDashboard() {
                       <Building2 className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                     </div>
                     <div className="flex space-x-2">
-                      <button className="p-3 sm:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] sm:min-h-auto">
+                      <button 
+                        onClick={() => handleEditClient(client)}
+                        className="p-3 sm:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] sm:min-h-auto"
+                      >
                         <Edit className="h-5 w-5 sm:h-4 sm:w-4" />
                       </button>
-                      <button className="p-3 sm:p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors min-h-[44px] sm:min-h-auto">
+                      <button 
+                        onClick={() => handleDeleteClient(client.id)}
+                        className="p-3 sm:p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors min-h-[44px] sm:min-h-auto"
+                      >
                         <Trash2 className="h-5 w-5 sm:h-4 sm:w-4" />
                       </button>
                     </div>
@@ -605,7 +924,10 @@ export default function InvoiceDashboard() {
                     <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                       {invoices.filter(inv => inv.clientId === client.id).length} invoices
                     </div>
-                    <button className="flex items-center justify-center space-x-1 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors px-3 py-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-500/10 min-h-[44px] sm:min-h-auto">
+                    <button 
+                      onClick={() => handleContactClient(client)}
+                      className="flex items-center justify-center space-x-1 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors px-3 py-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-500/10 min-h-[44px] sm:min-h-auto"
+                    >
                       <Mail className="h-4 w-4" />
                       <span>Contact</span>
                     </button>
@@ -635,9 +957,13 @@ export default function InvoiceDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                    Client
+                    Client *
                   </label>
-                  <select className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}>
+                  <select 
+                    value={newInvoice.clientId}
+                    onChange={(e) => setNewInvoice(prev => ({ ...prev, clientId: e.target.value }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                  >
                     <option value="">Select a client</option>
                     {clients.map((client) => (
                       <option key={client.id} value={client.id}>
@@ -649,60 +975,150 @@ export default function InvoiceDashboard() {
                 
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                    Due Date
+                    Due Date *
                   </label>
                   <input
                     type="date"
+                    value={newInvoice.dueDate}
+                    onChange={(e) => setNewInvoice(prev => ({ ...prev, dueDate: e.target.value }))}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                   />
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                  Invoice Items
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    Invoice Items *
+                  </label>
+                  <button
+                    onClick={addInvoiceItem}
+                    className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+                  >
+                    + Add Item
+                  </button>
+                </div>
                 <div className="space-y-3">
-                  <div className="grid grid-cols-12 gap-3 items-end">
-                    <div className="col-span-6">
-                      <input
-                        type="text"
-                        placeholder="Description"
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
-                      />
+                  {newInvoice.items.map((item) => (
+                    <div key={item.id} className="grid grid-cols-12 gap-3 items-end">
+                      <div className="col-span-5">
+                        <input
+                          type="text"
+                          placeholder="Description"
+                          value={item.description}
+                          onChange={(e) => updateInvoiceItem(item.id, 'description', e.target.value)}
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <input
+                          type="number"
+                          placeholder="Qty"
+                          value={item.quantity}
+                          onChange={(e) => updateInvoiceItem(item.id, 'quantity', parseInt(e.target.value) || 0)}
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <input
+                          type="number"
+                          placeholder="Rate"
+                          value={item.rate}
+                          onChange={(e) => updateInvoiceItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <div className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                          ${item.amount.toFixed(2)}
+                        </div>
+                      </div>
+                      <div className="col-span-1">
+                        {newInvoice.items.length > 1 && (
+                          <button
+                            onClick={() => removeInvoiceItem(item.id)}
+                            className="p-2 text-red-500 hover:text-red-700 transition-colors"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div className="col-span-2">
-                      <input
-                        type="number"
-                        placeholder="Qty"
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <input
-                        type="number"
-                        placeholder="Rate"
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <button className="w-full px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm">
-                        Add
-                      </button>
-                    </div>
-                  </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    Tax Rate (%)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={newInvoice.taxRate * 100}
+                    onChange={(e) => setNewInvoice(prev => ({ ...prev, taxRate: parseFloat(e.target.value) / 100 || 0 }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    Notes
+                  </label>
+                  <input
+                    type="text"
+                    value={newInvoice.notes}
+                    onChange={(e) => setNewInvoice(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder="Optional notes"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                  />
+                </div>
+              </div>
+
+              {/* Invoice Total Preview */}
+              <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-slate-800' : 'bg-gray-50'}`}>
+                <div className="flex justify-between items-center text-sm">
+                  <span style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Subtotal:</span>
+                  <span style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                    ${newInvoice.items.reduce((sum, item) => sum + item.amount, 0).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Tax:</span>
+                  <span style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                    ${(newInvoice.items.reduce((sum, item) => sum + item.amount, 0) * newInvoice.taxRate).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-lg font-bold border-t pt-2 mt-2">
+                  <span style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Total:</span>
+                  <span style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                    ${(newInvoice.items.reduce((sum, item) => sum + item.amount, 0) * (1 + newInvoice.taxRate)).toFixed(2)}
+                  </span>
                 </div>
               </div>
               
               <div className="flex justify-end space-x-3">
                 <button
-                  onClick={() => setShowCreateInvoice(false)}
+                  onClick={() => {
+                    setShowCreateInvoice(false);
+                    setEditingInvoice(null);
+                    setNewInvoice({
+                      clientId: '',
+                      dueDate: '',
+                      items: [{ id: '1', description: '', quantity: 1, rate: 0, amount: 0 }],
+                      taxRate: 0.1,
+                      notes: ''
+                    });
+                  }}
                   className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
-                <button className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
-                  Create Invoice
+                <button 
+                  onClick={handleCreateInvoice}
+                  className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  {editingInvoice ? 'Update Invoice' : 'Create Invoice'}
                 </button>
               </div>
             </div>
@@ -727,43 +1143,226 @@ export default function InvoiceDashboard() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                  Name
+                  Name *
                 </label>
                 <input
                   type="text"
+                  value={newClient.name}
+                  onChange={(e) => setNewClient(prev => ({ ...prev, name: e.target.value }))}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                 />
               </div>
               
               <div>
                 <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                  Email
+                  Email *
                 </label>
                 <input
                   type="email"
+                  value={newClient.email}
+                  onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                 />
               </div>
               
               <div>
                 <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                  Company
+                  Company *
                 </label>
                 <input
                   type="text"
+                  value={newClient.company}
+                  onChange={(e) => setNewClient(prev => ({ ...prev, company: e.target.value }))}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                  Phone
+                </label>
+                <input
+                  type="text"
+                  value={newClient.phone}
+                  onChange={(e) => setNewClient(prev => ({ ...prev, phone: e.target.value }))}
+                  placeholder="Optional"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                  Address
+                </label>
+                <textarea
+                  value={newClient.address}
+                  onChange={(e) => setNewClient(prev => ({ ...prev, address: e.target.value }))}
+                  placeholder="Optional"
+                  rows={3}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                 />
               </div>
               
               <div className="flex justify-end space-x-3">
                 <button
-                  onClick={() => setShowCreateClient(false)}
+                  onClick={() => {
+                    setShowCreateClient(false);
+                    setShowEditClient(false);
+                    setSelectedClient(null);
+                    setNewClient({
+                      name: '',
+                      email: '',
+                      company: '',
+                      phone: '',
+                      address: ''
+                    });
+                  }}
                   className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
-                <button className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
-                  Add Client
+                <button 
+                  onClick={showEditClient ? handleUpdateClient : handleCreateClient}
+                  className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  {showEditClient ? 'Update Client' : 'Add Client'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Invoice Modal */}
+      {showViewInvoice && selectedInvoice && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className={`rounded-2xl p-6 max-w-4xl w-full shadow-2xl border max-h-[90vh] overflow-y-auto ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                Invoice {selectedInvoice.invoiceNumber}
+              </h2>
+              <button
+                onClick={() => setShowViewInvoice(false)}
+                className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+              >
+                <X className={`h-5 w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+              </button>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Invoice Header */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-semibold mb-2" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Invoice Details</h3>
+                  <div className="space-y-1 text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    <p><strong>Invoice Number:</strong> {selectedInvoice.invoiceNumber}</p>
+                    <p><strong>Date:</strong> {selectedInvoice.createdAt}</p>
+                    <p><strong>Due Date:</strong> {selectedInvoice.dueDate}</p>
+                    <p><strong>Status:</strong> 
+                      <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
+                        selectedInvoice.status === 'paid' 
+                          ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400'
+                          : selectedInvoice.status === 'sent'
+                          ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400'
+                          : selectedInvoice.status === 'overdue'
+                          ? 'bg-red-100 dark:bg-red-500/20 text-red-800 dark:text-red-400'
+                          : 'bg-gray-100 dark:bg-gray-500/20 text-gray-800 dark:text-gray-300'
+                      }`}>
+                        {selectedInvoice.status}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold mb-2" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Bill To</h3>
+                  <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    <p className="font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>{selectedInvoice.client.name}</p>
+                    <p>{selectedInvoice.client.company}</p>
+                    <p>{selectedInvoice.client.email}</p>
+                    {selectedInvoice.client.phone && <p>{selectedInvoice.client.phone}</p>}
+                    {selectedInvoice.client.address && <p>{selectedInvoice.client.address}</p>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Invoice Items */}
+              <div>
+                <h3 className="font-semibold mb-4" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Items</h3>
+                <div className={`rounded-lg border overflow-hidden ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <table className="w-full">
+                    <thead className={isDarkMode ? 'bg-slate-800' : 'bg-gray-50'}>
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-semibold" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Description</th>
+                        <th className="px-4 py-3 text-center text-sm font-semibold" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Qty</th>
+                        <th className="px-4 py-3 text-right text-sm font-semibold" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Rate</th>
+                        <th className="px-4 py-3 text-right text-sm font-semibold" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                      {selectedInvoice.items.map((item) => (
+                        <tr key={item.id}>
+                          <td className="px-4 py-3 text-sm" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>{item.description}</td>
+                          <td className="px-4 py-3 text-center text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>{item.quantity}</td>
+                          <td className="px-4 py-3 text-right text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>${item.rate.toFixed(2)}</td>
+                          <td className="px-4 py-3 text-right text-sm font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>${item.amount.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Invoice Totals */}
+              <div className="flex justify-end">
+                <div className="w-64 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Subtotal:</span>
+                    <span style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>${selectedInvoice.subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Tax ({(selectedInvoice.taxRate * 100).toFixed(1)}%):</span>
+                    <span style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>${selectedInvoice.taxAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-bold border-t pt-2">
+                    <span style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Total:</span>
+                    <span style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>${selectedInvoice.total.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              {selectedInvoice.notes && (
+                <div>
+                  <h3 className="font-semibold mb-2" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Notes</h3>
+                  <p className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>{selectedInvoice.notes}</p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-3 pt-4 border-t">
+                <button
+                  onClick={() => handleDownloadPDF(selectedInvoice)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Download PDF</span>
+                </button>
+                {selectedInvoice.status !== 'paid' && (
+                  <button
+                    onClick={() => handleSendInvoice(selectedInvoice)}
+                    className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  >
+                    <Send className="h-4 w-4" />
+                    <span>Send Invoice</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => handleEditInvoice(selectedInvoice)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  <Edit className="h-4 w-4" />
+                  <span>Edit Invoice</span>
                 </button>
               </div>
             </div>
