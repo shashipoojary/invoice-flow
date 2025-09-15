@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, FileText, DollarSign, Users, Calendar, Download, Send, Zap, TrendingUp, Clock, CheckCircle, AlertCircle, X, Receipt, Sun, Moon } from 'lucide-react';
+import Image from 'next/image';
+import { Plus, FileText, DollarSign, Users, Calendar, Download, Send, Zap, TrendingUp, Clock, CheckCircle, AlertCircle, X, Sun, Moon } from 'lucide-react';
 
 interface Invoice {
   id: string;
@@ -20,6 +21,14 @@ interface InvoiceItem {
   quantity: number;
   rate: number;
   amount: number;
+}
+
+interface RecurringInvoice {
+  id: string;
+  baseInvoice: Invoice;
+  frequency: string;
+  nextDue: string;
+  isActive: boolean;
 }
 
 const QUICK_TEMPLATES = [
@@ -104,8 +113,15 @@ export default function InvoiceGenerator() {
   });
 
   // Smart Assistant Features
-  const [smartSuggestions, setSmartSuggestions] = useState<any>(null);
-  const [recurringInvoices, setRecurringInvoices] = useState<any[]>([]);
+  const [smartSuggestions, setSmartSuggestions] = useState<{
+    name: string;
+    company: string;
+    suggestedRate: number;
+    suggestedAmount: number;
+    paymentTerms: string;
+    lastProject: string;
+  } | null>(null);
+  const [recurringInvoices, setRecurringInvoices] = useState<RecurringInvoice[]>([]);
 
   // Dark Mode State
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -321,9 +337,11 @@ InvoiceFlow Team`;
   // Professional Logo Component
   const Logo = () => (
     <div className="flex items-center">
-      <img 
+      <Image 
         src={isDarkMode ? "/logowhite.png" : "/logoblack.png"} 
         alt="InvoiceFlow Logo" 
+        width={160}
+        height={160}
         className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 xl:w-40 xl:h-40"
       />
     </div>
