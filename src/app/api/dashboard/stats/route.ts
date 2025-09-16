@@ -1,61 +1,48 @@
-// Required env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+// Required env vars: DATABASE_URL
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase'
+import { query } from '@/lib/database'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerClient()
-    
-    // Get user from auth header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    )
-
-    if (authError || !user) {
+    // Get user from header
+    const userId = request.headers.get('X-User-ID')
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Get total revenue (sum of paid invoices)
-    const { data: revenueData } = await supabase
-      .from('invoices')
-      .select('total')
-      .eq('user_id', user.id)
-      .eq('status', 'paid')
-
-    const totalRevenue = revenueData?.reduce((sum, invoice) => sum + invoice.total, 0) || 0
+    const revenueResult = await query(
+      'SELECT COALESCE(SUM(total), 0) as total FROM invoices WHERE user_id = $1 AND status = $2',
+      [userId, 'paid']
+    )
+    const totalRevenue = parseFloat(revenueResult.rows[0]?.total || '0')
 
     // Get outstanding amount (sum of sent and overdue invoices)
-    const { data: outstandingData } = await supabase
-      .from('invoices')
-      .select('total')
-      .eq('user_id', user.id)
-      .in('status', ['sent', 'overdue'])
-
-    const outstandingAmount = outstandingData?.reduce((sum, invoice) => sum + invoice.total, 0) || 0
+    const outstandingResult = await query(
+      'SELECT COALESCE(SUM(total), 0) as total FROM invoices WHERE user_id = $1 AND status IN ($2, $3)',
+      [userId, 'sent', 'overdue']
+    )
+    const outstandingAmount = parseFloat(outstandingResult.rows[0]?.total || '0')
 
     // Get overdue count
-    const { count: overdueCount } = await supabase
-      .from('invoices')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('status', 'overdue')
+    const overdueResult = await query(
+      'SELECT COUNT(*) as count FROM invoices WHERE user_id = $1 AND status = $2',
+      [userId, 'overdue']
+    )
+    const overdueCount = parseInt(overdueResult.rows[0]?.count || '0')
 
     // Get total clients count
-    const { count: totalClients } = await supabase
-      .from('clients')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
+    const clientsResult = await query(
+      'SELECT COUNT(*) as count FROM clients WHERE user_id = $1',
+      [userId]
+    )
+    const totalClients = parseInt(clientsResult.rows[0]?.count || '0')
 
     return NextResponse.json({
       totalRevenue,
       outstandingAmount,
-      overdueCount: overdueCount || 0,
-      totalClients: totalClients || 0
+      overdueCount,
+      totalClients
     })
 
   } catch (error) {

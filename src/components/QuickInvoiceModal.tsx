@@ -7,8 +7,8 @@ interface QuickInvoiceModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
-  user: any
-  getAuthHeaders: () => any
+  user: { id: string; email: string; name?: string }
+  getAuthHeaders: () => { [key: string]: string }
 }
 
 interface Client {

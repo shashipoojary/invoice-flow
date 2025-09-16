@@ -1,39 +1,43 @@
-// Required env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+// Required env vars: DATABASE_URL
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase'
+import { query } from '@/lib/database'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerClient()
-    
-    // Get user from auth header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    )
-
-    if (authError || !user) {
+    // Get user from header
+    const userId = request.headers.get('X-User-ID')
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Fetch invoices with client and items
-    const { data: invoices, error } = await supabase
-      .from('invoices')
-      .select(`
-        *,
-        clients (*),
-        invoice_items (*)
-      `)
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
+    const invoicesResult = await query(
+      `SELECT i.*, c.name as client_name, c.email as client_email, c.company as client_company
+       FROM invoices i
+       LEFT JOIN clients c ON i.client_id = c.id
+       WHERE i.user_id = $1
+       ORDER BY i.created_at DESC`,
+      [userId]
+    )
 
-    if (error) {
-      return NextResponse.json({ error: 'Failed to fetch invoices' }, { status: 500 })
-    }
+    // Fetch invoice items for each invoice
+    const invoices = await Promise.all(
+      invoicesResult.rows.map(async (invoice) => {
+        const itemsResult = await query(
+          'SELECT * FROM invoice_items WHERE invoice_id = $1',
+          [invoice.id]
+        )
+        return {
+          ...invoice,
+          clients: {
+            name: invoice.client_name,
+            email: invoice.client_email,
+            company: invoice.client_company
+          },
+          invoice_items: itemsResult.rows
+        }
+      })
+    )
 
     return NextResponse.json({ invoices })
 

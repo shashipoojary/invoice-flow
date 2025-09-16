@@ -1,37 +1,22 @@
-// Required env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+// Required env vars: DATABASE_URL
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase'
+import { query } from '@/lib/database'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerClient()
-    
-    // Get user from auth header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    )
-
-    if (authError || !user) {
+    // Get user from header
+    const userId = request.headers.get('X-User-ID')
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Fetch clients
-    const { data: clients, error } = await supabase
-      .from('clients')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
+    const result = await query(
+      'SELECT * FROM clients WHERE user_id = $1 ORDER BY created_at DESC',
+      [userId]
+    )
 
-    if (error) {
-      return NextResponse.json({ error: 'Failed to fetch clients' }, { status: 500 })
-    }
-
-    return NextResponse.json({ clients })
+    return NextResponse.json({ clients: result.rows })
 
   } catch (error) {
     console.error('Error fetching clients:', error)
@@ -41,19 +26,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerClient()
-    
-    // Get user from auth header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    )
-
-    if (authError || !user) {
+    // Get user from header
+    const userId = request.headers.get('X-User-ID')
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -65,24 +40,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Create client
-    const { data: client, error } = await supabase
-      .from('clients')
-      .insert({
-        user_id: user.id,
-        name,
-        email,
-        company,
-        phone,
-        address
-      })
-      .select()
-      .single()
+    const result = await query(
+      'INSERT INTO clients (user_id, name, email, company, phone, address) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [userId, name, email, company, phone, address]
+    )
 
-    if (error) {
-      return NextResponse.json({ error: 'Failed to create client' }, { status: 500 })
-    }
-
-    return NextResponse.json({ client })
+    return NextResponse.json({ client: result.rows[0] })
 
   } catch (error) {
     console.error('Error creating client:', error)

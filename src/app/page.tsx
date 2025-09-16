@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Plus, FileText, DollarSign, Users, Calendar, Download, Send, Zap, TrendingUp, Clock, CheckCircle, AlertCircle, X, Sun, Moon, CreditCard, Building2, Mail, Eye, Edit, Trash2 } from 'lucide-react';
-import { useSupabase } from '@/hooks/useSupabase';
+import { useAuth } from '@/hooks/useAuth';
 import QuickInvoiceModal from '@/components/QuickInvoiceModal';
+import LoginModal from '@/components/LoginModal';
 
 // Types
 interface Client {
@@ -42,8 +43,9 @@ interface Invoice {
 }
 
 export default function InvoiceDashboard() {
-  // Supabase integration
-  const { user, loading: authLoading, getAuthHeaders } = useSupabase();
+  // Authentication
+  const { user, loading: authLoading, signIn, signUp, getAuthHeaders } = useAuth();
+  const [showLogin, setShowLogin] = useState(false);
   
   // State
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -191,6 +193,16 @@ export default function InvoiceDashboard() {
       setClients(data.clients || []);
     } catch (error) {
       console.error('Error fetching clients:', error);
+    }
+  };
+
+  const handleLogin = async (email: string, password: string) => {
+    const { error } = await signIn(email, password);
+    if (!error) {
+      // Refresh data after login
+      fetchDashboardStats();
+      fetchInvoices();
+      fetchClients();
     }
   };
 
@@ -783,13 +795,22 @@ InvoiceFlow Team`;
               <h2 className="font-heading text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                 All Invoices
               </h2>
-              <button
-                onClick={() => setShowCreateInvoice(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-                <span>New Invoice</span>
-              </button>
+              {user ? (
+                <button
+                  onClick={() => setShowCreateInvoice(true)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>New Invoice</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowLogin(true)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  <span>Sign In</span>
+                </button>
+              )}
             </div>
             
             {/* Invoice List */}
@@ -1380,6 +1401,13 @@ InvoiceFlow Team`;
           </div>
         </div>
       )}
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={showLogin}
+        onClose={() => setShowLogin(false)}
+        onLogin={handleLogin}
+      />
 
       {/* Quick Invoice Modal */}
       {user && (
