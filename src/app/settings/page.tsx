@@ -39,6 +39,9 @@ export default function SettingsPage() {
   })
 
   useEffect(() => {
+    // Check if we're in the browser
+    if (typeof window === 'undefined') return
+
     // Check dark mode
     const isDark = localStorage.getItem('darkMode') === 'true' || 
                    (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)
@@ -48,9 +51,13 @@ export default function SettingsPage() {
     }
 
     // Load saved settings
-    const savedSettings = localStorage.getItem('freelancerSettings')
-    if (savedSettings) {
-      setSettings(JSON.parse(savedSettings))
+    try {
+      const savedSettings = localStorage.getItem('freelancerSettings')
+      if (savedSettings) {
+        setSettings(JSON.parse(savedSettings))
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error)
     }
   }, [])
 
@@ -63,11 +70,14 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      localStorage.setItem('freelancerSettings', JSON.stringify(settings))
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      alert('Settings saved successfully!')
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('freelancerSettings', JSON.stringify(settings))
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        alert('Settings saved successfully!')
+      }
     } catch (error) {
+      console.error('Error saving settings:', error)
       alert('Error saving settings')
     } finally {
       setSaving(false)
@@ -87,17 +97,23 @@ export default function SettingsPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-gray-600">Loading settings...</p>
         </div>
       </div>
     )
   }
 
   if (!user) {
-    return null
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <p className="text-gray-600">Please sign in to access settings</p>
+        </div>
+      </div>
+    )
   }
 
   return (
