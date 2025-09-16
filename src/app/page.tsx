@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Plus, FileText, DollarSign, Users, Calendar, Download, Send, Zap, TrendingUp, Clock, CheckCircle, AlertCircle, X, Sun, Moon, CreditCard, Building2, Mail, Eye, Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import QuickInvoiceModal from '@/components/QuickInvoiceModal';
@@ -45,6 +46,7 @@ interface Invoice {
 export default function InvoiceDashboard() {
   // Authentication
   const { user, loading: authLoading, signIn, signUp, getAuthHeaders } = useAuth();
+  const router = useRouter();
   const [showLogin, setShowLogin] = useState(false);
   
   // State
@@ -555,7 +557,7 @@ InvoiceFlow Team`;
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Tab Navigation */}
+            {/* Tab Navigation */}
         <div className="mb-8">
           <div className="flex space-x-1 bg-gray-100 dark:bg-slate-800 p-1 rounded-lg w-fit">
             <button
@@ -569,12 +571,8 @@ InvoiceFlow Team`;
               Dashboard
             </button>
             <button
-              onClick={() => setActiveTab('invoices')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                activeTab === 'invoices'
-                  ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
+              onClick={() => router.push('/invoices')}
+              className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             >
               Invoices
             </button>
@@ -587,6 +585,12 @@ InvoiceFlow Team`;
               }`}
             >
               Clients
+            </button>
+            <button
+              onClick={() => router.push('/settings')}
+              className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            >
+              Settings
             </button>
           </div>
         </div>
