@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Plus, FileText, DollarSign, Users, Calendar, Download, Send, Zap, TrendingUp, Clock, CheckCircle, AlertCircle, X, Sun, Moon, CreditCard, Building2, Mail, Eye, Edit, Trash2 } from 'lucide-react';
+import { useSupabase } from '@/hooks/useSupabase';
+import QuickInvoiceModal from '@/components/QuickInvoiceModal';
 
 // Types
 interface Client {
@@ -40,6 +42,9 @@ interface Invoice {
 }
 
 export default function InvoiceDashboard() {
+  // Supabase integration
+  const { user, loading: authLoading, getAuthHeaders } = useSupabase();
+  
   // State
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'invoices' | 'clients'>('dashboard');
@@ -48,6 +53,12 @@ export default function InvoiceDashboard() {
   const [showViewInvoice, setShowViewInvoice] = useState(false);
   const [showEditClient, setShowEditClient] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [dashboardStats, setDashboardStats] = useState({
+    totalRevenue: 0,
+    outstandingAmount: 0,
+    overdueCount: 0,
+    totalClients: 0
+  });
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
 
@@ -137,6 +148,51 @@ export default function InvoiceDashboard() {
       document.documentElement.classList.add('dark');
     }
   }, []);
+
+  // Fetch dashboard data when user is authenticated
+  useEffect(() => {
+    if (user && !authLoading) {
+      fetchDashboardStats();
+      fetchInvoices();
+      fetchClients();
+    }
+  }, [user, authLoading]);
+
+  const fetchDashboardStats = async () => {
+    try {
+      const response = await fetch('/api/dashboard/stats', {
+        headers: getAuthHeaders()
+      });
+      const data = await response.json();
+      setDashboardStats(data);
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    }
+  };
+
+  const fetchInvoices = async () => {
+    try {
+      const response = await fetch('/api/invoices', {
+        headers: getAuthHeaders()
+      });
+      const data = await response.json();
+      setInvoices(data.invoices || []);
+    } catch (error) {
+      console.error('Error fetching invoices:', error);
+    }
+  };
+
+  const fetchClients = async () => {
+    try {
+      const response = await fetch('/api/clients', {
+        headers: getAuthHeaders()
+      });
+      const data = await response.json();
+      setClients(data.clients || []);
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+    }
+  };
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -546,7 +602,7 @@ InvoiceFlow Team`;
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Revenue</p>
                       <p className="font-heading text-3xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                        ${totalRevenue.toLocaleString()}
+                        ₹{dashboardStats.totalRevenue.toLocaleString()}
                       </p>
                       <div className="flex items-center space-x-1">
                         <TrendingUp className="h-4 w-4 text-emerald-500" />
@@ -565,7 +621,7 @@ InvoiceFlow Team`;
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Outstanding</p>
                       <p className="font-heading text-3xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                        ${outstandingAmount.toLocaleString()}
+                        ₹{dashboardStats.outstandingAmount.toLocaleString()}
                       </p>
                       <div className="flex items-center space-x-1">
                         <Clock className="h-4 w-4 text-amber-500" />
@@ -586,7 +642,7 @@ InvoiceFlow Team`;
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Overdue</p>
                       <p className="font-heading text-3xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                        {overdueCount}
+                        {dashboardStats.overdueCount}
                       </p>
                       <div className="flex items-center space-x-1">
                         <FileText className="h-4 w-4 text-red-500" />
@@ -607,7 +663,7 @@ InvoiceFlow Team`;
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Clients</p>
                       <p className="font-heading text-3xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                        {totalClients}
+                        {dashboardStats.totalClients}
                       </p>
                       <div className="flex items-center space-x-1">
                         <Users className="h-4 w-4 text-indigo-500" />
@@ -1323,6 +1379,21 @@ InvoiceFlow Team`;
             </div>
           </div>
         </div>
+      )}
+
+      {/* Quick Invoice Modal */}
+      {user && (
+        <QuickInvoiceModal
+          isOpen={showCreateInvoice}
+          onClose={() => setShowCreateInvoice(false)}
+          onSuccess={() => {
+            fetchDashboardStats();
+            fetchInvoices();
+            fetchClients();
+          }}
+          user={user}
+          getAuthHeaders={getAuthHeaders}
+        />
       )}
     </div>
   );
