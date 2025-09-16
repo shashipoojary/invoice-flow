@@ -1,7 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Enable standalone output for Docker
+  output: 'standalone',
+  
+  // Image optimization
+  images: {
+    unoptimized: true, // Disable for Docker builds
+  },
 };
 
 export default nextConfig;
