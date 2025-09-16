@@ -24,8 +24,8 @@ const ibmPlexSans = IBM_Plex_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "InvoiceFlow Pro - Enterprise Invoice Management",
-  description: "Professional invoice management platform for modern businesses",
+  title: "InvoiceFlow - The Fastest Way for Freelancers to Get Paid",
+  description: "60-second invoicing for freelancers, designers, developers, and contractors. Simple, fast, and professional.",
 };
 
 export default function RootLayout({
