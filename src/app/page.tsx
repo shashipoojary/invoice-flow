@@ -22,7 +22,6 @@ interface Client {
 interface InvoiceItem {
   id: string;
   description: string;
-  quantity: number;
   rate: number;
   amount: number;
 }
@@ -70,7 +69,7 @@ export default function InvoiceDashboard() {
   const [newInvoice, setNewInvoice] = useState({
     clientId: '',
     dueDate: '',
-    items: [{ id: '1', description: '', quantity: 1, rate: 0, amount: 0 }],
+    items: [{ id: '1', description: '', rate: 0, amount: 0 }],
     taxRate: 0.1,
     notes: ''
   });
@@ -112,8 +111,8 @@ export default function InvoiceDashboard() {
       clientId: '1',
       client: clients[0],
       items: [
-        { id: '1', description: 'Website Development', quantity: 40, rate: 75, amount: 3000 },
-        { id: '2', description: 'UI/UX Design', quantity: 20, rate: 50, amount: 1000 }
+        { id: '1', description: 'Website Development', rate: 3000, amount: 3000 },
+        { id: '2', description: 'UI/UX Design', rate: 1000, amount: 1000 }
       ],
       subtotal: 4000,
       taxRate: 0.1,
@@ -130,7 +129,7 @@ export default function InvoiceDashboard() {
       clientId: '2',
       client: clients[1],
       items: [
-        { id: '3', description: 'Mobile App Development', quantity: 60, rate: 100, amount: 6000 }
+        { id: '3', description: 'Mobile App Development', rate: 6000, amount: 6000 }
       ],
       subtotal: 6000,
       taxRate: 0.1,
@@ -229,7 +228,7 @@ export default function InvoiceDashboard() {
     const client = clients.find(c => c.id === newInvoice.clientId);
     if (!client) return;
 
-    const subtotal = newInvoice.items.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
+    const subtotal = newInvoice.items.reduce((sum, item) => sum + item.rate, 0);
     const taxAmount = subtotal * newInvoice.taxRate;
     const total = subtotal + taxAmount;
 
@@ -240,7 +239,7 @@ export default function InvoiceDashboard() {
       client: client,
       items: newInvoice.items.map(item => ({
         ...item,
-        amount: item.quantity * item.rate
+        amount: item.rate
       })),
       subtotal,
       taxRate: newInvoice.taxRate,
@@ -257,7 +256,7 @@ export default function InvoiceDashboard() {
     setNewInvoice({
       clientId: '',
       dueDate: '',
-      items: [{ id: '1', description: '', quantity: 1, rate: 0, amount: 0 }],
+      items: [{ id: '1', description: '', rate: 0, amount: 0 }],
       taxRate: 0.1,
       notes: ''
     });
@@ -311,8 +310,6 @@ export default function InvoiceDashboard() {
             <thead>
               <tr>
                 <th>Description</th>
-                <th>Quantity</th>
-                <th>Rate</th>
                 <th>Amount</th>
               </tr>
             </thead>
@@ -320,9 +317,7 @@ export default function InvoiceDashboard() {
               ${invoice.items.map(item => `
                 <tr>
                   <td>${item.description}</td>
-                  <td>${item.quantity}</td>
                   <td>$${item.rate.toFixed(2)}</td>
-                  <td>$${item.amount.toFixed(2)}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -479,7 +474,7 @@ InvoiceFlow Team`;
   const addInvoiceItem = () => {
     setNewInvoice(prev => ({
       ...prev,
-      items: [...prev.items, { id: Date.now().toString(), description: '', quantity: 1, rate: 0, amount: 0 }]
+      items: [...prev.items, { id: Date.now().toString(), description: '', rate: 0, amount: 0 }]
     }));
   };
 
@@ -496,8 +491,8 @@ InvoiceFlow Team`;
       items: prev.items.map(item => {
         if (item.id === itemId) {
           const updatedItem = { ...item, [field]: value };
-          if (field === 'quantity' || field === 'rate') {
-            updatedItem.amount = updatedItem.quantity * updatedItem.rate;
+          if (field === 'rate') {
+            updatedItem.amount = updatedItem.rate;
           }
           return updatedItem;
         }
@@ -1103,28 +1098,19 @@ InvoiceFlow Team`;
                 <div className="space-y-3">
                   {newInvoice.items.map((item) => (
                     <div key={item.id} className="grid grid-cols-12 gap-3 items-end">
-                      <div className="col-span-5">
+                      <div className="col-span-7">
                         <input
                           type="text"
-                          placeholder="Description"
+                          placeholder="Service Description"
                           value={item.description}
                           onChange={(e) => updateInvoiceItem(item.id, 'description', e.target.value)}
                           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                         />
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-3">
                         <input
                           type="number"
-                          placeholder="Qty"
-                          value={item.quantity}
-                          onChange={(e) => updateInvoiceItem(item.id, 'quantity', parseInt(e.target.value) || 0)}
-                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <input
-                          type="number"
-                          placeholder="Rate"
+                          placeholder="Amount"
                           value={item.rate}
                           onChange={(e) => updateInvoiceItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
                           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
@@ -1207,7 +1193,7 @@ InvoiceFlow Team`;
                     setNewInvoice({
                       clientId: '',
                       dueDate: '',
-                      items: [{ id: '1', description: '', quantity: 1, rate: 0, amount: 0 }],
+                      items: [{ id: '1', description: '', rate: 0, amount: 0 }],
                       taxRate: 0.1,
                       notes: ''
                     });
@@ -1395,9 +1381,7 @@ InvoiceFlow Team`;
                   <table className="w-full">
                     <thead className={isDarkMode ? 'bg-slate-800' : 'bg-gray-50'}>
                       <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Description</th>
-                        <th className="px-4 py-3 text-center text-sm font-semibold" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Qty</th>
-                        <th className="px-4 py-3 text-right text-sm font-semibold" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Rate</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Service</th>
                         <th className="px-4 py-3 text-right text-sm font-semibold" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Amount</th>
                       </tr>
                     </thead>
@@ -1405,8 +1389,6 @@ InvoiceFlow Team`;
                       {selectedInvoice.items.map((item) => (
                         <tr key={item.id}>
                           <td className="px-4 py-3 text-sm" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>{item.description}</td>
-                          <td className="px-4 py-3 text-center text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>{item.quantity}</td>
-                          <td className="px-4 py-3 text-right text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>${item.rate.toFixed(2)}</td>
                           <td className="px-4 py-3 text-right text-sm font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>${item.amount.toFixed(2)}</td>
                         </tr>
                       ))}

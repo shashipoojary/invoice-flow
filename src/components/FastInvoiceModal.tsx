@@ -62,7 +62,6 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, user, get
           client_id: clientId,
           items: [{
             description: parsedDescription,
-            qty: 1,
             rate: parsedAmount,
             line_total: parsedAmount
           }],
