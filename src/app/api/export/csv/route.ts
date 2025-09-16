@@ -1,6 +1,6 @@
 // Required env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase'
+import { query } from '@/lib/database'
 import Papa from 'papaparse'
 
 export async function POST(request: NextRequest) {

@@ -1,6 +1,6 @@
 // Required env vars: STRIPE_SECRET_KEY, NEXT_PUBLIC_APP_URL
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase'
+import { query } from '@/lib/database'
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {

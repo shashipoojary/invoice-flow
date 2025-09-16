@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+// Note: This page needs to be updated to use PostgreSQL API calls
 import { Download, CreditCard, CheckCircle, Clock, AlertCircle } from 'lucide-react'
 
 interface Invoice {

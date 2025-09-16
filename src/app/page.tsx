@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Plus, FileText, DollarSign, Users, Calendar, Download, Send, Zap, TrendingUp, Clock, CheckCircle, AlertCircle, X, Sun, Moon, CreditCard, Building2, Mail, Eye, Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import QuickInvoiceModal from '@/components/QuickInvoiceModal';
+import FastInvoiceModal from '@/components/FastInvoiceModal';
 import LoginModal from '@/components/LoginModal';
 
 // Types
@@ -51,6 +52,7 @@ export default function InvoiceDashboard() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'invoices' | 'clients'>('dashboard');
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
+  const [showFastInvoice, setShowFastInvoice] = useState(false);
   const [showCreateClient, setShowCreateClient] = useState(false);
   const [showViewInvoice, setShowViewInvoice] = useState(false);
   const [showEditClient, setShowEditClient] = useState(false);
@@ -603,7 +605,7 @@ InvoiceFlow Team`;
                 Dashboard Overview
               </h2>
               <p className="mb-6" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                Monitor your business performance and invoice metrics
+                The fastest way for freelancers & contractors to get paid
               </p>
               
               {/* Stats Grid */}
@@ -689,6 +691,74 @@ InvoiceFlow Team`;
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div>
+              <h2 className="font-heading text-2xl font-semibold mb-6" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                Quick Actions
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* 60-Second Invoice */}
+                <button
+                  onClick={() => setShowFastInvoice(true)}
+                  className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gradient-to-br from-green-500/20 to-green-600/20 border border-green-500/30' : 'bg-gradient-to-br from-green-50 to-green-100 border border-green-200'} backdrop-blur-sm`}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-green-500/30' : 'bg-green-100'}`}>
+                      <Zap className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-semibold text-lg" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                        60-Second Invoice
+                      </h3>
+                      <p className="text-sm" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
+                        Fast & simple invoicing
+                      </p>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Detailed Invoice */}
+                <button
+                  onClick={() => setShowCreateInvoice(true)}
+                  className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gradient-to-br from-blue-500/20 to-blue-600/20 border border-blue-500/30' : 'bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200'} backdrop-blur-sm`}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-blue-500/30' : 'bg-blue-100'}`}>
+                      <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-semibold text-lg" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                        Detailed Invoice
+                      </h3>
+                      <p className="text-sm" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
+                        Multiple items & customization
+                      </p>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Add Client */}
+                <button
+                  onClick={() => setShowCreateClient(true)}
+                  className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gradient-to-br from-purple-500/20 to-purple-600/20 border border-purple-500/30' : 'bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200'} backdrop-blur-sm`}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-purple-500/30' : 'bg-purple-100'}`}>
+                      <Users className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-semibold text-lg" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                        Add Client
+                      </h3>
+                      <p className="text-sm" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
+                        Manage your client list
+                      </p>
+                    </div>
+                  </div>
+                </button>
               </div>
             </div>
 
@@ -1408,6 +1478,21 @@ InvoiceFlow Team`;
         onClose={() => setShowLogin(false)}
         onLogin={handleLogin}
       />
+
+      {/* Fast Invoice Modal */}
+      {user && (
+        <FastInvoiceModal
+          isOpen={showFastInvoice}
+          onClose={() => setShowFastInvoice(false)}
+          onSuccess={() => {
+            fetchDashboardStats();
+            fetchInvoices();
+            fetchClients();
+          }}
+          user={user}
+          getAuthHeaders={getAuthHeaders}
+        />
+      )}
 
       {/* Quick Invoice Modal */}
       {user && (
