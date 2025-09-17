@@ -884,7 +884,7 @@ InvoiceFlow Team`;
               {user ? (
                 <button
                   onClick={() => setShowCreateInvoice(true)}
-                  className="flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                  className="flex items-center space-x-1 sm:space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                 >
                   <Plus className="h-4 w-4" />
                   <span className="hidden sm:inline">New Invoice</span>
@@ -893,7 +893,7 @@ InvoiceFlow Team`;
               ) : (
                 <button
                   onClick={() => setShowLogin(true)}
-                  className="flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                  className="flex items-center space-x-1 sm:space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                 >
                   <span>Sign In</span>
                 </button>
@@ -1272,7 +1272,7 @@ InvoiceFlow Team`;
               </div>
 
               <div className="flex justify-end mt-6">
-                <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                <button className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
                   Save Settings
                 </button>
               </div>
@@ -1442,13 +1442,13 @@ InvoiceFlow Team`;
                       notes: ''
                     });
                   }}
-                  className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+                  className="px-6 py-3 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={handleCreateInvoice}
-                  className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                 >
                   {editingInvoice ? 'Update Invoice' : 'Create Invoice'}
                 </button>
@@ -1824,7 +1824,7 @@ InvoiceFlow Team`;
               <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t">
                 <button
                   onClick={() => handleDownloadPDF(selectedInvoice)}
-                  className="flex items-center justify-center space-x-2 px-3 sm:px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium"
+                  className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium"
                 >
                   <Download className="h-4 w-4" />
                   <span>Download PDF</span>
@@ -1832,7 +1832,7 @@ InvoiceFlow Team`;
                 {selectedInvoice.status !== 'paid' && (
                   <button
                     onClick={() => handleSendInvoice(selectedInvoice)}
-                    className="flex items-center justify-center space-x-2 px-3 sm:px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                    className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                   >
                     <Send className="h-4 w-4" />
                     <span>Send Invoice</span>
@@ -1840,7 +1840,7 @@ InvoiceFlow Team`;
                 )}
                 <button
                   onClick={() => handleEditInvoice(selectedInvoice)}
-                  className="flex items-center justify-center space-x-2 px-3 sm:px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+                  className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
                 >
                   <Edit className="h-4 w-4" />
                   <span>Edit Invoice</span>

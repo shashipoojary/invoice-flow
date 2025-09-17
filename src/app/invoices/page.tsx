@@ -128,7 +128,7 @@ export default function InvoicesPage() {
             </div>
             <button
               onClick={() => router.push('/invoices/new')}
-              className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
             >
               <Plus className="h-4 w-4" />
               <span>New Invoice</span>
