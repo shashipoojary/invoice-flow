@@ -15,6 +15,7 @@ interface QuickInvoiceModalProps {
   // user parameter removed - not used
   getAuthHeaders: () => Promise<{ [key: string]: string }>
   isDarkMode?: boolean
+  clients?: Client[]
 }
 
 interface Client {
@@ -52,7 +53,8 @@ export default function QuickInvoiceModal({
   onClose, 
   onSuccess, 
   getAuthHeaders,
-  isDarkMode = false
+  isDarkMode = false,
+  clients: propClients = []
 }: QuickInvoiceModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [clients, setClients] = useState<Client[]>([])
@@ -137,7 +139,12 @@ export default function QuickInvoiceModal({
 
   useEffect(() => {
     if (isOpen) {
-      fetchClients()
+      // Use prop clients if available, otherwise fetch
+      if (propClients.length > 0) {
+        setClients(propClients)
+      } else {
+        fetchClients()
+      }
       fetchBusinessSettings()
       
       // Set default dates
@@ -152,7 +159,7 @@ export default function QuickInvoiceModal({
       const invoiceNum = `INV-${Date.now().toString().slice(-6)}`
       setInvoiceNumber(invoiceNum)
     }
-  }, [isOpen, fetchClients, fetchBusinessSettings])
+  }, [isOpen, fetchClients, fetchBusinessSettings, propClients])
 
   const addItem = () => {
     setItems([...items, { 
@@ -373,8 +380,20 @@ export default function QuickInvoiceModal({
                   isDarkMode ? 'text-white' : 'text-gray-900'
                 }`}>
                   <User className="h-5 w-5 mr-2 text-indigo-600" />
-                  Client
+                  Select Client
                 </h4>
+                
+                {clients.length > 0 && (
+                  <div className={`mb-4 p-3 rounded-lg ${
+                    isDarkMode ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50 border border-blue-200'
+                  }`}>
+                    <p className={`text-sm font-medium ${
+                      isDarkMode ? 'text-blue-300' : 'text-blue-700'
+                    }`}>
+                      💡 You have {clients.length} existing client{clients.length !== 1 ? 's' : ''} to choose from
+                    </p>
+                  </div>
+                )}
 
                 {selectedClientId ? (
                   <div className={`flex items-center justify-between p-4 rounded-lg border ${
@@ -419,22 +438,29 @@ export default function QuickInvoiceModal({
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <select
-                      value={selectedClientId}
-                      onChange={(e) => setSelectedClientId(e.target.value)}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                        isDarkMode 
-                          ? 'border-gray-600 bg-gray-800 text-white' 
-                          : 'border-gray-300 bg-white text-gray-900'
-                      }`}
-                    >
-                      <option value="">Select existing client</option>
-                      {clients.map(client => (
-                        <option key={client.id} value={client.id}>
-                          {client.name} {client.company && `(${client.company})`}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={selectedClientId}
+                        onChange={(e) => setSelectedClientId(e.target.value)}
+                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors appearance-none cursor-pointer ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-800 text-white' 
+                            : 'border-gray-300 bg-white text-gray-900'
+                        }`}
+                      >
+                        <option value="">📋 Select existing client</option>
+                        {clients.map(client => (
+                          <option key={client.id} value={client.id}>
+                            👤 {client.name} {client.company && `(${client.company})`}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
                     
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">

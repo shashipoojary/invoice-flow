@@ -26,10 +26,8 @@ ALTER COLUMN business_address DROP NOT NULL;
 ALTER TABLE public.invoices 
 ADD COLUMN IF NOT EXISTS issue_date date DEFAULT CURRENT_DATE;
 
--- Update the invoice_items table to match the Quick Invoice structure
-ALTER TABLE public.invoice_items 
-ALTER COLUMN qty DROP NOT NULL,
-ALTER COLUMN qty SET DEFAULT 1;
+-- invoice_items table structure is already correct for Quick Invoice
+-- No changes needed to invoice_items table
 
 -- Add a column for discount in invoices table
 ALTER TABLE public.invoices 

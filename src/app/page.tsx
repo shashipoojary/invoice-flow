@@ -9,6 +9,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import QuickInvoiceModal from '@/components/QuickInvoiceModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
+import ToastContainer from '@/components/Toast';
+import { useToast } from '@/hooks/useToast';
 import FastInvoiceModal from '@/components/FastInvoiceModal';
 import LoginModal from '@/components/LoginModal';
 import ModernSidebar from '@/components/ModernSidebar';
@@ -51,6 +54,9 @@ export default function InvoiceDashboard() {
   // Authentication
   const { user, loading: authLoading, signIn, signUp, getAuthHeaders } = useAuth();
   const [showLogin, setShowLogin] = useState(false);
+  
+  // Toast notifications
+  const { toasts, removeToast, showSuccess, showError } = useToast();
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   
   // State
@@ -78,6 +84,51 @@ export default function InvoiceDashboard() {
   const [isSendingInvoice, setIsSendingInvoice] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  
+  // Settings state
+  const [settings, setSettings] = useState({
+    businessName: '',
+    businessEmail: '',
+    businessPhone: '',
+    website: '',
+    address: '',
+    logo: '',
+    paypalEmail: '',
+    cashappId: '',
+    venmoId: '',
+    googlePayUpi: '',
+    applePayId: '',
+    bankAccount: '',
+    bankIfscSwift: '',
+    bankIban: '',
+    stripeAccount: '',
+    paymentNotes: ''
+  });
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(false);
+
+  // Update logo preview when settings change
+  useEffect(() => {
+    if (settings.logo && settings.logo !== logoPreview) {
+      setLogoPreview(settings.logo);
+    }
+  }, [settings, logoPreview]);
+  
+  // Confirmation modal state
+  const [confirmationModal, setConfirmationModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    type?: 'danger' | 'warning' | 'info';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    type: 'danger'
+  });
 
   // Form states
   const [newInvoice, setNewInvoice] = useState({
@@ -194,6 +245,33 @@ export default function InvoiceDashboard() {
     return false;
   }, []);
 
+  // Fetch settings from database
+  const fetchSettings = useCallback(async () => {
+    if (user && !authLoading) {
+      try {
+        // Check if we already have settings loaded
+        if (settings.businessName || settings.businessEmail) {
+          return;
+        }
+
+        setIsLoadingSettings(true);
+        const headers = await getAuthHeaders();
+        const response = await fetch('/api/settings', {
+          headers,
+          cache: 'no-store'
+        });
+        const data = await response.json();
+        if (data.settings) {
+          setSettings(data.settings);
+        }
+      } catch (error) {
+        console.error('Error fetching settings:', error);
+      } finally {
+        setIsLoadingSettings(false);
+      }
+    }
+  }, [user, authLoading, getAuthHeaders, settings.businessName, settings.businessEmail]);
+
   // Manual data fetching - no automatic fetching to prevent infinite loops
   const fetchAllData = useCallback(async () => {
     if (user && !authLoading) {
@@ -201,10 +279,11 @@ export default function InvoiceDashboard() {
       await Promise.all([
         fetchDashboardStats(),
         fetchInvoices(),
-        fetchClients()
+        fetchClients(),
+        fetchSettings()
       ]);
     }
-  }, [user, authLoading, fetchDashboardStats, fetchInvoices, fetchClients]);
+  }, [user, authLoading, fetchDashboardStats, fetchInvoices, fetchClients, fetchSettings]);
 
   // Load data from localStorage first, then fetch from server if needed
   useEffect(() => {
@@ -216,6 +295,13 @@ export default function InvoiceDashboard() {
       }
     }
   }, [user, authLoading, hasLoadedData, loadDataFromLocalStorage, fetchAllData]); // Include all dependencies
+
+  // Load settings immediately when user is authenticated
+  useEffect(() => {
+    if (user && !authLoading) {
+      fetchSettings();
+    }
+  }, [user, authLoading, fetchSettings]);
 
   // Save data to localStorage whenever it changes (but only after initial load)
   useEffect(() => {
@@ -554,22 +640,31 @@ InvoiceFlow Team`;
   // Client functions
   const handleCreateClient = async () => {
     if (!newClient.name || !newClient.email) {
-      alert('Please fill in all required fields');
+      alert('Please fill in name and email (required fields)');
       return;
     }
 
     setIsCreatingClient(true);
     try {
-      const client: Client = {
-        id: Date.now().toString(),
-        name: newClient.name,
-        email: newClient.email,
-        company: newClient.company,
-        phone: newClient.phone,
-        address: newClient.address,
-        createdAt: new Date().toISOString().split('T')[0]
-      };
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/clients', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          name: newClient.name,
+          email: newClient.email,
+          company: newClient.company || '',
+          phone: newClient.phone || '',
+          address: newClient.address || ''
+        })
+      });
 
+      if (!response.ok) {
+        throw new Error('Failed to create client');
+      }
+
+      const { client } = await response.json();
+      
       setClients(prev => [client, ...prev]);
       setShowCreateClient(false);
       setNewClient({
@@ -579,7 +674,10 @@ InvoiceFlow Team`;
         phone: '',
         address: ''
       });
-      alert('Client added successfully!');
+      showSuccess('Client Added', 'New client has been successfully added to your list.');
+    } catch (error) {
+      console.error('Error creating client:', error);
+      showError('Creation Failed', 'Failed to create client. Please try again.');
     } finally {
       setIsCreatingClient(false);
     }
@@ -600,16 +698,33 @@ InvoiceFlow Team`;
   const handleUpdateClient = async () => {
     if (!selectedClient) return;
     if (!newClient.name || !newClient.email) {
-      alert('Please fill in all required fields');
+      alert('Please fill in name and email (required fields)');
       return;
     }
 
     setIsUpdatingClient(true);
     try {
-      setClients(prev => prev.map(client => 
-        client.id === selectedClient.id 
-          ? { ...client, ...newClient }
-          : client
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/clients/${selectedClient.id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          name: newClient.name,
+          email: newClient.email,
+          company: newClient.company || '',
+          phone: newClient.phone || '',
+          address: newClient.address || ''
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update client');
+      }
+
+      const { client } = await response.json();
+      
+      setClients(prev => prev.map(c => 
+        c.id === selectedClient.id ? client : c
       ));
       setShowEditClient(false);
       setSelectedClient(null);
@@ -620,23 +735,44 @@ InvoiceFlow Team`;
         phone: '',
         address: ''
       });
-      alert('Client updated successfully!');
+      showSuccess('Client Updated', 'Client information has been successfully updated.');
+    } catch (error) {
+      console.error('Error updating client:', error);
+      showError('Update Failed', 'Failed to update client. Please try again.');
     } finally {
       setIsUpdatingClient(false);
     }
   };
 
-  const handleDeleteClient = async (clientId: string) => {
-    if (confirm('Are you sure you want to delete this client?')) {
-      try {
-        setClients(prev => prev.filter(client => client.id !== clientId));
-        setInvoices(prev => prev.filter(invoice => invoice.clientId !== clientId));
-        alert('Client deleted successfully!');
-      } catch (error) {
-        console.error('Error deleting client:', error);
-        alert('Failed to delete client');
+  const handleDeleteClient = (clientId: string) => {
+    const client = clients.find(c => c.id === clientId);
+    setConfirmationModal({
+      isOpen: true,
+      title: 'Delete Client',
+      message: `Are you sure you want to delete "${client?.name || 'this client'}"? This action cannot be undone and will also remove all associated invoices.`,
+      type: 'danger',
+      onConfirm: async () => {
+        setConfirmationModal(prev => ({ ...prev, isOpen: false }));
+        try {
+          const headers = await getAuthHeaders();
+          const response = await fetch(`/api/clients/${clientId}`, {
+            method: 'DELETE',
+            headers
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to delete client');
+          }
+
+          setClients(prev => prev.filter(client => client.id !== clientId));
+          setInvoices(prev => prev.filter(invoice => invoice.clientId !== clientId));
+          showSuccess('Client Deleted', 'Client has been successfully removed from your list.');
+        } catch (error) {
+          console.error('Error deleting client:', error);
+          showError('Delete Failed', 'Failed to delete client. Please try again.');
+        }
       }
-    }
+    });
   };
 
   const handleContactClient = (client: Client) => {
@@ -658,32 +794,105 @@ InvoiceFlow Team`;
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      showError('Invalid File Type', 'Please select an image file (PNG, JPG, etc.)');
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
+      showError('File Too Large', 'File size must be less than 5MB');
       return;
     }
 
     setIsUploadingLogo(true);
     try {
-      // Simulate upload process
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Convert file to base64 for storage
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64String = e.target?.result as string;
+        
+        // Update settings with logo
+        const updatedSettings = { ...settings, logo: base64String };
+        setSettings(updatedSettings);
+        setLogoPreview(base64String);
+        
+        // Save to database
+        const headers = await getAuthHeaders();
+        const response = await fetch('/api/settings', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(updatedSettings)
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save logo');
+        }
+
+        showSuccess('Logo Uploaded', 'Your logo has been successfully uploaded!');
+      };
       
-      // In a real app, you would upload to a server here
-      // For now, we'll just show success message
-      alert('Logo uploaded successfully!');
+      reader.readAsDataURL(file);
       
       // Reset the input
       event.target.value = '';
     } catch (error) {
       console.error('Logo upload error:', error);
-      alert('Failed to upload logo');
+      showError('Upload Failed', 'Failed to upload logo. Please try again.');
     } finally {
       setIsUploadingLogo(false);
+    }
+  };
+
+  const handleLogoRemove = async () => {
+    if (logoPreview) {
+      // Update settings to remove logo
+      const updatedSettings = { ...settings, logo: '' };
+      setSettings(updatedSettings);
+      setLogoPreview(null);
+      
+      // Save to database
+      try {
+        const headers = await getAuthHeaders();
+        const response = await fetch('/api/settings', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(updatedSettings)
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to remove logo');
+        }
+
+        showSuccess('Logo Removed', 'Your logo has been successfully removed.');
+      } catch (error) {
+        console.error('Logo removal error:', error);
+        showError('Remove Failed', 'Failed to remove logo. Please try again.');
+      }
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    setIsSavingSettings(true);
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/settings', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(settings)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save settings');
+      }
+
+      showSuccess('Settings Saved', 'Your business settings have been successfully saved!');
+      // Refresh settings from database
+      await fetchSettings();
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      showError('Save Failed', 'Failed to save settings. Please try again.');
+    } finally {
+      setIsSavingSettings(false);
     }
   };
 
@@ -1169,6 +1378,12 @@ InvoiceFlow Team`;
               <h2 className="font-heading text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                 Settings
               </h2>
+              {isLoadingSettings && (
+                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Loading...</span>
+                </div>
+              )}
             </div>
 
             {/* Business Information */}
@@ -1189,6 +1404,8 @@ InvoiceFlow Team`;
                   </label>
                   <input
                     type="text"
+                    value={settings.businessName}
+                    onChange={(e) => setSettings(prev => ({ ...prev, businessName: e.target.value }))}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                     placeholder="Your Business Name"
                   />
@@ -1200,6 +1417,8 @@ InvoiceFlow Team`;
                   </label>
                   <input
                     type="email"
+                    value={settings.businessEmail}
+                    onChange={(e) => setSettings(prev => ({ ...prev, businessEmail: e.target.value }))}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                     placeholder="your@email.com"
                   />
@@ -1211,6 +1430,8 @@ InvoiceFlow Team`;
                   </label>
                   <input
                     type="tel"
+                    value={settings.businessPhone}
+                    onChange={(e) => setSettings(prev => ({ ...prev, businessPhone: e.target.value }))}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                     placeholder="+1 (555) 123-4567"
                   />
@@ -1222,6 +1443,8 @@ InvoiceFlow Team`;
                   </label>
                   <input
                     type="url"
+                    value={settings.website}
+                    onChange={(e) => setSettings(prev => ({ ...prev, website: e.target.value }))}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                     placeholder="https://yourwebsite.com"
                   />
@@ -1233,6 +1456,8 @@ InvoiceFlow Team`;
                   </label>
                   <textarea
                     rows={3}
+                    value={settings.address}
+                    onChange={(e) => setSettings(prev => ({ ...prev, address: e.target.value }))}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                     placeholder="Your business address"
                   />
@@ -1242,6 +1467,42 @@ InvoiceFlow Team`;
                   <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                     Logo
                   </label>
+                  
+                  {/* Logo Preview */}
+                  {logoPreview && (
+                    <div className="mb-4 p-4 border rounded-lg" style={{borderColor: isDarkMode ? '#374151' : '#e5e7eb'}}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                          Current Logo
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleLogoRemove}
+                          className="text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <img
+                          src={logoPreview}
+                          alt="Logo preview"
+                          className="w-16 h-16 object-contain border rounded-lg"
+                          style={{borderColor: isDarkMode ? '#374151' : '#e5e7eb'}}
+                        />
+                        <div>
+                          <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                            Logo uploaded successfully
+                          </p>
+                          <p className="text-xs" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                            This will appear on your invoices
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Upload Button */}
                   <div className="flex items-center space-x-4">
                     <label className="cursor-pointer">
                       <input
@@ -1257,7 +1518,7 @@ InvoiceFlow Team`;
                         ) : (
                           <Upload className="h-4 w-4" />
                         )}
-                        <span className="text-sm">{isUploadingLogo ? 'Uploading...' : 'Upload Logo'}</span>
+                        <span className="text-sm">{isUploadingLogo ? 'Uploading...' : logoPreview ? 'Change Logo' : 'Upload Logo'}</span>
                       </div>
                     </label>
                   </div>
@@ -1283,6 +1544,8 @@ InvoiceFlow Team`;
                   </label>
                   <input
                     type="email"
+                    value={settings.paypalEmail}
+                    onChange={(e) => setSettings(prev => ({ ...prev, paypalEmail: e.target.value }))}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                     placeholder="your@paypal.com"
                   />
@@ -1294,6 +1557,8 @@ InvoiceFlow Team`;
                   </label>
                   <input
                     type="text"
+                    value={settings.cashappId}
+                    onChange={(e) => setSettings(prev => ({ ...prev, cashappId: e.target.value }))}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                     placeholder="$yourcashapp"
                   />
@@ -1306,6 +1571,8 @@ InvoiceFlow Team`;
                   <input
                     type="text"
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                    value={settings.venmoId}
+                    onChange={(e) => setSettings(prev => ({ ...prev, venmoId: e.target.value }))}
                     placeholder="@yourvenmo"
                   />
                 </div>
@@ -1316,6 +1583,8 @@ InvoiceFlow Team`;
                   </label>
                   <input
                     type="text"
+                    value={settings.googlePayUpi}
+                    onChange={(e) => setSettings(prev => ({ ...prev, googlePayUpi: e.target.value }))}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                     placeholder="your@upi or phone number"
                   />
@@ -1328,6 +1597,8 @@ InvoiceFlow Team`;
                   <input
                     type="text"
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                    value={settings.applePayId}
+                    onChange={(e) => setSettings(prev => ({ ...prev, applePayId: e.target.value }))}
                     placeholder="Apple Pay ID or phone number"
                   />
                 </div>
@@ -1343,6 +1614,8 @@ InvoiceFlow Team`;
                       </label>
                       <input
                         type="text"
+                        value={settings.bankAccount}
+                        onChange={(e) => setSettings(prev => ({ ...prev, bankAccount: e.target.value }))}
                         className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                         placeholder="Account number"
                       />
@@ -1353,6 +1626,8 @@ InvoiceFlow Team`;
                       </label>
                       <input
                         type="text"
+                        value={settings.bankIfscSwift}
+                        onChange={(e) => setSettings(prev => ({ ...prev, bankIfscSwift: e.target.value }))}
                         className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                         placeholder="IFSC or SWIFT code"
                       />
@@ -1366,6 +1641,8 @@ InvoiceFlow Team`;
                   </label>
                   <input
                     type="text"
+                    value={settings.bankIban}
+                    onChange={(e) => setSettings(prev => ({ ...prev, bankIban: e.target.value }))}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                     placeholder="IBAN number"
                   />
@@ -1377,6 +1654,8 @@ InvoiceFlow Team`;
                   </label>
                   <input
                     type="text"
+                    value={settings.stripeAccount}
+                    onChange={(e) => setSettings(prev => ({ ...prev, stripeAccount: e.target.value }))}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                     placeholder="Stripe account ID or email"
                   />
@@ -1388,6 +1667,8 @@ InvoiceFlow Team`;
                   </label>
                   <textarea
                     rows={3}
+                    value={settings.paymentNotes}
+                    onChange={(e) => setSettings(prev => ({ ...prev, paymentNotes: e.target.value }))}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                     placeholder="Wise, Revolut, Zelle, or other payment methods not listed above..."
                   />
@@ -1395,8 +1676,19 @@ InvoiceFlow Team`;
               </div>
 
               <div className="flex justify-end mt-6">
-                <button className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
-                  Save Settings
+                <button 
+                  onClick={handleSaveSettings}
+                  disabled={isSavingSettings}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                >
+                  {isSavingSettings ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Save Settings</span>
+                  )}
                 </button>
               </div>
             </div>
@@ -2009,6 +2301,7 @@ InvoiceFlow Team`;
         user={user || { id: 'guest', email: 'guest@example.com', name: 'Guest' }}
         getAuthHeaders={getAuthHeaders}
         isDarkMode={isDarkMode}
+        clients={clients}
       />
 
       {/* Quick Invoice Modal */}
@@ -2021,8 +2314,25 @@ InvoiceFlow Team`;
           }}
           getAuthHeaders={getAuthHeaders}
           isDarkMode={isDarkMode}
+          clients={clients}
         />
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmationModal.isOpen}
+        onClose={() => setConfirmationModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmationModal.onConfirm}
+        title={confirmationModal.title}
+        message={confirmationModal.message}
+        type={confirmationModal.type}
+      />
+
+      {/* Toast Notifications */}
+      <ToastContainer
+        toasts={toasts}
+        onRemove={removeToast}
+      />
           </div>
         </main>
       </div>

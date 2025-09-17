@@ -8,9 +8,12 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('GET /api/settings - Fetching settings');
+    
     // Get the authorization header
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('GET /api/settings - No auth header');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -19,8 +22,11 @@ export async function GET(request: NextRequest) {
     // Verify the user
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
+      console.log('GET /api/settings - Auth error:', authError);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    
+    console.log('GET /api/settings - User authenticated:', user.id);
 
     // Fetch user settings
     const { data: settings, error: settingsError } = await supabase
@@ -29,12 +35,51 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
       .single();
 
+    console.log('GET /api/settings - Settings query result:', { settings, settingsError });
+
     if (settingsError && settingsError.code !== 'PGRST116') {
+      console.log('GET /api/settings - Settings error:', settingsError);
       return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 });
     }
 
-    // Return settings or default empty object
-    return NextResponse.json({ settings: settings || {} });
+    // Return settings or default empty object - now with all payment method fields
+    const formattedSettings = settings ? {
+      businessName: settings.business_name || '',
+      businessEmail: settings.business_email || '',
+      businessPhone: settings.business_phone || '',
+      address: settings.business_address || '',
+      website: settings.website || '',
+      logo: settings.logo || settings.logo_url || '',
+      paypalEmail: settings.paypal_email || '',
+      cashappId: settings.cashapp_id || '',
+      venmoId: settings.venmo_id || '',
+      googlePayUpi: settings.google_pay_upi || '',
+      applePayId: settings.apple_pay_id || '',
+      bankAccount: settings.bank_account || '',
+      bankIfscSwift: settings.bank_ifsc_swift || '',
+      bankIban: settings.bank_iban || '',
+      stripeAccount: settings.stripe_account || '',
+      paymentNotes: settings.payment_notes || '',
+    } : {
+      businessName: '',
+      businessEmail: '',
+      businessPhone: '',
+      address: '',
+      website: '',
+      logo: '',
+      paypalEmail: '',
+      cashappId: '',
+      venmoId: '',
+      googlePayUpi: '',
+      applePayId: '',
+      bankAccount: '',
+      bankIfscSwift: '',
+      bankIban: '',
+      stripeAccount: '',
+      paymentNotes: '',
+    };
+    
+    return NextResponse.json({ settings: formattedSettings });
 
   } catch (error) {
     console.error('Settings fetch error:', error);
@@ -45,6 +90,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const settingsData = await request.json();
+    console.log('Settings data received:', settingsData);
 
     // Get the authorization header
     const authHeader = request.headers.get('authorization');
@@ -57,18 +103,21 @@ export async function POST(request: NextRequest) {
     // Verify the user
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
+      console.error('Auth error:', authError);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    
+    console.log('User authenticated:', user.id);
 
-    // Prepare settings data
+    // Prepare settings data - now with all payment method fields
     const settings = {
       user_id: user.id,
       business_name: settingsData.businessName || '',
-      logo: settingsData.logo || '',
-      address: settingsData.address || '',
-      email: settingsData.email || user.email || '',
-      phone: settingsData.phone || '',
+      business_email: settingsData.businessEmail || user.email || '',
+      business_phone: settingsData.businessPhone || '',
+      business_address: settingsData.address || '',
       website: settingsData.website || '',
+      logo: settingsData.logo || '',
       paypal_email: settingsData.paypalEmail || '',
       cashapp_id: settingsData.cashappId || '',
       venmo_id: settingsData.venmoId || '',
@@ -81,6 +130,8 @@ export async function POST(request: NextRequest) {
       payment_notes: settingsData.paymentNotes || '',
       updated_at: new Date().toISOString(),
     };
+
+    console.log('Settings to save (with all payment methods):', settings);
 
     // Check if settings exist
     const { data: existingSettings } = await supabase
@@ -104,13 +155,18 @@ export async function POST(request: NextRequest) {
     }
 
     if (result.error) {
-      return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 });
+      console.error('Database error:', result.error);
+      console.error('Error code:', result.error.code);
+      console.error('Error message:', result.error.message);
+      console.error('Error details:', result.error.details);
+      return NextResponse.json({ error: 'Failed to save settings', details: result.error }, { status: 500 });
     }
 
+    console.log('Settings saved successfully');
     return NextResponse.json({ success: true, message: 'Settings saved successfully' });
 
   } catch (error) {
     console.error('Settings save error:', error);
-    return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to save settings', details: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 }
