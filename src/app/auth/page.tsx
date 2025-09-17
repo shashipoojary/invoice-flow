@@ -109,6 +109,7 @@ export default function AuthPage() {
               width={160}
               height={160}
               className="w-40 h-40"
+              priority
             />
           </div>
           <p className={`text-lg ${

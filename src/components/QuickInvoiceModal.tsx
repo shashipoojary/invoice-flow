@@ -213,6 +213,7 @@ export default function QuickInvoiceModal({
           line_total: item.amount
         })),
         due_date: dueDate,
+        discount: discount,
         notes: notes,
         billing_choice: 'per_invoice'
       }

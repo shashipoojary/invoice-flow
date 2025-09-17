@@ -25,49 +25,94 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate required fields
-    if (!invoiceData.clientId || !invoiceData.dueDate || !invoiceData.items || invoiceData.items.length === 0) {
+    if (!invoiceData.due_date || !invoiceData.items || invoiceData.items.length === 0) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Calculate totals
-    const subtotal = invoiceData.items.reduce((sum: number, item: { rate?: number }) => sum + (item.rate || 0), 0);
-    const taxRate = invoiceData.taxRate || 0.1;
-    const taxAmount = subtotal * taxRate;
-    const total = subtotal + taxAmount;
-
-    // Generate invoice number
-    const { data: lastInvoice } = await supabase
-      .from('invoices')
-      .select('invoice_number')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    let invoiceNumber = 'INV-001';
-    if (lastInvoice) {
-      const lastNumber = parseInt(lastInvoice.invoice_number.split('-')[1]);
-      invoiceNumber = `INV-${String(lastNumber + 1).padStart(3, '0')}`;
+    // Validate items
+    for (const item of invoiceData.items) {
+      if (!item.description || !item.rate || item.rate <= 0) {
+        return NextResponse.json({ error: 'Invalid item data' }, { status: 400 });
+      }
     }
 
-    // Generate public token
-    const publicToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    let clientId = invoiceData.client_id;
+
+    // Handle new client creation if no client_id provided
+    if (!clientId && invoiceData.client_data) {
+      const { data: newClient, error: clientError } = await supabase
+        .from('clients')
+        .insert({
+          user_id: user.id,
+          name: invoiceData.client_data.name,
+          email: invoiceData.client_data.email,
+          company: invoiceData.client_data.company || null,
+          phone: invoiceData.client_data.phone || null,
+          address: invoiceData.client_data.address || null,
+        })
+        .select('id')
+        .single();
+
+      if (clientError) {
+        console.error('Client creation error:', clientError);
+        return NextResponse.json({ error: 'Failed to create client' }, { status: 500 });
+      }
+
+      clientId = newClient.id;
+    }
+
+    if (!clientId) {
+      return NextResponse.json({ error: 'Client ID or client data required' }, { status: 400 });
+    }
+
+    // Verify client belongs to user (security check)
+    const { data: client, error: clientCheckError } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('id', clientId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (clientCheckError || !client) {
+      return NextResponse.json({ error: 'Client not found or access denied' }, { status: 403 });
+    }
+
+    // Calculate totals
+    const subtotal = invoiceData.items.reduce((sum: number, item: { rate: number }) => sum + item.rate, 0);
+    const discount = invoiceData.discount || 0;
+    const total = subtotal - discount;
+
+    // Generate invoice number using database function
+    const { data: invoiceNumberData, error: invoiceNumberError } = await supabase
+      .rpc('generate_invoice_number', { user_uuid: user.id });
+
+    if (invoiceNumberError) {
+      console.error('Invoice number generation error:', invoiceNumberError);
+      return NextResponse.json({ error: 'Failed to generate invoice number' }, { status: 500 });
+    }
+
+    // Generate public token using database function
+    const { data: publicTokenData, error: tokenError } = await supabase
+      .rpc('generate_public_token');
+
+    if (tokenError) {
+      console.error('Public token generation error:', tokenError);
+      return NextResponse.json({ error: 'Failed to generate public token' }, { status: 500 });
+    }
 
     // Prepare invoice data
     const invoice = {
       user_id: user.id,
-      client_id: invoiceData.clientId,
-      invoice_number: invoiceNumber,
-      public_token: publicToken,
-      items: invoiceData.items,
+      client_id: clientId,
+      invoice_number: invoiceNumberData,
+      public_token: publicTokenData,
       subtotal,
-      tax_rate: taxRate,
-      tax_amount: taxAmount,
+      discount,
       total,
-      status: invoiceData.status || 'draft',
-      due_date: invoiceData.dueDate,
+      status: 'draft',
+      issue_date: new Date().toISOString().split('T')[0],
+      due_date: invoiceData.due_date,
       notes: invoiceData.notes || '',
-      created_at: new Date().toISOString(),
     };
 
     // Insert invoice
@@ -81,6 +126,7 @@ export async function POST(request: NextRequest) {
           name,
           email,
           company,
+          phone,
           address
         )
       `)
@@ -91,9 +137,56 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create invoice' }, { status: 500 });
     }
 
+    // Insert invoice items
+    const invoiceItems = invoiceData.items.map((item: { description: string; rate: number; line_total: number }) => ({
+      invoice_id: newInvoice.id,
+      description: item.description,
+      rate: item.rate,
+      line_total: item.rate,
+    }));
+
+    const { error: itemsError } = await supabase
+      .from('invoice_items')
+      .insert(invoiceItems);
+
+    if (itemsError) {
+      console.error('Invoice items creation error:', itemsError);
+      // Rollback invoice creation
+      await supabase.from('invoices').delete().eq('id', newInvoice.id);
+      return NextResponse.json({ error: 'Failed to create invoice items' }, { status: 500 });
+    }
+
+    // Fetch the complete invoice with items
+    const { data: completeInvoice, error: fetchError } = await supabase
+      .from('invoices')
+      .select(`
+        *,
+        clients (
+          id,
+          name,
+          email,
+          company,
+          phone,
+          address
+        ),
+        invoice_items (
+          id,
+          description,
+          rate,
+          line_total
+        )
+      `)
+      .eq('id', newInvoice.id)
+      .single();
+
+    if (fetchError) {
+      console.error('Invoice fetch error:', fetchError);
+      return NextResponse.json({ error: 'Failed to fetch complete invoice' }, { status: 500 });
+    }
+
     return NextResponse.json({ 
       success: true, 
-      invoice: newInvoice,
+      invoice: completeInvoice,
       message: 'Invoice created successfully' 
     });
 

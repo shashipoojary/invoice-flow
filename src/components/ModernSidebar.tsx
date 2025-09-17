@@ -143,6 +143,7 @@ const ModernSidebar = ({
               width={360}
               height={140}
               className="h-36 w-auto max-w-full"
+              priority
             />
           </div>
         ) : (
@@ -156,6 +157,7 @@ const ModernSidebar = ({
               width={28}
               height={20}
               className="w-7 h-5"
+              priority
             />
           </button>
         )}
