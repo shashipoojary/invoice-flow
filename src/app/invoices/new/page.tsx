@@ -238,7 +238,7 @@ export default function CreateInvoicePage() {
           {/* Form */}
           <div className="space-y-6">
             {/* Invoice Details */}
-            <div className={`rounded-2xl p-6 ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
+            <div className={`rounded-lg p-4 ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
               <h2 className="text-lg font-semibold mb-4" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                 Invoice Details
               </h2>
@@ -292,7 +292,7 @@ export default function CreateInvoicePage() {
             </div>
 
             {/* Client Details */}
-            <div className={`rounded-2xl p-6 ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
+            <div className={`rounded-lg p-4 ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
               <h2 className="text-lg font-semibold mb-4" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                 Client Details
               </h2>
@@ -373,7 +373,7 @@ export default function CreateInvoicePage() {
             </div>
 
             {/* Invoice Items */}
-            <div className={`rounded-2xl p-6 ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
+            <div className={`rounded-lg p-4 ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                   Services
@@ -443,7 +443,7 @@ export default function CreateInvoicePage() {
             </div>
 
             {/* Notes */}
-            <div className={`rounded-2xl p-6 ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
+            <div className={`rounded-lg p-4 ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
               <h2 className="text-lg font-semibold mb-4" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                 Notes
               </h2>
@@ -459,7 +459,7 @@ export default function CreateInvoicePage() {
 
           {/* Preview */}
           {showPreview && (
-            <div className={`rounded-2xl p-6 ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
+            <div className={`rounded-lg p-4 ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
               <h2 className="text-lg font-semibold mb-4" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                 Invoice Preview
               </h2>

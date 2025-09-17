@@ -866,7 +866,7 @@ InvoiceFlow Team`;
                 {/* Add Client */}
                 <button
                   onClick={() => setShowCreateClient(true)}
-                  className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}
+                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}
                 >
                   <div className="flex items-center space-x-4">
                     <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-purple-500/30' : 'bg-purple-100'}`}>
@@ -972,9 +972,9 @@ InvoiceFlow Team`;
             </div>
             
             {/* Client List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {clients.map((client) => (
-                <div key={client.id} className={`rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                <div key={client.id} className={`rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
                   <div className="flex items-start justify-between mb-4">
                     <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
                       <Building2 className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
@@ -1033,7 +1033,7 @@ InvoiceFlow Team`;
             </div>
 
             {/* Business Information */}
-            <div className={`rounded-2xl p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+            <div className={`rounded-lg p-4 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
               <div className="flex items-center space-x-3 mb-6">
                 <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
                   <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -1043,7 +1043,7 @@ InvoiceFlow Team`;
                 </h3>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                     Business Name
@@ -1080,7 +1080,7 @@ InvoiceFlow Team`;
             </div>
 
             {/* Payment Details */}
-            <div className={`rounded-2xl p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+            <div className={`rounded-lg p-4 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
               <div className="flex items-center space-x-3 mb-6">
                 <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-green-500/20' : 'bg-green-100'}`}>
                   <CreditCard className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -1090,7 +1090,7 @@ InvoiceFlow Team`;
                 </h3>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                     PayPal Email
@@ -1438,7 +1438,7 @@ InvoiceFlow Team`;
             
             <div className="space-y-4 sm:space-y-6">
               {/* Invoice Header */}
-              <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <h3 className="font-semibold mb-2 text-sm sm:text-base" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Invoice Details</h3>
                   <div className="space-y-1 text-xs sm:text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>

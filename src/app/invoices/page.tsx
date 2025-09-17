@@ -157,7 +157,7 @@ export default function InvoicesPage() {
             </button>
           </div>
         ) : (
-          <div className={`rounded-2xl overflow-hidden ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
+          <div className={`rounded-lg overflow-hidden ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className={isDarkMode ? 'bg-slate-800' : 'bg-gray-50'}>
