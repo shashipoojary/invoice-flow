@@ -199,10 +199,14 @@ const ModernSidebar = ({
                 setIsMobileOpen(false);
               }
             }}
-            className="w-full flex items-center justify-center p-5 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
+            className={`w-full flex items-center justify-center p-4 rounded-lg transition-colors ${
+              isDarkMode 
+                ? 'bg-white text-black hover:bg-gray-200' 
+                : 'bg-black text-white hover:bg-gray-800'
+            }`}
             title="Create Invoice"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-6 h-6" />
           </button>
         </div>
       )}
