@@ -119,13 +119,13 @@ export default function AuthPage() {
         </div>
 
         {/* Auth Card */}
-        <div className={`shadow-2xl p-8 ${
+        <div className={`shadow-2xl p-8 rounded-xl ${
           isDarkMode 
             ? 'bg-gray-900' 
             : 'bg-white'
         }`}>
           {/* Toggle */}
-          <div className={`flex p-1 mb-8 ${
+          <div className={`flex p-1 mb-8 rounded-lg ${
             isDarkMode 
               ? 'bg-gray-800' 
               : 'bg-gray-100'
@@ -186,7 +186,7 @@ export default function AuthPage() {
                     value={formData.name}
                     onChange={handleInputChange}
                     required={!isLogin}
-                    className={`w-full pl-12 pr-4 py-4 border focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                    className={`w-full pl-12 pr-4 py-4 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                       isDarkMode 
                         ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-400' 
                         : 'border-gray-200 bg-white text-gray-900 placeholder-gray-500'
@@ -218,7 +218,7 @@ export default function AuthPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  className={`w-full pl-12 pr-4 py-4 border focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                  className={`w-full pl-12 pr-4 py-4 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                     isDarkMode 
                       ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-400' 
                       : 'border-gray-200 bg-white text-gray-900 placeholder-gray-500'
@@ -249,7 +249,7 @@ export default function AuthPage() {
                   value={formData.password}
                   onChange={handleInputChange}
                   required
-                  className={`w-full pl-12 pr-12 py-4 border focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                  className={`w-full pl-12 pr-12 py-4 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                     isDarkMode 
                       ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-400' 
                       : 'border-gray-200 bg-white text-gray-900 placeholder-gray-500'
@@ -271,7 +271,7 @@ export default function AuthPage() {
             </div>
 
             {error && (
-              <div className={`border p-4 ${
+              <div className={`border p-4 rounded-lg ${
                 isDarkMode 
                   ? 'bg-red-900/20 border-red-800' 
                   : 'bg-red-50 border-red-200'
@@ -287,7 +287,7 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-4 px-4 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 font-medium ${
+              className={`w-full py-4 px-4 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 font-medium ${
                 isDarkMode 
                   ? 'bg-white text-black hover:bg-gray-200' 
                   : 'bg-black text-white hover:bg-gray-800'
