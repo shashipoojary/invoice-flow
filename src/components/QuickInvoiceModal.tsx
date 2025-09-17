@@ -26,6 +26,13 @@ interface InvoiceItem {
   rate: number
 }
 
+interface Client {
+  id: string
+  name: string
+  email: string
+  company?: string
+}
+
 export default function QuickInvoiceModal({ 
   isOpen, 
   onClose, 
@@ -33,8 +40,8 @@ export default function QuickInvoiceModal({
   getAuthHeaders,
   isDarkMode = false
 }: QuickInvoiceModalProps) {
-  const [clients, setClients] = useState<Client[]>([])
   const [selectedClientId, setSelectedClientId] = useState('')
+  const [clients, setClients] = useState<Client[]>([])
   const [newClient, setNewClient] = useState({
     name: '',
     email: '',

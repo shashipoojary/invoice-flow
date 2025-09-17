@@ -181,7 +181,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                         ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-400' 
                         : 'border-gray-200 bg-white text-gray-900 placeholder-gray-500'
                     }`}
-                    placeholder="John Smith"
+                    placeholder="Client Name"
                     required
                   />
                 </div>
@@ -210,7 +210,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                         ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-400' 
                         : 'border-gray-200 bg-white text-gray-900 placeholder-gray-500'
                     }`}
-                    placeholder="john@example.com"
+                    placeholder="client@company.com"
                     required
                   />
                 </div>

@@ -76,8 +76,8 @@ npm run dev
 
 1. Open http://localhost:3000
 2. Click "Sign In" 
-3. Enter any email/password (demo mode)
-4. You should see the dashboard with live data from PostgreSQL!
+3. Create a new account or sign in with your credentials
+4. You should see the dashboard ready for creating your first invoice!
 
 ## Troubleshooting
 

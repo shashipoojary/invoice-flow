@@ -1,5 +1,6 @@
 'use client'
 
+import { useCallback } from 'react'
 import { useSupabase } from './useSupabase'
 import { supabase } from '@/lib/supabase'
 
@@ -72,7 +73,7 @@ export function useAuth(): AuthContextType {
     }
   }
 
-  const getAuthHeaders = async (): Promise<{ [key: string]: string }> => {
+  const getAuthHeaders = useCallback(async (): Promise<{ [key: string]: string }> => {
     // Get the current session token from Supabase
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -89,7 +90,7 @@ export function useAuth(): AuthContextType {
     return {
       'Content-Type': 'application/json',
     }
-  }
+  }, [])
 
   return {
     user: user ? {

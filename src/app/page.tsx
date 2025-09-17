@@ -67,6 +67,7 @@ export default function InvoiceDashboard() {
     overdueCount: 0,
     totalClients: 0
   });
+  const [dataLoading, setDataLoading] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
 
@@ -87,64 +88,9 @@ export default function InvoiceDashboard() {
     address: ''
   });
 
-  // Sample data (in real app, this would come from Supabase)
-  const [clients, setClients] = useState<Client[]>([
-    {
-      id: '1',
-      name: 'John Smith',
-      email: 'john@acme.com',
-      company: 'Acme Corporation',
-      phone: '+1 (555) 123-4567',
-      address: '123 Business St, City, State 12345',
-      createdAt: '2024-01-01'
-    },
-    {
-      id: '2',
-      name: 'Sarah Johnson',
-      email: 'sarah@techstart.com',
-      company: 'TechStart LLC',
-      phone: '+1 (555) 987-6543',
-      address: '456 Innovation Ave, City, State 12345',
-      createdAt: '2024-01-15'
-    }
-  ]);
-
-  const [invoices, setInvoices] = useState<Invoice[]>([
-    {
-      id: '1',
-      invoiceNumber: 'INV-001',
-      clientId: '1',
-      client: clients[0],
-      items: [
-        { id: '1', description: 'Website Development', rate: 3000, amount: 3000 },
-        { id: '2', description: 'UI/UX Design', rate: 1000, amount: 1000 }
-      ],
-      subtotal: 4000,
-      taxRate: 0.1,
-      taxAmount: 400,
-      total: 4400,
-      status: 'sent',
-      dueDate: '2024-02-15',
-      createdAt: '2024-01-15',
-      notes: 'Thank you for your business!'
-    },
-    {
-      id: '2',
-      invoiceNumber: 'INV-002',
-      clientId: '2',
-      client: clients[1],
-      items: [
-        { id: '3', description: 'Mobile App Development', rate: 6000, amount: 6000 }
-      ],
-      subtotal: 6000,
-      taxRate: 0.1,
-      taxAmount: 600,
-      total: 6600,
-      status: 'paid',
-      dueDate: '2024-01-30',
-      createdAt: '2024-01-10'
-    }
-  ]);
+  // Data will be loaded from Supabase
+  const [clients, setClients] = useState<Client[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
 
   // Dark mode
   useEffect(() => {
@@ -206,19 +152,20 @@ export default function InvoiceDashboard() {
 
   // Fetch dashboard data when user is authenticated
   useEffect(() => {
-    if (user && !authLoading) {
-      // Only fetch if we don't have data yet
-      if (dashboardStats.totalRevenue === undefined) {
-        fetchDashboardStats();
-      }
-      if (invoices.length === 0) {
-        fetchInvoices();
-      }
-      if (clients.length === 0) {
-        fetchClients();
-      }
+    if (user && !authLoading && !dataLoading) {
+      setDataLoading(true);
+      
+      // Fetch all data in parallel
+      Promise.all([
+        fetchDashboardStats(),
+        fetchInvoices(),
+        fetchClients()
+      ]).finally(() => {
+        setDataLoading(false);
+      });
     }
-  }, [user, authLoading, dashboardStats.totalRevenue, invoices.length, clients.length, fetchDashboardStats, fetchInvoices, fetchClients]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading]); // Intentionally excluding function dependencies to prevent infinite loops
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -1538,7 +1485,7 @@ InvoiceFlow Team`;
           fetchInvoices();
           fetchClients();
         }}
-        user={user || { id: 'guest', email: 'guest@example.com', name: 'Guest' }}
+        user={user || { id: 'guest', email: 'guest@invoiceflow.com', name: 'Guest' }}
         getAuthHeaders={getAuthHeaders}
         isDarkMode={isDarkMode}
       />
