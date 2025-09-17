@@ -102,13 +102,13 @@ export default function AuthPage() {
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-24 h-24 mb-6">
+          <div className="inline-flex items-center justify-center w-40 h-40 mb-6">
             <Image
               src={isDarkMode ? "/logowhite.png" : "/logoblack.png"}
               alt="InvoiceFlow Logo"
-              width={96}
-              height={96}
-              className="w-24 h-24"
+              width={160}
+              height={160}
+              className="w-40 h-40"
             />
           </div>
           <p className={`text-lg ${

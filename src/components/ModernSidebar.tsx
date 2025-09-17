@@ -146,11 +146,11 @@ const ModernSidebar = ({
             className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <Image
-              src={isDarkMode ? "/logowhite.png" : "/logoblack.png"}
+              src={isDarkMode ? "/logo-icon-white.png" : "/logo-icon-black.png"}
               alt="InvoiceFlow Logo"
-              width={32}
-              height={32}
-              className="w-8 h-8"
+              width={28}
+              height={20}
+              className="w-7 h-5"
             />
           </button>
         )}
@@ -199,14 +199,14 @@ const ModernSidebar = ({
                 setIsMobileOpen(false);
               }
             }}
-            className={`w-full flex items-center justify-center p-4 rounded-lg transition-colors ${
+            className={`w-full flex items-center justify-center p-3 rounded-lg transition-colors ${
               isDarkMode 
                 ? 'bg-white text-black hover:bg-gray-200' 
                 : 'bg-black text-white hover:bg-gray-800'
             }`}
             title="Create Invoice"
           >
-            <Plus className="w-6 h-6" />
+            <Plus className="w-5 h-5" />
           </button>
         </div>
       )}
