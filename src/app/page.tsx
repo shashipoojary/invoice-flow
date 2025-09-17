@@ -716,7 +716,7 @@ InvoiceFlow Team`;
         />
 
         {/* Main Content */}
-        <main className="flex-1 lg:ml-0 overflow-y-auto scroll-smooth">
+        <main className="flex-1 lg:ml-0 overflow-y-auto scroll-smooth custom-scrollbar">
           <div className="pt-16 lg:pt-4 p-4 sm:p-6 lg:p-8">
             {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
@@ -1137,7 +1137,7 @@ InvoiceFlow Team`;
         {/* Create Invoice Modal */}
       {showCreateInvoice && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 max-w-2xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+          <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 max-w-2xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scroll-smooth custom-scrollbar ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h2 className="text-lg sm:text-2xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Create Invoice</h2>
               <button
@@ -1315,7 +1315,7 @@ InvoiceFlow Team`;
       {/* Create Client Modal */}
       {showCreateClient && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 max-w-md w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+          <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 max-w-md w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scroll-smooth custom-scrollbar ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h2 className="text-lg sm:text-2xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Add Client</h2>
               <button
@@ -1423,7 +1423,7 @@ InvoiceFlow Team`;
       {/* View Invoice Modal */}
       {showViewInvoice && selectedInvoice && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 max-w-4xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+          <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 max-w-4xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scroll-smooth custom-scrollbar ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h2 className="text-lg sm:text-2xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                 Invoice {selectedInvoice.invoiceNumber}
