@@ -64,7 +64,7 @@ export default function PublicInvoicePage() {
         } else {
           setError('Invoice not found')
         }
-      } catch (err) {
+      } catch {
         setError('Error loading invoice')
       } finally {
         setLoading(false)
@@ -122,7 +122,7 @@ export default function PublicInvoicePage() {
         <div className="text-center">
           <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Invoice Not Found</h1>
-          <p className="text-gray-600">The invoice you're looking for doesn't exist or has been removed.</p>
+          <p className="text-gray-600">The invoice you&apos;re looking for doesn&apos;t exist or has been removed.</p>
         </div>
       </div>
     )

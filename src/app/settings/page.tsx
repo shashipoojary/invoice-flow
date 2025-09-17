@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { Save, Upload, Building2, CreditCard, Mail, MapPin, User } from 'lucide-react'
+import { Save, Upload, Building2, CreditCard } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface FreelancerSettings {

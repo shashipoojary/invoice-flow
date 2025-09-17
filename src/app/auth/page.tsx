@@ -24,12 +24,33 @@ export default function AuthPage() {
     setLoading(true);
     setError('');
 
+    // Basic validation
+    if (!formData.email || !formData.password) {
+      setError('Please fill in all required fields');
+      setLoading(false);
+      return;
+    }
+
+    if (!isLogin && !formData.name) {
+      setError('Please enter your full name');
+      setLoading(false);
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
     try {
       let result;
       if (isLogin) {
         result = await signIn(formData.email, formData.password);
       } else {
-        result = await signUp(formData.name, formData.email, formData.password);
+        result = await signUp(formData.email, formData.password, formData.name);
       }
       
       if (result.error) {
@@ -37,9 +58,11 @@ export default function AuthPage() {
         return;
       }
       
+      // Success - redirect to dashboard
       router.push('/');
-    } catch (err: any) {
-      setError(err.message || 'An error occurred');
+    } catch (err: unknown) {
+      console.error('Auth error:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }

@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   
   // Disable Turbopack for now to avoid font issues
   experimental: {
-    turbo: false,
+    // turbo: false, // Removed - this was causing the warning
   },
 };
 

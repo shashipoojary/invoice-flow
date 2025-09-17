@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useSupabase } from './useSupabase'
+import { supabase } from '@/lib/supabase'
 
 interface User {
   id: string
@@ -14,110 +15,92 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ data: { user: User } | null; error: Error | null }>
   signUp: (email: string, password: string, name: string) => Promise<{ data: { user: User } | null; error: Error | null }>
   signOut: () => Promise<{ error: Error | null }>
-  getAuthHeaders: () => { [key: string]: string }
+  getAuthHeaders: () => Promise<{ [key: string]: string }>
 }
 
 export function useAuth(): AuthContextType {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { user, loading, signIn: supabaseSignIn, signUp: supabaseSignUp, signOut: supabaseSignOut } = useSupabase()
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedUser = localStorage.getItem('user')
-      const storedToken = localStorage.getItem('token')
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabaseSignIn(email, password)
       
-      if (storedUser && storedToken) {
-        setUser(JSON.parse(storedUser))
+      if (error) {
+        return { data: null, error: new Error(error.message || 'Login failed') }
       }
-    }
-    setLoading(false)
-  }, [])
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    setLoading(true)
+      const userData = data?.user ? {
+        id: data.user.id,
+        email: data.user.email || '',
+        name: data.user.user_metadata?.full_name || data.user.email || 'User'
+      } : null
+
+      return { data: userData ? { user: userData } : null, error: null }
+    } catch {
+      console.error('Sign in error')
+      return { data: null, error: new Error('Login failed') }
+    }
+  }
+
+  const signUp = async (email: string, password: string, name: string) => {
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        return { data: null, error: new Error(data.error || 'Login failed') }
+      const { data, error } = await supabaseSignUp(email, password, name)
+      
+      if (error) {
+        return { data: null, error: new Error(error.message || 'Registration failed') }
       }
 
-      // Store user and token
-      localStorage.setItem('user', JSON.stringify(data.user))
-      localStorage.setItem('token', data.token)
-      setUser(data.user)
+      const userData = data?.user ? {
+        id: data.user.id,
+        email: data.user.email || '',
+        name: data.user.user_metadata?.full_name || data.user.email || 'User'
+      } : null
 
-      return { data: { user: data.user }, error: null }
-    } catch (err) {
-      console.error('Login error:', err)
-      return { data: null, error: new Error('Network error') }
-    } finally {
-      setLoading(false)
+      return { data: userData ? { user: userData } : null, error: null }
+    } catch {
+      console.error('Sign up error')
+      return { data: null, error: new Error('Registration failed') }
     }
-  }, [])
+  }
 
-  const signUp = useCallback(async (email: string, password: string, name: string) => {
-    setLoading(true)
+  const signOut = async () => {
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
+      const { error } = await supabaseSignOut()
+      return { error: error ? new Error(error.message) : null }
+    } catch {
+      return { error: new Error('Sign out failed') }
+    }
+  }
+
+  const getAuthHeaders = async (): Promise<{ [key: string]: string }> => {
+    // Get the current session token from Supabase
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) {
+        return {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, name }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        return { data: null, error: new Error(data.error || 'Registration failed') }
+          'Authorization': `Bearer ${session.access_token}`
+        }
       }
-
-      // Store user and token from registration
-      localStorage.setItem('user', JSON.stringify(data.user))
-      localStorage.setItem('token', data.token)
-      setUser(data.user)
-
-      return { data: { user: data.user }, error: null }
-    } catch (err) {
-      console.error('Signup error:', err)
-      return { data: null, error: new Error('Network error') }
-    } finally {
-      setLoading(false)
-    }
-  }, [signIn])
-
-  const signOut = useCallback(async () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('user')
-      localStorage.removeItem('token')
-    }
-    setUser(null)
-    return { error: null }
-  }, [])
-
-  const getAuthHeaders = useCallback(() => {
-    const headers: { [key: string]: string } = {
-      'Content-Type': 'application/json'
+    } catch (error) {
+      console.error('Error getting session:', error)
     }
     
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token')
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`
-      }
+    return {
+      'Content-Type': 'application/json',
     }
-    
-    return headers
-  }, [])
+  }
 
-  return { user, loading, signIn, signUp, signOut, getAuthHeaders }
+  return {
+    user: user ? {
+      id: user.id,
+      email: user.email || '',
+      name: user.user_metadata?.full_name || user.email || 'User'
+    } : null,
+    loading,
+    signIn,
+    signUp,
+    signOut,
+    getAuthHeaders,
+  }
 }

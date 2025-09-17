@@ -1,22 +1,37 @@
 # Deployment Guide for InvoiceFlow
 
-## 🚀 Deploy to Vercel
+## 🚀 Deploy to Vercel with Supabase
 
 ### Prerequisites
 - GitHub account
 - Vercel account
-- SQLite database (will be created automatically)
+- Supabase account (free)
 
-### Step 1: Prepare Your Repository
+### Step 1: Set Up Supabase
+
+1. **Go to [Supabase](https://supabase.com) and create a new project**
+2. **Wait for the project to be ready (2-3 minutes)**
+3. **Go to Settings → API to get your keys:**
+   - Project URL
+   - Anon (public) key
+   - Service role key
+
+### Step 2: Set Up Database Schema
+
+1. **Go to Supabase Dashboard → SQL Editor**
+2. **Copy and paste the contents of `supabase/schema.sql`**
+3. **Click "Run" to create all tables and policies**
+
+### Step 3: Prepare Your Repository
 
 1. **Push your code to GitHub:**
    ```bash
    git add .
-   git commit -m "Ready for deployment"
+   git commit -m "Ready for Supabase deployment"
    git push origin main
    ```
 
-### Step 2: Deploy to Vercel
+### Step 4: Deploy to Vercel
 
 1. **Go to [Vercel](https://vercel.com) and sign in**
 2. **Click "New Project"**
@@ -27,7 +42,7 @@
    - **Build Command:** `npm run build`
    - **Output Directory:** `.next` (default)
 
-### Step 3: Set Environment Variables
+### Step 5: Set Environment Variables
 
 In your Vercel project dashboard:
 
@@ -35,37 +50,20 @@ In your Vercel project dashboard:
 2. **Add these variables:**
 
    ```
-   JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-   DATABASE_URL=file:./invoice_flow.db
+   NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+   SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
    ```
 
    **Important:** 
-   - Replace `your-super-secret-jwt-key-change-this-in-production` with a strong, random secret
-   - The SQLite database will be created automatically on first run
+   - Get these values from your Supabase project settings
+   - The service role key is sensitive - keep it secure
 
-### Step 4: Deploy
+### Step 6: Deploy
 
 1. **Click "Deploy"**
 2. **Wait for the build to complete**
 3. **Your app will be live at:** `https://your-project-name.vercel.app`
-
-## 🔧 Alternative: Deploy with Docker
-
-If you prefer to use Docker:
-
-### Step 1: Build Docker Image
-```bash
-docker build -t invoice-flow .
-```
-
-### Step 2: Run with Docker Compose
-```bash
-docker-compose up -d
-```
-
-### Step 3: Access Your App
-- **Local:** http://localhost:3000
-- **Database:** PostgreSQL on port 5432
 
 ## 📱 Mobile Responsiveness
 

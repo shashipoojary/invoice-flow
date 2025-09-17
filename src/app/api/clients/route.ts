@@ -1,22 +1,28 @@
-// Required env vars: DATABASE_URL
 import { NextRequest, NextResponse } from 'next/server'
-import { query } from '@/lib/database'
+import { supabaseAdmin } from '@/lib/supabase'
+import { getAuthenticatedUser } from '@/lib/auth-middleware'
 
 export async function GET(request: NextRequest) {
   try {
-    // Get user from header
-    const userId = request.headers.get('X-User-ID')
-    if (!userId) {
+    // Get authenticated user
+    const user = await getAuthenticatedUser(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Fetch clients
-    const result = await query(
-      'SELECT * FROM clients WHERE user_id = $1 ORDER BY created_at DESC',
-      [userId]
-    )
+    // Fetch clients from Supabase
+    const { data, error } = await supabaseAdmin
+      .from('clients')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
 
-    return NextResponse.json({ clients: result.rows })
+    if (error) {
+      console.error('Error fetching clients:', error)
+      return NextResponse.json({ error: 'Failed to fetch clients' }, { status: 500 })
+    }
+
+    return NextResponse.json({ clients: data || [] })
 
   } catch (error) {
     console.error('Error fetching clients:', error)
@@ -26,9 +32,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Get user from header
-    const userId = request.headers.get('X-User-ID')
-    if (!userId) {
+    // Get authenticated user
+    const user = await getAuthenticatedUser(request)
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -39,13 +45,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
-    // Create client
-    const result = await query(
-      'INSERT INTO clients (user_id, name, email, company, phone, address) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [userId, name, email, company, phone, address]
-    )
+    // Create client in Supabase
+    const { data, error } = await supabaseAdmin
+      .from('clients')
+      .insert({
+        user_id: user.id,
+        name,
+        email,
+        company,
+        phone,
+        address
+      })
+      .select()
+      .single()
 
-    return NextResponse.json({ client: result.rows[0] })
+    if (error) {
+      console.error('Error creating client:', error)
+      return NextResponse.json({ error: 'Failed to create client' }, { status: 500 })
+    }
+
+    return NextResponse.json({ client: data })
 
   } catch (error) {
     console.error('Error creating client:', error)

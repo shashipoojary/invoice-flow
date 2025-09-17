@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
-import { Plus, Eye, Edit, CheckCircle, Clock, AlertCircle, FileText } from 'lucide-react'
+import { Plus, Eye, CheckCircle, Clock, AlertCircle, FileText } from 'lucide-react'
 
 interface Invoice {
   id: string

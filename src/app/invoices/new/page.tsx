@@ -3,14 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
-import { Save, Eye, FileText, Plus, X, Calendar, User, Building2, DollarSign } from 'lucide-react'
+import { Save, Eye, Plus, X } from 'lucide-react'
 
-interface InvoiceItem {
-  id: string
-  description: string
-  rate: number
-  amount: number
-}
+// InvoiceItem interface removed - using inline type
 
 interface Client {
   id: string
@@ -41,7 +36,7 @@ export default function CreateInvoicePage() {
   const [saving, setSaving] = useState(false)
   const [freelancerSettings, setFreelancerSettings] = useState<FreelancerSettings | null>(null)
   const [clients, setClients] = useState<Client[]>([])
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null)
+  // selectedClient removed - not used
   const [showPreview, setShowPreview] = useState(false)
 
   const [invoice, setInvoice] = useState({
@@ -113,7 +108,7 @@ export default function CreateInvoicePage() {
     }))
   }
 
-  const updateInvoiceItem = (itemId: string, field: string, value: any) => {
+  const updateInvoiceItem = (itemId: string, field: string, value: string | number) => {
     setInvoice(prev => ({
       ...prev,
       items: prev.items.map(item => {
@@ -130,7 +125,7 @@ export default function CreateInvoicePage() {
   }
 
   const handleClientSelect = (client: Client) => {
-    setSelectedClient(client)
+    // setSelectedClient removed - not used
     setInvoice(prev => ({
       ...prev,
       clientId: client.id,
@@ -170,17 +165,14 @@ export default function CreateInvoicePage() {
 
       alert('Invoice saved as draft!')
       router.push('/invoices')
-    } catch (error) {
+    } catch {
       alert('Error saving invoice')
     } finally {
       setSaving(false)
     }
   }
 
-  const handleGeneratePDF = () => {
-    // This will be implemented with react-pdf
-    alert('PDF generation will be implemented')
-  }
+  // handleGeneratePDF removed - not implemented yet
 
   if (authLoading) {
     return (

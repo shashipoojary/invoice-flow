@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { X, Plus, Minus, Send, User, Mail, Building } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { X, Plus, Minus, Send, User } from 'lucide-react'
 
 interface QuickInvoiceModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
-  user: { id: string; email: string; name?: string }
-  getAuthHeaders: () => { [key: string]: string }
+  // user parameter removed - not used
+  getAuthHeaders: () => Promise<{ [key: string]: string }>
 }
 
 interface Client {
@@ -29,7 +29,6 @@ export default function QuickInvoiceModal({
   isOpen, 
   onClose, 
   onSuccess, 
-  user, 
   getAuthHeaders 
 }: QuickInvoiceModalProps) {
   const [clients, setClients] = useState<Client[]>([])
@@ -45,8 +44,20 @@ export default function QuickInvoiceModal({
   const [dueDate, setDueDate] = useState('')
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
-  const [billingRequired, setBillingRequired] = useState(false)
-  const [checkoutUrl, setCheckoutUrl] = useState('')
+  // billingRequired and checkoutUrl removed - not implemented yet
+
+  const fetchClients = useCallback(async () => {
+    try {
+      const headers = await getAuthHeaders()
+      const response = await fetch('/api/clients', {
+        headers
+      })
+      const data = await response.json()
+      setClients(data.clients || [])
+    } catch (error) {
+      console.error('Error fetching clients:', error)
+    }
+  }, [getAuthHeaders])
 
   useEffect(() => {
     if (isOpen) {
@@ -56,19 +67,7 @@ export default function QuickInvoiceModal({
       defaultDueDate.setDate(defaultDueDate.getDate() + 30)
       setDueDate(defaultDueDate.toISOString().split('T')[0])
     }
-  }, [isOpen])
-
-  const fetchClients = async () => {
-    try {
-      const response = await fetch('/api/clients', {
-        headers: getAuthHeaders()
-      })
-      const data = await response.json()
-      setClients(data.clients || [])
-    } catch (error) {
-      console.error('Error fetching clients:', error)
-    }
-  }
+  }, [isOpen, fetchClients])
 
   const addItem = () => {
     setItems([...items, { 
@@ -85,7 +84,7 @@ export default function QuickInvoiceModal({
     }
   }
 
-  const updateItem = (id: string, field: keyof InvoiceItem, value: any) => {
+  const updateItem = (id: string, field: keyof InvoiceItem, value: string | number) => {
     setItems(items.map(item => 
       item.id === id ? { ...item, [field]: value } : item
     ))
@@ -103,7 +102,8 @@ export default function QuickInvoiceModal({
     setLoading(true)
 
     try {
-      const { subtotal, tax, total } = calculateTotals()
+      const { total } = calculateTotals()
+      // total is used in the invoice creation
 
       // Validate required fields
       if (!selectedClientId && !newClient.name) {
@@ -129,23 +129,18 @@ export default function QuickInvoiceModal({
         billing_choice: 'per_invoice'
       }
 
+      const headers = await getAuthHeaders()
       const response = await fetch('/api/invoices/create', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers,
         body: JSON.stringify(payload)
       })
 
-      const data = await response.json()
+      await response.json()
 
-      if (data.billing_required && data.checkout_url) {
-        setBillingRequired(true)
-        setCheckoutUrl(data.checkout_url)
-        // Redirect to Stripe checkout
-        window.location.href = data.checkout_url
-      } else {
-        onSuccess()
-        onClose()
-      }
+      // Billing logic removed - not implemented yet
+      onSuccess()
+      onClose()
 
     } catch (error) {
       console.error('Error creating invoice:', error)
@@ -160,36 +155,36 @@ export default function QuickInvoiceModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">Create Quick Invoice</h2>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <h2 className="text-2xl font-semibold text-gray-900">Create Invoice</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
           >
-            <X className="h-6 w-6" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 space-y-8">
           {/* Client Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-3">
               Client
             </label>
             {selectedClientId ? (
-              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-indigo-50 rounded-xl border border-indigo-100">
                 <div className="flex items-center">
-                  <User className="h-5 w-5 text-blue-600 mr-2" />
-                  <span className="text-blue-900">
+                  <User className="h-5 w-5 text-indigo-600 mr-3" />
+                  <span className="text-indigo-900 font-medium">
                     {clients.find(c => c.id === selectedClientId)?.name}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSelectedClientId('')}
-                  className="text-blue-600 hover:text-blue-800"
+                  className="text-indigo-600 hover:text-indigo-800 text-sm font-medium px-3 py-1 rounded-lg hover:bg-indigo-100 transition-colors"
                 >
                   Change
                 </button>
@@ -199,7 +194,7 @@ export default function QuickInvoiceModal({
                 <select
                   value={selectedClientId}
                   onChange={(e) => setSelectedClientId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white"
                 >
                   <option value="">Select existing client</option>
                   {clients.map(client => (
@@ -209,29 +204,36 @@ export default function QuickInvoiceModal({
                   ))}
                 </select>
                 
-                <div className="text-center text-gray-500">or</div>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white text-gray-500">or add new client</span>
+                  </div>
+                </div>
                 
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <input
                     type="text"
                     placeholder="Client Name"
                     value={newClient.name}
                     onChange={(e) => setNewClient({...newClient, name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                   />
                   <input
                     type="email"
                     placeholder="Email"
                     value={newClient.email}
                     onChange={(e) => setNewClient({...newClient, email: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                   />
                   <input
                     type="text"
                     placeholder="Company (optional)"
                     value={newClient.company}
                     onChange={(e) => setNewClient({...newClient, company: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors sm:col-span-2"
                   />
                 </div>
               </div>
@@ -240,14 +242,14 @@ export default function QuickInvoiceModal({
 
           {/* Items */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <label className="block text-sm font-medium text-gray-700">
+            <div className="flex items-center justify-between mb-4">
+              <label className="block text-sm font-medium text-gray-900">
                 Items
               </label>
               <button
                 type="button"
                 onClick={addItem}
-                className="flex items-center text-blue-600 hover:text-blue-800"
+                className="flex items-center text-indigo-600 hover:text-indigo-800 text-sm font-medium px-3 py-1 rounded-lg hover:bg-indigo-50 transition-colors"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Add Item
@@ -255,15 +257,15 @@ export default function QuickInvoiceModal({
             </div>
             
             <div className="space-y-3">
-              {items.map((item, index) => (
-                <div key={item.id} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
+              {items.map((item) => (
+                <div key={item.id} className="flex items-center space-x-3 p-4 border border-gray-200 rounded-xl bg-gray-50">
                   <div className="flex-1">
                     <input
                       type="text"
                       placeholder="Description"
                       value={item.description}
                       onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white"
                     />
                   </div>
                   <div className="w-20">
@@ -272,7 +274,7 @@ export default function QuickInvoiceModal({
                       placeholder="Qty"
                       value={item.qty}
                       onChange={(e) => updateItem(item.id, 'qty', parseInt(e.target.value) || 1)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white text-center"
                     />
                   </div>
                   <div className="w-24">
@@ -281,17 +283,17 @@ export default function QuickInvoiceModal({
                       placeholder="Rate"
                       value={item.rate}
                       onChange={(e) => updateItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white"
                     />
                   </div>
-                  <div className="w-20 text-right font-medium">
+                  <div className="w-20 text-right font-semibold text-gray-900">
                     ₹{(item.qty * item.rate).toLocaleString()}
                   </div>
                   {items.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeItem(item.id)}
-                      className="text-red-600 hover:text-red-800"
+                      className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition-colors"
                     >
                       <Minus className="h-4 w-4" />
                     </button>
@@ -303,68 +305,68 @@ export default function QuickInvoiceModal({
 
           {/* Due Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-3">
               Due Date
             </label>
             <input
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
             />
           </div>
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-3">
               Notes (optional)
             </label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none"
               placeholder="Additional notes for the client..."
             />
           </div>
 
           {/* Totals */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="space-y-2">
+          <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
+            <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-gray-600">Subtotal</span>
-                <span className="font-medium">₹{subtotal.toLocaleString()}</span>
+                <span className="font-semibold text-gray-900">₹{subtotal.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Tax (18%)</span>
-                <span className="font-medium">₹{tax.toLocaleString()}</span>
+                <span className="font-semibold text-gray-900">₹{tax.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-lg font-semibold border-t pt-2">
-                <span>Total</span>
-                <span>₹{total.toLocaleString()}</span>
+              <div className="flex justify-between text-xl font-bold border-t border-gray-300 pt-3">
+                <span className="text-gray-900">Total</span>
+                <span className="text-gray-900">₹{total.toLocaleString()}</span>
               </div>
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex space-x-3 pt-4">
+          <div className="flex space-x-4 pt-6">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex-1 px-6 py-3 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              className="flex-1 flex items-center justify-center px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors font-medium"
             >
               {loading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
               ) : (
                 <>
-                  <Send className="h-4 w-4 mr-2" />
+                  <Send className="h-5 w-5 mr-2" />
                   Create & Send
                 </>
               )}
