@@ -188,7 +188,11 @@ export default function QuickInvoiceModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-8">
           {/* Client Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-3">
+            <label className={`block text-sm font-medium mb-3 ${
+              isDarkMode 
+                ? 'text-white' 
+                : 'text-gray-900'
+            }`}>
               Client
             </label>
             {selectedClientId ? (

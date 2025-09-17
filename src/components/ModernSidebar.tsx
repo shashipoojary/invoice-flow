@@ -95,9 +95,20 @@ const ModernSidebar = ({
 
   const handleSignOut = async () => {
     try {
-      await signOut();
+      const result = await signOut();
+      if (result.error) {
+        console.error('Sign out error:', result.error.message);
+        // Still proceed with logout even if there's an error
+      }
+      // Clear any local state
+      localStorage.removeItem('theme');
+      localStorage.removeItem('sidebarCollapsed');
+      // Force page reload to ensure clean state
+      window.location.href = '/auth';
     } catch (error) {
       console.error('Error signing out:', error);
+      // Force logout even on error
+      window.location.href = '/auth';
     }
   };
 
