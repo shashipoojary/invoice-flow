@@ -128,11 +128,10 @@ export default function InvoicesPage() {
             </div>
             <button
               onClick={() => router.push('/invoices/new')}
-              className="flex items-center space-x-1 sm:space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+              className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
             >
               <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">New Invoice</span>
-              <span className="sm:hidden">New</span>
+              <span>New Invoice</span>
             </button>
           </div>
         </div>
