@@ -143,7 +143,7 @@ const ModernSidebar = ({
         ) : (
           <button
             onClick={handleToggleCollapse}
-            className="flex items-center justify-center w-full p-4 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <Image
               src={isDarkMode ? "/logowhite.png" : "/logoblack.png"}
@@ -199,10 +199,10 @@ const ModernSidebar = ({
                 setIsMobileOpen(false);
               }
             }}
-            className="w-full flex items-center justify-center p-4 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
+            className="w-full flex items-center justify-center p-5 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
             title="Create Invoice"
           >
-            <Plus className="w-6 h-6" />
+            <Plus className="w-5 h-5" />
           </button>
         </div>
       )}
@@ -224,7 +224,7 @@ const ModernSidebar = ({
                     setIsMobileOpen(false);
                   }
                 }}
-                className={`w-full flex items-center ${isCollapsed ? 'justify-center p-4' : 'space-x-3 px-3 py-3'} rounded-lg transition-colors group ${
+                className={`w-full flex items-center ${isCollapsed ? 'justify-center p-3' : 'space-x-3 px-3 py-3'} rounded-lg transition-colors group ${
                   isActive
                     ? isDarkMode
                       ? 'bg-gray-800 text-white'
@@ -235,8 +235,8 @@ const ModernSidebar = ({
                 }`}
                 title={isCollapsed ? item.label : undefined}
               >
-                <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                  <Icon className="w-6 h-6" />
+                <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                  <Icon className="w-5 h-5" />
                 </div>
                 
                 {!isCollapsed && (
@@ -329,26 +329,26 @@ const ModernSidebar = ({
           <div className="space-y-3">
             <button
               onClick={onToggleDarkMode}
-              className={`w-full flex items-center justify-center p-4 rounded-lg transition-colors border ${
+              className={`w-full flex items-center justify-center p-3 rounded-lg transition-colors border ${
                 isDarkMode 
                   ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border-gray-700' 
                   : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-200'
               }`}
               title="Toggle Theme"
             >
-              <Settings className="w-6 h-6" />
+              <Settings className="w-5 h-5" />
             </button>
             
             <button
               onClick={handleSignOut}
-              className={`w-full flex items-center justify-center p-4 rounded-lg transition-colors border ${
+              className={`w-full flex items-center justify-center p-3 rounded-lg transition-colors border ${
                 isDarkMode 
                   ? 'text-red-400 bg-red-900/20 hover:bg-red-900/30 border-red-800' 
                   : 'text-red-600 bg-white hover:bg-red-50 border-red-200'
               }`}
               title="Logout"
             >
-              <LogOut className="w-6 h-6" />
+              <LogOut className="w-5 h-5" />
             </button>
           </div>
         )}
