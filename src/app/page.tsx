@@ -1600,6 +1600,7 @@ InvoiceFlow Team`;
             fetchClients();
           }}
           getAuthHeaders={getAuthHeaders}
+          isDarkMode={isDarkMode}
         />
       )}
           </div>

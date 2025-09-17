@@ -9,6 +9,7 @@ interface QuickInvoiceModalProps {
   onSuccess: () => void
   // user parameter removed - not used
   getAuthHeaders: () => Promise<{ [key: string]: string }>
+  isDarkMode?: boolean
 }
 
 interface Client {
@@ -29,7 +30,8 @@ export default function QuickInvoiceModal({
   isOpen, 
   onClose, 
   onSuccess, 
-  getAuthHeaders 
+  getAuthHeaders,
+  isDarkMode = false
 }: QuickInvoiceModalProps) {
   const [clients, setClients] = useState<Client[]>([])
   const [selectedClientId, setSelectedClientId] = useState('')
@@ -156,12 +158,28 @@ export default function QuickInvoiceModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <h2 className="text-2xl font-semibold text-gray-900">Create Invoice</h2>
+      <div className={`rounded-2xl shadow-2xl border max-w-2xl w-full max-h-[90vh] overflow-y-auto ${
+        isDarkMode 
+          ? 'bg-gray-800 border-gray-700' 
+          : 'bg-white border-gray-200'
+      }`}>
+        <div className={`flex items-center justify-between p-6 border-b ${
+          isDarkMode 
+            ? 'border-gray-700' 
+            : 'border-gray-100'
+        }`}>
+          <h2 className={`text-2xl font-semibold ${
+            isDarkMode 
+              ? 'text-white' 
+              : 'text-gray-900'
+          }`}>Create Invoice</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+            className={`transition-colors p-1 rounded-lg ${
+              isDarkMode 
+                ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
+                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+            }`}
           >
             <X className="h-5 w-5" />
           </button>

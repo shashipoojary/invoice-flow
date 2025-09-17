@@ -43,12 +43,23 @@ const ModernSidebar = ({
         setIsMobileOpen(false); // Close mobile menu on resize
       } else {
         setIsMobileOpen(false); // Always close mobile menu on desktop
+        // Restore saved collapse state on desktop
+        const savedCollapsed = localStorage.getItem('sidebarCollapsed');
+        if (savedCollapsed !== null) {
+          setIsCollapsed(JSON.parse(savedCollapsed));
+        }
       }
     };
     
     // Set initial state
     if (window.innerWidth < 1024) {
       setIsCollapsed(true);
+    } else {
+      // Load saved collapse state on desktop
+      const savedCollapsed = localStorage.getItem('sidebarCollapsed');
+      if (savedCollapsed !== null) {
+        setIsCollapsed(JSON.parse(savedCollapsed));
+      }
     }
     
     window.addEventListener('resize', handleResize);
@@ -90,6 +101,15 @@ const ModernSidebar = ({
     }
   };
 
+  const handleToggleCollapse = () => {
+    const newCollapsed = !isCollapsed;
+    setIsCollapsed(newCollapsed);
+    // Save to localStorage only on desktop
+    if (window.innerWidth >= 1024) {
+      localStorage.setItem('sidebarCollapsed', JSON.stringify(newCollapsed));
+    }
+  };
+
   const sidebarContent = (
     <div className={`h-full flex flex-col transition-all duration-300 ${
       isDarkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-200'
@@ -111,7 +131,7 @@ const ModernSidebar = ({
           </div>
         ) : (
           <button
-            onClick={() => setIsCollapsed(false)}
+            onClick={handleToggleCollapse}
             className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <Image
@@ -127,7 +147,7 @@ const ModernSidebar = ({
         {/* Collapse Toggle - Desktop Only */}
         {!isCollapsed && (
           <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
+            onClick={handleToggleCollapse}
             className={`hidden lg:flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
               isDarkMode 
                 ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-300' 
@@ -337,9 +357,17 @@ const ModernSidebar = ({
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-3 rounded-xl bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        className={`lg:hidden fixed top-4 left-4 z-50 p-3 rounded-xl shadow-lg border transition-colors ${
+          isDarkMode 
+            ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' 
+            : 'bg-white border-gray-200 hover:bg-gray-50'
+        }`}
       >
-        <Menu className="w-5 h-5" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}} />
+        <Menu className={`w-5 h-5 ${
+          isDarkMode 
+            ? 'text-gray-300' 
+            : 'text-gray-700'
+        }`} />
       </button>
 
       {/* Sidebar */}
@@ -353,9 +381,17 @@ const ModernSidebar = ({
       {isMobileOpen && (
         <button
           onClick={() => setIsMobileOpen(false)}
-          className="lg:hidden fixed top-4 right-4 z-50 p-3 rounded-xl bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          className={`lg:hidden fixed top-4 right-4 z-50 p-3 rounded-xl shadow-lg border transition-colors ${
+            isDarkMode 
+              ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' 
+              : 'bg-white border-gray-200 hover:bg-gray-50'
+          }`}
         >
-          <X className="w-5 h-5" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}} />
+          <X className={`w-5 h-5 ${
+            isDarkMode 
+              ? 'text-gray-300' 
+              : 'text-gray-700'
+          }`} />
         </button>
       )}
     </>
