@@ -102,8 +102,8 @@ export default function QuickInvoiceModal({
     setLoading(true)
 
     try {
-      const { total } = calculateTotals()
-      // total is used in the invoice creation
+      calculateTotals()
+      // Calculate totals for validation
 
       // Validate required fields
       if (!selectedClientId && !newClient.name) {

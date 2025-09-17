@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, memo } from 'react';
-import { useRouter } from 'next/navigation';
 import { 
   Plus, FileText, DollarSign, Users, Download, Send, Zap, TrendingUp, 
   Clock, CheckCircle, AlertCircle, X, Building2, Eye, 
