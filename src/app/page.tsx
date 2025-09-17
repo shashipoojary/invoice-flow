@@ -77,6 +77,7 @@ export default function InvoiceDashboard() {
   const [isUpdatingClient, setIsUpdatingClient] = useState(false);
   const [isSendingInvoice, setIsSendingInvoice] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [hasLoadedData, setHasLoadedData] = useState(false);
 
   // Form states
   const [newInvoice, setNewInvoice] = useState({
@@ -115,8 +116,8 @@ export default function InvoiceDashboard() {
     }
   }, []);
 
-  // Simple data fetching functions without useCallback
-  const fetchDashboardStats = async () => {
+  // Data fetching functions with useCallback to prevent infinite loops
+  const fetchDashboardStats = useCallback(async () => {
     try {
       const headers = await getAuthHeaders();
       const response = await fetch('/api/dashboard/stats', {
@@ -128,9 +129,9 @@ export default function InvoiceDashboard() {
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
     }
-  };
+  }, [getAuthHeaders]);
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = useCallback(async () => {
     try {
       const headers = await getAuthHeaders();
       const response = await fetch('/api/invoices', {
@@ -142,9 +143,9 @@ export default function InvoiceDashboard() {
     } catch (error) {
       console.error('Error fetching invoices:', error);
     }
-  };
+  }, [getAuthHeaders]);
 
-  const fetchClients = async () => {
+  const fetchClients = useCallback(async () => {
     try {
       const headers = await getAuthHeaders();
       const response = await fetch('/api/clients', {
@@ -156,7 +157,7 @@ export default function InvoiceDashboard() {
     } catch (error) {
       console.error('Error fetching clients:', error);
     }
-  };
+  }, [getAuthHeaders]);
 
   // Data persistence functions
   const saveDataToLocalStorage = useCallback(() => {
@@ -207,20 +208,21 @@ export default function InvoiceDashboard() {
 
   // Load data from localStorage first, then fetch from server if needed
   useEffect(() => {
-    if (user && !authLoading) {
+    if (user && !authLoading && !hasLoadedData) {
+      setHasLoadedData(true);
       const hasLocalData = loadDataFromLocalStorage();
       if (!hasLocalData) {
         fetchAllData();
       }
     }
-  }, [user, authLoading, loadDataFromLocalStorage, fetchAllData]); // Include all dependencies
+  }, [user, authLoading, hasLoadedData, loadDataFromLocalStorage, fetchAllData]); // Include all dependencies
 
-  // Save data to localStorage whenever it changes
+  // Save data to localStorage whenever it changes (but only after initial load)
   useEffect(() => {
-    if (user && !authLoading && (clients.length > 0 || invoices.length > 0)) {
+    if (user && !authLoading && hasLoadedData && (clients.length > 0 || invoices.length > 0)) {
       saveDataToLocalStorage();
     }
-  }, [clients, invoices, dashboardStats, user, authLoading, saveDataToLocalStorage]);
+  }, [clients, invoices, dashboardStats, user, authLoading, hasLoadedData, saveDataToLocalStorage]);
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
