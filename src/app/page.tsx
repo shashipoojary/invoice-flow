@@ -1577,19 +1577,17 @@ InvoiceFlow Team`;
       />
 
       {/* Fast Invoice Modal */}
-      {user && (
-        <FastInvoiceModal
-          isOpen={showFastInvoice}
-          onClose={() => setShowFastInvoice(false)}
-          onSuccess={() => {
-            fetchDashboardStats();
-            fetchInvoices();
-            fetchClients();
-          }}
-          user={user}
-          getAuthHeaders={getAuthHeaders}
-        />
-      )}
+      <FastInvoiceModal
+        isOpen={showFastInvoice}
+        onClose={() => setShowFastInvoice(false)}
+        onSuccess={() => {
+          fetchDashboardStats();
+          fetchInvoices();
+          fetchClients();
+        }}
+        user={user || { id: 'guest', email: 'guest@example.com', name: 'Guest' }}
+        getAuthHeaders={getAuthHeaders}
+      />
 
       {/* Quick Invoice Modal */}
       {user && (

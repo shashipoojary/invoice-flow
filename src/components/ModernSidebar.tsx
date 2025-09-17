@@ -232,15 +232,35 @@ const ModernSidebar = ({
         {!isCollapsed ? (
           <div className="space-y-4">
             {/* User Info */}
-            <div className="flex items-center space-x-3 p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-              <div className="w-10 h-10 bg-indigo-600 dark:bg-white rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-white dark:text-indigo-600" />
+            <div className={`flex items-center space-x-3 p-3 rounded-lg border ${
+              isDarkMode 
+                ? 'bg-gray-800 border-gray-700' 
+                : 'bg-white border-gray-200'
+            }`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                isDarkMode 
+                  ? 'bg-white' 
+                  : 'bg-indigo-600'
+              }`}>
+                <User className={`w-5 h-5 ${
+                  isDarkMode 
+                    ? 'text-indigo-600' 
+                    : 'text-white'
+                }`} />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm text-gray-900 dark:text-white truncate">
+                <div className={`font-medium text-sm truncate ${
+                  isDarkMode 
+                    ? 'text-white' 
+                    : 'text-gray-900'
+                }`}>
                   {user?.name || 'User'}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                <div className={`text-xs truncate ${
+                  isDarkMode 
+                    ? 'text-gray-400' 
+                    : 'text-gray-500'
+                }`}>
                   {user?.email?.split('@')[0]}@...
                 </div>
               </div>
@@ -250,7 +270,11 @@ const ModernSidebar = ({
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={onToggleDarkMode}
-                className="flex items-center justify-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
+                className={`flex items-center justify-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                  isDarkMode 
+                    ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border-gray-700' 
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-200'
+                }`}
               >
                 <Settings className="w-4 h-4" />
                 <span>Theme</span>
@@ -258,7 +282,11 @@ const ModernSidebar = ({
               
               <button
                 onClick={handleSignOut}
-                className="flex items-center justify-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-red-600 bg-white dark:bg-red-900/20 hover:bg-red-50 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800"
+                className={`flex items-center justify-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                  isDarkMode 
+                    ? 'text-red-400 bg-red-900/20 hover:bg-red-900/30 border-red-800' 
+                    : 'text-red-600 bg-white hover:bg-red-50 border-red-200'
+                }`}
               >
                 <LogOut className="w-4 h-4" />
                 <span>Logout</span>
@@ -269,7 +297,11 @@ const ModernSidebar = ({
           <div className="space-y-2">
             <button
               onClick={onToggleDarkMode}
-              className="w-full flex items-center justify-center p-2 rounded-lg transition-colors bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
+              className={`w-full flex items-center justify-center p-2 rounded-lg transition-colors border ${
+                isDarkMode 
+                  ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border-gray-700' 
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-200'
+              }`}
               title="Toggle Theme"
             >
               <Settings className="w-4 h-4" />
@@ -277,7 +309,11 @@ const ModernSidebar = ({
             
             <button
               onClick={handleSignOut}
-              className="w-full flex items-center justify-center p-2 rounded-lg text-red-600 bg-white dark:bg-red-900/20 hover:bg-red-50 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800 transition-colors"
+              className={`w-full flex items-center justify-center p-2 rounded-lg transition-colors border ${
+                isDarkMode 
+                  ? 'text-red-400 bg-red-900/20 hover:bg-red-900/30 border-red-800' 
+                  : 'text-red-600 bg-white hover:bg-red-50 border-red-200'
+              }`}
               title="Logout"
             >
               <LogOut className="w-4 h-4" />
