@@ -150,19 +150,26 @@ export default function InvoiceDashboard() {
     }
   }, [getAuthHeaders]);
 
-  // Fetch dashboard data when user is authenticated
-  useEffect(() => {
-    if (user && !authLoading && !dataLoading) {
-      setDataLoading(true);
-      
-      // Fetch all data in parallel
-      Promise.all([
+  // Single refresh function to prevent multiple API calls
+  const refreshData = useCallback(async () => {
+    if (dataLoading) return; // Prevent multiple simultaneous calls
+    
+    setDataLoading(true);
+    try {
+      await Promise.all([
         fetchDashboardStats(),
         fetchInvoices(),
         fetchClients()
-      ]).finally(() => {
-        setDataLoading(false);
-      });
+      ]);
+    } finally {
+      setDataLoading(false);
+    }
+  }, [dataLoading, fetchDashboardStats, fetchInvoices, fetchClients]);
+
+  // Fetch dashboard data when user is authenticated
+  useEffect(() => {
+    if (user && !authLoading) {
+      refreshData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading]); // Intentionally excluding function dependencies to prevent infinite loops
@@ -346,9 +353,7 @@ export default function InvoiceDashboard() {
     
     if (!result.error) {
       // Refresh data after login
-      fetchDashboardStats();
-      fetchInvoices();
-      fetchClients();
+      refreshData();
     }
   };
 
@@ -1480,11 +1485,7 @@ InvoiceFlow Team`;
       <FastInvoiceModal
         isOpen={showFastInvoice}
         onClose={() => setShowFastInvoice(false)}
-        onSuccess={() => {
-          fetchDashboardStats();
-          fetchInvoices();
-          fetchClients();
-        }}
+        onSuccess={refreshData}
         user={user || { id: 'guest', email: 'guest@invoiceflow.com', name: 'Guest' }}
         getAuthHeaders={getAuthHeaders}
         isDarkMode={isDarkMode}
@@ -1495,11 +1496,7 @@ InvoiceFlow Team`;
         <QuickInvoiceModal
           isOpen={showCreateInvoice}
           onClose={() => setShowCreateInvoice(false)}
-          onSuccess={() => {
-            fetchDashboardStats();
-            fetchInvoices();
-            fetchClients();
-          }}
+        onSuccess={refreshData}
           getAuthHeaders={getAuthHeaders}
           isDarkMode={isDarkMode}
         />

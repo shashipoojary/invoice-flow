@@ -53,9 +53,13 @@ export default function QuickInvoiceModal({
   const [dueDate, setDueDate] = useState('')
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
+  const [clientsLoading, setClientsLoading] = useState(false)
   // billingRequired and checkoutUrl removed - not implemented yet
 
   const fetchClients = useCallback(async () => {
+    if (clientsLoading) return; // Prevent multiple simultaneous calls
+    
+    setClientsLoading(true)
     try {
       const headers = await getAuthHeaders()
       const response = await fetch('/api/clients', {
@@ -65,18 +69,20 @@ export default function QuickInvoiceModal({
       setClients(data.clients || [])
     } catch (error) {
       console.error('Error fetching clients:', error)
+    } finally {
+      setClientsLoading(false)
     }
-  }, [getAuthHeaders])
+  }, [getAuthHeaders, clientsLoading])
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && clients.length === 0) {
       fetchClients()
       // Set default due date to 30 days from now
       const defaultDueDate = new Date()
       defaultDueDate.setDate(defaultDueDate.getDate() + 30)
       setDueDate(defaultDueDate.toISOString().split('T')[0])
     }
-  }, [isOpen, fetchClients])
+  }, [isOpen, fetchClients, clients.length])
 
   const addItem = () => {
     setItems([...items, { 
