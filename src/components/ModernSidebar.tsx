@@ -35,15 +35,22 @@ const ModernSidebar = ({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { user, signOut } = useAuth();
 
-  // Auto-collapse on mobile
+  // Auto-collapse on mobile and handle resize
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 1024) {
         setIsCollapsed(true);
+        setIsMobileOpen(false); // Close mobile menu on resize
+      } else {
+        setIsMobileOpen(false); // Always close mobile menu on desktop
       }
     };
     
-    handleResize();
+    // Set initial state
+    if (window.innerWidth < 1024) {
+      setIsCollapsed(true);
+    }
+    
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -136,7 +143,13 @@ const ModernSidebar = ({
       {!isCollapsed && (
         <div className="px-6 py-4">
           <button
-            onClick={onCreateInvoice}
+            onClick={() => {
+              onCreateInvoice();
+              // Close mobile menu when creating invoice
+              if (window.innerWidth < 1024) {
+                setIsMobileOpen(false);
+              }
+            }}
             className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors font-medium"
           >
             <Plus className="w-4 h-4" />
@@ -148,7 +161,13 @@ const ModernSidebar = ({
       {isCollapsed && (
         <div className="px-4 py-4">
           <button
-            onClick={onCreateInvoice}
+            onClick={() => {
+              onCreateInvoice();
+              // Close mobile menu when creating invoice
+              if (window.innerWidth < 1024) {
+                setIsMobileOpen(false);
+              }
+            }}
             className="w-full flex items-center justify-center p-3 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
           >
             <Plus className="w-4 h-4" />
@@ -166,7 +185,13 @@ const ModernSidebar = ({
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id as 'dashboard' | 'invoices' | 'clients' | 'settings')}
+                onClick={() => {
+                  setActiveTab(item.id as 'dashboard' | 'invoices' | 'clients' | 'settings');
+                  // Close mobile menu when navigating
+                  if (window.innerWidth < 1024) {
+                    setIsMobileOpen(false);
+                  }
+                }}
                 className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2 py-3' : 'space-x-3 px-3 py-3'} rounded-lg transition-colors group ${
                   isActive
                     ? isDarkMode
@@ -276,7 +301,7 @@ const ModernSidebar = ({
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700"
+        className="lg:hidden fixed top-4 left-4 z-50 p-3 rounded-xl bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
       >
         <Menu className="w-5 h-5" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}} />
       </button>
@@ -292,7 +317,7 @@ const ModernSidebar = ({
       {isMobileOpen && (
         <button
           onClick={() => setIsMobileOpen(false)}
-          className="lg:hidden fixed top-4 right-4 z-50 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700"
+          className="lg:hidden fixed top-4 right-4 z-50 p-3 rounded-xl bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         >
           <X className="w-5 h-5" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}} />
         </button>

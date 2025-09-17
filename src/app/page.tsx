@@ -716,8 +716,8 @@ InvoiceFlow Team`;
         />
 
         {/* Main Content */}
-        <main className="flex-1 lg:ml-0 overflow-y-auto">
-          <div className="p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 lg:ml-0 overflow-y-auto scroll-smooth">
+          <div className="pt-16 lg:pt-4 p-4 sm:p-6 lg:p-8">
             {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
           <div className="space-y-8">
