@@ -349,36 +349,36 @@ export default function InvoiceDashboard() {
         <div className={`border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}></div>
         
         {/* Action Buttons Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+        <div className="flex flex-wrap gap-2">
           <button 
             onClick={() => handleViewInvoice(invoice)}
-            className="flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2.5 text-xs sm:text-sm bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-all duration-200 font-medium"
+            className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}
           >
-            <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">View</span>
+            <Eye className="h-3 w-3" />
+            <span>View</span>
           </button>
           <button 
             onClick={() => handleDownloadPDF(invoice)}
-            className="flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2.5 text-xs sm:text-sm bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-all duration-200 font-medium"
+            className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}
           >
-            <Download className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">PDF</span>
+            <Download className="h-3 w-3" />
+            <span>PDF</span>
           </button>
           {invoice.status !== 'paid' && (
             <button 
               onClick={() => handleSendInvoice(invoice)}
-              className="flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2.5 text-xs sm:text-sm bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-500/30 transition-all duration-200 font-medium"
+              className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}`}
             >
-              <Send className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">Send</span>
+              <Send className="h-3 w-3" />
+              <span>Send</span>
             </button>
           )}
           <button 
             onClick={() => handleEditInvoice(invoice)}
-            className="flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2.5 text-xs sm:text-sm bg-gray-100 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500/30 transition-all duration-200 font-medium"
+            className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
           >
-            <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Edit</span>
+            <Edit className="h-3 w-3" />
+            <span>Edit</span>
           </button>
         </div>
       </div>
