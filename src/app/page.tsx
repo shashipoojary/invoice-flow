@@ -49,8 +49,7 @@ interface Invoice {
 
 export default function InvoiceDashboard() {
   // Authentication
-  const { user, loading: authLoading, signIn, signUp, signOut, getAuthHeaders } = useAuth();
-  const router = useRouter();
+  const { user, loading: authLoading, signIn, signUp, getAuthHeaders } = useAuth();
   const [showLogin, setShowLogin] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   
@@ -401,25 +400,6 @@ export default function InvoiceDashboard() {
       fetchClients();
     }
   };
-
-  const handleLogout = async () => {
-    try {
-      await signOut()
-      setShowProfileDropdown(false)
-      router.push('/auth')
-    } catch (error) {
-      console.error('Logout error:', error)
-    }
-  }
-
-  const markInvoiceAsPaid = (invoiceId: string) => {
-    setInvoices(prev => prev.map(invoice => 
-      invoice.id === invoiceId 
-        ? { ...invoice, status: 'paid' as const }
-        : invoice
-    ))
-  };
-
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -948,7 +928,7 @@ InvoiceFlow Team`;
                   <span>Sign In</span>
                 </button>
               )}
-            </div>
+        </div>
             
             {/* Invoice List */}
             <div className="space-y-4">
