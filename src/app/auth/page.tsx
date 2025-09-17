@@ -287,7 +287,7 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-4 px-4 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 font-medium ${
+              className={`w-full py-3 px-6 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm font-medium ${
                 isDarkMode 
                   ? 'bg-white text-black hover:bg-gray-200' 
                   : 'bg-black text-white hover:bg-gray-800'

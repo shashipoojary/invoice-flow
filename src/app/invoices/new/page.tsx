@@ -215,7 +215,7 @@ export default function CreateInvoicePage() {
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => setShowPreview(!showPreview)}
-                className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="flex items-center space-x-2 px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
               >
                 <Eye className="h-4 w-4" />
                 <span>Preview</span>
@@ -223,7 +223,7 @@ export default function CreateInvoicePage() {
               <button
                 onClick={handleSaveDraft}
                 disabled={saving}
-                className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium disabled:opacity-50"
               >
                 <Save className="h-4 w-4" />
                 <span>{saving ? 'Saving...' : 'Save Draft'}</span>
@@ -380,7 +380,7 @@ export default function CreateInvoicePage() {
                 </h2>
                 <button
                   onClick={addInvoiceItem}
-                  className="flex items-center space-x-2 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                 >
                   <Plus className="h-4 w-4" />
                   <span>Add Service</span>

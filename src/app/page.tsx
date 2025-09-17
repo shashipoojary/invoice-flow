@@ -962,10 +962,11 @@ InvoiceFlow Team`;
               </h2>
               <button
                 onClick={() => setShowCreateClient(true)}
-                className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                className="flex items-center space-x-1 sm:space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
               >
                 <Plus className="h-4 w-4" />
-                <span>Add Client</span>
+                <span className="hidden sm:inline">Add Client</span>
+                <span className="sm:hidden">Add</span>
               </button>
             </div>
             
@@ -1010,7 +1011,7 @@ InvoiceFlow Team`;
                       </div>
                       <button 
                         onClick={() => handleContactClient(client)}
-                        className="flex items-center justify-center space-x-1 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors px-3 py-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-500/10 min-h-[44px] sm:min-h-auto"
+                        className="flex items-center justify-center space-x-1 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors px-3 py-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-500/10 min-h-[44px] sm:min-h-auto"
                       >
                         <Mail className="h-4 w-4" />
                         <span>Contact</span>

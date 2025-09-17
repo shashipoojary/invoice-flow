@@ -181,7 +181,7 @@ const ModernSidebar = ({
                 setIsMobileOpen(false);
               }
             }}
-            className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors font-medium"
+            className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors text-sm font-medium"
           >
             <Plus className="w-4 h-4" />
             <span>Create Invoice</span>
@@ -306,7 +306,7 @@ const ModernSidebar = ({
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={onToggleDarkMode}
-                className={`flex items-center justify-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-lg text-sm font-medium transition-colors border ${
                   isDarkMode 
                     ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border-gray-700' 
                     : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-200'
@@ -318,7 +318,7 @@ const ModernSidebar = ({
               
               <button
                 onClick={handleSignOut}
-                className={`flex items-center justify-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-lg text-sm font-medium transition-colors border ${
                   isDarkMode 
                     ? 'text-red-400 bg-red-900/20 hover:bg-red-900/30 border-red-800' 
                     : 'text-red-600 bg-white hover:bg-red-50 border-red-200'
