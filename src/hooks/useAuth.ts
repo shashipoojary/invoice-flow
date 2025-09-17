@@ -1,74 +1,123 @@
-import { useState, useEffect } from 'react'
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
 
 interface User {
   id: string
   email: string
-  name?: string
+  name: string
 }
 
-export function useAuth() {
+interface AuthContextType {
+  user: User | null
+  loading: boolean
+  signIn: (email: string, password: string) => Promise<{ data: { user: User } | null; error: Error | null }>
+  signUp: (email: string, password: string, name: string) => Promise<{ data: { user: User } | null; error: Error | null }>
+  signOut: () => Promise<{ error: Error | null }>
+  getAuthHeaders: () => { [key: string]: string }
+}
+
+export function useAuth(): AuthContextType {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check if user is logged in (simple localStorage check for demo)
-    const savedUser = localStorage.getItem('user')
-    if (savedUser) {
-      setUser(JSON.parse(savedUser))
+    if (typeof window !== 'undefined') {
+      const storedUser = localStorage.getItem('user')
+      const storedToken = localStorage.getItem('token')
+      
+      if (storedUser && storedToken) {
+        setUser(JSON.parse(storedUser))
+      }
     }
     setLoading(false)
   }, [])
 
-  const signIn = async (email: string, password: string) => {
-    // Simple demo authentication - in production, this would call your API
-    if (email && password) {
-      const user = {
-        id: '1',
-        email: email,
-        name: email.split('@')[0]
-      }
-      setUser(user)
-      localStorage.setItem('user', JSON.stringify(user))
-      return { data: { user }, error: null }
-    }
-    return { data: null, error: new Error('Invalid credentials') }
-  }
+  const signIn = useCallback(async (email: string, password: string) => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
 
-  const signUp = async (email: string, password: string) => {
-    // Simple demo registration
-    if (email && password) {
-      const user = {
-        id: '1',
-        email: email,
-        name: email.split('@')[0]
-      }
-      setUser(user)
-      localStorage.setItem('user', JSON.stringify(user))
-      return { data: { user }, error: null }
-    }
-    return { data: null, error: new Error('Registration failed') }
-  }
+      const data = await response.json()
 
-  const signOut = async () => {
+      if (!response.ok) {
+        return { data: null, error: new Error(data.error || 'Login failed') }
+      }
+
+      // Store user and token
+      localStorage.setItem('user', JSON.stringify(data.user))
+      localStorage.setItem('token', data.token)
+      setUser(data.user)
+
+      return { data: { user: data.user }, error: null }
+    } catch (err) {
+      console.error('Login error:', err)
+      return { data: null, error: new Error('Network error') }
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  const signUp = useCallback(async (email: string, password: string, name: string) => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, name }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        return { data: null, error: new Error(data.error || 'Registration failed') }
+      }
+
+      // Store user and token from registration
+      localStorage.setItem('user', JSON.stringify(data.user))
+      localStorage.setItem('token', data.token)
+      setUser(data.user)
+
+      return { data: { user: data.user }, error: null }
+    } catch (err) {
+      console.error('Signup error:', err)
+      return { data: null, error: new Error('Network error') }
+    } finally {
+      setLoading(false)
+    }
+  }, [signIn])
+
+  const signOut = useCallback(async () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user')
+      localStorage.removeItem('token')
+    }
     setUser(null)
-    localStorage.removeItem('user')
     return { error: null }
-  }
+  }, [])
 
-  const getAuthHeaders = () => {
-    if (!user) return {}
-    return {
-      'Content-Type': 'application/json',
-      'X-User-ID': user.id
+  const getAuthHeaders = useCallback(() => {
+    const headers: { [key: string]: string } = {
+      'Content-Type': 'application/json'
     }
-  }
+    
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token')
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+    }
+    
+    return headers
+  }, [])
 
-  return {
-    user,
-    loading,
-    signIn,
-    signUp,
-    signOut,
-    getAuthHeaders
-  }
+  return { user, loading, signIn, signUp, signOut, getAuthHeaders }
 }

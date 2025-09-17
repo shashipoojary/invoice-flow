@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Plus, FileText, DollarSign, Users, Calendar, Download, Send, Zap, TrendingUp, Clock, CheckCircle, AlertCircle, X, Sun, Moon, CreditCard, Building2, Mail, Eye, Edit, Trash2 } from 'lucide-react';
+import { Plus, FileText, DollarSign, Users, Calendar, Download, Send, Zap, TrendingUp, Clock, CheckCircle, AlertCircle, X, Sun, Moon, CreditCard, Building2, Mail, Eye, Edit, Trash2, User, LogOut, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import QuickInvoiceModal from '@/components/QuickInvoiceModal';
 import FastInvoiceModal from '@/components/FastInvoiceModal';
@@ -45,9 +45,10 @@ interface Invoice {
 
 export default function InvoiceDashboard() {
   // Authentication
-  const { user, loading: authLoading, signIn, signUp, getAuthHeaders } = useAuth();
+  const { user, loading: authLoading, signIn, signUp, signOut, getAuthHeaders } = useAuth();
   const router = useRouter();
   const [showLogin, setShowLogin] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   
   // State
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -163,6 +164,23 @@ export default function InvoiceDashboard() {
     }
   }, [user, authLoading]);
 
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showProfileDropdown) {
+        const target = event.target as Element;
+        if (!target.closest('.profile-dropdown')) {
+          setShowProfileDropdown(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showProfileDropdown]);
+
   const fetchDashboardStats = async () => {
     try {
       const response = await fetch('/api/dashboard/stats', {
@@ -199,13 +217,31 @@ export default function InvoiceDashboard() {
     }
   };
 
-  const handleLogin = async (email: string, password: string) => {
-    const { error } = await signIn(email, password);
-    if (!error) {
+  const handleLogin = async (email: string, password: string, name?: string) => {
+    let result
+    if (name) {
+      // Sign up
+      result = await signUp(email, password, name)
+    } else {
+      // Sign in
+      result = await signIn(email, password)
+    }
+    
+    if (!result.error) {
       // Refresh data after login
       fetchDashboardStats();
       fetchInvoices();
       fetchClients();
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      setShowProfileDropdown(false)
+      router.push('/auth')
+    } catch (error) {
+      console.error('Logout error:', error)
     }
   };
 
@@ -550,6 +586,57 @@ InvoiceFlow Team`;
                 <Plus className="h-5 w-5 sm:mr-2" />
                 <span className="hidden sm:inline">Create Invoice</span>
               </button>
+
+              {/* Profile Dropdown */}
+              {user && (
+                <div className="relative profile-dropdown">
+                  <button
+                    onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                    className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                      <User className="h-4 w-4 text-white" />
+                    </div>
+                    <span className="hidden sm:inline text-sm font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                      {user.name}
+                    </span>
+                    <ChevronDown className="h-4 w-4" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}} />
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {showProfileDropdown && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50">
+                      <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700">
+                        <p className="text-sm font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                          {user.name}
+                        </p>
+                        <p className="text-xs" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                          {user.email}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setShowProfileDropdown(false)
+                          router.push('/settings')
+                        }}
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}
+                      >
+                        <User className="h-4 w-4 inline mr-2" />
+                        Profile Settings
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}
+                      >
+                        <LogOut className="h-4 w-4 inline mr-2" />
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -559,10 +646,10 @@ InvoiceFlow Team`;
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {/* Tab Navigation */}
         <div className="mb-8">
-          <div className="flex space-x-1 bg-gray-100 dark:bg-slate-800 p-1 rounded-lg w-fit">
+          <div className="flex flex-wrap gap-1 bg-gray-100 dark:bg-slate-800 p-1 rounded-lg w-full sm:w-fit">
             <button
               onClick={() => setActiveTab('dashboard')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+              className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                 activeTab === 'dashboard'
                   ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -572,13 +659,13 @@ InvoiceFlow Team`;
             </button>
             <button
               onClick={() => router.push('/invoices')}
-              className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              className="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             >
               Invoices
             </button>
             <button
               onClick={() => setActiveTab('clients')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+              className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                 activeTab === 'clients'
                   ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -588,7 +675,7 @@ InvoiceFlow Team`;
             </button>
             <button
               onClick={() => router.push('/settings')}
-              className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              className="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             >
               Settings
             </button>
@@ -615,7 +702,7 @@ InvoiceFlow Team`;
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Revenue</p>
                       <p className="font-heading text-3xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                        ₹{dashboardStats.totalRevenue.toLocaleString()}
+                        ₹{(dashboardStats.totalRevenue || 0).toLocaleString()}
                       </p>
                       <div className="flex items-center space-x-1">
                         <TrendingUp className="h-4 w-4 text-emerald-500" />
@@ -634,7 +721,7 @@ InvoiceFlow Team`;
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Outstanding</p>
                       <p className="font-heading text-3xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                        ₹{dashboardStats.outstandingAmount.toLocaleString()}
+                        ₹{(dashboardStats.outstandingAmount || 0).toLocaleString()}
                       </p>
                       <div className="flex items-center space-x-1">
                         <Clock className="h-4 w-4 text-amber-500" />
@@ -655,7 +742,7 @@ InvoiceFlow Team`;
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Overdue</p>
                       <p className="font-heading text-3xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                        {dashboardStats.overdueCount}
+                        {dashboardStats.overdueCount || 0}
                       </p>
                       <div className="flex items-center space-x-1">
                         <FileText className="h-4 w-4 text-red-500" />
@@ -676,7 +763,7 @@ InvoiceFlow Team`;
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Clients</p>
                       <p className="font-heading text-3xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                        {dashboardStats.totalClients}
+                        {dashboardStats.totalClients || 0}
                       </p>
                       <div className="flex items-center space-x-1">
                         <Users className="h-4 w-4 text-indigo-500" />

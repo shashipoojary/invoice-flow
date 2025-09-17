@@ -90,7 +90,7 @@ export default function CreateInvoicePage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/')
+      router.push('/auth')
     }
   }, [user, authLoading, router])
 

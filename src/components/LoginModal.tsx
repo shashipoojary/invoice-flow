@@ -6,20 +6,32 @@ import { X, Mail, Lock } from 'lucide-react'
 interface LoginModalProps {
   isOpen: boolean
   onClose: () => void
-  onLogin: (email: string, password: string) => void
+  onLogin: (email: string, password: string, name?: string) => void
 }
 
 export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
   const [isSignUp, setIsSignUp] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (email && password) {
-      onLogin(email, password)
-      onClose()
+    setError(null)
+    
+    if (!email || !password) {
+      setError('Please fill in all fields')
+      return
     }
+    
+    if (isSignUp && !name) {
+      setError('Please enter your name')
+      return
+    }
+    
+    onLogin(email, password, name)
+    onClose()
   }
 
   if (!isOpen) return null
@@ -40,6 +52,21 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {isSignUp && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Full Name
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter your full name"
+                required={isSignUp}
+              />
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Email
@@ -73,6 +100,12 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
               />
             </div>
           </div>
+
+          {error && (
+            <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">
+              {error}
+            </div>
+          )}
 
           <button
             type="submit"

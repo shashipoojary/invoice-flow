@@ -1,12 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable standalone output for Docker
-  output: 'standalone',
-  
   // Image optimization
   images: {
-    unoptimized: true, // Disable for Docker builds
+    unoptimized: true, // Disable for Vercel builds
+  },
+  
+  // Disable Turbopack for now to avoid font issues
+  experimental: {
+    turbo: false,
   },
 };
 

@@ -1,231 +1,192 @@
-# InvoiceFlow Pro - Enterprise Invoice Management
+# InvoiceFlow - Fast Freelancer Invoicing
 
-A modern, responsive invoice management system built with Next.js, designed for freelancers and small businesses. Features a clean, professional interface with dark/light mode support, client management, and comprehensive invoice tracking.
+> The fastest way for freelancers & contractors to get paid
 
-## 🚀 Features
+A modern, responsive invoicing application built with Next.js, designed specifically for freelancers and small contractors who need to get paid quickly and professionally.
 
-- **Invoice Management**: Create, edit, view, and track invoices
-- **Client Management**: Manage client information and contact details
-- **PDF Generation**: Download invoices as PDF files
-- **Email Integration**: Send invoices directly via email
-- **Responsive Design**: Works perfectly on desktop, tablet, and mobile
-- **Dark/Light Mode**: Toggle between themes for better user experience
-- **Real-time Dashboard**: Track revenue, outstanding amounts, and overdue invoices
-- **Professional UI**: Clean, modern interface with Google Fonts
+## ✨ Features
+
+- ⚡ **60-Second Invoicing** - Create professional invoices in under a minute
+- 📱 **Fully Responsive** - Perfect on mobile, tablet, and desktop
+- 🎨 **Custom Branding** - Add your logo, business name, and colors
+- 💳 **Payment Integration** - Display your payment details directly
+- 📧 **Email Automation** - Send invoices and reminders automatically
+- 📊 **Analytics Dashboard** - Track your business performance
+- 🔒 **Secure Authentication** - JWT-based user authentication
+- 📄 **PDF Generation** - Professional invoice PDFs
+- 🗄️ **SQLite Database** - Simple, reliable data storage
+
+## 🚀 Quick Start
+
+### Local Development
+
+1. **Clone and install:**
+   ```bash
+   git clone <repository-url>
+   cd subscription-pause-tool
+   npm install
+   ```
+
+2. **Start development server:**
+   ```bash
+   npm run dev
+   ```
+
+3. **Open [http://localhost:3000](http://localhost:3000)**
+
+### Test Credentials
+- **Email:** `test@example.com`
+- **Password:** `password123`
+
+## 📱 Mobile Responsive
+
+The application is fully responsive and works perfectly on:
+- 📱 **Mobile** (320px - 767px) - Touch-optimized interface
+- 📱 **Tablet** (768px - 1199px) - Balanced layout
+- 💻 **Desktop** (1200px+) - Full feature experience
+
+### Responsive Features:
+- Flexible navigation that adapts to screen size
+- Touch-friendly buttons and inputs
+- Optimized typography and spacing
+- Mobile-first design approach
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: Next.js 15, React, TypeScript
-- **Styling**: Tailwind CSS v4
-- **Database**: PostgreSQL
-- **Icons**: Lucide React
-- **Deployment**: Docker, Docker Compose
+- **Frontend:** Next.js 15, React 19, TypeScript, Tailwind CSS v4
+- **Backend:** Next.js API Routes, SQLite with better-sqlite3
+- **Authentication:** Custom JWT-based system
+- **Database:** SQLite (works out of the box)
+- **PDF:** React PDF for invoice generation
+- **Icons:** Lucide React
+- **Styling:** Tailwind CSS with custom design system
 
-## 📋 Prerequisites
+## 🚀 Deploy to Vercel
 
-- Node.js 18+ 
-- Docker and Docker Compose
-- Git
-
-## 🐳 Quick Start with Docker (Recommended)
-
-### 1. Clone the Repository
+### Step 1: Push to GitHub
 ```bash
-git clone https://github.com/yourusername/invoice-flow-pro.git
-cd invoice-flow-pro
+git add .
+git commit -m "Ready for deployment"
+git push origin main
 ```
 
-### 2. Environment Setup
-```bash
-# Copy the environment example file
-cp env.example .env
+### Step 2: Deploy to Vercel
+1. Go to [vercel.com](https://vercel.com)
+2. Import your GitHub repository
+3. Set environment variables:
+   ```
+   JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+   DATABASE_URL=file:./invoice_flow.db
+   ```
+4. Deploy!
 
-# Edit the .env file with your configuration
-nano .env
-```
+**See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.**
 
-### 3. Start with Docker Compose
-```bash
-# Build and start all services
-docker-compose up --build
-
-# Or run in detached mode
-docker-compose up -d --build
-```
-
-### 4. Access the Application
-- **Application**: http://localhost:3000
-- **Database**: localhost:5432
-- **Redis**: localhost:6379
-
-## 🏃‍♂️ Local Development
-
-### 1. Install Dependencies
-```bash
-npm install
-```
-
-### 2. Environment Setup
-```bash
-# Copy environment file
-cp env.example .env
-
-# Edit with your local database settings
-nano .env
-```
-
-### 3. Start Development Server
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) to view the application.
-
-## 🗄️ Database Setup
-
-The application uses PostgreSQL with the following default configuration:
-
-- **Database**: `invoice_flow`
-- **Username**: `invoice_user`
-- **Password**: `invoice_password`
-- **Port**: `5432`
-
-### Database Schema
-
-The application includes the following tables:
-- `clients` - Client information
-- `invoices` - Invoice details
-- `invoice_items` - Individual invoice line items
-
-Sample data is automatically loaded when using Docker.
-
-## 🐳 Docker Services
-
-### Services Included:
-- **app**: Next.js application (Port 3000)
-- **postgres**: PostgreSQL database (Port 5432)
-- **redis**: Redis cache (Port 6379)
-
-### Docker Commands:
-```bash
-# Start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop all services
-docker-compose down
-
-# Rebuild and restart
-docker-compose up --build
-
-# Remove all data (including database)
-docker-compose down -v
-```
-
-## 📁 Project Structure
+## 🏗️ Project Structure
 
 ```
-invoice-flow-pro/
-├── src/
-│   └── app/
-│       ├── page.tsx          # Main application
-│       ├── layout.tsx        # Root layout
-│       └── globals.css       # Global styles
-├── public/                   # Static assets
-├── Dockerfile               # Docker configuration
-├── docker-compose.yml       # Multi-service setup
-├── init.sql                # Database initialization
-├── env.example             # Environment variables template
-└── README.md               # This file
+src/
+├── app/                    # Next.js App Router
+│   ├── api/               # API routes (auth, invoices, etc.)
+│   ├── auth/              # Authentication page
+│   ├── invoices/          # Invoice management pages
+│   └── settings/          # User settings page
+├── components/            # Reusable UI components
+├── hooks/                 # Custom React hooks (useAuth)
+├── lib/                   # Database and utility functions
+└── types/                 # TypeScript definitions
 ```
 
-## 🔧 Configuration
+## 🎯 Key Features
 
-### Environment Variables
+### Dashboard
+- Revenue and client statistics
+- Recent invoices overview
+- Quick action buttons
+- Responsive grid layouts
 
-Key environment variables in `.env`:
+### Authentication
+- Secure login/registration
+- JWT token management
+- Protected routes
+- Profile management
+
+### Invoice Management
+- Fast invoice creation
+- Service-based invoicing (no quantities)
+- PDF generation
+- Email sending
+- Status tracking
+
+### Settings
+- Business profile setup
+- Payment details configuration
+- Logo upload
+- Brand customization
+
+## 🔧 Environment Variables
+
+For production deployment, set these environment variables:
 
 ```env
-# Database
-DATABASE_URL=postgresql://invoice_user:invoice_password@localhost:5432/invoice_flow
-
-# Application
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-NODE_ENV=development
-
-# Email (for sending invoices)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+DATABASE_URL=file:./invoice_flow.db
 ```
 
-## 🚀 Deployment
+## 📦 Dependencies
 
-### Production Deployment
+### Core Dependencies
+- `next` - React framework
+- `react` - UI library
+- `better-sqlite3` - Database
+- `bcryptjs` - Password hashing
+- `jsonwebtoken` - JWT authentication
+- `@react-pdf/renderer` - PDF generation
+- `lucide-react` - Icons
+- `tailwindcss` - Styling
 
-1. **Update Environment Variables**:
-   ```bash
-   # Set production values in .env
-   NODE_ENV=production
-   DATABASE_URL=your-production-database-url
-   ```
+## 🎨 Design System
 
-2. **Build and Deploy**:
-   ```bash
-   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-   ```
+- **Colors:** Professional blue and slate palette
+- **Typography:** Clean, readable fonts
+- **Spacing:** Consistent 4px grid system
+- **Components:** Reusable, accessible UI elements
+- **Dark Mode:** Full dark/light theme support
 
-### Cloud Deployment
+## 🔒 Security
 
-The application is ready for deployment on:
-- **Vercel** (recommended for Next.js)
-- **AWS ECS/Fargate**
-- **Google Cloud Run**
-- **DigitalOcean App Platform**
-- **Railway**
-- **Render**
+- JWT-based authentication
+- Password hashing with bcrypt
+- Protected API routes
+- Input validation and sanitization
+- Secure environment variable handling
 
-## 📱 Mobile Responsiveness
+## 📈 Performance
 
-The application is fully responsive and optimized for:
-- Desktop (1200px+)
-- Tablet (768px - 1199px)
-- Mobile (320px - 767px)
-
-## 🎨 Customization
-
-### Themes
-- Toggle between dark and light modes
-- Custom color schemes in `globals.css`
-- Professional Google Fonts integration
-
-### Styling
-- Tailwind CSS v4 with custom configuration
-- Component-based styling
-- Responsive design patterns
+- Server-side rendering (SSR)
+- Optimized images and assets
+- Efficient database queries
+- Minimal bundle size
+- Fast page loads
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - feel free to use this project for your own invoicing needs!
 
 ## 🆘 Support
 
-For support, email support@invoiceflowpro.com or create an issue in the GitHub repository.
+- Check the [DEPLOYMENT.md](./DEPLOYMENT.md) for deployment issues
+- Review the code comments for implementation details
+- Create an issue for bugs or feature requests
 
-## 🙏 Acknowledgments
+---
 
-- Built with [Next.js](https://nextjs.org/)
-- Styled with [Tailwind CSS](https://tailwindcss.com/)
-- Icons by [Lucide](https://lucide.dev/)
-- Fonts by [Google Fonts](https://fonts.google.com/)
+**Built with ❤️ for freelancers who want to get paid faster**
