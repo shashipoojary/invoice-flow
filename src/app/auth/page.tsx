@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
@@ -11,6 +11,7 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -19,6 +20,22 @@ export default function AuthPage() {
 
   const { signIn, signUp } = useAuth();
   const router = useRouter();
+
+  // Dark mode initialization
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const savedTheme = localStorage.getItem('theme');
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+      setIsDarkMode(true);
+      document.documentElement.classList.add('dark');
+    } else {
+      setIsDarkMode(false);
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,34 +94,53 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4" suppressHydrationWarning>
+    <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-200 ${
+      isDarkMode 
+        ? 'bg-black' 
+        : 'bg-gradient-to-br from-gray-50 to-gray-100'
+    }`} suppressHydrationWarning>
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-black mb-6">
+          <div className="inline-flex items-center justify-center w-24 h-24 mb-6">
             <Image
-              src="/logowhite.png"
+              src={isDarkMode ? "/logowhite.png" : "/logoblack.png"}
               alt="InvoiceFlow Logo"
-              width={80}
-              height={80}
-              className="w-16 h-16"
+              width={96}
+              height={96}
+              className="w-24 h-24"
             />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">InvoiceFlow</h1>
-          <p className="text-gray-600 text-lg">The fastest way for freelancers to get paid</p>
+          <p className={`text-lg ${
+            isDarkMode 
+              ? 'text-gray-300' 
+              : 'text-gray-600'
+          }`}>The fastest way for freelancers to get paid</p>
         </div>
 
         {/* Auth Card */}
-        <div className="bg-white shadow-2xl p-8">
+        <div className={`shadow-2xl p-8 ${
+          isDarkMode 
+            ? 'bg-gray-900' 
+            : 'bg-white'
+        }`}>
           {/* Toggle */}
-          <div className="flex bg-gray-100 p-1 mb-8">
+          <div className={`flex p-1 mb-8 ${
+            isDarkMode 
+              ? 'bg-gray-800' 
+              : 'bg-gray-100'
+          }`}>
             <button
               type="button"
               onClick={() => setIsLogin(true)}
               className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
                 isLogin 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? isDarkMode
+                    ? 'bg-gray-700 text-white shadow-sm'
+                    : 'bg-white text-gray-900 shadow-sm'
+                  : isDarkMode
+                    ? 'text-gray-400 hover:text-gray-200'
+                    : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               Sign In
@@ -114,8 +150,12 @@ export default function AuthPage() {
               onClick={() => setIsLogin(false)}
               className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
                 !isLogin 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? isDarkMode
+                    ? 'bg-gray-700 text-white shadow-sm'
+                    : 'bg-white text-gray-900 shadow-sm'
+                  : isDarkMode
+                    ? 'text-gray-400 hover:text-gray-200'
+                    : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               Sign Up
@@ -126,11 +166,19 @@ export default function AuthPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-3">
+                <label htmlFor="name" className={`block text-sm font-medium mb-3 ${
+                  isDarkMode 
+                    ? 'text-gray-300' 
+                    : 'text-gray-700'
+                }`}>
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <User className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 ${
+                    isDarkMode 
+                      ? 'text-gray-400' 
+                      : 'text-gray-400'
+                  }`} />
                   <input
                     type="text"
                     id="name"
@@ -138,7 +186,11 @@ export default function AuthPage() {
                     value={formData.name}
                     onChange={handleInputChange}
                     required={!isLogin}
-                    className="w-full pl-12 pr-4 py-4 border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white"
+                    className={`w-full pl-12 pr-4 py-4 border focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                      isDarkMode 
+                        ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-400' 
+                        : 'border-gray-200 bg-white text-gray-900 placeholder-gray-500'
+                    }`}
                     placeholder="Enter your full name"
                   />
                 </div>
@@ -146,11 +198,19 @@ export default function AuthPage() {
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-3">
+              <label htmlFor="email" className={`block text-sm font-medium mb-3 ${
+                isDarkMode 
+                  ? 'text-gray-300' 
+                  : 'text-gray-700'
+              }`}>
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Mail className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 ${
+                  isDarkMode 
+                    ? 'text-gray-400' 
+                    : 'text-gray-400'
+                }`} />
                 <input
                   type="email"
                   id="email"
@@ -158,18 +218,30 @@ export default function AuthPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  className="w-full pl-12 pr-4 py-4 border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white"
+                  className={`w-full pl-12 pr-4 py-4 border focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                    isDarkMode 
+                      ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-400' 
+                      : 'border-gray-200 bg-white text-gray-900 placeholder-gray-500'
+                  }`}
                   placeholder="Enter your email"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-3">
+              <label htmlFor="password" className={`block text-sm font-medium mb-3 ${
+                isDarkMode 
+                  ? 'text-gray-300' 
+                  : 'text-gray-700'
+              }`}>
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Lock className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 ${
+                  isDarkMode 
+                    ? 'text-gray-400' 
+                    : 'text-gray-400'
+                }`} />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   id="password"
@@ -177,13 +249,21 @@ export default function AuthPage() {
                   value={formData.password}
                   onChange={handleInputChange}
                   required
-                  className="w-full pl-12 pr-12 py-4 border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white"
+                  className={`w-full pl-12 pr-12 py-4 border focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                    isDarkMode 
+                      ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-400' 
+                      : 'border-gray-200 bg-white text-gray-900 placeholder-gray-500'
+                  }`}
                   placeholder="Enter your password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className={`absolute right-4 top-1/2 transform -translate-y-1/2 transition-colors ${
+                    isDarkMode 
+                      ? 'text-gray-400 hover:text-gray-200' 
+                      : 'text-gray-400 hover:text-gray-600'
+                  }`}
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -191,15 +271,27 @@ export default function AuthPage() {
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 p-4">
-                <p className="text-red-600 text-sm">{error}</p>
+              <div className={`border p-4 ${
+                isDarkMode 
+                  ? 'bg-red-900/20 border-red-800' 
+                  : 'bg-red-50 border-red-200'
+              }`}>
+                <p className={`text-sm ${
+                  isDarkMode 
+                    ? 'text-red-400' 
+                    : 'text-red-600'
+                }`}>{error}</p>
               </div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-black text-white py-4 px-4 hover:bg-gray-800 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 font-medium"
+              className={`w-full py-4 px-4 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 font-medium ${
+                isDarkMode 
+                  ? 'bg-white text-black hover:bg-gray-200' 
+                  : 'bg-black text-white hover:bg-gray-800'
+              }`}
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -214,12 +306,20 @@ export default function AuthPage() {
 
           {/* Footer */}
           <div className="mt-8 text-center">
-            <p className="text-sm text-gray-600">
+            <p className={`text-sm ${
+              isDarkMode 
+                ? 'text-gray-400' 
+                : 'text-gray-600'
+            }`}>
               {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
               <button
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}
-                className="text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
+                className={`font-medium transition-colors ${
+                  isDarkMode 
+                    ? 'text-indigo-400 hover:text-indigo-300' 
+                    : 'text-indigo-600 hover:text-indigo-700'
+                }`}
               >
                 {isLogin ? 'Sign up' : 'Sign in'}
               </button>
@@ -229,8 +329,16 @@ export default function AuthPage() {
 
         {/* Features */}
         <div className="mt-8 text-center">
-          <p className="text-sm text-slate-500 mb-4">Trusted by freelancers worldwide</p>
-          <div className="flex justify-center space-x-8 text-xs text-slate-400">
+          <p className={`text-sm mb-4 ${
+            isDarkMode 
+              ? 'text-gray-500' 
+              : 'text-gray-500'
+          }`}>Trusted by freelancers worldwide</p>
+          <div className={`flex justify-center space-x-8 text-xs ${
+            isDarkMode 
+              ? 'text-gray-500' 
+              : 'text-gray-400'
+          }`}>
             <span>✓ 60-second invoicing</span>
             <span>✓ Professional templates</span>
             <span>✓ Secure payments</span>
