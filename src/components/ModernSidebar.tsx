@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -11,7 +11,8 @@ import {
   X,
   User,
   LogOut,
-  Plus
+  Plus,
+  Loader2
 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,15 +25,16 @@ interface ModernSidebarProps {
   onCreateInvoice: () => void;
 }
 
-const ModernSidebar = ({ 
+const ModernSidebar = memo(function ModernSidebar({ 
   activeTab, 
   setActiveTab, 
   isDarkMode, 
   onToggleDarkMode, 
   onCreateInvoice 
-}: ModernSidebarProps) => {
+}: ModernSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { user, signOut } = useAuth();
 
   // Auto-collapse on mobile and handle resize
@@ -94,6 +96,7 @@ const ModernSidebar = ({
   ];
 
   const handleSignOut = async () => {
+    setIsLoggingOut(true);
     try {
       const result = await signOut();
       if (result.error) {
@@ -109,6 +112,8 @@ const ModernSidebar = ({
       console.error('Error signing out:', error);
       // Force logout even on error
       window.location.href = '/auth';
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -122,7 +127,7 @@ const ModernSidebar = ({
   };
 
   const sidebarContent = (
-    <div className={`h-full flex flex-col transition-all duration-300 ${
+    <div className={`h-full flex flex-col transition-all duration-300 scroll-optimized ${
       isDarkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-200'
     } ${isCollapsed ? 'w-16' : 'w-80'}`}>
       
@@ -318,14 +323,19 @@ const ModernSidebar = ({
               
               <button
                 onClick={handleSignOut}
-                className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-lg text-sm font-medium transition-colors border ${
+                disabled={isLoggingOut}
+                className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-lg text-sm font-medium transition-colors border disabled:opacity-50 disabled:cursor-not-allowed ${
                   isDarkMode 
                     ? 'text-red-400 bg-red-900/20 hover:bg-red-900/30 border-red-800' 
                     : 'text-red-600 bg-white hover:bg-red-50 border-red-200'
                 }`}
               >
-                <LogOut className="w-4 h-4" />
-                <span>Logout</span>
+                {isLoggingOut ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <LogOut className="w-4 h-4" />
+                )}
+                <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
               </button>
             </div>
           </div>
@@ -412,6 +422,6 @@ const ModernSidebar = ({
       )}
     </>
   );
-};
+});
 
 export default ModernSidebar;

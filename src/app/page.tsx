@@ -5,7 +5,7 @@ import {
   Plus, FileText, Users, Download, Send, TrendingUp, 
   Clock, CheckCircle, AlertCircle, X, Building2, Eye, 
   Trash2, Edit, Mail, CreditCard, Receipt, UserCheck, 
-  Timer, AlertTriangle, UserPlus, FilePlus, Sparkles, User, Phone, MapPin, Upload
+  Timer, AlertTriangle, UserPlus, FilePlus, Sparkles, User, Phone, MapPin, Upload, Loader2
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import QuickInvoiceModal from '@/components/QuickInvoiceModal';
@@ -47,7 +47,7 @@ interface Invoice {
   notes?: string;
 }
 
-export default function InvoiceDashboard() {
+const InvoiceDashboard = memo(function InvoiceDashboard() {
   // Authentication
   const { user, loading: authLoading, signIn, signUp, getAuthHeaders } = useAuth();
   const [showLogin, setShowLogin] = useState(false);
@@ -70,6 +70,10 @@ export default function InvoiceDashboard() {
   });
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  
+  // Loading states
+  const [isCreatingClient, setIsCreatingClient] = useState(false);
+  const [isSendingInvoice, setIsSendingInvoice] = useState(false);
 
   // Form states
   const [newInvoice, setNewInvoice] = useState({
@@ -152,7 +156,7 @@ export default function InvoiceDashboard() {
   };
 
   // Manual data fetching - no automatic fetching to prevent infinite loops
-  const fetchAllData = async () => {
+  const fetchAllData = useCallback(async () => {
     if (user && !authLoading) {
       console.log('Manually fetching data for user:', user.id);
       await Promise.all([
@@ -161,14 +165,14 @@ export default function InvoiceDashboard() {
         fetchClients()
       ]);
     }
-  };
+  }, [user, authLoading, fetchDashboardStats, fetchInvoices, fetchClients]);
 
   // Only fetch data once when user first logs in
   useEffect(() => {
     if (user && !authLoading) {
       fetchAllData();
     }
-  }, [user?.id]); // Only when user ID changes
+  }, [user, authLoading, fetchAllData]); // Include all dependencies
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -194,6 +198,7 @@ export default function InvoiceDashboard() {
   const overdueCount = useMemo(() => dashboardStats.overdueCount || 0, [dashboardStats.overdueCount]);
   const totalClients = useMemo(() => dashboardStats.totalClients || 0, [dashboardStats.totalClients]);
 
+
   // Memoize status utilities
   const getStatusIcon = useCallback((status: string) => {
     switch (status) {
@@ -214,6 +219,7 @@ export default function InvoiceDashboard() {
       default: return 'bg-gray-100 dark:bg-gray-500/20 text-gray-800 dark:text-gray-300';
     }
   }, []);
+
 
   // Memoized Invoice Card Component
   const InvoiceCard = memo(({ invoice, isDarkMode, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, getStatusIcon, getStatusColor }: {
@@ -447,9 +453,11 @@ export default function InvoiceDashboard() {
     }
   }, [getAuthHeaders]);
 
-  const handleSendInvoice = useCallback((invoice: Invoice) => {
-    const subject = `Invoice ${invoice.invoiceNumber} from InvoiceFlow`;
-    const body = `Dear ${invoice.client.name},
+  const handleSendInvoice = useCallback(async (invoice: Invoice) => {
+    setIsSendingInvoice(true);
+    try {
+      const subject = `Invoice ${invoice.invoiceNumber} from InvoiceFlow`;
+      const body = `Dear ${invoice.client.name},
 
 Please find attached your invoice ${invoice.invoiceNumber} for the amount of $${invoice.total.toFixed(2)}.
 
@@ -465,14 +473,17 @@ Thank you for your business!
 Best regards,
 InvoiceFlow Team`;
 
-    const mailtoLink = `mailto:${invoice.client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(mailtoLink);
-    
-    // Update invoice status to sent
-    setInvoices(prev => prev.map(inv => 
-      inv.id === invoice.id ? { ...inv, status: 'sent' as const } : inv
-    ));
-    alert('Invoice email opened!');
+      const mailtoLink = `mailto:${invoice.client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.open(mailtoLink);
+      
+      // Update invoice status to sent
+      setInvoices(prev => prev.map(inv => 
+        inv.id === invoice.id ? { ...inv, status: 'sent' as const } : inv
+      ));
+      alert('Invoice email opened!');
+    } finally {
+      setIsSendingInvoice(false);
+    }
   }, []);
 
   const handleEditInvoice = useCallback((invoice: Invoice) => {
@@ -488,32 +499,37 @@ InvoiceFlow Team`;
   }, []);
 
   // Client functions
-  const handleCreateClient = () => {
-    if (!newClient.name || !newClient.email || !newClient.company) {
+  const handleCreateClient = async () => {
+    if (!newClient.name || !newClient.email) {
       alert('Please fill in all required fields');
       return;
     }
 
-    const client: Client = {
-      id: Date.now().toString(),
-      name: newClient.name,
-      email: newClient.email,
-      company: newClient.company,
-      phone: newClient.phone,
-      address: newClient.address,
-      createdAt: new Date().toISOString().split('T')[0]
-    };
+    setIsCreatingClient(true);
+    try {
+      const client: Client = {
+        id: Date.now().toString(),
+        name: newClient.name,
+        email: newClient.email,
+        company: newClient.company,
+        phone: newClient.phone,
+        address: newClient.address,
+        createdAt: new Date().toISOString().split('T')[0]
+      };
 
-    setClients(prev => [client, ...prev]);
-    setShowCreateClient(false);
-    setNewClient({
-      name: '',
-      email: '',
-      company: '',
-      phone: '',
-      address: ''
-    });
-    alert('Client added successfully!');
+      setClients(prev => [client, ...prev]);
+      setShowCreateClient(false);
+      setNewClient({
+        name: '',
+        email: '',
+        company: '',
+        phone: '',
+        address: ''
+      });
+      alert('Client added successfully!');
+    } finally {
+      setIsCreatingClient(false);
+    }
   };
 
   const handleEditClient = (client: Client) => {
@@ -605,7 +621,7 @@ InvoiceFlow Team`;
 
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
+    <div className={`min-h-screen transition-colors duration-200 transform-gpu ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
       <div className="flex h-screen">
         {/* Modern Sidebar */}
         <ModernSidebar
@@ -617,7 +633,7 @@ InvoiceFlow Team`;
         />
 
         {/* Main Content */}
-        <main className="flex-1 lg:ml-0 overflow-y-auto scroll-smooth custom-scrollbar">
+        <main className="flex-1 lg:ml-0 overflow-y-auto scroll-smooth custom-scrollbar dashboard-scroll transform-gpu">
           <div className="pt-16 lg:pt-4 p-4 sm:p-6 lg:p-8">
             {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
@@ -775,10 +791,10 @@ InvoiceFlow Team`;
                       <Sparkles className="h-6 w-6 text-green-600 dark:text-green-400" />
                     </div>
                     <div className="text-left">
-                      <h3 className="font-semibold text-lg transition-colors" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                      <h3 className={`font-semibold text-lg transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
                         60-Second Invoice
                       </h3>
-                      <p className="text-sm transition-colors" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
+                      <p className={`text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                         Fast & simple invoicing
                       </p>
                     </div>
@@ -795,10 +811,10 @@ InvoiceFlow Team`;
                       <FilePlus className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div className="text-left">
-                      <h3 className="font-semibold text-lg transition-colors" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                      <h3 className={`font-semibold text-lg transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
                         Detailed Invoice
                       </h3>
-                      <p className="text-sm transition-colors" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
+                      <p className={`text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                         Multiple items & customization
                       </p>
                     </div>
@@ -815,10 +831,10 @@ InvoiceFlow Team`;
                       <UserPlus className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                     </div>
                     <div className="text-left">
-                      <h3 className="font-semibold text-lg transition-colors" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                      <h3 className={`font-semibold text-lg transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
                         Add Client
                       </h3>
-                      <p className="text-sm transition-colors" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
+                      <p className={`text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                         Manage your client list
                       </p>
                     </div>
@@ -1689,10 +1705,18 @@ InvoiceFlow Team`;
                   </button>
                   <button 
                     onClick={showEditClient ? handleUpdateClient : handleCreateClient}
-                    className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2"
+                    disabled={isCreatingClient}
+                    className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <UserPlus className="h-4 w-4" />
-                    <span>{showEditClient ? 'Update Client' : 'Add Client'}</span>
+                    {isCreatingClient ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <UserPlus className="h-4 w-4" />
+                    )}
+                    <span>
+                      {isCreatingClient ? 'Adding Client...' : 
+                       showEditClient ? 'Update Client' : 'Add Client'}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -1831,10 +1855,15 @@ InvoiceFlow Team`;
                 {selectedInvoice.status !== 'paid' && (
                   <button
                     onClick={() => handleSendInvoice(selectedInvoice)}
-                    className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                    disabled={isSendingInvoice}
+                    className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Send className="h-4 w-4" />
-                    <span>Send Invoice</span>
+                    {isSendingInvoice ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                    <span>{isSendingInvoice ? 'Sending...' : 'Send Invoice'}</span>
                   </button>
                 )}
                 <button
@@ -1886,4 +1915,6 @@ InvoiceFlow Team`;
       </div>
     </div>
   );
-}
+});
+
+export default InvoiceDashboard;

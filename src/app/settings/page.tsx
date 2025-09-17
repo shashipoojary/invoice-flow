@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { Save, Upload, Building2, CreditCard } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -49,27 +49,7 @@ export default function SettingsPage() {
     paymentNotes: ''
   })
 
-  useEffect(() => {
-    // Check if we're in the browser
-    if (typeof window === 'undefined') return
-
-    // Check dark mode - use same key as main app
-    const savedTheme = localStorage.getItem('theme')
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    const isDark = savedTheme === 'dark' || (!savedTheme && systemPrefersDark)
-    
-    setIsDarkMode(isDark)
-    if (isDark) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-
-    // Load saved settings from API
-    loadSettings()
-  }, [])
-
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     try {
       const headers = await getAuthHeaders()
       const response = await fetch('/api/settings', {
@@ -109,7 +89,27 @@ export default function SettingsPage() {
         console.error('Error loading local settings:', localError)
       }
     }
-  }
+  }, [getAuthHeaders])
+
+  useEffect(() => {
+    // Check if we're in the browser
+    if (typeof window === 'undefined') return
+
+    // Check dark mode - use same key as main app
+    const savedTheme = localStorage.getItem('theme')
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    const isDark = savedTheme === 'dark' || (!savedTheme && systemPrefersDark)
+    
+    setIsDarkMode(isDark)
+    if (isDark) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+
+    // Load saved settings from API
+    loadSettings()
+  }, [loadSettings])
 
   useEffect(() => {
     if (!authLoading && !user) {

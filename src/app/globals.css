@@ -44,6 +44,10 @@
     font-weight: 400;
     overflow-x: hidden;
     scroll-behavior: smooth;
+    /* Performance optimizations for scrolling */
+    -webkit-overflow-scrolling: touch;
+    transform: translateZ(0);
+    will-change: scroll-position;
   }
 
   /* Professional Scrollbar */
@@ -73,10 +77,55 @@
     scroll-behavior: smooth;
   }
 
+  /* Performance optimizations for all scrollable elements */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Optimize transforms and animations */
+  .transform-gpu {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  /* Optimize for mobile scrolling */
+  @media (max-width: 768px) {
+    body {
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+  }
+
   /* Better scrolling containers */
   .scroll-smooth {
     scroll-behavior: smooth;
     scroll-padding-top: 1rem;
+  }
+
+  /* High-performance scrolling containers */
+  .scroll-optimized {
+    -webkit-overflow-scrolling: touch;
+    transform: translateZ(0);
+    will-change: scroll-position;
+    contain: layout style paint;
+  }
+
+  /* Modal scrolling optimization */
+  .modal-scroll {
+    -webkit-overflow-scrolling: touch;
+    transform: translateZ(0);
+    will-change: scroll-position;
+    contain: layout style paint;
+    overscroll-behavior: contain;
+  }
+
+  /* Dashboard scrolling optimization */
+  .dashboard-scroll {
+    -webkit-overflow-scrolling: touch;
+    transform: translateZ(0);
+    will-change: scroll-position;
+    contain: layout style paint;
+    overscroll-behavior: contain;
   }
 
   /* Custom scrollbar for specific containers */

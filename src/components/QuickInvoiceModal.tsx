@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { 
-  X, Plus, Minus, Send, User, Building2, Mail, Phone, MapPin, 
-  Calendar, FileText, DollarSign, Upload, Save, Download, 
-  CreditCard, Banknote, Smartphone, ArrowRight, ArrowLeft,
-  Hash, Image, Globe, MessageSquare
+  X, Plus, Minus, Send, User, 
+  Calendar, FileText, DollarSign, Download, 
+  ArrowRight, ArrowLeft,
+  Hash, MessageSquare
 } from 'lucide-react'
 
 interface QuickInvoiceModalProps {
@@ -135,24 +135,30 @@ export default function QuickInvoiceModal({
     }
   }, [getAuthHeaders])
 
+  // Memoize default dates and invoice number to prevent recalculation
+  const defaultDates = useMemo(() => {
+    const today = new Date()
+    const defaultDueDate = new Date()
+    defaultDueDate.setDate(defaultDueDate.getDate() + 30)
+    
+    return {
+      issueDate: today.toISOString().split('T')[0],
+      dueDate: defaultDueDate.toISOString().split('T')[0],
+      invoiceNumber: `INV-${Date.now().toString().slice(-6)}`
+    }
+  }, [])
+
   useEffect(() => {
     if (isOpen) {
       fetchClients()
       fetchBusinessSettings()
       
-      // Set default dates
-      const today = new Date()
-      const defaultDueDate = new Date()
-      defaultDueDate.setDate(defaultDueDate.getDate() + 30)
-      
-      setIssueDate(today.toISOString().split('T')[0])
-      setDueDate(defaultDueDate.toISOString().split('T')[0])
-      
-      // Generate invoice number
-      const invoiceNum = `INV-${Date.now().toString().slice(-6)}`
-      setInvoiceNumber(invoiceNum)
+      // Set default dates and invoice number
+      setIssueDate(defaultDates.issueDate)
+      setDueDate(defaultDates.dueDate)
+      setInvoiceNumber(defaultDates.invoiceNumber)
     }
-  }, [isOpen, fetchClients, fetchBusinessSettings])
+  }, [isOpen, fetchClients, fetchBusinessSettings, defaultDates])
 
   const addItem = () => {
     setItems([...items, { 
@@ -266,7 +272,7 @@ export default function QuickInvoiceModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
-      <div className={`rounded-2xl shadow-2xl border max-w-4xl w-full max-h-[95vh] overflow-y-auto scroll-smooth custom-scrollbar ${
+      <div className={`rounded-2xl shadow-2xl border max-w-4xl w-full max-h-[95vh] overflow-y-auto scroll-smooth custom-scrollbar modal-scroll ${
         isDarkMode 
           ? 'bg-gray-900/95 border-gray-700' 
           : 'bg-white/95 border-gray-200'
