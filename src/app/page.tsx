@@ -148,12 +148,17 @@ export default function InvoiceDashboard() {
 
   // Dark mode
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const savedTheme = localStorage.getItem('theme');
     const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
     if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
       setIsDarkMode(true);
       document.documentElement.classList.add('dark');
+    } else {
+      setIsDarkMode(false);
+      document.documentElement.classList.remove('dark');
     }
   }, []);
 
@@ -271,7 +276,7 @@ export default function InvoiceDashboard() {
     getStatusIcon: (status: string) => React.ReactElement;
     getStatusColor: (status: string) => string;
   }) => (
-    <div className={`rounded-xl border p-6 transition-all duration-200 hover:shadow-md ${isDarkMode ? 'bg-slate-800/30 border-slate-700 hover:bg-slate-800/40' : 'bg-white border-slate-200 hover:shadow-lg'}`}>
+    <div className={`rounded-xl border p-6 transition-all duration-200 hover:shadow-md ${isDarkMode ? 'bg-gray-800/30 border-gray-700 hover:bg-gray-800/40' : 'bg-white border-gray-200 hover:shadow-lg'}`}>
       <div className="space-y-6">
         {/* Invoice Info Row */}
         <div className="space-y-4 sm:space-y-0">
@@ -341,7 +346,7 @@ export default function InvoiceDashboard() {
         </div>
         
         {/* Divider */}
-        <div className={`border-t ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}></div>
+        <div className={`border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}></div>
         
         {/* Action Buttons Row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
@@ -699,7 +704,7 @@ InvoiceFlow Team`;
 
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-slate-900' : 'bg-white'}`}>
+    <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
       <div className="flex h-screen">
         {/* Modern Sidebar */}
         <ModernSidebar
@@ -728,7 +733,7 @@ InvoiceFlow Team`;
               {/* Stats Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {/* Total Revenue */}
-                <div className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
+                <div className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Revenue</p>
@@ -747,7 +752,7 @@ InvoiceFlow Team`;
                 </div>
 
                 {/* Outstanding Amount */}
-                <div className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
+                <div className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Outstanding</p>
@@ -768,7 +773,7 @@ InvoiceFlow Team`;
                 </div>
 
                 {/* Overdue Invoices */}
-                <div className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
+                <div className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Overdue</p>
@@ -789,7 +794,7 @@ InvoiceFlow Team`;
                 </div>
 
                 {/* Total Clients */}
-                <div className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
+                <div className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Clients</p>
@@ -820,7 +825,7 @@ InvoiceFlow Team`;
                 {/* 60-Second Invoice */}
                 <button
                   onClick={() => setShowFastInvoice(true)}
-                  className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}
+                  className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}
                 >
                   <div className="flex items-center space-x-4">
                     <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-green-500/30' : 'bg-green-100'}`}>
@@ -840,7 +845,7 @@ InvoiceFlow Team`;
                 {/* Detailed Invoice */}
                 <button
                   onClick={() => setShowCreateInvoice(true)}
-                  className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}
+                  className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}
                 >
                   <div className="flex items-center space-x-4">
                     <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-blue-500/30' : 'bg-blue-100'}`}>
@@ -860,7 +865,7 @@ InvoiceFlow Team`;
                 {/* Add Client */}
                 <button
                   onClick={() => setShowCreateClient(true)}
-                  className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}
+                  className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}
                 >
                   <div className="flex items-center space-x-4">
                     <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-purple-500/30' : 'bg-purple-100'}`}>
@@ -968,7 +973,7 @@ InvoiceFlow Team`;
             {/* Client List */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {clients.map((client) => (
-                <div key={client.id} className={`rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
+                <div key={client.id} className={`rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
                   <div className="flex items-start justify-between mb-4">
                     <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
                       <Building2 className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
@@ -1027,7 +1032,7 @@ InvoiceFlow Team`;
             </div>
 
             {/* Business Information */}
-            <div className={`rounded-2xl p-6 ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
+            <div className={`rounded-2xl p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
               <div className="flex items-center space-x-3 mb-6">
                 <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
                   <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -1074,7 +1079,7 @@ InvoiceFlow Team`;
             </div>
 
             {/* Payment Details */}
-            <div className={`rounded-2xl p-6 ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
+            <div className={`rounded-2xl p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
               <div className="flex items-center space-x-3 mb-6">
                 <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-green-500/20' : 'bg-green-100'}`}>
                   <CreditCard className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -1256,7 +1261,7 @@ InvoiceFlow Team`;
               </div>
 
               {/* Invoice Total Preview */}
-              <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-slate-800' : 'bg-gray-50'}`}>
+              <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Subtotal:</span>
                   <span style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
@@ -1474,7 +1479,7 @@ InvoiceFlow Team`;
                 {/* Mobile Layout - Cards */}
                 <div className="sm:hidden space-y-3">
                   {selectedInvoice.items.map((item) => (
-                    <div key={item.id} className={`p-3 rounded-lg border ${isDarkMode ? 'bg-slate-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
+                    <div key={item.id} className={`p-3 rounded-lg border ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
                       <div className="text-sm font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                         {item.description}
                       </div>
@@ -1488,7 +1493,7 @@ InvoiceFlow Team`;
                 {/* Desktop Layout - Table */}
                 <div className={`hidden sm:block rounded-lg border overflow-hidden ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                   <table className="w-full">
-                    <thead className={isDarkMode ? 'bg-slate-800' : 'bg-gray-50'}>
+                    <thead className={isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}>
                       <tr>
                         <th className="px-4 py-3 text-left text-sm font-semibold" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Service</th>
                         <th className="px-4 py-3 text-right text-sm font-semibold" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Amount</th>

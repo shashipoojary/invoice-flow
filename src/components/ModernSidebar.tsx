@@ -85,12 +85,12 @@ const ModernSidebar = ({
 
   const sidebarContent = (
     <div className={`h-full flex flex-col transition-all duration-300 ${
-      isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
+      isDarkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-200'
     } ${isCollapsed ? 'w-16' : 'w-80'}`}>
       
       {/* Header */}
       <div className={`flex items-center ${isCollapsed ? 'justify-center p-4' : 'justify-between p-6'} border-b ${
-        isDarkMode ? 'border-slate-800' : 'border-slate-200'
+        isDarkMode ? 'border-gray-800' : 'border-gray-200'
       }`}>
         {!isCollapsed ? (
           <div className="flex items-center justify-center w-full">
@@ -105,7 +105,7 @@ const ModernSidebar = ({
         ) : (
           <button
             onClick={() => setIsCollapsed(false)}
-            className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <Image
               src={isDarkMode ? "/logowhite.png" : "/logoblack.png"}
@@ -123,8 +123,8 @@ const ModernSidebar = ({
             onClick={() => setIsCollapsed(!isCollapsed)}
             className={`hidden lg:flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
               isDarkMode 
-                ? 'hover:bg-slate-800 text-slate-400 hover:text-slate-300' 
-                : 'hover:bg-slate-100 text-slate-500 hover:text-slate-700'
+                ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-300' 
+                : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
             }`}
           >
             <ChevronLeft className="w-4 h-4" />
@@ -137,7 +137,7 @@ const ModernSidebar = ({
         <div className="px-6 py-4">
           <button
             onClick={onCreateInvoice}
-            className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors font-medium"
+            className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors font-medium"
           >
             <Plus className="w-4 h-4" />
             <span>Create Invoice</span>
@@ -149,7 +149,7 @@ const ModernSidebar = ({
         <div className="px-4 py-4">
           <button
             onClick={onCreateInvoice}
-            className="w-full flex items-center justify-center p-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors"
+            className="w-full flex items-center justify-center p-3 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
           >
             <Plus className="w-4 h-4" />
           </button>
@@ -170,11 +170,11 @@ const ModernSidebar = ({
                 className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2 py-3' : 'space-x-3 px-3 py-3'} rounded-lg transition-colors group ${
                   isActive
                     ? isDarkMode
-                      ? 'bg-slate-800 text-white'
-                      : 'bg-slate-100 text-slate-900'
+                      ? 'bg-gray-800 text-white'
+                      : 'bg-gray-100 text-black'
                     : isDarkMode
-                    ? 'text-slate-400 hover:text-white hover:bg-slate-800'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    ? 'text-gray-400 hover:text-white hover:bg-gray-800'
+                    : 'text-gray-600 hover:text-black hover:bg-gray-50'
                 }`}
                 title={isCollapsed ? item.label : undefined}
               >
@@ -187,8 +187,8 @@ const ModernSidebar = ({
                     <div className="font-medium text-sm">{item.label}</div>
                     <div className={`text-xs ${
                       isActive 
-                        ? isDarkMode ? 'text-slate-300' : 'text-slate-600'
-                        : isDarkMode ? 'text-slate-500' : 'text-slate-500'
+                        ? isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                        : isDarkMode ? 'text-gray-500' : 'text-gray-500'
                     }`}>
                       {item.description}
                     </div>
@@ -202,20 +202,20 @@ const ModernSidebar = ({
 
       {/* User Profile & Actions */}
       <div className={`${isCollapsed ? 'p-2' : 'p-6'} border-t ${
-        isDarkMode ? 'border-slate-800' : 'border-slate-200'
+        isDarkMode ? 'border-gray-800' : 'border-gray-200'
       }`}>
         {!isCollapsed ? (
           <div className="space-y-4">
             {/* User Info */}
-            <div className="flex items-center space-x-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-              <div className="w-10 h-10 bg-slate-900 dark:bg-white rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-white dark:text-slate-900" />
+            <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+              <div className="w-10 h-10 bg-black dark:bg-white rounded-full flex items-center justify-center">
+                <User className="w-5 h-5 text-white dark:text-black" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm text-slate-900 dark:text-white truncate">
+                <div className="font-medium text-sm text-black dark:text-white truncate">
                   {user?.name || 'User'}
                 </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                   {user?.email?.split('@')[0]}@...
                 </div>
               </div>
@@ -225,7 +225,7 @@ const ModernSidebar = ({
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={onToggleDarkMode}
-                className="flex items-center justify-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                className="flex items-center justify-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
               >
                 <Settings className="w-4 h-4" />
                 <span>Theme</span>
@@ -244,7 +244,7 @@ const ModernSidebar = ({
           <div className="space-y-2">
             <button
               onClick={onToggleDarkMode}
-              className="w-full flex items-center justify-center p-2 rounded-lg transition-colors bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+              className="w-full flex items-center justify-center p-2 rounded-lg transition-colors bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
               title="Toggle Theme"
             >
               <Settings className="w-4 h-4" />
@@ -276,7 +276,7 @@ const ModernSidebar = ({
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-white dark:bg-slate-800 shadow-lg border border-slate-200 dark:border-slate-700"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700"
       >
         <Menu className="w-5 h-5" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}} />
       </button>
@@ -292,7 +292,7 @@ const ModernSidebar = ({
       {isMobileOpen && (
         <button
           onClick={() => setIsMobileOpen(false)}
-          className="lg:hidden fixed top-4 right-4 z-50 p-2 rounded-lg bg-white dark:bg-slate-800 shadow-lg border border-slate-200 dark:border-slate-700"
+          className="lg:hidden fixed top-4 right-4 z-50 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700"
         >
           <X className="w-5 h-5" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}} />
         </button>

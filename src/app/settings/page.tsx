@@ -42,12 +42,16 @@ export default function SettingsPage() {
     // Check if we're in the browser
     if (typeof window === 'undefined') return
 
-    // Check dark mode
-    const isDark = localStorage.getItem('darkMode') === 'true' || 
-                   (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)
+    // Check dark mode - use same key as main app
+    const savedTheme = localStorage.getItem('theme')
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    const isDark = savedTheme === 'dark' || (!savedTheme && systemPrefersDark)
+    
     setIsDarkMode(isDark)
     if (isDark) {
       document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
     }
 
     // Load saved settings

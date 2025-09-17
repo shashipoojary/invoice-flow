@@ -17,11 +17,11 @@
 }
 
 @theme dark {
-  --color-background: #0f1419;
-  --color-foreground: #f8fafc;
-  --color-muted: #1e293b;
-  --color-muted-foreground: #94a3b8;
-  --color-border: #334155;
+  --color-background: #000000;
+  --color-foreground: #ffffff;
+  --color-muted: #111111;
+  --color-muted-foreground: #888888;
+  --color-border: #333333;
 }
 
 @layer base {
