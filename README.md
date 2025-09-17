@@ -34,10 +34,9 @@ A modern, responsive invoicing application built with Next.js, designed specific
 
 3. **Open [http://localhost:3000](http://localhost:3000)**
 
-### Getting Started
-1. Create your account by clicking "Sign Up"
-2. Complete your business settings in the Settings tab
-3. Add your first client and create your first invoice
+### Test Credentials
+- **Email:** `test@example.com`
+- **Password:** `password123`
 
 ## 📱 Mobile Responsive
 

@@ -4,23 +4,29 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { Save, Upload, Building2, CreditCard } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 
 interface FreelancerSettings {
   businessName: string
   logo: string
   address: string
   email: string
+  phone: string
+  website: string
   paypalEmail: string
+  cashappId: string
   venmoId: string
   googlePayUpi: string
+  applePayId: string
   bankAccount: string
   bankIfscSwift: string
   bankIban: string
+  stripeAccount: string
   paymentNotes: string
 }
 
 export default function SettingsPage() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, getAuthHeaders } = useAuth()
   const router = useRouter()
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -29,12 +35,17 @@ export default function SettingsPage() {
     logo: '',
     address: '',
     email: '',
+    phone: '',
+    website: '',
     paypalEmail: '',
+    cashappId: '',
     venmoId: '',
     googlePayUpi: '',
+    applePayId: '',
     bankAccount: '',
     bankIfscSwift: '',
     bankIban: '',
+    stripeAccount: '',
     paymentNotes: ''
   })
 
@@ -54,16 +65,51 @@ export default function SettingsPage() {
       document.documentElement.classList.remove('dark')
     }
 
-    // Load saved settings
+    // Load saved settings from API
+    loadSettings()
+  }, [])
+
+  const loadSettings = async () => {
     try {
-      const savedSettings = localStorage.getItem('freelancerSettings')
-      if (savedSettings) {
-        setSettings(JSON.parse(savedSettings))
+      const headers = await getAuthHeaders()
+      const response = await fetch('/api/settings', {
+        headers
+      })
+      const data = await response.json()
+      
+      if (data.settings) {
+        setSettings({
+          businessName: data.settings.business_name || '',
+          logo: data.settings.logo || '',
+          address: data.settings.address || '',
+          email: data.settings.email || '',
+          phone: data.settings.phone || '',
+          website: data.settings.website || '',
+          paypalEmail: data.settings.paypal_email || '',
+          cashappId: data.settings.cashapp_id || '',
+          venmoId: data.settings.venmo_id || '',
+          googlePayUpi: data.settings.google_pay_upi || '',
+          applePayId: data.settings.apple_pay_id || '',
+          bankAccount: data.settings.bank_account || '',
+          bankIfscSwift: data.settings.bank_ifsc_swift || '',
+          bankIban: data.settings.bank_iban || '',
+          stripeAccount: data.settings.stripe_account || '',
+          paymentNotes: data.settings.payment_notes || ''
+        })
       }
     } catch (error) {
       console.error('Error loading settings:', error)
+      // Fallback to localStorage for offline support
+      try {
+        const savedSettings = localStorage.getItem('freelancerSettings')
+        if (savedSettings) {
+          setSettings(JSON.parse(savedSettings))
+        }
+      } catch (localError) {
+        console.error('Error loading local settings:', localError)
+      }
     }
-  }, [])
+  }
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -74,15 +120,28 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('freelancerSettings', JSON.stringify(settings))
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
+      const headers = await getAuthHeaders()
+      
+      const response = await fetch('/api/settings', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(settings)
+      })
+      
+      const data = await response.json()
+      
+      if (response.ok) {
+        // Also save to localStorage as backup
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('freelancerSettings', JSON.stringify(settings))
+        }
         alert('Settings saved successfully!')
+      } else {
+        throw new Error(data.error || 'Failed to save settings')
       }
     } catch (error) {
       console.error('Error saving settings:', error)
-      alert('Error saving settings')
+      alert('Error saving settings: ' + (error as Error).message)
     } finally {
       setSaving(false)
     }
@@ -182,6 +241,32 @@ export default function SettingsPage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={settings.phone}
+                  onChange={(e) => setSettings(prev => ({ ...prev, phone: e.target.value }))}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                  placeholder="+1 (555) 123-4567"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                  Website
+                </label>
+                <input
+                  type="url"
+                  value={settings.website}
+                  onChange={(e) => setSettings(prev => ({ ...prev, website: e.target.value }))}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                  placeholder="https://yourwebsite.com"
+                />
+              </div>
+
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                   Address
@@ -201,7 +286,7 @@ export default function SettingsPage() {
                 </label>
                 <div className="flex items-center space-x-4">
                   {settings.logo && (
-                    <img src={settings.logo} alt="Logo" className="w-16 h-16 object-contain rounded-lg border" />
+                    <Image src={settings.logo} alt="Logo" width={64} height={64} className="w-16 h-16 object-contain rounded-lg border" />
                   )}
                   <label className="cursor-pointer">
                     <input
@@ -247,6 +332,19 @@ export default function SettingsPage() {
 
               <div>
                 <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                  CashApp ID
+                </label>
+                <input
+                  type="text"
+                  value={settings.cashappId}
+                  onChange={(e) => setSettings(prev => ({ ...prev, cashappId: e.target.value }))}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                  placeholder="$yourcashapp"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                   Venmo ID
                 </label>
                 <input
@@ -255,6 +353,19 @@ export default function SettingsPage() {
                   onChange={(e) => setSettings(prev => ({ ...prev, venmoId: e.target.value }))}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                   placeholder="@yourvenmo"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                  Apple Pay ID
+                </label>
+                <input
+                  type="text"
+                  value={settings.applePayId}
+                  onChange={(e) => setSettings(prev => ({ ...prev, applePayId: e.target.value }))}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                  placeholder="Apple Pay ID or phone number"
                 />
               </div>
 
@@ -271,30 +382,36 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                  Bank Account Number
+                  Bank Account Details
                 </label>
-                <input
-                  type="text"
-                  value={settings.bankAccount}
-                  onChange={(e) => setSettings(prev => ({ ...prev, bankAccount: e.target.value }))}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
-                  placeholder="Account number"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                  IFSC / SWIFT Code
-                </label>
-                <input
-                  type="text"
-                  value={settings.bankIfscSwift}
-                  onChange={(e) => setSettings(prev => ({ ...prev, bankIfscSwift: e.target.value }))}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
-                  placeholder="IFSC or SWIFT code"
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium mb-1" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                      Account Number
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.bankAccount}
+                      onChange={(e) => setSettings(prev => ({ ...prev, bankAccount: e.target.value }))}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                      placeholder="Account number"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                      IFSC / SWIFT Code
+                    </label>
+                    <input
+                      type="text"
+                      value={settings.bankIfscSwift}
+                      onChange={(e) => setSettings(prev => ({ ...prev, bankIfscSwift: e.target.value }))}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                      placeholder="IFSC or SWIFT code"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -310,6 +427,19 @@ export default function SettingsPage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                  Stripe Account
+                </label>
+                <input
+                  type="text"
+                  value={settings.stripeAccount}
+                  onChange={(e) => setSettings(prev => ({ ...prev, stripeAccount: e.target.value }))}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                  placeholder="Stripe account ID or email"
+                />
+              </div>
+
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                   Additional Payment Methods
@@ -319,7 +449,7 @@ export default function SettingsPage() {
                   onChange={(e) => setSettings(prev => ({ ...prev, paymentNotes: e.target.value }))}
                   rows={3}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
-                  placeholder="Wise, Revolut, CashApp, or other payment methods..."
+                  placeholder="Wise, Revolut, Zelle, or other payment methods not listed above..."
                 />
               </div>
             </div>

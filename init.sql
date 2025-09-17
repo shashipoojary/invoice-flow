@@ -65,5 +65,4 @@ CREATE TRIGGER update_clients_updated_at BEFORE UPDATE ON clients
 CREATE TRIGGER update_invoices_updated_at BEFORE UPDATE ON invoices
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Database is ready for production use
--- No sample data included - users will create their own data
+-- Sample data removed - users will create their own data

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import Image from 'next/image'
 import { Download, CheckCircle, Clock, AlertCircle, Mail, MapPin, Building2, CreditCard } from 'lucide-react'
 
 interface InvoiceItem {
@@ -138,9 +139,11 @@ export default function PublicInvoicePage() {
             <div className="flex justify-between items-start">
               <div>
                 {invoice.freelancerSettings?.logo && (
-                  <img 
+                  <Image 
                     src={invoice.freelancerSettings.logo} 
                     alt="Logo" 
+                    width={48}
+                    height={48}
                     className="h-12 w-auto mb-4" 
                   />
                 )}

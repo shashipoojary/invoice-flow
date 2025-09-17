@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { 
-  Plus, FileText, DollarSign, Users, Download, Send, Zap, TrendingUp, 
+  Plus, FileText, Users, Download, Send, TrendingUp, 
   Clock, CheckCircle, AlertCircle, X, Building2, Eye, 
-  Trash2, Edit, Mail, CreditCard 
+  Trash2, Edit, Mail, CreditCard, Receipt, UserCheck, 
+  Timer, AlertTriangle, UserPlus, FilePlus, Sparkles, User, Phone, MapPin, Upload
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import QuickInvoiceModal from '@/components/QuickInvoiceModal';
@@ -67,7 +68,6 @@ export default function InvoiceDashboard() {
     overdueCount: 0,
     totalClients: 0
   });
-  const [dataLoading, setDataLoading] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
 
@@ -88,10 +88,10 @@ export default function InvoiceDashboard() {
     address: ''
   });
 
-  // Data will be loaded from Supabase
+  // Data will be fetched from Supabase
   const [clients, setClients] = useState<Client[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-
+  
   // Dark mode
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -108,7 +108,8 @@ export default function InvoiceDashboard() {
     }
   }, []);
 
-  const fetchDashboardStats = useCallback(async () => {
+  // Simple data fetching functions without useCallback
+  const fetchDashboardStats = async () => {
     try {
       const headers = await getAuthHeaders();
       const response = await fetch('/api/dashboard/stats', {
@@ -120,9 +121,9 @@ export default function InvoiceDashboard() {
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
     }
-  }, [getAuthHeaders]);
+  };
 
-  const fetchInvoices = useCallback(async () => {
+  const fetchInvoices = async () => {
     try {
       const headers = await getAuthHeaders();
       const response = await fetch('/api/invoices', {
@@ -134,9 +135,9 @@ export default function InvoiceDashboard() {
     } catch (error) {
       console.error('Error fetching invoices:', error);
     }
-  }, [getAuthHeaders]);
+  };
 
-  const fetchClients = useCallback(async () => {
+  const fetchClients = async () => {
     try {
       const headers = await getAuthHeaders();
       const response = await fetch('/api/clients', {
@@ -148,31 +149,26 @@ export default function InvoiceDashboard() {
     } catch (error) {
       console.error('Error fetching clients:', error);
     }
-  }, [getAuthHeaders]);
+  };
 
-  // Single refresh function to prevent multiple API calls
-  const refreshData = useCallback(async () => {
-    if (dataLoading) return; // Prevent multiple simultaneous calls
-    
-    setDataLoading(true);
-    try {
+  // Manual data fetching - no automatic fetching to prevent infinite loops
+  const fetchAllData = async () => {
+    if (user && !authLoading) {
+      console.log('Manually fetching data for user:', user.id);
       await Promise.all([
         fetchDashboardStats(),
         fetchInvoices(),
         fetchClients()
       ]);
-    } finally {
-      setDataLoading(false);
     }
-  }, [dataLoading, fetchDashboardStats, fetchInvoices, fetchClients]);
+  };
 
-  // Fetch dashboard data when user is authenticated
+  // Only fetch data once when user first logs in
   useEffect(() => {
     if (user && !authLoading) {
-      refreshData();
+      fetchAllData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading]); // Intentionally excluding function dependencies to prevent infinite loops
+  }, [user?.id]); // Only when user ID changes
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -353,7 +349,7 @@ export default function InvoiceDashboard() {
     
     if (!result.error) {
       // Refresh data after login
-      refreshData();
+      fetchAllData();
     }
   };
 
@@ -635,6 +631,47 @@ InvoiceFlow Team`;
                 The fastest way for freelancers & contractors to get paid
               </p>
               
+              {/* Welcome message for new users */}
+              {user && invoices.length === 0 && clients.length === 0 && (
+                <div className={`rounded-lg p-6 mb-8 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                  <div className="flex items-center space-x-4 mb-4">
+                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
+                      <Sparkles className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                        Ready to get started?
+                      </h3>
+                      <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                        Let&apos;s create your first invoice
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm mb-6 leading-relaxed" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    InvoiceFlow makes it incredibly easy to create professional invoices and get paid faster. 
+                    Start by adding a client or create your first invoice in under 60 seconds.
+                  </p>
+                  
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      onClick={() => setShowFastInvoice(true)}
+                      className="inline-flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      <span>Create Invoice</span>
+                    </button>
+                    <button
+                      onClick={() => setShowCreateClient(true)}
+                      className="inline-flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      <span>Add Client</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+              
               {/* Stats Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Total Revenue */}
@@ -642,7 +679,7 @@ InvoiceFlow Team`;
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Revenue</p>
-                      <p className="font-heading text-3xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                      <p className="font-heading text-3xl font-bold text-emerald-600 dark:text-emerald-400">
                         ₹{totalRevenue.toLocaleString()}
                       </p>
                       <div className="flex items-center space-x-1">
@@ -651,7 +688,7 @@ InvoiceFlow Team`;
                       </div>
                     </div>
                     <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-emerald-500/20' : 'bg-emerald-50'}`}>
-                      <DollarSign className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                      <Receipt className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                     </div>
                   </div>
                 </div>
@@ -661,7 +698,7 @@ InvoiceFlow Team`;
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Outstanding</p>
-                      <p className="font-heading text-3xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                      <p className="font-heading text-3xl font-bold text-amber-600 dark:text-amber-400">
                         ₹{outstandingAmount.toLocaleString()}
                       </p>
                       <div className="flex items-center space-x-1">
@@ -672,7 +709,7 @@ InvoiceFlow Team`;
                       </div>
                     </div>
                     <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-amber-500/20' : 'bg-amber-50'}`}>
-                      <AlertCircle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                      <Timer className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                     </div>
                   </div>
                 </div>
@@ -682,7 +719,7 @@ InvoiceFlow Team`;
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Overdue</p>
-                      <p className="font-heading text-3xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                      <p className="font-heading text-3xl font-bold text-red-600 dark:text-red-400">
                         {overdueCount}
                       </p>
                       <div className="flex items-center space-x-1">
@@ -693,7 +730,7 @@ InvoiceFlow Team`;
                       </div>
                     </div>
                     <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-red-500/20' : 'bg-red-50'}`}>
-                      <FileText className="h-6 w-6 text-red-600 dark:text-red-400" />
+                      <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
                     </div>
                   </div>
                 </div>
@@ -703,7 +740,7 @@ InvoiceFlow Team`;
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Clients</p>
-                      <p className="font-heading text-3xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                      <p className="font-heading text-3xl font-bold text-indigo-600 dark:text-indigo-400">
                         {totalClients}
                       </p>
                       <div className="flex items-center space-x-1">
@@ -714,7 +751,7 @@ InvoiceFlow Team`;
                       </div>
                     </div>
                     <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
-                      <Users className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                      <UserCheck className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                     </div>
                   </div>
                 </div>
@@ -730,18 +767,18 @@ InvoiceFlow Team`;
                 {/* 60-Second Invoice */}
                 <button
                   onClick={() => setShowFastInvoice(true)}
-                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] touch-manipulation ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}
+                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] touch-manipulation border-2 ${isDarkMode ? 'bg-gray-800/50 border-gray-600 hover:border-green-500 hover:bg-green-500/10' : 'bg-white/70 border-gray-300 hover:border-green-500 hover:bg-green-50'} backdrop-blur-sm cursor-pointer`}
                   style={{ minHeight: '80px' }}
                 >
                   <div className="flex items-center space-x-4">
-                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-green-500/30' : 'bg-green-100'}`}>
-                      <Zap className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    <div className={`p-3 rounded-xl transition-colors ${isDarkMode ? 'bg-green-500/30 group-hover:bg-green-500/50' : 'bg-green-100 group-hover:bg-green-200'}`}>
+                      <Sparkles className="h-6 w-6 text-green-600 dark:text-green-400" />
                     </div>
                     <div className="text-left">
-                      <h3 className="font-semibold text-lg" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                      <h3 className="font-semibold text-lg transition-colors" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                         60-Second Invoice
                       </h3>
-                      <p className="text-sm" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
+                      <p className="text-sm transition-colors" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
                         Fast & simple invoicing
                       </p>
                     </div>
@@ -751,17 +788,17 @@ InvoiceFlow Team`;
                 {/* Detailed Invoice */}
                 <button
                   onClick={() => setShowCreateInvoice(true)}
-                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}
+                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] touch-manipulation border-2 ${isDarkMode ? 'bg-gray-800/50 border-gray-600 hover:border-blue-500 hover:bg-blue-500/10' : 'bg-white/70 border-gray-300 hover:border-blue-500 hover:bg-blue-50'} backdrop-blur-sm cursor-pointer`}
                 >
                   <div className="flex items-center space-x-4">
-                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-blue-500/30' : 'bg-blue-100'}`}>
-                      <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    <div className={`p-3 rounded-xl transition-colors ${isDarkMode ? 'bg-blue-500/30 group-hover:bg-blue-500/50' : 'bg-blue-100 group-hover:bg-blue-200'}`}>
+                      <FilePlus className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div className="text-left">
-                      <h3 className="font-semibold text-lg" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                      <h3 className="font-semibold text-lg transition-colors" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                         Detailed Invoice
                       </h3>
-                      <p className="text-sm" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
+                      <p className="text-sm transition-colors" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
                         Multiple items & customization
                       </p>
                     </div>
@@ -771,17 +808,17 @@ InvoiceFlow Team`;
                 {/* Add Client */}
                 <button
                   onClick={() => setShowCreateClient(true)}
-                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}
+                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] touch-manipulation border-2 ${isDarkMode ? 'bg-gray-800/50 border-gray-600 hover:border-purple-500 hover:bg-purple-500/10' : 'bg-white/70 border-gray-300 hover:border-purple-500 hover:bg-purple-50'} backdrop-blur-sm cursor-pointer`}
                 >
                   <div className="flex items-center space-x-4">
-                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-purple-500/30' : 'bg-purple-100'}`}>
-                      <Users className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                    <div className={`p-3 rounded-xl transition-colors ${isDarkMode ? 'bg-purple-500/30 group-hover:bg-purple-500/50' : 'bg-purple-100 group-hover:bg-purple-200'}`}>
+                      <UserPlus className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                     </div>
                     <div className="text-left">
-                      <h3 className="font-semibold text-lg" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                      <h3 className="font-semibold text-lg transition-colors" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                         Add Client
                       </h3>
-                      <p className="text-sm" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
+                      <p className="text-sm transition-colors" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
                         Manage your client list
                       </p>
                     </div>
@@ -795,21 +832,44 @@ InvoiceFlow Team`;
               <h2 className="font-heading text-2xl font-semibold mb-6" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                 Recent Invoices
               </h2>
-              <div className="space-y-4">
-                {recentInvoices.map((invoice) => (
-                  <InvoiceCard
-                    key={invoice.id}
-                    invoice={invoice}
-                    isDarkMode={isDarkMode}
-                    handleViewInvoice={handleViewInvoice}
-                    handleDownloadPDF={handleDownloadPDF}
-                    handleSendInvoice={handleSendInvoice}
-                    handleEditInvoice={handleEditInvoice}
-                    getStatusIcon={getStatusIcon}
-                    getStatusColor={getStatusColor}
-                  />
-                ))}
-              </div>
+              {recentInvoices.length > 0 ? (
+                <div className="space-y-4">
+                  {recentInvoices.map((invoice) => (
+                    <InvoiceCard
+                      key={invoice.id}
+                      invoice={invoice}
+                      isDarkMode={isDarkMode}
+                      handleViewInvoice={handleViewInvoice}
+                      handleDownloadPDF={handleDownloadPDF}
+                      handleSendInvoice={handleSendInvoice}
+                      handleEditInvoice={handleEditInvoice}
+                      getStatusIcon={getStatusIcon}
+                      getStatusColor={getStatusColor}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className={`rounded-lg p-8 text-center ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                  <div className={`inline-flex items-center justify-center w-16 h-16 rounded-xl mb-4 ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
+                    <FileText className="h-8 w-8 text-gray-500 dark:text-gray-400" />
+                  </div>
+                  
+                  <h3 className="text-lg font-semibold mb-2" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                    No invoices yet
+                  </h3>
+                  <p className="text-sm mb-6 max-w-sm mx-auto" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    Your recent invoices will appear here. Create your first invoice to start tracking your payments.
+                  </p>
+                  
+                  <button
+                    onClick={() => setShowFastInvoice(true)}
+                    className="inline-flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    <span>Create Invoice</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -841,21 +901,54 @@ InvoiceFlow Team`;
         </div>
             
             {/* Invoice List */}
-            <div className="space-y-4">
-              {invoices.map((invoice) => (
-                <InvoiceCard
-                  key={invoice.id}
-                  invoice={invoice}
-                  isDarkMode={isDarkMode}
-                  handleViewInvoice={handleViewInvoice}
-                  handleDownloadPDF={handleDownloadPDF}
-                  handleSendInvoice={handleSendInvoice}
-                  handleEditInvoice={handleEditInvoice}
-                  getStatusIcon={getStatusIcon}
-                  getStatusColor={getStatusColor}
-                />
-              ))}
-            </div>
+            {invoices.length > 0 ? (
+              <div className="space-y-4">
+                {invoices.map((invoice) => (
+                  <InvoiceCard
+                    key={invoice.id}
+                    invoice={invoice}
+                    isDarkMode={isDarkMode}
+                    handleViewInvoice={handleViewInvoice}
+                    handleDownloadPDF={handleDownloadPDF}
+                    handleSendInvoice={handleSendInvoice}
+                    handleEditInvoice={handleEditInvoice}
+                    getStatusIcon={getStatusIcon}
+                    getStatusColor={getStatusColor}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className={`rounded-lg p-12 text-center ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                <div className={`inline-flex items-center justify-center w-20 h-20 rounded-xl mb-6 ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
+                  <FileText className="h-10 w-10 text-gray-500 dark:text-gray-400" />
+                </div>
+                
+                <h3 className="text-xl font-semibold mb-3" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  No invoices found
+                </h3>
+                <p className="text-sm mb-8 max-w-md mx-auto" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                  Create your first invoice to start managing your business finances. 
+                  Choose between our quick invoice or detailed invoice with full customization.
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-sm mx-auto">
+                  <button
+                    onClick={() => setShowFastInvoice(true)}
+                    className="inline-flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    <span>Quick Invoice</span>
+                  </button>
+                  <button
+                    onClick={() => setShowCreateInvoice(true)}
+                    className="inline-flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
+                  >
+                    <FilePlus className="h-4 w-4" />
+                    <span>Detailed Invoice</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -877,54 +970,78 @@ InvoiceFlow Team`;
             </div>
             
             {/* Client List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {clients.map((client) => (
-                <div key={client.id} className={`rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
-                  <div className="flex items-start justify-between mb-4">
-                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
-                      <Building2 className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+            {clients.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {clients.map((client) => (
+                  <div key={client.id} className={`rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
+                        <Building2 className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                      </div>
+                      <div className="flex space-x-2">
+                        <button 
+                          onClick={() => handleEditClient(client)}
+                          className="p-3 sm:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] sm:min-h-auto"
+                        >
+                          <Edit className="h-5 w-5 sm:h-4 sm:w-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteClient(client.id)}
+                          className="p-3 sm:p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors min-h-[44px] sm:min-h-auto"
+                        >
+                          <Trash2 className="h-5 w-5 sm:h-4 sm:w-4" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex space-x-2">
+                    
+                    <h3 className="font-heading text-lg font-semibold mb-2" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                      {client.name}
+                    </h3>
+                    <p className="text-sm mb-1" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                      {client.company}
+                    </p>
+                    <p className="text-sm mb-4" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                      {client.email}
+                    </p>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                        {invoices.filter(inv => inv.clientId === client.id).length} invoices
+                      </div>
                       <button 
-                        onClick={() => handleEditClient(client)}
-                        className="p-3 sm:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] sm:min-h-auto"
+                        onClick={() => handleContactClient(client)}
+                        className="flex items-center justify-center space-x-1 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors px-3 py-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-500/10 min-h-[44px] sm:min-h-auto"
                       >
-                        <Edit className="h-5 w-5 sm:h-4 sm:w-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteClient(client.id)}
-                        className="p-3 sm:p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors min-h-[44px] sm:min-h-auto"
-                      >
-                        <Trash2 className="h-5 w-5 sm:h-4 sm:w-4" />
+                        <Mail className="h-4 w-4" />
+                        <span>Contact</span>
                       </button>
                     </div>
                   </div>
-                  
-                  <h3 className="font-heading text-lg font-semibold mb-2" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                    {client.name}
-                  </h3>
-                  <p className="text-sm mb-1" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                    {client.company}
-                  </p>
-                  <p className="text-sm mb-4" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                    {client.email}
-                  </p>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                      {invoices.filter(inv => inv.clientId === client.id).length} invoices
-                    </div>
-                    <button 
-                      onClick={() => handleContactClient(client)}
-                      className="flex items-center justify-center space-x-1 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors px-3 py-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-500/10 min-h-[44px] sm:min-h-auto"
-                    >
-                      <Mail className="h-4 w-4" />
-                      <span>Contact</span>
-                    </button>
-                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className={`rounded-lg p-12 text-center ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                <div className={`inline-flex items-center justify-center w-20 h-20 rounded-xl mb-6 ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
+                  <Users className="h-10 w-10 text-gray-500 dark:text-gray-400" />
                 </div>
-              ))}
-            </div>
+                
+                <h3 className="text-xl font-semibold mb-3" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  No clients yet
+                </h3>
+                <p className="text-sm mb-8 max-w-md mx-auto" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                  Build your client database to streamline your invoicing process. 
+                  Add client details once and use them for all future invoices.
+                </p>
+                
+                <button
+                  onClick={() => setShowCreateClient(true)}
+                  className="inline-flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span>Add First Client</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -951,7 +1068,7 @@ InvoiceFlow Team`;
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                    Business Name
+                    Business Name *
                   </label>
                   <input
                     type="text"
@@ -962,12 +1079,34 @@ InvoiceFlow Team`;
 
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                    Email
+                    Email *
                   </label>
                   <input
                     type="email"
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                     placeholder="your@email.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    Website
+                  </label>
+                  <input
+                    type="url"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                    placeholder="https://yourwebsite.com"
                   />
                 </div>
 
@@ -980,6 +1119,25 @@ InvoiceFlow Team`;
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                     placeholder="Your business address"
                   />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    Logo
+                  </label>
+                  <div className="flex items-center space-x-4">
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                      />
+                      <div className={`flex items-center space-x-2 px-4 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`}>
+                        <Upload className="h-4 w-4" />
+                        <span className="text-sm">Upload Logo</span>
+                      </div>
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1003,29 +1161,112 @@ InvoiceFlow Team`;
                   <input
                     type="email"
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
-                    placeholder="paypal@yourbusiness.com"
+                    placeholder="your@paypal.com"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                    Bank Account
+                    CashApp ID
                   </label>
                   <input
                     type="text"
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
-                    placeholder="Bank account details"
+                    placeholder="$yourcashapp"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    Venmo ID
+                  </label>
+                  <input
+                    type="text"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                    placeholder="@yourvenmo"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    Google Pay / UPI ID
+                  </label>
+                  <input
+                    type="text"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                    placeholder="your@upi or phone number"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    Apple Pay ID
+                  </label>
+                  <input
+                    type="text"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                    placeholder="Apple Pay ID or phone number"
                   />
                 </div>
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                    Other Payment Methods
+                    Bank Account Details
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium mb-1" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                        Account Number
+                      </label>
+                      <input
+                        type="text"
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                        placeholder="Account number"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                        IFSC / SWIFT Code
+                      </label>
+                      <input
+                        type="text"
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                        placeholder="IFSC or SWIFT code"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    IBAN (International)
+                  </label>
+                  <input
+                    type="text"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                    placeholder="IBAN number"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    Stripe Account
+                  </label>
+                  <input
+                    type="text"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                    placeholder="Stripe account ID or email"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    Additional Payment Methods
                   </label>
                   <textarea
                     rows={3}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
-                    placeholder="UPI, Venmo, or other payment methods"
+                    placeholder="Wise, Revolut, Zelle, or other payment methods not listed above..."
                   />
                 </div>
               </div>
@@ -1220,105 +1461,241 @@ InvoiceFlow Team`;
       {/* Create Client Modal */}
       {showCreateClient && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 max-w-md w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scroll-smooth custom-scrollbar ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <h2 className="text-lg sm:text-2xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Add Client</h2>
+          <div className={`rounded-2xl shadow-2xl border max-w-lg w-full ${
+            isDarkMode 
+              ? 'bg-gray-900/95 border-gray-700' 
+              : 'bg-white/95 border-gray-200'
+          } backdrop-blur-sm`}>
+            {/* Header */}
+            <div className={`flex items-center justify-between p-4 sm:p-6 border-b ${
+              isDarkMode 
+                ? 'border-gray-700' 
+                : 'border-gray-200'
+            }`}>
+              <div className="flex items-center space-x-3">
+                <div className={`p-3 rounded-xl ${
+                  isDarkMode 
+                    ? 'bg-indigo-500/20' 
+                    : 'bg-indigo-50'
+                }`}>
+                  <UserPlus className={`h-6 w-6 ${
+                    isDarkMode 
+                      ? 'text-indigo-400' 
+                      : 'text-indigo-600'
+                  }`} />
+                </div>
+                <div>
+                  <h2 className={`text-lg sm:text-xl font-bold ${
+                    isDarkMode 
+                      ? 'text-white' 
+                      : 'text-gray-900'
+                  }`}>
+                    {showEditClient ? 'Edit Client' : 'Add New Client'}
+                  </h2>
+                  <p className={`text-sm ${
+                    isDarkMode 
+                      ? 'text-gray-400' 
+                      : 'text-gray-600'
+                  }`}>
+                    {showEditClient ? 'Update client information' : 'Add a new client to your list'}
+                  </p>
+                </div>
+              </div>
               <button
-                onClick={() => setShowCreateClient(false)}
-                className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+                onClick={() => {
+                  setShowCreateClient(false);
+                  setShowEditClient(false);
+                  setSelectedClient(null);
+                  setNewClient({
+                    name: '',
+                    email: '',
+                    company: '',
+                    phone: '',
+                    address: ''
+                  });
+                }}
+                className={`transition-colors p-2 rounded-lg ${
+                  isDarkMode 
+                    ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' 
+                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                }`}
               >
-                <X className={`h-5 w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                <X className="h-5 w-5" />
               </button>
             </div>
-            
-            <div className="space-y-3 sm:space-y-4">
-              <div>
-                <label className="block text-xs sm:text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  value={newClient.name}
-                  onChange={(e) => setNewClient(prev => ({ ...prev, name: e.target.value }))}
-                  className={`w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
-                  placeholder="Client name"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  value={newClient.email}
-                  onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                  Company *
-                </label>
-                <input
-                  type="text"
-                  value={newClient.company}
-                  onChange={(e) => setNewClient(prev => ({ ...prev, company: e.target.value }))}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
-                />
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                  Phone
-                </label>
-                <input
-                  type="text"
-                  value={newClient.phone}
-                  onChange={(e) => setNewClient(prev => ({ ...prev, phone: e.target.value }))}
-                  placeholder="Optional"
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
-                />
-              </div>
+            {/* Form */}
+            <div className="p-4 sm:p-6">
+              <div className="space-y-6">
+                {/* Required Fields */}
+                <div className="space-y-4">
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Client Name *
+                    </label>
+                    <div className="relative">
+                      <User className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+                        isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                      }`} />
+                      <input
+                        type="text"
+                        value={newClient.name}
+                        onChange={(e) => setNewClient(prev => ({ ...prev, name: e.target.value }))}
+                        className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                            : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                        }`}
+                        placeholder="Enter client name"
+                        required
+                      />
+                    </div>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                  Address
-                </label>
-                <textarea
-                  value={newClient.address}
-                  onChange={(e) => setNewClient(prev => ({ ...prev, address: e.target.value }))}
-                  placeholder="Optional"
-                  rows={3}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
-                />
-              </div>
-              
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => {
-                    setShowCreateClient(false);
-                    setShowEditClient(false);
-                    setSelectedClient(null);
-                    setNewClient({
-                      name: '',
-                      email: '',
-                      company: '',
-                      phone: '',
-                      address: ''
-                    });
-                  }}
-                  className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={showEditClient ? handleUpdateClient : handleCreateClient}
-                  className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                >
-                  {showEditClient ? 'Update Client' : 'Add Client'}
-                </button>
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Email Address *
+                    </label>
+                    <div className="relative">
+                      <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+                        isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                      }`} />
+                      <input
+                        type="email"
+                        value={newClient.email}
+                        onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))}
+                        className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                            : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                        }`}
+                        placeholder="client@example.com"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Optional Fields */}
+                <div className={`p-4 rounded-xl border ${
+                  isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'
+                }`}>
+                  <h3 className={`text-sm font-medium mb-4 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Additional Information (Optional)
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className={`block text-sm font-medium mb-2 ${
+                        isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
+                        Mobile Number
+                      </label>
+                      <div className="relative">
+                        <Phone className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+                          isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                        }`} />
+                        <input
+                          type="tel"
+                          value={newClient.phone || ''}
+                          onChange={(e) => setNewClient(prev => ({ ...prev, phone: e.target.value }))}
+                          className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                            isDarkMode 
+                              ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                              : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                          }`}
+                          placeholder="+1 (555) 123-4567"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className={`block text-sm font-medium mb-2 ${
+                        isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
+                        Company
+                      </label>
+                      <div className="relative">
+                        <Building2 className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+                          isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                        }`} />
+                        <input
+                          type="text"
+                          value={newClient.company || ''}
+                          onChange={(e) => setNewClient(prev => ({ ...prev, company: e.target.value }))}
+                          className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                            isDarkMode 
+                              ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                              : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                          }`}
+                          placeholder="Company name"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className={`block text-sm font-medium mb-2 ${
+                        isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
+                        Address
+                      </label>
+                      <div className="relative">
+                        <MapPin className={`absolute left-3 top-3 h-4 w-4 ${
+                          isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                        }`} />
+                        <textarea
+                          value={newClient.address || ''}
+                          onChange={(e) => setNewClient(prev => ({ ...prev, address: e.target.value }))}
+                          className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
+                            isDarkMode 
+                              ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                              : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                          }`}
+                          placeholder="Client address"
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                  <button
+                    onClick={() => {
+                      setShowCreateClient(false);
+                      setShowEditClient(false);
+                      setSelectedClient(null);
+                      setNewClient({
+                        name: '',
+                        email: '',
+                        company: '',
+                        phone: '',
+                        address: ''
+                      });
+                    }}
+                    className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium ${
+                      isDarkMode 
+                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={showEditClient ? handleUpdateClient : handleCreateClient}
+                    className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    <span>{showEditClient ? 'Update Client' : 'Add Client'}</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1485,8 +1862,10 @@ InvoiceFlow Team`;
       <FastInvoiceModal
         isOpen={showFastInvoice}
         onClose={() => setShowFastInvoice(false)}
-        onSuccess={refreshData}
-        user={user || { id: 'guest', email: 'guest@invoiceflow.com', name: 'Guest' }}
+        onSuccess={() => {
+          fetchAllData();
+        }}
+        user={user || { id: 'guest', email: 'guest@example.com', name: 'Guest' }}
         getAuthHeaders={getAuthHeaders}
         isDarkMode={isDarkMode}
       />
@@ -1496,7 +1875,9 @@ InvoiceFlow Team`;
         <QuickInvoiceModal
           isOpen={showCreateInvoice}
           onClose={() => setShowCreateInvoice(false)}
-        onSuccess={refreshData}
+          onSuccess={() => {
+            fetchAllData();
+          }}
           getAuthHeaders={getAuthHeaders}
           isDarkMode={isDarkMode}
         />

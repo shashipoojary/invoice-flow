@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Zap, DollarSign, Calendar, FileText, User, Mail } from 'lucide-react'
+import { X, Sparkles, DollarSign, Calendar, FileText, User, Mail, ArrowRight, ArrowLeft } from 'lucide-react'
 
 interface FastInvoiceModalProps {
   isOpen: boolean
@@ -100,41 +100,51 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50">
-      <div className={`rounded-2xl shadow-2xl border max-w-md w-full ${
+      <div className={`rounded-2xl shadow-2xl border max-w-lg w-full ${
         isDarkMode 
-          ? 'bg-gray-800 border-gray-700' 
-          : 'bg-white border-gray-200'
-      }`}>
+          ? 'bg-gray-900/95 border-gray-700' 
+          : 'bg-white/95 border-gray-200'
+      } backdrop-blur-sm`}>
+        {/* Header */}
         <div className={`flex items-center justify-between p-6 border-b ${
           isDarkMode 
             ? 'border-gray-700' 
-            : 'border-gray-100'
+            : 'border-gray-200'
         }`}>
           <div className="flex items-center space-x-3">
-            <div className={`p-2 rounded-lg ${
+            <div className={`p-3 rounded-xl ${
               isDarkMode 
-                ? 'bg-indigo-900/30' 
-                : 'bg-indigo-100'
+                ? 'bg-indigo-500/20' 
+                : 'bg-indigo-50'
             }`}>
-              <Zap className={`h-5 w-5 ${
+              <Sparkles className={`h-6 w-6 ${
                 isDarkMode 
                   ? 'text-indigo-400' 
                   : 'text-indigo-600'
               }`} />
             </div>
-            <h2 className={`text-xl font-semibold ${
-              isDarkMode 
-                ? 'text-white' 
-                : 'text-gray-900'
-            }`}>
-              Quick Invoice
-            </h2>
+            <div>
+              <h2 className={`text-xl font-bold ${
+                isDarkMode 
+                  ? 'text-white' 
+                  : 'text-gray-900'
+              }`}>
+                Quick Invoice
+              </h2>
+              <p className={`text-sm ${
+                isDarkMode 
+                  ? 'text-gray-400' 
+                  : 'text-gray-600'
+              }`}>
+                Create invoice in 60 seconds
+              </p>
+            </div>
           </div>
           <button
             onClick={handleClose}
-            className={`transition-colors p-1 rounded-lg ${
+            className={`transition-colors p-2 rounded-lg ${
               isDarkMode 
-                ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700' 
+                ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' 
                 : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
             }`}
           >
@@ -142,10 +152,17 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-6">
           {step === 1 && (
-            <>
-              <div className="text-center mb-6">
+            <div className="space-y-6">
+              {/* Step indicator */}
+              <div className="flex items-center justify-center space-x-2 mb-8">
+                <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-semibold">1</div>
+                <div className="w-12 h-0.5 bg-gray-300 dark:bg-gray-600"></div>
+                <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400 flex items-center justify-center text-sm font-semibold">2</div>
+              </div>
+
+              <div className="text-center mb-8">
                 <h3 className={`text-lg font-semibold mb-2 ${
                   isDarkMode 
                     ? 'text-white' 
@@ -158,77 +175,87 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                 }`}>Who are you billing?</p>
               </div>
 
-              <div>
-                <label className={`block text-sm font-medium mb-3 ${
-                  isDarkMode 
-                    ? 'text-white' 
-                    : 'text-gray-900'
-                }`}>
-                  Client Name *
-                </label>
-                <div className="relative">
-                  <User className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+              <div className="space-y-5">
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
                     isDarkMode 
-                      ? 'text-gray-400' 
-                      : 'text-gray-400'
-                  }`} />
-                  <input
-                    type="text"
-                    value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
-                    className={`w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                      ? 'text-gray-300' 
+                      : 'text-gray-700'
+                  }`}>
+                    Client Name *
+                  </label>
+                  <div className="relative">
+                    <User className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
                       isDarkMode 
-                        ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-400' 
-                        : 'border-gray-200 bg-white text-gray-900 placeholder-gray-500'
-                    }`}
-                    placeholder="Client Name"
-                    required
-                  />
+                        ? 'text-gray-500' 
+                        : 'text-gray-400'
+                    }`} />
+                    <input
+                      type="text"
+                      value={clientName}
+                      onChange={(e) => setClientName(e.target.value)}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                          : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                      }`}
+                      placeholder="Enter client name"
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label className={`block text-sm font-medium mb-3 ${
-                  isDarkMode 
-                    ? 'text-white' 
-                    : 'text-gray-900'
-                }`}>
-                  Client Email *
-                </label>
-                <div className="relative">
-                  <Mail className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
                     isDarkMode 
-                      ? 'text-gray-400' 
-                      : 'text-gray-400'
-                  }`} />
-                  <input
-                    type="email"
-                    value={clientEmail}
-                    onChange={(e) => setClientEmail(e.target.value)}
-                    className={`w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                      ? 'text-gray-300' 
+                      : 'text-gray-700'
+                  }`}>
+                    Client Email *
+                  </label>
+                  <div className="relative">
+                    <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
                       isDarkMode 
-                        ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-400' 
-                        : 'border-gray-200 bg-white text-gray-900 placeholder-gray-500'
-                    }`}
-                    placeholder="client@company.com"
-                    required
-                  />
+                        ? 'text-gray-500' 
+                        : 'text-gray-400'
+                    }`} />
+                    <input
+                      type="email"
+                      value={clientEmail}
+                      onChange={(e) => setClientEmail(e.target.value)}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                          : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                      }`}
+                      placeholder="client@example.com"
+                      required
+                    />
+                  </div>
                 </div>
               </div>
 
               <button
                 type="button"
                 onClick={() => setStep(2)}
-                className="w-full bg-indigo-600 text-white py-3 px-4 rounded-xl hover:bg-indigo-700 transition-colors font-medium"
+                className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2"
               >
-                Next: Invoice Details
+                <span>Continue</span>
+                <ArrowRight className="h-4 w-4" />
               </button>
-            </>
+            </div>
           )}
 
           {step === 2 && (
-            <>
-              <div className="text-center mb-6">
+            <div className="space-y-6">
+              {/* Step indicator */}
+              <div className="flex items-center justify-center space-x-2 mb-8">
+                <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-semibold">1</div>
+                <div className="w-12 h-0.5 bg-indigo-600"></div>
+                <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-sm font-semibold">2</div>
+              </div>
+
+              <div className="text-center mb-8">
                 <h3 className={`text-lg font-semibold mb-2 ${
                   isDarkMode 
                     ? 'text-white' 
@@ -241,134 +268,138 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                 }`}>What are you billing for?</p>
               </div>
 
-              <div>
-                <label className={`block text-sm font-medium mb-3 ${
-                  isDarkMode 
-                    ? 'text-white' 
-                    : 'text-gray-900'
-                }`}>
-                  Description *
-                </label>
-                <div className="relative">
-                  <FileText className={`absolute left-4 top-4 h-4 w-4 ${
+              <div className="space-y-5">
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
                     isDarkMode 
-                      ? 'text-gray-400' 
-                      : 'text-gray-400'
-                  }`} />
+                      ? 'text-gray-300' 
+                      : 'text-gray-700'
+                  }`}>
+                    Description *
+                  </label>
+                  <div className="relative">
+                    <FileText className={`absolute left-3 top-3 h-4 w-4 ${
+                      isDarkMode 
+                        ? 'text-gray-500' 
+                        : 'text-gray-400'
+                    }`} />
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                          : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                      }`}
+                      placeholder="Describe the work or service provided"
+                      rows={3}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDarkMode 
+                      ? 'text-gray-300' 
+                      : 'text-gray-700'
+                  }`}>
+                    Amount *
+                  </label>
+                  <div className="relative">
+                    <DollarSign className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+                      isDarkMode 
+                        ? 'text-gray-500' 
+                        : 'text-gray-400'
+                    }`} />
+                    <input
+                      type="number"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                          : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                      }`}
+                      placeholder="0.00"
+                      step="0.01"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDarkMode 
+                      ? 'text-gray-300' 
+                      : 'text-gray-700'
+                  }`}>
+                    Due Date
+                  </label>
+                  <div className="relative">
+                    <Calendar className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+                      isDarkMode 
+                        ? 'text-gray-500' 
+                        : 'text-gray-400'
+                    }`} />
+                    <input
+                      type="date"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-800 text-white' 
+                          : 'border-gray-300 bg-white text-gray-900'
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDarkMode 
+                      ? 'text-gray-300' 
+                      : 'text-gray-700'
+                  }`}>
+                    Notes (Optional)
+                  </label>
                   <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className={`w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
                       isDarkMode 
-                        ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-400' 
-                        : 'border-gray-200 bg-white text-gray-900 placeholder-gray-500'
+                        ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                        : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                     }`}
-                    placeholder="Website design and development"
-                    rows={3}
-                    required
+                    placeholder="Payment terms, additional details..."
+                    rows={2}
                   />
                 </div>
               </div>
 
-              <div>
-                <label className={`block text-sm font-medium mb-3 ${
-                  isDarkMode 
-                    ? 'text-white' 
-                    : 'text-gray-900'
-                }`}>
-                  Amount *
-                </label>
-                <div className="relative">
-                  <DollarSign className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
-                    isDarkMode 
-                      ? 'text-gray-400' 
-                      : 'text-gray-400'
-                  }`} />
-                  <input
-                    type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    className={`w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                      isDarkMode 
-                        ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-400' 
-                        : 'border-gray-200 bg-white text-gray-900 placeholder-gray-500'
-                    }`}
-                    placeholder="1500"
-                    step="0.01"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className={`block text-sm font-medium mb-3 ${
-                  isDarkMode 
-                    ? 'text-white' 
-                    : 'text-gray-900'
-                }`}>
-                  Due Date
-                </label>
-                <div className="relative">
-                  <Calendar className={`absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
-                    isDarkMode 
-                      ? 'text-gray-400' 
-                      : 'text-gray-400'
-                  }`} />
-                  <input
-                    type="date"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className={`w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                      isDarkMode 
-                        ? 'border-gray-600 bg-gray-800 text-white' 
-                        : 'border-gray-200 bg-white text-gray-900'
-                    }`}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className={`block text-sm font-medium mb-3 ${
-                  isDarkMode 
-                    ? 'text-white' 
-                    : 'text-gray-900'
-                }`}>
-                  Notes (Optional)
-                </label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
-                    isDarkMode 
-                      ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-400' 
-                      : 'border-gray-200 bg-white text-gray-900 placeholder-gray-500'
-                  }`}
-                  placeholder="Payment terms, additional details..."
-                  rows={2}
-                />
-              </div>
-
-              <div className="flex space-x-4">
+              <div className="flex space-x-3">
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className={`flex-1 py-3 px-4 rounded-xl transition-colors font-medium ${
+                  className={`flex-1 py-3 px-4 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 ${
                     isDarkMode 
                       ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  Back
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back</span>
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-xl hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50"
+                  className="flex-1 bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50 flex items-center justify-center space-x-2"
                 >
-                  {loading ? 'Creating...' : 'Create & Send'}
+                  <Sparkles className="h-4 w-4" />
+                  <span>{loading ? 'Creating...' : 'Create Invoice'}</span>
                 </button>
               </div>
-            </>
+            </div>
           )}
         </form>
       </div>
