@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -25,13 +25,13 @@ interface ModernSidebarProps {
   onCreateInvoice: () => void;
 }
 
-const ModernSidebar = memo(function ModernSidebar({ 
+const ModernSidebar = ({ 
   activeTab, 
   setActiveTab, 
   isDarkMode, 
   onToggleDarkMode, 
   onCreateInvoice 
-}: ModernSidebarProps) {
+}: ModernSidebarProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -127,7 +127,7 @@ const ModernSidebar = memo(function ModernSidebar({
   };
 
   const sidebarContent = (
-    <div className={`h-full flex flex-col transition-all duration-300 scroll-optimized ${
+    <div className={`h-full flex flex-col transition-all duration-300 ${
       isDarkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-200'
     } ${isCollapsed ? 'w-16' : 'w-80'}`}>
       
@@ -422,6 +422,6 @@ const ModernSidebar = memo(function ModernSidebar({
       )}
     </>
   );
-});
+};
 
 export default ModernSidebar;

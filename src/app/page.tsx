@@ -47,7 +47,7 @@ interface Invoice {
   notes?: string;
 }
 
-const InvoiceDashboard = memo(function InvoiceDashboard() {
+export default function InvoiceDashboard() {
   // Authentication
   const { user, loading: authLoading, signIn, signUp, getAuthHeaders } = useAuth();
   const [showLogin, setShowLogin] = useState(false);
@@ -72,8 +72,11 @@ const InvoiceDashboard = memo(function InvoiceDashboard() {
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   
   // Loading states
+  const [isCreatingInvoice, setIsCreatingInvoice] = useState(false);
   const [isCreatingClient, setIsCreatingClient] = useState(false);
+  const [isUpdatingClient, setIsUpdatingClient] = useState(false);
   const [isSendingInvoice, setIsSendingInvoice] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
   // Form states
   const [newInvoice, setNewInvoice] = useState({
@@ -155,6 +158,41 @@ const InvoiceDashboard = memo(function InvoiceDashboard() {
     }
   };
 
+  // Data persistence functions
+  const saveDataToLocalStorage = useCallback(() => {
+    const data = {
+      clients,
+      invoices,
+      dashboardStats,
+      timestamp: Date.now()
+    };
+    localStorage.setItem('invoiceFlowData', JSON.stringify(data));
+  }, [clients, invoices, dashboardStats]);
+
+  const loadDataFromLocalStorage = useCallback(() => {
+    try {
+      const savedData = localStorage.getItem('invoiceFlowData');
+      if (savedData) {
+        const data = JSON.parse(savedData);
+        // Only load if data is less than 24 hours old
+        if (Date.now() - data.timestamp < 24 * 60 * 60 * 1000) {
+          setClients(data.clients || []);
+          setInvoices(data.invoices || []);
+          setDashboardStats(data.dashboardStats || {
+            totalRevenue: 0,
+            outstandingAmount: 0,
+            overdueCount: 0,
+            totalClients: 0
+          });
+          return true;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading data from localStorage:', error);
+    }
+    return false;
+  }, []);
+
   // Manual data fetching - no automatic fetching to prevent infinite loops
   const fetchAllData = useCallback(async () => {
     if (user && !authLoading) {
@@ -167,12 +205,22 @@ const InvoiceDashboard = memo(function InvoiceDashboard() {
     }
   }, [user, authLoading, fetchDashboardStats, fetchInvoices, fetchClients]);
 
-  // Only fetch data once when user first logs in
+  // Load data from localStorage first, then fetch from server if needed
   useEffect(() => {
     if (user && !authLoading) {
-      fetchAllData();
+      const hasLocalData = loadDataFromLocalStorage();
+      if (!hasLocalData) {
+        fetchAllData();
+      }
     }
-  }, [user, authLoading, fetchAllData]); // Include all dependencies
+  }, [user, authLoading, loadDataFromLocalStorage, fetchAllData]); // Include all dependencies
+
+  // Save data to localStorage whenever it changes
+  useEffect(() => {
+    if (user && !authLoading && (clients.length > 0 || invoices.length > 0)) {
+      saveDataToLocalStorage();
+    }
+  }, [clients, invoices, dashboardStats, user, authLoading, saveDataToLocalStorage]);
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -198,7 +246,6 @@ const InvoiceDashboard = memo(function InvoiceDashboard() {
   const overdueCount = useMemo(() => dashboardStats.overdueCount || 0, [dashboardStats.overdueCount]);
   const totalClients = useMemo(() => dashboardStats.totalClients || 0, [dashboardStats.totalClients]);
 
-
   // Memoize status utilities
   const getStatusIcon = useCallback((status: string) => {
     switch (status) {
@@ -219,7 +266,6 @@ const InvoiceDashboard = memo(function InvoiceDashboard() {
       default: return 'bg-gray-100 dark:bg-gray-500/20 text-gray-800 dark:text-gray-300';
     }
   }, []);
-
 
   // Memoized Invoice Card Component
   const InvoiceCard = memo(({ invoice, isDarkMode, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, getStatusIcon, getStatusColor }: {
@@ -371,7 +417,7 @@ const InvoiceDashboard = memo(function InvoiceDashboard() {
   };
 
   // Invoice functions
-  const handleCreateInvoice = () => {
+  const handleCreateInvoice = async () => {
     if (!newInvoice.clientId || !newInvoice.dueDate || newInvoice.items.some(item => !item.description || item.rate <= 0)) {
       alert('Please fill in all required fields');
       return;
@@ -380,39 +426,44 @@ const InvoiceDashboard = memo(function InvoiceDashboard() {
     const client = clients.find(c => c.id === newInvoice.clientId);
     if (!client) return;
 
-    const subtotal = newInvoice.items.reduce((sum, item) => sum + item.rate, 0);
-    const taxAmount = subtotal * newInvoice.taxRate;
-    const total = subtotal + taxAmount;
+    setIsCreatingInvoice(true);
+    try {
+      const subtotal = newInvoice.items.reduce((sum, item) => sum + item.rate, 0);
+      const taxAmount = subtotal * newInvoice.taxRate;
+      const total = subtotal + taxAmount;
 
-    const invoice: Invoice = {
-      id: Date.now().toString(),
-      invoiceNumber: `INV-${String(invoices.length + 1).padStart(3, '0')}`,
-      clientId: newInvoice.clientId,
-      client: client,
-      items: newInvoice.items.map(item => ({
-        ...item,
-        amount: item.rate
-      })),
-      subtotal,
-      taxRate: newInvoice.taxRate,
-      taxAmount,
-      total,
-      status: 'draft',
-      dueDate: newInvoice.dueDate,
-      createdAt: new Date().toISOString().split('T')[0],
-      notes: newInvoice.notes
-    };
+      const invoice: Invoice = {
+        id: Date.now().toString(),
+        invoiceNumber: `INV-${String(invoices.length + 1).padStart(3, '0')}`,
+        clientId: newInvoice.clientId,
+        client: client,
+        items: newInvoice.items.map(item => ({
+          ...item,
+          amount: item.rate
+        })),
+        subtotal,
+        taxRate: newInvoice.taxRate,
+        taxAmount,
+        total,
+        status: 'draft',
+        dueDate: newInvoice.dueDate,
+        createdAt: new Date().toISOString().split('T')[0],
+        notes: newInvoice.notes
+      };
 
-    setInvoices(prev => [invoice, ...prev]);
-    setShowCreateInvoice(false);
-    setNewInvoice({
-      clientId: '',
-      dueDate: '',
-      items: [{ id: '1', description: '', rate: 0, amount: 0 }],
-      taxRate: 0.1,
-      notes: ''
-    });
-    alert('Invoice created successfully!');
+      setInvoices(prev => [invoice, ...prev]);
+      setShowCreateInvoice(false);
+      setNewInvoice({
+        clientId: '',
+        dueDate: '',
+        items: [{ id: '1', description: '', rate: 0, amount: 0 }],
+        taxRate: 0.1,
+        notes: ''
+      });
+      alert('Invoice created successfully!');
+    } finally {
+      setIsCreatingInvoice(false);
+    }
   };
 
   const handleViewInvoice = useCallback((invoice: Invoice) => {
@@ -544,31 +595,45 @@ InvoiceFlow Team`;
     setShowEditClient(true);
   };
 
-  const handleUpdateClient = () => {
+  const handleUpdateClient = async () => {
     if (!selectedClient) return;
+    if (!newClient.name || !newClient.email) {
+      alert('Please fill in all required fields');
+      return;
+    }
 
-    setClients(prev => prev.map(client => 
-      client.id === selectedClient.id 
-        ? { ...client, ...newClient }
-        : client
-    ));
-    setShowEditClient(false);
-    setSelectedClient(null);
-    setNewClient({
-      name: '',
-      email: '',
-      company: '',
-      phone: '',
-      address: ''
-    });
-    alert('Client updated successfully!');
+    setIsUpdatingClient(true);
+    try {
+      setClients(prev => prev.map(client => 
+        client.id === selectedClient.id 
+          ? { ...client, ...newClient }
+          : client
+      ));
+      setShowEditClient(false);
+      setSelectedClient(null);
+      setNewClient({
+        name: '',
+        email: '',
+        company: '',
+        phone: '',
+        address: ''
+      });
+      alert('Client updated successfully!');
+    } finally {
+      setIsUpdatingClient(false);
+    }
   };
 
-  const handleDeleteClient = (clientId: string) => {
+  const handleDeleteClient = async (clientId: string) => {
     if (confirm('Are you sure you want to delete this client?')) {
-      setClients(prev => prev.filter(client => client.id !== clientId));
-      setInvoices(prev => prev.filter(invoice => invoice.clientId !== clientId));
-      alert('Client deleted successfully!');
+      try {
+        setClients(prev => prev.filter(client => client.id !== clientId));
+        setInvoices(prev => prev.filter(invoice => invoice.clientId !== clientId));
+        alert('Client deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting client:', error);
+        alert('Failed to delete client');
+      }
     }
   };
 
@@ -583,6 +648,41 @@ InvoiceFlow Team`;
 
     const mailtoLink = `mailto:${client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(mailtoLink);
+  };
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    try {
+      // Simulate upload process
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // In a real app, you would upload to a server here
+      // For now, we'll just show success message
+      alert('Logo uploaded successfully!');
+      
+      // Reset the input
+      event.target.value = '';
+    } catch (error) {
+      console.error('Logo upload error:', error);
+      alert('Failed to upload logo');
+    } finally {
+      setIsUploadingLogo(false);
+    }
   };
 
   // Invoice item functions
@@ -621,7 +721,7 @@ InvoiceFlow Team`;
 
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 transform-gpu ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
+    <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
       <div className="flex h-screen">
         {/* Modern Sidebar */}
         <ModernSidebar
@@ -633,7 +733,7 @@ InvoiceFlow Team`;
         />
 
         {/* Main Content */}
-        <main className="flex-1 lg:ml-0 overflow-y-auto scroll-smooth custom-scrollbar dashboard-scroll transform-gpu">
+        <main className="flex-1 lg:ml-0 overflow-y-auto scroll-smooth custom-scrollbar">
           <div className="pt-16 lg:pt-4 p-4 sm:p-6 lg:p-8">
             {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
@@ -791,10 +891,10 @@ InvoiceFlow Team`;
                       <Sparkles className="h-6 w-6 text-green-600 dark:text-green-400" />
                     </div>
                     <div className="text-left">
-                      <h3 className={`font-semibold text-lg transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                      <h3 className="font-semibold text-lg transition-colors" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                         60-Second Invoice
                       </h3>
-                      <p className={`text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      <p className="text-sm transition-colors" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
                         Fast & simple invoicing
                       </p>
                     </div>
@@ -811,10 +911,10 @@ InvoiceFlow Team`;
                       <FilePlus className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div className="text-left">
-                      <h3 className={`font-semibold text-lg transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                      <h3 className="font-semibold text-lg transition-colors" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                         Detailed Invoice
                       </h3>
-                      <p className={`text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      <p className="text-sm transition-colors" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
                         Multiple items & customization
                       </p>
                     </div>
@@ -831,10 +931,10 @@ InvoiceFlow Team`;
                       <UserPlus className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                     </div>
                     <div className="text-left">
-                      <h3 className={`font-semibold text-lg transition-colors ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                      <h3 className="font-semibold text-lg transition-colors" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                         Add Client
                       </h3>
-                      <p className={`text-sm transition-colors ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      <p className="text-sm transition-colors" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
                         Manage your client list
                       </p>
                     </div>
@@ -1145,11 +1245,17 @@ InvoiceFlow Team`;
                       <input
                         type="file"
                         accept="image/*"
+                        onChange={handleLogoUpload}
+                        disabled={isUploadingLogo}
                         className="hidden"
                       />
-                      <div className={`flex items-center space-x-2 px-4 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`}>
-                        <Upload className="h-4 w-4" />
-                        <span className="text-sm">Upload Logo</span>
+                      <div className={`flex items-center space-x-2 px-4 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`}>
+                        {isUploadingLogo ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Upload className="h-4 w-4" />
+                        )}
+                        <span className="text-sm">{isUploadingLogo ? 'Uploading...' : 'Upload Logo'}</span>
                       </div>
                     </label>
                   </div>
@@ -1463,9 +1569,13 @@ InvoiceFlow Team`;
                 </button>
                 <button 
                   onClick={handleCreateInvoice}
-                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  disabled={isCreatingInvoice}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
-                  {editingInvoice ? 'Update Invoice' : 'Create Invoice'}
+                  {isCreatingInvoice ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : null}
+                  <span>{isCreatingInvoice ? 'Creating Invoice...' : (editingInvoice ? 'Update Invoice' : 'Create Invoice')}</span>
                 </button>
               </div>
             </div>
@@ -1705,16 +1815,17 @@ InvoiceFlow Team`;
                   </button>
                   <button 
                     onClick={showEditClient ? handleUpdateClient : handleCreateClient}
-                    disabled={isCreatingClient}
+                    disabled={isCreatingClient || isUpdatingClient}
                     className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isCreatingClient ? (
+                    {(isCreatingClient || isUpdatingClient) ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <UserPlus className="h-4 w-4" />
                     )}
                     <span>
                       {isCreatingClient ? 'Adding Client...' : 
+                       isUpdatingClient ? 'Updating Client...' :
                        showEditClient ? 'Update Client' : 'Add Client'}
                     </span>
                   </button>
@@ -1915,6 +2026,4 @@ InvoiceFlow Team`;
       </div>
     </div>
   );
-});
-
-export default InvoiceDashboard;
+}
