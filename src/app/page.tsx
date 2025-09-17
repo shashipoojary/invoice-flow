@@ -466,85 +466,38 @@ export default function InvoiceDashboard() {
     setShowViewInvoice(true);
   }, []);
 
-  const handleDownloadPDF = useCallback((invoice: Invoice) => {
-    // Generate PDF content
-    const pdfContent = `
-      <html>
-        <head>
-          <title>Invoice ${invoice.invoiceNumber}</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 40px; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .invoice-details { margin-bottom: 30px; }
-            .client-info { margin-bottom: 30px; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-            th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-            th { background-color: #f2f2f2; }
-            .total { text-align: right; font-weight: bold; }
-            .notes { margin-top: 30px; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>INVOICE</h1>
-            <h2>${invoice.invoiceNumber}</h2>
-          </div>
-          
-          <div class="invoice-details">
-            <p><strong>Date:</strong> ${invoice.createdAt}</p>
-            <p><strong>Due Date:</strong> ${invoice.dueDate}</p>
-            <p><strong>Status:</strong> ${invoice.status.toUpperCase()}</p>
-          </div>
+  const handleDownloadPDF = useCallback(async (invoice: Invoice) => {
+    try {
+      const authHeaders = await getAuthHeaders();
+      
+      const response = await fetch('/api/invoices/pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        },
+        body: JSON.stringify({ invoiceId: invoice.id }),
+      });
 
-          <div class="client-info">
-            <h3>Bill To:</h3>
-            <p><strong>${invoice.client.name}</strong></p>
-            <p>${invoice.client.company}</p>
-            <p>${invoice.client.email}</p>
-            ${invoice.client.address ? `<p>${invoice.client.address}</p>` : ''}
-          </div>
+      if (!response.ok) {
+        throw new Error('Failed to generate PDF');
+      }
 
-          <table>
-            <thead>
-              <tr>
-                <th>Description</th>
-                <th>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${invoice.items.map(item => `
-                <tr>
-                  <td>${item.description}</td>
-                  <td>$${item.rate.toFixed(2)}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-
-          <div class="total">
-            <p>Subtotal: $${invoice.subtotal.toFixed(2)}</p>
-            <p>Tax (${(invoice.taxRate * 100).toFixed(1)}%): $${invoice.taxAmount.toFixed(2)}</p>
-            <p><strong>Total: $${invoice.total.toFixed(2)}</strong></p>
-          </div>
-
-          ${invoice.notes ? `
-            <div class="notes">
-              <h3>Notes:</h3>
-              <p>${invoice.notes}</p>
-            </div>
-          ` : ''}
-        </body>
-      </html>
-    `;
-
-    // Open PDF in new window
-    const newWindow = window.open('', '_blank');
-    if (newWindow) {
-      newWindow.document.write(pdfContent);
-      newWindow.document.close();
-      newWindow.print();
+      // Create blob and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice-${invoice.invoiceNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('PDF download error:', error);
+      alert('Failed to download PDF');
     }
-  }, []);
+  }, [getAuthHeaders]);
 
   const handleSendInvoice = useCallback((invoice: Invoice) => {
     const subject = `Invoice ${invoice.invoiceNumber} from InvoiceFlow`;
