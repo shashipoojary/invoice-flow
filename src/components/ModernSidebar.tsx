@@ -190,7 +190,7 @@ const ModernSidebar = ({
       )}
 
       {isCollapsed && (
-        <div className="px-4 py-4">
+        <div className="px-3 py-4">
           <button
             onClick={() => {
               onCreateInvoice();
@@ -199,16 +199,17 @@ const ModernSidebar = ({
                 setIsMobileOpen(false);
               }
             }}
-            className="w-full flex items-center justify-center p-3 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
+            className="w-full flex items-center justify-center p-4 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors"
+            title="Create Invoice"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-5 h-5" />
           </button>
         </div>
       )}
 
       {/* Navigation */}
-      <nav className={`flex-1 ${isCollapsed ? 'px-2 py-4' : 'px-6 py-4'}`}>
-        <div className="space-y-2">
+      <nav className={`flex-1 ${isCollapsed ? 'px-3 py-4' : 'px-6 py-4'}`}>
+        <div className="space-y-3">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -223,7 +224,7 @@ const ModernSidebar = ({
                     setIsMobileOpen(false);
                   }
                 }}
-                className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2 py-3' : 'space-x-3 px-3 py-3'} rounded-lg transition-colors group ${
+                className={`w-full flex items-center ${isCollapsed ? 'justify-center p-3' : 'space-x-3 px-3 py-3'} rounded-lg transition-colors group ${
                   isActive
                     ? isDarkMode
                       ? 'bg-gray-800 text-white'
@@ -257,7 +258,7 @@ const ModernSidebar = ({
       </nav>
 
       {/* User Profile & Actions */}
-      <div className={`${isCollapsed ? 'p-2' : 'p-6'} border-t ${
+      <div className={`${isCollapsed ? 'p-3' : 'p-6'} border-t ${
         isDarkMode ? 'border-gray-800' : 'border-gray-200'
       }`}>
         {!isCollapsed ? (
@@ -325,29 +326,29 @@ const ModernSidebar = ({
             </div>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <button
               onClick={onToggleDarkMode}
-              className={`w-full flex items-center justify-center p-2 rounded-lg transition-colors border ${
+              className={`w-full flex items-center justify-center p-3 rounded-lg transition-colors border ${
                 isDarkMode 
                   ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border-gray-700' 
                   : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-200'
               }`}
               title="Toggle Theme"
             >
-              <Settings className="w-4 h-4" />
+              <Settings className="w-5 h-5" />
             </button>
             
             <button
               onClick={handleSignOut}
-              className={`w-full flex items-center justify-center p-2 rounded-lg transition-colors border ${
+              className={`w-full flex items-center justify-center p-3 rounded-lg transition-colors border ${
                 isDarkMode 
                   ? 'text-red-400 bg-red-900/20 hover:bg-red-900/30 border-red-800' 
                   : 'text-red-600 bg-white hover:bg-red-50 border-red-200'
               }`}
               title="Logout"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-5 h-5" />
             </button>
           </div>
         )}
