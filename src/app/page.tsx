@@ -656,14 +656,14 @@ InvoiceFlow Team`;
                   <div className="flex flex-col sm:flex-row gap-3">
                     <button
                       onClick={() => setShowFastInvoice(true)}
-                      className="inline-flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                      className="inline-flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                     >
                       <Sparkles className="h-4 w-4" />
                       <span>Create Invoice</span>
                     </button>
                     <button
                       onClick={() => setShowCreateClient(true)}
-                      className="inline-flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
+                      className="inline-flex items-center space-x-2 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
                     >
                       <UserPlus className="h-4 w-4" />
                       <span>Add Client</span>
@@ -863,7 +863,7 @@ InvoiceFlow Team`;
                   
                   <button
                     onClick={() => setShowFastInvoice(true)}
-                    className="inline-flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                    className="inline-flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                   >
                     <Sparkles className="h-4 w-4" />
                     <span>Create Invoice</span>
@@ -934,14 +934,14 @@ InvoiceFlow Team`;
                 <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-sm mx-auto">
                   <button
                     onClick={() => setShowFastInvoice(true)}
-                    className="inline-flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                    className="inline-flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                   >
                     <Sparkles className="h-4 w-4" />
                     <span>Quick Invoice</span>
                   </button>
                   <button
                     onClick={() => setShowCreateInvoice(true)}
-                    className="inline-flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
+                    className="inline-flex items-center space-x-2 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
                   >
                     <FilePlus className="h-4 w-4" />
                     <span>Detailed Invoice</span>
@@ -962,7 +962,7 @@ InvoiceFlow Team`;
               </h2>
               <button
                 onClick={() => setShowCreateClient(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 <span>Add Client</span>
@@ -1035,7 +1035,7 @@ InvoiceFlow Team`;
                 
                 <button
                   onClick={() => setShowCreateClient(true)}
-                  className="inline-flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                  className="inline-flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                 >
                   <UserPlus className="h-4 w-4" />
                   <span>Add First Client</span>
