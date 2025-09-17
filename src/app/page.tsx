@@ -825,7 +825,8 @@ InvoiceFlow Team`;
                 {/* 60-Second Invoice */}
                 <button
                   onClick={() => setShowFastInvoice(true)}
-                  className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}
+                  className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] touch-manipulation ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}
+                  style={{ minHeight: '80px' }}
                 >
                   <div className="flex items-center space-x-4">
                     <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-green-500/30' : 'bg-green-100'}`}>
@@ -912,7 +913,7 @@ InvoiceFlow Team`;
         {activeTab === 'invoices' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="font-heading text-lg sm:text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                 Invoices
               </h2>
               {user ? (

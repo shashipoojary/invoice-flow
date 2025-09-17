@@ -232,12 +232,12 @@ const ModernSidebar = ({
         {!isCollapsed ? (
           <div className="space-y-4">
             {/* User Info */}
-            <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
-              <div className="w-10 h-10 bg-black dark:bg-white rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-white dark:text-black" />
+            <div className="flex items-center space-x-3 p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+              <div className="w-10 h-10 bg-indigo-600 dark:bg-white rounded-full flex items-center justify-center">
+                <User className="w-5 h-5 text-white dark:text-indigo-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm text-black dark:text-white truncate">
+                <div className="font-medium text-sm text-gray-900 dark:text-white truncate">
                   {user?.name || 'User'}
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
@@ -250,7 +250,7 @@ const ModernSidebar = ({
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={onToggleDarkMode}
-                className="flex items-center justify-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="flex items-center justify-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
               >
                 <Settings className="w-4 h-4" />
                 <span>Theme</span>
@@ -258,7 +258,7 @@ const ModernSidebar = ({
               
               <button
                 onClick={handleSignOut}
-                className="flex items-center justify-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-red-600 bg-red-50 hover:bg-red-100"
+                className="flex items-center justify-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-red-600 bg-white dark:bg-red-900/20 hover:bg-red-50 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Logout</span>
@@ -269,7 +269,7 @@ const ModernSidebar = ({
           <div className="space-y-2">
             <button
               onClick={onToggleDarkMode}
-              className="w-full flex items-center justify-center p-2 rounded-lg transition-colors bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="w-full flex items-center justify-center p-2 rounded-lg transition-colors bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
               title="Toggle Theme"
             >
               <Settings className="w-4 h-4" />
@@ -277,7 +277,7 @@ const ModernSidebar = ({
             
             <button
               onClick={handleSignOut}
-              className="w-full flex items-center justify-center p-2 rounded-lg text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+              className="w-full flex items-center justify-center p-2 rounded-lg text-red-600 bg-white dark:bg-red-900/20 hover:bg-red-50 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800 transition-colors"
               title="Logout"
             >
               <LogOut className="w-4 h-4" />
