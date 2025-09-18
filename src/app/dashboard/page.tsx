@@ -103,7 +103,7 @@ export default function DashboardOverview() {
     }
   }, []);
 
-  // Data fetching functions
+  // Data fetching functions - remove getAuthHeaders dependency to prevent infinite loop
   const fetchDashboardStats = useCallback(async () => {
     try {
       const headers = await getAuthHeaders();
@@ -116,7 +116,7 @@ export default function DashboardOverview() {
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
     }
-  }, [getAuthHeaders]);
+  }, []); // Remove getAuthHeaders dependency
 
   const fetchInvoices = useCallback(async () => {
     try {
@@ -131,7 +131,7 @@ export default function DashboardOverview() {
       console.error('Error fetching invoices:', error);
       setInvoices([]);
     }
-  }, [getAuthHeaders]);
+  }, []); // Remove getAuthHeaders dependency
 
   const fetchClients = useCallback(async () => {
     try {
@@ -145,27 +145,28 @@ export default function DashboardOverview() {
     } catch (error) {
       console.error('Error fetching clients:', error);
     }
-  }, [getAuthHeaders]);
-
-  // Fetch all data
-  const fetchAllData = useCallback(async () => {
-    if (user && !loading) {
-      setIsLoading(true);
-      await Promise.all([
-        fetchDashboardStats(),
-        fetchInvoices(),
-        fetchClients()
-      ]);
-      setIsLoading(false);
-    }
-  }, [user, loading, fetchDashboardStats, fetchInvoices, fetchClients]);
+  }, []); // Remove getAuthHeaders dependency
 
   // Load data on mount
   useEffect(() => {
     if (user && !loading) {
-      fetchAllData();
+      const loadData = async () => {
+        setIsLoading(true);
+        try {
+          await Promise.all([
+            fetchDashboardStats(),
+            fetchInvoices(),
+            fetchClients()
+          ]);
+        } catch (error) {
+          console.error('Error loading data:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      loadData();
     }
-  }, [user, loading, fetchAllData]);
+  }, [user, loading, fetchDashboardStats, fetchInvoices, fetchClients]); // Include dependencies but functions are stable
 
   // Memoize calculations
   const recentInvoices = useMemo(() => Array.isArray(invoices) ? invoices.slice(0, 5) : [], [invoices]);
