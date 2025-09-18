@@ -75,6 +75,7 @@ export default function DashboardOverview() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasLoadedData, setHasLoadedData] = useState(false);
 
   // Dark mode toggle
   const toggleDarkMode = useCallback(() => {
@@ -104,9 +105,11 @@ export default function DashboardOverview() {
   }, []);
 
 
-  // Load data on mount - remove function dependencies to prevent infinite loop
+  // Load data on mount - prevent infinite loop with hasLoadedData flag
   useEffect(() => {
-    if (user && !loading) {
+    if (user && !loading && !hasLoadedData) {
+      setHasLoadedData(true); // Set flag immediately to prevent re-runs
+      
       const loadData = async () => {
         setIsLoading(true);
         try {
@@ -143,7 +146,7 @@ export default function DashboardOverview() {
       };
       loadData();
     }
-  }, [user, loading]); // Only depend on user and loading state
+  }, [user, loading, hasLoadedData]); // Include hasLoadedData to prevent re-runs
 
   // Memoize calculations
   const recentInvoices = useMemo(() => Array.isArray(invoices) ? invoices.slice(0, 5) : [], [invoices]);
