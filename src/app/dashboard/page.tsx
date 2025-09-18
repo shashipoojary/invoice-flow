@@ -126,9 +126,10 @@ export default function DashboardOverview() {
         cache: 'no-store'
       });
       const data = await response.json();
-      setInvoices(data);
+      setInvoices(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching invoices:', error);
+      setInvoices([]);
     }
   }, [getAuthHeaders]);
 
@@ -167,7 +168,7 @@ export default function DashboardOverview() {
   }, [user, loading, fetchAllData]);
 
   // Memoize calculations
-  const recentInvoices = useMemo(() => invoices.slice(0, 5), [invoices]);
+  const recentInvoices = useMemo(() => Array.isArray(invoices) ? invoices.slice(0, 5) : [], [invoices]);
   const totalRevenue = useMemo(() => dashboardStats.totalRevenue || 0, [dashboardStats.totalRevenue]);
   const outstandingAmount = useMemo(() => dashboardStats.outstandingAmount || 0, [dashboardStats.outstandingAmount]);
   const overdueCount = useMemo(() => dashboardStats.overdueCount || 0, [dashboardStats.overdueCount]);
