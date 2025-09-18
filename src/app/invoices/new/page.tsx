@@ -168,7 +168,7 @@ export default function CreateInvoicePage() {
       localStorage.setItem('invoices', JSON.stringify(invoices))
 
       alert('Invoice saved as draft!')
-      router.push('/invoices')
+      router.push('/dashboard/invoices')
     } catch {
       alert('Error saving invoice')
     } finally {

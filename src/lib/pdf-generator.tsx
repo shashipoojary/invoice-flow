@@ -2,6 +2,7 @@ import React from 'react';
 import { pdf } from '@react-pdf/renderer';
 import ProfessionalInvoicePDF from '@/components/ProfessionalInvoicePDF';
 import QRCode from 'qrcode';
+import { Invoice, BusinessSettings } from '@/types';
 
 // Generate QR code data based on user's payment methods and invoice
 const generateQRCodeData = (invoice: Invoice, businessSettings?: BusinessSettings) => {
@@ -77,56 +78,6 @@ const generateQRCodeDataURL = async (invoice: Invoice, businessSettings?: Busine
   }
 };
 
-interface InvoiceItem {
-  id: string;
-  description: string;
-  rate: number;
-  amount: number;
-}
-
-interface Client {
-  id: string;
-    name: string;
-    email: string;
-    company?: string;
-  phone?: string;
-    address?: string;
-}
-
-interface Invoice {
-  id: string;
-  invoiceNumber: string;
-  clientId: string;
-  client: Client;
-  items: InvoiceItem[];
-  subtotal: number;
-  discount?: number;
-  taxRate: number;
-  taxAmount: number;
-  total: number;
-  status: 'draft' | 'sent' | 'paid' | 'overdue';
-  dueDate: string;
-  createdAt: string;
-  notes?: string;
-}
-
-interface BusinessSettings {
-  businessName?: string;
-  businessEmail?: string;
-  businessPhone?: string;
-  businessAddress?: string;
-  logo?: string;
-  paypalEmail?: string;
-  cashappId?: string;
-  venmoId?: string;
-  googlePayUpi?: string;
-  applePayId?: string;
-  bankAccount?: string;
-  bankIfscSwift?: string;
-  bankIban?: string;
-  stripeAccount?: string;
-  paymentNotes?: string;
-}
 
 export const generateProfessionalPDF = async (
   invoice: Invoice,
@@ -148,7 +99,8 @@ export const generateProfessionalPDF = async (
         email: invoice.client?.email || 'no-email@example.com',
         company: invoice.client?.company || '',
         phone: invoice.client?.phone || '',
-        address: invoice.client?.address || ''
+        address: invoice.client?.address || '',
+        createdAt: invoice.client?.createdAt || new Date().toISOString()
       },
       items: Array.isArray(invoice.items) ? invoice.items.map(item => ({
         id: item.id || 'item-1',
@@ -164,7 +116,11 @@ export const generateProfessionalPDF = async (
       status: invoice.status || 'draft',
       dueDate: invoice.dueDate || new Date().toISOString().split('T')[0],
       createdAt: invoice.createdAt || new Date().toISOString().split('T')[0],
-      notes: invoice.notes || ''
+      notes: invoice.notes || '',
+      clientName: invoice.clientName || invoice.client?.name || 'Unknown Client',
+      clientEmail: invoice.clientEmail || invoice.client?.email || 'no-email@example.com',
+      clientCompany: invoice.clientCompany || invoice.client?.company || '',
+      clientAddress: invoice.clientAddress || invoice.client?.address || ''
     };
 
     // Validate and sanitize business settings
@@ -172,7 +128,7 @@ export const generateProfessionalPDF = async (
       businessName: businessSettings?.businessName || 'Your Business Name',
       businessEmail: businessSettings?.businessEmail || 'your-email@example.com',
       businessPhone: businessSettings?.businessPhone || '',
-      businessAddress: businessSettings?.businessAddress || '',
+      address: businessSettings?.address || '',
       logo: businessSettings?.logo || '',
       paypalEmail: businessSettings?.paypalEmail || '',
       cashappId: businessSettings?.cashappId || '',
@@ -266,7 +222,7 @@ export const generatePDFBlob = async (invoice: Invoice, businessSettings?: Busin
     };
 
     // Generate QR code data URL
-    const qrCodeDataURL = await generateQRCodeDataURL(sanitizedInvoice, businessSettings);
+    const qrCodeDataURL = await generateQRCodeDataURL(sanitizedInvoice as Invoice, businessSettings);
     
     const doc = <ProfessionalInvoicePDF invoice={sanitizedInvoice} businessSettings={businessSettings} qrCodeDataURL={qrCodeDataURL} />;
     const blob = await pdf(doc).toBlob();
@@ -318,7 +274,7 @@ const createFallbackInvoiceHTML = (invoice: Invoice, businessSettings?: Business
   const businessName = businessSettings?.businessName || 'Your Business Name';
   const businessEmail = businessSettings?.businessEmail || 'your-email@example.com';
   const businessPhone = businessSettings?.businessPhone || '';
-  const businessAddress = businessSettings?.businessAddress || '';
+  const businessAddress = businessSettings?.address || '';
   
   console.log('HTML Fallback - Processed Business Info:', { businessName, businessEmail, businessPhone, businessAddress });
   

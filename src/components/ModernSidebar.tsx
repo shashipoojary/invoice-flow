@@ -15,19 +15,16 @@ import {
   Loader2
 } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 
 interface ModernSidebarProps {
-  activeTab: 'dashboard' | 'invoices' | 'clients' | 'settings';
-  setActiveTab: (tab: 'dashboard' | 'invoices' | 'clients' | 'settings') => void;
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
   onCreateInvoice: () => void;
 }
 
 const ModernSidebar = ({ 
-  activeTab, 
-  setActiveTab, 
   isDarkMode, 
   onToggleDarkMode, 
   onCreateInvoice 
@@ -36,6 +33,8 @@ const ModernSidebar = ({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { user, signOut } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
 
   // Auto-collapse on mobile and handle resize
   useEffect(() => {
@@ -73,25 +72,29 @@ const ModernSidebar = ({
       id: 'dashboard',
       label: 'Dashboard',
       icon: LayoutDashboard,
-      description: 'Overview & Analytics'
+      description: 'Overview & Analytics',
+      route: '/dashboard'
     },
     {
       id: 'invoices',
       label: 'Invoices',
       icon: FileText,
-      description: 'Manage Invoices'
+      description: 'Manage Invoices',
+      route: '/dashboard/invoices'
     },
     {
       id: 'clients',
       label: 'Clients',
       icon: Users,
-      description: 'Client Management'
+      description: 'Client Management',
+      route: '/dashboard/clients'
     },
     {
       id: 'settings',
       label: 'Settings',
       icon: Settings,
-      description: 'Account & Preferences'
+      description: 'Account & Preferences',
+      route: '/dashboard/settings'
     }
   ];
 
@@ -188,7 +191,11 @@ const ModernSidebar = ({
                 setIsMobileOpen(false);
               }
             }}
-            className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors text-sm font-medium"
+            className={`w-full flex items-center justify-center space-x-2 px-6 py-3 rounded-lg transition-colors text-sm font-medium ${
+              isDarkMode 
+                ? 'bg-white text-black hover:bg-gray-200' 
+                : 'bg-black text-white hover:bg-gray-800'
+            }`}
           >
             <Plus className="w-4 h-4" />
             <span>Create Invoice</span>
@@ -223,13 +230,13 @@ const ModernSidebar = ({
         <div className="space-y-3">
           {navigationItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeTab === item.id;
+            const isActive = pathname === item.route;
             
             return (
               <button
                 key={item.id}
                 onClick={() => {
-                  setActiveTab(item.id as 'dashboard' | 'invoices' | 'clients' | 'settings');
+                  router.push(item.route);
                   // Close mobile menu when navigating
                   if (window.innerWidth < 1024) {
                     setIsMobileOpen(false);

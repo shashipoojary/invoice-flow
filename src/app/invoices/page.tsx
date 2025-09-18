@@ -147,13 +147,15 @@ export default function InvoicesPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
-        return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/20'
+        return 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200 border border-green-200 dark:border-green-700'
       case 'sent':
-        return 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/20'
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 border border-blue-200 dark:border-blue-700'
       case 'overdue':
-        return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/20'
+        return 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200 border border-red-200 dark:border-red-700'
+      case 'draft':
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-200 border border-gray-200 dark:border-gray-600'
       default:
-        return 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-900/20'
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-200 border border-gray-200 dark:border-gray-600'
     }
   }
 

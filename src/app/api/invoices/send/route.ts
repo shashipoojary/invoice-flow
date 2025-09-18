@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       businessName: settingsData?.business_name || 'Your Business Name',
       businessEmail: settingsData?.business_email || 'your-email@example.com',
       businessPhone: settingsData?.business_phone || '',
-      businessAddress: settingsData?.business_address || '',
+      address: settingsData?.business_address || '',
       logo: settingsData?.logo || '',
       paypalEmail: settingsData?.paypal_email || '',
       cashappId: settingsData?.cashapp_id || '',
@@ -297,7 +297,7 @@ export async function POST(request: NextRequest) {
     // Update invoice status to 'sent' if it was 'draft'
     if (invoice.status === 'draft') {
       await supabaseAdmin
-        .from('invoices')
+      .from('invoices')
         .update({ status: 'sent' })
         .eq('id', invoiceId)
         .eq('user_id', user.id);

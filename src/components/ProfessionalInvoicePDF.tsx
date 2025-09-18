@@ -87,6 +87,17 @@ const styles = StyleSheet.create({
   addressColumn: {
     flex: 1,
   },
+  sectionTitleWithLine: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5e5',
+    paddingBottom: 5,
+  },
   sectionTitle: {
     fontSize: 12,
     fontWeight: 'bold',
@@ -202,22 +213,22 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   notesSection: {
-    marginTop: 20,
-    marginBottom: 20,
-    padding: 20,
+    marginTop: 15,
+    marginBottom: 15,
+    padding: 15,
   },
   notesTitle: {
     fontSize: 11,
     fontWeight: 'bold',
     color: '#1a1a1a',
-    marginBottom: 10,
+    marginBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
   notesText: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#666666',
-    lineHeight: 1.5,
+    lineHeight: 1.4,
   },
   footer: {
     marginTop: 8,
@@ -282,17 +293,73 @@ const styles = StyleSheet.create({
   },
   thankYouSection: {
     position: 'absolute',
-    bottom: 50,
+    bottom: 30,
     left: 0,
     right: 0,
     alignItems: 'center',
     justifyContent: 'center',
   },
   thankYouText: {
-    fontSize: 10,
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    textAlign: 'center',
+    lineHeight: 1.4,
+    marginBottom: 3,
+  },
+  thankYouSubtext: {
+    fontSize: 9,
     color: '#666666',
     textAlign: 'center',
     lineHeight: 1.4,
+  },
+  // New styles for second page sections - matching first page design
+  sectionTitleSecond: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  paymentInfoSection: {
+    marginTop: 15,
+    marginBottom: 15,
+    padding: 15,
+  },
+  paymentMethodsList: {
+    paddingLeft: 10,
+  },
+  paymentMethodRow: {
+    flexDirection: 'row',
+    marginBottom: 6,
+    alignItems: 'flex-start',
+  },
+  paymentMethodLabel: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    width: 80,
+    textTransform: 'uppercase',
+  },
+  paymentMethodValue: {
+    fontSize: 9,
+    color: '#666666',
+    lineHeight: 1.3,
+    flex: 1,
+  },
+  termsSectionSecond: {
+    marginBottom: 15,
+    padding: 15,
+  },
+  termsContentSecond: {
+    paddingLeft: 5,
+  },
+  termsTextSecond: {
+    fontSize: 9,
+    color: '#666666',
+    lineHeight: 1.4,
+    marginBottom: 3,
   },
   statusBadge: {
     backgroundColor: '#f8f9fa',
@@ -498,7 +565,7 @@ const generateQRCodeDataURL = async (invoice: Invoice, businessSettings?: Busine
         {/* Bill From and Bill To Section */}
         <View style={styles.addressSection}>
           <View style={styles.addressColumn}>
-            <Text style={styles.sectionTitle}>BILL FROM</Text>
+            <Text style={styles.sectionTitleWithLine}>BILL FROM</Text>
             <Text style={styles.clientName}>{businessSettings?.businessName || 'Your Business Name'}</Text>
             <View style={styles.clientDetails}>
               {businessSettings?.businessAddress && <Text>{businessSettings.businessAddress}</Text>}
@@ -508,7 +575,7 @@ const generateQRCodeDataURL = async (invoice: Invoice, businessSettings?: Busine
           </View>
           
           <View style={styles.addressColumn}>
-            <Text style={styles.sectionTitle}>BILL TO</Text>
+            <Text style={styles.sectionTitleWithLine}>BILL TO</Text>
             <Text style={styles.clientName}>{invoice.client.name}</Text>
             <View style={styles.clientDetails}>
               {invoice.client.address && <Text>{invoice.client.address}</Text>}
@@ -579,19 +646,99 @@ const generateQRCodeDataURL = async (invoice: Invoice, businessSettings?: Busine
         </View>
       </Page>
 
-      {/* Second Page - Notes and Thank You */}
+      {/* Second Page - Payment Info and Terms */}
       <Page size="A4" style={styles.page}>
-        {/* Notes */}
+        {/* Payment Information Section */}
+        <View style={styles.paymentInfoSection}>
+          <Text style={styles.sectionTitleSecond}>PAYMENT METHODS</Text>
+          <View style={styles.paymentMethodsList}>
+            {businessSettings?.paypalEmail && (
+              <View style={styles.paymentMethodRow}>
+                <Text style={styles.paymentMethodLabel}>PayPal:</Text>
+                <Text style={styles.paymentMethodValue}>{businessSettings.paypalEmail}</Text>
+              </View>
+            )}
+            {businessSettings?.cashappId && (
+              <View style={styles.paymentMethodRow}>
+                <Text style={styles.paymentMethodLabel}>Cash App:</Text>
+                <Text style={styles.paymentMethodValue}>${businessSettings.cashappId}</Text>
+              </View>
+            )}
+            {businessSettings?.venmoId && (
+              <View style={styles.paymentMethodRow}>
+                <Text style={styles.paymentMethodLabel}>Venmo:</Text>
+                <Text style={styles.paymentMethodValue}>@{businessSettings.venmoId}</Text>
+              </View>
+            )}
+            {businessSettings?.googlePayUpi && (
+              <View style={styles.paymentMethodRow}>
+                <Text style={styles.paymentMethodLabel}>Google Pay/UPI:</Text>
+                <Text style={styles.paymentMethodValue}>{businessSettings.googlePayUpi}</Text>
+              </View>
+            )}
+            {businessSettings?.applePayId && (
+              <View style={styles.paymentMethodRow}>
+                <Text style={styles.paymentMethodLabel}>Apple Pay:</Text>
+                <Text style={styles.paymentMethodValue}>{businessSettings.applePayId}</Text>
+              </View>
+            )}
+            {businessSettings?.bankAccount && (
+              <View style={styles.paymentMethodRow}>
+                <Text style={styles.paymentMethodLabel}>Bank Transfer:</Text>
+                <Text style={styles.paymentMethodValue}>{businessSettings.bankAccount}</Text>
+              </View>
+            )}
+            {businessSettings?.bankIfscSwift && (
+              <View style={styles.paymentMethodRow}>
+                <Text style={styles.paymentMethodLabel}>IFSC/SWIFT:</Text>
+                <Text style={styles.paymentMethodValue}>{businessSettings.bankIfscSwift}</Text>
+              </View>
+            )}
+            {businessSettings?.bankIban && (
+              <View style={styles.paymentMethodRow}>
+                <Text style={styles.paymentMethodLabel}>IBAN:</Text>
+                <Text style={styles.paymentMethodValue}>{businessSettings.bankIban}</Text>
+              </View>
+            )}
+            {businessSettings?.stripeAccount && (
+              <View style={styles.paymentMethodRow}>
+                <Text style={styles.paymentMethodLabel}>Stripe:</Text>
+                <Text style={styles.paymentMethodValue}>{businessSettings.stripeAccount}</Text>
+              </View>
+            )}
+            {businessSettings?.paymentNotes && (
+              <View style={styles.paymentMethodRow}>
+                <Text style={styles.paymentMethodLabel}>Notes:</Text>
+                <Text style={styles.paymentMethodValue}>{businessSettings.paymentNotes}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Terms and Conditions */}
+        <View style={styles.termsSectionSecond}>
+          <Text style={styles.sectionTitleSecond}>TERMS & CONDITIONS</Text>
+          <View style={styles.termsContentSecond}>
+            <Text style={styles.termsTextSecond}>• Payment is due within 30 days of invoice date</Text>
+            <Text style={styles.termsTextSecond}>• Late payments may incur a 1.5% monthly service charge</Text>
+            <Text style={styles.termsTextSecond}>• All work is performed according to agreed specifications</Text>
+            <Text style={styles.termsTextSecond}>• Client retains ownership of all provided materials</Text>
+            <Text style={styles.termsTextSecond}>• Disputes must be raised within 7 days of invoice receipt</Text>
+          </View>
+        </View>
+
+        {/* Notes Section */}
         {invoice.notes && (
           <View style={styles.notesSection}>
-            <Text style={styles.notesTitle}>ADDITIONAL NOTES</Text>
+            <Text style={styles.sectionTitleSecond}>ADDITIONAL NOTES</Text>
             <Text style={styles.notesText}>{invoice.notes}</Text>
           </View>
         )}
 
-        {/* Thank You Message - Bottom of Second Page */}
+        {/* Thank You Message */}
         <View style={styles.thankYouSection}>
-          <Text style={styles.thankYouText}>Thank you for your business! Please transfer the payment to the above account.</Text>
+          <Text style={styles.thankYouText}>Thank you for your business!</Text>
+          <Text style={styles.thankYouSubtext}>We appreciate your prompt payment and look forward to working with you again.</Text>
         </View>
       </Page>
     </Document>
