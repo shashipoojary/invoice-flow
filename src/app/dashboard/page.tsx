@@ -103,60 +103,37 @@ export default function DashboardOverview() {
     }
   }, []);
 
-  // Data fetching functions - remove getAuthHeaders dependency to prevent infinite loop
-  const fetchDashboardStats = useCallback(async () => {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch('/api/dashboard/stats', {
-        headers,
-        cache: 'no-store'
-      });
-      const data = await response.json();
-      setDashboardStats(data);
-    } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
-    }
-  }, []); // Remove getAuthHeaders dependency
 
-  const fetchInvoices = useCallback(async () => {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch('/api/invoices', {
-        headers,
-        cache: 'no-store'
-      });
-      const data = await response.json();
-      setInvoices(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error('Error fetching invoices:', error);
-      setInvoices([]);
-    }
-  }, []); // Remove getAuthHeaders dependency
-
-  const fetchClients = useCallback(async () => {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch('/api/clients', {
-        headers,
-        cache: 'no-store'
-      });
-      const data = await response.json();
-      setClients(data);
-    } catch (error) {
-      console.error('Error fetching clients:', error);
-    }
-  }, []); // Remove getAuthHeaders dependency
-
-  // Load data on mount
+  // Load data on mount - remove function dependencies to prevent infinite loop
   useEffect(() => {
     if (user && !loading) {
       const loadData = async () => {
         setIsLoading(true);
         try {
+          // Call getAuthHeaders directly in each fetch to avoid dependency issues
+          const headers = await getAuthHeaders();
+          
           await Promise.all([
-            fetchDashboardStats(),
-            fetchInvoices(),
-            fetchClients()
+            // Fetch dashboard stats
+            fetch('/api/dashboard/stats', { headers, cache: 'no-store' })
+              .then(res => res.json())
+              .then(data => setDashboardStats(data))
+              .catch(err => console.error('Error fetching dashboard stats:', err)),
+            
+            // Fetch invoices
+            fetch('/api/invoices', { headers, cache: 'no-store' })
+              .then(res => res.json())
+              .then(data => setInvoices(Array.isArray(data) ? data : []))
+              .catch(err => {
+                console.error('Error fetching invoices:', err);
+                setInvoices([]);
+              }),
+            
+            // Fetch clients
+            fetch('/api/clients', { headers, cache: 'no-store' })
+              .then(res => res.json())
+              .then(data => setClients(data))
+              .catch(err => console.error('Error fetching clients:', err))
           ]);
         } catch (error) {
           console.error('Error loading data:', error);
@@ -166,7 +143,7 @@ export default function DashboardOverview() {
       };
       loadData();
     }
-  }, [user, loading, fetchDashboardStats, fetchInvoices, fetchClients]); // Include dependencies but functions are stable
+  }, [user, loading]); // Only depend on user and loading state
 
   // Memoize calculations
   const recentInvoices = useMemo(() => Array.isArray(invoices) ? invoices.slice(0, 5) : [], [invoices]);
