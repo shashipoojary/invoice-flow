@@ -68,17 +68,17 @@ const ToastComponent: React.FC<ToastProps> = ({ toast, onRemove }) => {
   const styles = getToastStyles();
 
   return (
-    <div className={`relative flex items-start space-x-3 p-4 rounded-lg border shadow-lg backdrop-blur-sm transition-all duration-300 transform ${styles.bgColor} ${styles.borderColor} animate-in slide-in-from-right-full`}>
+    <div className={`relative flex items-start space-x-3 p-3 sm:p-4 rounded-lg border shadow-lg backdrop-blur-sm transition-all duration-300 transform ${styles.bgColor} ${styles.borderColor} animate-in slide-in-from-top-full sm:slide-in-from-right-full`}>
       <div className={`flex-shrink-0 p-1 rounded-full ${styles.iconBg}`}>
         {styles.icon}
       </div>
       
-      <div className="flex-1 min-w-0">
-        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+      <div className="flex-1 min-w-0 pr-2">
+        <h4 className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">
           {toast.title}
         </h4>
         {toast.message && (
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+          <p className="mt-1 text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
             {toast.message}
           </p>
         )}
@@ -86,7 +86,8 @@ const ToastComponent: React.FC<ToastProps> = ({ toast, onRemove }) => {
       
       <button
         onClick={() => onRemove(toast.id)}
-        className="flex-shrink-0 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
+        className="flex-shrink-0 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors touch-manipulation min-w-[32px] min-h-[32px] flex items-center justify-center"
+        aria-label="Close notification"
       >
         <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
       </button>
@@ -103,14 +104,16 @@ const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onRemove }) => 
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2 max-w-sm w-full">
-      {toasts.map((toast) => (
-        <ToastComponent
-          key={toast.id}
-          toast={toast}
-          onRemove={onRemove}
-        />
-      ))}
+    <div className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm z-50 space-y-2 pointer-events-none">
+      <div className="space-y-2 pointer-events-auto">
+        {toasts.map((toast) => (
+          <ToastComponent
+            key={toast.id}
+            toast={toast}
+            onRemove={onRemove}
+          />
+        ))}
+      </div>
     </div>
   );
 };
