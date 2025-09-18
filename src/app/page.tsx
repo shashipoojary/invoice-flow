@@ -329,6 +329,37 @@ export default function InvoiceDashboard() {
     };
   }, [showProfileDropdown]);
 
+  // Auto-refresh data when window regains focus (for cross-device sync)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (user && !authLoading && hasLoadedData) {
+        // Small delay to ensure user is fully focused
+        setTimeout(() => {
+          fetchAllData();
+        }, 500);
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [user, authLoading, hasLoadedData, fetchAllData]);
+
+  // Periodic data refresh for cross-device synchronization (every 30 seconds)
+  useEffect(() => {
+    if (!user || authLoading || !hasLoadedData) return;
+
+    const interval = setInterval(() => {
+      // Only refresh if window is visible and user is active
+      if (!document.hidden) {
+        fetchAllData();
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [user, authLoading, hasLoadedData, fetchAllData]);
+
   // Memoize expensive calculations
   const recentInvoices = useMemo(() => invoices.slice(0, 5), [invoices]);
   const totalRevenue = useMemo(() => dashboardStats.totalRevenue || 0, [dashboardStats.totalRevenue]);
@@ -666,9 +697,9 @@ InvoiceFlow Team`;
         throw new Error(errorData.error || 'Failed to create client');
       }
 
-      const { client } = await response.json();
+      // Refresh data from server to ensure synchronization across all devices
+      await fetchClients();
       
-      setClients(prev => [client, ...prev]);
       setShowCreateClient(false);
       setNewClient({
         name: '',
@@ -725,11 +756,9 @@ InvoiceFlow Team`;
         throw new Error(errorData.error || 'Failed to update client');
       }
 
-      const { client } = await response.json();
+      // Refresh data from server to ensure synchronization across all devices
+      await fetchClients();
       
-      setClients(prev => prev.map(c => 
-        c.id === selectedClient.id ? client : c
-      ));
       setShowEditClient(false);
       setSelectedClient(null);
       setNewClient({
@@ -779,6 +808,13 @@ InvoiceFlow Team`;
             const errorData = await response.json();
             throw new Error(errorData.error || 'Failed to delete client');
           }
+
+          // Refresh data from server to ensure synchronization across all devices
+          await Promise.all([
+            fetchClients(),
+            fetchInvoices(),
+            fetchDashboardStats()
+          ]);
 
           showSuccess('Client Deleted', 'Client has been successfully removed from your list.');
         } catch (error) {
