@@ -79,6 +79,7 @@ export default function DashboardOverview() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [showFastInvoice, setShowFastInvoice] = useState(false);
+  const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   const [showCreateClient, setShowCreateClient] = useState(false);
 
   // Dark mode toggle
@@ -326,6 +327,75 @@ export default function DashboardOverview() {
               </div>
             </div>
 
+            {/* Quick Actions */}
+            <div>
+              <h2 className="font-heading text-2xl font-semibold mb-6" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                Quick Actions
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* 60-Second Invoice */}
+                <button
+                  onClick={() => setShowFastInvoice(true)}
+                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] touch-manipulation border-2 ${isDarkMode ? 'bg-gray-800/50 border-gray-600 hover:border-green-500 hover:bg-green-500/10' : 'bg-white/70 border-gray-300 hover:border-green-500 hover:bg-green-50'} backdrop-blur-sm cursor-pointer`}
+                  style={{ minHeight: '80px' }}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className={`p-3 rounded-xl transition-colors ${isDarkMode ? 'bg-green-500/30 group-hover:bg-green-500/50' : 'bg-green-100 group-hover:bg-green-200'}`}>
+                      <Sparkles className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-semibold text-lg transition-colors" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                        60-Second Invoice
+                      </h3>
+                      <p className="text-sm transition-colors" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
+                        Fast & simple invoicing
+                      </p>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Detailed Invoice */}
+                <button
+                  onClick={() => setShowCreateInvoice(true)}
+                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] touch-manipulation border-2 ${isDarkMode ? 'bg-gray-800/50 border-gray-600 hover:border-blue-500 hover:bg-blue-500/10' : 'bg-white/70 border-gray-300 hover:border-blue-500 hover:bg-blue-50'} backdrop-blur-sm cursor-pointer`}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className={`p-3 rounded-xl transition-colors ${isDarkMode ? 'bg-blue-500/30 group-hover:bg-blue-500/50' : 'bg-blue-100 group-hover:bg-blue-200'}`}>
+                      <FilePlus className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-semibold text-lg transition-colors" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                        Detailed Invoice
+                      </h3>
+                      <p className="text-sm transition-colors" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
+                        Multiple items & customization
+                      </p>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Add Client */}
+                <button
+                  onClick={() => setShowCreateClient(true)}
+                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] touch-manipulation border-2 ${isDarkMode ? 'bg-gray-800/50 border-gray-600 hover:border-purple-500 hover:bg-purple-500/10' : 'bg-white/70 border-gray-300 hover:border-purple-500 hover:bg-purple-50'} backdrop-blur-sm cursor-pointer`}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className={`p-3 rounded-xl transition-colors ${isDarkMode ? 'bg-purple-500/30 group-hover:bg-purple-500/50' : 'bg-purple-100 group-hover:bg-purple-200'}`}>
+                      <UserPlus className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-semibold text-lg transition-colors" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                        Add Client
+                      </h3>
+                      <p className="text-sm transition-colors" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
+                        Manage your client list
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             {/* Recent Invoices */}
             <div className="mt-8">
               <h2 className="font-heading text-2xl font-semibold mb-6" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
@@ -412,6 +482,41 @@ export default function DashboardOverview() {
           clients={clients}
           onSuccess={() => {
             setShowFastInvoice(false);
+            // Refresh data after successful invoice creation
+            if (user && !loading) {
+              const loadData = async () => {
+                try {
+                  const headers = await getAuthHeaders();
+                  await Promise.all([
+                    fetch('/api/dashboard/stats', { headers, cache: 'no-store' })
+                      .then(res => res.json())
+                      .then(data => setDashboardStats(data))
+                      .catch(err => console.error('Error fetching dashboard stats:', err)),
+                    fetch('/api/invoices', { headers, cache: 'no-store' })
+                      .then(res => res.json())
+                      .then(data => setInvoices(Array.isArray(data) ? data : []))
+                      .catch(err => console.error('Error fetching invoices:', err))
+                  ]);
+                } catch (error) {
+                  console.error('Error refreshing data:', error);
+                }
+              };
+              loadData();
+            }
+          }}
+        />
+      )}
+
+      {/* Detailed Invoice Modal */}
+      {showCreateInvoice && (
+        <QuickInvoiceModal
+          isOpen={showCreateInvoice}
+          onClose={() => setShowCreateInvoice(false)}
+          getAuthHeaders={getAuthHeaders}
+          isDarkMode={isDarkMode}
+          clients={clients}
+          onSuccess={() => {
+            setShowCreateInvoice(false);
             // Refresh data after successful invoice creation
             if (user && !loading) {
               const loadData = async () => {
