@@ -81,6 +81,8 @@ export default function InvoiceDashboard() {
   const [isCreatingInvoice, setIsCreatingInvoice] = useState(false);
   const [isCreatingClient, setIsCreatingClient] = useState(false);
   const [isUpdatingClient, setIsUpdatingClient] = useState(false);
+  const [isDeletingClient, setIsDeletingClient] = useState(false);
+  const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
   const [isSendingInvoice, setIsSendingInvoice] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
@@ -640,7 +642,7 @@ InvoiceFlow Team`;
   // Client functions
   const handleCreateClient = async () => {
     if (!newClient.name || !newClient.email) {
-      alert('Please fill in name and email (required fields)');
+      showError('Validation Error', 'Name and email are required fields.');
       return;
     }
 
@@ -660,7 +662,8 @@ InvoiceFlow Team`;
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create client');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create client');
       }
 
       const { client } = await response.json();
@@ -677,7 +680,7 @@ InvoiceFlow Team`;
       showSuccess('Client Added', 'New client has been successfully added to your list.');
     } catch (error) {
       console.error('Error creating client:', error);
-      showError('Creation Failed', 'Failed to create client. Please try again.');
+      showError('Creation Failed', `Failed to create client: ${error instanceof Error ? error.message : 'Please try again.'}`);
     } finally {
       setIsCreatingClient(false);
     }
@@ -698,7 +701,7 @@ InvoiceFlow Team`;
   const handleUpdateClient = async () => {
     if (!selectedClient) return;
     if (!newClient.name || !newClient.email) {
-      alert('Please fill in name and email (required fields)');
+      showError('Validation Error', 'Name and email are required fields.');
       return;
     }
 
@@ -718,7 +721,8 @@ InvoiceFlow Team`;
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update client');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update client');
       }
 
       const { client } = await response.json();
@@ -738,7 +742,7 @@ InvoiceFlow Team`;
       showSuccess('Client Updated', 'Client information has been successfully updated.');
     } catch (error) {
       console.error('Error updating client:', error);
-      showError('Update Failed', 'Failed to update client. Please try again.');
+      showError('Update Failed', `Failed to update client: ${error instanceof Error ? error.message : 'Please try again.'}`);
     } finally {
       setIsUpdatingClient(false);
     }
@@ -753,7 +757,18 @@ InvoiceFlow Team`;
       type: 'danger',
       onConfirm: async () => {
         setConfirmationModal(prev => ({ ...prev, isOpen: false }));
+        setIsDeletingClient(true);
+        setDeletingClientId(clientId);
+        
+        // Store original state for rollback
+        const originalClients = [...clients];
+        const originalInvoices = [...invoices];
+        
         try {
+          // Optimistic update - remove client immediately for better UX
+          setClients(prev => prev.filter(client => client.id !== clientId));
+          setInvoices(prev => prev.filter(invoice => invoice.clientId !== clientId));
+          
           const headers = await getAuthHeaders();
           const response = await fetch(`/api/clients/${clientId}`, {
             method: 'DELETE',
@@ -761,15 +776,22 @@ InvoiceFlow Team`;
           });
 
           if (!response.ok) {
-            throw new Error('Failed to delete client');
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to delete client');
           }
 
-          setClients(prev => prev.filter(client => client.id !== clientId));
-          setInvoices(prev => prev.filter(invoice => invoice.clientId !== clientId));
           showSuccess('Client Deleted', 'Client has been successfully removed from your list.');
         } catch (error) {
           console.error('Error deleting client:', error);
-          showError('Delete Failed', 'Failed to delete client. Please try again.');
+          
+          // Rollback optimistic update on error
+          setClients(originalClients);
+          setInvoices(originalInvoices);
+          
+          showError('Delete Failed', `Failed to delete client: ${error instanceof Error ? error.message : 'Please try again.'}`);
+        } finally {
+          setIsDeletingClient(false);
+          setDeletingClientId(null);
         }
       }
     });
@@ -1299,7 +1321,7 @@ InvoiceFlow Team`;
             {clients.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {clients.map((client) => (
-                  <div key={client.id} className={`rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                  <div key={client.id} className={`rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm ${isDeletingClient && deletingClientId === client.id ? 'opacity-50 pointer-events-none' : ''}`}>
                     <div className="flex items-start justify-between mb-4">
                       <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
                         <Building2 className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
@@ -1307,15 +1329,31 @@ InvoiceFlow Team`;
                       <div className="flex space-x-2">
                         <button 
                           onClick={() => handleEditClient(client)}
-                          className="p-3 sm:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] sm:min-h-auto"
+                          disabled={isUpdatingClient || (isDeletingClient && deletingClientId === client.id)}
+                          className={`p-3 sm:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] sm:min-h-auto touch-manipulation ${
+                            isUpdatingClient || (isDeletingClient && deletingClientId === client.id)
+                              ? 'opacity-50 cursor-not-allowed' 
+                              : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                          }`}
+                          aria-label={`Edit ${client.name}`}
                         >
                           <Edit className="h-5 w-5 sm:h-4 sm:w-4" />
                         </button>
                         <button 
                           onClick={() => handleDeleteClient(client.id)}
-                          className="p-3 sm:p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors min-h-[44px] sm:min-h-auto"
+                          disabled={isDeletingClient && deletingClientId === client.id}
+                          className={`p-3 sm:p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors min-h-[44px] sm:min-h-auto touch-manipulation ${
+                            isDeletingClient && deletingClientId === client.id 
+                              ? 'opacity-50 cursor-not-allowed' 
+                              : 'hover:bg-red-50 dark:hover:bg-red-900/20'
+                          }`}
+                          aria-label={`Delete ${client.name}`}
                         >
-                          <Trash2 className="h-5 w-5 sm:h-4 sm:w-4" />
+                          {isDeletingClient && deletingClientId === client.id ? (
+                            <Loader2 className="h-5 w-5 sm:h-4 sm:w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-5 w-5 sm:h-4 sm:w-4" />
+                          )}
                         </button>
                       </div>
                     </div>
