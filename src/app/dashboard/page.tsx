@@ -3,12 +3,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Plus, FileText, Users, TrendingUp, 
-  Clock, CheckCircle, AlertCircle, AlertTriangle, UserPlus, FilePlus, Sparkles, Receipt
+  Clock, CheckCircle, AlertCircle, AlertTriangle, UserPlus, FilePlus, Sparkles, Receipt, Timer
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
+import FastInvoiceModal from '@/components/FastInvoiceModal';
+import QuickInvoiceModal from '@/components/QuickInvoiceModal';
 
 // Types
 interface Client {
@@ -76,6 +78,8 @@ export default function DashboardOverview() {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedData, setHasLoadedData] = useState(false);
+  const [showFastInvoice, setShowFastInvoice] = useState(false);
+  const [showCreateClient, setShowCreateClient] = useState(false);
 
   // Dark mode toggle
   const toggleDarkMode = useCallback(() => {
@@ -199,23 +203,46 @@ export default function DashboardOverview() {
                 The fastest way for freelancers & contractors to get paid
               </p>
               
-              {/* Quick Actions */}
-              <div className="mb-8">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <button 
-                    className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
-                  >
-                    <FilePlus className="h-4 w-4" />
-                    <span>Create Invoice</span>
-                  </button>
-                  <button 
-                    className="flex items-center space-x-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium"
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    <span>Add Client</span>
-                  </button>
+              {/* Welcome message for new users */}
+              {user && invoices.length === 0 && clients.length === 0 && (
+                <div className={`rounded-lg p-6 mb-8 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                  <div className="flex items-center space-x-4 mb-4">
+                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
+                      <Sparkles className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                        Ready to get started?
+                      </h3>
+                      <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                        Let&apos;s create your first invoice
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm mb-6 leading-relaxed" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    InvoiceFlow makes it incredibly easy to create professional invoices and get paid faster. 
+                    Start by adding a client or create your first invoice in under 60 seconds.
+                  </p>
+                  
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <button
+                      onClick={() => setShowFastInvoice(true)}
+                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      <span>Create Invoice</span>
+                    </button>
+                    <button
+                      onClick={() => setShowCreateClient(true)}
+                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      <span>Add Client</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
               
               {/* Stats Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -229,10 +256,10 @@ export default function DashboardOverview() {
                       </p>
                       <div className="flex items-center space-x-1">
                         <TrendingUp className="h-4 w-4 text-emerald-500" />
-                        <span className="text-xs text-emerald-600 dark:text-emerald-400">+12% from last month</span>
+                        <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Paid invoices</span>
                       </div>
                     </div>
-                    <div className="p-3 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-emerald-500/20' : 'bg-emerald-50'}`}>
                       <Receipt className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                     </div>
                   </div>
@@ -248,11 +275,13 @@ export default function DashboardOverview() {
                       </p>
                       <div className="flex items-center space-x-1">
                         <Clock className="h-4 w-4 text-amber-500" />
-                        <span className="text-xs text-amber-600 dark:text-amber-400">Pending payments</span>
+                        <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                          {invoices.filter(inv => inv.status === 'sent').length} pending
+                        </span>
                       </div>
                     </div>
-                    <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-900/30">
-                      <Clock className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-amber-500/20' : 'bg-amber-50'}`}>
+                      <Timer className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                     </div>
                   </div>
                 </div>
@@ -267,10 +296,10 @@ export default function DashboardOverview() {
                       </p>
                       <div className="flex items-center space-x-1">
                         <AlertCircle className="h-4 w-4 text-red-500" />
-                        <span className="text-xs text-red-600 dark:text-red-400">Need attention</span>
+                        <span className="text-sm font-medium text-red-600 dark:text-red-400">Need attention</span>
                       </div>
                     </div>
-                    <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/30">
+                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-red-500/20' : 'bg-red-50'}`}>
                       <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
                     </div>
                   </div>
@@ -286,10 +315,10 @@ export default function DashboardOverview() {
                       </p>
                       <div className="flex items-center space-x-1">
                         <Users className="h-4 w-4 text-indigo-500" />
-                        <span className="text-xs text-indigo-600 dark:text-indigo-400">Active clients</span>
+                        <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">Active clients</span>
                       </div>
                     </div>
-                    <div className="p-3 rounded-full bg-indigo-100 dark:bg-indigo-900/30">
+                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
                       <Users className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                     </div>
                   </div>
@@ -342,15 +371,22 @@ export default function DashboardOverview() {
                 </div>
               ) : (
                 <div className={`p-8 rounded-lg border-2 border-dashed text-center ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
-                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <div className={`inline-flex items-center justify-center w-16 h-16 rounded-xl mb-4 ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
+                    <FileText className="h-8 w-8 text-gray-500 dark:text-gray-400" />
+                  </div>
+                  
                   <h3 className="text-lg font-semibold mb-2" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                     No invoices yet
                   </h3>
-                  <p className="mb-4" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                    Create your first invoice to get started
+                  <p className="text-sm mb-6 max-w-sm mx-auto" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    Your recent invoices will appear here. Create your first invoice to start tracking your payments.
                   </p>
-                  <button className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium mx-auto">
-                    <FilePlus className="h-4 w-4" />
+                  
+                  <button
+                    onClick={() => setShowFastInvoice(true)}
+                    className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium mx-auto"
+                  >
+                    <Sparkles className="h-4 w-4" />
                     <span>Create Invoice</span>
                   </button>
                 </div>
@@ -364,6 +400,77 @@ export default function DashboardOverview() {
         toasts={toasts}
         onRemove={removeToast}
       />
+
+      {/* Fast Invoice Modal */}
+      {showFastInvoice && (
+        <FastInvoiceModal
+          isOpen={showFastInvoice}
+          onClose={() => setShowFastInvoice(false)}
+          user={user}
+          getAuthHeaders={getAuthHeaders}
+          isDarkMode={isDarkMode}
+          clients={clients}
+          onSuccess={() => {
+            setShowFastInvoice(false);
+            // Refresh data after successful invoice creation
+            if (user && !loading) {
+              const loadData = async () => {
+                try {
+                  const headers = await getAuthHeaders();
+                  await Promise.all([
+                    fetch('/api/dashboard/stats', { headers, cache: 'no-store' })
+                      .then(res => res.json())
+                      .then(data => setDashboardStats(data))
+                      .catch(err => console.error('Error fetching dashboard stats:', err)),
+                    fetch('/api/invoices', { headers, cache: 'no-store' })
+                      .then(res => res.json())
+                      .then(data => setInvoices(Array.isArray(data) ? data : []))
+                      .catch(err => console.error('Error fetching invoices:', err))
+                  ]);
+                } catch (error) {
+                  console.error('Error refreshing data:', error);
+                }
+              };
+              loadData();
+            }
+          }}
+        />
+      )}
+
+      {/* Create Client Modal */}
+      {showCreateClient && (
+        <QuickInvoiceModal
+          isOpen={showCreateClient}
+          onClose={() => setShowCreateClient(false)}
+          getAuthHeaders={getAuthHeaders}
+          isDarkMode={isDarkMode}
+          clients={clients}
+          onSuccess={() => {
+            setShowCreateClient(false);
+            // Refresh data after successful client creation
+            if (user && !loading) {
+              const loadData = async () => {
+                try {
+                  const headers = await getAuthHeaders();
+                  await Promise.all([
+                    fetch('/api/dashboard/stats', { headers, cache: 'no-store' })
+                      .then(res => res.json())
+                      .then(data => setDashboardStats(data))
+                      .catch(err => console.error('Error fetching dashboard stats:', err)),
+                    fetch('/api/clients', { headers, cache: 'no-store' })
+                      .then(res => res.json())
+                      .then(data => setClients(data))
+                      .catch(err => console.error('Error fetching clients:', err))
+                  ]);
+                } catch (error) {
+                  console.error('Error refreshing data:', error);
+                }
+              };
+              loadData();
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
