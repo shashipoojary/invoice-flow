@@ -12,6 +12,7 @@ import QuickInvoiceModal from '@/components/QuickInvoiceModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import ToastContainer from '@/components/Toast';
 import { useToast } from '@/hooks/useToast';
+import { viewPDF, downloadPDF, generatePDFBlob } from '@/lib/pdf-generator';
 import FastInvoiceModal from '@/components/FastInvoiceModal';
 import LoginModal from '@/components/LoginModal';
 import ModernSidebar from '@/components/ModernSidebar';
@@ -41,6 +42,7 @@ interface Invoice {
   client: Client;
   items: InvoiceItem[];
   subtotal: number;
+  discount?: number;
   taxRate: number;
   taxAmount: number;
   total: number;
@@ -48,6 +50,12 @@ interface Invoice {
   dueDate: string;
   createdAt: string;
   notes?: string;
+  type?: 'fast' | 'detailed'; // Add invoice type
+  // Database field names (for compatibility)
+  client_id?: string;
+  due_date?: string;
+  tax_rate?: number;
+  tax?: number;
 }
 
 export default function InvoiceDashboard() {
@@ -64,10 +72,9 @@ export default function InvoiceDashboard() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'invoices' | 'clients' | 'settings'>('dashboard');
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   const [showFastInvoice, setShowFastInvoice] = useState(false);
-  const [showCreateClient, setShowCreateClient] = useState(false);
   const [showViewInvoice, setShowViewInvoice] = useState(false);
+  const [showCreateClient, setShowCreateClient] = useState(false);
   const [showEditClient, setShowEditClient] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [dashboardStats, setDashboardStats] = useState({
     totalRevenue: 0,
     outstandingAmount: 0,
@@ -75,6 +82,7 @@ export default function InvoiceDashboard() {
     totalClients: 0
   });
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   
   // Loading states
@@ -137,6 +145,7 @@ export default function InvoiceDashboard() {
     clientId: '',
     dueDate: '',
     items: [{ id: '1', description: '', rate: 0, amount: 0 }],
+    discount: 0,
     taxRate: 0.1,
     notes: ''
   });
@@ -152,7 +161,7 @@ export default function InvoiceDashboard() {
   // Data will be fetched from Supabase
   const [clients, setClients] = useState<Client[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  
+
   // Dark mode
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -253,9 +262,11 @@ export default function InvoiceDashboard() {
       try {
         // Check if we already have settings loaded
         if (settings.businessName || settings.businessEmail) {
+          console.log('Settings already loaded, skipping fetch');
           return;
         }
 
+        console.log('Fetching settings from database...');
         setIsLoadingSettings(true);
         const headers = await getAuthHeaders();
         const response = await fetch('/api/settings', {
@@ -263,7 +274,10 @@ export default function InvoiceDashboard() {
           cache: 'no-store'
         });
         const data = await response.json();
+        console.log('Settings API response:', data);
+        
         if (data.settings) {
+          console.log('Setting settings state with:', data.settings);
           setSettings(data.settings);
         }
       } catch (error) {
@@ -389,13 +403,14 @@ export default function InvoiceDashboard() {
   }, []);
 
   // Memoized Invoice Card Component
-  const InvoiceCard = memo(({ invoice, isDarkMode, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, getStatusIcon, getStatusColor }: {
+  const InvoiceCard = memo(({ invoice, isDarkMode, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, getStatusIcon, getStatusColor }: {
     invoice: Invoice;
     isDarkMode: boolean;
     handleViewInvoice: (invoice: Invoice) => void;
     handleDownloadPDF: (invoice: Invoice) => void;
     handleSendInvoice: (invoice: Invoice) => void;
     handleEditInvoice: (invoice: Invoice) => void;
+    handleMarkAsPaid: (invoice: Invoice) => void;
     getStatusIcon: (status: string) => React.ReactElement;
     getStatusColor: (status: string) => string;
   }) => (
@@ -406,8 +421,17 @@ export default function InvoiceDashboard() {
           {/* Mobile Layout */}
           <div className="sm:hidden space-y-3">
             <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
               <div className="font-heading text-sm font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                 {invoice.invoiceNumber}
+                </div>
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                  invoice.type === 'fast' 
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                    : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                }`}>
+                  {invoice.type === 'fast' ? 'Fast' : 'Detailed'}
+                </span>
               </div>
               <div className="font-heading text-lg font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                 ₹{invoice.total.toLocaleString()}
@@ -438,8 +462,17 @@ export default function InvoiceDashboard() {
           {/* Desktop Layout */}
           <div className="hidden sm:grid grid-cols-4 gap-4 items-center">
             <div className="space-y-1">
+              <div className="flex items-center space-x-2">
               <div className="font-heading text-sm font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                 {invoice.invoiceNumber}
+                </div>
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                  invoice.type === 'fast' 
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                    : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
+                }`}>
+                  {invoice.type === 'fast' ? 'Fast' : 'Detailed'}
+                </span>
               </div>
               <div className="text-xs" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                 {invoice.createdAt}
@@ -487,7 +520,7 @@ export default function InvoiceDashboard() {
             <Download className="h-3 w-3" />
             <span>PDF</span>
           </button>
-          {invoice.status !== 'paid' && (
+          {invoice.status === 'draft' && (
             <button 
               onClick={() => handleSendInvoice(invoice)}
               className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}`}
@@ -496,6 +529,16 @@ export default function InvoiceDashboard() {
               <span>Send</span>
             </button>
           )}
+          {invoice.status !== 'paid' && (
+            <button 
+              onClick={() => handleMarkAsPaid(invoice)}
+              className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}
+            >
+              <CheckCircle className="h-3 w-3" />
+              <span>Mark as Paid</span>
+            </button>
+          )}
+          {invoice.status === 'draft' ? (
           <button 
             onClick={() => handleEditInvoice(invoice)}
             className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
@@ -503,6 +546,15 @@ export default function InvoiceDashboard() {
             <Edit className="h-3 w-3" />
             <span>Edit</span>
           </button>
+          ) : (
+            <div 
+              className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-gray-600/20 text-gray-500' : 'bg-gray-50 text-gray-400'} cursor-not-allowed`}
+              title="Cannot edit sent invoices - create a new invoice for changes"
+            >
+              <Edit className="h-3 w-3" />
+              <span>Edit</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -549,39 +601,42 @@ export default function InvoiceDashboard() {
 
     setIsCreatingInvoice(true);
     try {
-      const subtotal = newInvoice.items.reduce((sum, item) => sum + item.rate, 0);
-      const taxAmount = subtotal * newInvoice.taxRate;
-      const total = subtotal + taxAmount;
+    const subtotal = newInvoice.items.reduce((sum, item) => sum + item.rate, 0);
+    const taxAmount = subtotal * newInvoice.taxRate;
+    const total = subtotal + taxAmount;
 
-      const invoice: Invoice = {
-        id: Date.now().toString(),
-        invoiceNumber: `INV-${String(invoices.length + 1).padStart(3, '0')}`,
-        clientId: newInvoice.clientId,
-        client: client,
-        items: newInvoice.items.map(item => ({
-          ...item,
-          amount: item.rate
-        })),
-        subtotal,
-        taxRate: newInvoice.taxRate,
-        taxAmount,
-        total,
-        status: 'draft',
-        dueDate: newInvoice.dueDate,
-        createdAt: new Date().toISOString().split('T')[0],
-        notes: newInvoice.notes
-      };
+    const invoice: Invoice = {
+      id: Date.now().toString(),
+      invoiceNumber: `INV-${String(invoices.length + 1).padStart(3, '0')}`,
+      clientId: newInvoice.clientId,
+      client: client,
+      items: newInvoice.items.map(item => ({
+        ...item,
+        amount: item.rate
+      })),
+      subtotal,
+      discount: newInvoice.discount,
+      taxRate: newInvoice.taxRate,
+      taxAmount,
+      total,
+      status: 'draft',
+      dueDate: newInvoice.dueDate,
+      createdAt: new Date().toISOString().split('T')[0],
+      notes: newInvoice.notes,
+      type: 'detailed' // Mark as detailed invoice
+    };
 
-      setInvoices(prev => [invoice, ...prev]);
-      setShowCreateInvoice(false);
-      setNewInvoice({
-        clientId: '',
-        dueDate: '',
-        items: [{ id: '1', description: '', rate: 0, amount: 0 }],
-        taxRate: 0.1,
-        notes: ''
-      });
-      alert('Invoice created successfully!');
+    setInvoices(prev => [invoice, ...prev]);
+    setShowCreateInvoice(false);
+    setNewInvoice({
+      clientId: '',
+      dueDate: '',
+      items: [{ id: '1', description: '', rate: 0, amount: 0 }],
+        discount: 0,
+      taxRate: 0.1,
+      notes: ''
+    });
+    alert('Invoice created successfully!');
     } finally {
       setIsCreatingInvoice(false);
     }
@@ -594,81 +649,197 @@ export default function InvoiceDashboard() {
 
   const handleDownloadPDF = useCallback(async (invoice: Invoice) => {
     try {
-      const authHeaders = await getAuthHeaders();
+      // Debug: Log current settings
+      console.log('PDF Download - Current Settings:', settings);
       
-      const response = await fetch('/api/invoices/pdf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders,
-        },
-        body: JSON.stringify({ invoiceId: invoice.id }),
-      });
+      // Prepare business settings for PDF
+      const businessSettings = {
+        businessName: settings.businessName || 'Your Business Name',
+        businessEmail: settings.businessEmail || 'your-email@example.com',
+        businessPhone: settings.businessPhone || '',
+        businessAddress: settings.address || '',
+        logo: settings.logo || '',
+        paypalEmail: settings.paypalEmail || '',
+        cashappId: settings.cashappId || '',
+        venmoId: settings.venmoId || '',
+        googlePayUpi: settings.googlePayUpi || '',
+        applePayId: settings.applePayId || '',
+        bankAccount: settings.bankAccount || '',
+        bankIfscSwift: settings.bankIfscSwift || '',
+        bankIban: settings.bankIban || '',
+        stripeAccount: settings.stripeAccount || '',
+        paymentNotes: settings.paymentNotes || ''
+      };
+      
+      // Debug: Log business settings being passed to PDF
+      console.log('PDF Download - Business Settings:', businessSettings);
 
-      if (!response.ok) {
-        throw new Error('Failed to generate PDF');
-      }
-
-      // Create blob and download
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `invoice-${invoice.invoiceNumber}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      // Download PDF
+      await downloadPDF(invoice, businessSettings);
+      
+      showSuccess('PDF Downloaded', `Invoice ${invoice.invoiceNumber} has been downloaded.`);
     } catch (error) {
       console.error('PDF download error:', error);
-      alert('Failed to download PDF');
+      showError('Download Failed', 'Failed to download PDF. Please try again.');
     }
-  }, [getAuthHeaders]);
+  }, [showSuccess, showError, settings]);
 
   const handleSendInvoice = useCallback(async (invoice: Invoice) => {
     setIsSendingInvoice(true);
     try {
-      const subject = `Invoice ${invoice.invoiceNumber} from InvoiceFlow`;
-      const body = `Dear ${invoice.client.name},
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/invoices/send', {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          invoiceId: invoice.id,
+          clientEmail: invoice.client.email,
+          clientName: invoice.client.name
+        }),
+      });
 
-Please find attached your invoice ${invoice.invoiceNumber} for the amount of $${invoice.total.toFixed(2)}.
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send invoice');
+      }
 
-Invoice Details:
-- Invoice Number: ${invoice.invoiceNumber}
-- Due Date: ${invoice.dueDate}
-- Total Amount: $${invoice.total.toFixed(2)}
-
-${invoice.notes ? `Notes: ${invoice.notes}` : ''}
-
-Thank you for your business!
-
-Best regards,
-InvoiceFlow Team`;
-
-      const mailtoLink = `mailto:${invoice.client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      window.open(mailtoLink);
+      const result = await response.json();
       
-      // Update invoice status to sent
-      setInvoices(prev => prev.map(inv => 
-        inv.id === invoice.id ? { ...inv, status: 'sent' as const } : inv
+      // Update invoice status locally
+    setInvoices(prev => prev.map(inv => 
+        inv.id === invoice.id 
+          ? { ...inv, status: 'sent' as const }
+          : inv
       ));
-      alert('Invoice email opened!');
+
+      showSuccess('Invoice Sent', `Invoice has been sent to ${invoice.client.email} successfully!`);
+    } catch (error) {
+      console.error('Error sending invoice:', error);
+      showError('Send Failed', error instanceof Error ? error.message : 'Failed to send invoice. Please try again.');
     } finally {
       setIsSendingInvoice(false);
     }
-  }, []);
+  }, [getAuthHeaders, showSuccess, showError]);
 
-  const handleEditInvoice = useCallback((invoice: Invoice) => {
+  const handleEditInvoice = useCallback(async (invoice: Invoice) => {
+    console.log('=== EDIT INVOICE DEBUG ===');
+    console.log('Full invoice object:', JSON.stringify(invoice, null, 2));
+    console.log('Invoice client data:', invoice.client);
+    console.log('Available clients:', clients);
+    console.log('Current newInvoice state:', newInvoice);
+    
+    // Ensure clients are loaded before editing
+    if (clients.length === 0) {
+      console.log('No clients loaded, fetching clients first...');
+      await fetchClients();
+    }
+    
     setEditingInvoice(invoice);
-    setNewInvoice({
-      clientId: invoice.clientId,
-      dueDate: invoice.dueDate,
-      items: invoice.items,
-      taxRate: invoice.taxRate,
-      notes: invoice.notes || ''
-    });
-    setShowCreateInvoice(true);
-  }, []);
+    
+    // Open correct modal based on invoice type (default to detailed for existing invoices without type)
+    if (invoice.type === 'fast') {
+      setShowFastInvoice(true);
+    } else {
+      // For detailed invoices, pre-fill the detailed form
+      const clientId = invoice.client_id || invoice.clientId;
+      
+      // Wait a bit for clients to load if we just fetched them
+      let matchingClient = clients.find(c => c.id === clientId);
+      if (!matchingClient && clients.length === 0) {
+        console.log('Waiting for clients to load...');
+        // Give a small delay for clients to load
+        await new Promise(resolve => setTimeout(resolve, 100));
+        matchingClient = clients.find(c => c.id === clientId);
+      }
+      
+      console.log('=== PREFILL DEBUG ===');
+      console.log('Invoice client_id:', clientId);
+      console.log('Matching client found:', matchingClient);
+      console.log('All available clients:', clients.map(c => ({ id: c.id, name: c.name, email: c.email })));
+      
+      // If client doesn't exist, we'll still pre-fill but show a warning
+      if (!matchingClient) {
+        console.warn('Client not found in current clients list. Invoice client data:', invoice.client);
+      }
+      
+      const prefillData = {
+        clientId: clientId, // Handle both field names
+        dueDate: invoice.due_date || invoice.dueDate ? (invoice.due_date || invoice.dueDate).split('T')[0] : '', // Format date for HTML input
+        items: invoice.items ? invoice.items.map(item => ({
+          ...item,
+          rate: item.amount // Use amount as rate for editing
+        })) : [{ id: '1', description: '', rate: 0, amount: 0 }],
+        discount: invoice.discount || 0,
+        taxRate: invoice.tax_rate || invoice.taxRate || 0.1, // Use tax_rate field from database
+        notes: invoice.notes || ''
+      };
+      console.log('Pre-filling detailed form with:', prefillData);
+      console.log('Invoice items:', invoice.items);
+      setNewInvoice(prefillData);
+      
+      // Small delay to ensure state is updated before opening modal
+      setTimeout(() => {
+        setShowCreateInvoice(true);
+      }, 50);
+    }
+  }, [fetchClients]);
+
+  // Effect to pre-fill form when editing invoice changes
+  useEffect(() => {
+    if (editingInvoice && showCreateInvoice) {
+      const prefillData = {
+        clientId: editingInvoice.client_id || editingInvoice.clientId,
+        dueDate: editingInvoice.due_date || editingInvoice.dueDate ? (editingInvoice.due_date || editingInvoice.dueDate).split('T')[0] : '',
+        items: editingInvoice.items ? editingInvoice.items.map(item => ({
+          ...item,
+          rate: item.amount
+        })) : [{ id: '1', description: '', rate: 0, amount: 0 }],
+        discount: editingInvoice.discount || 0,
+        taxRate: editingInvoice.tax_rate || editingInvoice.taxRate || 0.1,
+        notes: editingInvoice.notes || ''
+      };
+      console.log('useEffect pre-filling form with:', prefillData);
+      console.log('Current newInvoice state before update:', newInvoice);
+      setNewInvoice(prefillData);
+    }
+  }, [editingInvoice, showCreateInvoice]);
+
+  const handleMarkAsPaid = useCallback(async (invoice: Invoice) => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/invoices/${invoice.id}`, {
+        method: 'PUT',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'paid',
+          notes: invoice.notes
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to mark invoice as paid');
+      }
+
+      // Update invoice status locally
+    setInvoices(prev => prev.map(inv => 
+        inv.id === invoice.id 
+          ? { ...inv, status: 'paid' as const }
+          : inv
+      ));
+
+      showSuccess('Invoice Updated', `Invoice ${invoice.invoiceNumber} has been marked as paid!`);
+    } catch (error) {
+      console.error('Error marking invoice as paid:', error);
+      showError('Update Failed', error instanceof Error ? error.message : 'Failed to mark invoice as paid. Please try again.');
+    }
+  }, [getAuthHeaders, showSuccess, showError]);
 
   // Client functions
   const handleCreateClient = async () => {
@@ -684,8 +855,8 @@ InvoiceFlow Team`;
         method: 'POST',
         headers,
         body: JSON.stringify({
-          name: newClient.name,
-          email: newClient.email,
+      name: newClient.name,
+      email: newClient.email,
           company: newClient.company || '',
           phone: newClient.phone || '',
           address: newClient.address || ''
@@ -700,14 +871,14 @@ InvoiceFlow Team`;
       // Refresh data from server to ensure synchronization across all devices
       await fetchClients();
       
-      setShowCreateClient(false);
-      setNewClient({
-        name: '',
-        email: '',
-        company: '',
-        phone: '',
-        address: ''
-      });
+    setShowCreateClient(false);
+    setNewClient({
+      name: '',
+      email: '',
+      company: '',
+      phone: '',
+      address: ''
+    });
       showSuccess('Client Added', 'New client has been successfully added to your list.');
     } catch (error) {
       console.error('Error creating client:', error);
@@ -759,15 +930,15 @@ InvoiceFlow Team`;
       // Refresh data from server to ensure synchronization across all devices
       await fetchClients();
       
-      setShowEditClient(false);
-      setSelectedClient(null);
-      setNewClient({
-        name: '',
-        email: '',
-        company: '',
-        phone: '',
-        address: ''
-      });
+    setShowEditClient(false);
+    setSelectedClient(null);
+    setNewClient({
+      name: '',
+      email: '',
+      company: '',
+      phone: '',
+      address: ''
+    });
       showSuccess('Client Updated', 'Client information has been successfully updated.');
     } catch (error) {
       console.error('Error updating client:', error);
@@ -795,8 +966,8 @@ InvoiceFlow Team`;
         
         try {
           // Optimistic update - remove client immediately for better UX
-          setClients(prev => prev.filter(client => client.id !== clientId));
-          setInvoices(prev => prev.filter(invoice => invoice.clientId !== clientId));
+      setClients(prev => prev.filter(client => client.id !== clientId));
+      setInvoices(prev => prev.filter(invoice => invoice.clientId !== clientId));
           
           const headers = await getAuthHeaders();
           const response = await fetch(`/api/clients/${clientId}`, {
@@ -1218,21 +1389,22 @@ InvoiceFlow Team`;
                 Recent Invoices
               </h2>
               {recentInvoices.length > 0 ? (
-                <div className="space-y-4">
-                  {recentInvoices.map((invoice) => (
-                    <InvoiceCard
-                      key={invoice.id}
-                      invoice={invoice}
-                      isDarkMode={isDarkMode}
-                      handleViewInvoice={handleViewInvoice}
-                      handleDownloadPDF={handleDownloadPDF}
-                      handleSendInvoice={handleSendInvoice}
-                      handleEditInvoice={handleEditInvoice}
-                      getStatusIcon={getStatusIcon}
-                      getStatusColor={getStatusColor}
-                    />
-                  ))}
-                </div>
+              <div className="space-y-4">
+                {recentInvoices.map((invoice) => (
+                  <InvoiceCard
+                    key={invoice.id}
+                    invoice={invoice}
+                    isDarkMode={isDarkMode}
+                    handleViewInvoice={handleViewInvoice}
+                    handleDownloadPDF={handleDownloadPDF}
+                    handleSendInvoice={handleSendInvoice}
+                    handleEditInvoice={handleEditInvoice}
+                      handleMarkAsPaid={handleMarkAsPaid}
+                    getStatusIcon={getStatusIcon}
+                    getStatusColor={getStatusColor}
+                  />
+                ))}
+              </div>
               ) : (
                 <div className={`rounded-lg p-8 text-center ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
                   <div className={`inline-flex items-center justify-center w-16 h-16 rounded-xl mb-4 ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
@@ -1286,21 +1458,22 @@ InvoiceFlow Team`;
             
             {/* Invoice List */}
             {invoices.length > 0 ? (
-              <div className="space-y-4">
-                {invoices.map((invoice) => (
-                  <InvoiceCard
-                    key={invoice.id}
-                    invoice={invoice}
-                    isDarkMode={isDarkMode}
-                    handleViewInvoice={handleViewInvoice}
-                    handleDownloadPDF={handleDownloadPDF}
-                    handleSendInvoice={handleSendInvoice}
-                    handleEditInvoice={handleEditInvoice}
-                    getStatusIcon={getStatusIcon}
-                    getStatusColor={getStatusColor}
-                  />
-                ))}
-              </div>
+            <div className="space-y-4">
+              {invoices.map((invoice) => (
+                <InvoiceCard
+                  key={invoice.id}
+                  invoice={invoice}
+                  isDarkMode={isDarkMode}
+                  handleViewInvoice={handleViewInvoice}
+                  handleDownloadPDF={handleDownloadPDF}
+                  handleSendInvoice={handleSendInvoice}
+                  handleEditInvoice={handleEditInvoice}
+                    handleMarkAsPaid={handleMarkAsPaid}
+                  getStatusIcon={getStatusIcon}
+                  getStatusColor={getStatusColor}
+                />
+              ))}
+            </div>
             ) : (
               <div className={`rounded-lg p-12 text-center ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
                 <div className={`inline-flex items-center justify-center w-20 h-20 rounded-xl mb-6 ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
@@ -1355,16 +1528,16 @@ InvoiceFlow Team`;
             
             {/* Client List */}
             {clients.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {clients.map((client) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {clients.map((client) => (
                   <div key={client.id} className={`rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm ${isDeletingClient && deletingClientId === client.id ? 'opacity-50 pointer-events-none' : ''}`}>
-                    <div className="flex items-start justify-between mb-4">
-                      <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
-                        <Building2 className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-                      </div>
-                      <div className="flex space-x-2">
-                        <button 
-                          onClick={() => handleEditClient(client)}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
+                      <Building2 className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={() => handleEditClient(client)}
                           disabled={isUpdatingClient || (isDeletingClient && deletingClientId === client.id)}
                           className={`p-3 sm:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] sm:min-h-auto touch-manipulation ${
                             isUpdatingClient || (isDeletingClient && deletingClientId === client.id)
@@ -1372,11 +1545,11 @@ InvoiceFlow Team`;
                               : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
                           }`}
                           aria-label={`Edit ${client.name}`}
-                        >
-                          <Edit className="h-5 w-5 sm:h-4 sm:w-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteClient(client.id)}
+                      >
+                        <Edit className="h-5 w-5 sm:h-4 sm:w-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteClient(client.id)}
                           disabled={isDeletingClient && deletingClientId === client.id}
                           className={`p-3 sm:p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors min-h-[44px] sm:min-h-auto touch-manipulation ${
                             isDeletingClient && deletingClientId === client.id 
@@ -1388,37 +1561,37 @@ InvoiceFlow Team`;
                           {isDeletingClient && deletingClientId === client.id ? (
                             <Loader2 className="h-5 w-5 sm:h-4 sm:w-4 animate-spin" />
                           ) : (
-                            <Trash2 className="h-5 w-5 sm:h-4 sm:w-4" />
+                        <Trash2 className="h-5 w-5 sm:h-4 sm:w-4" />
                           )}
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <h3 className="font-heading text-lg font-semibold mb-2" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                      {client.name}
-                    </h3>
-                    <p className="text-sm mb-1" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                      {client.company}
-                    </p>
-                    <p className="text-sm mb-4" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                      {client.email}
-                    </p>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                        {invoices.filter(inv => inv.clientId === client.id).length} invoices
-                      </div>
-                      <button 
-                        onClick={() => handleContactClient(client)}
-                        className="flex items-center justify-center space-x-1 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors px-3 py-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-500/10 min-h-[44px] sm:min-h-auto"
-                      >
-                        <Mail className="h-4 w-4" />
-                        <span>Contact</span>
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
+                  
+                  <h3 className="font-heading text-lg font-semibold mb-2" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                    {client.name}
+                  </h3>
+                  <p className="text-sm mb-1" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    {client.company}
+                  </p>
+                  <p className="text-sm mb-4" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    {client.email}
+                  </p>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                      {invoices.filter(inv => inv.clientId === client.id).length} invoices
+                    </div>
+                    <button 
+                      onClick={() => handleContactClient(client)}
+                        className="flex items-center justify-center space-x-1 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors px-3 py-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-500/10 min-h-[44px] sm:min-h-auto"
+                    >
+                      <Mail className="h-4 w-4" />
+                      <span>Contact</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
             ) : (
               <div className={`rounded-lg p-12 text-center ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
                 <div className={`inline-flex items-center justify-center w-20 h-20 rounded-xl mb-6 ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
@@ -1556,7 +1729,7 @@ InvoiceFlow Team`;
                         >
                           Remove
                         </button>
-                      </div>
+              </div>
                       <div className="flex items-center space-x-3">
                         <img
                           src={logoPreview}
@@ -1772,9 +1945,18 @@ InvoiceFlow Team`;
         {/* Create Invoice Modal */}
       {showCreateInvoice && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 max-w-2xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scroll-smooth custom-scrollbar ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+          <div key={editingInvoice?.id || 'new'} className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 max-w-2xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scroll-smooth custom-scrollbar ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
             <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <h2 className="text-lg sm:text-2xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Create Invoice</h2>
+              <h2 className="text-lg sm:text-2xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                {editingInvoice ? 'Edit Invoice' : 'Create Invoice'}
+              </h2>
+              {editingInvoice && (
+                <div className="text-xs text-gray-500 mt-1 space-y-1">
+                  <div>Debug: ClientId={newInvoice.clientId || 'empty'}, DueDate={newInvoice.dueDate || 'empty'}, Items={newInvoice.items?.length || 0}</div>
+                  <div>Available Clients: {clients.map(c => `${c.name}(${c.id})`).join(', ')}</div>
+                  <div>Matching Client: {clients.find(c => c.id === newInvoice.clientId)?.name || 'NOT FOUND'}</div>
+                </div>
+              )}
               <button
                 onClick={() => setShowCreateInvoice(false)}
                 className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
@@ -1790,7 +1972,7 @@ InvoiceFlow Team`;
                     Client *
                   </label>
                   <select 
-                    value={newInvoice.clientId}
+                    value={newInvoice.clientId || ''}
                     onChange={(e) => setNewInvoice(prev => ({ ...prev, clientId: e.target.value }))}
                     className={`w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                   >
@@ -1809,7 +1991,7 @@ InvoiceFlow Team`;
                   </label>
                   <input
                     type="date"
-                    value={newInvoice.dueDate}
+                    value={newInvoice.dueDate || ''}
                     onChange={(e) => setNewInvoice(prev => ({ ...prev, dueDate: e.target.value }))}
                     className={`w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                   />
@@ -1872,12 +2054,24 @@ InvoiceFlow Team`;
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    Discount ($)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={newInvoice.discount || 0}
+                    onChange={(e) => setNewInvoice(prev => ({ ...prev, discount: parseFloat(e.target.value) || 0 }))}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                     Tax Rate (%)
                   </label>
                   <input
                     type="number"
                     step="0.01"
-                    value={newInvoice.taxRate * 100}
+                    value={(newInvoice.taxRate || 0.1) * 100}
                     onChange={(e) => setNewInvoice(prev => ({ ...prev, taxRate: parseFloat(e.target.value) / 100 || 0 }))}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
                   />
@@ -1888,7 +2082,7 @@ InvoiceFlow Team`;
                   </label>
                   <input
                     type="text"
-                    value={newInvoice.notes}
+                    value={newInvoice.notes || ''}
                     onChange={(e) => setNewInvoice(prev => ({ ...prev, notes: e.target.value }))}
                     placeholder="Optional notes"
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors text-sm ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
@@ -1927,6 +2121,7 @@ InvoiceFlow Team`;
                       clientId: '',
                       dueDate: '',
                       items: [{ id: '1', description: '', rate: 0, amount: 0 }],
+                      discount: 0,
                       taxRate: 0.1,
                       notes: ''
                     });
@@ -2016,26 +2211,26 @@ InvoiceFlow Team`;
                 <X className="h-5 w-5" />
               </button>
             </div>
-
+            
             {/* Form */}
             <div className="p-4 sm:p-6">
               <div className="space-y-6">
                 {/* Required Fields */}
                 <div className="space-y-4">
-                  <div>
+              <div>
                     <label className={`block text-sm font-medium mb-2 ${
                       isDarkMode ? 'text-gray-300' : 'text-gray-700'
                     }`}>
                       Client Name *
-                    </label>
+                </label>
                     <div className="relative">
                       <User className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
                         isDarkMode ? 'text-gray-500' : 'text-gray-400'
                       }`} />
-                      <input
-                        type="text"
-                        value={newClient.name}
-                        onChange={(e) => setNewClient(prev => ({ ...prev, name: e.target.value }))}
+                <input
+                  type="text"
+                  value={newClient.name}
+                  onChange={(e) => setNewClient(prev => ({ ...prev, name: e.target.value }))}
                         className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                           isDarkMode 
                             ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
@@ -2045,22 +2240,22 @@ InvoiceFlow Team`;
                         required
                       />
                     </div>
-                  </div>
-
-                  <div>
+              </div>
+              
+              <div>
                     <label className={`block text-sm font-medium mb-2 ${
                       isDarkMode ? 'text-gray-300' : 'text-gray-700'
                     }`}>
                       Email Address *
-                    </label>
+                </label>
                     <div className="relative">
                       <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
                         isDarkMode ? 'text-gray-500' : 'text-gray-400'
                       }`} />
-                      <input
-                        type="email"
-                        value={newClient.email}
-                        onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))}
+                <input
+                  type="email"
+                  value={newClient.email}
+                  onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))}
                         className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                           isDarkMode 
                             ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
@@ -2071,8 +2266,8 @@ InvoiceFlow Team`;
                       />
                     </div>
                   </div>
-                </div>
-
+              </div>
+              
                 {/* Optional Fields */}
                 <div className={`p-4 rounded-xl border ${
                   isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'
@@ -2084,17 +2279,17 @@ InvoiceFlow Team`;
                   </h3>
                   
                   <div className="space-y-4">
-                    <div>
+              <div>
                       <label className={`block text-sm font-medium mb-2 ${
                         isDarkMode ? 'text-gray-300' : 'text-gray-700'
                       }`}>
                         Mobile Number
-                      </label>
+                </label>
                       <div className="relative">
                         <Phone className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
                           isDarkMode ? 'text-gray-500' : 'text-gray-400'
                         }`} />
-                        <input
+                <input
                           type="tel"
                           value={newClient.phone || ''}
                           onChange={(e) => setNewClient(prev => ({ ...prev, phone: e.target.value }))}
@@ -2106,20 +2301,20 @@ InvoiceFlow Team`;
                           placeholder="+1 (555) 123-4567"
                         />
                       </div>
-                    </div>
+              </div>
 
-                    <div>
+              <div>
                       <label className={`block text-sm font-medium mb-2 ${
                         isDarkMode ? 'text-gray-300' : 'text-gray-700'
                       }`}>
                         Company
-                      </label>
+                </label>
                       <div className="relative">
                         <Building2 className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
                           isDarkMode ? 'text-gray-500' : 'text-gray-400'
                         }`} />
-                        <input
-                          type="text"
+                <input
+                  type="text"
                           value={newClient.company || ''}
                           onChange={(e) => setNewClient(prev => ({ ...prev, company: e.target.value }))}
                           className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
@@ -2130,59 +2325,59 @@ InvoiceFlow Team`;
                           placeholder="Company name"
                         />
                       </div>
-                    </div>
+              </div>
 
-                    <div>
+              <div>
                       <label className={`block text-sm font-medium mb-2 ${
                         isDarkMode ? 'text-gray-300' : 'text-gray-700'
                       }`}>
-                        Address
-                      </label>
+                  Address
+                </label>
                       <div className="relative">
                         <MapPin className={`absolute left-3 top-3 h-4 w-4 ${
                           isDarkMode ? 'text-gray-500' : 'text-gray-400'
                         }`} />
-                        <textarea
+                <textarea
                           value={newClient.address || ''}
-                          onChange={(e) => setNewClient(prev => ({ ...prev, address: e.target.value }))}
+                  onChange={(e) => setNewClient(prev => ({ ...prev, address: e.target.value }))}
                           className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
                             isDarkMode 
                               ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
                               : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                           }`}
                           placeholder="Client address"
-                          rows={3}
-                        />
+                  rows={3}
+                />
                       </div>
                     </div>
                   </div>
-                </div>
-
+              </div>
+              
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                  <button
-                    onClick={() => {
-                      setShowCreateClient(false);
-                      setShowEditClient(false);
-                      setSelectedClient(null);
-                      setNewClient({
-                        name: '',
-                        email: '',
-                        company: '',
-                        phone: '',
-                        address: ''
-                      });
-                    }}
+                <button
+                  onClick={() => {
+                    setShowCreateClient(false);
+                    setShowEditClient(false);
+                    setSelectedClient(null);
+                    setNewClient({
+                      name: '',
+                      email: '',
+                      company: '',
+                      phone: '',
+                      address: ''
+                    });
+                  }}
                     className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium ${
                       isDarkMode 
                         ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    onClick={showEditClient ? handleUpdateClient : handleCreateClient}
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={showEditClient ? handleUpdateClient : handleCreateClient}
                     disabled={isCreatingClient || isUpdatingClient}
                     className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -2196,7 +2391,7 @@ InvoiceFlow Team`;
                        isUpdatingClient ? 'Updating Client...' :
                        showEditClient ? 'Update Client' : 'Add Client'}
                     </span>
-                  </button>
+                </button>
                 </div>
               </div>
             </div>
@@ -2204,159 +2399,6 @@ InvoiceFlow Team`;
         </div>
       )}
 
-      {/* View Invoice Modal */}
-      {showViewInvoice && selectedInvoice && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className={`rounded-xl sm:rounded-2xl p-4 sm:p-6 max-w-4xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scroll-smooth custom-scrollbar ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <h2 className="text-lg sm:text-2xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                Invoice {selectedInvoice.invoiceNumber}
-              </h2>
-              <button
-                onClick={() => setShowViewInvoice(false)}
-                className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
-              >
-                <X className={`h-5 w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-              </button>
-            </div>
-            
-            <div className="space-y-4 sm:space-y-6">
-              {/* Invoice Header */}
-              <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-semibold mb-2 text-sm sm:text-base" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Invoice Details</h3>
-                  <div className="space-y-1 text-xs sm:text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                    <p><strong>Invoice Number:</strong> {selectedInvoice.invoiceNumber}</p>
-                    <p><strong>Date:</strong> {selectedInvoice.createdAt}</p>
-                    <p><strong>Due Date:</strong> {selectedInvoice.dueDate}</p>
-                    <p><strong>Status:</strong> 
-                      <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
-                        selectedInvoice.status === 'paid' 
-                          ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400'
-                          : selectedInvoice.status === 'sent'
-                          ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400'
-                          : selectedInvoice.status === 'overdue'
-                          ? 'bg-red-100 dark:bg-red-500/20 text-red-800 dark:text-red-400'
-                          : 'bg-gray-100 dark:bg-gray-500/20 text-gray-800 dark:text-gray-300'
-                      }`}>
-                        {selectedInvoice.status}
-                      </span>
-                    </p>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="font-semibold mb-2 text-sm sm:text-base" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Bill To</h3>
-                  <div className="text-xs sm:text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                    <p className="font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>{selectedInvoice.client.name}</p>
-                    {selectedInvoice.client.company && <p>{selectedInvoice.client.company}</p>}
-                    <p>{selectedInvoice.client.email}</p>
-                    {selectedInvoice.client.phone && <p>{selectedInvoice.client.phone}</p>}
-                    {selectedInvoice.client.address && <p>{selectedInvoice.client.address}</p>}
-                  </div>
-                </div>
-              </div>
-
-              {/* Invoice Items */}
-              <div>
-                <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Items</h3>
-                
-                {/* Mobile Layout - Cards */}
-                <div className="sm:hidden space-y-3">
-                  {selectedInvoice.items.map((item) => (
-                    <div key={item.id} className={`p-3 rounded-lg border ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
-                      <div className="text-sm font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                        {item.description}
-                      </div>
-                      <div className="text-sm font-semibold mt-1" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                        ₹{item.amount.toFixed(2)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                {/* Desktop Layout - Table */}
-                <div className={`hidden sm:block rounded-lg border overflow-hidden ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <table className="w-full">
-                    <thead className={isDarkMode ? 'bg-gray-800' : 'bg-gray-50'}>
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Service</th>
-                        <th className="px-4 py-3 text-right text-sm font-semibold" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                      {selectedInvoice.items.map((item) => (
-                        <tr key={item.id}>
-                          <td className="px-4 py-3 text-sm" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>{item.description}</td>
-                          <td className="px-4 py-3 text-right text-sm font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>₹{item.amount.toFixed(2)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Invoice Totals */}
-              <div className="flex justify-end">
-                <div className="w-full sm:w-64 space-y-2">
-                  <div className="flex justify-between text-xs sm:text-sm">
-                    <span style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Subtotal:</span>
-                    <span style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>₹{selectedInvoice.subtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs sm:text-sm">
-                    <span style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Tax ({(selectedInvoice.taxRate * 100).toFixed(1)}%):</span>
-                    <span style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>₹{selectedInvoice.taxAmount.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-base sm:text-lg font-bold border-t pt-2">
-                    <span style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Total:</span>
-                    <span style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>₹{selectedInvoice.total.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Notes */}
-              {selectedInvoice.notes && (
-                <div>
-                  <h3 className="font-semibold mb-2 text-sm sm:text-base" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Notes</h3>
-                  <p className="text-xs sm:text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>{selectedInvoice.notes}</p>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t">
-                <button
-                  onClick={() => handleDownloadPDF(selectedInvoice)}
-                  className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium"
-                >
-                  <Download className="h-4 w-4" />
-                  <span>Download PDF</span>
-                </button>
-                {selectedInvoice.status !== 'paid' && (
-                  <button
-                    onClick={() => handleSendInvoice(selectedInvoice)}
-                    disabled={isSendingInvoice}
-                    className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isSendingInvoice ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                    <span>{isSendingInvoice ? 'Sending...' : 'Send Invoice'}</span>
-                  </button>
-                )}
-                <button
-                  onClick={() => handleEditInvoice(selectedInvoice)}
-                  className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
-                >
-                  <Edit className="h-4 w-4" />
-                  <span>Edit Invoice</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Login Modal */}
       <LoginModal
@@ -2401,6 +2443,151 @@ InvoiceFlow Team`;
         message={confirmationModal.message}
         type={confirmationModal.type}
       />
+
+      {/* View Invoice Modal */}
+      {showViewInvoice && selectedInvoice && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
+          <div className={`rounded-xl sm:rounded-2xl p-2 sm:p-4 max-w-6xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scroll-smooth custom-scrollbar ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h2 className="text-base sm:text-xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Invoice Details</h2>
+              <button
+                onClick={() => setShowViewInvoice(false)}
+                className={`p-1 sm:p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+              >
+                <X className={`h-4 w-4 sm:h-5 sm:w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+              </button>
+            </div>
+            
+            {/* Responsive Invoice View */}
+            <div className={`w-full ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} overflow-hidden`}>
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 sm:p-6 border-b border-gray-200">
+                <div className="w-full sm:w-auto mb-3 sm:mb-0">
+                  <h2 className="text-lg sm:text-2xl font-bold text-gray-900 mb-1">
+                    {settings.businessName || 'Your Business Name'}
+                  </h2>
+                  <div className="text-xs sm:text-sm text-gray-600 space-y-1">
+                    {settings.address && <p>{settings.address}</p>}
+                    {settings.businessEmail && <p>{settings.businessEmail}</p>}
+                    {settings.businessPhone && <p>{settings.businessPhone}</p>}
+                  </div>
+                </div>
+                <div className="bg-orange-500 text-white px-3 py-2 rounded text-sm sm:text-base font-bold">
+                  Invoice
+                  </div>
+                </div>
+                
+              {/* Invoice Details */}
+              <div className="p-3 sm:p-6 border-b border-gray-200">
+                <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Invoice Details</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
+                <div>
+                    <span className="font-medium">Invoice Number:</span>
+                    <p className="text-gray-600">#{selectedInvoice.invoiceNumber || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Date:</span>
+                    <p className="text-gray-600">
+                      {selectedInvoice.createdAt ? new Date(selectedInvoice.createdAt).toLocaleDateString() : 'N/A'}
+                    </p>
+                </div>
+              <div>
+                    <span className="font-medium">Due Date:</span>
+                    <p className="text-gray-600">
+                      {selectedInvoice.dueDate ? new Date(selectedInvoice.dueDate).toLocaleDateString() : 'N/A'}
+                    </p>
+                      </div>
+                      </div>
+                    </div>
+
+              {/* Bill To */}
+              <div className="p-3 sm:p-6 border-b border-gray-200">
+                <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Bill To</h3>
+                <div className="text-xs sm:text-sm">
+                  <p className="font-medium text-gray-900">{selectedInvoice.client?.name || 'N/A'}</p>
+                  <p className="text-gray-600">{selectedInvoice.client?.email || 'N/A'}</p>
+                  {selectedInvoice.client?.phone && <p className="text-gray-600">{selectedInvoice.client.phone}</p>}
+                  {selectedInvoice.client?.address && <p className="text-gray-600">{selectedInvoice.client.address}</p>}
+                </div>
+                </div>
+                
+              {/* Items Table */}
+              <div className="overflow-x-auto">
+                  <table className="w-full">
+                  <thead className="bg-gray-800 text-white">
+                    <tr>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-medium">Description</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-medium">Hours/Qty</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs sm:text-sm font-medium">Rate</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs sm:text-sm font-medium">Total</th>
+                      </tr>
+                    </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {selectedInvoice.items?.map((item, index) => (
+                      <tr key={item.id || index} className="hover:bg-gray-50">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
+                          {item.description || 'Service'}
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-600">1</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 text-right">
+                          ${(item.amount || 0).toFixed(2)}
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 text-right font-medium">
+                          ${(item.amount || 0).toFixed(2)}
+                        </td>
+                        </tr>
+                    )) || (
+                      <tr>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">Service</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-600">1</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 text-right">$0.00</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 text-right font-medium">$0.00</td>
+                      </tr>
+                    )}
+                    </tbody>
+                  </table>
+              </div>
+
+              {/* Totals */}
+              <div className="p-3 sm:p-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+                  <div className="w-full sm:w-auto">
+                    <p className="text-xs sm:text-sm text-gray-600">Thank you for your business!</p>
+                  </div>
+                  <div className="w-full sm:w-64">
+                    <div className="space-y-1">
+                  <div className="flex justify-between text-xs sm:text-sm">
+                        <span className="text-gray-600">Subtotal:</span>
+                        <span className="text-gray-900">${(selectedInvoice.subtotal || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs sm:text-sm">
+                        <span className="text-gray-600">Discount:</span>
+                        <span className="text-gray-900">${(selectedInvoice.discount || 0).toFixed(2)}</span>
+                  </div>
+                      <div className="flex justify-between text-xs sm:text-sm">
+                        <span className="text-gray-600">Tax ({(selectedInvoice.taxRate || 0) * 100}%):</span>
+                        <span className="text-gray-900">${(selectedInvoice.taxAmount || 0).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1">
+                        <span className="text-gray-900">Total:</span>
+                        <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              {selectedInvoice.notes && (
+                <div className="p-3 sm:p-6 border-t border-gray-200">
+                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Notes</h3>
+                  <p className="text-xs sm:text-sm text-gray-600">{selectedInvoice.notes}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Notifications */}
       <ToastContainer

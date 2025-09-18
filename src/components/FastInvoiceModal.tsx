@@ -92,7 +92,8 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
           }],
           due_date: dueDate,
           notes: notes,
-          billing_choice: 'subscription' // For now, assume subscription
+          billing_choice: 'subscription', // For now, assume subscription
+          type: 'fast' // Mark as fast invoice
         })
       })
 

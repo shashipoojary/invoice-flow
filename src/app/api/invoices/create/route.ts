@@ -113,6 +113,7 @@ export async function POST(request: NextRequest) {
       issue_date: new Date().toISOString().split('T')[0],
       due_date: invoiceData.due_date,
       notes: invoiceData.notes || '',
+      type: invoiceData.type || 'detailed', // Add invoice type
     };
 
     // Insert invoice
@@ -184,9 +185,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch complete invoice' }, { status: 500 });
     }
 
+    // Map database fields to frontend interface
+    const mappedInvoice = {
+      ...completeInvoice,
+      invoiceNumber: completeInvoice.invoice_number,
+      dueDate: completeInvoice.due_date,
+      createdAt: completeInvoice.created_at,
+      client: completeInvoice.clients,
+      items: (completeInvoice.invoice_items || []).map((item: { id: string; description: string; line_total: number }) => ({
+        id: item.id,
+        description: item.description,
+        amount: item.line_total
+      }))
+    };
+
     return NextResponse.json({ 
       success: true, 
-      invoice: completeInvoice,
+      invoice: mappedInvoice,
       message: 'Invoice created successfully' 
     });
 

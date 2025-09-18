@@ -43,8 +43,16 @@ export async function GET(request: NextRequest) {
 
         return {
           ...invoice,
+          // Map database fields to frontend interface
+          invoiceNumber: invoice.invoice_number,
+          dueDate: invoice.due_date,
+          createdAt: invoice.created_at,
           client: invoice.clients,
-          invoice_items: itemsData || []
+          items: (itemsData || []).map(item => ({
+            id: item.id,
+            description: item.description,
+            amount: item.line_total
+          }))
         }
       })
     )
