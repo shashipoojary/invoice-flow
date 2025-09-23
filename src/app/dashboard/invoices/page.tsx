@@ -437,7 +437,7 @@ export default function InvoicesPage() {
     }
   }, [user, loading, hasLoadedData, getAuthHeaders, loadSettings]); // Include hasLoadedData to prevent re-runs
 
-  if (loading) {
+  if (false && loading) {
     return (
       <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">
@@ -447,7 +447,7 @@ export default function InvoicesPage() {
     );
   }
 
-  if (!user) {
+  if (false && !user) {
     return (
       <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">
@@ -555,7 +555,7 @@ export default function InvoicesPage() {
       />
 
       {/* Fast Invoice Modal */}
-      {showFastInvoice && (
+      {showFastInvoice && user && (
         <FastInvoiceModal
           isOpen={showFastInvoice}
           onClose={() => setShowFastInvoice(false)}

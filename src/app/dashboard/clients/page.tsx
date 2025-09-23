@@ -222,7 +222,7 @@ export default function ClientsPage() {
     }
   }, [user, loading, hasLoadedData]); // Include hasLoadedData to prevent re-runs
 
-  if (loading) {
+  if (false && loading) {
     return (
       <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">
@@ -232,7 +232,7 @@ export default function ClientsPage() {
     );
   }
 
-  if (!user) {
+  if (false && !user) {
     return (
       <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">

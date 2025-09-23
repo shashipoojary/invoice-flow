@@ -471,7 +471,7 @@ export default function DashboardOverview() {
   const totalClients = useMemo(() => dashboardStats.totalClients || 0, [dashboardStats.totalClients]);
 
   // Show loading only for authentication, but with a very short timeout
-  if (loading) {
+  if (false && loading) {
     return (
       <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">
@@ -485,7 +485,7 @@ export default function DashboardOverview() {
   }
 
   // Show login prompt if no user, but don't block the entire page
-  if (!user) {
+  if (false && !user) {
     return (
       <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">
@@ -765,7 +765,7 @@ export default function DashboardOverview() {
       />
 
       {/* Fast Invoice Modal */}
-      {showFastInvoice && (
+      {showFastInvoice && user && (
         <FastInvoiceModal
           isOpen={showFastInvoice}
           onClose={() => setShowFastInvoice(false)}
