@@ -196,14 +196,16 @@ export default function ClientsPage() {
     }
   }, []);
 
-  // Load data on mount - wait for user to be available
+  // Load data on mount - smart loading with retry
   useEffect(() => {
-    if (user && !loading && !hasLoadedData) {
+    if (!hasLoadedData) {
       setHasLoadedData(true); // Set flag immediately to prevent re-runs
       
-      const loadData = async () => {
-        setIsLoading(true);
+      const loadWithRetry = async () => {
         try {
+          const loadData = async () => {
+            setIsLoading(true);
+            try {
           // Call getAuthHeaders directly in each fetch to avoid dependency issues
           const headers = await getAuthHeaders();
           
@@ -218,7 +220,16 @@ export default function ClientsPage() {
           setIsLoading(false);
         }
       };
-      loadData();
+          await loadData();
+        } catch (error) {
+          // If auth fails, retry after a short delay
+          setTimeout(() => {
+            loadWithRetry();
+          }, 200);
+        }
+      };
+      
+      loadWithRetry();
     }
   }, [user, loading, hasLoadedData]); // Include hasLoadedData to prevent re-runs
 

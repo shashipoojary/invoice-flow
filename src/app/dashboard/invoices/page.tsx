@@ -384,15 +384,17 @@ export default function InvoicesPage() {
     }
   }, [getAuthHeaders]);
 
-  // Load data on mount - wait for user to be available
+  // Load data on mount - smart loading with retry
   useEffect(() => {
-    if (user && !loading && !hasLoadedData) {
+    if (!hasLoadedData) {
       setHasLoadedData(true); // Set flag immediately to prevent re-runs
       
-      const loadData = async () => {
+      const loadWithRetry = async () => {
         try {
-          // Start loading immediately without blocking
-          setIsLoading(true);
+          const loadData = async () => {
+            try {
+              // Start loading immediately without blocking
+              setIsLoading(true);
           
           // Get headers (now optimized to use cached session)
           const headers = await getAuthHeaders();
@@ -428,12 +430,21 @@ export default function InvoicesPage() {
           setIsLoading(false);
         }
       };
-      loadData();
+          await loadData();
+          
+          // Set a timeout to stop loading after 200ms to prevent blocking LCP
+          setTimeout(() => {
+            setIsLoading(false);
+          }, 200);
+        } catch (error) {
+          // If auth fails, retry after a short delay
+          setTimeout(() => {
+            loadWithRetry();
+          }, 200);
+        }
+      };
       
-      // Set a timeout to stop loading after 200ms to prevent blocking LCP
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 200);
+      loadWithRetry();
     }
   }, [user, loading, hasLoadedData, getAuthHeaders, loadSettings]); // Include hasLoadedData to prevent re-runs
 

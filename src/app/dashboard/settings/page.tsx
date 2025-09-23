@@ -66,13 +66,25 @@ export default function SettingsPage() {
     }
   }, []);
 
-  // Load settings data - wait for user to be available
+  // Load settings data - smart loading with retry
   useEffect(() => {
-    if (user && !loading && !hasLoadedData) {
+    if (!hasLoadedData) {
       setHasLoadedData(true);
-      loadSettings();
+      
+      const loadWithRetry = async () => {
+        try {
+          await loadSettings();
+        } catch (error) {
+          // If auth fails, retry after a short delay
+          setTimeout(() => {
+            loadWithRetry();
+          }, 200);
+        }
+      };
+      
+      loadWithRetry();
     }
-  }, [user, loading, hasLoadedData]);
+  }, [hasLoadedData]);
 
   const loadSettings = async () => {
     try {
