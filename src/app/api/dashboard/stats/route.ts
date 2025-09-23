@@ -10,45 +10,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get total revenue (sum of paid invoices)
-    const { data: revenueData, error: revenueError } = await supabaseAdmin
+    // Get all invoice data in one query
+    const { data: invoiceData, error: invoiceError } = await supabaseAdmin
       .from('invoices')
-      .select('total')
+      .select('total, status')
       .eq('user_id', user.id)
-      .eq('status', 'paid')
 
-    if (revenueError) {
-      console.error('Error fetching revenue:', revenueError)
-      return NextResponse.json({ error: 'Failed to fetch revenue' }, { status: 500 })
+    if (invoiceError) {
+      console.error('Error fetching invoices:', invoiceError)
+      return NextResponse.json({ error: 'Failed to fetch invoice data' }, { status: 500 })
     }
 
-    const totalRevenue = revenueData?.reduce((sum, invoice) => sum + (invoice.total || 0), 0) || 0
+    // Calculate stats from the single query result
+    const totalRevenue = invoiceData
+      ?.filter(invoice => invoice.status === 'paid')
+      ?.reduce((sum, invoice) => sum + (invoice.total || 0), 0) || 0
 
-    // Get outstanding amount (sum of sent and overdue invoices)
-    const { data: outstandingData, error: outstandingError } = await supabaseAdmin
-      .from('invoices')
-      .select('total')
-      .eq('user_id', user.id)
-      .in('status', ['sent', 'overdue'])
+    const outstandingAmount = invoiceData
+      ?.filter(invoice => ['sent', 'overdue'].includes(invoice.status))
+      ?.reduce((sum, invoice) => sum + (invoice.total || 0), 0) || 0
 
-    if (outstandingError) {
-      console.error('Error fetching outstanding amount:', outstandingError)
-      return NextResponse.json({ error: 'Failed to fetch outstanding amount' }, { status: 500 })
-    }
-
-    const outstandingAmount = outstandingData?.reduce((sum, invoice) => sum + (invoice.total || 0), 0) || 0
-
-    // Get overdue count
-    const { count: overdueCount, error: overdueError } = await supabaseAdmin
-      .from('invoices')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('status', 'overdue')
-
-    if (overdueError) {
-      console.error('Error fetching overdue count:', overdueError)
-      return NextResponse.json({ error: 'Failed to fetch overdue count' }, { status: 500 })
-    }
+    const overdueCount = invoiceData
+      ?.filter(invoice => invoice.status === 'overdue')
+      ?.length || 0
 
     // Get total clients count
     const { count: totalClients, error: clientsError } = await supabaseAdmin
