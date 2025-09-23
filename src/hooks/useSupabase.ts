@@ -14,10 +14,10 @@ export function useSupabase() {
       return
     }
 
-    // Set a timeout to stop loading after 2 seconds to prevent blocking
+    // Set a timeout to stop loading after 500ms to prevent blocking
     const loadingTimeout = setTimeout(() => {
       setLoading(false)
-    }, 2000)
+    }, 500)
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {

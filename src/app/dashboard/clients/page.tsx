@@ -23,7 +23,7 @@ export default function ClientsPage() {
   // State
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Start as false to prevent blocking
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [showCreateClient, setShowCreateClient] = useState(false);
   const [showEditClient, setShowEditClient] = useState(false);

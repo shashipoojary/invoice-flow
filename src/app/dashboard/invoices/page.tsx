@@ -27,7 +27,7 @@ export default function InvoicesPage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Start as false to prevent blocking
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [showFastInvoice, setShowFastInvoice] = useState(false);
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
@@ -430,10 +430,10 @@ export default function InvoicesPage() {
       };
       loadData();
       
-      // Set a timeout to stop loading after 1 second to prevent blocking LCP
+      // Set a timeout to stop loading after 200ms to prevent blocking LCP
       setTimeout(() => {
         setIsLoading(false);
-      }, 1000);
+      }, 200);
     }
   }, [user, loading, hasLoadedData, getAuthHeaders, loadSettings]); // Include hasLoadedData to prevent re-runs
 
