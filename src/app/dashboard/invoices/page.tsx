@@ -429,6 +429,11 @@ export default function InvoicesPage() {
         }
       };
       loadData();
+      
+      // Set a timeout to stop loading after 1 second to prevent blocking LCP
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
     }
   }, [user, loading, hasLoadedData, getAuthHeaders, loadSettings]); // Include hasLoadedData to prevent re-runs
 

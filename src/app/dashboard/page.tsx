@@ -405,11 +405,11 @@ export default function DashboardOverview() {
     if (user && !loading && !hasLoadedData) {
       setHasLoadedData(true); // Set flag immediately to prevent re-runs
       
+      // Start loading immediately without blocking
+      setIsLoading(true);
+      
       const loadData = async () => {
         try {
-          // Start loading immediately without blocking
-          setIsLoading(true);
-          
           // Get headers (now optimized to use cached session)
           const headers = await getAuthHeaders();
           
@@ -452,7 +452,14 @@ export default function DashboardOverview() {
           setIsLoading(false);
         }
       };
+      
+      // Start data loading immediately without waiting
       loadData();
+      
+      // Set a timeout to stop loading after 1 second to prevent blocking LCP
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 1000);
     }
   }, [user, loading, hasLoadedData, getAuthHeaders, loadSettings]); // Include hasLoadedData to prevent re-runs
 
