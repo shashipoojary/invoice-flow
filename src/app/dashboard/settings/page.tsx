@@ -138,7 +138,7 @@ export default function SettingsPage() {
     setSettings(prev => ({ ...prev, logo: '' }));
   };
 
-  if (loading || isLoadingSettings) {
+  if (false && (loading || isLoadingSettings)) {
     return (
       <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">
@@ -148,7 +148,7 @@ export default function SettingsPage() {
     );
   }
 
-  if (!user) {
+  if (false && !user) {
     return (
       <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">
