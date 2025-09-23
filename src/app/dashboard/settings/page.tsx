@@ -70,8 +70,10 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!hasLoadedData) {
       setHasLoadedData(true);
-      // Load settings immediately without waiting for user/loading states
-      loadSettings();
+      // Load settings immediately, but with a small delay to ensure user is available
+      setTimeout(() => {
+        loadSettings();
+      }, 100);
     }
   }, [hasLoadedData]);
 

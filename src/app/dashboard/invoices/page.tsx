@@ -389,10 +389,12 @@ export default function InvoicesPage() {
     if (!hasLoadedData) {
       setHasLoadedData(true); // Set flag immediately to prevent re-runs
       
-      const loadData = async () => {
-        try {
-          // Start loading immediately without blocking
-          setIsLoading(true);
+      // Start loading with a small delay to ensure user is available
+      setTimeout(() => {
+        const loadData = async () => {
+          try {
+            // Start loading immediately without blocking
+            setIsLoading(true);
           
           // Get headers (now optimized to use cached session)
           const headers = await getAuthHeaders();
@@ -428,12 +430,13 @@ export default function InvoicesPage() {
           setIsLoading(false);
         }
       };
-      loadData();
-      
-      // Set a timeout to stop loading after 200ms to prevent blocking LCP
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 200);
+        loadData();
+        
+        // Set a timeout to stop loading after 200ms to prevent blocking LCP
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 200);
+      }, 100);
     }
   }, [user, loading, hasLoadedData, getAuthHeaders, loadSettings]); // Include hasLoadedData to prevent re-runs
 

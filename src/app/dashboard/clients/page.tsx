@@ -201,9 +201,11 @@ export default function ClientsPage() {
     if (!hasLoadedData) {
       setHasLoadedData(true); // Set flag immediately to prevent re-runs
       
-      const loadData = async () => {
-        setIsLoading(true);
-        try {
+      // Start loading with a small delay to ensure user is available
+      setTimeout(() => {
+        const loadData = async () => {
+          setIsLoading(true);
+          try {
           // Call getAuthHeaders directly in each fetch to avoid dependency issues
           const headers = await getAuthHeaders();
           
@@ -218,7 +220,8 @@ export default function ClientsPage() {
           setIsLoading(false);
         }
       };
-      loadData();
+        loadData();
+      }, 100);
     }
   }, [user, loading, hasLoadedData]); // Include hasLoadedData to prevent re-runs
 
