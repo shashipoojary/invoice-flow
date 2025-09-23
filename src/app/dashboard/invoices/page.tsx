@@ -370,8 +370,7 @@ export default function InvoicesPage() {
       setIsLoadingSettings(true);
       const headers = await getAuthHeaders();
       const response = await fetch('/api/settings', {
-        headers,
-        cache: 'no-store'
+        headers
       });
       const data = await response.json();
       
@@ -398,7 +397,7 @@ export default function InvoicesPage() {
           
           await Promise.all([
             // Fetch invoices
-            fetch('/api/invoices', { headers, cache: 'no-store' })
+            fetch('/api/invoices', { headers })
               .then(res => res.json())
               .then(data => setInvoices(Array.isArray(data.invoices) ? data.invoices : []))
               .catch(err => {
@@ -407,7 +406,7 @@ export default function InvoicesPage() {
               }),
             
             // Fetch clients
-            fetch('/api/clients', { headers, cache: 'no-store' })
+            fetch('/api/clients', { headers })
               .then(res => res.json())
               .then(data => setClients(data.clients || []))
               .catch(err => console.error('Error fetching clients:', err)),

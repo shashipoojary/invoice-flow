@@ -79,7 +79,7 @@ export default function SettingsPage() {
       setIsLoadingSettings(true);
       const headers = await getAuthHeaders();
       
-      const response = await fetch('/api/settings', { headers, cache: 'no-store' });
+      const response = await fetch('/api/settings', { headers });
       const data = await response.json();
       
       if (response.ok && data.settings) {
@@ -178,9 +178,6 @@ export default function SettingsPage() {
                   <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                     Settings
                   </h2>
-                  <p className="text-sm mt-1" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                    Manage your business information and payment methods
-                  </p>
                 </div>
                 <button
                   onClick={handleSave}

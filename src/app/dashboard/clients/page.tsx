@@ -82,7 +82,7 @@ export default function ClientsPage() {
           if (response.ok) {
             showSuccess('Client deleted successfully');
             // Refresh clients data
-            const clientsResponse = await fetch('/api/clients', { headers, cache: 'no-store' });
+            const clientsResponse = await fetch('/api/clients', { headers });
             const clientsData = await clientsResponse.json();
             setClients(clientsData.clients || []);
           } else {
@@ -205,7 +205,7 @@ export default function ClientsPage() {
           const headers = await getAuthHeaders();
           
           // Fetch clients
-          const response = await fetch('/api/clients', { headers, cache: 'no-store' });
+          const response = await fetch('/api/clients', { headers });
           const data = await response.json();
           setClients(data.clients || []);
         } catch (error) {
@@ -259,9 +259,6 @@ export default function ClientsPage() {
                   <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                     Clients
                   </h2>
-                  <p className="text-sm mt-1" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                    Manage your client relationships and contact information
-                  </p>
                 </div>
                 <button
                   onClick={() => setShowCreateClient(true)}
@@ -334,7 +331,7 @@ export default function ClientsPage() {
               const loadData = async () => {
                 try {
                   const headers = await getAuthHeaders();
-                  const response = await fetch('/api/clients', { headers, cache: 'no-store' });
+                  const response = await fetch('/api/clients', { headers });
                   const data = await response.json();
                   setClients(data.clients || []);
                 } catch (error) {
@@ -366,7 +363,7 @@ export default function ClientsPage() {
               const loadData = async () => {
                 try {
                   const headers = await getAuthHeaders();
-                  const response = await fetch('/api/clients', { headers, cache: 'no-store' });
+                  const response = await fetch('/api/clients', { headers });
                   const data = await response.json();
                   setClients(data.clients || []);
                 } catch (error) {

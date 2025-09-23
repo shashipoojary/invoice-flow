@@ -383,8 +383,7 @@ export default function DashboardOverview() {
       setIsLoadingSettings(true);
       const headers = await getAuthHeaders();
       const response = await fetch('/api/settings', {
-        headers,
-        cache: 'no-store'
+        headers
       });
       const data = await response.json();
       
@@ -411,13 +410,13 @@ export default function DashboardOverview() {
           
           await Promise.all([
             // Fetch dashboard stats
-            fetch('/api/dashboard/stats', { headers, cache: 'no-store' })
+            fetch('/api/dashboard/stats', { headers })
               .then(res => res.json())
               .then(data => setDashboardStats(data))
               .catch(err => console.error('Error fetching dashboard stats:', err)),
             
             // Fetch invoices
-            fetch('/api/invoices', { headers, cache: 'no-store' })
+            fetch('/api/invoices', { headers })
               .then(res => res.json())
               .then(data => setInvoices(Array.isArray(data.invoices) ? data.invoices : []))
               .catch(err => {
@@ -426,7 +425,7 @@ export default function DashboardOverview() {
               }),
             
             // Fetch clients
-            fetch('/api/clients', { headers, cache: 'no-store' })
+            fetch('/api/clients', { headers })
               .then(res => res.json())
               .then(data => setClients(data.clients || []))
               .catch(err => console.error('Error fetching clients:', err)),
