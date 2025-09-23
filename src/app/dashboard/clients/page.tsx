@@ -9,8 +9,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
-import ClientModal from '@/components/ClientModal';
-import ConfirmationModal from '@/components/ConfirmationModal';
+import dynamic from 'next/dynamic';
+
+// Lazy load modal components to improve initial page load
+const ClientModal = dynamic(() => import('@/components/ClientModal'), { ssr: false });
+const ConfirmationModal = dynamic(() => import('@/components/ConfirmationModal'), { ssr: false });
 import { Client } from '@/types';
 
 export default function ClientsPage() {
@@ -219,7 +222,7 @@ export default function ClientsPage() {
     }
   }, [user, loading, hasLoadedData]); // Include hasLoadedData to prevent re-runs
 
-  if (loading || isLoading) {
+  if (loading) {
     return (
       <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">

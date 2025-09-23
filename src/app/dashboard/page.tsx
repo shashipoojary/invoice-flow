@@ -10,9 +10,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
-import FastInvoiceModal from '@/components/FastInvoiceModal';
-import QuickInvoiceModal from '@/components/QuickInvoiceModal';
-import ClientModal from '@/components/ClientModal';
+import dynamic from 'next/dynamic';
+
+// Lazy load modal components to improve initial page load
+const FastInvoiceModal = dynamic(() => import('@/components/FastInvoiceModal'), { ssr: false });
+const QuickInvoiceModal = dynamic(() => import('@/components/QuickInvoiceModal'), { ssr: false });
+const ClientModal = dynamic(() => import('@/components/ClientModal'), { ssr: false });
 import { Client, Invoice } from '@/types';
 
 interface DashboardStats {
@@ -450,7 +453,8 @@ export default function DashboardOverview() {
   const overdueCount = useMemo(() => dashboardStats.overdueCount || 0, [dashboardStats.overdueCount]);
   const totalClients = useMemo(() => dashboardStats.totalClients || 0, [dashboardStats.totalClients]);
 
-  if (loading || isLoading) {
+  // Show loading only for authentication, not for data loading
+  if (loading) {
     return (
       <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">
@@ -541,7 +545,7 @@ export default function DashboardOverview() {
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Revenue</p>
                       <p className="font-heading text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-                        ${totalRevenue.toLocaleString()}
+                        {isLoading ? '...' : `$${totalRevenue.toLocaleString()}`}
                       </p>
                       <div className="flex items-center space-x-1">
                         <TrendingUp className="h-4 w-4 text-emerald-500" />
@@ -560,7 +564,7 @@ export default function DashboardOverview() {
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Outstanding</p>
                       <p className="font-heading text-3xl font-bold text-amber-600 dark:text-amber-400">
-                        ${outstandingAmount.toLocaleString()}
+                        {isLoading ? '...' : `$${outstandingAmount.toLocaleString()}`}
                       </p>
                       <div className="flex items-center space-x-1">
                         <Clock className="h-4 w-4 text-amber-500" />
@@ -581,7 +585,7 @@ export default function DashboardOverview() {
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Overdue</p>
                       <p className="font-heading text-3xl font-bold text-red-600 dark:text-red-400">
-                        {overdueCount}
+                        {isLoading ? '...' : overdueCount}
                       </p>
                       <div className="flex items-center space-x-1">
                         <AlertCircle className="h-4 w-4 text-red-500" />
@@ -600,7 +604,7 @@ export default function DashboardOverview() {
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Clients</p>
                       <p className="font-heading text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-                        {totalClients}
+                        {isLoading ? '...' : totalClients}
                       </p>
                       <div className="flex items-center space-x-1">
                         <Users className="h-4 w-4 text-indigo-500" />

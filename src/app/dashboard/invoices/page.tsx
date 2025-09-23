@@ -9,9 +9,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
-import FastInvoiceModal from '@/components/FastInvoiceModal';
-import QuickInvoiceModal from '@/components/QuickInvoiceModal';
-import ClientModal from '@/components/ClientModal';
+import dynamic from 'next/dynamic';
+
+// Lazy load modal components to improve initial page load
+const FastInvoiceModal = dynamic(() => import('@/components/FastInvoiceModal'), { ssr: false });
+const QuickInvoiceModal = dynamic(() => import('@/components/QuickInvoiceModal'), { ssr: false });
+const ClientModal = dynamic(() => import('@/components/ClientModal'), { ssr: false });
 
 // Types
 import { Client, Invoice } from '@/types';
@@ -424,7 +427,7 @@ export default function InvoicesPage() {
     }
   }, [user, loading, hasLoadedData, getAuthHeaders, loadSettings]); // Include hasLoadedData to prevent re-runs
 
-  if (loading || isLoading) {
+  if (loading) {
     return (
       <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">
