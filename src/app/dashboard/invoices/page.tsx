@@ -68,7 +68,6 @@ export default function InvoicesPage() {
   // Create invoice handler
   const handleCreateInvoice = useCallback(() => {
     // This will be handled by navigation to the invoices page
-    console.log('Create invoice clicked');
   }, []);
 
   // Status helper functions
@@ -109,7 +108,6 @@ export default function InvoicesPage() {
   const handleDownloadPDF = useCallback(async (invoice: Invoice) => {
     try {
       // Debug: Log current settings
-      console.log('PDF Download - Current Settings:', settings);
       
       // Prepare business settings for PDF
       const businessSettings = {
@@ -131,7 +129,6 @@ export default function InvoicesPage() {
       };
       
       // Debug: Log business settings being passed to PDF
-      console.log('PDF Download - Business Settings:', businessSettings);
 
       const { downloadPDF } = await import('@/lib/pdf-generator');
       await downloadPDF(invoice, businessSettings);
@@ -394,11 +391,11 @@ export default function InvoicesPage() {
       
       const loadData = async () => {
         try {
-          // Call getAuthHeaders directly in each fetch to avoid dependency issues
-          const headers = await getAuthHeaders();
-          
           // Start loading immediately without blocking
           setIsLoading(true);
+          
+          // Get headers (now optimized to use cached session)
+          const headers = await getAuthHeaders();
           
           // Load invoices first (most important for this page)
           fetch('/api/invoices', { headers })

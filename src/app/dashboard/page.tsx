@@ -407,11 +407,11 @@ export default function DashboardOverview() {
       
       const loadData = async () => {
         try {
-          // Call getAuthHeaders directly in each fetch to avoid dependency issues
-          const headers = await getAuthHeaders();
-          
           // Start loading immediately without blocking
           setIsLoading(true);
+          
+          // Get headers (now optimized to use cached session)
+          const headers = await getAuthHeaders();
           
           // Load dashboard stats first (most important for initial view)
           fetch('/api/dashboard/stats', { headers })
