@@ -406,18 +406,27 @@ export default function DashboardOverview() {
       setHasLoadedData(true); // Set flag immediately to prevent re-runs
       
       const loadData = async () => {
-        setIsLoading(true);
         try {
           // Call getAuthHeaders directly in each fetch to avoid dependency issues
           const headers = await getAuthHeaders();
           
-          await Promise.all([
-            // Fetch dashboard stats
-            fetch('/api/dashboard/stats', { headers })
-              .then(res => res.json())
-              .then(data => setDashboardStats(data))
-              .catch(err => console.error('Error fetching dashboard stats:', err)),
-            
+          // Start loading immediately without blocking
+          setIsLoading(true);
+          
+          // Load dashboard stats first (most important for initial view)
+          fetch('/api/dashboard/stats', { headers })
+            .then(res => res.json())
+            .then(data => {
+              setDashboardStats(data);
+              setIsLoading(false); // Stop loading after stats load
+            })
+            .catch(err => {
+              console.error('Error fetching dashboard stats:', err);
+              setIsLoading(false);
+            });
+          
+          // Load other data in parallel (non-blocking)
+          Promise.all([
             // Fetch invoices
             fetch('/api/invoices', { headers })
               .then(res => res.json())
@@ -435,10 +444,11 @@ export default function DashboardOverview() {
             
             // Load settings
             loadSettings()
-          ]);
+          ]).catch(error => {
+            console.error('Error loading additional data:', error);
+          });
         } catch (error) {
           console.error('Error loading data:', error);
-        } finally {
           setIsLoading(false);
         }
       };

@@ -393,21 +393,28 @@ export default function InvoicesPage() {
       setHasLoadedData(true); // Set flag immediately to prevent re-runs
       
       const loadData = async () => {
-        setIsLoading(true);
         try {
           // Call getAuthHeaders directly in each fetch to avoid dependency issues
           const headers = await getAuthHeaders();
           
-          await Promise.all([
-            // Fetch invoices
-            fetch('/api/invoices', { headers })
-              .then(res => res.json())
-              .then(data => setInvoices(Array.isArray(data.invoices) ? data.invoices : []))
-              .catch(err => {
-                console.error('Error fetching invoices:', err);
-                setInvoices([]);
-              }),
-            
+          // Start loading immediately without blocking
+          setIsLoading(true);
+          
+          // Load invoices first (most important for this page)
+          fetch('/api/invoices', { headers })
+            .then(res => res.json())
+            .then(data => {
+              setInvoices(Array.isArray(data.invoices) ? data.invoices : []);
+              setIsLoading(false); // Stop loading after invoices load
+            })
+            .catch(err => {
+              console.error('Error fetching invoices:', err);
+              setInvoices([]);
+              setIsLoading(false);
+            });
+          
+          // Load other data in parallel (non-blocking)
+          Promise.all([
             // Fetch clients
             fetch('/api/clients', { headers })
               .then(res => res.json())
@@ -416,10 +423,11 @@ export default function InvoicesPage() {
             
             // Load settings
             loadSettings()
-          ]);
+          ]).catch(error => {
+            console.error('Error loading additional data:', error);
+          });
         } catch (error) {
           console.error('Error loading data:', error);
-        } finally {
           setIsLoading(false);
         }
       };

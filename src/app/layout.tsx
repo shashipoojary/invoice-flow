@@ -20,6 +20,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* Preload critical logo images for faster LCP */}
+        <link rel="preload" href="/logoblack.png" as="image" type="image/png" />
+        <link rel="preload" href="/logowhite.png" as="image" type="image/png" />
+      </head>
       <body
         className={`${inter.variable} antialiased`}
         suppressHydrationWarning
