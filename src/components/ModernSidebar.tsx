@@ -140,16 +140,27 @@ const ModernSidebar = ({
       }`}>
         {!isCollapsed ? (
           <div className="flex items-center justify-center w-full">
-            <Image
-              src={isDarkMode ? "/logowhite.png" : "/logoblack.png"}
-              alt="InvoiceFlow Logo"
-              width={360}
-              height={140}
-              className="h-36 w-auto max-w-full"
-              priority
-              placeholder="blur"
-              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-            />
+            {/* Use smaller icon version and add text fallback */}
+            <div className="flex items-center space-x-3">
+              <Image
+                src={isDarkMode ? "/logo-icon-white.png" : "/logo-icon-black.png"}
+                alt="InvoiceFlow"
+                width={40}
+                height={40}
+                className="h-10 w-10"
+                priority
+                placeholder="blur"
+                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+              />
+              <div className="flex flex-col">
+                <span className="font-bold text-lg" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  InvoiceFlow
+                </span>
+                <span className="text-xs opacity-70" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                  Get Paid Fast
+                </span>
+              </div>
+            </div>
           </div>
         ) : (
           <button
