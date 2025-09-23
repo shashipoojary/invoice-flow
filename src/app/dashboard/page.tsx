@@ -402,7 +402,7 @@ export default function DashboardOverview() {
 
   // Load data on mount - prevent infinite loop with hasLoadedData flag
   useEffect(() => {
-    if (user && !loading && !hasLoadedData) {
+    if (!hasLoadedData) {
       setHasLoadedData(true); // Set flag immediately to prevent re-runs
       
       // Start loading immediately without blocking

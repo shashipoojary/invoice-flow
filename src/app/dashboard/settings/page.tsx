@@ -66,13 +66,14 @@ export default function SettingsPage() {
     }
   }, []);
 
-  // Load settings data
+  // Load settings data - more aggressive loading
   useEffect(() => {
-    if (user && !loading && !hasLoadedData) {
+    if (!hasLoadedData) {
       setHasLoadedData(true);
+      // Load settings immediately without waiting for user/loading states
       loadSettings();
     }
-  }, [user, loading, hasLoadedData]);
+  }, [hasLoadedData]);
 
   const loadSettings = async () => {
     try {
