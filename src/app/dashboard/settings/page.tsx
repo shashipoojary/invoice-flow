@@ -66,16 +66,13 @@ export default function SettingsPage() {
     }
   }, []);
 
-  // Load settings data - more aggressive loading
+  // Load settings data - wait for user to be available
   useEffect(() => {
-    if (!hasLoadedData) {
+    if (user && !loading && !hasLoadedData) {
       setHasLoadedData(true);
-      // Load settings immediately, but with a small delay to ensure user is available
-      setTimeout(() => {
-        loadSettings();
-      }, 100);
+      loadSettings();
     }
-  }, [hasLoadedData]);
+  }, [user, loading, hasLoadedData]);
 
   const loadSettings = async () => {
     try {

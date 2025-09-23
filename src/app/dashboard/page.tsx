@@ -400,14 +400,13 @@ export default function DashboardOverview() {
     }
   }, [getAuthHeaders]);
 
-  // Load data on mount - prevent infinite loop with hasLoadedData flag
+  // Load data on mount - wait for user to be available
   useEffect(() => {
-    if (!hasLoadedData) {
+    if (user && !loading && !hasLoadedData) {
       setHasLoadedData(true); // Set flag immediately to prevent re-runs
       
-      // Start loading immediately without blocking, but with a small delay to ensure user is available
-      setTimeout(() => {
-        setIsLoading(true);
+      // Start loading immediately without blocking
+      setIsLoading(true);
       
       const loadData = async () => {
         try {
@@ -454,14 +453,13 @@ export default function DashboardOverview() {
         }
       };
       
-        // Start data loading immediately without waiting
-        loadData();
-        
-        // Set a timeout to stop loading after 200ms to prevent blocking LCP
-        setTimeout(() => {
-          setIsLoading(false);
-        }, 200);
-      }, 100);
+      // Start data loading immediately without waiting
+      loadData();
+      
+      // Set a timeout to stop loading after 200ms to prevent blocking LCP
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 200);
     }
   }, [user, loading, hasLoadedData, getAuthHeaders, loadSettings]); // Include hasLoadedData to prevent re-runs
 

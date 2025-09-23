@@ -196,16 +196,14 @@ export default function ClientsPage() {
     }
   }, []);
 
-  // Load data on mount - prevent infinite loop with hasLoadedData flag
+  // Load data on mount - wait for user to be available
   useEffect(() => {
-    if (!hasLoadedData) {
+    if (user && !loading && !hasLoadedData) {
       setHasLoadedData(true); // Set flag immediately to prevent re-runs
       
-      // Start loading with a small delay to ensure user is available
-      setTimeout(() => {
-        const loadData = async () => {
-          setIsLoading(true);
-          try {
+      const loadData = async () => {
+        setIsLoading(true);
+        try {
           // Call getAuthHeaders directly in each fetch to avoid dependency issues
           const headers = await getAuthHeaders();
           
@@ -220,8 +218,7 @@ export default function ClientsPage() {
           setIsLoading(false);
         }
       };
-        loadData();
-      }, 100);
+      loadData();
     }
   }, [user, loading, hasLoadedData]); // Include hasLoadedData to prevent re-runs
 
