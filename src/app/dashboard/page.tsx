@@ -35,6 +35,8 @@ export default function DashboardOverview() {
     totalClients: 0
   });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [isLoadingInvoices, setIsLoadingInvoices] = useState(true);
+  const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -425,17 +427,27 @@ export default function DashboardOverview() {
           // Fetch invoices
           fetch('/api/invoices', { headers, cache: 'no-store' })
             .then(res => res.json())
-            .then(data => setInvoices(Array.isArray(data.invoices) ? data.invoices : []))
+            .then(data => {
+              setInvoices(Array.isArray(data.invoices) ? data.invoices : []);
+              setIsLoadingInvoices(false);
+            })
             .catch(err => {
               console.error('Error fetching invoices:', err);
               setInvoices([]);
+              setIsLoadingInvoices(false);
             });
           
           // Fetch clients
           fetch('/api/clients', { headers, cache: 'no-store' })
             .then(res => res.json())
-            .then(data => setClients(data.clients || []))
-            .catch(err => console.error('Error fetching clients:', err));
+            .then(data => {
+              setClients(data.clients || []);
+              setIsLoadingClients(false);
+            })
+            .catch(err => {
+              console.error('Error fetching clients:', err);
+              setIsLoadingClients(false);
+            });
           
           // Load settings
           loadSettings();
@@ -710,7 +722,28 @@ export default function DashboardOverview() {
               <h2 className="font-heading text-2xl font-semibold mb-6" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                 Recent Invoices
               </h2>
-              {recentInvoices.length > 0 ? (
+              {isLoadingInvoices ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className={`rounded-lg p-4 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                      <div className="animate-pulse">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
+                            <div>
+                              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-2"></div>
+                              <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
+                            </div>
+                          </div>
+                          <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+                        </div>
+                        <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-full mb-2"></div>
+                        <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : recentInvoices.length > 0 ? (
                 <div className="space-y-4">
                   {recentInvoices.map((invoice) => (
                     <InvoiceCard

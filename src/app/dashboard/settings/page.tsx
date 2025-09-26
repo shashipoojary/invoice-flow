@@ -18,7 +18,7 @@ export default function SettingsPage() {
   // State
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [isLoadingSettings, setIsLoadingSettings] = useState(false);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [settings, setSettings] = useState<FreelancerSettings>({
     businessName: '',
@@ -195,7 +195,25 @@ export default function SettingsPage() {
               </div>
 
               {/* Business Information */}
-              <div className={`rounded-lg p-4 sm:p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+              {isLoadingSettings ? (
+                <div className={`rounded-lg p-4 sm:p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                  <div className="animate-pulse">
+                    <div className="flex items-center space-x-3 mb-6">
+                      <div className="w-9 h-9 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
+                      <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-48"></div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i}>
+                          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-2"></div>
+                          <div className="h-10 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className={`rounded-lg p-4 sm:p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
                 <div className="flex items-center space-x-3 mb-6">
                   <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
                     <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -332,8 +350,27 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
+              )}
 
               {/* Payment Methods */}
+              {isLoadingSettings ? (
+                <div className={`rounded-lg p-4 sm:p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                  <div className="animate-pulse">
+                    <div className="flex items-center space-x-3 mb-6">
+                      <div className="w-9 h-9 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
+                      <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-40"></div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+                        <div key={i}>
+                          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-2"></div>
+                          <div className="h-10 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
               <div className={`rounded-lg p-4 sm:p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
                 <div className="flex items-center space-x-3 mb-6">
                   <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-green-500/20' : 'bg-green-100'}`}>
@@ -476,6 +513,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
+              )}
             </div>
           </div>
         </main>

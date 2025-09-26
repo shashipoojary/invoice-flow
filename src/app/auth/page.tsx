@@ -93,12 +93,66 @@ export default function AuthPage() {
   };
 
   return (
-    <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-200 ${
+    <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-200 relative overflow-hidden ${
       isDarkMode 
         ? 'bg-black' 
-        : 'bg-gradient-to-br from-gray-50 to-gray-100'
+        : 'bg-gray-50'
     }`} suppressHydrationWarning>
-      <div className="w-full max-w-md">
+      {/* Subtle Background Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        {/* Geometric shapes */}
+        <div className={`absolute top-20 left-10 w-32 h-32 rounded-full opacity-5 ${
+          isDarkMode ? 'bg-white' : 'bg-gray-900'
+        }`}></div>
+        <div className={`absolute top-40 right-20 w-24 h-24 rounded-full opacity-5 ${
+          isDarkMode ? 'bg-white' : 'bg-gray-900'
+        }`}></div>
+        <div className={`absolute bottom-32 left-1/4 w-20 h-20 rounded-full opacity-5 ${
+          isDarkMode ? 'bg-white' : 'bg-gray-900'
+        }`}></div>
+        <div className={`absolute bottom-20 right-1/3 w-28 h-28 rounded-full opacity-5 ${
+          isDarkMode ? 'bg-white' : 'bg-gray-900'
+        }`}></div>
+        
+        {/* Subtle lines */}
+        <div className={`absolute top-1/4 left-0 w-full h-px opacity-10 ${
+          isDarkMode ? 'bg-white' : 'bg-gray-900'
+        }`}></div>
+        <div className={`absolute top-3/4 left-0 w-full h-px opacity-10 ${
+          isDarkMode ? 'bg-white' : 'bg-gray-900'
+        }`}></div>
+        
+        {/* Corner accents */}
+        <div className={`absolute top-0 left-0 w-64 h-64 opacity-5 ${
+          isDarkMode ? 'bg-white' : 'bg-gray-900'
+        }`} style={{
+          background: `linear-gradient(135deg, transparent 0%, ${isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'} 100%)`
+        }}></div>
+        <div className={`absolute bottom-0 right-0 w-64 h-64 opacity-5 ${
+          isDarkMode ? 'bg-white' : 'bg-gray-900'
+        }`} style={{
+          background: `linear-gradient(315deg, transparent 0%, ${isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'} 100%)`
+        }}></div>
+        
+        {/* Invoice-themed elements */}
+        <div className={`absolute top-1/3 right-10 w-16 h-20 opacity-5 ${
+          isDarkMode ? 'bg-white' : 'bg-gray-900'
+        }`} style={{
+          clipPath: 'polygon(0 0, 100% 0, 100% 80%, 80% 100%, 0 100%)'
+        }}></div>
+        <div className={`absolute bottom-1/3 left-10 w-12 h-16 opacity-5 ${
+          isDarkMode ? 'bg-white' : 'bg-gray-900'
+        }`} style={{
+          clipPath: 'polygon(0 0, 100% 0, 100% 80%, 80% 100%, 0 100%)'
+        }}></div>
+        
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 opacity-5" style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, ${isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'} 1px, transparent 0)`,
+          backgroundSize: '40px 40px'
+        }}></div>
+      </div>
+      <div className="w-full max-w-md relative z-10">
         {/* Logo/Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-40 h-40 mb-6">
