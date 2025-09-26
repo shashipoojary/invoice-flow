@@ -18,7 +18,7 @@ export default function SettingsPage() {
   // State
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [settings, setSettings] = useState<FreelancerSettings>({
     businessName: '',
@@ -66,32 +66,20 @@ export default function SettingsPage() {
     }
   }, []);
 
-  // Load settings data - smart loading with retry
+  // Load settings data
   useEffect(() => {
-    if (!hasLoadedData) {
+    if (user && !loading && !hasLoadedData) {
       setHasLoadedData(true);
-      
-      const loadWithRetry = async () => {
-        try {
-          await loadSettings();
-        } catch (error) {
-          // If auth fails, retry after a short delay
-          setTimeout(() => {
-            loadWithRetry();
-          }, 200);
-        }
-      };
-      
-      loadWithRetry();
+      loadSettings();
     }
-  }, [hasLoadedData]);
+  }, [user, loading, hasLoadedData]);
 
   const loadSettings = async () => {
     try {
       setIsLoadingSettings(true);
       const headers = await getAuthHeaders();
       
-      const response = await fetch('/api/settings', { headers });
+      const response = await fetch('/api/settings', { headers, cache: 'no-store' });
       const data = await response.json();
       
       if (response.ok && data.settings) {
@@ -150,7 +138,8 @@ export default function SettingsPage() {
     setSettings(prev => ({ ...prev, logo: '' }));
   };
 
-  if (false && (loading || isLoadingSettings)) {
+  // Only show loading spinner if user is not authenticated yet
+  if (loading && !user) {
     return (
       <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">
@@ -160,7 +149,7 @@ export default function SettingsPage() {
     );
   }
 
-  if (false && !user) {
+  if (!user) {
     return (
       <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">
@@ -303,12 +292,12 @@ export default function SettingsPage() {
                           </button>
                         </div>
                         <div className="flex items-center space-x-3">
-                          <img
-                            src={settings.logo}
-                            alt="Logo preview"
-                            className="w-16 h-16 object-contain border rounded-lg"
+                          <div
+                            className="w-16 h-16 object-contain border rounded-lg flex items-center justify-center bg-gray-100 dark:bg-gray-700"
                             style={{borderColor: isDarkMode ? '#374151' : '#e5e7eb'}}
-                          />
+                          >
+                            <span className="text-xs text-gray-500">Logo</span>
+                          </div>
                           <div>
                             <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
                               Logo uploaded successfully

@@ -14,7 +14,6 @@ import {
   Plus,
   Loader2
 } from 'lucide-react';
-import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -140,40 +139,29 @@ const ModernSidebar = ({
       }`}>
         {!isCollapsed ? (
           <div className="flex items-center justify-center w-full">
-            {/* Use smaller icon version and add text fallback */}
-            <div className="flex items-center space-x-3">
-              <Image
-                src={isDarkMode ? "/logo-icon-white.png" : "/logo-icon-black.png"}
-                alt="InvoiceFlow"
-                width={40}
-                height={40}
-                className="h-10 w-10"
-                priority
-                placeholder="blur"
-                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-              />
-              <div className="flex flex-col">
-                <span className="font-bold text-lg" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                  InvoiceFlow
-                </span>
-                <span className="text-xs opacity-70" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
-                  Get Paid Fast
-                </span>
-              </div>
-            </div>
+            <img
+              src={isDarkMode ? "/logo-white-final.png" : "/logo-black-final.png"}
+              alt="InvoiceFlow Logo"
+              className="h-16 w-auto max-w-full"
+              loading="lazy"
+            />
           </div>
         ) : (
           <button
             onClick={handleToggleCollapse}
-            className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors bg-transparent border-none outline-none"
+            style={{ backgroundColor: 'transparent' }}
           >
-            <Image
-              src={isDarkMode ? "/logo-icon-white.png" : "/logo-icon-black.png"}
+            <img
+              src={isDarkMode ? "/logo-icon-white-clean.png" : "/logo-icon-black-clean.png"}
               alt="InvoiceFlow Logo"
-              width={28}
-              height={20}
-              className="w-7 h-5"
-              priority
+              className="w-7 h-5 object-contain"
+              style={{ 
+                backgroundColor: 'transparent',
+                border: 'none',
+                outline: 'none'
+              }}
+              loading="lazy"
             />
           </button>
         )}

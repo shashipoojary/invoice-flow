@@ -286,7 +286,9 @@ export default function SettingsPage() {
                 </label>
                 <div className="flex items-center space-x-4">
                   {settings.logo && (
-                    <Image src={settings.logo} alt="Logo" width={64} height={64} className="w-16 h-16 object-contain rounded-lg border" />
+                    <div className="w-16 h-16 object-contain rounded-lg border flex items-center justify-center bg-gray-100 dark:bg-gray-700">
+                      <span className="text-xs text-gray-500">Logo</span>
+                    </div>
                   )}
                   <label className="cursor-pointer">
                     <input

@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
   experimental: {
     // turbo: false, // Removed - this was causing the warning
   },
+  
+  // Force cache busting
+  generateEtags: false,
+  poweredByHeader: false,
 };
 
 export default nextConfig;

@@ -9,11 +9,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
-import dynamic from 'next/dynamic';
-
-// Lazy load modal components to improve initial page load
-const ClientModal = dynamic(() => import('@/components/ClientModal'), { ssr: false });
-const ConfirmationModal = dynamic(() => import('@/components/ConfirmationModal'), { ssr: false });
+import ClientModal from '@/components/ClientModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { Client } from '@/types';
 
 export default function ClientsPage() {
@@ -23,7 +20,8 @@ export default function ClientsPage() {
   // State
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
-  const [isLoading, setIsLoading] = useState(false); // Start as false to prevent blocking
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [showCreateClient, setShowCreateClient] = useState(false);
   const [showEditClient, setShowEditClient] = useState(false);
@@ -85,7 +83,7 @@ export default function ClientsPage() {
           if (response.ok) {
             showSuccess('Client deleted successfully');
             // Refresh clients data
-            const clientsResponse = await fetch('/api/clients', { headers });
+            const clientsResponse = await fetch('/api/clients', { headers, cache: 'no-store' });
             const clientsData = await clientsResponse.json();
             setClients(clientsData.clients || []);
           } else {
@@ -196,44 +194,34 @@ export default function ClientsPage() {
     }
   }, []);
 
-  // Load data on mount - smart loading with retry
+  // Load data on mount - prevent infinite loop with hasLoadedData flag
   useEffect(() => {
-    if (!hasLoadedData) {
+    if (user && !loading && !hasLoadedData) {
       setHasLoadedData(true); // Set flag immediately to prevent re-runs
       
-      const loadWithRetry = async () => {
+      const loadData = async () => {
+        setIsLoading(true);
         try {
-          const loadData = async () => {
-            setIsLoading(true);
-            try {
           // Call getAuthHeaders directly in each fetch to avoid dependency issues
           const headers = await getAuthHeaders();
           
           // Fetch clients
-          const response = await fetch('/api/clients', { headers });
+          const response = await fetch('/api/clients', { headers, cache: 'no-store' });
           const data = await response.json();
           setClients(data.clients || []);
+          setIsLoadingClients(false);
         } catch (error) {
           console.error('Error loading clients:', error);
           setClients([]);
-        } finally {
-          setIsLoading(false);
+          setIsLoadingClients(false);
         }
       };
-          await loadData();
-        } catch (error) {
-          // If auth fails, retry after a short delay
-          setTimeout(() => {
-            loadWithRetry();
-          }, 200);
-        }
-      };
-      
-      loadWithRetry();
+      loadData();
     }
   }, [user, loading, hasLoadedData]); // Include hasLoadedData to prevent re-runs
 
-  if (false && loading) {
+  // Only show loading spinner if user is not authenticated yet
+  if (loading && !user) {
     return (
       <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">
@@ -243,7 +231,7 @@ export default function ClientsPage() {
     );
   }
 
-  if (false && !user) {
+  if (!user) {
     return (
       <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">
@@ -284,7 +272,25 @@ export default function ClientsPage() {
               </div>
                 
               {/* Client List */}
-              {clients.length > 0 ? (
+              {isLoadingClients ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className={`rounded-lg p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                      <div className="animate-pulse">
+                        <div className="flex items-center space-x-3 mb-4">
+                          <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                          <div>
+                            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-2"></div>
+                            <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-32"></div>
+                          </div>
+                        </div>
+                        <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-full mb-2"></div>
+                        <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-2/3"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : clients.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {clients.map((client) => (
                     <ClientCard
@@ -345,7 +351,7 @@ export default function ClientsPage() {
               const loadData = async () => {
                 try {
                   const headers = await getAuthHeaders();
-                  const response = await fetch('/api/clients', { headers });
+                  const response = await fetch('/api/clients', { headers, cache: 'no-store' });
                   const data = await response.json();
                   setClients(data.clients || []);
                 } catch (error) {
@@ -377,7 +383,7 @@ export default function ClientsPage() {
               const loadData = async () => {
                 try {
                   const headers = await getAuthHeaders();
-                  const response = await fetch('/api/clients', { headers });
+                  const response = await fetch('/api/clients', { headers, cache: 'no-store' });
                   const data = await response.json();
                   setClients(data.clients || []);
                 } catch (error) {

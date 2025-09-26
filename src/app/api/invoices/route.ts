@@ -2,12 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getAuthenticatedUser } from '@/lib/auth-middleware'
 
-interface InvoiceItem {
-  id: string;
-  description: string;
-  line_total: number;
-}
-
 export async function GET(request: NextRequest) {
   try {
     // Get authenticated user
@@ -16,7 +10,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Fetch invoices with client data and items in one query
+    // Fetch invoices with client data
     const { data: invoicesData, error: invoicesError } = await supabaseAdmin
       .from('invoices')
       .select(`
@@ -25,11 +19,6 @@ export async function GET(request: NextRequest) {
           name,
           email,
           company
-        ),
-        invoice_items (
-          id,
-          description,
-          line_total
         )
       `)
       .eq('user_id', user.id)
@@ -40,20 +29,33 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch invoices' }, { status: 500 })
     }
 
-    // Process the data
-    const invoices = (invoicesData || []).map(invoice => ({
-      ...invoice,
-      // Map database fields to frontend interface
-      invoiceNumber: invoice.invoice_number,
-      dueDate: invoice.due_date,
-      createdAt: invoice.created_at,
-      client: invoice.clients,
-      items: (invoice.invoice_items || []).map((item: InvoiceItem) => ({
-        id: item.id,
-        description: item.description,
-        amount: item.line_total
-      }))
-    }))
+    // Fetch invoice items for each invoice
+    const invoices = await Promise.all(
+      (invoicesData || []).map(async (invoice) => {
+        const { data: itemsData, error: itemsError } = await supabaseAdmin
+          .from('invoice_items')
+          .select('*')
+          .eq('invoice_id', invoice.id)
+
+        if (itemsError) {
+          console.error('Error fetching invoice items:', itemsError)
+        }
+
+        return {
+          ...invoice,
+          // Map database fields to frontend interface
+          invoiceNumber: invoice.invoice_number,
+          dueDate: invoice.due_date,
+          createdAt: invoice.created_at,
+          client: invoice.clients,
+          items: (itemsData || []).map(item => ({
+            id: item.id,
+            description: item.description,
+            amount: item.line_total
+          }))
+        }
+      })
+    )
 
     return NextResponse.json({ invoices })
 

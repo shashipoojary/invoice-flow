@@ -10,12 +10,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
-import dynamic from 'next/dynamic';
-
-// Lazy load modal components to improve initial page load
-const FastInvoiceModal = dynamic(() => import('@/components/FastInvoiceModal'), { ssr: false });
-const QuickInvoiceModal = dynamic(() => import('@/components/QuickInvoiceModal'), { ssr: false });
-const ClientModal = dynamic(() => import('@/components/ClientModal'), { ssr: false });
+import FastInvoiceModal from '@/components/FastInvoiceModal';
+import QuickInvoiceModal from '@/components/QuickInvoiceModal';
+import ClientModal from '@/components/ClientModal';
 import { Client, Invoice } from '@/types';
 
 interface DashboardStats {
@@ -37,9 +34,10 @@ export default function DashboardOverview() {
     overdueCount: 0,
     totalClients: 0
   });
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [isLoading, setIsLoading] = useState(false); // Start as false to prevent blocking
+  const [isLoading, setIsLoading] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [showFastInvoice, setShowFastInvoice] = useState(false);
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
@@ -386,7 +384,8 @@ export default function DashboardOverview() {
       setIsLoadingSettings(true);
       const headers = await getAuthHeaders();
       const response = await fetch('/api/settings', {
-        headers
+        headers,
+        cache: 'no-store'
       });
       const data = await response.json();
       
@@ -400,77 +399,51 @@ export default function DashboardOverview() {
     }
   }, [getAuthHeaders]);
 
-  // Load data on mount - smart loading with retry
+  // Load data on mount - prevent infinite loop with hasLoadedData flag
   useEffect(() => {
-    if (!hasLoadedData) {
+    if (user && !loading && !hasLoadedData) {
       setHasLoadedData(true); // Set flag immediately to prevent re-runs
-      
-      const loadWithRetry = async () => {
-        try {
-          // Start loading immediately without blocking
-          setIsLoading(true);
       
       const loadData = async () => {
         try {
-          // Get headers (now optimized to use cached session)
+          // Call getAuthHeaders directly in each fetch to avoid dependency issues
           const headers = await getAuthHeaders();
           
-          // Load dashboard stats first (most important for initial view)
-          fetch('/api/dashboard/stats', { headers })
+          // Load data progressively without blocking the UI
+          // Fetch dashboard stats
+          fetch('/api/dashboard/stats', { headers, cache: 'no-store' })
             .then(res => res.json())
             .then(data => {
               setDashboardStats(data);
-              setIsLoading(false); // Stop loading after stats load
+              setIsLoadingStats(false);
             })
             .catch(err => {
               console.error('Error fetching dashboard stats:', err);
-              setIsLoading(false);
+              setIsLoadingStats(false);
             });
           
-          // Load other data in parallel (non-blocking)
-          Promise.all([
-            // Fetch invoices
-            fetch('/api/invoices', { headers })
-              .then(res => res.json())
-              .then(data => setInvoices(Array.isArray(data.invoices) ? data.invoices : []))
-              .catch(err => {
-                console.error('Error fetching invoices:', err);
-                setInvoices([]);
-              }),
-            
-            // Fetch clients
-            fetch('/api/clients', { headers })
-              .then(res => res.json())
-              .then(data => setClients(data.clients || []))
-              .catch(err => console.error('Error fetching clients:', err)),
-            
-            // Load settings
-            loadSettings()
-          ]).catch(error => {
-            console.error('Error loading additional data:', error);
-          });
+          // Fetch invoices
+          fetch('/api/invoices', { headers, cache: 'no-store' })
+            .then(res => res.json())
+            .then(data => setInvoices(Array.isArray(data.invoices) ? data.invoices : []))
+            .catch(err => {
+              console.error('Error fetching invoices:', err);
+              setInvoices([]);
+            });
+          
+          // Fetch clients
+          fetch('/api/clients', { headers, cache: 'no-store' })
+            .then(res => res.json())
+            .then(data => setClients(data.clients || []))
+            .catch(err => console.error('Error fetching clients:', err));
+          
+          // Load settings
+          loadSettings();
         } catch (error) {
           console.error('Error loading data:', error);
-          setIsLoading(false);
         }
       };
-      
-          // Start data loading immediately without waiting
-          await loadData();
-          
-          // Set a timeout to stop loading after 200ms to prevent blocking LCP
-          setTimeout(() => {
-            setIsLoading(false);
-          }, 200);
-        } catch (error) {
-          // If auth fails, retry after a short delay
-          setTimeout(() => {
-            loadWithRetry();
-          }, 200);
-        }
-      };
-      
-      loadWithRetry();
+      loadData();
     }
   }, [user, loading, hasLoadedData, getAuthHeaders, loadSettings]); // Include hasLoadedData to prevent re-runs
 
@@ -481,28 +454,23 @@ export default function DashboardOverview() {
   const overdueCount = useMemo(() => dashboardStats.overdueCount || 0, [dashboardStats.overdueCount]);
   const totalClients = useMemo(() => dashboardStats.totalClients || 0, [dashboardStats.totalClients]);
 
-  // Show loading only for authentication, but with a very short timeout
-  if (false && loading) {
+  // Only show loading spinner if user is not authenticated yet
+  if (loading && !user) {
     return (
       <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Loading...</p>
-          </div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
         </div>
       </div>
     );
   }
 
-  // Show login prompt if no user, but don't block the entire page
-  if (false && !user) {
+  if (!user) {
     return (
       <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Please log in to access the dashboard</h1>
-            <p className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Redirecting to login...</p>
+            <h1 className="text-2xl font-bold mb-4">Please log in to access the dashboard</h1>
           </div>
         </div>
       </div>
@@ -578,7 +546,11 @@ export default function DashboardOverview() {
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Revenue</p>
                       <p className="font-heading text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-                        {isLoading ? '...' : `$${totalRevenue.toLocaleString()}`}
+                        {isLoadingStats ? (
+                          <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-24 rounded"></div>
+                        ) : (
+                          `$${totalRevenue.toLocaleString()}`
+                        )}
                       </p>
                       <div className="flex items-center space-x-1">
                         <TrendingUp className="h-4 w-4 text-emerald-500" />
@@ -597,7 +569,11 @@ export default function DashboardOverview() {
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Outstanding</p>
                       <p className="font-heading text-3xl font-bold text-amber-600 dark:text-amber-400">
-                        {isLoading ? '...' : `$${outstandingAmount.toLocaleString()}`}
+                        {isLoadingStats ? (
+                          <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-24 rounded"></div>
+                        ) : (
+                          `$${outstandingAmount.toLocaleString()}`
+                        )}
                       </p>
                       <div className="flex items-center space-x-1">
                         <Clock className="h-4 w-4 text-amber-500" />
@@ -618,7 +594,11 @@ export default function DashboardOverview() {
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Overdue</p>
                       <p className="font-heading text-3xl font-bold text-red-600 dark:text-red-400">
-                        {isLoading ? '...' : overdueCount}
+                        {isLoadingStats ? (
+                          <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-8 rounded"></div>
+                        ) : (
+                          overdueCount
+                        )}
                       </p>
                       <div className="flex items-center space-x-1">
                         <AlertCircle className="h-4 w-4 text-red-500" />
@@ -637,7 +617,11 @@ export default function DashboardOverview() {
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Clients</p>
                       <p className="font-heading text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-                        {isLoading ? '...' : totalClients}
+                        {isLoadingStats ? (
+                          <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-8 rounded"></div>
+                        ) : (
+                          totalClients
+                        )}
                       </p>
                       <div className="flex items-center space-x-1">
                         <Users className="h-4 w-4 text-indigo-500" />
@@ -776,7 +760,7 @@ export default function DashboardOverview() {
       />
 
       {/* Fast Invoice Modal */}
-      {showFastInvoice && user && (
+      {showFastInvoice && (
         <FastInvoiceModal
           isOpen={showFastInvoice}
           onClose={() => setShowFastInvoice(false)}

@@ -9,12 +9,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
-import dynamic from 'next/dynamic';
-
-// Lazy load modal components to improve initial page load
-const FastInvoiceModal = dynamic(() => import('@/components/FastInvoiceModal'), { ssr: false });
-const QuickInvoiceModal = dynamic(() => import('@/components/QuickInvoiceModal'), { ssr: false });
-const ClientModal = dynamic(() => import('@/components/ClientModal'), { ssr: false });
+import FastInvoiceModal from '@/components/FastInvoiceModal';
+import QuickInvoiceModal from '@/components/QuickInvoiceModal';
+import ClientModal from '@/components/ClientModal';
 
 // Types
 import { Client, Invoice } from '@/types';
@@ -27,7 +24,9 @@ export default function InvoicesPage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [isLoading, setIsLoading] = useState(false); // Start as false to prevent blocking
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingInvoices, setIsLoadingInvoices] = useState(true);
+  const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [showFastInvoice, setShowFastInvoice] = useState(false);
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
@@ -68,6 +67,7 @@ export default function InvoicesPage() {
   // Create invoice handler
   const handleCreateInvoice = useCallback(() => {
     // This will be handled by navigation to the invoices page
+    console.log('Create invoice clicked');
   }, []);
 
   // Status helper functions
@@ -108,6 +108,7 @@ export default function InvoicesPage() {
   const handleDownloadPDF = useCallback(async (invoice: Invoice) => {
     try {
       // Debug: Log current settings
+      console.log('PDF Download - Current Settings:', settings);
       
       // Prepare business settings for PDF
       const businessSettings = {
@@ -129,6 +130,7 @@ export default function InvoicesPage() {
       };
       
       // Debug: Log business settings being passed to PDF
+      console.log('PDF Download - Business Settings:', businessSettings);
 
       const { downloadPDF } = await import('@/lib/pdf-generator');
       await downloadPDF(invoice, businessSettings);
@@ -370,7 +372,8 @@ export default function InvoicesPage() {
       setIsLoadingSettings(true);
       const headers = await getAuthHeaders();
       const response = await fetch('/api/settings', {
-        headers
+        headers,
+        cache: 'no-store'
       });
       const data = await response.json();
       
@@ -384,71 +387,54 @@ export default function InvoicesPage() {
     }
   }, [getAuthHeaders]);
 
-  // Load data on mount - smart loading with retry
+  // Load data on mount - prevent infinite loop with hasLoadedData flag
   useEffect(() => {
-    if (!hasLoadedData) {
+    if (user && !loading && !hasLoadedData) {
       setHasLoadedData(true); // Set flag immediately to prevent re-runs
       
-      const loadWithRetry = async () => {
+      const loadData = async () => {
         try {
-          const loadData = async () => {
-            try {
-              // Start loading immediately without blocking
-              setIsLoading(true);
-          
-          // Get headers (now optimized to use cached session)
+          // Call getAuthHeaders directly in each fetch to avoid dependency issues
           const headers = await getAuthHeaders();
           
-          // Load invoices first (most important for this page)
-          fetch('/api/invoices', { headers })
+          // Load data progressively without blocking the UI
+          // Fetch invoices
+          fetch('/api/invoices', { headers, cache: 'no-store' })
             .then(res => res.json())
             .then(data => {
               setInvoices(Array.isArray(data.invoices) ? data.invoices : []);
-              setIsLoading(false); // Stop loading after invoices load
+              setIsLoadingInvoices(false);
             })
             .catch(err => {
               console.error('Error fetching invoices:', err);
               setInvoices([]);
-              setIsLoading(false);
+              setIsLoadingInvoices(false);
             });
           
-          // Load other data in parallel (non-blocking)
-          Promise.all([
-            // Fetch clients
-            fetch('/api/clients', { headers })
-              .then(res => res.json())
-              .then(data => setClients(data.clients || []))
-              .catch(err => console.error('Error fetching clients:', err)),
-            
-            // Load settings
-            loadSettings()
-          ]).catch(error => {
-            console.error('Error loading additional data:', error);
-          });
+          // Fetch clients
+          fetch('/api/clients', { headers, cache: 'no-store' })
+            .then(res => res.json())
+            .then(data => {
+              setClients(data.clients || []);
+              setIsLoadingClients(false);
+            })
+            .catch(err => {
+              console.error('Error fetching clients:', err);
+              setIsLoadingClients(false);
+            });
+          
+          // Load settings
+          loadSettings();
         } catch (error) {
           console.error('Error loading data:', error);
-          setIsLoading(false);
         }
       };
-          await loadData();
-          
-          // Set a timeout to stop loading after 200ms to prevent blocking LCP
-          setTimeout(() => {
-            setIsLoading(false);
-          }, 200);
-        } catch (error) {
-          // If auth fails, retry after a short delay
-          setTimeout(() => {
-            loadWithRetry();
-          }, 200);
-        }
-      };
-      
-      loadWithRetry();
+      loadData();
     }
   }, [user, loading, hasLoadedData, getAuthHeaders, loadSettings]); // Include hasLoadedData to prevent re-runs
 
-  if (false && loading) {
+  // Only show loading spinner if user is not authenticated yet
+  if (loading && !user) {
     return (
       <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">
@@ -458,7 +444,7 @@ export default function InvoicesPage() {
     );
   }
 
-  if (false && !user) {
+  if (!user) {
     return (
       <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">
@@ -506,7 +492,28 @@ export default function InvoicesPage() {
               </div>
                 
               {/* Invoice List */}
-              {invoices.length > 0 ? (
+              {isLoadingInvoices ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className={`rounded-lg p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                      <div className="animate-pulse">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
+                            <div>
+                              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-2"></div>
+                              <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
+                            </div>
+                          </div>
+                          <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+                        </div>
+                        <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-full mb-2"></div>
+                        <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : invoices.length > 0 ? (
                 <div className="space-y-4">
                   {invoices.map((invoice) => (
                     <InvoiceCard
@@ -566,7 +573,7 @@ export default function InvoicesPage() {
       />
 
       {/* Fast Invoice Modal */}
-      {showFastInvoice && user && (
+      {showFastInvoice && (
         <FastInvoiceModal
           isOpen={showFastInvoice}
           onClose={() => setShowFastInvoice(false)}

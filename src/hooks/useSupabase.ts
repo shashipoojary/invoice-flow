@@ -14,19 +14,12 @@ export function useSupabase() {
       return
     }
 
-    // Set a timeout to stop loading after 500ms to prevent blocking
-    const loadingTimeout = setTimeout(() => {
-      setLoading(false)
-    }, 500)
-
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      clearTimeout(loadingTimeout)
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
     }).catch((error) => {
-      clearTimeout(loadingTimeout)
       console.error('Error getting session:', error)
       setLoading(false)
     })
@@ -35,16 +28,12 @@ export function useSupabase() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      clearTimeout(loadingTimeout)
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
     })
 
-    return () => {
-      clearTimeout(loadingTimeout)
-      subscription.unsubscribe()
-    }
+    return () => subscription.unsubscribe()
   }, [])
 
   const signIn = async (email: string, password: string) => {

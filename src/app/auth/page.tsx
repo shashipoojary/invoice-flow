@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
-import Image from 'next/image';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -103,13 +102,11 @@ export default function AuthPage() {
         {/* Logo/Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-40 h-40 mb-6">
-            <Image
-              src={isDarkMode ? "/logowhite.png" : "/logoblack.png"}
+            <img
+              src={isDarkMode ? "/logo-white-final.png" : "/logo-black-final.png"}
               alt="InvoiceFlow Logo"
-              width={160}
-              height={160}
-              className="w-40 h-40"
-              priority
+              className="w-40 h-auto max-w-full object-contain"
+              loading="lazy"
             />
           </div>
           <p className={`text-lg ${

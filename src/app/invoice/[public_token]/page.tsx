@@ -139,13 +139,9 @@ export default function PublicInvoicePage() {
             <div className="flex justify-between items-start">
               <div>
                 {invoice.freelancerSettings?.logo && (
-                  <Image 
-                    src={invoice.freelancerSettings.logo} 
-                    alt="Logo" 
-                    width={48}
-                    height={48}
-                    className="h-12 w-auto mb-4" 
-                  />
+                  <div className="h-12 w-auto mb-4 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded px-4">
+                    <span className="text-xs text-gray-500">Logo</span>
+                  </div>
                 )}
                 <h1 className="text-2xl font-bold text-gray-900">
                   {invoice.freelancerSettings?.businessName || 'Your Business Name'}

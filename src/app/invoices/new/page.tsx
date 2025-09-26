@@ -468,7 +468,9 @@ export default function CreateInvoicePage() {
                 <div className="flex justify-between items-start mb-6">
                   <div>
                     {freelancerSettings?.logo && (
-                      <img src={freelancerSettings.logo} alt="Logo" className="h-12 w-auto mb-2" />
+                      <div className="h-12 w-auto mb-2 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded px-4">
+                        <span className="text-xs text-gray-500">Logo</span>
+                      </div>
                     )}
                     <h1 className="text-xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                       {freelancerSettings?.businessName || 'Your Business Name'}

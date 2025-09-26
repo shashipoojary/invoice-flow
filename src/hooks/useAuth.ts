@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react'
 import { useSupabase } from './useSupabase'
+import { supabase } from '@/lib/supabase'
 
 interface User {
   id: string
@@ -19,7 +20,7 @@ interface AuthContextType {
 }
 
 export function useAuth(): AuthContextType {
-  const { user, loading, session, signIn: supabaseSignIn, signUp: supabaseSignUp, signOut: supabaseSignOut } = useSupabase()
+  const { user, loading, signIn: supabaseSignIn, signUp: supabaseSignUp, signOut: supabaseSignOut } = useSupabase()
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -73,18 +74,23 @@ export function useAuth(): AuthContextType {
   }
 
   const getAuthHeaders = useCallback(async (): Promise<{ [key: string]: string }> => {
-    // Use the cached session instead of making a new API call
-    if (session?.access_token) {
-      return {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
+    // Get the current session token from Supabase
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) {
+        return {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        }
       }
+    } catch (error) {
+      console.error('Error getting session:', error)
     }
     
     return {
       'Content-Type': 'application/json',
     }
-  }, [session])
+  }, [])
 
   return {
     user: user ? {
