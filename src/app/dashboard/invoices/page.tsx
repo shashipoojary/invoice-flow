@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
   Plus, FileText, Clock, CheckCircle, AlertCircle, FilePlus, Sparkles,
-  Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Calendar
+  Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Calendar, Trash2
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -351,8 +351,40 @@ export default function InvoicesPage() {
     }
   }, [getAuthHeaders, showSuccess, showError]);
 
+  const handleDeleteInvoice = useCallback(async (invoice: Invoice) => {
+    if (!confirm(`Are you sure you want to delete invoice ${invoice.invoiceNumber}? This action cannot be undone.`)) {
+      return;
+    }
+
+    const actionKey = `delete-${invoice.id}`;
+    setLoadingActions(prev => ({ ...prev, [actionKey]: true }));
+    
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/invoices/${invoice.id}`, {
+        method: 'DELETE',
+        headers,
+      });
+
+      if (response.ok) {
+        // Refresh invoices data
+        const invoicesResponse = await fetch('/api/invoices', { headers, cache: 'no-store' });
+        const invoicesData = await invoicesResponse.json();
+        setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
+        showSuccess('Invoice Deleted', `Invoice ${invoice.invoiceNumber} has been deleted successfully.`);
+      } else {
+        showError('Delete Failed', 'Failed to delete invoice. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+      showError('Delete Failed', 'Failed to delete invoice. Please try again.');
+    } finally {
+      setLoadingActions(prev => ({ ...prev, [actionKey]: false }));
+    }
+  }, [getAuthHeaders, showSuccess, showError]);
+
   // Memoized Invoice Card Component
-  const InvoiceCard = useCallback(({ invoice, isDarkMode, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions }: {
+  const InvoiceCard = useCallback(({ invoice, isDarkMode, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, handleDeleteInvoice, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions }: {
     invoice: Invoice;
     isDarkMode: boolean;
     handleViewInvoice: (invoice: Invoice) => void;
@@ -360,6 +392,7 @@ export default function InvoicesPage() {
     handleSendInvoice: (invoice: Invoice) => void;
     handleEditInvoice: (invoice: Invoice) => void;
     handleMarkAsPaid: (invoice: Invoice) => void;
+    handleDeleteInvoice: (invoice: Invoice) => void;
     getStatusIcon: (status: string) => React.ReactElement;
     getStatusColor: (status: string) => string;
     getDueDateStatus: (dueDate: string) => { status: string; days: number; color: string };
@@ -598,13 +631,27 @@ export default function InvoicesPage() {
             </button>
           )}
           {invoice.status === 'draft' ? (
-            <button 
-              onClick={() => handleEditInvoice(invoice)}
-              className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-            >
-              <Edit className="h-3 w-3" />
-              <span>Edit</span>
-            </button>
+            <>
+              <button 
+                onClick={() => handleEditInvoice(invoice)}
+                className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                <Edit className="h-3 w-3" />
+                <span>Edit</span>
+              </button>
+              <button 
+                onClick={() => handleDeleteInvoice(invoice)}
+                disabled={loadingActions[`delete-${invoice.id}`]}
+                className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-red-100 text-red-700 hover:bg-red-200'} ${loadingActions[`delete-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {loadingActions[`delete-${invoice.id}`] ? (
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                ) : (
+                  <Trash2 className="h-3 w-3" />
+                )}
+                <span>Delete</span>
+              </button>
+            </>
           ) : (
             <div 
               className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-gray-600/20 text-gray-500' : 'bg-gray-50 text-gray-400'} cursor-not-allowed`}
@@ -786,6 +833,7 @@ export default function InvoicesPage() {
                       handleSendInvoice={handleSendInvoice}
                       handleEditInvoice={handleEditInvoice}
                       handleMarkAsPaid={handleMarkAsPaid}
+                      handleDeleteInvoice={handleDeleteInvoice}
                       getStatusIcon={getStatusIcon}
                       getStatusColor={getStatusColor}
                       getDueDateStatus={getDueDateStatus}
