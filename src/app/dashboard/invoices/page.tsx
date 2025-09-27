@@ -89,15 +89,30 @@ export default function InvoicesPage() {
   const getStatusColor = useCallback((status: string) => {
     switch (status) {
       case 'paid':
-        return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30';
+        return 'dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30';
       case 'sent':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 border border-blue-300 dark:border-blue-500/30';
+        return 'dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30';
       case 'overdue':
-        return 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300 border border-red-300 dark:border-red-500/30';
+        return 'dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/30';
       case 'draft':
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-300 border border-gray-300 dark:border-gray-500/30';
+        return 'dark:bg-gray-500/20 dark:text-gray-300 dark:border-gray-500/30';
       default:
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-300 border border-gray-300 dark:border-gray-500/30';
+        return 'dark:bg-gray-500/20 dark:text-gray-300 dark:border-gray-500/30';
+    }
+  }, []);
+
+  const getStatusStyle = useCallback((status: string) => {
+    switch (status) {
+      case 'paid':
+        return { backgroundColor: '#d1fae5', color: '#047857', borderColor: '#6ee7b7' };
+      case 'sent':
+        return { backgroundColor: '#dbeafe', color: '#1d4ed8', borderColor: '#93c5fd' };
+      case 'overdue':
+        return { backgroundColor: '#fee2e2', color: '#dc2626', borderColor: '#fca5a5' };
+      case 'draft':
+        return { backgroundColor: '#f3f4f6', color: '#374151', borderColor: '#d1d5db' };
+      default:
+        return { backgroundColor: '#f3f4f6', color: '#374151', borderColor: '#d1d5db' };
     }
   }, []);
 
@@ -348,11 +363,17 @@ export default function InvoicesPage() {
                 <div className="font-heading text-sm font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                   {invoice.invoiceNumber}
                 </div>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full border ${
-                  invoice.type === 'fast' 
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 border-blue-300 dark:border-blue-500/30'
-                    : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 border-indigo-300 dark:border-indigo-500/30'
-                }`}>
+                <span 
+                  className={`px-2 py-1 text-xs font-medium rounded-full border ${
+                    invoice.type === 'fast' 
+                      ? 'dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30'
+                      : 'dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30'
+                  }`}
+                  style={!isDarkMode ? (invoice.type === 'fast' 
+                    ? { backgroundColor: '#dbeafe', color: '#1d4ed8', borderColor: '#93c5fd' }
+                    : { backgroundColor: '#e0e7ff', color: '#3730a3', borderColor: '#a5b4fc' }
+                  ) : {}}
+                >
                   {invoice.type === 'fast' ? 'Fast' : 'Detailed'}
                 </span>
               </div>
@@ -383,7 +404,10 @@ export default function InvoicesPage() {
               </div>
             )}
             <div className="flex items-center justify-between">
-              <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${getStatusColor(invoice.status)}`}>
+              <span 
+                className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border ${getStatusColor(invoice.status)}`}
+                style={!isDarkMode ? getStatusStyle(invoice.status) : {}}
+              >
                 {getStatusIcon(invoice.status)}
                 {invoice.status}
               </span>
@@ -408,11 +432,17 @@ export default function InvoicesPage() {
                 <div className="font-heading text-sm font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                   {invoice.invoiceNumber}
                 </div>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full border ${
-                  invoice.type === 'fast' 
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 border-blue-300 dark:border-blue-500/30'
-                    : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 border-indigo-300 dark:border-indigo-500/30'
-                }`}>
+                <span 
+                  className={`px-2 py-1 text-xs font-medium rounded-full border ${
+                    invoice.type === 'fast' 
+                      ? 'dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30'
+                      : 'dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30'
+                  }`}
+                  style={!isDarkMode ? (invoice.type === 'fast' 
+                    ? { backgroundColor: '#dbeafe', color: '#1d4ed8', borderColor: '#93c5fd' }
+                    : { backgroundColor: '#e0e7ff', color: '#3730a3', borderColor: '#a5b4fc' }
+                  ) : {}}
+                >
                   {invoice.type === 'fast' ? 'Fast' : 'Detailed'}
                 </span>
               </div>
@@ -443,7 +473,10 @@ export default function InvoicesPage() {
               )}
             </div>
             <div className="flex items-center justify-between">
-              <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${getStatusColor(invoice.status)}`}>
+              <span 
+                className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border ${getStatusColor(invoice.status)}`}
+                style={!isDarkMode ? getStatusStyle(invoice.status) : {}}
+              >
                 {getStatusIcon(invoice.status)}
                 {invoice.status}
               </span>
@@ -904,11 +937,17 @@ export default function InvoicesPage() {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                   <div className={`px-3 py-1 text-xs font-medium rounded-full border ${
-                     selectedInvoice.type === 'fast' 
-                       ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 border-blue-300 dark:border-blue-500/30'
-                       : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 border-indigo-300 dark:border-indigo-500/30'
-                   }`}>
+                   <div 
+                     className={`px-3 py-1 text-xs font-medium rounded-full border ${
+                       selectedInvoice.type === 'fast' 
+                         ? 'dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30'
+                         : 'dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30'
+                     }`}
+                     style={!isDarkMode ? (selectedInvoice.type === 'fast' 
+                       ? { backgroundColor: '#dbeafe', color: '#1d4ed8', borderColor: '#93c5fd' }
+                       : { backgroundColor: '#e0e7ff', color: '#3730a3', borderColor: '#a5b4fc' }
+                     ) : {}}
+                   >
                     {selectedInvoice.type === 'fast' ? 'Fast Invoice' : 'Detailed Invoice'}
                   </div>
                   <div className="bg-orange-500 text-white px-3 py-2 rounded text-sm sm:text-base font-bold">
