@@ -128,7 +128,8 @@ export default function QuickInvoiceModal({
   ])
   
   const [loading, setLoading] = useState(false)
-  const [discount, setDiscount] = useState(0)
+  const [pdfLoading, setPdfLoading] = useState(false)
+  const [discount, setDiscount] = useState('')
   
   // Reminder settings
   const [reminders, setReminders] = useState<ReminderSettings>({
@@ -249,11 +250,12 @@ export default function QuickInvoiceModal({
 
   const calculateTotals = () => {
     const subtotal = items.reduce((sum, item) => sum + (parseFloat(item.amount.toString()) || 0), 0)
-    const total = subtotal - discount
+    const discountAmount = parseFloat(discount.toString()) || 0
+    const total = subtotal - discountAmount
     
     return { 
       subtotal, 
-      discount, 
+      discount: discountAmount, 
       total
     }
   }
@@ -286,7 +288,7 @@ export default function QuickInvoiceModal({
           line_total: parseFloat(item.amount.toString()) || 0
         })),
         due_date: dueDate,
-        discount: discount,
+        discount: parseFloat(discount.toString()) || 0,
         notes: notes,
         billing_choice: 'per_invoice',
         type: 'detailed', // Mark as detailed invoice
@@ -347,7 +349,7 @@ export default function QuickInvoiceModal({
     setNewClient({ name: '', email: '', company: '', address: '' })
     setItems([{ id: '1', description: '', amount: '' }])
     setNotes('Thank you for your business!')
-    setDiscount(0)
+    setDiscount('')
   }
 
   const handleClose = () => {
@@ -356,6 +358,7 @@ export default function QuickInvoiceModal({
   }
 
   const handleGeneratePDF = async () => {
+    setPdfLoading(true)
     try {
       // Validate required fields for PDF generation
       if (!selectedClientId && !newClient.name) {
@@ -377,7 +380,7 @@ export default function QuickInvoiceModal({
           line_total: parseFloat(item.amount.toString()) || 0
         })),
         due_date: dueDate,
-        discount: discount,
+        discount: parseFloat(discount.toString()) || 0,
         notes: notes,
         billing_choice: 'per_invoice',
         type: 'detailed', // Mark as detailed invoice
@@ -436,6 +439,8 @@ export default function QuickInvoiceModal({
     } catch (error) {
       console.error('Error generating PDF:', error)
       alert('Failed to generate PDF. Please try again.')
+    } finally {
+      setPdfLoading(false)
     }
   }
 
@@ -933,10 +938,10 @@ export default function QuickInvoiceModal({
                         isDarkMode ? 'text-gray-500' : 'text-gray-400'
                       }`} />
                       <input
-                        type="number"
+                        type="text"
                         placeholder="0"
                         value={discount}
-                        onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                        onChange={(e) => setDiscount(e.target.value)}
                         className={`w-full pl-10 pr-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                           isDarkMode 
                             ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
@@ -1757,14 +1762,24 @@ export default function QuickInvoiceModal({
                 <button
                   type="button"
                   onClick={handleGeneratePDF}
-                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm ${
+                  disabled={pdfLoading}
+                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 ${
                     isDarkMode 
                       ? 'bg-blue-600 text-white hover:bg-blue-700' 
                       : 'bg-blue-600 text-white hover:bg-blue-700'
                   }`}
                 >
-                  <Download className="h-4 w-4" />
-                  <span>Generate PDF</span>
+                  {pdfLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Generating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4" />
+                      <span>Generate PDF</span>
+                    </>
+                  )}
                 </button>
                 
                 <button
@@ -1777,7 +1792,10 @@ export default function QuickInvoiceModal({
                   }`}
                 >
                   {loading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Creating...</span>
+                    </>
                   ) : (
                     <>
                       <Send className="h-4 w-4" />

@@ -216,8 +216,37 @@ export async function POST(request: NextRequest) {
     if (invoiceData.generate_pdf_only) {
       // Generate PDF and return it
       try {
+        // Fetch business settings for PDF generation
+        const { data: settingsData, error: settingsError } = await supabase
+          .from('business_settings')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (settingsError) {
+          console.error('Settings fetch error:', settingsError);
+        }
+
+        const businessSettings = settingsData ? {
+          businessName: settingsData.business_name,
+          businessEmail: settingsData.business_email,
+          businessPhone: settingsData.business_phone,
+          address: settingsData.business_address,
+          logo: settingsData.logo_url,
+          bankAccount: settingsData.bank_account,
+          bankIfscSwift: settingsData.bank_ifsc_swift,
+          bankIban: settingsData.bank_iban,
+          paypalEmail: settingsData.paypal_email,
+          cashappId: settingsData.cashapp_id,
+          venmoId: settingsData.venmo_id,
+          googlePayUpi: settingsData.google_pay_upi,
+          applePayId: settingsData.apple_pay_id,
+          stripeAccount: settingsData.stripe_account,
+          paymentNotes: settingsData.payment_notes
+        } : undefined;
+
         const { generatePDFBlob } = await import('@/lib/pdf-generator');
-        const pdfBlob = await generatePDFBlob(mappedInvoice, undefined); // No business settings for now
+        const pdfBlob = await generatePDFBlob(mappedInvoice, businessSettings);
         const pdfBuffer = await pdfBlob.arrayBuffer();
         
         return new NextResponse(pdfBuffer, {
