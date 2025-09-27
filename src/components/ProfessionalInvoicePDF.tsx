@@ -391,7 +391,7 @@ interface InvoiceItem {
   id: string;
   description: string;
   rate: number;
-  amount: number;
+  amount: number | string;
 }
 
 interface Client {
@@ -595,7 +595,7 @@ const generateQRCodeDataURL = async (invoice: Invoice, businessSettings?: Busine
           {invoice.items?.map((item) => (
             <View key={item.id} style={styles.tableRow}>
               <Text style={[styles.tableCell, styles.descriptionCol]}>{item.description || 'Service'}</Text>
-              <Text style={[styles.tableCell, styles.priceCol]}>{formatCurrency(item.amount || 0)}</Text>
+              <Text style={[styles.tableCell, styles.priceCol]}>{formatCurrency(parseFloat(item.amount?.toString() || '0') || 0)}</Text>
             </View>
           ))}
         </View>

@@ -31,7 +31,7 @@ interface Client {
 interface InvoiceItem {
   id: string
   description: string
-  amount: number
+  amount: number | string
 }
 
 interface BusinessDetails {
@@ -124,7 +124,7 @@ export default function QuickInvoiceModal({
   
   // Invoice items
   const [items, setItems] = useState<InvoiceItem[]>([
-    { id: '1', description: '', amount: 0 }
+    { id: '1', description: '', amount: '' }
   ])
   
   const [loading, setLoading] = useState(false)
@@ -231,7 +231,7 @@ export default function QuickInvoiceModal({
     setItems([...items, { 
       id: Date.now().toString(), 
       description: '', 
-      amount: 0
+      amount: ''
     }])
   }
 
@@ -248,7 +248,7 @@ export default function QuickInvoiceModal({
   }
 
   const calculateTotals = () => {
-    const subtotal = items.reduce((sum, item) => sum + item.amount, 0)
+    const subtotal = items.reduce((sum, item) => sum + (parseFloat(item.amount.toString()) || 0), 0)
     const total = subtotal - discount
     
     return { 
@@ -272,7 +272,7 @@ export default function QuickInvoiceModal({
         return
       }
 
-      if (items.some(item => !item.description || item.amount <= 0)) {
+      if (items.some(item => !item.description || !item.amount || parseFloat(item.amount.toString()) <= 0)) {
         alert('Please fill in all item details with valid amounts')
         return
       }
@@ -282,8 +282,8 @@ export default function QuickInvoiceModal({
         client_data: selectedClientId ? undefined : newClient,
         items: items.map(item => ({
           description: item.description,
-          rate: item.amount,
-          line_total: item.amount
+          rate: parseFloat(item.amount.toString()) || 0,
+          line_total: parseFloat(item.amount.toString()) || 0
         })),
         due_date: dueDate,
         discount: discount,
@@ -344,7 +344,7 @@ export default function QuickInvoiceModal({
     setCurrentStep(1)
     setSelectedClientId('')
     setNewClient({ name: '', email: '', company: '', address: '' })
-    setItems([{ id: '1', description: '', amount: 0 }])
+    setItems([{ id: '1', description: '', amount: '' }])
     setNotes('Thank you for your business!')
     setDiscount(0)
   }
@@ -362,7 +362,7 @@ export default function QuickInvoiceModal({
         return
       }
 
-      if (items.some(item => !item.description || item.amount <= 0)) {
+      if (items.some(item => !item.description || !item.amount || parseFloat(item.amount.toString()) <= 0)) {
         alert('Please fill in all item details with valid amounts')
         return
       }
@@ -372,8 +372,8 @@ export default function QuickInvoiceModal({
         client_data: selectedClientId ? undefined : newClient,
         items: items.map(item => ({
           description: item.description,
-          rate: item.amount,
-          line_total: item.amount
+          rate: parseFloat(item.amount.toString()) || 0,
+          line_total: parseFloat(item.amount.toString()) || 0
         })),
         due_date: dueDate,
         discount: discount,
@@ -873,13 +873,13 @@ export default function QuickInvoiceModal({
                             <label className={`block text-xs font-medium mb-1 ${
                               isDarkMode ? 'text-gray-300' : 'text-gray-700'
                             }`}>
-                              Amount (₹)
+                              Amount ($)
                             </label>
                             <input
                               type="number"
                               placeholder="0.00"
                               value={item.amount}
-                              onChange={(e) => updateItem(item.id, 'amount', parseFloat(e.target.value) || 0)}
+                              onChange={(e) => updateItem(item.id, 'amount', e.target.value)}
                               className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                                 isDarkMode 
                                   ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
@@ -922,7 +922,7 @@ export default function QuickInvoiceModal({
                     <p className={`text-xs ${
                       isDarkMode ? 'text-gray-400' : 'text-gray-500'
                     }`}>
-                      Enter discount amount in ₹
+                      Enter discount amount in $
                     </p>
                   </div>
                   <div className="w-32">
@@ -982,12 +982,12 @@ export default function QuickInvoiceModal({
                     <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Subtotal</span>
                     <span className={`font-semibold ${
                       isDarkMode ? 'text-white' : 'text-gray-900'
-                    }`}>₹{subtotal.toLocaleString()}</span>
+                    }`}>${subtotal.toLocaleString()}</span>
                   </div>
                   {totalDiscount > 0 && (
                     <div className="flex justify-between text-sm">
                       <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Discount</span>
-                      <span className={`font-semibold text-green-600`}>-₹{totalDiscount.toLocaleString()}</span>
+                      <span className={`font-semibold text-green-600`}>-${totalDiscount.toLocaleString()}</span>
                     </div>
                   )}
                   <div className={`flex justify-between text-lg font-bold border-t pt-3 ${
@@ -996,7 +996,7 @@ export default function QuickInvoiceModal({
                       : 'border-gray-300'
                   }`}>
                     <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>Total</span>
-                    <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>₹{total.toLocaleString()}</span>
+                    <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>${total.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -1674,7 +1674,7 @@ export default function QuickInvoiceModal({
                     )}
                     <div className="flex justify-between text-lg font-bold mt-2 pt-2 border-t border-gray-300 dark:border-gray-600">
                       <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>Total</span>
-                      <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>₹{total.toLocaleString()}</span>
+                      <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>${total.toLocaleString()}</span>
                     </div>
                   </div>
                 </div>

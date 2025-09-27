@@ -106,7 +106,7 @@ export const generateProfessionalPDF = async (
         id: item.id || 'item-1',
         description: item.description || 'Service',
         rate: typeof item.rate === 'number' ? item.rate : 0,
-        amount: typeof item.amount === 'number' ? item.amount : 0
+        amount: typeof item.amount === 'number' ? item.amount : (parseFloat(item.amount?.toString() || '0') || 0)
       })) : [{ id: 'item-1', description: 'Service', rate: 0, amount: 0 }],
       subtotal: typeof invoice.subtotal === 'number' ? invoice.subtotal : 0,
       discount: typeof invoice.discount === 'number' ? invoice.discount : 0,
@@ -207,7 +207,7 @@ export const generatePDFBlob = async (invoice: Invoice, businessSettings?: Busin
         id: item.id || Math.random().toString(),
         description: item.description || 'Service',
         rate: typeof item.rate === 'number' ? item.rate : 0,
-        amount: typeof item.amount === 'number' ? item.amount : 0
+        amount: typeof item.amount === 'number' ? item.amount : (parseFloat(item.amount?.toString() || '0') || 0)
       })) : [{ id: '1', description: 'Service', rate: 0, amount: 0 }],
       subtotal: typeof invoice.subtotal === 'number' ? invoice.subtotal : 0,
       discount: typeof invoice.discount === 'number' ? invoice.discount : 0,
@@ -567,7 +567,7 @@ const formatCurrency = (amount: number) => {
             ${Array.isArray(invoice.items) ? invoice.items.map(item => `
               <tr>
                 <td>${item.description || 'Service'}</td>
-                <td class="amount">${formatCurrency(item.amount || 0)}</td>
+                <td class="amount">${formatCurrency(parseFloat(item.amount?.toString() || '0') || 0)}</td>
               </tr>
             `).join('') : '<tr><td>Service</td><td class="amount">$0.00</td></tr>'}
           </tbody>

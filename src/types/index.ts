@@ -14,7 +14,7 @@ export interface InvoiceItem {
   id: string;
   description: string;
   rate: number;
-  amount: number;
+  amount: number | string;
 }
 
 export interface Invoice {
