@@ -1800,8 +1800,8 @@ export default function QuickInvoiceModal({
                     </>
                   ) : (
                     <>
-                      <Download className="h-4 w-4" />
-                      <span>Generate PDF</span>
+                  <Download className="h-4 w-4" />
+                  <span>Generate PDF</span>
                     </>
                   )}
                 </button>
@@ -1817,7 +1817,7 @@ export default function QuickInvoiceModal({
                 >
                   {loading ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                       <span>Creating...</span>
                     </>
                   ) : (

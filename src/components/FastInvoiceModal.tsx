@@ -531,7 +531,11 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                   type="button"
                   onClick={handleCreateInvoice}
                   disabled={loading || sendLoading}
-                  className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50 flex items-center justify-center space-x-2 text-sm"
+                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 ${
+                    isDarkMode 
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
+                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  }`}
                 >
                   {loading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -544,7 +548,11 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                   type="button"
                   onClick={handleCreateAndSend}
                   disabled={loading || sendLoading}
-                  className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 flex items-center justify-center space-x-2 text-sm"
+                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 ${
+                    isDarkMode 
+                      ? 'bg-green-600 text-white hover:bg-green-700' 
+                      : 'bg-green-600 text-white hover:bg-green-700'
+                  }`}
                 >
                   {sendLoading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
