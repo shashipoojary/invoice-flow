@@ -89,15 +89,15 @@ export default function InvoicesPage() {
   const getStatusColor = useCallback((status: string) => {
     switch (status) {
       case 'paid':
-        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30';
+        return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30';
       case 'sent':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300 border border-blue-300 dark:border-blue-500/30';
+        return 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 border border-blue-300 dark:border-blue-500/30';
       case 'overdue':
-        return 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300 border border-red-300 dark:border-red-500/30';
+        return 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300 border border-red-300 dark:border-red-500/30';
       case 'draft':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-500/20 dark:text-gray-300 border border-gray-300 dark:border-gray-500/30';
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-300 border border-gray-300 dark:border-gray-500/30';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-500/20 dark:text-gray-300 border border-gray-300 dark:border-gray-500/30';
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-300 border border-gray-300 dark:border-gray-500/30';
     }
   }, []);
 
@@ -350,8 +350,8 @@ export default function InvoicesPage() {
                 </div>
                 <span className={`px-2 py-1 text-xs font-medium rounded-full border ${
                   invoice.type === 'fast' 
-                    ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20 dark:border-blue-500/30'
-                    : 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20 dark:border-purple-500/30'
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 border-blue-300 dark:border-blue-500/30'
+                    : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 border-indigo-300 dark:border-indigo-500/30'
                 }`}>
                   {invoice.type === 'fast' ? 'Fast' : 'Detailed'}
                 </span>
@@ -410,8 +410,8 @@ export default function InvoicesPage() {
                 </div>
                 <span className={`px-2 py-1 text-xs font-medium rounded-full border ${
                   invoice.type === 'fast' 
-                    ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20 dark:border-blue-500/30'
-                    : 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20 dark:border-purple-500/30'
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 border-blue-300 dark:border-blue-500/30'
+                    : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 border-indigo-300 dark:border-indigo-500/30'
                 }`}>
                   {invoice.type === 'fast' ? 'Fast' : 'Detailed'}
                 </span>
@@ -906,8 +906,8 @@ export default function InvoicesPage() {
                 <div className="flex items-center space-x-2">
                    <div className={`px-3 py-1 text-xs font-medium rounded-full border ${
                      selectedInvoice.type === 'fast' 
-                       ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20 dark:border-blue-500/30'
-                       : 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20 dark:border-purple-500/30'
+                       ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 border-blue-300 dark:border-blue-500/30'
+                       : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 border-indigo-300 dark:border-indigo-500/30'
                    }`}>
                     {selectedInvoice.type === 'fast' ? 'Fast Invoice' : 'Detailed Invoice'}
                   </div>
