@@ -110,10 +110,15 @@ export async function POST(request: NextRequest) {
       discount,
       total,
       status: 'draft',
-      issue_date: new Date().toISOString().split('T')[0],
+      issue_date: invoiceData.issue_date || new Date().toISOString().split('T')[0],
       due_date: invoiceData.due_date,
       notes: invoiceData.notes || '',
-      type: invoiceData.type || 'detailed', // Add invoice type
+      type: invoiceData.type || 'detailed',
+      // New enhanced fields
+      payment_terms: invoiceData.payment_terms ? JSON.stringify(invoiceData.payment_terms) : null,
+      late_fees: invoiceData.late_fees ? JSON.stringify(invoiceData.late_fees) : null,
+      reminders: invoiceData.reminders ? JSON.stringify(invoiceData.reminders) : null,
+      theme: invoiceData.theme ? JSON.stringify(invoiceData.theme) : null,
     };
 
     // Insert invoice
@@ -196,7 +201,15 @@ export async function POST(request: NextRequest) {
         id: item.id,
         description: item.description,
         amount: item.line_total
-      }))
+      })),
+      // Parse JSON fields with fallbacks for existing invoices (only for sent/unpaid)
+      paymentTerms: completeInvoice.payment_terms ? JSON.parse(completeInvoice.payment_terms) : 
+        { enabled: true, terms: 'Net 30' },
+      lateFees: completeInvoice.late_fees ? JSON.parse(completeInvoice.late_fees) : 
+        { enabled: true, type: 'fixed', amount: 50, gracePeriod: 7 },
+      reminders: completeInvoice.reminders ? JSON.parse(completeInvoice.reminders) : 
+        { enabled: true, useSystemDefaults: true, rules: [] },
+      theme: completeInvoice.theme ? JSON.parse(completeInvoice.theme) : undefined,
     };
 
     return NextResponse.json({ 

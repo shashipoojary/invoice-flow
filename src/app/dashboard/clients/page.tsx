@@ -11,6 +11,7 @@ import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
 import ClientModal from '@/components/ClientModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
+import QuickInvoiceModal from '@/components/QuickInvoiceModal';
 import { Client } from '@/types';
 
 export default function ClientsPage() {
@@ -20,12 +21,12 @@ export default function ClientsPage() {
   // State
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [showCreateClient, setShowCreateClient] = useState(false);
   const [showEditClient, setShowEditClient] = useState(false);
   const [showViewClient, setShowViewClient] = useState(false);
+  const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [confirmationModal, setConfirmationModal] = useState({
@@ -48,8 +49,8 @@ export default function ClientsPage() {
 
   // Create invoice handler
   const handleCreateInvoice = useCallback(() => {
-    // This will be handled by navigation to the invoices page
-    console.log('Create invoice clicked');
+    // Show the detailed invoice modal by default
+    setShowCreateInvoice(true);
   }, []);
 
   // Client handler functions
@@ -200,7 +201,6 @@ export default function ClientsPage() {
       setHasLoadedData(true); // Set flag immediately to prevent re-runs
       
       const loadData = async () => {
-        setIsLoading(true);
         try {
           // Call getAuthHeaders directly in each fetch to avoid dependency issues
           const headers = await getAuthHeaders();
@@ -416,17 +416,17 @@ export default function ClientsPage() {
             {/* Client Details */}
             <div className={`w-full ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} overflow-hidden`}>
               {/* Header */}
-              <div className="p-3 sm:p-6 border-b border-gray-200">
+              <div className={`p-3 sm:p-6 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                 <div className="flex items-center space-x-4">
                   <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
                     <Users className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
                   </div>
                   <div>
-                    <h3 className="text-lg sm:text-2xl font-bold text-gray-900">
+                    <h3 className={`text-lg sm:text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                       {selectedClient.name}
                     </h3>
                     {selectedClient.company && (
-                      <p className="text-sm sm:text-base text-gray-600">
+                      <p className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                         {selectedClient.company}
                       </p>
                     )}
@@ -437,22 +437,22 @@ export default function ClientsPage() {
               {/* Contact Information */}
               <div className="p-3 sm:p-6 space-y-4">
                 <div>
-                  <h4 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Contact Information</h4>
+                  <h4 className={`text-sm sm:text-base font-semibold mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Contact Information</h4>
                   <div className="space-y-3">
                     <div className="flex items-center space-x-3">
-                      <Mail className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm sm:text-base text-gray-600">{selectedClient.email}</span>
+                      <Mail className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                      <span className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{selectedClient.email}</span>
                     </div>
                     {selectedClient.phone && (
                       <div className="flex items-center space-x-3">
-                        <Phone className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm sm:text-base text-gray-600">{selectedClient.phone}</span>
+                        <Phone className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                        <span className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{selectedClient.phone}</span>
                       </div>
                     )}
                     {selectedClient.address && (
                       <div className="flex items-start space-x-3">
-                        <MapPin className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm sm:text-base text-gray-600">{selectedClient.address}</span>
+                        <MapPin className={`h-4 w-4 mt-0.5 flex-shrink-0 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                        <span className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{selectedClient.address}</span>
                       </div>
                     )}
                   </div>
@@ -460,10 +460,10 @@ export default function ClientsPage() {
                 
                 {/* Additional Info */}
                 <div>
-                  <h4 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">Additional Information</h4>
+                  <h4 className={`text-sm sm:text-base font-semibold mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Additional Information</h4>
                   <div className="flex items-center space-x-3">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm sm:text-base text-gray-600">
+                    <Calendar className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                    <span className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                       Client since {new Date(selectedClient.createdAt).toLocaleDateString()}
                     </span>
                   </div>
@@ -472,6 +472,21 @@ export default function ClientsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Create Invoice Modal */}
+      {showCreateInvoice && (
+        <QuickInvoiceModal
+          isOpen={showCreateInvoice}
+          onClose={() => setShowCreateInvoice(false)}
+          getAuthHeaders={getAuthHeaders}
+          isDarkMode={isDarkMode}
+          clients={clients}
+          onSuccess={() => {
+            setShowCreateInvoice(false);
+            showSuccess('Invoice created successfully');
+          }}
+        />
       )}
 
       {/* Confirmation Modal */}

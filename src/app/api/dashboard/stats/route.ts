@@ -38,17 +38,21 @@ export async function GET(request: NextRequest) {
 
     const outstandingAmount = outstandingData?.reduce((sum, invoice) => sum + (invoice.total || 0), 0) || 0
 
-    // Get overdue count
-    const { count: overdueCount, error: overdueError } = await supabaseAdmin
+    // Get overdue count (only sent invoices past due date)
+    const today = new Date().toISOString().split('T')[0]
+    const { data: overdueData, error: overdueError } = await supabaseAdmin
       .from('invoices')
-      .select('*', { count: 'exact', head: true })
+      .select('id')
       .eq('user_id', user.id)
-      .eq('status', 'overdue')
+      .eq('status', 'sent')
+      .lt('due_date', today)
 
     if (overdueError) {
       console.error('Error fetching overdue count:', overdueError)
       return NextResponse.json({ error: 'Failed to fetch overdue count' }, { status: 500 })
     }
+
+    const overdueCount = overdueData?.length || 0
 
     // Get total clients count
     const { count: totalClients, error: clientsError } = await supabaseAdmin
@@ -64,7 +68,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       totalRevenue,
       outstandingAmount,
-      overdueCount: overdueCount || 0,
+      overdueCount,
       totalClients: totalClients || 0
     })
 

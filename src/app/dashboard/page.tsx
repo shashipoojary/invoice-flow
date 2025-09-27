@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   FileText, Users, TrendingUp, 
   Clock, CheckCircle, AlertCircle, AlertTriangle, UserPlus, FilePlus, Sparkles, Receipt, Timer,
-  Eye, Download, Send, Edit, X
+  Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Calendar
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -36,16 +36,19 @@ export default function DashboardOverview() {
   });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [isLoadingInvoices, setIsLoadingInvoices] = useState(true);
-  const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [showFastInvoice, setShowFastInvoice] = useState(false);
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   const [showCreateClient, setShowCreateClient] = useState(false);
   const [showViewInvoice, setShowViewInvoice] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  
+  // Loading states for action buttons
+  const [loadingActions, setLoadingActions] = useState<{
+    [key: string]: boolean;
+  }>({});
   
   // Business settings state
   const [settings, setSettings] = useState({
@@ -66,7 +69,6 @@ export default function DashboardOverview() {
     stripeAccount: '',
     paymentNotes: ''
   });
-  const [isLoadingSettings, setIsLoadingSettings] = useState(false);
 
   // Dark mode toggle
   const toggleDarkMode = useCallback(() => {
@@ -79,8 +81,8 @@ export default function DashboardOverview() {
 
   // Create invoice handler
   const handleCreateInvoice = useCallback(() => {
-    // This will be handled by navigation to the invoices page
-    console.log('Create invoice clicked');
+    // Show the detailed invoice modal by default
+    setShowCreateInvoice(true);
   }, []);
 
   // Status helper functions
@@ -100,16 +102,105 @@ export default function DashboardOverview() {
   const getStatusColor = useCallback((status: string) => {
     switch (status) {
       case 'paid':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200 border border-green-200 dark:border-green-700';
+        return 'bg-green-500/10 text-green-700 dark:text-green-300 border border-green-500/20 dark:border-green-500/30';
       case 'sent':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 border border-blue-200 dark:border-blue-700';
+        return 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 dark:border-blue-500/30';
       case 'overdue':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200 border border-red-200 dark:border-red-700';
+        return 'bg-red-500/10 text-red-700 dark:text-red-300 border border-red-500/20 dark:border-red-500/30';
       case 'draft':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-200 border border-gray-200 dark:border-gray-600';
+        return 'bg-gray-500/10 text-gray-700 dark:text-gray-300 border border-gray-500/20 dark:border-gray-500/30';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-200 border border-gray-200 dark:border-gray-600';
+        return 'bg-gray-500/10 text-gray-700 dark:text-gray-300 border border-gray-500/20 dark:border-gray-500/30';
     }
+  }, []);
+
+  // Helper function to calculate due date status
+  const getDueDateStatus = useCallback((dueDate: string) => {
+    const today = new Date();
+    const due = new Date(dueDate);
+    const diffTime = due.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) {
+      return { status: 'overdue', days: Math.abs(diffDays), color: 'text-red-600 dark:text-red-400' };
+    } else if (diffDays === 0) {
+      return { status: 'due-today', days: 0, color: 'text-orange-600 dark:text-orange-400' };
+    } else if (diffDays <= 3) {
+      return { status: 'due-soon', days: diffDays, color: 'text-yellow-600 dark:text-yellow-400' };
+    } else {
+      return { status: 'upcoming', days: diffDays, color: 'text-gray-600 dark:text-gray-400' };
+    }
+  }, []);
+
+  // Helper function to format payment terms
+  const formatPaymentTerms = useCallback((paymentTerms?: { enabled: boolean; terms: string }) => {
+    if (!paymentTerms?.enabled) return null;
+    return paymentTerms.terms;
+  }, []);
+
+  // Helper function to format late fees
+  const formatLateFees = useCallback((lateFees?: { enabled: boolean; type: 'fixed' | 'percentage'; amount: number; gracePeriod: number }) => {
+    if (!lateFees?.enabled) return null;
+    const amount = lateFees.type === 'fixed' ? `$${lateFees.amount}` : `${lateFees.amount}%`;
+    return `${amount} after ${lateFees.gracePeriod} days`;
+  }, []);
+
+  // Helper function to format reminders
+  const formatReminders = useCallback((reminders?: { enabled: boolean; useSystemDefaults: boolean; rules: Array<{ enabled: boolean }> }) => {
+    if (!reminders?.enabled) return null;
+    if (reminders.useSystemDefaults) return 'Smart System';
+    const activeRules = reminders.rules.filter(rule => rule.enabled).length;
+    return `${activeRules} Custom Rule${activeRules !== 1 ? 's' : ''}`;
+  }, []);
+
+  // Helper function to calculate due charges and total payable
+  const calculateDueCharges = useCallback((invoice: Invoice) => {
+    // Only calculate late fees for sent invoices that are actually overdue
+    if (invoice.status !== 'sent') {
+      return {
+        hasLateFees: false,
+        lateFeeAmount: 0,
+        totalPayable: invoice.total,
+        overdueDays: 0
+      };
+    }
+
+    const today = new Date();
+    const due = new Date(invoice.dueDate);
+    const diffTime = due.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    // Only calculate late fees if invoice is overdue and late fees are enabled
+    if (diffDays < 0 && invoice.lateFees?.enabled) {
+      const overdueDays = Math.abs(diffDays);
+      const gracePeriod = invoice.lateFees.gracePeriod || 0;
+      
+      if (overdueDays > gracePeriod) {
+        const chargeableDays = overdueDays - gracePeriod;
+        let lateFeeAmount = 0;
+        
+        if (invoice.lateFees.type === 'fixed') {
+          lateFeeAmount = invoice.lateFees.amount;
+        } else if (invoice.lateFees.type === 'percentage') {
+          lateFeeAmount = (invoice.total * invoice.lateFees.amount) / 100;
+        }
+        
+        const totalPayable = invoice.total + lateFeeAmount;
+        return {
+          hasLateFees: true,
+          lateFeeAmount,
+          totalPayable,
+          overdueDays: chargeableDays
+        };
+      }
+    }
+    
+    return {
+      hasLateFees: false,
+      lateFeeAmount: 0,
+      totalPayable: invoice.total,
+      overdueDays: 0
+    };
   }, []);
 
   // Invoice handler functions
@@ -119,6 +210,9 @@ export default function DashboardOverview() {
   }, []);
 
   const handleDownloadPDF = useCallback(async (invoice: Invoice) => {
+    const actionKey = `pdf-${invoice.id}`;
+    setLoadingActions(prev => ({ ...prev, [actionKey]: true }));
+    
     try {
       // Debug: Log current settings
       console.log('PDF Download - Current Settings:', settings);
@@ -152,10 +246,15 @@ export default function DashboardOverview() {
     } catch (error) {
       console.error('PDF download error:', error);
       showError('Download Failed', 'Failed to download PDF. Please try again.');
+    } finally {
+      setLoadingActions(prev => ({ ...prev, [actionKey]: false }));
     }
   }, [settings, showSuccess, showError]);
 
   const handleSendInvoice = useCallback(async (invoice: Invoice) => {
+    const actionKey = `send-${invoice.id}`;
+    setLoadingActions(prev => ({ ...prev, [actionKey]: true }));
+    
     try {
       const headers = await getAuthHeaders();
       const response = await fetch(`/api/invoices/send`, {
@@ -172,11 +271,17 @@ export default function DashboardOverview() {
         const invoicesResponse = await fetch('/api/invoices', { headers, cache: 'no-store' });
         const invoicesData = await invoicesResponse.json();
         setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
+        showSuccess('Invoice Sent', `Invoice ${invoice.invoiceNumber} has been sent successfully.`);
+      } else {
+        showError('Send Failed', 'Failed to send invoice. Please try again.');
       }
     } catch (error) {
       console.error('Error sending invoice:', error);
+      showError('Send Failed', 'Failed to send invoice. Please try again.');
+    } finally {
+      setLoadingActions(prev => ({ ...prev, [actionKey]: false }));
     }
-  }, [getAuthHeaders]);
+  }, [getAuthHeaders, showSuccess, showError]);
 
   const handleEditInvoice = useCallback((invoice: Invoice) => {
     if (invoice.type === 'fast') {
@@ -187,6 +292,9 @@ export default function DashboardOverview() {
   }, []);
 
   const handleMarkAsPaid = useCallback(async (invoice: Invoice) => {
+    const actionKey = `paid-${invoice.id}`;
+    setLoadingActions(prev => ({ ...prev, [actionKey]: true }));
+    
     try {
       const headers = await getAuthHeaders();
       const response = await fetch(`/api/invoices/${invoice.id}`, {
@@ -203,14 +311,20 @@ export default function DashboardOverview() {
         const invoicesResponse = await fetch('/api/invoices', { headers, cache: 'no-store' });
         const invoicesData = await invoicesResponse.json();
         setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
+        showSuccess('Invoice Updated', `Invoice ${invoice.invoiceNumber} has been marked as paid.`);
+      } else {
+        showError('Update Failed', 'Failed to mark invoice as paid. Please try again.');
       }
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
+      showError('Update Failed', 'Failed to mark invoice as paid. Please try again.');
+    } finally {
+      setLoadingActions(prev => ({ ...prev, [actionKey]: false }));
     }
-  }, [getAuthHeaders]);
+  }, [getAuthHeaders, showSuccess, showError]);
 
   // Memoized Invoice Card Component
-  const InvoiceCard = useCallback(({ invoice, isDarkMode, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, getStatusIcon, getStatusColor }: {
+  const InvoiceCard = useCallback(({ invoice, isDarkMode, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions }: {
     invoice: Invoice;
     isDarkMode: boolean;
     handleViewInvoice: (invoice: Invoice) => void;
@@ -220,7 +334,22 @@ export default function DashboardOverview() {
     handleMarkAsPaid: (invoice: Invoice) => void;
     getStatusIcon: (status: string) => React.ReactElement;
     getStatusColor: (status: string) => string;
-  }) => (
+    getDueDateStatus: (dueDate: string) => { status: string; days: number; color: string };
+    formatPaymentTerms: (paymentTerms?: { enabled: boolean; terms: string }) => string | null;
+    formatLateFees: (lateFees?: { enabled: boolean; type: 'fixed' | 'percentage'; amount: number; gracePeriod: number }) => string | null;
+    formatReminders: (reminders?: { enabled: boolean; useSystemDefaults: boolean; rules: Array<{ enabled: boolean }> }) => string | null;
+    calculateDueCharges: (invoice: Invoice) => { hasLateFees: boolean; lateFeeAmount: number; totalPayable: number; overdueDays: number };
+    loadingActions: { [key: string]: boolean };
+  }) => {
+    const dueDateStatus = getDueDateStatus(invoice.dueDate);
+    const dueCharges = calculateDueCharges(invoice);
+    
+    // Show enhanced features for all invoice statuses
+    const paymentTerms = formatPaymentTerms(invoice.paymentTerms);
+    const lateFees = formatLateFees(invoice.lateFees);
+    const reminders = formatReminders(invoice.reminders);
+    
+    return (
     <div className={`rounded-lg border p-4 transition-all duration-200 hover:shadow-md ${isDarkMode ? 'bg-gray-800/30 border-gray-700 hover:bg-gray-800/40' : 'bg-white border-gray-200 hover:shadow-lg'}`}>
       <div className="space-y-6">
         {/* Invoice Info Row */}
@@ -234,14 +363,25 @@ export default function DashboardOverview() {
                 </div>
                 <span className={`px-2 py-1 text-xs font-medium rounded-full border ${
                   invoice.type === 'fast' 
-                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 border-blue-200 dark:border-blue-700'
-                    : 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200 border-purple-200 dark:border-purple-700'
+                    ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20 dark:border-blue-500/30'
+                    : 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20 dark:border-purple-500/30'
                 }`}>
                   {invoice.type === 'fast' ? 'Fast' : 'Detailed'}
                 </span>
               </div>
-              <div className="font-heading text-lg font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                ${invoice.total.toLocaleString()}
+              <div className={`font-heading text-lg font-bold ${
+                invoice.status === 'paid' ? 'text-green-600 dark:text-green-400' :
+                invoice.status === 'sent' ? 'text-amber-600 dark:text-amber-400' :
+                invoice.status === 'draft' ? 'text-gray-500 dark:text-gray-400' :
+                dueDateStatus.status === 'overdue' ? 'text-red-600 dark:text-red-400' :
+                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                ${dueCharges.totalPayable.toLocaleString()}
+                {dueCharges.hasLateFees && (
+                  <div className="text-xs font-normal text-red-500">
+                    (includes ${dueCharges.lateFeeAmount.toFixed(2)} late fee)
+                  </div>
+                )}
               </div>
             </div>
             <div className="text-xs" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
@@ -260,9 +400,17 @@ export default function DashboardOverview() {
                 {getStatusIcon(invoice.status)}
                 {invoice.status}
               </span>
-              <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                Due: {invoice.dueDate}
-              </div>
+              {invoice.status === 'sent' && (
+                <div className="text-sm flex items-center space-x-1">
+                  <Calendar className="h-3 w-3" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}} />
+                  <span className={dueDateStatus.color}>
+                    {dueDateStatus.status === 'overdue' ? `${dueDateStatus.days} days overdue` :
+                     dueDateStatus.status === 'due-today' ? 'Due today' :
+                     dueDateStatus.status === 'due-soon' ? `Due in ${dueDateStatus.days} days` :
+                     `Due in ${dueDateStatus.days} days`}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
           
@@ -275,8 +423,8 @@ export default function DashboardOverview() {
                 </div>
                 <span className={`px-2 py-1 text-xs font-medium rounded-full border ${
                   invoice.type === 'fast' 
-                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 border-blue-200 dark:border-blue-700'
-                    : 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200 border-purple-200 dark:border-purple-700'
+                    ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20 dark:border-blue-500/30'
+                    : 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20 dark:border-purple-500/30'
                 }`}>
                   {invoice.type === 'fast' ? 'Fast' : 'Detailed'}
                 </span>
@@ -293,23 +441,74 @@ export default function DashboardOverview() {
                 {invoice.client.company}
               </div>
             </div>
-            <div className="font-heading text-lg font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-              ${invoice.total.toLocaleString()}
+            <div className={`font-heading text-lg font-bold ${
+              invoice.status === 'paid' ? 'text-green-600 dark:text-green-400' :
+              invoice.status === 'sent' ? 'text-amber-600 dark:text-amber-400' :
+              invoice.status === 'draft' ? 'text-gray-500 dark:text-gray-400' :
+              dueDateStatus.status === 'overdue' ? 'text-red-600 dark:text-red-400' :
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>
+              ${dueCharges.totalPayable.toLocaleString()}
+              {dueCharges.hasLateFees && (
+                <div className="text-xs font-normal text-red-500">
+                  (includes ${dueCharges.lateFeeAmount.toFixed(2)} late fee)
+                </div>
+              )}
             </div>
             <div className="flex items-center justify-between">
               <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${getStatusColor(invoice.status)}`}>
                 {getStatusIcon(invoice.status)}
                 {invoice.status}
               </span>
-              <div className="text-sm hidden lg:block" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                Due: {invoice.dueDate}
-              </div>
+              {invoice.status === 'sent' && (
+                <div className="text-sm hidden lg:block flex items-center space-x-1">
+                  <Calendar className="h-3 w-3" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}} />
+                  <span className={dueDateStatus.color}>
+                    {dueDateStatus.status === 'overdue' ? `${dueDateStatus.days} days overdue` :
+                     dueDateStatus.status === 'due-today' ? 'Due today' :
+                     dueDateStatus.status === 'due-soon' ? `Due in ${dueDateStatus.days} days` :
+                     `Due in ${dueDateStatus.days} days`}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
         
         {/* Divider */}
         <div className={`border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}></div>
+        
+        {/* Enhanced Features Section */}
+        {(paymentTerms || lateFees || reminders) && (
+          <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'}`}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              {paymentTerms && (
+                <div className="flex items-center space-x-2">
+                  <CreditCard className="h-3 w-3 text-blue-500" />
+                  <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                    <span className="font-medium">Terms:</span> {paymentTerms}
+                  </span>
+                </div>
+              )}
+              {lateFees && (
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="h-3 w-3 text-orange-500" />
+                  <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                    <span className="font-medium">Late Fee:</span> {lateFees}
+                  </span>
+                </div>
+              )}
+              {reminders && (
+                <div className="flex items-center space-x-2">
+                  <Bell className="h-3 w-3 text-green-500" />
+                  <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
+                    <span className="font-medium">Reminders:</span> {reminders}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         
         {/* Action Buttons Row */}
         <div className="flex flex-wrap gap-2">
@@ -322,26 +521,41 @@ export default function DashboardOverview() {
           </button>
           <button 
             onClick={() => handleDownloadPDF(invoice)}
-            className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}
+            disabled={loadingActions[`pdf-${invoice.id}`]}
+            className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            <Download className="h-3 w-3" />
+            {loadingActions[`pdf-${invoice.id}`] ? (
+              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+            ) : (
+              <Download className="h-3 w-3" />
+            )}
             <span>PDF</span>
           </button>
           {invoice.status === 'draft' && (
             <button 
               onClick={() => handleSendInvoice(invoice)}
-              className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}`}
+              disabled={loadingActions[`send-${invoice.id}`]}
+              className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <Send className="h-3 w-3" />
+              {loadingActions[`send-${invoice.id}`] ? (
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+              ) : (
+                <Send className="h-3 w-3" />
+              )}
               <span>Send</span>
             </button>
           )}
           {invoice.status !== 'paid' && (
             <button 
               onClick={() => handleMarkAsPaid(invoice)}
-              className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}
+              disabled={loadingActions[`paid-${invoice.id}`]}
+              className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <CheckCircle className="h-3 w-3" />
+              {loadingActions[`paid-${invoice.id}`] ? (
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+              ) : (
+                <CheckCircle className="h-3 w-3" />
+              )}
               <span>Mark as Paid</span>
             </button>
           )}
@@ -365,7 +579,8 @@ export default function DashboardOverview() {
         </div>
       </div>
     </div>
-  ), []);
+    );
+  }, []);
 
   // Load dark mode preference
   useEffect(() => {
@@ -383,7 +598,6 @@ export default function DashboardOverview() {
   // Load settings function
   const loadSettings = useCallback(async () => {
     try {
-      setIsLoadingSettings(true);
       const headers = await getAuthHeaders();
       const response = await fetch('/api/settings', {
         headers,
@@ -396,8 +610,6 @@ export default function DashboardOverview() {
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
-    } finally {
-      setIsLoadingSettings(false);
     }
   }, [getAuthHeaders]);
 
@@ -442,11 +654,9 @@ export default function DashboardOverview() {
             .then(res => res.json())
             .then(data => {
               setClients(data.clients || []);
-              setIsLoadingClients(false);
             })
             .catch(err => {
               console.error('Error fetching clients:', err);
-              setIsLoadingClients(false);
             });
           
           // Load settings
@@ -462,9 +672,24 @@ export default function DashboardOverview() {
   // Memoize calculations
   const recentInvoices = useMemo(() => Array.isArray(invoices) ? invoices.slice(0, 5) : [], [invoices]);
   const totalRevenue = useMemo(() => dashboardStats.totalRevenue || 0, [dashboardStats.totalRevenue]);
-  const outstandingAmount = useMemo(() => dashboardStats.outstandingAmount || 0, [dashboardStats.outstandingAmount]);
   const overdueCount = useMemo(() => dashboardStats.overdueCount || 0, [dashboardStats.overdueCount]);
   const totalClients = useMemo(() => dashboardStats.totalClients || 0, [dashboardStats.totalClients]);
+  
+  // Calculate total payable amount including late fees
+  const totalPayableAmount = useMemo(() => {
+    return invoices.reduce((total, invoice) => {
+      const charges = calculateDueCharges(invoice);
+      return total + charges.totalPayable;
+    }, 0);
+  }, [invoices, calculateDueCharges]);
+  
+  // Calculate total late fees
+  const totalLateFees = useMemo(() => {
+    return invoices.reduce((total, invoice) => {
+      const charges = calculateDueCharges(invoice);
+      return total + charges.lateFeeAmount;
+    }, 0);
+  }, [invoices, calculateDueCharges]);
 
   // Only show loading spinner if user is not authenticated yet
   if (loading && !user) {
@@ -579,12 +804,12 @@ export default function DashboardOverview() {
                 <div className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
-                      <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Outstanding</p>
+                      <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Payable</p>
                       <p className="font-heading text-3xl font-bold text-amber-600 dark:text-amber-400">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-24 rounded"></div>
                         ) : (
-                          `$${outstandingAmount.toLocaleString()}`
+                          `$${totalPayableAmount.toLocaleString()}`
                         )}
                       </p>
                       <div className="flex items-center space-x-1">
@@ -592,6 +817,11 @@ export default function DashboardOverview() {
                         <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
                           {invoices.filter(inv => inv.status === 'sent').length} pending
                         </span>
+                        {totalLateFees > 0 && (
+                          <span className="text-xs text-red-500 ml-2">
+                            (+${totalLateFees.toFixed(2)} late fees)
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-amber-500/20' : 'bg-amber-50'}`}>
@@ -757,6 +987,12 @@ export default function DashboardOverview() {
                       handleMarkAsPaid={handleMarkAsPaid}
                       getStatusIcon={getStatusIcon}
                       getStatusColor={getStatusColor}
+                      getDueDateStatus={getDueDateStatus}
+                      formatPaymentTerms={formatPaymentTerms}
+                      formatLateFees={formatLateFees}
+                      formatReminders={formatReminders}
+                      calculateDueCharges={calculateDueCharges}
+                      loadingActions={loadingActions}
                     />
                   ))}
                 </div>
@@ -925,8 +1161,17 @@ export default function DashboardOverview() {
                      {settings.businessPhone && <p>{settings.businessPhone}</p>}
                    </div>
                  </div>
-                 <div className="bg-orange-500 text-white px-3 py-2 rounded text-sm sm:text-base font-bold">
-                   Invoice
+                 <div className="flex items-center space-x-2">
+                   <div className={`px-3 py-1 text-xs font-medium rounded-full border ${
+                     selectedInvoice.type === 'fast' 
+                       ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20 dark:border-blue-500/30'
+                       : 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20 dark:border-purple-500/30'
+                   }`}>
+                     {selectedInvoice.type === 'fast' ? 'Fast Invoice' : 'Detailed Invoice'}
+                   </div>
+                   <div className="bg-orange-500 text-white px-3 py-2 rounded text-sm sm:text-base font-bold">
+                     Invoice
+                   </div>
                  </div>
                </div>
                
@@ -1035,6 +1280,56 @@ export default function DashboardOverview() {
                  <div className={`p-3 sm:p-6 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                    <h3 className={`text-sm sm:text-base font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Notes</h3>
                    <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{selectedInvoice.notes}</p>
+                 </div>
+               )}
+
+               {/* Enhanced Features - Only for Detailed Invoices */}
+               {selectedInvoice.type === 'detailed' && (selectedInvoice.paymentTerms || selectedInvoice.lateFees || selectedInvoice.reminders) && (
+                 <div className={`p-3 sm:p-6 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                   <h3 className={`text-sm sm:text-base font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Enhanced Features</h3>
+                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs sm:text-sm">
+                     {selectedInvoice.paymentTerms && (
+                       <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                         <div className="flex items-center space-x-2 mb-2">
+                           <CreditCard className="h-4 w-4 text-blue-500" />
+                           <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Payment Terms</span>
+                         </div>
+                         <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                           {selectedInvoice.paymentTerms.enabled ? selectedInvoice.paymentTerms.terms : 'Not configured'}
+                         </p>
+                       </div>
+                     )}
+                     {selectedInvoice.lateFees && (
+                       <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                         <div className="flex items-center space-x-2 mb-2">
+                           <DollarSign className="h-4 w-4 text-orange-500" />
+                           <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Late Fees</span>
+                         </div>
+                         <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                           {selectedInvoice.lateFees.enabled 
+                             ? `${selectedInvoice.lateFees.type === 'fixed' ? '$' : ''}${selectedInvoice.lateFees.amount}${selectedInvoice.lateFees.type === 'percentage' ? '%' : ''} after ${selectedInvoice.lateFees.gracePeriod} days`
+                             : 'Not configured'
+                           }
+                         </p>
+                       </div>
+                     )}
+                     {selectedInvoice.reminders && (
+                       <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                         <div className="flex items-center space-x-2 mb-2">
+                           <Bell className="h-4 w-4 text-green-500" />
+                           <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Auto Reminders</span>
+                         </div>
+                         <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                           {selectedInvoice.reminders.enabled 
+                             ? (selectedInvoice.reminders.useSystemDefaults 
+                               ? 'Smart System' 
+                               : `${selectedInvoice.reminders.rules.filter(rule => rule.enabled).length} Custom Rule${selectedInvoice.reminders.rules.filter(rule => rule.enabled).length !== 1 ? 's' : ''}`)
+                             : 'Not configured'
+                           }
+                         </p>
+                       </div>
+                     )}
+                   </div>
                  </div>
                )}
              </div>

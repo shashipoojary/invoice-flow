@@ -9,7 +9,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
-import { FreelancerSettings } from '@/types';
+import QuickInvoiceModal from '@/components/QuickInvoiceModal';
+import { FreelancerSettings, Client } from '@/types';
 
 export default function SettingsPage() {
   const { user, loading, getAuthHeaders } = useAuth();
@@ -20,6 +21,8 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [hasLoadedData, setHasLoadedData] = useState(false);
+  const [showCreateInvoice, setShowCreateInvoice] = useState(false);
+  const [clients, setClients] = useState<Client[]>([]);
   const [settings, setSettings] = useState<FreelancerSettings>({
     businessName: '',
     businessEmail: '',
@@ -50,8 +53,8 @@ export default function SettingsPage() {
 
   // Create invoice handler
   const handleCreateInvoice = useCallback(() => {
-    // This will be handled by navigation to the invoices page
-    console.log('Create invoice clicked');
+    // Show the detailed invoice modal by default
+    setShowCreateInvoice(true);
   }, []);
 
   // Load dark mode preference
@@ -71,8 +74,20 @@ export default function SettingsPage() {
     if (user && !loading && !hasLoadedData) {
       setHasLoadedData(true);
       loadSettings();
+      loadClients();
     }
   }, [user, loading, hasLoadedData]);
+
+  const loadClients = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/clients', { headers, cache: 'no-store' });
+      const data = await response.json();
+      setClients(data.clients || []);
+    } catch (error) {
+      console.error('Error loading clients:', error);
+    }
+  };
 
   const loadSettings = async () => {
     try {
@@ -341,8 +356,8 @@ export default function SettingsPage() {
                         htmlFor="logo-upload"
                         className="cursor-pointer"
                       >
-                        <div className={`flex items-center space-x-2 px-4 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`}>
-                          <Upload className="h-4 w-4" />
+                        <div className={`flex items-center space-x-2 px-4 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:text-gray-100' : 'border-gray-300 text-gray-700 hover:text-gray-900'}`}>
+                          <Upload className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                           <span className="text-sm">{settings.logo ? 'Change Logo' : 'Upload Logo'}</span>
                         </div>
                       </label>
@@ -523,6 +538,21 @@ export default function SettingsPage() {
         toasts={toasts}
         onRemove={removeToast}
       />
+
+      {/* Create Invoice Modal */}
+      {showCreateInvoice && (
+        <QuickInvoiceModal
+          isOpen={showCreateInvoice}
+          onClose={() => setShowCreateInvoice(false)}
+          getAuthHeaders={getAuthHeaders}
+          isDarkMode={isDarkMode}
+          clients={clients}
+          onSuccess={() => {
+            setShowCreateInvoice(false);
+            showSuccess('Invoice created successfully');
+          }}
+        />
+      )}
     </div>
   );
 }

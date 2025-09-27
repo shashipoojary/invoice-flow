@@ -37,6 +37,33 @@ export interface Invoice {
   clientEmail: string;
   clientCompany: string;
   clientAddress?: string;
+  // New fields for enhanced invoices
+  issueDate?: string;
+  paymentTerms?: {
+    enabled: boolean;
+    terms: string;
+  };
+  lateFees?: {
+    enabled: boolean;
+    type: 'fixed' | 'percentage';
+    amount: number;
+    gracePeriod: number;
+  };
+  reminders?: {
+    enabled: boolean;
+    useSystemDefaults: boolean;
+    rules: Array<{
+      id: string;
+      type: 'before' | 'after';
+      days: number;
+      enabled: boolean;
+    }>;
+  };
+  theme?: {
+    primaryColor: string;
+    secondaryColor: string;
+    accentColor: string;
+  };
   // Database field names (for compatibility)
   client_id?: string;
   due_date?: string;

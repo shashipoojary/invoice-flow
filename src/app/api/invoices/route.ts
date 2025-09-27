@@ -52,7 +52,15 @@ export async function GET(request: NextRequest) {
             id: item.id,
             description: item.description,
             amount: item.line_total
-          }))
+          })),
+          // Parse JSON fields with fallbacks for existing invoices (all statuses)
+          paymentTerms: invoice.payment_terms ? JSON.parse(invoice.payment_terms) : 
+            { enabled: true, terms: 'Net 30' },
+          lateFees: invoice.late_fees ? JSON.parse(invoice.late_fees) : 
+            { enabled: true, type: 'fixed', amount: 50, gracePeriod: 7 },
+          reminders: invoice.reminders ? JSON.parse(invoice.reminders) : 
+            { enabled: true, useSystemDefaults: true, rules: [] },
+          theme: invoice.theme ? JSON.parse(invoice.theme) : undefined,
         }
       })
     )
