@@ -12,6 +12,7 @@ import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
 import FastInvoiceModal from '@/components/FastInvoiceModal';
 import QuickInvoiceModal from '@/components/QuickInvoiceModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import ClientModal from '@/components/ClientModal';
 import { Client, Invoice } from '@/types';
 
@@ -49,6 +50,16 @@ export default function DashboardOverview() {
   const [loadingActions, setLoadingActions] = useState<{
     [key: string]: boolean;
   }>({});
+  
+  // Confirmation modal state
+  const [confirmationModal, setConfirmationModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'danger' as 'danger' | 'warning' | 'info',
+    onConfirm: () => {},
+    isLoading: false
+  });
   
   // Business settings state
   const [settings, setSettings] = useState({
@@ -364,13 +375,19 @@ export default function DashboardOverview() {
     }
   }, [getAuthHeaders, showSuccess, showError]);
 
-  const handleDeleteInvoice = useCallback(async (invoice: Invoice) => {
-    if (!confirm(`Are you sure you want to delete invoice ${invoice.invoiceNumber}? This action cannot be undone.`)) {
-      return;
-    }
+  const handleDeleteInvoice = useCallback((invoice: Invoice) => {
+    setConfirmationModal({
+      isOpen: true,
+      title: 'Delete Invoice',
+      message: `Are you sure you want to delete invoice ${invoice.invoiceNumber}? This action cannot be undone and will permanently remove the invoice from your records.`,
+      type: 'danger',
+      onConfirm: () => performDeleteInvoice(invoice),
+      isLoading: false
+    });
+  }, []);
 
-    const actionKey = `delete-${invoice.id}`;
-    setLoadingActions(prev => ({ ...prev, [actionKey]: true }));
+  const performDeleteInvoice = useCallback(async (invoice: Invoice) => {
+    setConfirmationModal(prev => ({ ...prev, isLoading: true }));
     
     try {
       const headers = await getAuthHeaders();
@@ -385,14 +402,15 @@ export default function DashboardOverview() {
         const invoicesData = await invoicesResponse.json();
         setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
         showSuccess('Invoice Deleted', `Invoice ${invoice.invoiceNumber} has been deleted successfully.`);
+        setConfirmationModal(prev => ({ ...prev, isOpen: false, isLoading: false }));
       } else {
         showError('Delete Failed', 'Failed to delete invoice. Please try again.');
+        setConfirmationModal(prev => ({ ...prev, isLoading: false }));
       }
     } catch (error) {
       console.error('Error deleting invoice:', error);
       showError('Delete Failed', 'Failed to delete invoice. Please try again.');
-    } finally {
-      setLoadingActions(prev => ({ ...prev, [actionKey]: false }));
+      setConfirmationModal(prev => ({ ...prev, isLoading: false }));
     }
   }, [getAuthHeaders, showSuccess, showError]);
 
@@ -1453,6 +1471,71 @@ export default function DashboardOverview() {
            </div>
          </div>
        )}
+
+       {/* Modals */}
+       {showFastInvoice && (
+         <FastInvoiceModal
+           isOpen={showFastInvoice}
+           onClose={() => setShowFastInvoice(false)}
+           onSuccess={() => {
+             setShowFastInvoice(false);
+             // Refresh invoices data
+             window.location.reload();
+           }}
+           user={user!}
+           getAuthHeaders={getAuthHeaders}
+           isDarkMode={isDarkMode}
+           clients={clients}
+         />
+       )}
+
+       {showCreateInvoice && (
+         <QuickInvoiceModal
+           isOpen={showCreateInvoice}
+           onClose={() => setShowCreateInvoice(false)}
+           onSuccess={() => {
+             setShowCreateInvoice(false);
+             // Refresh invoices data
+             window.location.reload();
+           }}
+           getAuthHeaders={getAuthHeaders}
+           isDarkMode={isDarkMode}
+           clients={clients}
+         />
+       )}
+
+       {showCreateClient && (
+         <ClientModal
+           isOpen={showCreateClient}
+           onClose={() => setShowCreateClient(false)}
+           onSuccess={() => {
+             setShowCreateClient(false);
+             // Refresh clients data
+             window.location.reload();
+           }}
+           getAuthHeaders={getAuthHeaders}
+           isDarkMode={isDarkMode}
+         />
+       )}
+
+       {/* Confirmation Modal */}
+       <ConfirmationModal
+         isOpen={confirmationModal.isOpen}
+         onClose={() => setConfirmationModal(prev => ({ ...prev, isOpen: false }))}
+         onConfirm={confirmationModal.onConfirm}
+         title={confirmationModal.title}
+         message={confirmationModal.message}
+         type={confirmationModal.type}
+         isLoading={confirmationModal.isLoading}
+         confirmText="Delete Invoice"
+         cancelText="Cancel"
+       />
+
+       {/* Toast Container */}
+       <ToastContainer
+         toasts={toasts}
+         onRemove={removeToast}
+       />
      </div>
    );
  }
