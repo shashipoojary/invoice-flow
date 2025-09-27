@@ -833,13 +833,13 @@ export default function DashboardOverview() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Revenue</p>
-                      <p className="font-heading text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                      <div className="font-heading text-3xl font-bold text-emerald-600 dark:text-emerald-400">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-24 rounded"></div>
                         ) : (
                           `$${totalRevenue.toLocaleString()}`
                         )}
-                      </p>
+                      </div>
                       <div className="flex items-center space-x-1">
                         <TrendingUp className="h-4 w-4 text-emerald-500" />
                         <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Paid invoices</span>
@@ -856,13 +856,13 @@ export default function DashboardOverview() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Payable</p>
-                      <p className="font-heading text-3xl font-bold text-amber-600 dark:text-amber-400">
+                      <div className="font-heading text-3xl font-bold text-amber-600 dark:text-amber-400">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-24 rounded"></div>
                         ) : (
                           `$${totalPayableAmount.toLocaleString()}`
                         )}
-                      </p>
+                      </div>
                       <div className="flex items-center space-x-1">
                         <Clock className="h-4 w-4 text-amber-500" />
                         <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
@@ -886,13 +886,13 @@ export default function DashboardOverview() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Overdue</p>
-                      <p className="font-heading text-3xl font-bold text-red-600 dark:text-red-400">
+                      <div className="font-heading text-3xl font-bold text-red-600 dark:text-red-400">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-8 rounded"></div>
                         ) : (
                           overdueCount
                         )}
-                      </p>
+                      </div>
                       <div className="flex items-center space-x-1">
                         <AlertCircle className="h-4 w-4 text-red-500" />
                         <span className="text-sm font-medium text-red-600 dark:text-red-400">Need attention</span>
@@ -909,13 +909,13 @@ export default function DashboardOverview() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Clients</p>
-                      <p className="font-heading text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+                      <div className="font-heading text-3xl font-bold text-indigo-600 dark:text-indigo-400">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-8 rounded"></div>
                         ) : (
                           totalClients
                         )}
-                      </p>
+                      </div>
                       <div className="flex items-center space-x-1">
                         <Users className="h-4 w-4 text-indigo-500" />
                         <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">Active clients</span>

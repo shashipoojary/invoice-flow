@@ -1,6 +1,6 @@
--- Copy and paste this into your Supabase SQL Editor to fix the invoice creation error
+-- URGENT: Run this in your Supabase SQL Editor to fix invoice creation
 
--- Add missing columns to invoices table
+-- 1. Add missing columns to invoices table
 ALTER TABLE public.invoices 
 ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'fast' CHECK (type IN ('fast', 'detailed')),
 ADD COLUMN IF NOT EXISTS issue_date DATE DEFAULT CURRENT_DATE,
@@ -9,10 +9,10 @@ ADD COLUMN IF NOT EXISTS late_fees JSONB DEFAULT '{"enabled": false, "type": "fi
 ADD COLUMN IF NOT EXISTS reminders JSONB DEFAULT '{"enabled": false, "useSystemDefaults": true, "rules": []}',
 ADD COLUMN IF NOT EXISTS theme JSONB DEFAULT '{"primaryColor": "#3b82f6", "secondaryColor": "#1e40af", "accentColor": "#60a5fa"}';
 
--- Create index for the new type column
+-- 2. Create index for the new type column
 CREATE INDEX IF NOT EXISTS idx_invoices_type ON public.invoices(type);
 
--- Update existing invoices to have default values
+-- 3. Update existing invoices to have default values
 UPDATE public.invoices 
 SET 
   type = 'fast',
@@ -23,7 +23,7 @@ SET
   theme = COALESCE(theme, '{"primaryColor": "#3b82f6", "secondaryColor": "#1e40af", "accentColor": "#60a5fa"}')
 WHERE type IS NULL OR issue_date IS NULL OR payment_terms IS NULL OR late_fees IS NULL OR reminders IS NULL OR theme IS NULL;
 
--- Create or replace the generate_invoice_number function
+-- 4. Fix the generate_invoice_number function
 CREATE OR REPLACE FUNCTION public.generate_invoice_number(user_uuid UUID)
 RETURNS TEXT AS $$
 DECLARE
@@ -40,7 +40,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create or replace the generate_public_token function
+-- 5. Fix the generate_public_token function (changed from base64url to base64)
 CREATE OR REPLACE FUNCTION public.generate_public_token()
 RETURNS TEXT AS $$
 BEGIN

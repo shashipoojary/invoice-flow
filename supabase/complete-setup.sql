@@ -277,7 +277,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION public.generate_public_token()
 RETURNS TEXT AS $$
 BEGIN
-  RETURN encode(gen_random_bytes(32), 'base64url');
+  RETURN encode(gen_random_bytes(32), 'base64');
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
