@@ -129,6 +129,32 @@ export default function DashboardOverview() {
     }
   }, []);
 
+  const getStatusStyleDark = useCallback((status: string) => {
+    switch (status) {
+      case 'paid':
+        return { backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#6ee7b7', borderColor: 'rgba(16, 185, 129, 0.3)' };
+      case 'sent':
+        return { backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#93c5fd', borderColor: 'rgba(59, 130, 246, 0.3)' };
+      case 'overdue':
+        return { backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#fca5a5', borderColor: 'rgba(239, 68, 68, 0.3)' };
+      case 'draft':
+        return { backgroundColor: 'rgba(107, 114, 128, 0.2)', color: '#d1d5db', borderColor: 'rgba(107, 114, 128, 0.3)' };
+      default:
+        return { backgroundColor: 'rgba(107, 114, 128, 0.2)', color: '#d1d5db', borderColor: 'rgba(107, 114, 128, 0.3)' };
+    }
+  }, []);
+
+  const getTypeStyleDark = useCallback((type: string) => {
+    switch (type) {
+      case 'fast':
+        return { backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#93c5fd', borderColor: 'rgba(59, 130, 246, 0.3)' };
+      case 'detailed':
+        return { backgroundColor: 'rgba(99, 102, 241, 0.2)', color: '#a5b4fc', borderColor: 'rgba(99, 102, 241, 0.3)' };
+      default:
+        return { backgroundColor: 'rgba(99, 102, 241, 0.2)', color: '#a5b4fc', borderColor: 'rgba(99, 102, 241, 0.3)' };
+    }
+  }, []);
+
   // Helper function to calculate due date status
   const getDueDateStatus = useCallback((dueDate: string) => {
     const today = new Date();
@@ -377,15 +403,11 @@ export default function DashboardOverview() {
                   {invoice.invoiceNumber}
                 </div>
                 <span 
-                  className={`px-2 py-1 text-xs font-medium rounded-full border ${
-                    invoice.type === 'fast' 
-                      ? 'dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30'
-                      : 'dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30'
-                  }`}
-                  style={!isDarkMode ? (invoice.type === 'fast' 
+                  className={`px-2 py-1 text-xs font-medium rounded-full border`}
+                  style={isDarkMode ? getTypeStyleDark(invoice.type || 'detailed') : ((invoice.type || 'detailed') === 'fast' 
                     ? { backgroundColor: '#dbeafe', color: '#1d4ed8', borderColor: '#93c5fd' }
                     : { backgroundColor: '#e0e7ff', color: '#3730a3', borderColor: '#a5b4fc' }
-                  ) : {}}
+                  )}
                 >
                   {invoice.type === 'fast' ? 'Fast' : 'Detailed'}
                 </span>
@@ -418,8 +440,8 @@ export default function DashboardOverview() {
             )}
             <div className="flex items-center justify-between">
               <span 
-                className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border ${getStatusColor(invoice.status)}`}
-                style={!isDarkMode ? getStatusStyle(invoice.status) : {}}
+                className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border`}
+                style={isDarkMode ? getStatusStyleDark(invoice.status) : getStatusStyle(invoice.status)}
               >
                 {getStatusIcon(invoice.status)}
                 {invoice.status}
@@ -446,15 +468,11 @@ export default function DashboardOverview() {
                   {invoice.invoiceNumber}
                 </div>
                 <span 
-                  className={`px-2 py-1 text-xs font-medium rounded-full border ${
-                    invoice.type === 'fast' 
-                      ? 'dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30'
-                      : 'dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30'
-                  }`}
-                  style={!isDarkMode ? (invoice.type === 'fast' 
+                  className={`px-2 py-1 text-xs font-medium rounded-full border`}
+                  style={isDarkMode ? getTypeStyleDark(invoice.type || 'detailed') : ((invoice.type || 'detailed') === 'fast' 
                     ? { backgroundColor: '#dbeafe', color: '#1d4ed8', borderColor: '#93c5fd' }
                     : { backgroundColor: '#e0e7ff', color: '#3730a3', borderColor: '#a5b4fc' }
-                  ) : {}}
+                  )}
                 >
                   {invoice.type === 'fast' ? 'Fast' : 'Detailed'}
                 </span>
@@ -487,8 +505,8 @@ export default function DashboardOverview() {
             </div>
             <div className="flex items-center justify-between">
               <span 
-                className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border ${getStatusColor(invoice.status)}`}
-                style={!isDarkMode ? getStatusStyle(invoice.status) : {}}
+                className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border`}
+                style={isDarkMode ? getStatusStyleDark(invoice.status) : getStatusStyle(invoice.status)}
               >
                 {getStatusIcon(invoice.status)}
                 {invoice.status}
@@ -1195,17 +1213,13 @@ export default function DashboardOverview() {
                    </div>
                  </div>
                  <div className="flex items-center space-x-2">
-                   <div 
-                     className={`px-3 py-1 text-xs font-medium rounded-full border ${
-                       selectedInvoice.type === 'fast' 
-                         ? 'dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30'
-                         : 'dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30'
-                     }`}
-                     style={!isDarkMode ? (selectedInvoice.type === 'fast' 
-                       ? { backgroundColor: '#dbeafe', color: '#1d4ed8', borderColor: '#93c5fd' }
-                       : { backgroundColor: '#e0e7ff', color: '#3730a3', borderColor: '#a5b4fc' }
-                     ) : {}}
-                   >
+        <div 
+          className={`px-3 py-1 text-xs font-medium rounded-full border`}
+          style={isDarkMode ? getTypeStyleDark(selectedInvoice.type || 'detailed') : ((selectedInvoice.type || 'detailed') === 'fast' 
+            ? { backgroundColor: '#dbeafe', color: '#1d4ed8', borderColor: '#93c5fd' }
+            : { backgroundColor: '#e0e7ff', color: '#3730a3', borderColor: '#a5b4fc' }
+          )}
+        >
                      {selectedInvoice.type === 'fast' ? 'Fast Invoice' : 'Detailed Invoice'}
                    </div>
                    <div className="bg-orange-500 text-white px-3 py-2 rounded text-sm sm:text-base font-bold">
