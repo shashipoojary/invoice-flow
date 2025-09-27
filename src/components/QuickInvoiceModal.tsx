@@ -327,9 +327,33 @@ export default function QuickInvoiceModal({
         body: JSON.stringify(payload)
       })
 
-      await response.json()
+      const result = await response.json()
 
-      // Billing logic removed - not implemented yet
+      if (response.ok && result.invoice) {
+        // Send the invoice to the client
+        const sendResponse = await fetch('/api/invoices/send', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            invoiceId: result.invoice.id,
+            clientEmail: selectedClientId ? 
+              (clients.find(c => c.id === selectedClientId)?.email || newClient.email) : 
+              newClient.email,
+            clientName: selectedClientId ? 
+              (clients.find(c => c.id === selectedClientId)?.name || newClient.name) : 
+              newClient.name
+          })
+        })
+
+        if (sendResponse.ok) {
+          alert('Invoice created and sent successfully!')
+        } else {
+          alert('Invoice created but failed to send. You can send it later from the invoice list.')
+        }
+      } else {
+        throw new Error(result.error || 'Failed to create invoice')
+      }
+
       onSuccess()
       onClose()
 

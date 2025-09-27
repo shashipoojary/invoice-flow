@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, DollarSign, Calendar, FileText, User, Mail, ArrowRight, ArrowLeft, Clock, CheckCircle } from 'lucide-react'
+import { X, DollarSign, Calendar, FileText, User, Mail, ArrowRight, ArrowLeft, Clock, CheckCircle, Send } from 'lucide-react'
 
 interface Client {
   id: string
@@ -25,6 +25,7 @@ interface FastInvoiceModalProps {
 export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHeaders, isDarkMode = false, clients = [] }: FastInvoiceModalProps) {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [sendLoading, setSendLoading] = useState(false)
   
   // Form data
   const [selectedClientId, setSelectedClientId] = useState('')
@@ -60,8 +61,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
     onClose()
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleCreateInvoice = async () => {
     setLoading(true)
 
     try {
@@ -107,15 +107,64 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
       })
 
       if (invoiceResponse.ok) {
+        const result = await invoiceResponse.json()
+        alert('Invoice created successfully!')
         onSuccess()
         onClose()
         resetForm()
+        return result.invoice
+      } else {
+        throw new Error('Failed to create invoice')
       }
     } catch (error) {
       console.error('Error creating invoice:', error)
+      alert('Failed to create invoice. Please try again.')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleCreateAndSend = async () => {
+    setSendLoading(true)
+
+    try {
+      // First create the invoice
+      const invoice = await handleCreateInvoice()
+      
+      if (invoice) {
+        // Then send it
+        const headers = await getAuthHeaders()
+        const sendResponse = await fetch('/api/invoices/send', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            invoiceId: invoice.id,
+            clientEmail: selectedClientId ? 
+              (clients.find(c => c.id === selectedClientId)?.email || clientEmail) : 
+              clientEmail,
+            clientName: selectedClientId ? 
+              (clients.find(c => c.id === selectedClientId)?.name || clientName) : 
+              clientName
+          })
+        })
+
+        if (sendResponse.ok) {
+          alert('Invoice created and sent successfully!')
+        } else {
+          alert('Invoice created but failed to send. You can send it later from the invoice list.')
+        }
+      }
+    } catch (error) {
+      console.error('Error creating and sending invoice:', error)
+      alert('Failed to create and send invoice. Please try again.')
+    } finally {
+      setSendLoading(false)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    // This will be handled by the individual buttons
   }
 
 
@@ -479,8 +528,9 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                   <span>Back</span>
                 </button>
                 <button
-                  type="submit"
-                  disabled={loading}
+                  type="button"
+                  onClick={handleCreateInvoice}
+                  disabled={loading || sendLoading}
                   className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:opacity-50 flex items-center justify-center space-x-2 text-sm"
                 >
                   {loading ? (
@@ -488,7 +538,20 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                   ) : (
                     <CheckCircle className="h-4 w-4" />
                   )}
-                  <span>{loading ? 'Creating...' : 'Create Invoice'}</span>
+                  <span>{loading ? 'Creating...' : 'Create'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateAndSend}
+                  disabled={loading || sendLoading}
+                  className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 flex items-center justify-center space-x-2 text-sm"
+                >
+                  {sendLoading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  <span>{sendLoading ? 'Sending...' : 'Create & Send'}</span>
                 </button>
               </div>
             </div>

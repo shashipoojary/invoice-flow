@@ -77,7 +77,146 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Client not found or access denied' }, { status: 403 });
     }
 
-    // Calculate totals
+    // Check if PDF generation is requested (before any database operations)
+    if (invoiceData.generate_pdf_only) {
+      // Generate PDF without saving to database
+      try {
+        // Fetch full client data for PDF
+        const { data: fullClientData, error: fullClientError } = await supabase
+          .from('clients')
+          .select('id, name, email, company, phone, address')
+          .eq('id', clientId)
+          .eq('user_id', user.id)
+          .single();
+
+        if (fullClientError || !fullClientData) {
+          return NextResponse.json({ error: 'Client not found or access denied' }, { status: 403 });
+        }
+
+        // Calculate totals for PDF
+        const subtotal = invoiceData.items.reduce((sum: number, item: { rate: number }) => sum + item.rate, 0);
+        const discount = invoiceData.discount || 0;
+        const total = subtotal - discount;
+
+        // Generate invoice number for PDF (without saving)
+        const { data: invoiceNumberData, error: invoiceNumberError } = await supabase
+          .rpc('generate_invoice_number', { user_uuid: user.id });
+
+        if (invoiceNumberError) {
+          console.error('Invoice number generation error:', invoiceNumberError);
+          return NextResponse.json({ error: 'Failed to generate invoice number' }, { status: 500 });
+        }
+
+        // Generate public token for PDF (without saving)
+        const { data: publicTokenData, error: tokenError } = await supabase
+          .rpc('generate_public_token');
+
+        if (tokenError) {
+          console.error('Public token generation error:', tokenError);
+          return NextResponse.json({ error: 'Failed to generate public token' }, { status: 500 });
+        }
+
+        // Create temporary invoice object for PDF generation
+        const tempInvoice = {
+          id: 'temp-pdf-id',
+          user_id: user.id,
+          client_id: clientId,
+          invoice_number: invoiceNumberData,
+          public_token: publicTokenData,
+          subtotal,
+          discount,
+          total,
+          status: 'draft' as const,
+          issue_date: invoiceData.issue_date || new Date().toISOString().split('T')[0],
+          due_date: invoiceData.due_date,
+          notes: invoiceData.notes || '',
+          type: invoiceData.type || 'detailed',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          clients: fullClientData,
+          invoice_items: invoiceData.items.map((item: { description: string; rate: number; line_total: number }) => ({
+            id: 'temp-item-id',
+            description: item.description,
+            rate: item.rate,
+            line_total: item.line_total
+          }))
+        };
+
+        // Fetch business settings for PDF generation
+        const { data: settingsData, error: settingsError } = await supabase
+          .from('business_settings')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (settingsError) {
+          console.error('Settings fetch error:', settingsError);
+        }
+
+        const businessSettings = settingsData ? {
+          businessName: settingsData.business_name,
+          businessEmail: settingsData.business_email,
+          businessPhone: settingsData.business_phone,
+          address: settingsData.business_address,
+          logo: settingsData.logo_url,
+          bankAccount: settingsData.bank_account,
+          bankIfscSwift: settingsData.bank_ifsc_swift,
+          bankIban: settingsData.bank_iban,
+          paypalEmail: settingsData.paypal_email,
+          cashappId: settingsData.cashapp_id,
+          venmoId: settingsData.venmo_id,
+          googlePayUpi: settingsData.google_pay_upi,
+          applePayId: settingsData.apple_pay_id,
+          stripeAccount: settingsData.stripe_account,
+          paymentNotes: settingsData.payment_notes
+        } : undefined;
+
+        // Map to frontend format
+        const mappedInvoice = {
+          ...tempInvoice,
+          invoiceNumber: tempInvoice.invoice_number,
+          dueDate: tempInvoice.due_date,
+          createdAt: tempInvoice.created_at,
+          clientId: tempInvoice.client_id,
+          client: {
+            ...tempInvoice.clients,
+            createdAt: new Date().toISOString()
+          },
+          clientName: tempInvoice.clients.name,
+          clientEmail: tempInvoice.clients.email,
+          clientCompany: tempInvoice.clients.company,
+          clientAddress: tempInvoice.clients.address,
+          items: tempInvoice.invoice_items.map((item: { id: string; description: string; line_total: number }) => ({
+            id: item.id,
+            description: item.description,
+            amount: item.line_total
+          })),
+          taxRate: 0,
+          taxAmount: 0,
+          paymentTerms: invoiceData.payment_terms || { enabled: false, terms: 'Net 30' },
+          lateFees: invoiceData.late_fees || { enabled: false, type: 'fixed', amount: 0, gracePeriod: 0 },
+          reminders: invoiceData.reminders || { enabled: false, useSystemDefaults: true, rules: [] },
+          theme: invoiceData.theme || undefined,
+        };
+
+        const { generatePDFBlob } = await import('@/lib/pdf-generator');
+        const pdfBlob = await generatePDFBlob(mappedInvoice, businessSettings);
+        const pdfBuffer = await pdfBlob.arrayBuffer();
+        
+        return new NextResponse(pdfBuffer, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="invoice-${invoiceNumberData}.pdf"`,
+          },
+        });
+      } catch (pdfError) {
+        console.error('PDF generation error:', pdfError);
+        return NextResponse.json({ error: 'Failed to generate PDF' }, { status: 500 });
+      }
+    }
+
+    // Calculate totals for database save
     const subtotal = invoiceData.items.reduce((sum: number, item: { rate: number }) => sum + item.rate, 0);
     const discount = invoiceData.discount || 0;
     const total = subtotal - discount;
@@ -212,55 +351,6 @@ export async function POST(request: NextRequest) {
       theme: completeInvoice.theme ? JSON.parse(completeInvoice.theme) : undefined,
     };
 
-    // Check if PDF generation is requested
-    if (invoiceData.generate_pdf_only) {
-      // Generate PDF and return it
-      try {
-        // Fetch business settings for PDF generation
-        const { data: settingsData, error: settingsError } = await supabase
-          .from('business_settings')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-
-        if (settingsError) {
-          console.error('Settings fetch error:', settingsError);
-        }
-
-        const businessSettings = settingsData ? {
-          businessName: settingsData.business_name,
-          businessEmail: settingsData.business_email,
-          businessPhone: settingsData.business_phone,
-          address: settingsData.business_address,
-          logo: settingsData.logo_url,
-          bankAccount: settingsData.bank_account,
-          bankIfscSwift: settingsData.bank_ifsc_swift,
-          bankIban: settingsData.bank_iban,
-          paypalEmail: settingsData.paypal_email,
-          cashappId: settingsData.cashapp_id,
-          venmoId: settingsData.venmo_id,
-          googlePayUpi: settingsData.google_pay_upi,
-          applePayId: settingsData.apple_pay_id,
-          stripeAccount: settingsData.stripe_account,
-          paymentNotes: settingsData.payment_notes
-        } : undefined;
-
-        const { generatePDFBlob } = await import('@/lib/pdf-generator');
-        const pdfBlob = await generatePDFBlob(mappedInvoice, businessSettings);
-        const pdfBuffer = await pdfBlob.arrayBuffer();
-        
-        return new NextResponse(pdfBuffer, {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename="invoice-${mappedInvoice.invoiceNumber}.pdf"`,
-          },
-        });
-      } catch (pdfError) {
-        console.error('PDF generation error:', pdfError);
-        return NextResponse.json({ error: 'Failed to generate PDF' }, { status: 500 });
-      }
-    }
 
     return NextResponse.json({ 
       success: true, 
