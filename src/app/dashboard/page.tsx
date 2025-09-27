@@ -442,7 +442,7 @@ export default function DashboardOverview() {
     const reminders = formatReminders(invoice.reminders);
     
     return (
-    <div className={`rounded-lg border p-4 transition-all duration-200 hover:shadow-md ${isDarkMode ? 'bg-gray-800/30 border-gray-700 hover:bg-gray-800/40' : 'bg-white border-gray-200 hover:shadow-lg'}`}>
+    <div className={`rounded-lg border p-4 transition-all duration-200 hover:shadow-md ${isDarkMode ? 'bg-gray-800/30 border-gray-700 hover:bg-gray-800/40' : 'bg-white border-gray-300 hover:shadow-lg'}`}>
       <div className="space-y-6">
         {/* Invoice Info Row */}
         <div className="space-y-4 sm:space-y-0">
