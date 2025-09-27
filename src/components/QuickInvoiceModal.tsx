@@ -9,6 +9,7 @@ import {
   Clock, CreditCard, AlertTriangle, Trash2,
   Zap
 } from 'lucide-react'
+import { Invoice } from '@/types'
 
 interface QuickInvoiceModalProps {
   isOpen: boolean
@@ -18,6 +19,7 @@ interface QuickInvoiceModalProps {
   getAuthHeaders: () => Promise<{ [key: string]: string }>
   isDarkMode?: boolean
   clients?: Client[]
+  editingInvoice?: Invoice | null
 }
 
 interface Client {
@@ -88,7 +90,8 @@ export default function QuickInvoiceModal({
   onSuccess, 
   getAuthHeaders,
   isDarkMode = false,
-  clients: propClients = []
+  clients: propClients = [],
+  editingInvoice = null
 }: QuickInvoiceModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [clients, setClients] = useState<Client[]>([])
@@ -227,6 +230,51 @@ export default function QuickInvoiceModal({
       setInvoiceNumber(invoiceNum)
     }
   }, [isOpen, fetchClients, fetchBusinessSettings, propClients])
+
+  // Pre-fill form when editing an invoice
+  useEffect(() => {
+    if (isOpen && editingInvoice) {
+      setSelectedClientId(editingInvoice.clientId || '')
+      setInvoiceNumber(editingInvoice.invoiceNumber || '')
+      setIssueDate(editingInvoice.issueDate || '')
+      setDueDate(editingInvoice.dueDate || '')
+      setNotes(editingInvoice.notes || 'Thank you for your business!')
+      setDiscount(editingInvoice.discount?.toString() || '')
+      
+      // Set invoice items
+      if (editingInvoice.items && editingInvoice.items.length > 0) {
+        setItems(editingInvoice.items.map(item => ({
+          id: item.id || Date.now().toString(),
+          description: item.description || '',
+          amount: item.amount?.toString() || ''
+        })))
+      }
+      
+      // Set payment terms
+      if (editingInvoice.paymentTerms) {
+        setPaymentTerms({
+          enabled: editingInvoice.paymentTerms.enabled,
+          options: ['Due on Receipt', 'Net 15', 'Net 30', 'Net 45', 'Net 60'],
+          defaultOption: editingInvoice.paymentTerms.terms || 'Net 30'
+        })
+      }
+      
+      // Set late fees
+      if (editingInvoice.lateFees) {
+        setLateFees(editingInvoice.lateFees)
+      }
+      
+      // Set reminders
+      if (editingInvoice.reminders) {
+        setReminders(editingInvoice.reminders)
+      }
+      
+      // Set theme
+      if (editingInvoice.theme) {
+        setTheme(editingInvoice.theme)
+      }
+    }
+  }, [isOpen, editingInvoice])
 
   const addItem = () => {
     setItems([...items, { 

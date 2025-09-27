@@ -323,6 +323,7 @@ export default function InvoicesPage() {
   }, [getAuthHeaders, showSuccess, showError]);
 
   const handleEditInvoice = useCallback((invoice: Invoice) => {
+    setSelectedInvoice(invoice);
     if (invoice.type === 'fast') {
       setShowFastInvoice(true);
     } else {
@@ -1218,9 +1219,13 @@ export default function InvoicesPage() {
       {showFastInvoice && (
         <FastInvoiceModal
           isOpen={showFastInvoice}
-          onClose={() => setShowFastInvoice(false)}
+          onClose={() => {
+            setShowFastInvoice(false);
+            setSelectedInvoice(null);
+          }}
           onSuccess={() => {
             setShowFastInvoice(false);
+            setSelectedInvoice(null);
             // Refresh invoices data
             window.location.reload();
           }}
@@ -1228,21 +1233,27 @@ export default function InvoicesPage() {
           getAuthHeaders={getAuthHeaders}
           isDarkMode={isDarkMode}
           clients={clients}
+          editingInvoice={selectedInvoice}
         />
       )}
 
       {showCreateInvoice && (
         <QuickInvoiceModal
           isOpen={showCreateInvoice}
-          onClose={() => setShowCreateInvoice(false)}
+          onClose={() => {
+            setShowCreateInvoice(false);
+            setSelectedInvoice(null);
+          }}
           onSuccess={() => {
             setShowCreateInvoice(false);
+            setSelectedInvoice(null);
             // Refresh invoices data
             window.location.reload();
           }}
           getAuthHeaders={getAuthHeaders}
           isDarkMode={isDarkMode}
           clients={clients}
+          editingInvoice={selectedInvoice}
         />
       )}
 

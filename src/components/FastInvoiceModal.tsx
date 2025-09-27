@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, DollarSign, Calendar, FileText, User, Mail, ArrowRight, ArrowLeft, Clock, CheckCircle, Send } from 'lucide-react'
+import { Invoice } from '@/types'
 
 interface Client {
   id: string
@@ -18,11 +19,12 @@ interface FastInvoiceModalProps {
   getAuthHeaders: () => Promise<{ [key: string]: string }>
   isDarkMode?: boolean
   clients?: Client[]
+  editingInvoice?: Invoice | null
 }
 
 // Client interface removed - not used
 
-export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHeaders, isDarkMode = false, clients = [] }: FastInvoiceModalProps) {
+export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHeaders, isDarkMode = false, clients = [], editingInvoice = null }: FastInvoiceModalProps) {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [sendLoading, setSendLoading] = useState(false)
@@ -44,6 +46,22 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
       setDueDate(defaultDueDate.toISOString().split('T')[0])
     }
   }, [isOpen, dueDate])
+
+  // Pre-fill form when editing an invoice
+  useEffect(() => {
+    if (isOpen && editingInvoice) {
+      setSelectedClientId(editingInvoice.clientId || '')
+      setClientName(editingInvoice.clientName || '')
+      setClientEmail(editingInvoice.clientEmail || '')
+      setDescription(editingInvoice.items?.[0]?.description || '')
+      setAmount(editingInvoice.items?.[0]?.amount?.toString() || '')
+      setDueDate(editingInvoice.dueDate || '')
+      setNotes(editingInvoice.notes || '')
+    } else if (isOpen && !editingInvoice) {
+      // Reset form when creating new invoice
+      resetForm()
+    }
+  }, [isOpen, editingInvoice])
 
   const resetForm = () => {
     setStep(1)
