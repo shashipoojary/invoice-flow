@@ -480,9 +480,17 @@ export default function DashboardOverview() {
                 {invoice.status}
               </span>
               {invoice.status === 'sent' && (
-                <div className="text-sm flex items-center space-x-1">
-                  <Calendar className="h-3 w-3" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}} />
-                  <span className={dueDateStatus.color}>
+                <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium ${
+                  dueDateStatus.status === 'overdue' 
+                    ? (isDarkMode ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-red-100 text-red-700 border border-red-200')
+                    : dueDateStatus.status === 'due-today'
+                    ? (isDarkMode ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-orange-100 text-orange-700 border border-orange-200')
+                    : dueDateStatus.status === 'due-soon'
+                    ? (isDarkMode ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : 'bg-yellow-100 text-yellow-700 border border-yellow-200')
+                    : (isDarkMode ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-blue-100 text-blue-700 border border-blue-200')
+                }`}>
+                  <Calendar className="h-3 w-3" />
+                  <span>
                     {dueDateStatus.status === 'overdue' ? `${dueDateStatus.days} days overdue` :
                      dueDateStatus.status === 'due-today' ? 'Due today' :
                      dueDateStatus.status === 'due-soon' ? `Due in ${dueDateStatus.days} days` :
@@ -545,9 +553,17 @@ export default function DashboardOverview() {
                 {invoice.status}
               </span>
               {invoice.status === 'sent' && (
-                <div className="text-sm hidden lg:block flex items-center space-x-1">
-                  <Calendar className="h-3 w-3" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}} />
-                  <span className={dueDateStatus.color}>
+                <div className={`hidden lg:flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium ${
+                  dueDateStatus.status === 'overdue' 
+                    ? (isDarkMode ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-red-100 text-red-700 border border-red-200')
+                    : dueDateStatus.status === 'due-today'
+                    ? (isDarkMode ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-orange-100 text-orange-700 border border-orange-200')
+                    : dueDateStatus.status === 'due-soon'
+                    ? (isDarkMode ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : 'bg-yellow-100 text-yellow-700 border border-yellow-200')
+                    : (isDarkMode ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-blue-100 text-blue-700 border border-blue-200')
+                }`}>
+                  <Calendar className="h-3 w-3" />
+                  <span>
                     {dueDateStatus.status === 'overdue' ? `${dueDateStatus.days} days overdue` :
                      dueDateStatus.status === 'due-today' ? 'Due today' :
                      dueDateStatus.status === 'due-soon' ? `Due in ${dueDateStatus.days} days` :
