@@ -212,6 +212,27 @@ export async function POST(request: NextRequest) {
       theme: completeInvoice.theme ? JSON.parse(completeInvoice.theme) : undefined,
     };
 
+    // Check if PDF generation is requested
+    if (invoiceData.generate_pdf_only) {
+      // Generate PDF and return it
+      try {
+        const { generatePDFBlob } = await import('@/lib/pdf-generator');
+        const pdfBlob = await generatePDFBlob(mappedInvoice, undefined); // No business settings for now
+        const pdfBuffer = await pdfBlob.arrayBuffer();
+        
+        return new NextResponse(pdfBuffer, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="invoice-${mappedInvoice.invoiceNumber}.pdf"`,
+          },
+        });
+      } catch (pdfError) {
+        console.error('PDF generation error:', pdfError);
+        return NextResponse.json({ error: 'Failed to generate PDF' }, { status: 500 });
+      }
+    }
+
     return NextResponse.json({ 
       success: true, 
       invoice: mappedInvoice,

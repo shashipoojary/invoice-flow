@@ -354,6 +354,89 @@ export default function QuickInvoiceModal({
     onClose()
   }
 
+  const handleGeneratePDF = async () => {
+    try {
+      // Validate required fields for PDF generation
+      if (!selectedClientId && !newClient.name) {
+        alert('Please select a client or enter client details')
+        return
+      }
+
+      if (items.some(item => !item.description || item.amount <= 0)) {
+        alert('Please fill in all item details with valid amounts')
+        return
+      }
+
+      const payload = {
+        client_id: selectedClientId || undefined,
+        client_data: selectedClientId ? undefined : newClient,
+        items: items.map(item => ({
+          description: item.description,
+          rate: item.amount,
+          line_total: item.amount
+        })),
+        due_date: dueDate,
+        discount: discount,
+        notes: notes,
+        billing_choice: 'per_invoice',
+        // New features
+        invoice_number: invoiceNumber,
+        issue_date: issueDate,
+        reminders: reminders.enabled ? {
+          enabled: true,
+          use_system_defaults: reminders.useSystemDefaults,
+          rules: reminders.rules.filter(rule => rule.enabled).map(rule => ({
+            type: rule.type,
+            days: rule.days
+          }))
+        } : { enabled: false },
+        late_fees: lateFees.enabled ? {
+          enabled: true,
+          type: lateFees.type,
+          amount: lateFees.amount,
+          grace_period: lateFees.gracePeriod
+        } : { enabled: false },
+        payment_terms: paymentTerms.enabled ? {
+          enabled: true,
+          terms: paymentTerms.defaultOption
+        } : { enabled: false },
+        theme: {
+          primary_color: theme.primaryColor,
+          secondary_color: theme.secondaryColor,
+          accent_color: theme.accentColor
+        },
+        // PDF generation flag
+        generate_pdf_only: true
+      }
+
+      const headers = await getAuthHeaders()
+      const response = await fetch('/api/invoices/create', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload)
+      })
+
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `invoice-${invoiceNumber}.pdf`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+        alert('PDF generated successfully!')
+      } else {
+        throw new Error('Failed to generate PDF')
+      }
+
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+      alert('Failed to generate PDF. Please try again.')
+    }
+  }
+
   const nextStep = () => {
     if (currentStep < 4) setCurrentStep(currentStep + 1)
   }
@@ -456,16 +539,16 @@ export default function QuickInvoiceModal({
         </div>
 
         {/* Step Indicator */}
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-center space-x-4">
+        <div className="px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex items-center justify-center space-x-2 sm:space-x-4 overflow-x-auto">
             {[
               { step: 1, label: 'Client', icon: User },
               { step: 2, label: 'Services', icon: FileText },
               { step: 3, label: 'Settings', icon: Settings },
               { step: 4, label: 'Review', icon: CheckCircle }
             ].map(({ step, label, icon: Icon }) => (
-              <div key={step} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+              <div key={step} className="flex items-center flex-shrink-0">
+                <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
                   step <= currentStep
                     ? 'bg-indigo-600 text-white'
                     : isDarkMode
@@ -473,12 +556,12 @@ export default function QuickInvoiceModal({
                     : 'bg-gray-200 text-gray-500'
                 }`}>
                   {step < currentStep ? (
-                    <CheckCircle className="h-4 w-4" />
+                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
                   ) : (
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
                   )}
                 </div>
-                <span className={`ml-2 text-xs font-medium ${
+                <span className={`ml-1 sm:ml-2 text-xs font-medium hidden sm:inline ${
                   step <= currentStep
                     ? isDarkMode ? 'text-indigo-400' : 'text-indigo-600'
                     : isDarkMode ? 'text-gray-400' : 'text-gray-500'
@@ -486,7 +569,7 @@ export default function QuickInvoiceModal({
                   {label}
                 </span>
                 {step < 4 && (
-                  <div className={`w-6 h-0.5 mx-3 ${
+                  <div className={`w-3 sm:w-6 h-0.5 mx-2 sm:mx-3 ${
                     step < currentStep ? 'bg-indigo-600' : isDarkMode ? 'bg-gray-600' : 'bg-gray-300'
                   }`} />
                 )}
@@ -1671,6 +1754,7 @@ export default function QuickInvoiceModal({
                 
                 <button
                   type="button"
+                  onClick={handleGeneratePDF}
                   className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm ${
                     isDarkMode 
                       ? 'bg-blue-600 text-white hover:bg-blue-700' 
