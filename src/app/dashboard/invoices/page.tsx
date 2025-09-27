@@ -302,7 +302,11 @@ export default function InvoicesPage() {
           ...headers,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ invoiceId: invoice.id }),
+        body: JSON.stringify({ 
+          invoiceId: invoice.id,
+          clientEmail: invoice.clientEmail,
+          clientName: invoice.clientName
+        }),
       });
 
       if (response.ok) {
