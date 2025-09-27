@@ -402,14 +402,14 @@ export default function QuickInvoiceModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className={`rounded-2xl shadow-2xl border max-w-2xl w-full max-h-[95vh] overflow-y-auto scroll-smooth ${
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+      <div className={`rounded-xl sm:rounded-2xl shadow-2xl border max-w-2xl w-full max-h-[98vh] sm:max-h-[95vh] overflow-y-auto scroll-smooth ${
         isDarkMode 
           ? 'bg-gray-900/95 border-gray-700' 
           : 'bg-white/95 border-gray-200'
       } backdrop-blur-sm`}>
         {/* Header */}
-        <div className={`flex items-center justify-between p-6 border-b ${
+        <div className={`flex items-center justify-between p-4 sm:p-6 border-b ${
           isDarkMode 
             ? 'border-gray-700' 
             : 'border-gray-200'
@@ -427,14 +427,14 @@ export default function QuickInvoiceModal({
               }`} />
             </div>
             <div>
-              <h2 className={`text-lg font-semibold ${
+              <h2 className={`text-base sm:text-lg font-semibold ${
                 isDarkMode 
                   ? 'text-white' 
                   : 'text-gray-900'
               }`}>
                 Detailed Invoice
               </h2>
-              <p className={`text-xs ${
+              <p className={`text-xs sm:text-sm ${
                 isDarkMode 
                   ? 'text-gray-400' 
                   : 'text-gray-500'
@@ -495,12 +495,12 @@ export default function QuickInvoiceModal({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 pb-6">
+        <form onSubmit={handleSubmit} className="px-4 sm:px-6 pb-4 sm:pb-6">
           {/* Step 1: Client & Details */}
           {currentStep === 1 && (
-            <div className="space-y-5">
-              <div className="text-center mb-6">
-                <h3 className={`text-base font-semibold mb-1 ${
+            <div className="space-y-4 sm:space-y-5">
+              <div className="text-center mb-4 sm:mb-6">
+                <h3 className={`text-sm sm:text-base font-semibold mb-1 ${
                   isDarkMode ? 'text-white' : 'text-gray-900'
                 }`}>Client & Invoice Details</h3>
                 <p className={`text-xs ${
@@ -713,7 +713,7 @@ export default function QuickInvoiceModal({
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center space-x-2 text-sm"
+                  className="w-full sm:w-auto bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm"
                 >
                   <span>Next</span>
                   <ArrowRight className="h-4 w-4" />
@@ -724,9 +724,9 @@ export default function QuickInvoiceModal({
 
           {/* Step 2: Services & Amount */}
           {currentStep === 2 && (
-            <div className="space-y-5">
-              <div className="text-center mb-6">
-                <h3 className={`text-base font-semibold mb-1 ${
+            <div className="space-y-4 sm:space-y-5">
+              <div className="text-center mb-4 sm:mb-6">
+                <h3 className={`text-sm sm:text-base font-semibold mb-1 ${
                   isDarkMode ? 'text-white' : 'text-gray-900'
                 }`}>Services & Amount</h3>
                 <p className={`text-xs ${
@@ -918,11 +918,11 @@ export default function QuickInvoiceModal({
                 </div>
               </div>
 
-              <div className="flex justify-between">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   type="button"
                   onClick={prevStep}
-                  className={`py-3 px-6 rounded-lg transition-colors font-medium flex items-center space-x-2 text-sm ${
+                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm ${
                     isDarkMode 
                       ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -934,7 +934,7 @@ export default function QuickInvoiceModal({
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center space-x-2 text-sm"
+                  className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm"
                 >
                   <span>Next</span>
                   <ArrowRight className="h-4 w-4" />
@@ -945,9 +945,9 @@ export default function QuickInvoiceModal({
 
           {/* Step 3: Settings (Reminders, Late Fees, Payment Terms & Colors) */}
           {currentStep === 3 && (
-            <div className="space-y-5">
-              <div className="text-center mb-6">
-                <h3 className={`text-base font-semibold mb-1 ${
+            <div className="space-y-4 sm:space-y-5">
+              <div className="text-center mb-4 sm:mb-6">
+                <h3 className={`text-sm sm:text-base font-semibold mb-1 ${
                   isDarkMode ? 'text-white' : 'text-gray-900'
                 }`}>Invoice Settings</h3>
                 <p className={`text-xs ${
@@ -1447,11 +1447,11 @@ export default function QuickInvoiceModal({
                 </div>
               </div>
 
-              <div className="flex justify-between">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   type="button"
                   onClick={prevStep}
-                  className={`py-3 px-6 rounded-lg transition-colors font-medium flex items-center space-x-2 text-sm ${
+                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm ${
                     isDarkMode 
                       ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1463,7 +1463,7 @@ export default function QuickInvoiceModal({
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center space-x-2 text-sm"
+                  className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm"
                 >
                   <span>Review</span>
                   <ArrowRight className="h-4 w-4" />
@@ -1474,9 +1474,9 @@ export default function QuickInvoiceModal({
 
           {/* Step 4: Review & Create */}
           {currentStep === 4 && (
-            <div className="space-y-6">
-              <div className="text-center mb-8">
-                <h3 className={`text-lg font-semibold mb-2 ${
+            <div className="space-y-4 sm:space-y-6">
+              <div className="text-center mb-6 sm:mb-8">
+                <h3 className={`text-base sm:text-lg font-semibold mb-2 ${
                   isDarkMode ? 'text-white' : 'text-gray-900'
                 }`}>Review & Create Invoice</h3>
                 <p className={`text-sm ${

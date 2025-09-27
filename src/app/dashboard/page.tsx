@@ -879,7 +879,7 @@ export default function DashboardOverview() {
             </div>
 
             {/* Quick Actions */}
-            <div>
+            <div className="mt-8">
               <h2 className="font-heading text-2xl font-semibold mb-6" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                 Quick Actions
               </h2>
