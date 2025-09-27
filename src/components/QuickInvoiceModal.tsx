@@ -289,6 +289,7 @@ export default function QuickInvoiceModal({
         discount: discount,
         notes: notes,
         billing_choice: 'per_invoice',
+        type: 'detailed', // Mark as detailed invoice
         // New features
         invoice_number: invoiceNumber,
         issue_date: issueDate,
@@ -379,6 +380,7 @@ export default function QuickInvoiceModal({
         discount: discount,
         notes: notes,
         billing_choice: 'per_invoice',
+        type: 'detailed', // Mark as detailed invoice
         // New features
         invoice_number: invoiceNumber,
         issue_date: issueDate,
@@ -601,7 +603,7 @@ export default function QuickInvoiceModal({
                   <User className="h-4 w-4 mr-2 text-indigo-600" />
                   Select Client
                 </h4>
-                
+
                 {selectedClientId ? (
                   <div className={`flex items-center justify-between p-4 rounded-lg border ${
                     isDarkMode 
@@ -614,7 +616,7 @@ export default function QuickInvoiceModal({
                       }`}>
                         <User className={`h-4 w-4 ${
                           isDarkMode ? 'text-indigo-300' : 'text-indigo-600'
-                        }`} />
+                      }`} />
                       </div>
                       <div>
                         <p className={`text-sm font-medium ${
@@ -644,44 +646,44 @@ export default function QuickInvoiceModal({
                 ) : (
                   <div className="space-y-3">
                     {clients.length > 0 && (
-                      <div className="relative">
-                        <select
-                          value={selectedClientId}
-                          onChange={(e) => setSelectedClientId(e.target.value)}
+                    <div className="relative">
+                      <select
+                        value={selectedClientId}
+                        onChange={(e) => setSelectedClientId(e.target.value)}
                           className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors appearance-none cursor-pointer ${
-                            isDarkMode 
-                              ? 'border-gray-600 bg-gray-800 text-white' 
-                              : 'border-gray-300 bg-white text-gray-900'
-                          }`}
-                        >
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-800 text-white' 
+                            : 'border-gray-300 bg-white text-gray-900'
+                        }`}
+                      >
                           <option value="">Select existing client</option>
-                          {clients.map(client => (
-                            <option key={client.id} value={client.id}>
+                        {clients.map(client => (
+                          <option key={client.id} value={client.id}>
                               {client.name} {client.company && `(${client.company})`}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                           <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
                       </div>
+                    </div>
                     )}
                     
                     {clients.length > 0 && (
-                      <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                          <div className={`w-full border-t ${
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className={`w-full border-t ${
                             isDarkMode ? 'border-gray-600' : 'border-gray-300'
-                          }`} />
-                        </div>
+                        }`} />
+                      </div>
                         <div className="relative flex justify-center text-xs">
-                          <span className={`px-2 ${
+                        <span className={`px-2 ${
                             isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'
                           }`}>or add new</span>
-                        </div>
                       </div>
+                    </div>
                     )}
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -690,17 +692,17 @@ export default function QuickInvoiceModal({
                           <User className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
                             isDarkMode ? 'text-gray-500' : 'text-gray-400'
                           }`} />
-                          <input
-                            type="text"
+                        <input
+                          type="text"
                             placeholder="Client name"
-                            value={newClient.name}
-                            onChange={(e) => setNewClient({...newClient, name: e.target.value})}
+                          value={newClient.name}
+                          onChange={(e) => setNewClient({...newClient, name: e.target.value})}
                             className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                              isDarkMode 
-                                ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
-                                : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
-                            }`}
-                          />
+                            isDarkMode 
+                              ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                              : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                          }`}
+                        />
                         </div>
                       </div>
                       <div>
@@ -708,17 +710,17 @@ export default function QuickInvoiceModal({
                           <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
                             isDarkMode ? 'text-gray-500' : 'text-gray-400'
                           }`} />
-                          <input
-                            type="email"
-                            placeholder="client@example.com"
-                            value={newClient.email}
-                            onChange={(e) => setNewClient({...newClient, email: e.target.value})}
+                        <input
+                          type="email"
+                          placeholder="client@example.com"
+                          value={newClient.email}
+                          onChange={(e) => setNewClient({...newClient, email: e.target.value})}
                             className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                              isDarkMode 
-                                ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
-                                : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
-                            }`}
-                          />
+                            isDarkMode 
+                              ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                              : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                          }`}
+                        />
                         </div>
                       </div>
                     </div>
@@ -749,7 +751,7 @@ export default function QuickInvoiceModal({
                       <div className={`w-2 h-2 rounded-full ${
                         isDarkMode ? 'bg-green-400' : 'bg-green-500'
                       }`} title="Auto-generated by system"></div>
-                    </div>
+                  </div>
                   </div>
                   <p className={`text-xs mt-1 ${
                     isDarkMode ? 'text-gray-400' : 'text-gray-500'
@@ -779,7 +781,7 @@ export default function QuickInvoiceModal({
                         <div className={`w-2 h-2 rounded-full ${
                           isDarkMode ? 'bg-orange-400' : 'bg-orange-500'
                         }`} title="Auto-updated by payment terms"></div>
-                      </div>
+                  </div>
                     )}
                   </div>
                   {paymentTerms.enabled && paymentTerms.defaultOption === 'Due on Receipt' && (

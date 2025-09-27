@@ -409,7 +409,7 @@ export default function DashboardOverview() {
                     : { backgroundColor: '#e0e7ff', color: '#3730a3', borderColor: '#a5b4fc' }
                   )}
                 >
-                  {invoice.type === 'fast' ? 'Fast' : 'Detailed'}
+                  {(invoice.type || 'detailed') === 'fast' ? 'Fast' : 'Detailed'}
                 </span>
               </div>
               <div className={`font-heading text-lg font-bold ${
@@ -474,7 +474,7 @@ export default function DashboardOverview() {
                     : { backgroundColor: '#e0e7ff', color: '#3730a3', borderColor: '#a5b4fc' }
                   )}
                 >
-                  {invoice.type === 'fast' ? 'Fast' : 'Detailed'}
+                  {(invoice.type || 'detailed') === 'fast' ? 'Fast' : 'Detailed'}
                 </span>
               </div>
               <div className="text-xs" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
