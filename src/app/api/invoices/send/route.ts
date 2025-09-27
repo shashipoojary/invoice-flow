@@ -20,7 +20,11 @@ export async function POST(request: NextRequest) {
 
     const { invoiceId, clientEmail, clientName } = await request.json();
 
+    // Debug: Log the received data
+    console.log('Send Invoice - Received data:', { invoiceId, clientEmail, clientName });
+
     if (!invoiceId || !clientEmail) {
+      console.log('Send Invoice - Missing required fields:', { invoiceId, clientEmail });
       return NextResponse.json({ 
         error: 'Invoice ID and client email are required' 
       }, { status: 400 });

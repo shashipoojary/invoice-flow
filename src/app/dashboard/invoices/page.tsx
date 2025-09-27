@@ -296,6 +296,15 @@ export default function InvoicesPage() {
     
     try {
       const headers = await getAuthHeaders();
+      
+      // Debug: Log the invoice data being sent
+      console.log('Send Invoice - Invoice data:', {
+        id: invoice.id,
+        clientEmail: invoice.clientEmail,
+        clientName: invoice.clientName,
+        client: invoice.client
+      });
+      
       const response = await fetch(`/api/invoices/send`, {
         method: 'POST',
         headers: {
@@ -310,10 +319,14 @@ export default function InvoicesPage() {
       });
 
       if (response.ok) {
-        // Refresh invoices data
-        const invoicesResponse = await fetch('/api/invoices', { headers, cache: 'no-store' });
-        const invoicesData = await invoicesResponse.json();
-        setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
+        // Update local state instead of refetching
+        setInvoices(prevInvoices => 
+          prevInvoices.map(inv => 
+            inv.id === invoice.id 
+              ? { ...inv, status: 'sent' as const }
+              : inv
+          )
+        );
         showSuccess('Invoice Sent', `Invoice ${invoice.invoiceNumber} has been sent successfully.`);
       } else {
         showError('Send Failed', 'Failed to send invoice. Please try again.');
@@ -351,10 +364,14 @@ export default function InvoicesPage() {
       });
 
       if (response.ok) {
-        // Refresh invoices data
-        const invoicesResponse = await fetch('/api/invoices', { headers, cache: 'no-store' });
-        const invoicesData = await invoicesResponse.json();
-        setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
+        // Update local state instead of refetching
+        setInvoices(prevInvoices => 
+          prevInvoices.map(inv => 
+            inv.id === invoice.id 
+              ? { ...inv, status: 'paid' as const }
+              : inv
+          )
+        );
         showSuccess('Invoice Updated', `Invoice ${invoice.invoiceNumber} has been marked as paid.`);
       } else {
         showError('Update Failed', 'Failed to mark invoice as paid. Please try again.');
@@ -389,10 +406,10 @@ export default function InvoicesPage() {
       });
 
       if (response.ok) {
-        // Refresh invoices data
-        const invoicesResponse = await fetch('/api/invoices', { headers, cache: 'no-store' });
-        const invoicesData = await invoicesResponse.json();
-        setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
+        // Update local state instead of refetching
+        setInvoices(prevInvoices => 
+          prevInvoices.filter(inv => inv.id !== invoice.id)
+        );
         showSuccess('Invoice Deleted', `Invoice ${invoice.invoiceNumber} has been deleted successfully.`);
         setConfirmationModal(prev => ({ ...prev, isOpen: false, isLoading: false }));
       } else {
@@ -655,7 +672,7 @@ export default function InvoicesPage() {
               <span>Send</span>
             </button>
           )}
-          {invoice.status !== 'paid' && (
+          {invoice.status === 'sent' && (
             <button 
               onClick={() => handleMarkAsPaid(invoice)}
               disabled={loadingActions[`paid-${invoice.id}`]}

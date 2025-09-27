@@ -141,16 +141,65 @@ export default function SettingsPage() {
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        showError('File Too Large', 'Logo file must be smaller than 5MB.');
+        return;
+      }
+
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        showError('Invalid File Type', 'Please select an image file.');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (e) => {
-        setSettings(prev => ({ ...prev, logo: e.target?.result as string }));
+        const result = e.target?.result as string;
+        if (result) {
+          setSettings(prev => ({ ...prev, logo: result }));
+          showSuccess('Logo Uploaded', 'Logo has been uploaded successfully. Don\'t forget to save your settings.');
+        }
+      };
+      reader.onerror = () => {
+        showError('Upload Failed', 'Failed to read the logo file. Please try again.');
       };
       reader.readAsDataURL(file);
     }
   };
 
   const handleRemoveLogo = () => {
-    setSettings(prev => ({ ...prev, logo: '' }));
+    if (confirm('Are you sure you want to remove the logo?')) {
+      setSettings(prev => ({ ...prev, logo: '' }));
+      showSuccess('Logo Removed', 'Logo has been removed. Don\'t forget to save your settings.');
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    setSaving(true);
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/settings', {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settings),
+      });
+
+      if (response.ok) {
+        showSuccess('Settings Saved', 'Your settings have been saved successfully.');
+      } else {
+        const errorData = await response.json();
+        showError('Save Failed', errorData.error || 'Failed to save settings. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      showError('Save Failed', 'Failed to save settings. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Only show loading spinner if user is not authenticated yet
@@ -309,58 +358,93 @@ export default function SettingsPage() {
                       Business Logo
                     </label>
                     
-                    {/* Logo Preview */}
-                    {settings.logo && (
-                      <div className="mb-4 p-4 border rounded-lg" style={{borderColor: isDarkMode ? '#374151' : '#e5e7eb'}}>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                            Current Logo
-                          </span>
-                          <button
-                            type="button"
-                            onClick={handleRemoveLogo}
-                            className="text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className="w-16 h-16 object-contain border rounded-lg flex items-center justify-center bg-gray-100 dark:bg-gray-700"
-                            style={{borderColor: isDarkMode ? '#374151' : '#e5e7eb'}}
-                          >
-                            <span className="text-xs text-gray-500">Logo</span>
+                    
+                    {/* Upload Area */}
+                    <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                      isDarkMode 
+                        ? 'border-gray-600 hover:border-gray-500 bg-gray-800/50' 
+                        : 'border-gray-300 hover:border-gray-400 bg-gray-50'
+                    }`}>
+                      {settings.logo ? (
+                        <div className="space-y-4">
+                          <div className="flex justify-center">
+                            <div className="w-24 h-24 border rounded-lg flex items-center justify-center bg-white dark:bg-gray-700 overflow-hidden">
+                              <img 
+                                src={settings.logo} 
+                                alt="Business Logo Preview" 
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
                           </div>
                           <div>
                             <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                              Logo uploaded successfully
+                              Logo Preview
                             </p>
                             <p className="text-xs" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
-                              This will appear on your invoices
+                              This is how your logo will appear on invoices
                             </p>
                           </div>
+                          <div className="flex items-center justify-center space-x-4">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleLogoUpload}
+                              className="hidden"
+                              id="logo-upload"
+                            />
+                            <label
+                              htmlFor="logo-upload"
+                              className="cursor-pointer"
+                            >
+                              <div className={`flex items-center space-x-2 px-4 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:text-gray-100' : 'border-gray-300 text-gray-700 hover:text-gray-900'}`}>
+                                <Upload className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                                <span className="text-sm">Change Logo</span>
+                              </div>
+                            </label>
+                            <button
+                              type="button"
+                              onClick={handleRemoveLogo}
+                              className={`flex items-center space-x-2 px-4 py-2 border rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors ${isDarkMode ? 'border-red-600 text-red-400 hover:text-red-300' : 'border-red-300 text-red-600 hover:text-red-800'}`}
+                            >
+                              <span className="text-sm">Remove</span>
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    
-                    {/* Upload Button */}
-                    <div className="flex items-center space-x-4">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleLogoUpload}
-                        className="hidden"
-                        id="logo-upload"
-                      />
-                      <label
-                        htmlFor="logo-upload"
-                        className="cursor-pointer"
-                      >
-                        <div className={`flex items-center space-x-2 px-4 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:text-gray-100' : 'border-gray-300 text-gray-700 hover:text-gray-900'}`}>
-                          <Upload className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                          <span className="text-sm">{settings.logo ? 'Change Logo' : 'Upload Logo'}</span>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="flex justify-center">
+                            <div className={`w-24 h-24 border-2 border-dashed rounded-lg flex items-center justify-center ${
+                              isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-300 bg-gray-100'
+                            }`}>
+                              <Upload className={`h-8 w-8 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                              Upload your business logo
+                            </p>
+                            <p className="text-xs" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                              PNG, JPG, or GIF up to 5MB
+                            </p>
+                          </div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoUpload}
+                            className="hidden"
+                            id="logo-upload"
+                          />
+                          <label
+                            htmlFor="logo-upload"
+                            className="cursor-pointer"
+                          >
+                            <div className={`inline-flex items-center space-x-2 px-6 py-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:text-gray-100' : 'border-gray-300 text-gray-700 hover:text-gray-900'}`}>
+                              <Upload className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                              <span className="text-sm font-medium">Choose Logo File</span>
+                            </div>
+                          </label>
                         </div>
-                      </label>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -529,6 +613,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               )}
+
             </div>
           </div>
         </main>

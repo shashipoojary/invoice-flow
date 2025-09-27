@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
         clients (
           name,
           email,
-          company
+          company,
+          address
         )
       `)
       .eq('user_id', user.id)
@@ -48,6 +49,11 @@ export async function GET(request: NextRequest) {
           dueDate: invoice.due_date,
           createdAt: invoice.created_at,
           client: invoice.clients,
+          // Map client fields to invoice level for easier access
+          clientName: invoice.clients?.name || '',
+          clientEmail: invoice.clients?.email || '',
+          clientCompany: invoice.clients?.company || '',
+          clientAddress: invoice.clients?.address || '',
           items: (itemsData || []).map(item => ({
             id: item.id,
             description: item.description,

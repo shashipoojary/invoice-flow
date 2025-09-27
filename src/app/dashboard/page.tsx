@@ -37,6 +37,7 @@ export default function DashboardOverview() {
   });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [isLoadingInvoices, setIsLoadingInvoices] = useState(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [hasLoadedData, setHasLoadedData] = useState(false);
@@ -309,6 +310,15 @@ export default function DashboardOverview() {
     
     try {
       const headers = await getAuthHeaders();
+      
+      // Debug: Log the invoice data being sent
+      console.log('Send Invoice - Invoice data:', {
+        id: invoice.id,
+        clientEmail: invoice.clientEmail,
+        clientName: invoice.clientName,
+        client: invoice.client
+      });
+      
       const response = await fetch(`/api/invoices/send`, {
         method: 'POST',
         headers: {
@@ -323,10 +333,14 @@ export default function DashboardOverview() {
       });
 
       if (response.ok) {
-        // Refresh invoices data
-        const invoicesResponse = await fetch('/api/invoices', { headers, cache: 'no-store' });
-        const invoicesData = await invoicesResponse.json();
-        setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
+        // Update local state instead of refetching
+        setInvoices(prevInvoices => 
+          prevInvoices.map(inv => 
+            inv.id === invoice.id 
+              ? { ...inv, status: 'sent' as const }
+              : inv
+          )
+        );
         showSuccess('Invoice Sent', `Invoice ${invoice.invoiceNumber} has been sent successfully.`);
       } else {
         showError('Send Failed', 'Failed to send invoice. Please try again.');
@@ -364,10 +378,14 @@ export default function DashboardOverview() {
       });
 
       if (response.ok) {
-        // Refresh invoices data
-        const invoicesResponse = await fetch('/api/invoices', { headers, cache: 'no-store' });
-        const invoicesData = await invoicesResponse.json();
-        setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
+        // Update local state instead of refetching
+        setInvoices(prevInvoices => 
+          prevInvoices.map(inv => 
+            inv.id === invoice.id 
+              ? { ...inv, status: 'paid' as const }
+              : inv
+          )
+        );
         showSuccess('Invoice Updated', `Invoice ${invoice.invoiceNumber} has been marked as paid.`);
       } else {
         showError('Update Failed', 'Failed to mark invoice as paid. Please try again.');
@@ -402,10 +420,10 @@ export default function DashboardOverview() {
       });
 
       if (response.ok) {
-        // Refresh invoices data
-        const invoicesResponse = await fetch('/api/invoices', { headers, cache: 'no-store' });
-        const invoicesData = await invoicesResponse.json();
-        setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
+        // Update local state instead of refetching
+        setInvoices(prevInvoices => 
+          prevInvoices.filter(inv => inv.id !== invoice.id)
+        );
         showSuccess('Invoice Deleted', `Invoice ${invoice.invoiceNumber} has been deleted successfully.`);
         setConfirmationModal(prev => ({ ...prev, isOpen: false, isLoading: false }));
       } else {
@@ -668,7 +686,7 @@ export default function DashboardOverview() {
               <span>Send</span>
             </button>
           )}
-          {invoice.status !== 'paid' && (
+          {invoice.status === 'sent' && (
             <button 
               onClick={() => handleMarkAsPaid(invoice)}
               disabled={loadingActions[`paid-${invoice.id}`]}
@@ -806,6 +824,13 @@ export default function DashboardOverview() {
     }
   }, [user, loading, hasLoadedData, getAuthHeaders, loadSettings]); // Include hasLoadedData to prevent re-runs
 
+  // Set dataLoaded to true when both loading states are false
+  useEffect(() => {
+    if (!isLoadingStats && !isLoadingInvoices) {
+      setDataLoaded(true);
+    }
+  }, [isLoadingStats, isLoadingInvoices]);
+
   // Memoize calculations
   const recentInvoices = useMemo(() => Array.isArray(invoices) ? invoices.slice(0, 5) : [], [invoices]);
   const totalRevenue = useMemo(() => dashboardStats.totalRevenue || 0, [dashboardStats.totalRevenue]);
@@ -872,7 +897,7 @@ export default function DashboardOverview() {
               </p>
               
               {/* Welcome message for new users */}
-              {user && invoices.length === 0 && clients.length === 0 && (
+              {user && dataLoaded && invoices.length === 0 && clients.length === 0 && (
                 <div className={`rounded-lg p-6 mb-8 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
                   <div className="flex items-center space-x-4 mb-4">
                     <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
