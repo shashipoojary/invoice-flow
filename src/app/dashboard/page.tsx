@@ -1003,24 +1003,24 @@ export default function DashboardOverview() {
                 {/* Total Revenue */}
                 <button 
                   onClick={handlePaidInvoicesClick}
-                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-emerald-500' : 'bg-white/70 border border-gray-200 hover:border-emerald-500'} backdrop-blur-sm`}
+                  className={`group relative overflow-hidden rounded-lg p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-emerald-500' : 'bg-white/70 border border-gray-200 hover:border-emerald-500'} backdrop-blur-sm`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Revenue</p>
-                      <div className="font-heading text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium text-left" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Revenue</p>
+                      <div className="font-heading text-3xl font-bold text-emerald-600 dark:text-emerald-400 text-left">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-24 rounded"></div>
                         ) : (
                           `$${totalRevenue.toLocaleString()}`
                         )}
                       </div>
-                      <div className="flex items-center space-x-1">
+                      <div className="flex items-center space-x-1 justify-start">
                         <TrendingUp className="h-4 w-4 text-emerald-500" />
                         <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Paid invoices</span>
                       </div>
                     </div>
-                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-emerald-500/20' : 'bg-emerald-50'}`}>
+                    <div className={`p-2 rounded-xl ${isDarkMode ? 'bg-emerald-500/20' : 'bg-emerald-50'}`}>
                       <Receipt className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                     </div>
                   </div>
@@ -1029,19 +1029,19 @@ export default function DashboardOverview() {
                 {/* Outstanding Amount */}
                 <button 
                   onClick={handlePendingInvoicesClick}
-                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-amber-500' : 'bg-white/70 border border-gray-200 hover:border-amber-500'} backdrop-blur-sm`}
+                  className={`group relative overflow-hidden rounded-lg p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-amber-500' : 'bg-white/70 border border-gray-200 hover:border-amber-500'} backdrop-blur-sm`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Payable</p>
-                      <div className="font-heading text-3xl font-bold text-amber-600 dark:text-amber-400">
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium text-left" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Payable</p>
+                      <div className="font-heading text-3xl font-bold text-amber-600 dark:text-amber-400 text-left">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-24 rounded"></div>
                         ) : (
                           `$${totalPayableAmount.toLocaleString()}`
                         )}
                       </div>
-                      <div className="flex items-center space-x-1">
+                      <div className="flex items-center space-x-1 justify-start">
                         <Clock className="h-4 w-4 text-amber-500" />
                         <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
                           {invoices.filter(inv => inv.status === 'sent').length} pending
@@ -1053,7 +1053,7 @@ export default function DashboardOverview() {
                         )}
                       </div>
                     </div>
-                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-amber-500/20' : 'bg-amber-50'}`}>
+                    <div className={`p-2 rounded-xl ${isDarkMode ? 'bg-amber-500/20' : 'bg-amber-50'}`}>
                       <Timer className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                     </div>
                   </div>
@@ -1062,24 +1062,24 @@ export default function DashboardOverview() {
                 {/* Overdue Invoices */}
                 <button 
                   onClick={handleOverdueInvoicesClick}
-                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-red-500' : 'bg-white/70 border border-gray-200 hover:border-red-500'} backdrop-blur-sm`}
+                  className={`group relative overflow-hidden rounded-lg p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-red-500' : 'bg-white/70 border border-gray-200 hover:border-red-500'} backdrop-blur-sm`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Overdue</p>
-                      <div className="font-heading text-3xl font-bold text-red-600 dark:text-red-400">
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium text-left" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Overdue</p>
+                      <div className="font-heading text-3xl font-bold text-red-600 dark:text-red-400 text-left">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-8 rounded"></div>
                         ) : (
                           overdueCount
                         )}
                       </div>
-                      <div className="flex items-center space-x-1">
+                      <div className="flex items-center space-x-1 justify-start">
                         <AlertCircle className="h-4 w-4 text-red-500" />
                         <span className="text-sm font-medium text-red-600 dark:text-red-400">Need attention</span>
                       </div>
                     </div>
-                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-red-500/20' : 'bg-red-50'}`}>
+                    <div className={`p-2 rounded-xl ${isDarkMode ? 'bg-red-500/20' : 'bg-red-50'}`}>
                       <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
                     </div>
                   </div>
@@ -1088,24 +1088,24 @@ export default function DashboardOverview() {
                 {/* Total Clients */}
                 <button 
                   onClick={handleClientsClick}
-                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-indigo-500' : 'bg-white/70 border border-gray-200 hover:border-indigo-500'} backdrop-blur-sm`}
+                  className={`group relative overflow-hidden rounded-lg p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-indigo-500' : 'bg-white/70 border border-gray-200 hover:border-indigo-500'} backdrop-blur-sm`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Clients</p>
-                      <div className="font-heading text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium text-left" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Clients</p>
+                      <div className="font-heading text-3xl font-bold text-indigo-600 dark:text-indigo-400 text-left">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-8 rounded"></div>
                         ) : (
                           totalClients
                         )}
                       </div>
-                      <div className="flex items-center space-x-1">
+                      <div className="flex items-center space-x-1 justify-start">
                         <Users className="h-4 w-4 text-indigo-500" />
                         <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">Active clients</span>
                       </div>
                     </div>
-                    <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
+                    <div className={`p-2 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
                       <Users className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                     </div>
                   </div>
