@@ -559,7 +559,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleCreateInvoice()}
+                  onClick={() => handleCreateInvoice(true)}
                   disabled={loading || sendLoading}
                   className={`flex-1 px-3 py-2 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-xs disabled:opacity-50 ${
                     isDarkMode 

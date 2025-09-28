@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import Image from 'next/image'
 import { Download, CheckCircle, Clock, AlertCircle, Mail, MapPin, Building2, CreditCard } from 'lucide-react'
 
 interface InvoiceItem {
@@ -32,14 +33,11 @@ interface Invoice {
     address: string
     email: string
     paypalEmail: string
-    cashappId: string
     venmoId: string
     googlePayUpi: string
-    applePayId: string
     bankAccount: string
     bankIfscSwift: string
     bankIban: string
-    stripeAccount: string
     paymentNotes: string
   }
 }
@@ -276,151 +274,60 @@ export default function PublicInvoicePage() {
           {/* Payment Information */}
           {invoice.freelancerSettings && (
             <div className="px-8 py-6 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Information</h3>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <p className="text-sm text-blue-800 font-medium mb-2">💳 How to Pay</p>
-                <p className="text-sm text-blue-700">
-                  Please use one of the payment methods below to settle this invoice. 
-                  Include invoice number <strong>#{invoice.invoiceNumber}</strong> in your payment reference.
-                </p>
-              </div>
-              
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Options:</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {invoice.freelancerSettings.paypalEmail && (
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-                      <div className="flex items-start">
-                        <div className="bg-blue-100 p-2 rounded-lg mr-3">
-                          <CreditCard className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900 mb-1">PayPal</p>
-                          <p className="text-gray-600 text-sm mb-2">Send payment to:</p>
-                          <p className="text-gray-900 font-medium">{invoice.freelancerSettings.paypalEmail}</p>
-                        </div>
+                    <div className="flex items-center">
+                      <CreditCard className="h-5 w-5 text-blue-500 mr-3" />
+                      <div>
+                        <p className="font-medium text-gray-900">PayPal</p>
+                        <p className="text-gray-600">{invoice.freelancerSettings.paypalEmail}</p>
                       </div>
                     </div>
                   )}
-                  
-                  {invoice.freelancerSettings.cashappId && (
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-                      <div className="flex items-start">
-                        <div className="bg-green-100 p-2 rounded-lg mr-3">
-                          <CreditCard className="h-5 w-5 text-green-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900 mb-1">Cash App</p>
-                          <p className="text-gray-600 text-sm mb-2">Send to:</p>
-                          <p className="text-gray-900 font-medium">${invoice.freelancerSettings.cashappId}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
                   {invoice.freelancerSettings.venmoId && (
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-                      <div className="flex items-start">
-                        <div className="bg-teal-100 p-2 rounded-lg mr-3">
-                          <CreditCard className="h-5 w-5 text-teal-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900 mb-1">Venmo</p>
-                          <p className="text-gray-600 text-sm mb-2">Send to:</p>
-                          <p className="text-gray-900 font-medium">@{invoice.freelancerSettings.venmoId}</p>
-                        </div>
+                    <div className="flex items-center">
+                      <CreditCard className="h-5 w-5 text-green-500 mr-3" />
+                      <div>
+                        <p className="font-medium text-gray-900">Venmo</p>
+                        <p className="text-gray-600">{invoice.freelancerSettings.venmoId}</p>
                       </div>
                     </div>
                   )}
-                  
                   {invoice.freelancerSettings.googlePayUpi && (
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-                      <div className="flex items-start">
-                        <div className="bg-purple-100 p-2 rounded-lg mr-3">
-                          <CreditCard className="h-5 w-5 text-purple-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900 mb-1">Google Pay / UPI</p>
-                          <p className="text-gray-600 text-sm mb-2">UPI ID:</p>
-                          <p className="text-gray-900 font-medium">{invoice.freelancerSettings.googlePayUpi}</p>
-                        </div>
+                    <div className="flex items-center">
+                      <CreditCard className="h-5 w-5 text-purple-500 mr-3" />
+                      <div>
+                        <p className="font-medium text-gray-900">Google Pay / UPI</p>
+                        <p className="text-gray-600">{invoice.freelancerSettings.googlePayUpi}</p>
                       </div>
                     </div>
                   )}
                 </div>
-                
-                <div className="space-y-4">
-                  {invoice.freelancerSettings.applePayId && (
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-                      <div className="flex items-start">
-                        <div className="bg-gray-100 p-2 rounded-lg mr-3">
-                          <CreditCard className="h-5 w-5 text-gray-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900 mb-1">Apple Pay</p>
-                          <p className="text-gray-600 text-sm mb-2">Send to:</p>
-                          <p className="text-gray-900 font-medium">{invoice.freelancerSettings.applePayId}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
+                <div className="space-y-3">
                   {invoice.freelancerSettings.bankAccount && (
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-                      <div className="flex items-start">
-                        <div className="bg-indigo-100 p-2 rounded-lg mr-3">
-                          <Building2 className="h-5 w-5 text-indigo-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900 mb-1">Bank Transfer</p>
-                          <p className="text-gray-600 text-sm mb-2">Account Details:</p>
-                          <p className="text-gray-900 font-medium">{invoice.freelancerSettings.bankAccount}</p>
-                          {invoice.freelancerSettings.bankIfscSwift && (
-                            <p className="text-gray-600 text-sm mt-1">IFSC/SWIFT: {invoice.freelancerSettings.bankIfscSwift}</p>
-                          )}
-                          {invoice.freelancerSettings.bankIban && (
-                            <p className="text-gray-600 text-sm mt-1">IBAN: {invoice.freelancerSettings.bankIban}</p>
-                          )}
-                        </div>
+                    <div className="flex items-center">
+                      <Building2 className="h-5 w-5 text-indigo-500 mr-3" />
+                      <div>
+                        <p className="font-medium text-gray-900">Bank Transfer</p>
+                        <p className="text-gray-600">Account: {invoice.freelancerSettings.bankAccount}</p>
+                        {invoice.freelancerSettings.bankIfscSwift && (
+                          <p className="text-gray-600">IFSC/SWIFT: {invoice.freelancerSettings.bankIfscSwift}</p>
+                        )}
+                        {invoice.freelancerSettings.bankIban && (
+                          <p className="text-gray-600">IBAN: {invoice.freelancerSettings.bankIban}</p>
+                        )}
                       </div>
                     </div>
                   )}
-                  
-                  {invoice.freelancerSettings.stripeAccount && (
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-                      <div className="flex items-start">
-                        <div className="bg-blue-100 p-2 rounded-lg mr-3">
-                          <CreditCard className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900 mb-1">Credit/Debit Card</p>
-                          <p className="text-gray-600 text-sm mb-2">Processed securely via Stripe</p>
-                          <p className="text-gray-900 font-medium">{invoice.freelancerSettings.stripeAccount}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
                   {invoice.freelancerSettings.paymentNotes && (
-                    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-                      <div className="flex items-start">
-                        <div className="bg-yellow-100 p-2 rounded-lg mr-3">
-                          <CreditCard className="h-5 w-5 text-yellow-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900 mb-1">Other Methods</p>
-                          <p className="text-gray-600 text-sm">{invoice.freelancerSettings.paymentNotes}</p>
-                        </div>
-                      </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Other Methods:</p>
+                      <p className="text-gray-600">{invoice.freelancerSettings.paymentNotes}</p>
                     </div>
                   )}
                 </div>
-              </div>
-              
-              <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4">
-                <p className="text-sm text-green-800">
-                  <strong>✅ Security:</strong> All payment methods are secure and encrypted. 
-                  Please include invoice number <strong>#{invoice.invoiceNumber}</strong> in your payment reference.
-                </p>
               </div>
             </div>
           )}

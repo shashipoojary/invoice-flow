@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { 
   Plus, FileText, Clock, CheckCircle, AlertCircle, FilePlus, Sparkles,
   Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Calendar, Trash2
@@ -17,9 +18,10 @@ import ClientModal from '@/components/ClientModal';
 // Types
 import { Client, Invoice } from '@/types';
 
-export default function InvoicesPage() {
+function InvoicesContent() {
   const { user, loading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
+  const searchParams = useSearchParams();
   
   // State
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -857,9 +859,32 @@ export default function InvoicesPage() {
             {/* Invoices Section */}
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                  Invoices
-                </h2>
+                <div className="flex items-center space-x-3">
+                  <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                    Invoices
+                  </h2>
+                  {searchParams.get('status') && (
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      searchParams.get('status') === 'paid' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                      searchParams.get('status') === 'sent' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
+                      searchParams.get('status') === 'overdue' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+                      'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                    }`}>
+                      {searchParams.get('status') === 'paid' ? 'Paid Invoices' :
+                       searchParams.get('status') === 'sent' ? 'Pending Invoices' :
+                       searchParams.get('status') === 'overdue' ? 'Overdue Invoices' :
+                       'Filtered'}
+                    </span>
+                  )}
+                  {searchParams.get('status') && (
+                    <button
+                      onClick={() => window.history.replaceState({}, '', '/dashboard/invoices')}
+                      className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 underline"
+                    >
+                      Clear Filter
+                    </button>
+                  )}
+                </div>
                 {user ? (
                   <button
                     onClick={() => setShowCreateInvoice(true)}
@@ -902,7 +927,33 @@ export default function InvoicesPage() {
                 </div>
               ) : invoices.length > 0 ? (
                 <div className="space-y-4">
-                  {invoices.map((invoice) => (
+                  {invoices
+                    .filter((invoice) => {
+                      const statusFilter = searchParams.get('status');
+                      if (!statusFilter) return true;
+                      
+                      if (statusFilter === 'paid') {
+                        return invoice.status === 'paid';
+                      } else if (statusFilter === 'sent') {
+                        return invoice.status === 'sent';
+                      } else if (statusFilter === 'overdue') {
+                        if (invoice.status !== 'sent') return false;
+                        const today = new Date();
+                        const dueDate = new Date(invoice.dueDate);
+                        return dueDate < today;
+                      }
+                      return true;
+                    })
+                    .sort((a, b) => {
+                      const statusFilter = searchParams.get('status');
+                      if (statusFilter === 'paid' || statusFilter === 'sent') {
+                        // Sort by amount (highest first)
+                        return b.total - a.total;
+                      }
+                      // Default sort by date (newest first)
+                      return new Date(b.created_at || b.createdAt || 0).getTime() - new Date(a.created_at || a.createdAt || 0).getTime();
+                    })
+                    .map((invoice) => (
                     <InvoiceCard
                       key={invoice.id}
                       invoice={invoice}
@@ -1334,5 +1385,17 @@ export default function InvoicesPage() {
         onRemove={removeToast}
       />
     </div>
+  );
+}
+
+export default function InvoicesPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
+      </div>
+    }>
+      <InvoicesContent />
+    </Suspense>
   );
 }

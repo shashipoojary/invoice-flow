@@ -20,8 +20,11 @@ export default function TestEmailTemplate() {
   const [venmoId, setVenmoId] = useState('techphysic')
   const [googlePayUpi, setGooglePayUpi] = useState('techphysic@upi')
   const [applePayId, setApplePayId] = useState('techphysic@apple')
-  const [bankAccount, setBankAccount] = useState('Account: 1234567890')
+  const [bankAccount, setBankAccount] = useState('Chase Bank Account Name: Tech Physic LLC')
+  const [bankIfscSwift, setBankIfscSwift] = useState('CHASUS33XXX')
+  const [bankIban, setBankIban] = useState('US64SVBKUS6S3300958879')
   const [stripeAccount, setStripeAccount] = useState('stripe@techphysic.com')
+  const [paymentNotes, setPaymentNotes] = useState('Wire transfers, Zelle, and cryptocurrency payments also accepted. Contact us for details.')
 
   const emailHtml = `
     <!DOCTYPE html>
@@ -142,12 +145,11 @@ export default function TestEmailTemplate() {
           }
           .payment-methods {
             margin: 32px 0;
-            padding: 24px 0;
-            border-top: 1px solid #f1f3f4;
+            padding: 0;
           }
           .payment-methods h3 {
-            font-size: 16px;
-            font-weight: 500;
+            font-size: 18px;
+            font-weight: 600;
             color: #202124;
             margin-bottom: 16px;
           }
@@ -164,43 +166,34 @@ export default function TestEmailTemplate() {
             color: #202124;
             line-height: 1.5;
           }
-          .payment-options {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 16px;
+          .payment-list {
             margin-bottom: 20px;
           }
-          .payment-option {
-            background: #ffffff;
-            border: 1px solid #e8eaed;
-            border-radius: 8px;
-            padding: 16px;
-            transition: box-shadow 0.2s ease;
+          .payment-item {
+            margin-bottom: 16px;
+            padding: 0;
           }
-          .payment-option:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          }
-          .payment-method-name {
-            font-size: 14px;
+          .payment-method {
+            font-size: 16px;
             font-weight: 600;
             color: #1a73e8;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
           }
-          .payment-details {
-            font-size: 13px;
+          .payment-info {
+            font-size: 14px;
             color: #5f6368;
             line-height: 1.4;
           }
           .payment-security {
-            background: #e8f0fe;
+            background: #f1f3f4;
             padding: 16px;
             border-radius: 4px;
-            border: 1px solid #dadce0;
+            border: 1px solid #e8eaed;
           }
           .payment-security p {
             margin: 0;
-            font-size: 13px;
-            color: #1a73e8;
+            font-size: 14px;
+            color: #5f6368;
             line-height: 1.4;
           }
           .footer {
@@ -308,58 +301,64 @@ export default function TestEmailTemplate() {
             </div>
 
             <div class="cta-section">
-              <a href="#" class="cta-button">
+              <a href="https://invoice-flow-vert.vercel.app/invoice/INV-0008" class="cta-button">
                 View Invoice Online
               </a>
             </div>
 
-            ${(paypalEmail || cashappId || venmoId || googlePayUpi || applePayId || bankAccount || stripeAccount) ? `
+            ${(paypalEmail || cashappId || venmoId || googlePayUpi || applePayId || bankAccount || stripeAccount || paymentNotes) ? `
             <div class="payment-methods">
               <h3>Payment Information</h3>
               <div class="payment-notice">
                 <p>Please use one of the following payment methods to settle this invoice. All payments are processed securely.</p>
               </div>
-              <div class="payment-options">
+              <div class="payment-list">
                 ${paypalEmail ? `
-                  <div class="payment-option">
-                    <div class="payment-method-name">PayPal</div>
-                    <div class="payment-details">Send payment to: ${paypalEmail}</div>
+                  <div class="payment-item">
+                    <div class="payment-method">PayPal</div>
+                    <div class="payment-info">Send payment to: ${paypalEmail}</div>
                   </div>
                 ` : ''}
                 ${cashappId ? `
-                  <div class="payment-option">
-                    <div class="payment-method-name">Cash App</div>
-                    <div class="payment-details">Send to: $${cashappId}</div>
+                  <div class="payment-item">
+                    <div class="payment-method">Cash App</div>
+                    <div class="payment-info">Send to: $${cashappId}</div>
                   </div>
                 ` : ''}
                 ${venmoId ? `
-                  <div class="payment-option">
-                    <div class="payment-method-name">Venmo</div>
-                    <div class="payment-details">Send to: @${venmoId}</div>
+                  <div class="payment-item">
+                    <div class="payment-method">Venmo</div>
+                    <div class="payment-info">Send to: @${venmoId}</div>
                   </div>
                 ` : ''}
                 ${googlePayUpi ? `
-                  <div class="payment-option">
-                    <div class="payment-method-name">Google Pay</div>
-                    <div class="payment-details">UPI ID: ${googlePayUpi}</div>
+                  <div class="payment-item">
+                    <div class="payment-method">Google Pay</div>
+                    <div class="payment-info">UPI ID: ${googlePayUpi}</div>
                   </div>
                 ` : ''}
                 ${applePayId ? `
-                  <div class="payment-option">
-                    <div class="payment-method-name">Apple Pay</div>
-                    <div class="payment-details">Send to: ${applePayId}</div>
+                  <div class="payment-item">
+                    <div class="payment-method">Apple Pay</div>
+                    <div class="payment-info">Send to: ${applePayId}</div>
                   </div>
                 ` : ''}
                 ${bankAccount ? `
-                  <div class="payment-option">
-                    <div class="payment-method-name">Bank Transfer</div>
-                    <div class="payment-details">${bankAccount}</div>
+                  <div class="payment-item">
+                    <div class="payment-method">Bank Transfer</div>
+                    <div class="payment-info">${bankAccount}${bankIfscSwift ? `<br>IFSC/SWIFT: ${bankIfscSwift}` : ''}${bankIban ? `<br>IBAN: ${bankIban}` : ''}</div>
                   </div>
                 ` : ''}
                 ${stripeAccount ? `
-                  <div class="payment-option">
-                    <div class="payment-method-name">Credit/Debit Card</div>
-                    <div class="payment-details">Processed securely via Stripe</div>
+                  <div class="payment-item">
+                    <div class="payment-method">Credit/Debit Card</div>
+                    <div class="payment-info">Processed securely via Stripe</div>
+                  </div>
+                ` : ''}
+                ${paymentNotes ? `
+                  <div class="payment-item">
+                    <div class="payment-method">Other Payment Methods</div>
+                    <div class="payment-info">${paymentNotes}</div>
                   </div>
                 ` : ''}
               </div>
@@ -547,11 +546,38 @@ export default function TestEmailTemplate() {
                     />
                   </div>
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Bank IFSC/SWIFT</label>
+                    <input
+                      type="text"
+                      value={bankIfscSwift}
+                      onChange={(e) => setBankIfscSwift(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Bank IBAN</label>
+                    <input
+                      type="text"
+                      value={bankIban}
+                      onChange={(e) => setBankIban(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Stripe Account</label>
                     <input
                       type="text"
                       value={stripeAccount}
                       onChange={(e) => setStripeAccount(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Notes</label>
+                    <textarea
+                      value={paymentNotes}
+                      onChange={(e) => setPaymentNotes(e.target.value)}
+                      rows={3}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>

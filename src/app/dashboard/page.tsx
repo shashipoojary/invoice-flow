@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   FileText, Users, TrendingUp, 
   Clock, CheckCircle, AlertCircle, AlertTriangle, UserPlus, FilePlus, Sparkles, Receipt, Timer,
@@ -26,6 +27,7 @@ interface DashboardStats {
 export default function DashboardOverview() {
   const { user, loading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError, showWarning } = useToast();
+  const router = useRouter();
   
   // State
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -856,17 +858,36 @@ export default function DashboardOverview() {
 
   // Memoize calculations
   const recentInvoices = useMemo(() => Array.isArray(invoices) ? invoices.slice(0, 5) : [], [invoices]);
-  const totalRevenue = useMemo(() => dashboardStats.totalRevenue || 0, [dashboardStats.totalRevenue]);
-  const overdueCount = useMemo(() => dashboardStats.overdueCount || 0, [dashboardStats.overdueCount]);
-  const totalClients = useMemo(() => dashboardStats.totalClients || 0, [dashboardStats.totalClients]);
   
-  // Calculate total payable amount including late fees
+  // Calculate total revenue (only paid invoices)
+  const totalRevenue = useMemo(() => {
+    return invoices
+      .filter(invoice => invoice.status === 'paid')
+      .reduce((total, invoice) => total + invoice.total, 0);
+  }, [invoices]);
+  
+  // Calculate total payable (only pending invoices, excluding draft)
   const totalPayableAmount = useMemo(() => {
-    return invoices.reduce((total, invoice) => {
-      const charges = calculateDueCharges(invoice);
-      return total + charges.totalPayable;
-    }, 0);
+    return invoices
+      .filter(invoice => invoice.status === 'sent')
+      .reduce((total, invoice) => {
+        const charges = calculateDueCharges(invoice);
+        return total + charges.totalPayable;
+      }, 0);
   }, [invoices, calculateDueCharges]);
+  
+  // Calculate overdue count (only sent invoices that are overdue)
+  const overdueCount = useMemo(() => {
+    const today = new Date();
+    return invoices.filter(invoice => {
+      if (invoice.status !== 'sent') return false;
+      const dueDate = new Date(invoice.dueDate);
+      return dueDate < today;
+    }).length;
+  }, [invoices]);
+  
+  // Calculate total clients
+  const totalClients = useMemo(() => clients.length, [clients]);
   
   // Calculate total late fees
   const totalLateFees = useMemo(() => {
@@ -875,6 +896,23 @@ export default function DashboardOverview() {
       return total + charges.lateFeeAmount;
     }, 0);
   }, [invoices, calculateDueCharges]);
+
+  // Navigation functions for dashboard cards
+  const handlePaidInvoicesClick = useCallback(() => {
+    router.push('/dashboard/invoices?status=paid');
+  }, [router]);
+
+  const handlePendingInvoicesClick = useCallback(() => {
+    router.push('/dashboard/invoices?status=sent');
+  }, [router]);
+
+  const handleOverdueInvoicesClick = useCallback(() => {
+    router.push('/dashboard/invoices?status=overdue');
+  }, [router]);
+
+  const handleClientsClick = useCallback(() => {
+    router.push('/dashboard/clients');
+  }, [router]);
 
   // Only show loading spinner if user is not authenticated yet
   if (loading && !user) {
@@ -963,7 +1001,10 @@ export default function DashboardOverview() {
               {/* Stats Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Total Revenue */}
-                <div className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                <button 
+                  onClick={handlePaidInvoicesClick}
+                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-emerald-500' : 'bg-white/70 border border-gray-200 hover:border-emerald-500'} backdrop-blur-sm`}
+                >
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Revenue</p>
@@ -983,10 +1024,13 @@ export default function DashboardOverview() {
                       <Receipt className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                     </div>
                   </div>
-                </div>
+                </button>
 
                 {/* Outstanding Amount */}
-                <div className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                <button 
+                  onClick={handlePendingInvoicesClick}
+                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-amber-500' : 'bg-white/70 border border-gray-200 hover:border-amber-500'} backdrop-blur-sm`}
+                >
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Payable</p>
@@ -1013,10 +1057,13 @@ export default function DashboardOverview() {
                       <Timer className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                     </div>
                   </div>
-                </div>
+                </button>
 
                 {/* Overdue Invoices */}
-                <div className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                <button 
+                  onClick={handleOverdueInvoicesClick}
+                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-red-500' : 'bg-white/70 border border-gray-200 hover:border-red-500'} backdrop-blur-sm`}
+                >
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Overdue</p>
@@ -1036,10 +1083,13 @@ export default function DashboardOverview() {
                       <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
                     </div>
                   </div>
-                </div>
+                </button>
 
                 {/* Total Clients */}
-                <div className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                <button 
+                  onClick={handleClientsClick}
+                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-indigo-500' : 'bg-white/70 border border-gray-200 hover:border-indigo-500'} backdrop-blur-sm`}
+                >
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
                       <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Clients</p>
@@ -1059,7 +1109,7 @@ export default function DashboardOverview() {
                       <Users className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                     </div>
                   </div>
-                </div>
+                </button>
               </div>
             </div>
 

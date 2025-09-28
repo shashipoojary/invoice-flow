@@ -86,14 +86,11 @@ export async function GET(
           address: settingsData.address || '',
           email: settingsData.business_email || '',
           paypalEmail: settingsData.paypal_email || '',
-          cashappId: settingsData.cashapp_id || '',
           venmoId: settingsData.venmo_id || '',
           googlePayUpi: settingsData.google_pay_upi || '',
-          applePayId: settingsData.apple_pay_id || '',
           bankAccount: settingsData.bank_account || '',
           bankIfscSwift: settingsData.bank_ifsc_swift || '',
           bankIban: settingsData.bank_iban || '',
-          stripeAccount: settingsData.stripe_account || '',
           paymentNotes: settingsData.payment_notes || ''
         } : {
           businessName: 'Your Business',
@@ -101,14 +98,11 @@ export async function GET(
           address: '',
           email: '',
           paypalEmail: '',
-          cashappId: '',
           venmoId: '',
           googlePayUpi: '',
-          applePayId: '',
           bankAccount: '',
           bankIfscSwift: '',
           bankIban: '',
-          stripeAccount: '',
           paymentNotes: ''
         }
       }

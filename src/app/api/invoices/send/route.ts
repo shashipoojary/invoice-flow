@@ -245,12 +245,11 @@ export async function POST(request: NextRequest) {
             }
             .payment-methods {
               margin: 32px 0;
-              padding: 24px 0;
-              border-top: 1px solid #f1f3f4;
+              padding: 0;
             }
             .payment-methods h3 {
-              font-size: 16px;
-              font-weight: 500;
+              font-size: 18px;
+              font-weight: 600;
               color: #202124;
               margin-bottom: 16px;
             }
@@ -267,43 +266,34 @@ export async function POST(request: NextRequest) {
               color: #202124;
               line-height: 1.5;
             }
-            .payment-options {
-              display: grid;
-              grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-              gap: 16px;
+            .payment-list {
               margin-bottom: 20px;
             }
-            .payment-option {
-              background: #ffffff;
-              border: 1px solid #e8eaed;
-              border-radius: 8px;
-              padding: 16px;
-              transition: box-shadow 0.2s ease;
+            .payment-item {
+              margin-bottom: 16px;
+              padding: 0;
             }
-            .payment-option:hover {
-              box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            }
-            .payment-method-name {
-              font-size: 14px;
+            .payment-method {
+              font-size: 16px;
               font-weight: 600;
               color: #1a73e8;
-              margin-bottom: 8px;
+              margin-bottom: 4px;
             }
-            .payment-details {
-              font-size: 13px;
+            .payment-info {
+              font-size: 14px;
               color: #5f6368;
               line-height: 1.4;
             }
             .payment-security {
-              background: #e8f0fe;
+              background: #f1f3f4;
               padding: 16px;
               border-radius: 4px;
-              border: 1px solid #dadce0;
+              border: 1px solid #e8eaed;
             }
             .payment-security p {
               margin: 0;
-              font-size: 13px;
-              color: #1a73e8;
+              font-size: 14px;
+              color: #5f6368;
               line-height: 1.4;
             }
             .footer {
@@ -410,60 +400,66 @@ export async function POST(request: NextRequest) {
                 ${invoice.notes ? `<p><strong>Notes:</strong> ${invoice.notes}</p>` : ''}
               </div>
 
-              <div class="cta-section">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invoice/${invoice.public_token}" 
-                   class="cta-button">
-                  View Invoice Online
-                </a>
-              </div>
+                 <div class="cta-section">
+                   <a href="https://invoice-flow-vert.vercel.app/invoice/${invoice.public_token}" 
+                      class="cta-button">
+                     View Invoice Online
+                   </a>
+                 </div>
 
-              ${(businessSettings.paypalEmail || businessSettings.cashappId || businessSettings.venmoId || businessSettings.googlePayUpi || businessSettings.applePayId || businessSettings.bankAccount || businessSettings.stripeAccount) ? `
+              ${(businessSettings.paypalEmail || businessSettings.cashappId || businessSettings.venmoId || businessSettings.googlePayUpi || businessSettings.applePayId || businessSettings.bankAccount || businessSettings.stripeAccount || businessSettings.paymentNotes) ? `
               <div class="payment-methods">
                 <h3>Payment Information</h3>
                 <div class="payment-notice">
                   <p>Please use one of the following payment methods to settle this invoice. All payments are processed securely.</p>
                 </div>
-                <div class="payment-options">
+                <div class="payment-list">
                   ${businessSettings.paypalEmail ? `
-                    <div class="payment-option">
-                      <div class="payment-method-name">PayPal</div>
-                      <div class="payment-details">Send payment to: ${businessSettings.paypalEmail}</div>
+                    <div class="payment-item">
+                      <div class="payment-method">PayPal</div>
+                      <div class="payment-info">Send payment to: ${businessSettings.paypalEmail}</div>
                     </div>
                   ` : ''}
                   ${businessSettings.cashappId ? `
-                    <div class="payment-option">
-                      <div class="payment-method-name">Cash App</div>
-                      <div class="payment-details">Send to: $${businessSettings.cashappId}</div>
+                    <div class="payment-item">
+                      <div class="payment-method">Cash App</div>
+                      <div class="payment-info">Send to: $${businessSettings.cashappId}</div>
                     </div>
                   ` : ''}
                   ${businessSettings.venmoId ? `
-                    <div class="payment-option">
-                      <div class="payment-method-name">Venmo</div>
-                      <div class="payment-details">Send to: @${businessSettings.venmoId}</div>
+                    <div class="payment-item">
+                      <div class="payment-method">Venmo</div>
+                      <div class="payment-info">Send to: @${businessSettings.venmoId}</div>
                     </div>
                   ` : ''}
                   ${businessSettings.googlePayUpi ? `
-                    <div class="payment-option">
-                      <div class="payment-method-name">Google Pay</div>
-                      <div class="payment-details">UPI ID: ${businessSettings.googlePayUpi}</div>
+                    <div class="payment-item">
+                      <div class="payment-method">Google Pay</div>
+                      <div class="payment-info">UPI ID: ${businessSettings.googlePayUpi}</div>
                     </div>
                   ` : ''}
                   ${businessSettings.applePayId ? `
-                    <div class="payment-option">
-                      <div class="payment-method-name">Apple Pay</div>
-                      <div class="payment-details">Send to: ${businessSettings.applePayId}</div>
+                    <div class="payment-item">
+                      <div class="payment-method">Apple Pay</div>
+                      <div class="payment-info">Send to: ${businessSettings.applePayId}</div>
                     </div>
                   ` : ''}
                   ${businessSettings.bankAccount ? `
-                    <div class="payment-option">
-                      <div class="payment-method-name">Bank Transfer</div>
-                      <div class="payment-details">${businessSettings.bankAccount}</div>
+                    <div class="payment-item">
+                      <div class="payment-method">Bank Transfer</div>
+                      <div class="payment-info">${businessSettings.bankAccount}${businessSettings.bankIfscSwift ? `<br>IFSC/SWIFT: ${businessSettings.bankIfscSwift}` : ''}${businessSettings.bankIban ? `<br>IBAN: ${businessSettings.bankIban}` : ''}</div>
                     </div>
                   ` : ''}
                   ${businessSettings.stripeAccount ? `
-                    <div class="payment-option">
-                      <div class="payment-method-name">Credit/Debit Card</div>
-                      <div class="payment-details">Processed securely via Stripe</div>
+                    <div class="payment-item">
+                      <div class="payment-method">Credit/Debit Card</div>
+                      <div class="payment-info">Processed securely via Stripe</div>
+                    </div>
+                  ` : ''}
+                  ${businessSettings.paymentNotes ? `
+                    <div class="payment-item">
+                      <div class="payment-method">Other Payment Methods</div>
+                      <div class="payment-info">${businessSettings.paymentNotes}</div>
                     </div>
                   ` : ''}
                 </div>
