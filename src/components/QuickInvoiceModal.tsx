@@ -9,7 +9,9 @@ import {
   Clock, CreditCard, AlertTriangle, Trash2,
   Zap
 } from 'lucide-react'
+import TemplateSelector from './TemplateSelector'
 import { Invoice } from '@/types'
+import { useToast } from '@/hooks/useToast'
 
 interface QuickInvoiceModalProps {
   isOpen: boolean
@@ -20,6 +22,9 @@ interface QuickInvoiceModalProps {
   isDarkMode?: boolean
   clients?: Client[]
   editingInvoice?: Invoice | null
+  showSuccess?: (message: string) => void
+  showError?: (message: string) => void
+  showWarning?: (message: string) => void
 }
 
 interface Client {
@@ -79,6 +84,7 @@ interface PaymentTerms {
 }
 
 interface InvoiceTheme {
+  template: number // 1, 2, or 3
   primaryColor: string
   secondaryColor: string
   accentColor: string
@@ -91,9 +97,18 @@ export default function QuickInvoiceModal({
   getAuthHeaders,
   isDarkMode = false,
   clients: propClients = [],
-  editingInvoice = null
+  editingInvoice = null,
+  showSuccess: propShowSuccess,
+  showError: propShowError,
+  showWarning: propShowWarning
 }: QuickInvoiceModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
+  const { showSuccess: localShowSuccess, showError: localShowError, showWarning: localShowWarning } = useToast()
+  
+  // Use passed toast functions if available, otherwise use local ones
+  const showSuccess = propShowSuccess || localShowSuccess
+  const showError = propShowError || localShowError
+  const showWarning = propShowWarning || localShowWarning
   const [clients, setClients] = useState<Client[]>([])
   const [selectedClientId, setSelectedClientId] = useState('')
   const [newClient, setNewClient] = useState({
@@ -161,10 +176,12 @@ export default function QuickInvoiceModal({
   
   // Invoice theme
   const [theme, setTheme] = useState<InvoiceTheme>({
-    primaryColor: '#4f46e5', // indigo-600
-    secondaryColor: '#6366f1', // indigo-500
+    template: 1, // Default to template 1
+    primaryColor: '#5C2D91', // Template 1 default
+    secondaryColor: '#8B5CF6', // Template 1 default
     accentColor: '#8b5cf6' // violet-500
   })
+  
 
   const fetchClients = useCallback(async () => {
     try {
@@ -271,7 +288,13 @@ export default function QuickInvoiceModal({
       
       // Set theme
       if (editingInvoice.theme) {
-        setTheme(editingInvoice.theme)
+        const invoiceTheme = editingInvoice.theme as { template?: number; primaryColor: string; secondaryColor: string; accentColor: string };
+        setTheme({
+          template: invoiceTheme.template || 1,
+          primaryColor: invoiceTheme.primaryColor,
+          secondaryColor: invoiceTheme.secondaryColor,
+          accentColor: invoiceTheme.accentColor
+        })
       }
     }
   }, [isOpen, editingInvoice])
@@ -308,6 +331,85 @@ export default function QuickInvoiceModal({
     }
   }
 
+  const handleCreateDraft = async () => {
+    setLoading(true)
+
+    try {
+      calculateTotals()
+      // Calculate totals for validation
+
+      // Validate required fields
+      if (!selectedClientId && !newClient.name) {
+        showWarning('Please select a client or enter client details')
+        return
+      }
+
+      if (items.some(item => !item.description || !item.amount || parseFloat(item.amount.toString()) <= 0)) {
+        showWarning('Please fill in all item details with valid amounts')
+        return
+      }
+
+      const payload = {
+        client_id: selectedClientId || undefined,
+        client_data: selectedClientId ? undefined : newClient,
+        items: items.map(item => ({
+          description: item.description,
+          rate: parseFloat(item.amount.toString()) || 0,
+          line_total: parseFloat(item.amount.toString()) || 0
+        })),
+        due_date: dueDate,
+        notes: notes,
+        billing_choice: 'subscription',
+        type: 'detailed',
+        // Enhanced features
+        payment_terms: paymentTerms.enabled ? {
+          enabled: true,
+          terms: paymentTerms.defaultOption
+        } : undefined,
+        late_fees: lateFees.enabled ? {
+          enabled: true,
+          type: lateFees.type,
+          amount: lateFees.amount,
+          gracePeriod: lateFees.gracePeriod
+        } : undefined,
+        reminders: reminders.enabled ? {
+          enabled: true,
+          useSystemDefaults: reminders.useSystemDefaults,
+          rules: reminders.rules.filter(rule => rule.enabled)
+        } : undefined,
+        theme: {
+          template: theme.template,
+          primary_color: theme.primaryColor,
+          secondary_color: theme.secondaryColor,
+          accent_color: theme.accentColor
+        }
+      }
+
+      const headers = await getAuthHeaders()
+      const response = await fetch('/api/invoices/create', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload)
+      })
+
+      const result = await response.json()
+
+      if (response.ok && result.invoice) {
+        showSuccess('Invoice created and saved as draft!')
+        onSuccess()
+        onClose()
+      } else {
+        throw new Error(result.error || 'Failed to create invoice')
+      }
+
+    } catch (error) {
+      console.error('Error creating invoice:', error)
+      showError('Failed to create invoice. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -318,12 +420,12 @@ export default function QuickInvoiceModal({
 
       // Validate required fields
       if (!selectedClientId && !newClient.name) {
-        alert('Please select a client or enter client details')
+        showWarning('Please select a client or enter client details')
         return
       }
 
       if (items.some(item => !item.description || !item.amount || parseFloat(item.amount.toString()) <= 0)) {
-        alert('Please fill in all item details with valid amounts')
+        showWarning('Please fill in all item details with valid amounts')
         return
       }
 
@@ -362,6 +464,7 @@ export default function QuickInvoiceModal({
           terms: paymentTerms.defaultOption
         } : { enabled: false },
         theme: {
+          template: theme.template,
           primary_color: theme.primaryColor,
           secondary_color: theme.secondaryColor,
           accent_color: theme.accentColor
@@ -394,9 +497,9 @@ export default function QuickInvoiceModal({
         })
 
         if (sendResponse.ok) {
-          alert('Invoice created and sent successfully!')
+          showSuccess('Invoice created and sent successfully!')
         } else {
-          alert('Invoice created but failed to send. You can send it later from the invoice list.')
+          showWarning('Invoice created but failed to send. You can send it later from the invoice list.')
         }
       } else {
         throw new Error(result.error || 'Failed to create invoice')
@@ -407,7 +510,7 @@ export default function QuickInvoiceModal({
 
     } catch (error) {
       console.error('Error creating invoice:', error)
-      alert('Failed to create invoice. Please try again.')
+      showError('Failed to create invoice. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -434,12 +537,12 @@ export default function QuickInvoiceModal({
     try {
       // Validate required fields for PDF generation
       if (!selectedClientId && !newClient.name) {
-        alert('Please select a client or enter client details')
+        showWarning('Please select a client or enter client details')
         return
       }
 
       if (items.some(item => !item.description || !item.amount || parseFloat(item.amount.toString()) <= 0)) {
-        alert('Please fill in all item details with valid amounts')
+        showWarning('Please fill in all item details with valid amounts')
         return
       }
 
@@ -478,6 +581,7 @@ export default function QuickInvoiceModal({
           terms: paymentTerms.defaultOption
         } : { enabled: false },
         theme: {
+          template: theme.template,
           primary_color: theme.primaryColor,
           secondary_color: theme.secondaryColor,
           accent_color: theme.accentColor
@@ -503,14 +607,14 @@ export default function QuickInvoiceModal({
         a.click()
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
-        alert('PDF generated successfully!')
+        showSuccess('PDF generated successfully!')
       } else {
         throw new Error('Failed to generate PDF')
       }
 
     } catch (error) {
       console.error('Error generating PDF:', error)
-      alert('Failed to generate PDF. Please try again.')
+      showError('Failed to generate PDF. Please try again.')
     } finally {
       setPdfLoading(false)
     }
@@ -1117,6 +1221,21 @@ export default function QuickInvoiceModal({
                 }`}>Configure reminders, late fees, payment terms and colors</p>
               </div>
 
+              {/* Template Selection */}
+              <div className={`p-5 rounded-lg border ${
+                isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'
+              }`}>
+                <TemplateSelector
+                  selectedTemplate={theme.template}
+                  onTemplateSelect={(template) => setTheme(prevTheme => ({...prevTheme, template}))}
+                  primaryColor={theme.primaryColor}
+                  onPrimaryColorChange={(color) => setTheme(prevTheme => ({...prevTheme, primaryColor: color}))}
+                  secondaryColor={theme.secondaryColor}
+                  onSecondaryColorChange={(color) => setTheme(prevTheme => ({...prevTheme, secondaryColor: color}))}
+                  isDarkMode={isDarkMode}
+                />
+              </div>
+
               {/* Auto Reminders */}
               <div className={`p-5 rounded-lg border ${
                 isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'
@@ -1343,61 +1462,95 @@ export default function QuickInvoiceModal({
                 </div>
 
                 {lateFees.enabled && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className={`block text-xs font-medium mb-1 ${
-                        isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  <div className="space-y-4">
+                    {/* Helpful description */}
+                    <div className={`p-3 rounded-lg ${
+                      isDarkMode ? 'bg-orange-500/10 border border-orange-500/20' : 'bg-orange-50 border border-orange-200'
+                    }`}>
+                      <p className={`text-xs ${
+                        isDarkMode ? 'text-orange-300' : 'text-orange-700'
                       }`}>
-                        Fee Type
-                      </label>
-                      <select
-                        value={lateFees.type}
-                        onChange={(e) => setLateFees({...lateFees, type: e.target.value as 'fixed' | 'percentage'})}
-                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                          isDarkMode 
-                            ? 'border-gray-600 bg-gray-800 text-white' 
-                            : 'border-gray-300 bg-white text-gray-900'
-                        }`}
-                      >
-                        <option value="fixed">Fixed Amount</option>
-                        <option value="percentage">Percentage</option>
-                      </select>
+                        💡 <strong>Late fees</strong> are automatically added to overdue invoices. Choose between a fixed dollar amount or a percentage of the invoice total.
+                      </p>
                     </div>
-                    <div>
-                      <label className={`block text-xs font-medium mb-1 ${
-                        isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                      }`}>
-                        Amount
-                      </label>
-                      <input
-                        type="number"
-                        value={lateFees.amount}
-                        onChange={(e) => setLateFees({...lateFees, amount: parseFloat(e.target.value) || 0})}
-                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                          isDarkMode 
-                            ? 'border-gray-600 bg-gray-800 text-white' 
-                            : 'border-gray-300 bg-white text-gray-900'
-                        }`}
-                        placeholder={lateFees.type === 'fixed' ? '25.00' : '5'}
-                      />
-                    </div>
-                    <div>
-                      <label className={`block text-xs font-medium mb-1 ${
-                        isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                      }`}>
-                        Grace Period (days)
-                      </label>
-                      <input
-                        type="number"
-                        value={lateFees.gracePeriod}
-                        onChange={(e) => setLateFees({...lateFees, gracePeriod: parseInt(e.target.value) || 0})}
-                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                          isDarkMode 
-                            ? 'border-gray-600 bg-gray-800 text-white' 
-                            : 'border-gray-300 bg-white text-gray-900'
-                        }`}
-                        placeholder="7"
-                      />
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className={`block text-xs font-medium mb-1 ${
+                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                        }`}>
+                          Fee Type
+                        </label>
+                        <select
+                          value={lateFees.type}
+                          onChange={(e) => setLateFees({...lateFees, type: e.target.value as 'fixed' | 'percentage'})}
+                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                            isDarkMode 
+                              ? 'border-gray-600 bg-gray-800 text-white' 
+                              : 'border-gray-300 bg-white text-gray-900'
+                          }`}
+                        >
+                          <option value="fixed">Fixed Amount ($)</option>
+                          <option value="percentage">Percentage (%)</option>
+                        </select>
+                        <p className={`text-xs mt-1 ${
+                          isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                        }`}>
+                          {lateFees.type === 'fixed' ? 'Fixed dollar amount' : 'Percentage of invoice total'}
+                        </p>
+                      </div>
+                      <div>
+                        <label className={`block text-xs font-medium mb-1 ${
+                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                        }`}>
+                          Amount {lateFees.type === 'percentage' && <span className="text-orange-600">(%)</span>}
+                        </label>
+                        <input
+                          type="number"
+                          value={lateFees.amount}
+                          onChange={(e) => setLateFees({...lateFees, amount: parseFloat(e.target.value) || 0})}
+                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                            isDarkMode 
+                              ? 'border-gray-600 bg-gray-800 text-white' 
+                              : 'border-gray-300 bg-white text-gray-900'
+                          }`}
+                          placeholder={lateFees.type === 'fixed' ? '25.00' : '5'}
+                          min="0"
+                          max={lateFees.type === 'percentage' ? '100' : undefined}
+                        />
+                        <p className={`text-xs mt-1 ${
+                          isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                        }`}>
+                          {lateFees.type === 'fixed' 
+                            ? 'e.g., $25.00 per late invoice' 
+                            : 'e.g., 5% of invoice total'
+                          }
+                        </p>
+                      </div>
+                      <div>
+                        <label className={`block text-xs font-medium mb-1 ${
+                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                        }`}>
+                          Grace Period (days)
+                        </label>
+                        <input
+                          type="number"
+                          value={lateFees.gracePeriod}
+                          onChange={(e) => setLateFees({...lateFees, gracePeriod: parseInt(e.target.value) || 0})}
+                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                            isDarkMode 
+                              ? 'border-gray-600 bg-gray-800 text-white' 
+                              : 'border-gray-300 bg-white text-gray-900'
+                          }`}
+                          placeholder="7"
+                          min="0"
+                        />
+                        <p className={`text-xs mt-1 ${
+                          isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                        }`}>
+                          Days after due date before late fees apply
+                        </p>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1850,6 +2003,29 @@ export default function QuickInvoiceModal({
                     <>
                   <Download className="h-4 w-4" />
                   <span>Generate PDF</span>
+                    </>
+                  )}
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={handleCreateDraft}
+                  disabled={loading}
+                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 ${
+                    isDarkMode 
+                      ? 'bg-gray-600 text-white hover:bg-gray-700' 
+                      : 'bg-gray-500 text-white hover:bg-gray-600'
+                  }`}
+                >
+                  {loading ? (
+                    <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Creating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4" />
+                      <span>Create</span>
                     </>
                   )}
                 </button>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X, DollarSign, Calendar, FileText, User, Mail, ArrowRight, ArrowLeft, Clock, CheckCircle, Send } from 'lucide-react'
 import { Invoice } from '@/types'
+import { useToast } from '@/hooks/useToast'
 
 interface Client {
   id: string
@@ -20,14 +21,23 @@ interface FastInvoiceModalProps {
   isDarkMode?: boolean
   clients?: Client[]
   editingInvoice?: Invoice | null
+  showSuccess?: (message: string) => void
+  showError?: (message: string) => void
+  showWarning?: (message: string) => void
 }
 
 // Client interface removed - not used
 
-export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHeaders, isDarkMode = false, clients = [], editingInvoice = null }: FastInvoiceModalProps) {
+export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHeaders, isDarkMode = false, clients = [], editingInvoice = null, showSuccess: propShowSuccess, showError: propShowError, showWarning: propShowWarning }: FastInvoiceModalProps) {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [sendLoading, setSendLoading] = useState(false)
+  const { showSuccess: localShowSuccess, showError: localShowError, showWarning: localShowWarning } = useToast()
+  
+  // Use passed toast functions if available, otherwise use local ones
+  const showSuccess = propShowSuccess || localShowSuccess
+  const showError = propShowError || localShowError
+  const showWarning = propShowWarning || localShowWarning
   
   // Form data
   const [selectedClientId, setSelectedClientId] = useState('')
@@ -79,7 +89,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
     onClose()
   }
 
-  const handleCreateInvoice = async () => {
+  const handleCreateInvoice = async (showToast = true) => {
     setLoading(true)
 
     try {
@@ -126,7 +136,9 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
 
       if (invoiceResponse.ok) {
         const result = await invoiceResponse.json()
-        alert('Invoice created successfully!')
+        if (showToast) {
+          showSuccess('Invoice created and saved as draft!')
+        }
         onSuccess()
         onClose()
         resetForm()
@@ -136,7 +148,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
       }
     } catch (error) {
       console.error('Error creating invoice:', error)
-      alert('Failed to create invoice. Please try again.')
+      showError('Failed to create invoice. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -146,8 +158,8 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
     setSendLoading(true)
 
     try {
-      // First create the invoice
-      const invoice = await handleCreateInvoice()
+      // First create the invoice (without showing toast)
+      const invoice = await handleCreateInvoice(false)
       
       if (invoice) {
         // Then send it
@@ -167,14 +179,14 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         })
 
         if (sendResponse.ok) {
-          alert('Invoice created and sent successfully!')
+          showSuccess('Invoice created and sent successfully!')
         } else {
-          alert('Invoice created but failed to send. You can send it later from the invoice list.')
+          showWarning('Invoice created but failed to send. You can send it later from the invoice list.')
         }
       }
     } catch (error) {
       console.error('Error creating and sending invoice:', error)
-      alert('Failed to create and send invoice. Please try again.')
+      showError('Failed to create and send invoice. Please try again.')
     } finally {
       setSendLoading(false)
     }
@@ -547,7 +559,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                 </button>
                 <button
                   type="button"
-                  onClick={handleCreateInvoice}
+                  onClick={() => handleCreateInvoice()}
                   disabled={loading || sendLoading}
                   className={`flex-1 px-3 py-2 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-xs disabled:opacity-50 ${
                     isDarkMode 

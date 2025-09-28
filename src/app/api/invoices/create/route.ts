@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
 
         // Fetch business settings for PDF generation
         const { data: settingsData, error: settingsError } = await supabase
-          .from('business_settings')
+          .from('user_settings')
           .select('*')
           .eq('user_id', user.id)
           .single();
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
           businessEmail: settingsData.business_email,
           businessPhone: settingsData.business_phone,
           address: settingsData.business_address,
-          logo: settingsData.logo_url,
+          logo: settingsData.logo || settingsData.logo_url,
           bankAccount: settingsData.bank_account,
           bankIfscSwift: settingsData.bank_ifsc_swift,
           bankIban: settingsData.bank_iban,
@@ -193,23 +193,43 @@ export async function POST(request: NextRequest) {
           })),
           taxRate: 0,
           taxAmount: 0,
-          paymentTerms: invoiceData.payment_terms || { enabled: false, terms: 'Net 30' },
-          lateFees: invoiceData.late_fees || { enabled: false, type: 'fixed', amount: 0, gracePeriod: 0 },
-          reminders: invoiceData.reminders || { enabled: false, useSystemDefaults: true, rules: [] },
+          // Only set advanced features for detailed invoices, not fast invoices
+          paymentTerms: invoiceData.type === 'fast' ? undefined : (invoiceData.payment_terms || { enabled: false, terms: 'Net 30' }),
+          lateFees: invoiceData.type === 'fast' ? undefined : (invoiceData.late_fees || { enabled: false, type: 'fixed', amount: 0, gracePeriod: 0 }),
+          reminders: invoiceData.type === 'fast' ? undefined : (invoiceData.reminders || { enabled: false, useSystemDefaults: true, rules: [] }),
           theme: invoiceData.theme || undefined,
         };
 
-        const { generatePDFBlob } = await import('@/lib/pdf-generator');
-        const pdfBlob = await generatePDFBlob(mappedInvoice, businessSettings);
-        const pdfBuffer = await pdfBlob.arrayBuffer();
-        
-        return new NextResponse(pdfBuffer, {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename="invoice-${invoiceNumberData}.pdf"`,
-          },
-        });
+        try {
+          const { generateTemplatePDFBlob } = await import('@/lib/template-pdf-generator');
+          
+          // Extract template and colors from theme
+          const invoiceTheme = invoiceData.theme as { template?: number; primary_color?: string; secondary_color?: string } | undefined;
+          // Use template 1 (FastInvoiceTemplate) for fast invoices, otherwise use theme template
+          const template = invoiceData.type === 'fast' ? 1 : (invoiceTheme?.template || 1);
+          const primaryColor = invoiceTheme?.primary_color || '#5C2D91';
+          const secondaryColor = invoiceTheme?.secondary_color || '#8B5CF6';
+          
+          console.log('PDF Generation - Template:', template, 'Primary:', primaryColor, 'Secondary:', secondaryColor);
+          console.log('PDF Generation - Mapped Invoice:', JSON.stringify(mappedInvoice, null, 2));
+          console.log('PDF Generation - Business Settings:', JSON.stringify(businessSettings, null, 2));
+          
+          const pdfBlob = await generateTemplatePDFBlob(mappedInvoice, businessSettings, template, primaryColor, secondaryColor);
+          const pdfBuffer = await pdfBlob.arrayBuffer();
+          
+          return new NextResponse(pdfBuffer, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/pdf',
+              'Content-Disposition': `attachment; filename="invoice-${invoiceNumberData}.pdf"`,
+            },
+          });
+        } catch (pdfError) {
+          console.error('PDF generation error:', pdfError);
+          console.error('PDF generation error details:', pdfError instanceof Error ? pdfError.message : 'Unknown error');
+          console.error('PDF generation stack:', pdfError instanceof Error ? pdfError.stack : 'No stack trace');
+          return NextResponse.json({ error: 'Failed to generate PDF', details: pdfError instanceof Error ? pdfError.message : 'Unknown error' }, { status: 500 });
+        }
       } catch (pdfError) {
         console.error('PDF generation error:', pdfError);
         return NextResponse.json({ error: 'Failed to generate PDF' }, { status: 500 });
@@ -253,11 +273,11 @@ export async function POST(request: NextRequest) {
       due_date: invoiceData.due_date,
       notes: invoiceData.notes || '',
       type: invoiceData.type || 'detailed',
-      // New enhanced fields
-      payment_terms: invoiceData.payment_terms ? JSON.stringify(invoiceData.payment_terms) : null,
-      late_fees: invoiceData.late_fees ? JSON.stringify(invoiceData.late_fees) : null,
-      reminders: invoiceData.reminders ? JSON.stringify(invoiceData.reminders) : null,
-      theme: invoiceData.theme ? JSON.stringify(invoiceData.theme) : null,
+      // New enhanced fields - only for detailed invoices
+      payment_terms: invoiceData.type === 'fast' ? null : (invoiceData.payment_terms ? JSON.stringify(invoiceData.payment_terms) : null),
+      late_fees: invoiceData.type === 'fast' ? null : (invoiceData.late_fees ? JSON.stringify(invoiceData.late_fees) : null),
+      reminders: invoiceData.type === 'fast' ? null : (invoiceData.reminders ? JSON.stringify(invoiceData.reminders) : null),
+      theme: invoiceData.type === 'fast' ? null : (invoiceData.theme ? JSON.stringify(invoiceData.theme) : null),
     };
 
     // Insert invoice
@@ -341,14 +361,18 @@ export async function POST(request: NextRequest) {
         description: item.description,
         amount: item.line_total
       })),
-      // Parse JSON fields with fallbacks for existing invoices (only for sent/unpaid)
-      paymentTerms: completeInvoice.payment_terms ? JSON.parse(completeInvoice.payment_terms) : 
-        { enabled: true, terms: 'Net 30' },
-      lateFees: completeInvoice.late_fees ? JSON.parse(completeInvoice.late_fees) : 
-        { enabled: true, type: 'fixed', amount: 50, gracePeriod: 7 },
-      reminders: completeInvoice.reminders ? JSON.parse(completeInvoice.reminders) : 
-        { enabled: true, useSystemDefaults: true, rules: [] },
-      theme: completeInvoice.theme ? JSON.parse(completeInvoice.theme) : undefined,
+      // Parse JSON fields with fallbacks for existing invoices (only for detailed invoices)
+      paymentTerms: completeInvoice.type === 'fast' ? undefined : 
+        (completeInvoice.payment_terms ? JSON.parse(completeInvoice.payment_terms) : 
+        { enabled: true, terms: 'Net 30' }),
+      lateFees: completeInvoice.type === 'fast' ? undefined : 
+        (completeInvoice.late_fees ? JSON.parse(completeInvoice.late_fees) : 
+        { enabled: true, type: 'fixed', amount: 50, gracePeriod: 7 }),
+      reminders: completeInvoice.type === 'fast' ? undefined : 
+        (completeInvoice.reminders ? JSON.parse(completeInvoice.reminders) : 
+        { enabled: true, useSystemDefaults: true, rules: [] }),
+      theme: completeInvoice.type === 'fast' ? undefined : 
+        (completeInvoice.theme ? JSON.parse(completeInvoice.theme) : undefined),
     };
 
 

@@ -66,19 +66,23 @@ export async function GET(
           description: item.description,
           amount: item.line_total
         })),
-        // Parse JSON fields with fallbacks for existing invoices (all statuses)
-        paymentTerms: invoice.payment_terms ? 
-          (typeof invoice.payment_terms === 'string' ? JSON.parse(invoice.payment_terms) : invoice.payment_terms) : 
-          { enabled: true, terms: 'Net 30' },
-        lateFees: invoice.late_fees ? 
-          (typeof invoice.late_fees === 'string' ? JSON.parse(invoice.late_fees) : invoice.late_fees) : 
-          { enabled: true, type: 'fixed', amount: 50, gracePeriod: 7 },
-        reminders: invoice.reminders ? 
-          (typeof invoice.reminders === 'string' ? JSON.parse(invoice.reminders) : invoice.reminders) : 
-          { enabled: true, useSystemDefaults: true, rules: [] },
-        theme: invoice.theme ? 
-          (typeof invoice.theme === 'string' ? JSON.parse(invoice.theme) : invoice.theme) : 
-          undefined,
+        // Parse JSON fields with fallbacks for existing invoices (only for detailed invoices)
+        paymentTerms: invoice.type === 'fast' ? undefined : 
+          (invoice.payment_terms ? 
+            (typeof invoice.payment_terms === 'string' ? JSON.parse(invoice.payment_terms) : invoice.payment_terms) : 
+            { enabled: true, terms: 'Net 30' }),
+        lateFees: invoice.type === 'fast' ? undefined : 
+          (invoice.late_fees ? 
+            (typeof invoice.late_fees === 'string' ? JSON.parse(invoice.late_fees) : invoice.late_fees) : 
+            { enabled: true, type: 'fixed', amount: 50, gracePeriod: 7 }),
+        reminders: invoice.type === 'fast' ? undefined : 
+          (invoice.reminders ? 
+            (typeof invoice.reminders === 'string' ? JSON.parse(invoice.reminders) : invoice.reminders) : 
+            { enabled: true, useSystemDefaults: true, rules: [] }),
+        theme: invoice.type === 'fast' ? undefined : 
+          (invoice.theme ? 
+            (typeof invoice.theme === 'string' ? JSON.parse(invoice.theme) : invoice.theme) : 
+            undefined),
       }
     })
 

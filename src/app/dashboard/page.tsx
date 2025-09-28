@@ -25,7 +25,7 @@ interface DashboardStats {
 
 export default function DashboardOverview() {
   const { user, loading, getAuthHeaders } = useAuth();
-  const { toasts, removeToast, showSuccess, showError } = useToast();
+  const { toasts, removeToast, showSuccess, showError, showWarning } = useToast();
   
   // State
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -292,8 +292,31 @@ export default function DashboardOverview() {
       // Debug: Log business settings being passed to PDF
       console.log('PDF Download - Business Settings:', businessSettings);
 
-      const { downloadPDF } = await import('@/lib/pdf-generator');
-      await downloadPDF(invoice, businessSettings);
+      const { generateTemplatePDFBlob } = await import('@/lib/template-pdf-generator');
+      
+      // Extract template and colors from invoice theme if available
+      const invoiceTheme = invoice.theme as { template?: number; primary_color?: string; secondary_color?: string } | undefined;
+      const template = invoiceTheme?.template || 1;
+      const primaryColor = invoiceTheme?.primary_color || '#5C2D91';
+      const secondaryColor = invoiceTheme?.secondary_color || '#8B5CF6';
+      
+      const pdfBlob = await generateTemplatePDFBlob(
+        invoice, 
+        businessSettings, 
+        template, 
+        primaryColor, 
+        secondaryColor
+      );
+      
+      // Create download link
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `invoice-${invoice.invoiceNumber}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
       
       showSuccess('PDF Downloaded', `Invoice ${invoice.invoiceNumber} has been downloaded.`);
     } catch (error) {
@@ -514,14 +537,14 @@ export default function DashboardOverview() {
             )}
             <div className="flex items-center justify-between">
               <span 
-                className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border`}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border`}
                 style={isDarkMode ? getStatusStyleDark(invoice.status) : getStatusStyle(invoice.status)}
               >
                 {getStatusIcon(invoice.status)}
-                {invoice.status}
+                <span className="capitalize">{invoice.status}</span>
               </span>
               {invoice.status === 'sent' && (
-                <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium ${
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
                   dueDateStatus.status === 'overdue' 
                     ? (isDarkMode ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-red-100 text-red-700 border border-red-200')
                     : dueDateStatus.status === 'due-today'
@@ -587,11 +610,11 @@ export default function DashboardOverview() {
             </div>
             <div className="flex items-center justify-between">
               <span 
-                className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border`}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border`}
                 style={isDarkMode ? getStatusStyleDark(invoice.status) : getStatusStyle(invoice.status)}
               >
                 {getStatusIcon(invoice.status)}
-                {invoice.status}
+                <span className="capitalize">{invoice.status}</span>
               </span>
               {invoice.status === 'sent' && (
                 <div className={`hidden lg:flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium ${
@@ -1200,29 +1223,34 @@ export default function DashboardOverview() {
           getAuthHeaders={getAuthHeaders}
           isDarkMode={isDarkMode}
           clients={clients}
+          showSuccess={showSuccess}
+          showError={showError}
+          showWarning={showWarning}
           onSuccess={() => {
             setShowFastInvoice(false);
-            // Refresh data after successful invoice creation
-            if (user && !loading) {
-              const loadData = async () => {
-                try {
-                  const headers = await getAuthHeaders();
-                  await Promise.all([
-                    fetch('/api/dashboard/stats', { headers, cache: 'no-store' })
-                      .then(res => res.json())
-                      .then(data => setDashboardStats(data))
-                      .catch(err => console.error('Error fetching dashboard stats:', err)),
-                    fetch('/api/invoices', { headers, cache: 'no-store' })
-                      .then(res => res.json())
-                      .then(data => setInvoices(Array.isArray(data.invoices) ? data.invoices : []))
-                      .catch(err => console.error('Error fetching invoices:', err))
-                  ]);
-                } catch (error) {
-                  console.error('Error refreshing data:', error);
-                }
-              };
-              loadData();
-            }
+            // Delay data refresh to allow toast to be visible
+            setTimeout(() => {
+              if (user && !loading) {
+                const loadData = async () => {
+                  try {
+                    const headers = await getAuthHeaders();
+                    await Promise.all([
+                      fetch('/api/dashboard/stats', { headers, cache: 'no-store' })
+                        .then(res => res.json())
+                        .then(data => setDashboardStats(data))
+                        .catch(err => console.error('Error fetching dashboard stats:', err)),
+                      fetch('/api/invoices', { headers, cache: 'no-store' })
+                        .then(res => res.json())
+                        .then(data => setInvoices(Array.isArray(data.invoices) ? data.invoices : []))
+                        .catch(err => console.error('Error fetching invoices:', err))
+                    ]);
+                  } catch (error) {
+                    console.error('Error refreshing data:', error);
+                  }
+                };
+                loadData();
+              }
+            }, 2000); // Wait 2 seconds for toast to be visible
           }}
         />
       )}
@@ -1513,14 +1541,19 @@ export default function DashboardOverview() {
            onSuccess={() => {
              setShowFastInvoice(false);
              setSelectedInvoice(null);
-             // Refresh invoices data
-             window.location.reload();
+             // Delay page reload to allow toast to be visible
+             setTimeout(() => {
+               window.location.reload();
+             }, 2000); // Wait 2 seconds for toast to be visible
            }}
            user={user!}
            getAuthHeaders={getAuthHeaders}
            isDarkMode={isDarkMode}
            clients={clients}
            editingInvoice={selectedInvoice}
+           showSuccess={showSuccess}
+           showError={showError}
+           showWarning={showWarning}
          />
        )}
 
@@ -1534,13 +1567,18 @@ export default function DashboardOverview() {
            onSuccess={() => {
              setShowCreateInvoice(false);
              setSelectedInvoice(null);
-             // Refresh invoices data
-             window.location.reload();
+             // Delay page reload to allow toast to be visible
+             setTimeout(() => {
+               window.location.reload();
+             }, 2000); // Wait 2 seconds for toast to be visible
            }}
            getAuthHeaders={getAuthHeaders}
            isDarkMode={isDarkMode}
            clients={clients}
            editingInvoice={selectedInvoice}
+           showSuccess={showSuccess}
+           showError={showError}
+           showWarning={showWarning}
          />
        )}
 

@@ -10,7 +10,10 @@ import { useToast } from '@/hooks/useToast';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
 import QuickInvoiceModal from '@/components/QuickInvoiceModal';
+import LazyLogo from '@/components/LazyLogo';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { FreelancerSettings, Client } from '@/types';
+import { optimizeLogo, validateLogoFile } from '@/lib/logo-optimizer';
 
 export default function SettingsPage() {
   const { user, loading, getAuthHeaders } = useAuth();
@@ -23,6 +26,16 @@ export default function SettingsPage() {
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isRemovingLogo, setIsRemovingLogo] = useState(false);
+  const [confirmationModal, setConfirmationModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'danger' as 'danger' | 'warning' | 'info',
+    onConfirm: () => {},
+    isLoading: false
+  });
   const [settings, setSettings] = useState<FreelancerSettings>({
     businessName: '',
     businessEmail: '',
@@ -138,69 +151,118 @@ export default function SettingsPage() {
     }
   };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        showError('File Too Large', 'Logo file must be smaller than 5MB.');
-        return;
-      }
+    if (!file) return;
 
-      // Check file type
-      if (!file.type.startsWith('image/')) {
-        showError('Invalid File Type', 'Please select an image file.');
-        return;
-      }
+    // Validate file
+    const validation = validateLogoFile(file);
+    if (!validation.valid) {
+      showError('Invalid File', validation.error || 'Please select a valid image file.');
+      return;
+    }
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        if (result) {
-          setSettings(prev => ({ ...prev, logo: result }));
-          showSuccess('Logo Uploaded', 'Logo has been uploaded successfully. Don\'t forget to save your settings.');
-        }
-      };
-      reader.onerror = () => {
-        showError('Upload Failed', 'Failed to read the logo file. Please try again.');
-      };
-      reader.readAsDataURL(file);
+    setIsUploadingLogo(true);
+
+    try {
+      // Optimize the logo on the frontend (browser environment)
+      const optimizedLogo = await optimizeLogo(file, 200, 200, 0.8);
+      
+      // Convert dataUrl back to File for upload
+      const dataResponse = await fetch(optimizedLogo.dataUrl);
+      const blob = await dataResponse.blob();
+      const optimizedFile = new File([blob], file.name, { type: blob.type });
+      
+      // Create form data for file upload
+      const formData = new FormData();
+      formData.append('logo', optimizedFile);
+
+      // Get auth headers (but exclude Content-Type for FormData)
+      const authHeaders = await getAuthHeaders();
+      const { 'Content-Type': _, ...headersWithoutContentType } = authHeaders;
+      
+      // Upload file to server
+      const response = await fetch('/api/upload-logo', {
+        method: 'POST',
+        headers: headersWithoutContentType, // Don't set Content-Type, let browser set it for FormData
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Update settings with the new logo URL
+        setSettings(prev => ({ ...prev, logo: data.logoUrl }));
+        
+        // Show success message
+        const fileSize = (file.size / 1024).toFixed(1);
+        showSuccess(
+          'Logo Uploaded Successfully', 
+          `Logo uploaded and optimized! File size: ${fileSize}KB. Your settings have been saved automatically.`
+        );
+      } else {
+        throw new Error(data.error || 'Failed to upload logo');
+      }
+    } catch (error) {
+      console.error('Logo upload error:', error);
+      showError('Upload Failed', 'Failed to upload the logo file. Please try again.');
+    } finally {
+      setIsUploadingLogo(false);
+      // Reset the input so the same file can be selected again
+      e.target.value = '';
     }
   };
 
   const handleRemoveLogo = () => {
-    if (confirm('Are you sure you want to remove the logo?')) {
-      setSettings(prev => ({ ...prev, logo: '' }));
-      showSuccess('Logo Removed', 'Logo has been removed. Don\'t forget to save your settings.');
-    }
+    setConfirmationModal({
+      isOpen: true,
+      title: 'Remove Logo',
+      message: 'Are you sure you want to remove your business logo? This action cannot be undone.',
+      type: 'warning',
+      onConfirm: async () => {
+        setConfirmationModal(prev => ({ ...prev, isOpen: false, isLoading: true }));
+        setIsRemovingLogo(true);
+        
+        try {
+          // Get auth headers
+          const headers = await getAuthHeaders();
+          
+          // Call the delete API
+          const response = await fetch('/api/upload-logo', {
+            method: 'DELETE',
+            headers
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            // Update settings to remove logo
+            setSettings(prev => ({ ...prev, logo: '' }));
+            showSuccess('Logo Removed', 'Logo has been removed successfully.');
+            
+            // Clear any file input values
+            const fileInputs = document.querySelectorAll('input[type="file"]');
+            fileInputs.forEach(input => {
+              if (input.id === 'logo-upload') {
+                (input as HTMLInputElement).value = '';
+              }
+            });
+          } else {
+            throw new Error(data.error || 'Failed to remove logo');
+          }
+        } catch (error) {
+          console.error('Logo removal error:', error);
+          showError('Removal Failed', 'Failed to remove the logo. Please try again.');
+        } finally {
+          setConfirmationModal(prev => ({ ...prev, isLoading: false }));
+          setIsRemovingLogo(false);
+        }
+      },
+      isLoading: false
+    });
   };
 
-  const handleSaveSettings = async () => {
-    setSaving(true);
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch('/api/settings', {
-        method: 'POST',
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(settings),
-      });
 
-      if (response.ok) {
-        showSuccess('Settings Saved', 'Your settings have been saved successfully.');
-      } else {
-        const errorData = await response.json();
-        showError('Save Failed', errorData.error || 'Failed to save settings. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      showError('Save Failed', 'Failed to save settings. Please try again.');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   // Only show loading spinner if user is not authenticated yet
   if (loading && !user) {
@@ -365,14 +427,16 @@ export default function SettingsPage() {
                         ? 'border-gray-600 hover:border-gray-500 bg-gray-800/50' 
                         : 'border-gray-300 hover:border-gray-400 bg-gray-50'
                     }`}>
-                      {settings.logo ? (
+                      {settings.logo && settings.logo.trim() !== '' ? (
                         <div className="space-y-4">
                           <div className="flex justify-center">
                             <div className="w-24 h-24 border rounded-lg flex items-center justify-center bg-white dark:bg-gray-700 overflow-hidden">
-                              <img 
+                              <LazyLogo 
                                 src={settings.logo} 
                                 alt="Business Logo Preview" 
-                                className="w-full h-full object-contain"
+                                className="w-full h-full"
+                                width={96}
+                                height={96}
                               />
                             </div>
                           </div>
@@ -394,19 +458,39 @@ export default function SettingsPage() {
                             />
                             <label
                               htmlFor="logo-upload"
-                              className="cursor-pointer"
+                              className={`cursor-pointer ${isUploadingLogo ? 'pointer-events-none opacity-50' : ''}`}
                             >
                               <div className={`flex items-center space-x-2 px-4 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:text-gray-100' : 'border-gray-300 text-gray-700 hover:text-gray-900'}`}>
-                                <Upload className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                                <span className="text-sm">Change Logo</span>
+                                {isUploadingLogo ? (
+                                  <Loader2 className={`h-4 w-4 animate-spin ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                                ) : (
+                                  <Upload className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                                )}
+                                <span className="text-sm">
+                                  {isUploadingLogo ? 'Optimizing...' : 'Change Logo'}
+                                </span>
                               </div>
                             </label>
                             <button
                               type="button"
                               onClick={handleRemoveLogo}
-                              className={`flex items-center space-x-2 px-4 py-2 border rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors ${isDarkMode ? 'border-red-600 text-red-400 hover:text-red-300' : 'border-red-300 text-red-600 hover:text-red-800'}`}
+                              disabled={isRemovingLogo}
+                              className={`flex items-center space-x-2 px-4 py-2 border rounded-lg transition-colors ${
+                                isRemovingLogo 
+                                  ? 'opacity-50 cursor-not-allowed border-gray-300 text-gray-500 dark:border-gray-600 dark:text-gray-400'
+                                  : isDarkMode 
+                                    ? 'border-red-600 text-red-400 hover:text-red-300 hover:bg-red-900/20' 
+                                    : 'border-red-300 text-red-600 hover:text-red-800 hover:bg-red-50'
+                              }`}
                             >
-                              <span className="text-sm">Remove</span>
+                              {isRemovingLogo ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                                  <span className="text-sm">Removing...</span>
+                                </>
+                              ) : (
+                                <span className="text-sm">Remove</span>
+                              )}
                             </button>
                           </div>
                         </div>
@@ -436,11 +520,17 @@ export default function SettingsPage() {
                           />
                           <label
                             htmlFor="logo-upload"
-                            className="cursor-pointer"
+                            className={`cursor-pointer ${isUploadingLogo ? 'pointer-events-none opacity-50' : ''}`}
                           >
                             <div className={`inline-flex items-center space-x-2 px-6 py-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:text-gray-100' : 'border-gray-300 text-gray-700 hover:text-gray-900'}`}>
-                              <Upload className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                              <span className="text-sm font-medium">Choose Logo File</span>
+                              {isUploadingLogo ? (
+                                <Loader2 className={`h-4 w-4 animate-spin ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                              ) : (
+                                <Upload className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                              )}
+                              <span className="text-sm font-medium">
+                                {isUploadingLogo ? 'Optimizing...' : 'Choose Logo File'}
+                              </span>
                             </div>
                           </label>
                         </div>
@@ -638,6 +728,19 @@ export default function SettingsPage() {
           }}
         />
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmationModal.isOpen}
+        onClose={() => setConfirmationModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmationModal.onConfirm}
+        title={confirmationModal.title}
+        message={confirmationModal.message}
+        type={confirmationModal.type}
+        isLoading={confirmationModal.isLoading}
+        confirmText="Remove Logo"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

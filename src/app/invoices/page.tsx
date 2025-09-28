@@ -291,9 +291,9 @@ export default function InvoicesPage() {
                       
                       {/* Status Badge */}
                       <div className="flex items-center justify-start">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>
+                        <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>
                           {getStatusIcon(invoice.status)}
-                          <span className="ml-1.5 capitalize">{invoice.status}</span>
+                          <span className="capitalize">{invoice.status}</span>
                         </span>
                       </div>
                     </div>

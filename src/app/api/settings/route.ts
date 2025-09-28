@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       businessPhone: settings.business_phone || '',
       address: settings.business_address || '',
       website: settings.website || '',
-      logo: settings.logo || settings.logo_url || '',
+      logo: settings.logo || settings.logo_url || '', // Only use logo_url as fallback if logo is null/empty
       paypalEmail: settings.paypal_email || '',
       cashappId: settings.cashapp_id || '',
       venmoId: settings.venmo_id || '',
@@ -117,7 +117,8 @@ export async function POST(request: NextRequest) {
       business_phone: settingsData.businessPhone || '',
       business_address: settingsData.address || '',
       website: settingsData.website || '',
-      logo: settingsData.logo || '',
+      logo: settingsData.logo && settingsData.logo.trim() !== '' ? settingsData.logo : null, // Set to null if empty
+      logo_url: settingsData.logo && settingsData.logo.trim() !== '' ? settingsData.logo : null, // Also clear logo_url to prevent fallback
       paypal_email: settingsData.paypalEmail || '',
       cashapp_id: settingsData.cashappId || '',
       venmo_id: settingsData.venmoId || '',
