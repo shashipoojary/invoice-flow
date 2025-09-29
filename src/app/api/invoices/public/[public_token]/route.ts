@@ -57,6 +57,19 @@ export async function GET(
       console.error('Error fetching user settings:', settingsError)
     }
 
+    // Calculate overdue status and late fees
+    const currentDate = new Date()
+    const dueDate = new Date(invoice.due_date)
+    const isOverdue = currentDate > dueDate && invoice.status !== 'paid'
+    
+    // Calculate late fees if overdue (assuming 5% per month or as configured)
+    let lateFees = 0
+    if (isOverdue && invoice.status !== 'paid') {
+      const daysOverdue = Math.ceil((currentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))
+      const monthsOverdue = Math.ceil(daysOverdue / 30)
+      lateFees = (invoice.total_amount || 0) * 0.05 * monthsOverdue // 5% per month
+    }
+
     // Return formatted invoice data
     return NextResponse.json({ 
       invoice: {
@@ -77,32 +90,44 @@ export async function GET(
         subtotal: invoice.subtotal || 0,
         taxAmount: invoice.tax_amount || 0,
         total: invoice.total_amount || 0,
-        status: invoice.status,
+        lateFees: lateFees,
+        totalWithLateFees: (invoice.total_amount || 0) + lateFees,
+        status: isOverdue && invoice.status !== 'paid' ? 'overdue' : invoice.status,
+        isOverdue: isOverdue,
+        daysOverdue: isOverdue ? Math.ceil((currentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)) : 0,
         notes: invoice.notes,
         created_at: invoice.created_at,
         freelancerSettings: settingsData ? {
           businessName: settingsData.business_name || 'Your Business',
           logo: settingsData.logo || '',
-          address: settingsData.address || '',
+          address: settingsData.business_address || '',
           email: settingsData.business_email || '',
+          phone: settingsData.business_phone || '',
           paypalEmail: settingsData.paypal_email || '',
+          cashappId: settingsData.cashapp_id || '',
           venmoId: settingsData.venmo_id || '',
           googlePayUpi: settingsData.google_pay_upi || '',
+          applePayId: settingsData.apple_pay_id || '',
           bankAccount: settingsData.bank_account || '',
           bankIfscSwift: settingsData.bank_ifsc_swift || '',
           bankIban: settingsData.bank_iban || '',
+          stripeAccount: settingsData.stripe_account || '',
           paymentNotes: settingsData.payment_notes || ''
         } : {
           businessName: 'Your Business',
           logo: '',
           address: '',
           email: '',
+          phone: '',
           paypalEmail: '',
+          cashappId: '',
           venmoId: '',
           googlePayUpi: '',
+          applePayId: '',
           bankAccount: '',
           bankIfscSwift: '',
           bankIban: '',
+          stripeAccount: '',
           paymentNotes: ''
         }
       }

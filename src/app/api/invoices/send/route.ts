@@ -156,9 +156,11 @@ export async function POST(request: NextRequest) {
               display: flex;
               justify-content: space-between;
               align-items: flex-start;
+              width: 100%;
             }
             .business-info {
-              flex: 1;
+              flex: 0 0 auto;
+              max-width: 50%;
             }
             .business-name {
               font-size: 18px;
@@ -173,7 +175,9 @@ export async function POST(request: NextRequest) {
             }
             .invoice-info {
               text-align: right;
-              flex: 1;
+              flex: 0 0 auto;
+              max-width: 50%;
+              margin-left: auto;
             }
             .invoice-title {
               font-size: 20px;
@@ -345,6 +349,18 @@ export async function POST(request: NextRequest) {
               .header {
                 padding: 24px 16px;
               }
+              .header-content {
+                flex-direction: column;
+                gap: 16px;
+              }
+              .business-info {
+                max-width: 100%;
+              }
+              .invoice-info {
+                max-width: 100%;
+                text-align: left;
+                margin-left: 0;
+              }
               .content {
                 padding: 24px 16px;
               }
@@ -360,10 +376,6 @@ export async function POST(request: NextRequest) {
               <div class="header-content">
                 <div class="business-info">
                   <div class="business-name">${businessSettings.businessName}</div>
-                  <div class="business-details">
-                    ${businessSettings.businessEmail}<br>
-                    ${businessSettings.businessPhone}
-                  </div>
                 </div>
                 <div class="invoice-info">
                   <div class="invoice-title">Invoice</div>
@@ -385,7 +397,7 @@ export async function POST(request: NextRequest) {
                 </div>
                 <div class="detail-row">
                   <span class="detail-label">Status</span>
-                  <span class="detail-value" style="text-transform: capitalize;">${invoice.status}</span>
+                  <span class="detail-value" style="text-transform: capitalize;">Sent</span>
                 </div>
                 <div class="detail-row">
                   <span class="detail-label">Created</span>

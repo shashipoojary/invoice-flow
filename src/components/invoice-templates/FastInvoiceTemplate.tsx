@@ -18,32 +18,20 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     fontFamily: 'Helvetica',
   },
-  // Professional header section
+  // Professional header section with teal banner
   header: {
     paddingVertical: 20,
     paddingHorizontal: 30,
     marginBottom: 20,
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    borderBottom: '1px solid #e9ecef',
+    backgroundColor: '#0D9488', // Teal matching other sections
   },
   invoiceTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 8,
-    letterSpacing: 0.5,
-  },
-  invoiceNumber: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 12,
-    fontWeight: 'normal',
-  },
-  invoiceAmount: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#059669',
+    color: '#FFFFFF', // White text on teal background
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   // Professional company section
   companySection: {
@@ -275,46 +263,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
   },
-  // Professional payment methods section
-  paymentMethodsSection: {
-    marginTop: 30,
-    marginBottom: 20,
-    paddingHorizontal: 30,
-  },
-  paymentMethodsTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  paymentMethodsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  paymentMethodCard: {
-    width: '48%',
-    padding: 12,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 6,
-    border: '1px solid #e9ecef',
-    marginBottom: 10,
-  },
-  paymentMethodLabel: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#495057',
-    marginBottom: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  paymentMethodValue: {
-    fontSize: 11,
-    color: '#1a1a1a',
-    fontWeight: 'normal',
-  },
   // Footer with InvoiceFlow branding - positioned at bottom
   footer: {
     position: 'absolute',
@@ -401,13 +349,9 @@ export default function Template1({ invoice, businessSettings }: Template1Props)
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Professional Header Section */}
+        {/* Professional Header Section with Purple Banner */}
         <View style={styles.header}>
           <Text style={styles.invoiceTitle}>Invoice</Text>
-          <Text style={styles.invoiceNumber}>#{invoice.invoiceNumber}</Text>
-          <Text style={[styles.invoiceAmount, { color: secondaryColor }]}>
-            {formatCurrency(calculateTotal())}
-          </Text>
         </View>
 
         {/* Professional Company Section */}
@@ -537,56 +481,6 @@ export default function Template1({ invoice, businessSettings }: Template1Props)
           </View>
         </View>
 
-        {/* Professional Payment Methods Section */}
-        {(businessSettings.paypalEmail || businessSettings.cashappId || businessSettings.venmoId || businessSettings.googlePayUpi || businessSettings.applePayId || businessSettings.bankAccount || businessSettings.stripeAccount) && (
-          <View style={styles.paymentMethodsSection}>
-            <Text style={styles.paymentMethodsTitle}>Payment Methods</Text>
-            <View style={styles.paymentMethodsGrid}>
-              {businessSettings.paypalEmail && (
-                <View style={styles.paymentMethodCard}>
-                  <Text style={styles.paymentMethodLabel}>PayPal</Text>
-                  <Text style={styles.paymentMethodValue}>{businessSettings.paypalEmail}</Text>
-                </View>
-              )}
-              {businessSettings.cashappId && (
-                <View style={styles.paymentMethodCard}>
-                  <Text style={styles.paymentMethodLabel}>Cash App</Text>
-                  <Text style={styles.paymentMethodValue}>${businessSettings.cashappId}</Text>
-                </View>
-              )}
-              {businessSettings.venmoId && (
-                <View style={styles.paymentMethodCard}>
-                  <Text style={styles.paymentMethodLabel}>Venmo</Text>
-                  <Text style={styles.paymentMethodValue}>@{businessSettings.venmoId}</Text>
-                </View>
-              )}
-              {businessSettings.googlePayUpi && (
-                <View style={styles.paymentMethodCard}>
-                  <Text style={styles.paymentMethodLabel}>Google Pay</Text>
-                  <Text style={styles.paymentMethodValue}>{businessSettings.googlePayUpi}</Text>
-                </View>
-              )}
-              {businessSettings.applePayId && (
-                <View style={styles.paymentMethodCard}>
-                  <Text style={styles.paymentMethodLabel}>Apple Pay</Text>
-                  <Text style={styles.paymentMethodValue}>{businessSettings.applePayId}</Text>
-                </View>
-              )}
-              {businessSettings.bankAccount && (
-                <View style={styles.paymentMethodCard}>
-                  <Text style={styles.paymentMethodLabel}>Bank Transfer</Text>
-                  <Text style={styles.paymentMethodValue}>{businessSettings.bankAccount}</Text>
-                </View>
-              )}
-              {businessSettings.stripeAccount && (
-                <View style={styles.paymentMethodCard}>
-                  <Text style={styles.paymentMethodLabel}>Stripe</Text>
-                  <Text style={styles.paymentMethodValue}>{businessSettings.stripeAccount}</Text>
-                </View>
-              )}
-            </View>
-          </View>
-        )}
 
         {/* Footer with disclaimer only */}
         <View style={styles.footer}>

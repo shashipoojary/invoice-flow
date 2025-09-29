@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
-import { Download, CheckCircle, Clock, AlertCircle, Mail, MapPin, Building2, CreditCard } from 'lucide-react'
+import { Download, CheckCircle, Clock, AlertCircle, Mail, MapPin, Building2, CreditCard, Smartphone, DollarSign, Shield } from 'lucide-react'
 
 interface InvoiceItem {
   id: string
@@ -25,19 +25,27 @@ interface Invoice {
   subtotal: number
   taxAmount: number
   total: number
+  lateFees: number
+  totalWithLateFees: number
   status: 'draft' | 'sent' | 'paid' | 'overdue'
+  isOverdue: boolean
+  daysOverdue: number
   notes?: string
   freelancerSettings?: {
     businessName: string
     logo: string
     address: string
     email: string
+    phone: string
     paypalEmail: string
+    cashappId: string
     venmoId: string
     googlePayUpi: string
+    applePayId: string
     bankAccount: string
     bankIfscSwift: string
     bankIban: string
+    stripeAccount: string
     paymentNotes: string
   }
 }
@@ -73,26 +81,26 @@ export default function PublicInvoicePage() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'paid':
-        return <CheckCircle className="h-5 w-5 text-green-500" />
+        return <CheckCircle className="h-4 w-4 text-green-500" />
       case 'sent':
-        return <Clock className="h-5 w-5 text-blue-500" />
+        return <Clock className="h-4 w-4 text-blue-500" />
       case 'overdue':
-        return <AlertCircle className="h-5 w-5 text-red-500" />
+        return <AlertCircle className="h-4 w-4 text-red-500" />
       default:
-        return <Clock className="h-5 w-5 text-gray-500" />
+        return <Clock className="h-4 w-4 text-gray-500" />
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
-        return 'text-green-600 bg-green-100'
+        return 'text-green-700 bg-green-50 border-green-200'
       case 'sent':
-        return 'text-blue-600 bg-blue-100'
+        return 'text-blue-700 bg-blue-50 border-blue-200'
       case 'overdue':
-        return 'text-red-600 bg-red-100'
+        return 'text-red-700 bg-red-50 border-red-200'
       default:
-        return 'text-gray-600 bg-gray-100'
+        return 'text-gray-700 bg-gray-50 border-gray-200'
     }
   }
 
@@ -125,95 +133,119 @@ export default function PublicInvoicePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50">
+      {/* Modern Header with Teal Banner */}
+      <div className="bg-teal-600 text-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-wide">INVOICE</h1>
+            <p className="text-teal-100 mt-2 text-lg">#{invoice.invoiceNumber}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Invoice Container */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          {/* Header */}
-          <div className="bg-white px-8 py-6 border-b border-gray-200">
-            <div className="flex justify-between items-start">
-              <div>
-                {invoice.freelancerSettings?.logo && (
-                  <div className="h-12 w-auto mb-4 flex items-center justify-center bg-gray-100 dark:bg-gray-700 rounded px-4">
-                    <span className="text-xs text-gray-500">Logo</span>
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          {/* Business Header */}
+          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 border-b border-gray-200">
+            <div className="flex flex-col gap-4">
+              {/* Mobile: Stack vertically, Desktop: Side by side */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  {/* Logo Placeholder */}
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    {invoice.freelancerSettings?.logo ? (
+                      <Image
+                        src={invoice.freelancerSettings.logo}
+                        alt="Business Logo"
+                        width={48}
+                        height={48}
+                        className="rounded-lg object-cover w-full h-full"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const fallback = target.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    <span className="text-sm sm:text-lg font-bold text-gray-600 hidden">
+                      {invoice.freelancerSettings?.businessName?.charAt(0) || 'B'}
+                    </span>
                   </div>
-                )}
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {invoice.freelancerSettings?.businessName || 'Your Business Name'}
-                </h1>
-                {invoice.freelancerSettings?.address && (
-                  <div className="mt-2 text-sm text-gray-600">
-                    <div className="flex items-center">
-                      <MapPin className="h-4 w-4 mr-1" />
-                      {invoice.freelancerSettings.address}
-                    </div>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
+                      {invoice.freelancerSettings?.businessName || 'Your Business Name'}
+                    </h2>
+                    {invoice.freelancerSettings?.email && (
+                      <p className="text-xs sm:text-sm text-gray-600 truncate">{invoice.freelancerSettings.email}</p>
+                    )}
                   </div>
-                )}
-                {invoice.freelancerSettings?.email && (
-                  <div className="mt-1 text-sm text-gray-600">
-                    <div className="flex items-center">
-                      <Mail className="h-4 w-4 mr-1" />
-                      {invoice.freelancerSettings.email}
-                    </div>
+                </div>
+                <div className="text-left sm:text-right w-full sm:w-auto">
+                  <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+                    ${invoice.isOverdue ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2)}
                   </div>
-                )}
-              </div>
-              <div className="text-right">
-                <h2 className="text-3xl font-bold text-gray-900">INVOICE</h2>
-                <p className="text-lg text-gray-600">#{invoice.invoiceNumber}</p>
-                <div className="mt-4">
-                  <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(invoice.status)}`}>
+                  <div className={`inline-flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border ${getStatusColor(invoice.status)}`}>
                     {getStatusIcon(invoice.status)}
                     <span className="capitalize">{invoice.status}</span>
-                  </span>
+                  </div>
+                  {invoice.isOverdue && (
+                    <div className="mt-1 text-xs sm:text-sm text-red-600 font-medium">
+                      {invoice.daysOverdue} days overdue
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Invoice Details */}
-          <div className="px-8 py-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Invoice Details Grid */}
+          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
               {/* Bill To */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Bill To:</h3>
-                <div className="text-gray-700">
-                  <p className="font-medium">{invoice.clientName}</p>
-                  {invoice.clientCompany && (
-                    <p>{invoice.clientCompany}</p>
-                  )}
-                  <div className="mt-2">
-                    <div className="flex items-center">
-                      <Mail className="h-4 w-4 mr-1" />
-                      {invoice.clientEmail}
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Bill To</h3>
+                <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                  <div className="text-gray-900">
+                    <p className="font-semibold text-base sm:text-lg">{invoice.clientName}</p>
+                    {invoice.clientCompany && (
+                      <p className="text-gray-600 mt-1 text-sm sm:text-base">{invoice.clientCompany}</p>
+                    )}
+                    <div className="mt-3 space-y-2">
+                      <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                        <Mail className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
+                        <span className="truncate">{invoice.clientEmail}</span>
+                      </div>
+                      {invoice.clientAddress && (
+                        <div className="flex items-start text-xs sm:text-sm text-gray-600">
+                          <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-2 mt-0.5 flex-shrink-0" />
+                          <span className="break-words">{invoice.clientAddress}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  {invoice.clientAddress && (
-                    <div className="mt-1">
-                      <div className="flex items-start">
-                        <MapPin className="h-4 w-4 mr-1 mt-0.5" />
-                        <span className="text-sm">{invoice.clientAddress}</span>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
 
               {/* Invoice Info */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Invoice Details:</h3>
-                <div className="text-gray-700 space-y-1">
-                  <div className="flex justify-between">
-                    <span>Issue Date:</span>
-                    <span>{new Date(invoice.issueDate).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Due Date:</span>
-                    <span>{new Date(invoice.dueDate).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Status:</span>
-                    <span className="capitalize">{invoice.status}</span>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Invoice Details</h3>
+                <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                  <div className="space-y-2 sm:space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 text-xs sm:text-sm">Issue Date</span>
+                      <span className="font-medium text-xs sm:text-sm">{new Date(invoice.issueDate).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 text-xs sm:text-sm">Due Date</span>
+                      <span className="font-medium text-xs sm:text-sm">{new Date(invoice.dueDate).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 text-xs sm:text-sm">Status</span>
+                      <span className="font-medium text-xs sm:text-sm capitalize">{invoice.status}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -221,23 +253,23 @@ export default function PublicInvoicePage() {
           </div>
 
           {/* Services Table */}
-          <div className="px-8 py-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Services:</h3>
+          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Services</h3>
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
+              <table className="w-full min-w-[300px]">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Service</th>
-                    <th className="text-right py-3 px-4 font-medium text-gray-900">Amount</th>
+                  <tr className="bg-teal-600 text-white">
+                    <th className="text-left py-3 sm:py-4 px-3 sm:px-4 font-semibold text-sm sm:text-base">Service</th>
+                    <th className="text-right py-3 sm:py-4 px-3 sm:px-4 font-semibold text-sm sm:text-base">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {invoice.items.map((item) => (
-                    <tr key={item.id} className="border-b border-gray-100">
-                      <td className="py-3 px-4 text-gray-700">
+                  {invoice.items.map((item, index) => (
+                    <tr key={item.id} className={`border-b border-gray-100 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 text-gray-900 text-sm sm:text-base">
                         {item.description}
                       </td>
-                      <td className="py-3 px-4 text-right text-gray-900 font-medium">
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 text-right text-gray-900 font-semibold text-sm sm:text-base">
                         ${item.rate.toFixed(2)}
                       </td>
                     </tr>
@@ -248,107 +280,228 @@ export default function PublicInvoicePage() {
           </div>
 
           {/* Totals */}
-          <div className="px-8 py-6 bg-gray-50">
+          <div className="px-6 sm:px-8 py-6 bg-gray-50">
             <div className="flex justify-end">
-              <div className="w-64">
-                <div className="space-y-2">
+              <div className="w-full sm:w-80">
+                <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Subtotal:</span>
-                    <span className="text-gray-900">${invoice.subtotal.toFixed(2)}</span>
+                    <span className="text-gray-600">Subtotal</span>
+                    <span className="text-gray-900 font-medium">${invoice.subtotal.toFixed(2)}</span>
                   </div>
                   {invoice.taxAmount > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Tax:</span>
-                      <span className="text-gray-900">${invoice.taxAmount.toFixed(2)}</span>
+                      <span className="text-gray-600">Tax</span>
+                      <span className="text-gray-900 font-medium">${invoice.taxAmount.toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-lg font-bold pt-2 border-t border-gray-200">
-                    <span className="text-gray-900">Total:</span>
-                    <span className="text-gray-900">${invoice.total.toFixed(2)}</span>
+                  {invoice.isOverdue && invoice.lateFees > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                      <span className="text-red-600 font-medium">${invoice.lateFees.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-xl font-bold pt-3 border-t-2 border-gray-300">
+                    <span className="text-gray-900">
+                      {invoice.isOverdue ? 'Total Payable' : 'Total'}
+                    </span>
+                    <span className={`font-bold ${invoice.isOverdue ? 'text-red-600' : 'text-gray-900'}`}>
+                      ${invoice.isOverdue ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2)}
+                    </span>
                   </div>
+                  {invoice.isOverdue && (
+                    <div className="text-sm text-red-600 bg-red-50 p-2 rounded border border-red-200">
+                      <strong>Overdue Notice:</strong> This invoice is {invoice.daysOverdue} days past due. 
+                      Late fees of ${invoice.lateFees.toFixed(2)} have been applied.
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Payment Information */}
-          {invoice.freelancerSettings && (
-            <div className="px-8 py-6 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Options:</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  {invoice.freelancerSettings.paypalEmail && (
-                    <div className="flex items-center">
-                      <CreditCard className="h-5 w-5 text-blue-500 mr-3" />
-                      <div>
-                        <p className="font-medium text-gray-900">PayPal</p>
-                        <p className="text-gray-600">{invoice.freelancerSettings.paypalEmail}</p>
-                      </div>
-                    </div>
-                  )}
-                  {invoice.freelancerSettings.venmoId && (
-                    <div className="flex items-center">
-                      <CreditCard className="h-5 w-5 text-green-500 mr-3" />
-                      <div>
-                        <p className="font-medium text-gray-900">Venmo</p>
-                        <p className="text-gray-600">{invoice.freelancerSettings.venmoId}</p>
-                      </div>
-                    </div>
-                  )}
-                  {invoice.freelancerSettings.googlePayUpi && (
-                    <div className="flex items-center">
-                      <CreditCard className="h-5 w-5 text-purple-500 mr-3" />
-                      <div>
-                        <p className="font-medium text-gray-900">Google Pay / UPI</p>
-                        <p className="text-gray-600">{invoice.freelancerSettings.googlePayUpi}</p>
-                      </div>
-                    </div>
-                  )}
+          {/* Status Message */}
+          {invoice.status === 'paid' && (
+            <div className="px-6 sm:px-8 py-6 border-t border-gray-200">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-green-800">Payment Received</h3>
+                    <p className="text-green-700">Thank you! This invoice has been paid in full.</p>
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  {invoice.freelancerSettings.bankAccount && (
-                    <div className="flex items-center">
-                      <Building2 className="h-5 w-5 text-indigo-500 mr-3" />
-                      <div>
-                        <p className="font-medium text-gray-900">Bank Transfer</p>
-                        <p className="text-gray-600">Account: {invoice.freelancerSettings.bankAccount}</p>
-                        {invoice.freelancerSettings.bankIfscSwift && (
-                          <p className="text-gray-600">IFSC/SWIFT: {invoice.freelancerSettings.bankIfscSwift}</p>
-                        )}
-                        {invoice.freelancerSettings.bankIban && (
-                          <p className="text-gray-600">IBAN: {invoice.freelancerSettings.bankIban}</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  {invoice.freelancerSettings.paymentNotes && (
-                    <div>
-                      <p className="font-medium text-gray-900">Other Methods:</p>
-                      <p className="text-gray-600">{invoice.freelancerSettings.paymentNotes}</p>
-                    </div>
-                  )}
+              </div>
+            </div>
+          )}
+
+          {invoice.isOverdue && (
+            <div className="px-6 sm:px-8 py-6 border-t border-gray-200">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-red-800">Payment Overdue</h3>
+                    <p className="text-red-700">
+                      This invoice is {invoice.daysOverdue} days past due. Please remit payment immediately to avoid additional charges.
+                    </p>
+                  </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Payment Information - Modern Design */}
+          {invoice.freelancerSettings && invoice.status !== 'paid' && (
+            <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 border-t border-gray-200">
+              <div className="flex items-center gap-2 mb-4 sm:mb-6">
+                <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Payment Information</h3>
+              </div>
+              
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+                <p className="text-xs sm:text-sm text-green-800">
+                  <strong>Security:</strong> All payment methods are secure and encrypted. Please include invoice number #{invoice.invoiceNumber} in your payment reference.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                {/* PayPal */}
+                {invoice.freelancerSettings.paypalEmail && (
+                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
+                      </div>
+                      <span className="font-semibold text-gray-900 text-sm sm:text-base">PayPal</span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-gray-600 break-all">{invoice.freelancerSettings.paypalEmail}</p>
+                  </div>
+                )}
+
+                {/* Cash App */}
+                {invoice.freelancerSettings.cashappId && (
+                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
+                      </div>
+                      <span className="font-semibold text-gray-900 text-sm sm:text-base">Cash App</span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-gray-600">${invoice.freelancerSettings.cashappId}</p>
+                  </div>
+                )}
+
+                {/* Venmo */}
+                {invoice.freelancerSettings.venmoId && (
+                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <Smartphone className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
+                      </div>
+                      <span className="font-semibold text-gray-900 text-sm sm:text-base">Venmo</span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-gray-600">@{invoice.freelancerSettings.venmoId}</p>
+                  </div>
+                )}
+
+                {/* Google Pay */}
+                {invoice.freelancerSettings.googlePayUpi && (
+                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <Smartphone className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
+                      </div>
+                      <span className="font-semibold text-gray-900 text-sm sm:text-base">Google Pay</span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-gray-600 break-all">{invoice.freelancerSettings.googlePayUpi}</p>
+                  </div>
+                )}
+
+                {/* Apple Pay */}
+                {invoice.freelancerSettings.applePayId && (
+                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <Smartphone className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
+                      </div>
+                      <span className="font-semibold text-gray-900 text-sm sm:text-base">Apple Pay</span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-gray-600 break-all">{invoice.freelancerSettings.applePayId}</p>
+                  </div>
+                )}
+
+                {/* Bank Transfer */}
+                {invoice.freelancerSettings.bankAccount && (
+                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <Building2 className="h-3 w-3 sm:h-4 sm:w-4 text-indigo-600" />
+                      </div>
+                      <span className="font-semibold text-gray-900 text-sm sm:text-base">Bank Transfer</span>
+                    </div>
+                    <div className="text-xs sm:text-sm text-gray-600 space-y-1">
+                      <p className="break-words">{invoice.freelancerSettings.bankAccount}</p>
+                      {invoice.freelancerSettings.bankIfscSwift && (
+                        <p className="break-words">IFSC/SWIFT: {invoice.freelancerSettings.bankIfscSwift}</p>
+                      )}
+                      {invoice.freelancerSettings.bankIban && (
+                        <p className="break-words">IBAN: {invoice.freelancerSettings.bankIban}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Stripe */}
+                {invoice.freelancerSettings.stripeAccount && (
+                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
+                      </div>
+                      <span className="font-semibold text-gray-900 text-sm sm:text-base">Credit/Debit Card</span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-gray-600">Processed securely via Stripe</p>
+                  </div>
+                )}
+
+                {/* Other Payment Methods */}
+                {invoice.freelancerSettings.paymentNotes && (
+                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
+                      </div>
+                      <span className="font-semibold text-gray-900 text-sm sm:text-base">Other Methods</span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-gray-600 break-words">{invoice.freelancerSettings.paymentNotes}</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {/* Notes */}
           {invoice.notes && (
-            <div className="px-8 py-6 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Notes:</h3>
-              <p className="text-gray-700">{invoice.notes}</p>
+            <div className="px-6 sm:px-8 py-6 border-t border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Notes</h3>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-gray-700">{invoice.notes}</p>
+              </div>
             </div>
           )}
 
           {/* Footer */}
-          <div className="px-8 py-6 bg-gray-50 border-t border-gray-200">
-            <div className="flex justify-between items-center">
-              <div className="text-sm text-gray-500">
-                Thank you for your business!
+          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="text-center sm:text-left">
+                <p className="text-gray-600 font-medium text-sm sm:text-base">Thank you for your business!</p>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                  Generated with <a href="https://invoice-flow-vert.vercel.app/" className="text-indigo-600 hover:text-indigo-700">InvoiceFlow</a>
+                </p>
               </div>
               <button
                 onClick={handleDownloadPDF}
-                className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm sm:text-base w-full sm:w-auto justify-center"
               >
                 <Download className="h-4 w-4" />
                 <span>Download PDF</span>
