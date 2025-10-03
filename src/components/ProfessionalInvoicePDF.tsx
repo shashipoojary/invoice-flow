@@ -1,6 +1,5 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
-import QRCode from 'qrcode';
 
 // Create professional, modern styles
 const styles = StyleSheet.create({
@@ -470,67 +469,7 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-// Generate QR code data based on user's payment methods and invoice
-const generateQRCodeData = (invoice: Invoice, businessSettings?: BusinessSettings) => {
-  const paymentMethods = [];
-  
-  // Add available payment methods
-  if (businessSettings?.googlePayUpi) {
-    paymentMethods.push(`UPI: ${businessSettings.googlePayUpi}`);
-  }
-  if (businessSettings?.paypalEmail) {
-    paymentMethods.push(`PayPal: ${businessSettings.paypalEmail}`);
-  }
-  if (businessSettings?.venmoId) {
-    paymentMethods.push(`Venmo: ${businessSettings.venmoId}`);
-  }
-  if (businessSettings?.cashappId) {
-    paymentMethods.push(`CashApp: ${businessSettings.cashappId}`);
-  }
-  if (businessSettings?.applePayId) {
-    paymentMethods.push(`Apple Pay: ${businessSettings.applePayId}`);
-  }
-  if (businessSettings?.bankAccount) {
-    paymentMethods.push(`Bank: ${businessSettings.bankAccount}`);
-  }
-  
-  // Create QR code data
-  const qrData = {
-    invoice: {
-      number: invoice.invoiceNumber,
-      amount: invoice.total,
-      dueDate: invoice.dueDate,
-      business: businessSettings?.businessName || 'Your Business'
-    },
-    paymentMethods: paymentMethods,
-    contact: {
-      email: businessSettings?.businessEmail,
-      phone: businessSettings?.businessPhone
-    }
-  };
-  
-  return JSON.stringify(qrData);
-};
 
-// Generate QR code as data URL
-const generateQRCodeDataURL = async (invoice: Invoice, businessSettings?: BusinessSettings): Promise<string> => {
-  try {
-    const qrData = generateQRCodeData(invoice, businessSettings);
-    const qrCodeDataURL = await QRCode.toDataURL(qrData, {
-      width: 80,
-      margin: 1,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF'
-      }
-    });
-    return qrCodeDataURL;
-  } catch (error) {
-    console.error('Error generating QR code:', error);
-    // Return a fallback data URL for a simple QR code
-    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRkZGRkZGIi8+Cjx0ZXh0IHg9IjQwIiB5PSI0MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjgiIGZpbGw9IiM5OTk5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5RUiBDT0RFPC90ZXh0Pgo8L3N2Zz4K';
-  }
-};
 
   return (
     <Document>
@@ -544,7 +483,7 @@ const generateQRCodeDataURL = async (invoice: Invoice, businessSettings?: Busine
         <View style={styles.header}>
           <View style={styles.logoSection}>
             {businessSettings?.logo ? (
-              <Image style={styles.logo} src={businessSettings.logo} />
+              <Image style={styles.logo} src={businessSettings.logo} alt="Business Logo" />
             ) : (
               <View style={styles.logo}>
                 <Text style={styles.businessNameText}>
@@ -633,7 +572,7 @@ const generateQRCodeDataURL = async (invoice: Invoice, businessSettings?: Busine
           
           {/* QR Code for Payment */}
           {qrCodeDataURL ? (
-            <Image style={styles.cornerQrCode} src={qrCodeDataURL} />
+            <Image style={styles.cornerQrCode} src={qrCodeDataURL} alt="QR Code" />
           ) : (
             <View style={styles.cornerQrCode}>
               <Text style={{ fontSize: 6, textAlign: 'center', marginTop: 20, color: '#999' }}>

@@ -285,7 +285,7 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, businessInfo }) => {
         <View style={styles.header}>
           <View>
             {businessInfo.logo && (
-              <Image style={styles.logo} src={businessInfo.logo} />
+              <Image style={styles.logo} src={businessInfo.logo} alt="Business Logo" />
             )}
           </View>
           <View style={styles.businessInfo}>

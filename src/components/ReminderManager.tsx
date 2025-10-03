@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Bell, Send, AlertCircle, CheckCircle, Clock, X } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Bell, Send, CheckCircle, X } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 
 interface OverdueInvoice {
@@ -43,9 +43,9 @@ export default function ReminderManager({ isOpen, onClose, userId }: ReminderMan
     if (isOpen && userId) {
       fetchOverdueInvoices();
     }
-  }, [isOpen, userId]);
+  }, [isOpen, userId, fetchOverdueInvoices]);
 
-  const fetchOverdueInvoices = async () => {
+  const fetchOverdueInvoices = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/reminders/trigger', {
@@ -72,7 +72,7 @@ export default function ReminderManager({ isOpen, onClose, userId }: ReminderMan
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId, showError]);
 
   const fetchDebugInfo = async () => {
     try {
@@ -151,7 +151,7 @@ export default function ReminderManager({ isOpen, onClose, userId }: ReminderMan
         } else {
           errorCount++;
         }
-      } catch (error) {
+      } catch {
         errorCount++;
       }
     }

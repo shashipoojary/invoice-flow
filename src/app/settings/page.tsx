@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { Save, Upload, Building2, CreditCard } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 
 interface FreelancerSettings {
   businessName: string

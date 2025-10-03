@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 
 interface LazyLogoProps {
   src: string
@@ -88,15 +89,16 @@ export default function LazyLogo({
   return (
     <div className={`relative ${className}`} style={{ width, height }}>
       {imageSrc && (
-        <img
+        <Image
           ref={imgRef}
           src={imageSrc}
           alt={alt}
+          width={width || 100}
+          height={height || 100}
           className={`w-full h-full object-contain transition-opacity duration-300 ${
             isLoading ? 'opacity-50' : 'opacity-100'
           }`}
           style={{ width, height }}
-          loading="lazy"
         />
       )}
       {isLoading && (

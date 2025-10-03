@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation';
 import { 
   FileText, Users, TrendingUp, 
   Clock, CheckCircle, AlertCircle, AlertTriangle, UserPlus, FilePlus, Sparkles, Receipt, Timer,
-  Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Calendar, Trash2
+  Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2
 } from 'lucide-react';
 import { 
-  LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, 
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
+  AreaChart, Area, PieChart, Pie, Cell, 
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -21,12 +21,6 @@ import ConfirmationModal from '@/components/ConfirmationModal';
 import ClientModal from '@/components/ClientModal';
 import { Client, Invoice } from '@/types';
 
-interface DashboardStats {
-  totalRevenue: number;
-  outstandingAmount: number;
-  overdueCount: number;
-  totalClients: number;
-}
 
 export default function DashboardOverview() {
   const { user, loading, getAuthHeaders } = useAuth();
@@ -35,12 +29,6 @@ export default function DashboardOverview() {
   
   // State
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
-    totalRevenue: 0,
-    outstandingAmount: 0,
-    overdueCount: 0,
-    totalClients: 0
-  });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [isLoadingInvoices, setIsLoadingInvoices] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -738,8 +726,7 @@ export default function DashboardOverview() {
           // Fetch dashboard stats
           fetch('/api/dashboard/stats', { headers, cache: 'no-store' })
             .then(res => res.json())
-            .then(data => {
-              setDashboardStats(data);
+            .then(() => {
               setIsLoadingStats(false);
             })
             .catch(err => {
@@ -1441,7 +1428,6 @@ export default function DashboardOverview() {
                     await Promise.all([
                       fetch('/api/dashboard/stats', { headers, cache: 'no-store' })
                         .then(res => res.json())
-                        .then(data => setDashboardStats(data))
                         .catch(err => console.error('Error fetching dashboard stats:', err)),
                       fetch('/api/invoices', { headers, cache: 'no-store' })
                         .then(res => res.json())
@@ -1477,7 +1463,6 @@ export default function DashboardOverview() {
                   await Promise.all([
                     fetch('/api/dashboard/stats', { headers, cache: 'no-store' })
                       .then(res => res.json())
-                      .then(data => setDashboardStats(data))
                       .catch(err => console.error('Error fetching dashboard stats:', err)),
                     fetch('/api/invoices', { headers, cache: 'no-store' })
                       .then(res => res.json())
@@ -1511,7 +1496,6 @@ export default function DashboardOverview() {
                   await Promise.all([
                     fetch('/api/dashboard/stats', { headers, cache: 'no-store' })
                       .then(res => res.json())
-                      .then(data => setDashboardStats(data))
                       .catch(err => console.error('Error fetching dashboard stats:', err)),
                     fetch('/api/clients', { headers, cache: 'no-store' })
                       .then(res => res.json())

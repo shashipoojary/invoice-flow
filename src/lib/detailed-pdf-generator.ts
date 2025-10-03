@@ -539,8 +539,8 @@ async function generateTemplate3PDF(
   secondaryRgb: { r: number; g: number; b: number },
   font: PDFFont,
   boldFont: PDFFont,
-  formatCurrency: (amount: number) => string,
-  formatDate: (dateString: string) => string
+  _formatCurrency: (amount: number) => string,
+  _formatDate: (dateString: string) => string
 ): Promise<Uint8Array> {
   const { width, height } = page.getSize();
 

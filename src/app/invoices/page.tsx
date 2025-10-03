@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
-import { Plus, Eye, CheckCircle, Clock, AlertCircle, FileText, Loader2, Download, Send, Edit, Calendar, User, Building2, DollarSign } from 'lucide-react'
+import { Plus, Eye, CheckCircle, Clock, AlertCircle, FileText, Loader2, Download, Send, Calendar, User, Building2 } from 'lucide-react'
 import ToastContainer from '@/components/Toast'
 import { useToast } from '@/hooks/useToast'
 

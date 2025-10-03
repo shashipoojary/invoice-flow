@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -139,11 +140,12 @@ const ModernSidebar = ({
       }`}>
         {!isCollapsed ? (
           <div className="flex items-center justify-center w-full">
-            <img
+            <Image
               src={isDarkMode ? "/logo-white-final.png" : "/logo-black-final.png"}
               alt="InvoiceFlow Logo"
+              width={200}
+              height={64}
               className="h-16 w-auto max-w-full"
-              loading="lazy"
             />
           </div>
         ) : (
@@ -152,16 +154,17 @@ const ModernSidebar = ({
             className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors bg-transparent border-none outline-none"
             style={{ backgroundColor: 'transparent' }}
           >
-            <img
+            <Image
               src={isDarkMode ? "/logo-icon-white-clean.png" : "/logo-icon-black-clean.png"}
               alt="InvoiceFlow Logo"
+              width={28}
+              height={20}
               className="w-7 h-5 object-contain"
               style={{ 
                 backgroundColor: 'transparent',
                 border: 'none',
                 outline: 'none'
               }}
-              loading="lazy"
             />
           </button>
         )}
