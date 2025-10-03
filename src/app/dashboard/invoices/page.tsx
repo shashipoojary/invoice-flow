@@ -858,45 +858,46 @@ function InvoicesContent() {
           <div className="pt-16 lg:pt-4 p-4 sm:p-6 lg:p-8">
             {/* Invoices Section */}
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                   <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                     Invoices
                   </h2>
                   {searchParams.get('status') && (
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      searchParams.get('status') === 'paid' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                      searchParams.get('status') === 'sent' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
-                      searchParams.get('status') === 'overdue' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
-                      'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
-                    }`}>
-                      {searchParams.get('status') === 'paid' ? 'Paid Invoices' :
-                       searchParams.get('status') === 'sent' ? 'Pending Invoices' :
-                       searchParams.get('status') === 'overdue' ? 'Overdue Invoices' :
-                       'Filtered'}
-                    </span>
-                  )}
-                  {searchParams.get('status') && (
-                    <button
-                      onClick={() => window.history.replaceState({}, '', '/dashboard/invoices')}
-                      className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 underline"
-                    >
-                      Clear Filter
-                    </button>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
+                        searchParams.get('status') === 'paid' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                        searchParams.get('status') === 'sent' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
+                        searchParams.get('status') === 'overdue' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+                        'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                      }`}>
+                        {searchParams.get('status') === 'paid' ? 'Paid Invoices' :
+                         searchParams.get('status') === 'sent' ? 'Pending Invoices' :
+                         searchParams.get('status') === 'overdue' ? 'Overdue Invoices' :
+                         'Filtered'}
+                      </span>
+                      <button
+                        onClick={() => window.history.replaceState({}, '', '/dashboard/invoices')}
+                        className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 underline"
+                      >
+                        Clear Filter
+                      </button>
+                    </div>
                   )}
                 </div>
                 {user ? (
                   <button
                     onClick={() => setShowCreateInvoice(true)}
-                    className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                    className="flex items-center space-x-1 sm:space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-xs sm:text-sm font-medium"
                   >
-                    <Plus className="h-4 w-4" />
-                    <span>New Invoice</span>
+                    <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">New Invoice</span>
+                    <span className="sm:hidden">New</span>
                   </button>
                 ) : (
                   <button
                     onClick={() => setShowCreateInvoice(true)}
-                    className="flex items-center space-x-1 sm:space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                    className="flex items-center space-x-1 sm:space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-xs sm:text-sm font-medium"
                   >
                     <span>Sign In</span>
                   </button>
