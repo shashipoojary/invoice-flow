@@ -1736,19 +1736,6 @@ export default function DashboardOverview() {
 
 
 
-       {showCreateClient && (
-         <ClientModal
-           isOpen={showCreateClient}
-           onClose={() => setShowCreateClient(false)}
-           onSuccess={() => {
-             setShowCreateClient(false);
-             // Refresh clients data
-             window.location.reload();
-           }}
-           getAuthHeaders={getAuthHeaders}
-           isDarkMode={isDarkMode}
-         />
-       )}
 
 
        {/* Confirmation Modal */}
