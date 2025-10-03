@@ -202,17 +202,13 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className={`rounded-2xl shadow-2xl border max-w-md w-full ${
+      <div className={`rounded-xl shadow-2xl max-w-md w-full ${
         isDarkMode 
-          ? 'bg-gray-900/95 border-gray-700' 
-          : 'bg-white/95 border-gray-200'
-      } backdrop-blur-sm`}>
+          ? 'bg-gray-900' 
+          : 'bg-white'
+      }`}>
         {/* Header */}
-        <div className={`flex items-center justify-between p-6 border-b ${
-          isDarkMode 
-            ? 'border-gray-700' 
-            : 'border-gray-200'
-        }`}>
+        <div className="flex items-center justify-between p-6">
           <div className="flex items-center space-x-3">
             <div className={`p-2.5 rounded-lg ${
               isDarkMode 
@@ -254,7 +250,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
+        <form onSubmit={handleSubmit} className="px-6 pb-6">
           {step === 1 && (
             <div className="space-y-5">
               {/* Step indicator */}
@@ -290,16 +286,16 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
               <div className="space-y-4">
                 {/* Client Selection */}
                 {selectedClientId ? (
-                  <div className={`p-4 rounded-lg border ${
-                    isDarkMode ? 'bg-indigo-900/20 border-indigo-800' : 'bg-indigo-50 border-indigo-200'
+                  <div className={`p-4 rounded-lg ${
+                    isDarkMode ? 'bg-gray-800' : 'bg-gray-50'
                   }`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          isDarkMode ? 'bg-indigo-800' : 'bg-indigo-100'
+                          isDarkMode ? 'bg-indigo-600' : 'bg-indigo-100'
                         }`}>
                           <User className={`h-4 w-4 ${
-                            isDarkMode ? 'text-indigo-300' : 'text-indigo-600'
+                            isDarkMode ? 'text-white' : 'text-indigo-600'
                           }`} />
                         </div>
                         <div>
@@ -318,10 +314,10 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                       <button
                         type="button"
                         onClick={() => setSelectedClientId('')}
-                        className={`text-xs font-medium px-3 py-2 rounded transition-colors ${
+                        className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors ${
                           isDarkMode 
-                            ? 'text-indigo-400 hover:text-indigo-200 hover:bg-indigo-800/30' 
-                            : 'text-indigo-600 hover:text-indigo-800 hover:bg-indigo-100'
+                            ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
                         }`}
                       >
                         Change
@@ -336,9 +332,9 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                           <select
                             value={selectedClientId}
                             onChange={(e) => setSelectedClientId(e.target.value)}
-                            className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors appearance-none cursor-pointer ${
+                            className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors appearance-none cursor-pointer ${
                               isDarkMode 
-                                ? 'border-gray-600 bg-gray-800 text-white' 
+                                ? 'border-gray-700 bg-gray-800 text-white' 
                                 : 'border-gray-300 bg-white text-gray-900'
                             }`}
                           >
@@ -362,7 +358,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                       <div className="relative">
                         <div className="absolute inset-0 flex items-center">
                           <div className={`w-full border-t ${
-                            isDarkMode ? 'border-gray-600' : 'border-gray-300'
+                            isDarkMode ? 'border-gray-700' : 'border-gray-200'
                           }`} />
                         </div>
                         <div className="relative flex justify-center text-xs">
@@ -383,9 +379,9 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                             type="text"
                             value={clientName}
                             onChange={(e) => setClientName(e.target.value)}
-                            className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                            className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                               isDarkMode 
-                                ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                                ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                                 : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                             }`}
                             placeholder="Client name"
@@ -403,9 +399,9 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                             type="email"
                             value={clientEmail}
                             onChange={(e) => setClientEmail(e.target.value)}
-                            className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                            className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                               isDarkMode 
-                                ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                                ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                                 : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                             }`}
                             placeholder="client@example.com"
@@ -472,9 +468,9 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                     <textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
+                      className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
                         isDarkMode 
-                          ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                          ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                           : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                       }`}
                       placeholder="Describe the work or service provided"
@@ -496,9 +492,9 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                         type="number"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                           isDarkMode 
-                            ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                            ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                             : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                         }`}
                         placeholder="0.00"
@@ -519,9 +515,9 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                         type="date"
                         value={dueDate}
                         onChange={(e) => setDueDate(e.target.value)}
-                        className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                           isDarkMode 
-                            ? 'border-gray-600 bg-gray-800 text-white' 
+                            ? 'border-gray-700 bg-gray-800 text-white' 
                             : 'border-gray-300 bg-white text-gray-900'
                         }`}
                       />
@@ -533,9 +529,9 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
+                    className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
                       isDarkMode 
-                        ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                        ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                         : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                     }`}
                     placeholder="Payment terms, additional details... (optional)"

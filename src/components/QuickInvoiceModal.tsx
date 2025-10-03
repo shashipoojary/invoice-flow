@@ -668,18 +668,14 @@ export default function QuickInvoiceModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
-      <div className={`rounded-xl sm:rounded-2xl shadow-2xl border max-w-2xl w-full max-h-[98vh] sm:max-h-[95vh] overflow-y-auto scroll-smooth ${
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className={`rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto scroll-smooth ${
         isDarkMode 
-          ? 'bg-gray-900/95 border-gray-700' 
-          : 'bg-white/95 border-gray-200'
-      } backdrop-blur-sm`}>
+          ? 'bg-gray-900' 
+          : 'bg-white'
+      }`}>
         {/* Header */}
-        <div className={`flex items-center justify-between p-4 sm:p-6 border-b ${
-          isDarkMode 
-            ? 'border-gray-700' 
-            : 'border-gray-200'
-        }`}>
+        <div className="flex items-center justify-between p-4 sm:p-6">
           <div className="flex items-center space-x-3">
             <div className={`p-2.5 rounded-lg ${
               isDarkMode 
@@ -722,8 +718,8 @@ export default function QuickInvoiceModal({
         </div>
 
         {/* Step Indicator */}
-        <div className="px-4 sm:px-6 py-3 sm:py-4">
-          <div className="flex items-center justify-center space-x-2 sm:space-x-4 overflow-x-auto">
+        <div className="px-4 sm:px-6 py-2">
+          <div className="flex items-center justify-center space-x-1 sm:space-x-3 overflow-x-auto">
             {[
               { step: 1, label: 'Client', icon: User },
               { step: 2, label: 'Services', icon: FileText },
@@ -731,7 +727,7 @@ export default function QuickInvoiceModal({
               { step: 4, label: 'Review', icon: CheckCircle }
             ].map(({ step, label, icon: Icon }) => (
               <div key={step} className="flex items-center flex-shrink-0">
-                <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+                <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
                   step <= currentStep
                     ? 'bg-indigo-600 text-white'
                     : isDarkMode
@@ -739,12 +735,12 @@ export default function QuickInvoiceModal({
                     : 'bg-gray-200 text-gray-500'
                 }`}>
                   {step < currentStep ? (
-                    <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <CheckCircle className="h-3 w-3" />
                   ) : (
-                    <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <Icon className="h-3 w-3" />
                   )}
                 </div>
-                <span className={`ml-1 sm:ml-2 text-xs font-medium hidden sm:inline ${
+                <span className={`ml-1 sm:ml-2 text-xs font-medium hidden xs:inline ${
                   step <= currentStep
                     ? isDarkMode ? 'text-indigo-400' : 'text-indigo-600'
                     : isDarkMode ? 'text-gray-400' : 'text-gray-500'
@@ -752,7 +748,7 @@ export default function QuickInvoiceModal({
                   {label}
                 </span>
                 {step < 4 && (
-                  <div className={`w-3 sm:w-6 h-0.5 mx-2 sm:mx-3 ${
+                  <div className={`w-2 sm:w-6 h-0.5 mx-1 sm:mx-3 ${
                     step < currentStep ? 'bg-indigo-600' : isDarkMode ? 'bg-gray-600' : 'bg-gray-300'
                   }`} />
                 )}
@@ -764,21 +760,19 @@ export default function QuickInvoiceModal({
         <form onSubmit={handleSubmit} className="px-4 sm:px-6 pb-4 sm:pb-6">
           {/* Step 1: Client & Details */}
           {currentStep === 1 && (
-            <div className="space-y-4 sm:space-y-5">
-              <div className="text-center mb-4 sm:mb-6">
-                <h3 className={`text-sm sm:text-base font-semibold mb-1 ${
+            <div className="space-y-4">
+              <div className="text-center mb-4">
+                <h3 className={`text-sm font-semibold mb-1 ${
                   isDarkMode ? 'text-white' : 'text-gray-900'
                 }`}>Client & Invoice Details</h3>
                 <p className={`text-xs ${
                   isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                }`}>Select client and set basic invoice information</p>
+                }`}>Select client and set basic information</p>
               </div>
 
               {/* Client Selection */}
-              <div className={`p-5 rounded-lg border ${
-                isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'
-              }`}>
-                <h4 className={`text-sm font-semibold mb-4 flex items-center ${
+              <div className="p-4">
+                <h4 className={`text-sm font-semibold mb-3 flex items-center ${
                   isDarkMode ? 'text-white' : 'text-gray-900'
                 }`}>
                   <User className="h-4 w-4 mr-2 text-indigo-600" />
@@ -786,17 +780,17 @@ export default function QuickInvoiceModal({
                 </h4>
 
                 {selectedClientId ? (
-                  <div className={`flex items-center justify-between p-4 rounded-lg border ${
+                  <div className={`flex items-center justify-between p-3 rounded-lg ${
                     isDarkMode 
-                      ? 'bg-indigo-900/20 border-indigo-800' 
-                      : 'bg-indigo-50 border-indigo-200'
+                      ? 'bg-indigo-500/10' 
+                      : 'bg-indigo-50'
                   }`}>
                     <div className="flex items-center space-x-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        isDarkMode ? 'bg-indigo-800' : 'bg-indigo-100'
+                        isDarkMode ? 'bg-indigo-600' : 'bg-indigo-100'
                       }`}>
                         <User className={`h-4 w-4 ${
-                          isDarkMode ? 'text-indigo-300' : 'text-indigo-600'
+                          isDarkMode ? 'text-white' : 'text-indigo-600'
                       }`} />
                       </div>
                       <div>
@@ -815,10 +809,10 @@ export default function QuickInvoiceModal({
                     <button
                       type="button"
                       onClick={() => setSelectedClientId('')}
-                      className={`text-xs font-medium px-3 py-2 rounded transition-colors ${
+                      className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors ${
                         isDarkMode 
-                          ? 'text-indigo-400 hover:text-indigo-200 hover:bg-indigo-800/30' 
-                          : 'text-indigo-600 hover:text-indigo-800 hover:bg-indigo-100'
+                          ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
                       }`}
                     >
                       Change
@@ -831,11 +825,11 @@ export default function QuickInvoiceModal({
                       <select
                         value={selectedClientId}
                         onChange={(e) => setSelectedClientId(e.target.value)}
-                          className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors appearance-none cursor-pointer ${
-                          isDarkMode 
-                            ? 'border-gray-600 bg-gray-800 text-white' 
-                            : 'border-gray-300 bg-white text-gray-900'
-                        }`}
+                            className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors appearance-none cursor-pointer ${
+                              isDarkMode 
+                                ? 'border-gray-700 bg-gray-800 text-white' 
+                                : 'border-gray-300 bg-white text-gray-900'
+                            }`}
                       >
                           <option value="">Select existing client</option>
                         {clients.map(client => (
@@ -856,8 +850,8 @@ export default function QuickInvoiceModal({
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">
                         <div className={`w-full border-t ${
-                            isDarkMode ? 'border-gray-600' : 'border-gray-300'
-                        }`} />
+                            isDarkMode ? 'border-gray-600' : 'border-gray-200'
+                          }`} />
                       </div>
                         <div className="relative flex justify-center text-xs">
                         <span className={`px-2 ${
@@ -878,9 +872,9 @@ export default function QuickInvoiceModal({
                             placeholder="Client name"
                           value={newClient.name}
                           onChange={(e) => setNewClient({...newClient, name: e.target.value})}
-                            className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                            className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                             isDarkMode 
-                              ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                              ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                               : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                           }`}
                         />
@@ -896,9 +890,9 @@ export default function QuickInvoiceModal({
                           placeholder="client@example.com"
                           value={newClient.email}
                           onChange={(e) => setNewClient({...newClient, email: e.target.value})}
-                            className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                            className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                             isDarkMode 
-                              ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                              ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                               : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                           }`}
                         />
@@ -922,7 +916,7 @@ export default function QuickInvoiceModal({
                       readOnly
                       className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg transition-colors ${
                         isDarkMode 
-                          ? 'border-gray-600 bg-gray-800/50 text-gray-300' 
+                          ? 'border-gray-700 bg-gray-800 text-gray-300' 
                           : 'border-gray-300 bg-gray-50 text-gray-600'
                       }`}
                       placeholder="Auto-generated"
@@ -950,9 +944,9 @@ export default function QuickInvoiceModal({
                       type="date"
                       value={dueDate}
                       onChange={(e) => setDueDate(e.target.value)}
-                      className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                      className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                         isDarkMode 
-                          ? 'border-gray-600 bg-gray-800 text-white' 
+                          ? 'border-gray-700 bg-gray-800 text-white' 
                           : 'border-gray-300 bg-white text-gray-900'
                       }`}
                       required
@@ -1028,7 +1022,7 @@ export default function QuickInvoiceModal({
                   {items.map((item) => (
                     <div key={item.id} className={`p-4 border rounded-lg ${
                       isDarkMode 
-                        ? 'border-gray-600 bg-gray-800/50' 
+                        ? 'border-gray-700 bg-gray-800' 
                         : 'border-gray-200 bg-gray-50'
                     }`}>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
@@ -1043,9 +1037,9 @@ export default function QuickInvoiceModal({
                             placeholder="e.g., Website Development, Consulting, Design"
                             value={item.description}
                             onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                            className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                            className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                               isDarkMode 
-                                ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                                ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                                 : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                             }`}
                           />
@@ -1063,9 +1057,9 @@ export default function QuickInvoiceModal({
                               placeholder="0.00"
                               value={item.amount}
                               onChange={(e) => updateItem(item.id, 'amount', e.target.value)}
-                              className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                              className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                                 isDarkMode 
-                                  ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                                  ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                                   : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                               }`}
                             />
@@ -1092,9 +1086,7 @@ export default function QuickInvoiceModal({
               </div>
 
               {/* Discount */}
-              <div className={`p-4 rounded-lg border ${
-                isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'
-              }`}>
+              <div className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <label className={`block text-sm font-medium mb-1 ${
@@ -1118,9 +1110,9 @@ export default function QuickInvoiceModal({
                         placeholder="0"
                         value={discount}
                         onChange={(e) => setDiscount(e.target.value)}
-                        className={`w-full pl-10 pr-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        className={`w-full pl-10 pr-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                           isDarkMode 
-                            ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                            ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                             : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                         }`}
                       />
@@ -1143,9 +1135,9 @@ export default function QuickInvoiceModal({
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
                       isDarkMode 
-                        ? 'border-gray-600 bg-gray-800 text-white placeholder-gray-500' 
+                        ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                         : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                     }`}
                     placeholder="Thank you for your business!"
@@ -1155,11 +1147,7 @@ export default function QuickInvoiceModal({
               </div>
 
               {/* Totals */}
-              <div className={`p-6 rounded-xl border ${
-                isDarkMode 
-                  ? 'bg-gray-800/50 border-gray-600' 
-                  : 'bg-gray-50 border-gray-200'
-              }`}>
+              <div className="p-6">
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Subtotal</span>
@@ -1222,9 +1210,7 @@ export default function QuickInvoiceModal({
               </div>
 
               {/* Template Selection */}
-              <div className={`p-5 rounded-lg border ${
-                isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'
-              }`}>
+              <div className="p-5">
                 <TemplateSelector
                   selectedTemplate={theme.template}
                   onTemplateSelect={(template) => setTheme(prevTheme => ({...prevTheme, template}))}
@@ -1237,9 +1223,7 @@ export default function QuickInvoiceModal({
               </div>
 
               {/* Auto Reminders */}
-              <div className={`p-5 rounded-lg border ${
-                isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'
-              }`}>
+              <div className="p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className={`text-sm font-semibold flex items-center ${
                     isDarkMode ? 'text-white' : 'text-gray-900'
@@ -1312,9 +1296,7 @@ export default function QuickInvoiceModal({
 
                     {reminders.useSystemDefaults ? (
                       /* Smart Defaults - Clean Design */
-                      <div className={`p-4 rounded-lg border ${
-                        isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'
-                      }`}>
+                      <div className="p-4">
                         <div className="flex items-center space-x-2 mb-3">
                           <Clock className="h-4 w-4 text-indigo-600" />
                           <span className={`text-sm font-medium ${
@@ -1383,9 +1365,9 @@ export default function QuickInvoiceModal({
                             <select
                               value={rule.type}
                               onChange={(e) => updateReminderRule(rule.id, { type: e.target.value as 'before' | 'after' })}
-                              className={`px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                              className={`px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                                 isDarkMode 
-                                  ? 'border-gray-600 bg-gray-800' 
+                                  ? 'border-gray-700 bg-gray-800' 
                                   : 'border-gray-300 bg-white'
                               } ${
                                 rule.type === 'before'
@@ -1401,9 +1383,9 @@ export default function QuickInvoiceModal({
                               type="number"
                               value={rule.days}
                               onChange={(e) => updateReminderRule(rule.id, { days: parseInt(e.target.value) || 0 })}
-                              className={`w-20 px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                              className={`w-20 px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                                 isDarkMode 
-                                  ? 'border-gray-600 bg-gray-800 text-white' 
+                                  ? 'border-gray-700 bg-gray-800 text-white' 
                                   : 'border-gray-300 bg-white text-gray-900'
                               }`}
                               placeholder="Days"
@@ -1432,9 +1414,7 @@ export default function QuickInvoiceModal({
               </div>
 
               {/* Late Fees */}
-              <div className={`p-5 rounded-lg border ${
-                isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'
-              }`}>
+              <div className="p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className={`text-sm font-semibold flex items-center ${
                     isDarkMode ? 'text-white' : 'text-gray-900'
@@ -1465,7 +1445,7 @@ export default function QuickInvoiceModal({
                   <div className="space-y-4">
                     {/* Helpful description */}
                     <div className={`p-3 rounded-lg ${
-                      isDarkMode ? 'bg-orange-500/10 border border-orange-500/20' : 'bg-orange-50 border border-orange-200'
+                      isDarkMode ? 'bg-orange-500/10' : 'bg-orange-50'
                     }`}>
                       <p className={`text-xs ${
                         isDarkMode ? 'text-orange-300' : 'text-orange-700'
@@ -1484,9 +1464,9 @@ export default function QuickInvoiceModal({
                         <select
                           value={lateFees.type}
                           onChange={(e) => setLateFees({...lateFees, type: e.target.value as 'fixed' | 'percentage'})}
-                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                             isDarkMode 
-                              ? 'border-gray-600 bg-gray-800 text-white' 
+                              ? 'border-gray-700 bg-gray-800 text-white' 
                               : 'border-gray-300 bg-white text-gray-900'
                           }`}
                         >
@@ -1509,9 +1489,9 @@ export default function QuickInvoiceModal({
                           type="number"
                           value={lateFees.amount}
                           onChange={(e) => setLateFees({...lateFees, amount: parseFloat(e.target.value) || 0})}
-                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                             isDarkMode 
-                              ? 'border-gray-600 bg-gray-800 text-white' 
+                              ? 'border-gray-700 bg-gray-800 text-white' 
                               : 'border-gray-300 bg-white text-gray-900'
                           }`}
                           placeholder={lateFees.type === 'fixed' ? '25.00' : '5'}
@@ -1537,9 +1517,9 @@ export default function QuickInvoiceModal({
                           type="number"
                           value={lateFees.gracePeriod}
                           onChange={(e) => setLateFees({...lateFees, gracePeriod: parseInt(e.target.value) || 0})}
-                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                             isDarkMode 
-                              ? 'border-gray-600 bg-gray-800 text-white' 
+                              ? 'border-gray-700 bg-gray-800 text-white' 
                               : 'border-gray-300 bg-white text-gray-900'
                           }`}
                           placeholder="7"
@@ -1557,9 +1537,7 @@ export default function QuickInvoiceModal({
               </div>
 
               {/* Payment Terms */}
-              <div className={`p-5 rounded-lg border ${
-                isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'
-              }`}>
+              <div className="p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className={`text-sm font-semibold flex items-center ${
                     isDarkMode ? 'text-white' : 'text-gray-900'
@@ -1590,7 +1568,7 @@ export default function QuickInvoiceModal({
                   <div className="space-y-4">
                     {/* Explanation */}
                     <div className={`p-3 rounded-lg ${
-                      isDarkMode ? 'bg-blue-900/20 border border-blue-800' : 'bg-blue-50 border border-blue-200'
+                      isDarkMode ? 'bg-blue-500/10' : 'bg-blue-50'
                     }`}>
                       <div className="flex items-start space-x-2">
                         <Zap className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5" />
@@ -1639,9 +1617,9 @@ export default function QuickInvoiceModal({
                             setDueDate(newDueDate.toISOString().split('T')[0])
                           }
                         }}
-                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                           isDarkMode 
-                            ? 'border-gray-600 bg-gray-800 text-white' 
+                            ? 'border-gray-700 bg-gray-800 text-white' 
                             : 'border-gray-300 bg-white text-gray-900'
                         }`}
                       >
@@ -1685,82 +1663,6 @@ export default function QuickInvoiceModal({
                 )}
               </div>
 
-              {/* Color Customization */}
-              <div className={`p-5 rounded-lg border ${
-                isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'
-              }`}>
-                <h4 className={`text-sm font-semibold mb-4 flex items-center ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
-                }`}>
-                  <Palette className="h-4 w-4 mr-2 text-indigo-600" />
-                  Invoice Colors
-                </h4>
-                
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className={`block text-xs font-medium mb-2 ${
-                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
-                      Primary
-                    </label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="color"
-                        value={theme.primaryColor}
-                        onChange={(e) => setTheme({...theme, primaryColor: e.target.value})}
-                        className="w-8 h-8 rounded border-2 border-gray-300 dark:border-gray-600 cursor-pointer"
-                      />
-                      <span className={`text-xs font-mono ${
-                        isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                      }`}>
-                        {theme.primaryColor}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className={`block text-xs font-medium mb-2 ${
-                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
-                      Secondary
-                    </label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="color"
-                        value={theme.secondaryColor}
-                        onChange={(e) => setTheme({...theme, secondaryColor: e.target.value})}
-                        className="w-8 h-8 rounded border-2 border-gray-300 dark:border-gray-600 cursor-pointer"
-                      />
-                      <span className={`text-xs font-mono ${
-                        isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                      }`}>
-                        {theme.secondaryColor}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className={`block text-xs font-medium mb-2 ${
-                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
-                      Accent
-                    </label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="color"
-                        value={theme.accentColor}
-                        onChange={(e) => setTheme({...theme, accentColor: e.target.value})}
-                        className="w-8 h-8 rounded border-2 border-gray-300 dark:border-gray-600 cursor-pointer"
-                      />
-                      <span className={`text-xs font-mono ${
-                        isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                      }`}>
-                        {theme.accentColor}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
@@ -1800,9 +1702,7 @@ export default function QuickInvoiceModal({
               </div>
 
               {/* Invoice Preview */}
-              <div className={`p-6 rounded-xl border ${
-                isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'
-              }`}>
+              <div className="p-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Business Info */}
                   <div>
@@ -1913,9 +1813,7 @@ export default function QuickInvoiceModal({
               </div>
 
               {/* Features Summary */}
-              <div className={`p-5 rounded-lg border ${
-                isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-gray-200'
-              }`}>
+              <div className="p-5">
                 <h4 className={`text-sm font-semibold mb-4 ${
                   isDarkMode ? 'text-white' : 'text-gray-900'
                 }`}>

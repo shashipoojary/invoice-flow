@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { 
-  Plus, FileText, Clock, CheckCircle, AlertCircle, FilePlus, Sparkles,
+  Plus, FileText, Clock, CheckCircle, AlertCircle, AlertTriangle, FilePlus, Sparkles,
   Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Calendar, Trash2
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -117,15 +117,15 @@ function InvoicesContent() {
   const getStatusStyle = useCallback((status: string) => {
     switch (status) {
       case 'paid':
-        return { backgroundColor: '#d1fae5', color: '#047857', borderColor: '#6ee7b7' };
+        return { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' };
       case 'sent':
-        return { backgroundColor: '#dbeafe', color: '#1d4ed8', borderColor: '#93c5fd' };
+        return { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' };
       case 'overdue':
-        return { backgroundColor: '#fee2e2', color: '#dc2626', borderColor: '#fca5a5' };
+        return { backgroundColor: '#fef2f2', color: '#dc2626', borderColor: '#fecaca' };
       case 'draft':
-        return { backgroundColor: '#f3f4f6', color: '#374151', borderColor: '#d1d5db' };
+        return { backgroundColor: '#f3f4f6', color: '#374151', borderColor: '#e5e7eb' };
       default:
-        return { backgroundColor: '#f3f4f6', color: '#374151', borderColor: '#d1d5db' };
+        return { backgroundColor: '#f3f4f6', color: '#374151', borderColor: '#e5e7eb' };
     }
   }, []);
 
@@ -477,9 +477,9 @@ function InvoicesContent() {
     
     return (
     <div className={`rounded-lg border p-4 transition-all duration-200 hover:shadow-md ${isDarkMode ? 'bg-gray-800/30 border-gray-700 hover:bg-gray-800/40' : 'bg-white border-gray-300 hover:shadow-lg'}`}>
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Invoice Info Row */}
-        <div className="space-y-4 sm:space-y-0">
+        <div className="space-y-3 sm:space-y-0">
           {/* Mobile Layout */}
           <div className="sm:hidden space-y-3">
             <div className="flex items-center justify-between">
@@ -488,9 +488,9 @@ function InvoicesContent() {
                   {invoice.invoiceNumber}
                 </div>
                 <span 
-                  className={`px-2 py-1 text-xs font-medium rounded-full border`}
+                  className={`px-2 py-0.5 text-xs font-medium rounded-full border`}
                   style={isDarkMode ? getTypeStyleDark(invoice.type || 'detailed') : ((invoice.type || 'detailed') === 'fast' 
-                    ? { backgroundColor: '#dbeafe', color: '#1d4ed8', borderColor: '#93c5fd' }
+                    ? { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' }
                     : { backgroundColor: '#e0e7ff', color: '#3730a3', borderColor: '#a5b4fc' }
                   )}
                 >
@@ -498,22 +498,17 @@ function InvoicesContent() {
                 </span>
               </div>
               <div className={`font-heading text-lg font-bold ${
-                invoice.status === 'paid' ? 'text-green-600 dark:text-green-400' :
-                invoice.status === 'sent' ? 'text-amber-600 dark:text-amber-400' :
-                invoice.status === 'draft' ? 'text-gray-500 dark:text-gray-400' :
-                dueDateStatus.status === 'overdue' ? 'text-red-600 dark:text-red-400' :
-                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                invoice.status === 'paid' ? 'text-green-700 dark:text-green-400' :
+                invoice.status === 'sent' ? 'text-orange-600 dark:text-amber-400' :
+                invoice.status === 'draft' ? 'text-gray-600 dark:text-gray-400' :
+                dueDateStatus.status === 'overdue' ? 'text-red-700 dark:text-red-400' :
+                isDarkMode ? 'text-gray-300' : 'text-gray-800'
               }`}>
                 ${dueCharges.totalPayable.toLocaleString()}
-                {dueCharges.hasLateFees && (
-                  <div className="text-xs font-normal text-red-500">
-                    (includes ${dueCharges.lateFeeAmount.toFixed(2)} late fee)
-                  </div>
-                )}
               </div>
             </div>
             <div className="text-xs" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-              {invoice.createdAt}
+              {new Date(invoice.createdAt).toLocaleDateString()}
             </div>
             <div className="text-sm font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
               {invoice.client.name}
@@ -525,7 +520,7 @@ function InvoicesContent() {
             )}
             <div className="flex items-center justify-between">
               <span 
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border`}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border`}
                 style={isDarkMode ? getStatusStyleDark(invoice.status) : getStatusStyle(invoice.status)}
               >
                 {getStatusIcon(invoice.status)}
@@ -561,9 +556,9 @@ function InvoicesContent() {
                   {invoice.invoiceNumber}
                 </div>
                 <span 
-                  className={`px-2 py-1 text-xs font-medium rounded-full border`}
+                  className={`px-2 py-0.5 text-xs font-medium rounded-full border`}
                   style={isDarkMode ? getTypeStyleDark(invoice.type || 'detailed') : ((invoice.type || 'detailed') === 'fast' 
-                    ? { backgroundColor: '#dbeafe', color: '#1d4ed8', borderColor: '#93c5fd' }
+                    ? { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' }
                     : { backgroundColor: '#e0e7ff', color: '#3730a3', borderColor: '#a5b4fc' }
                   )}
                 >
@@ -571,16 +566,18 @@ function InvoicesContent() {
                 </span>
               </div>
               <div className="text-xs" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                {invoice.createdAt}
+                {new Date(invoice.createdAt).toLocaleDateString()}
               </div>
             </div>
             <div>
               <div className="text-sm font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                 {invoice.client.name}
               </div>
-              <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                {invoice.client.company}
-              </div>
+              {invoice.client.company && (
+                <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                  {invoice.client.company}
+                </div>
+              )}
             </div>
             <div className={`font-heading text-lg font-bold ${
               invoice.status === 'paid' ? 'text-green-600 dark:text-green-400' :
@@ -590,96 +587,45 @@ function InvoicesContent() {
               isDarkMode ? 'text-gray-300' : 'text-gray-700'
             }`}>
               ${dueCharges.totalPayable.toLocaleString()}
-              {dueCharges.hasLateFees && (
-                <div className="text-xs font-normal text-red-500">
-                  (includes ${dueCharges.lateFeeAmount.toFixed(2)} late fee)
-                </div>
-              )}
             </div>
             <div className="flex items-center justify-between">
               <span 
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border`}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border`}
                 style={isDarkMode ? getStatusStyleDark(invoice.status) : getStatusStyle(invoice.status)}
               >
                 {getStatusIcon(invoice.status)}
                 <span className="capitalize">{invoice.status}</span>
               </span>
-              {invoice.status === 'sent' && (
-                <div className={`hidden lg:flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium ${
-                  dueDateStatus.status === 'overdue' 
-                    ? (isDarkMode ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-red-100 text-red-700 border border-red-200')
-                    : dueDateStatus.status === 'due-today'
-                    ? (isDarkMode ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-orange-100 text-orange-700 border border-orange-200')
-                    : dueDateStatus.status === 'due-soon'
-                    ? (isDarkMode ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : 'bg-yellow-100 text-yellow-700 border border-yellow-200')
-                    : (isDarkMode ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-blue-100 text-blue-700 border border-blue-200')
+              {invoice.status === 'sent' && dueDateStatus.status === 'overdue' && (
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${
+                  isDarkMode ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-50 text-red-800 border-red-300'
                 }`}>
-                  <Calendar className="h-3 w-3" />
-                  <span>
-                    {dueDateStatus.status === 'overdue' ? `${dueDateStatus.days} days overdue` :
-                     dueDateStatus.status === 'due-today' ? 'Due today' :
-                     dueDateStatus.status === 'due-soon' ? `Due in ${dueDateStatus.days} days` :
-                     `Due in ${dueDateStatus.days} days`}
-                  </span>
-                </div>
+                  <AlertTriangle className="h-3 w-3" />
+                  <span>{dueDateStatus.days}d overdue</span>
+                </span>
               )}
             </div>
           </div>
         </div>
         
-        {/* Divider */}
-        <div className={`border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}></div>
-        
-        {/* Enhanced Features Section */}
-        {(paymentTerms || lateFees || reminders) && (
-          <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-800/50' : 'bg-gray-50'}`}>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-              {paymentTerms && (
-                <div className="flex items-center space-x-2">
-                  <CreditCard className="h-3 w-3 text-blue-500" />
-                  <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-                    <span className="font-medium">Terms:</span> {paymentTerms}
-                  </span>
-                </div>
-              )}
-              {lateFees && (
-                <div className="flex items-center space-x-2">
-                  <DollarSign className="h-3 w-3 text-orange-500" />
-                  <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-                    <span className="font-medium">Late Fee:</span> {lateFees}
-                  </span>
-                </div>
-              )}
-              {reminders && (
-                <div className="flex items-center space-x-2">
-                  <Bell className="h-3 w-3 text-green-500" />
-                  <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
-                    <span className="font-medium">Reminders:</span> {reminders}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-        
         {/* Action Buttons Row */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 pt-3">
           <button 
             onClick={() => handleViewInvoice(invoice)}
-            className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'}`}
+            className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30' : 'bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-300'}`}
           >
-            <Eye className="h-3 w-3" />
+            <Eye className="h-3.5 w-3.5" />
             <span>View</span>
           </button>
           <button 
             onClick={() => handleDownloadPDF(invoice)}
             disabled={loadingActions[`pdf-${invoice.id}`]}
-            className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {loadingActions[`pdf-${invoice.id}`] ? (
-              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+              <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></div>
             ) : (
-              <Download className="h-3 w-3" />
+              <Download className="h-3.5 w-3.5" />
             )}
             <span>PDF</span>
           </button>
@@ -687,12 +633,12 @@ function InvoicesContent() {
             <button 
               onClick={() => handleSendInvoice(invoice)}
               disabled={loadingActions[`send-${invoice.id}`]}
-              className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 border border-indigo-500/30' : 'bg-indigo-50 text-indigo-800 hover:bg-indigo-100 border border-indigo-300'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {loadingActions[`send-${invoice.id}`] ? (
-                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></div>
               ) : (
-                <Send className="h-3 w-3" />
+                <Send className="h-3.5 w-3.5" />
               )}
               <span>Send</span>
             </button>
@@ -701,46 +647,38 @@ function InvoicesContent() {
             <button 
               onClick={() => handleMarkAsPaid(invoice)}
               disabled={loadingActions[`paid-${invoice.id}`]}
-              className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {loadingActions[`paid-${invoice.id}`] ? (
-                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></div>
               ) : (
-                <CheckCircle className="h-3 w-3" />
+                <CheckCircle className="h-3.5 w-3.5" />
               )}
               <span>Mark as Paid</span>
             </button>
           )}
-          {invoice.status === 'draft' ? (
+          {invoice.status === 'draft' && (
             <>
               <button 
                 onClick={() => handleEditInvoice(invoice)}
-                className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30 border border-gray-500/30' : 'bg-gray-50 text-gray-800 hover:bg-gray-100 border border-gray-300'}`}
               >
-                <Edit className="h-3 w-3" />
+                <Edit className="h-3.5 w-3.5" />
                 <span>Edit</span>
               </button>
               <button 
                 onClick={() => handleDeleteInvoice(invoice)}
                 disabled={loadingActions[`delete-${invoice.id}`]}
-                className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-red-100 text-red-700 hover:bg-red-200'} ${loadingActions[`delete-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30' : 'bg-red-50 text-red-800 hover:bg-red-100 border border-red-300'} ${loadingActions[`delete-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {loadingActions[`delete-${invoice.id}`] ? (
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></div>
                 ) : (
-                  <Trash2 className="h-3 w-3" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 )}
                 <span>Delete</span>
               </button>
             </>
-          ) : (
-            <div 
-              className={`flex items-center justify-center space-x-1 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-gray-600/20 text-gray-500' : 'bg-gray-50 text-gray-400'} cursor-not-allowed`}
-              title="Cannot edit sent invoices - create a new invoice for changes"
-            >
-              <Edit className="h-3 w-3" />
-              <span>Edit</span>
-            </div>
           )}
         </div>
       </div>
@@ -858,14 +796,14 @@ function InvoicesContent() {
           <div className="pt-16 lg:pt-4 p-4 sm:p-6 lg:p-8">
             {/* Invoices Section */}
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                   <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                     Invoices
                   </h2>
                   {searchParams.get('status') && (
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                      <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap ${
                         searchParams.get('status') === 'paid' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
                         searchParams.get('status') === 'sent' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
                         searchParams.get('status') === 'overdue' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
@@ -878,7 +816,7 @@ function InvoicesContent() {
                       </span>
                       <button
                         onClick={() => window.history.replaceState({}, '', '/dashboard/invoices')}
-                        className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 underline"
+                        className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 underline whitespace-nowrap"
                       >
                         Clear Filter
                       </button>
@@ -888,16 +826,15 @@ function InvoicesContent() {
                 {user ? (
                   <button
                     onClick={() => setShowCreateInvoice(true)}
-                    className="flex items-center space-x-1 sm:space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-xs sm:text-sm font-medium"
+                    className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                   >
-                    <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                    <span className="hidden sm:inline">New Invoice</span>
-                    <span className="sm:hidden">New</span>
+                    <Plus className="h-4 w-4" />
+                    <span>Add Invoice</span>
                   </button>
                 ) : (
                   <button
                     onClick={() => setShowCreateInvoice(true)}
-                    className="flex items-center space-x-1 sm:space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-xs sm:text-sm font-medium"
+                    className="flex items-center space-x-1 sm:space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                   >
                     <span>Sign In</span>
                   </button>
@@ -1311,47 +1248,7 @@ function InvoicesContent() {
         </div>
       )}
 
-      {/* Modals */}
-      {showFastInvoice && (
-        <FastInvoiceModal
-          isOpen={showFastInvoice}
-          onClose={() => {
-            setShowFastInvoice(false);
-            setSelectedInvoice(null);
-          }}
-          onSuccess={() => {
-            setShowFastInvoice(false);
-            setSelectedInvoice(null);
-            // Refresh invoices data
-            window.location.reload();
-          }}
-          user={user!}
-          getAuthHeaders={getAuthHeaders}
-          isDarkMode={isDarkMode}
-          clients={clients}
-          editingInvoice={selectedInvoice}
-        />
-      )}
 
-      {showCreateInvoice && (
-        <QuickInvoiceModal
-          isOpen={showCreateInvoice}
-          onClose={() => {
-            setShowCreateInvoice(false);
-            setSelectedInvoice(null);
-          }}
-          onSuccess={() => {
-            setShowCreateInvoice(false);
-            setSelectedInvoice(null);
-            // Refresh invoices data
-            window.location.reload();
-          }}
-          getAuthHeaders={getAuthHeaders}
-          isDarkMode={isDarkMode}
-          clients={clients}
-          editingInvoice={selectedInvoice}
-        />
-      )}
 
       {showCreateClient && (
         <ClientModal
