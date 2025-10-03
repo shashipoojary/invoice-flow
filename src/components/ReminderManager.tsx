@@ -39,12 +39,6 @@ export default function ReminderManager({ isOpen, onClose, userId }: ReminderMan
   } | null>(null);
   const { showSuccess, showError } = useToast();
 
-  useEffect(() => {
-    if (isOpen && userId) {
-      fetchOverdueInvoices();
-    }
-  }, [isOpen, userId, fetchOverdueInvoices]);
-
   const fetchOverdueInvoices = useCallback(async () => {
     setLoading(true);
     try {
@@ -73,6 +67,12 @@ export default function ReminderManager({ isOpen, onClose, userId }: ReminderMan
       setLoading(false);
     }
   }, [userId, showError]);
+
+  useEffect(() => {
+    if (isOpen && userId) {
+      fetchOverdueInvoices();
+    }
+  }, [isOpen, userId, fetchOverdueInvoices]);
 
   const fetchDebugInfo = async () => {
     try {

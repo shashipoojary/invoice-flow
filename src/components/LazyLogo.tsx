@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import Image from 'next/image'
+import NextImage from 'next/image'
 
 interface LazyLogoProps {
   src: string
@@ -89,7 +89,7 @@ export default function LazyLogo({
   return (
     <div className={`relative ${className}`} style={{ width, height }}>
       {imageSrc && (
-        <Image
+        <NextImage
           ref={imgRef}
           src={imageSrc}
           alt={alt}

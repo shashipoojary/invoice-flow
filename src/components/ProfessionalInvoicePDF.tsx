@@ -483,7 +483,7 @@ const formatCurrency = (amount: number) => {
         <View style={styles.header}>
           <View style={styles.logoSection}>
             {businessSettings?.logo ? (
-              <Image style={styles.logo} src={businessSettings.logo} alt="Business Logo" />
+              <Image style={styles.logo} src={businessSettings.logo} />
             ) : (
               <View style={styles.logo}>
                 <Text style={styles.businessNameText}>
@@ -572,7 +572,7 @@ const formatCurrency = (amount: number) => {
           
           {/* QR Code for Payment */}
           {qrCodeDataURL ? (
-            <Image style={styles.cornerQrCode} src={qrCodeDataURL} alt="QR Code" />
+            <Image style={styles.cornerQrCode} src={qrCodeDataURL} />
           ) : (
             <View style={styles.cornerQrCode}>
               <Text style={{ fontSize: 6, textAlign: 'center', marginTop: 20, color: '#999' }}>

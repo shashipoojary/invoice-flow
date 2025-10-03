@@ -11,6 +11,7 @@ export default function TestDbPage() {
     details?: string;
     testData?: any[];
     columnError?: string;
+    code?: string;
   } | null>(null);
   const [loading, setLoading] = useState(false);
 

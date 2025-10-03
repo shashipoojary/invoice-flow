@@ -13,7 +13,26 @@ export default function TestRemindersPage() {
       status: string;
       dueDate: string;
       isOverdue: boolean;
+      daysOverdue?: number;
+      reminderCount?: number;
+      clientName?: string;
     }>;
+    overdueCount?: number;
+    success?: boolean;
+    debug?: {
+      userId: string;
+      totalInvoices: number;
+      today: string;
+      invoices?: Array<{
+        invoiceNumber: string;
+        status: string;
+        dueDate: string;
+        isOverdue: boolean;
+        daysOverdue?: number;
+        reminderCount?: number;
+        clientName?: string;
+      }>;
+    };
   } | null>(null);
   const [loading, setLoading] = useState(false);
 
