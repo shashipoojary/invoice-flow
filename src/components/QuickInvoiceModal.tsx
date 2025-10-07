@@ -378,7 +378,7 @@ export default function QuickInvoiceModal({
           rules: reminders.rules.filter(rule => rule.enabled)
         } : undefined,
         theme: {
-          template: theme.template,
+          template: getPdfTemplate(theme.template), // Map to correct PDF template
           primary_color: theme.primaryColor,
           secondary_color: theme.secondaryColor,
           accent_color: theme.accentColor
@@ -464,7 +464,7 @@ export default function QuickInvoiceModal({
           terms: paymentTerms.defaultOption
         } : { enabled: false },
         theme: {
-          template: theme.template,
+          template: getPdfTemplate(theme.template), // Map to correct PDF template
           primary_color: theme.primaryColor,
           secondary_color: theme.secondaryColor,
           accent_color: theme.accentColor
@@ -532,6 +532,16 @@ export default function QuickInvoiceModal({
     onClose()
   }
 
+  // Helper function to map template selection to PDF template
+  const getPdfTemplate = (templateId: number): number => {
+    switch (templateId) {
+      case 1: return 6; // Fast Invoice -> Template 6 (Minimal - Finalized)
+      case 2: return 4; // Modern -> Template 4
+      case 3: return 5; // Creative -> Template 5 (Simple Clean)
+      default: return 6; // Default to Template 6
+    }
+  }
+
   const handleGeneratePDF = async () => {
     setPdfLoading(true)
     try {
@@ -581,7 +591,7 @@ export default function QuickInvoiceModal({
           terms: paymentTerms.defaultOption
         } : { enabled: false },
         theme: {
-          template: theme.template,
+          template: getPdfTemplate(theme.template), // Map to correct PDF template
           primary_color: theme.primaryColor,
           secondary_color: theme.secondaryColor,
           accent_color: theme.accentColor
@@ -1223,7 +1233,9 @@ export default function QuickInvoiceModal({
               </div>
 
               {/* Auto Reminders */}
-              <div className="p-5">
+              <div className={`p-5 rounded-lg border ${
+                isDarkMode ? 'border-gray-700' : 'border-gray-200'
+              }`}>
                 <div className="flex items-center justify-between mb-4">
                   <h4 className={`text-sm font-semibold flex items-center ${
                     isDarkMode ? 'text-white' : 'text-gray-900'
@@ -1414,7 +1426,9 @@ export default function QuickInvoiceModal({
               </div>
 
               {/* Late Fees */}
-              <div className="p-5">
+              <div className={`p-5 rounded-lg border ${
+                isDarkMode ? 'border-gray-700' : 'border-gray-200'
+              }`}>
                 <div className="flex items-center justify-between mb-4">
                   <h4 className={`text-sm font-semibold flex items-center ${
                     isDarkMode ? 'text-white' : 'text-gray-900'
@@ -1537,7 +1551,9 @@ export default function QuickInvoiceModal({
               </div>
 
               {/* Payment Terms */}
-              <div className="p-5">
+              <div className={`p-5 rounded-lg border ${
+                isDarkMode ? 'border-gray-700' : 'border-gray-200'
+              }`}>
                 <div className="flex items-center justify-between mb-4">
                   <h4 className={`text-sm font-semibold flex items-center ${
                     isDarkMode ? 'text-white' : 'text-gray-900'

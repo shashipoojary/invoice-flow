@@ -340,7 +340,7 @@ export default function Template1({ invoice, businessSettings, primaryColor = '#
         <View style={styles.companySection}>
           <View style={[styles.logo, { backgroundColor: primaryColor }]}>
             <Text style={styles.logoText}>
-              {businessSettings.businessName?.charAt(0) || 'B'}
+            {businessSettings.businessName?.charAt(0) || 'B'}
             </Text>
           </View>
           <Text style={[styles.companyName, { color: secondaryColor }]}>{businessSettings.businessName}</Text>
@@ -362,14 +362,14 @@ export default function Template1({ invoice, businessSettings, primaryColor = '#
         {/* Divider line */}
         <View style={[styles.divider, { backgroundColor: `${primaryColor}30` }]} />
 
-        {/* Bill To and Invoice Details */}
+      {/* Bill To and Invoice Details */}
         <View style={styles.billToSection}>
           <View style={styles.billTo}>
             <Text style={styles.billToTitle}>BILL TO:</Text>
             <View style={[styles.clientNameContainer, { backgroundColor: `${primaryColor}15` }]}>
               <Text style={styles.clientName}>{invoice.client.name}</Text>
             </View>
-            {invoice.client.company && (
+          {invoice.client.company && (
               <View style={[styles.clientDetailField, { backgroundColor: `${primaryColor}15` }]}>
                 <Text style={styles.clientDetailText}>{invoice.client.company}</Text>
               </View>
@@ -382,7 +382,7 @@ export default function Template1({ invoice, businessSettings, primaryColor = '#
             <View style={[styles.clientDetailField, { backgroundColor: `${primaryColor}15` }]}>
               <Text style={styles.clientDetailText}>{invoice.client.email}</Text>
             </View>
-            {invoice.client.phone && (
+          {invoice.client.phone && (
               <View style={[styles.clientDetailField, { backgroundColor: `${primaryColor}15` }]}>
                 <Text style={styles.clientDetailText}>{invoice.client.phone}</Text>
               </View>
@@ -414,7 +414,7 @@ export default function Template1({ invoice, businessSettings, primaryColor = '#
             <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'center' }]}>TAX</Text>
             <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'right' }]}>AMOUNT</Text>
           </View>
-          {invoice.items.map((item, index) => (
+        {invoice.items.map((item, index) => (
             <View key={index} style={[
               index % 2 === 0 ? styles.tableRow : styles.tableRowEven,
               index % 2 === 1 ? { backgroundColor: `${primaryColor}08` } : {}
@@ -466,7 +466,7 @@ export default function Template1({ invoice, businessSettings, primaryColor = '#
         {/* Footer with disclaimer only */}
         <View style={styles.footer}>
           <Text style={styles.disclaimer}>
-            This invoice was generated with InvoiceFlow. Create professional invoices in seconds.
+          This invoice was generated with InvoiceFlow. Create professional invoices in seconds.
           </Text>
         </View>
       </Page>

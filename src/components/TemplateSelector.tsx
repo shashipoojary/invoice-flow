@@ -20,7 +20,8 @@ const templatePreviews = [
     description: 'Quick and reliable',
     icon: FileText,
     defaultPrimary: '#5C2D91',
-    defaultSecondary: '#8B5CF6'
+    defaultSecondary: '#8B5CF6',
+    pdfTemplate: 6 // Maps to Template 6 (Minimal - Finalized)
   },
   {
     id: 2,
@@ -28,7 +29,8 @@ const templatePreviews = [
     description: 'Sleek and minimal',
     icon: Layout,
     defaultPrimary: '#7C3AED',
-    defaultSecondary: '#A855F7'
+    defaultSecondary: '#A855F7',
+    pdfTemplate: 4 // Maps to Template 4 (Modern)
   },
   {
     id: 3,
@@ -36,7 +38,8 @@ const templatePreviews = [
     description: 'Bold and dynamic',
     icon: PenTool,
     defaultPrimary: '#8B5CF6',
-    defaultSecondary: '#F59E0B'
+    defaultSecondary: '#F59E0B',
+    pdfTemplate: 5 // Maps to Template 5 (Simple Clean)
   }
 ]
 
