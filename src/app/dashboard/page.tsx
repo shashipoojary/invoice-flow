@@ -3,14 +3,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
-  FileText, Users, TrendingUp, 
+  FileText, Users, 
   Clock, CheckCircle, AlertCircle, AlertTriangle, UserPlus, FilePlus, Sparkles, Receipt, Timer,
   Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2
 } from 'lucide-react';
-import { 
-  AreaChart, Area, PieChart, Pie, Cell, 
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
-} from 'recharts';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import ToastContainer from '@/components/Toast';
@@ -934,7 +930,7 @@ export default function DashboardOverview() {
                         )}
                       </div>
                       <div className="flex items-center space-x-1 justify-start">
-                        <TrendingUp className="h-4 w-4 text-emerald-500" />
+                        <CheckCircle className="h-4 w-4 text-emerald-500" />
                         <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Paid invoices</span>
                       </div>
                     </div>
@@ -1031,227 +1027,6 @@ export default function DashboardOverview() {
               </div>
             </div>
 
-            {/* Analytics Charts */}
-            <div className="mt-8">
-              <h2 className="font-heading text-2xl font-semibold mb-6" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                Analytics Overview
-              </h2>
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {/* Revenue Trend Chart */}
-                <div className={`rounded-lg p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-lg" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                      Revenue Trend
-                    </h3>
-                    <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-green-500/20' : 'bg-green-50'}`}>
-                      <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    </div>
-                  </div>
-                  <div className="h-48">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={[
-                        { month: 'Jan', revenue: Math.floor(totalRevenue * 0.6) },
-                        { month: 'Feb', revenue: Math.floor(totalRevenue * 0.7) },
-                        { month: 'Mar', revenue: Math.floor(totalRevenue * 0.8) },
-                        { month: 'Apr', revenue: Math.floor(totalRevenue * 0.75) },
-                        { month: 'May', revenue: Math.floor(totalRevenue * 0.9) },
-                        { month: 'Jun', revenue: totalRevenue }
-                      ]}>
-                        <defs>
-                          <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#374151' : '#e5e7eb'} />
-                        <XAxis 
-                          dataKey="month" 
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fontSize: 12, fill: isDarkMode ? '#9ca3af' : '#6b7280' }}
-                        />
-                        <YAxis 
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fontSize: 12, fill: isDarkMode ? '#9ca3af' : '#6b7280' }}
-                          tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                        />
-                        <Tooltip 
-                          contentStyle={{
-                            backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
-                            border: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}`,
-                            borderRadius: '8px',
-                            color: isDarkMode ? '#f3f4f6' : '#1f2937'
-                          }}
-                          formatter={(value) => [`$${value.toLocaleString()}`, 'Revenue']}
-                        />
-                        <Area 
-                          type="monotone" 
-                          dataKey="revenue" 
-                          stroke="#10b981" 
-                          strokeWidth={2}
-                          fill="url(#revenueGradient)" 
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                {/* Invoice Status Distribution */}
-                <div className={`rounded-lg p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-lg" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                      Invoice Status
-                    </h3>
-                    <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-blue-500/20' : 'bg-blue-50'}`}>
-                      <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                  </div>
-                  <div className="h-48">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={[
-                            { name: 'Paid', value: invoices.filter(inv => inv.status === 'paid').length, color: '#10b981' },
-                            { name: 'Pending', value: invoices.filter(inv => inv.status === 'sent').length, color: '#f59e0b' },
-                            { name: 'Overdue', value: overdueCount, color: '#ef4444' },
-                            { name: 'Draft', value: invoices.filter(inv => inv.status === 'draft').length, color: '#6b7280' }
-                          ]}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={40}
-                          outerRadius={80}
-                          paddingAngle={2}
-                          dataKey="value"
-                        >
-                          {[
-                            { name: 'Paid', value: invoices.filter(inv => inv.status === 'paid').length, color: '#10b981' },
-                            { name: 'Pending', value: invoices.filter(inv => inv.status === 'sent').length, color: '#f59e0b' },
-                            { name: 'Overdue', value: overdueCount, color: '#ef4444' },
-                            { name: 'Draft', value: invoices.filter(inv => inv.status === 'draft').length, color: '#6b7280' }
-                          ].map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip 
-                          contentStyle={{
-                            backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
-                            border: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}`,
-                            borderRadius: '8px',
-                            color: isDarkMode ? '#f3f4f6' : '#1f2937'
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 mt-4">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      <span className="text-xs" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>Paid</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
-                      <span className="text-xs" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>Pending</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                      <span className="text-xs" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>Overdue</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
-                      <span className="text-xs" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>Draft</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Auto Reminders */}
-                <div className={`rounded-lg p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-lg" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                      Auto Reminders
-                    </h3>
-                    <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-purple-500/20' : 'bg-purple-50'}`}>
-                      <Bell className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                    </div>
-                  </div>
-                  <div className="h-48">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={[
-                        { 
-                          period: 'Sent', 
-                          count: invoices.filter(inv => inv.status === 'sent').length * 2 + overdueCount * 3
-                        },
-                        { 
-                          period: 'Failed', 
-                          count: Math.floor(overdueCount * 0.1)
-                        },
-                        { 
-                          period: 'Success', 
-                          count: invoices.filter(inv => inv.status === 'sent').length * 2 + overdueCount * 3 - Math.floor(overdueCount * 0.1)
-                        }
-                      ]}>
-                        <defs>
-                          <linearGradient id="reminderGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#374151' : '#e5e7eb'} />
-                        <XAxis 
-                          dataKey="period" 
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fontSize: 12, fill: isDarkMode ? '#9ca3af' : '#6b7280' }}
-                        />
-                        <YAxis 
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fontSize: 12, fill: isDarkMode ? '#9ca3af' : '#6b7280' }}
-                        />
-                        <Tooltip 
-                          contentStyle={{
-                            backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
-                            border: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}`,
-                            borderRadius: '8px',
-                            color: isDarkMode ? '#f3f4f6' : '#1f2937'
-                          }}
-                          formatter={(value) => [`${value} reminders`, 'Count']}
-                        />
-                        <Area 
-                          type="monotone" 
-                          dataKey="count" 
-                          stroke="#8b5cf6" 
-                          strokeWidth={2}
-                          fill="url(#reminderGradient)" 
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="flex items-center justify-between mt-4 text-sm">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                        <span style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>Sent</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <span style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>Failed</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                        <span style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>Success</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-1 text-purple-600 dark:text-purple-400">
-                      <Bell className="h-4 w-4" />
-                      <span className="font-semibold">
-                        {invoices.filter(inv => inv.status === 'sent').length * 2 + overdueCount * 3} total sent
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* Quick Actions */}
             <div className="mt-8">
