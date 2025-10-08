@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
 
               <!-- View Invoice Button -->
               <div style="text-align: center; margin: 32px 0;">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL}/invoice/${invoice.publicToken}" 
+                <a href="https://invoice-flow-vert.vercel.app/invoice/${invoice.publicToken}" 
                    style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 500; font-size: 16px;">
                   View Invoice Online
                 </a>

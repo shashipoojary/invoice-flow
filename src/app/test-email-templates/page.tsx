@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getEmailTemplate } from '@/lib/email-templates';
 
 export default function TestEmailTemplates() {
@@ -51,7 +51,7 @@ export default function TestEmailTemplates() {
     paymentNotes: 'Contact us for alternative payment methods'
   };
 
-  const generateEmail = () => {
+  const generateEmail = useCallback(() => {
     try {
       console.log('Generating email for template:', selectedTemplate);
       const publicUrl = 'https://invoice-flow-vert.vercel.app/invoice/INV-0013';
@@ -64,17 +64,17 @@ export default function TestEmailTemplates() {
       console.error('Error generating email:', error);
       setEmailHtml('<p>Error generating email template</p>');
     }
-  };
+  }, [selectedTemplate, mockBusinessSettings, getMockInvoice]);
 
   // Auto-generate email when template changes
   useEffect(() => {
     generateEmail();
-  }, [selectedTemplate]);
+  }, [selectedTemplate, generateEmail]);
 
   const templateNames = {
     4: 'Modern',
     5: 'Creative', 
-    6: 'Fast Invoice'
+    6: 'Minimal'
   };
 
   const templateDescriptions = {
@@ -163,7 +163,7 @@ export default function TestEmailTemplates() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                     <p className="text-lg font-medium">No email preview generated</p>
-                    <p className="text-sm">Select a template and click "Generate Email Preview" to see the email design</p>
+                    <p className="text-sm">Select a template and click &quot;Generate Email Preview&quot; to see the email design</p>
                   </div>
                 </div>
               )}

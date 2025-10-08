@@ -128,10 +128,10 @@ export default function TestTemplate6Page() {
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Fast Invoice - Template 6 (Minimal) Test
+            Minimal - Template 6 Test
           </h1>
           <p className="text-gray-600 mb-6">
-            Test the finalized Fast Invoice template with minimal design and full customization support
+            Test the finalized Minimal template with clean design and full customization support
           </p>
           
           <button

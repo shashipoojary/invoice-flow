@@ -77,7 +77,7 @@ export default function TestTemplatePage() {
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Fast Invoice Template Live Preview</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Minimal Template Live Preview</h1>
         
         {/* Color Controls */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -113,8 +113,8 @@ export default function TestTemplatePage() {
         {/* HTML Template Preview */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="p-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold">Fast Invoice Template HTML Preview</h2>
-            <p className="text-sm text-gray-600">Live preview of Fast Invoice Template with dummy data</p>
+            <h2 className="text-xl font-semibold">Minimal Template HTML Preview</h2>
+            <p className="text-sm text-gray-600">Live preview of Minimal Template with dummy data</p>
           </div>
           <div className="p-8">
             {/* Invoice Template HTML Version */}

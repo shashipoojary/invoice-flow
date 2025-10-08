@@ -16,8 +16,8 @@ interface TemplateSelectorProps {
 const templatePreviews = [
   {
     id: 1,
-    name: 'Fast Invoice',
-    description: 'Quick and reliable',
+    name: 'Minimal',
+    description: 'Clean and simple',
     icon: FileText,
     defaultPrimary: '#5C2D91',
     defaultSecondary: '#8B5CF6',

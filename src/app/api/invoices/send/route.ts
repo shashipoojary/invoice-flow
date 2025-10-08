@@ -112,10 +112,26 @@ export async function POST(request: NextRequest) {
     console.log('Email PDF - Logo URL:', businessSettings.logo);
 
     // Generate PDF with template
-    const invoiceTheme = invoice.theme as { template?: number; primary_color?: string; secondary_color?: string } | undefined;
-    const template = invoiceTheme?.template || 1;
+    let invoiceTheme: { template?: number; primary_color?: string; secondary_color?: string } | undefined;
+    
+    // Parse theme if it's a JSON string
+    if (typeof invoice.theme === 'string') {
+      try {
+        invoiceTheme = JSON.parse(invoice.theme);
+      } catch (e) {
+        console.log('Failed to parse theme JSON:', e);
+        invoiceTheme = undefined;
+      }
+    } else {
+      invoiceTheme = invoice.theme as { template?: number; primary_color?: string; secondary_color?: string } | undefined;
+    }
+    
+    // Use template 1 (FastInvoiceTemplate) for fast invoices, otherwise use theme template
+    const template = invoice.type === 'fast' ? 1 : (invoiceTheme?.template || 1);
     const primaryColor = invoiceTheme?.primary_color || '#5C2D91';
     const secondaryColor = invoiceTheme?.secondary_color || '#8B5CF6';
+    
+    console.log(`Email Template Logic - Invoice Type: ${invoice.type}, Theme Template: ${invoiceTheme?.template}, Selected Template: ${template}`);
     
     const pdfBlob = await generateTemplatePDFBlob(
       mappedInvoice, 
@@ -127,7 +143,9 @@ export async function POST(request: NextRequest) {
     const pdfBuffer = await pdfBlob.arrayBuffer();
 
     // Generate template-specific email using the new email templates
-    const publicUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invoice/${invoice.public_token}`;
+    // Properly encode the public token to handle special characters like + and =
+    const encodedToken = encodeURIComponent(invoice.public_token);
+    const publicUrl = `https://invoice-flow-vert.vercel.app/invoice/${encodedToken}`;
     const emailHtml = getEmailTemplate(template, invoice, businessSettings, publicUrl);
 
     // Check if Resend API key is configured

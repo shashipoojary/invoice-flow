@@ -5,7 +5,7 @@ export async function POST() {
     console.log('🚀 Manually triggering auto reminder job...');
     
     // Call the auto-send endpoint
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/reminders/auto-send`, {
+    const response = await fetch(`https://invoice-flow-vert.vercel.app/api/reminders/auto-send`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

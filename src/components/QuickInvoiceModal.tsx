@@ -535,7 +535,7 @@ export default function QuickInvoiceModal({
   // Helper function to map template selection to PDF template
   const getPdfTemplate = (templateId: number): number => {
     switch (templateId) {
-      case 1: return 6; // Fast Invoice -> Template 6 (Minimal - Finalized)
+      case 1: return 6; // Minimal -> Template 6 (Minimal - Finalized)
       case 2: return 4; // Modern -> Template 4
       case 3: return 5; // Creative -> Template 5 (Simple Clean)
       default: return 6; // Default to Template 6

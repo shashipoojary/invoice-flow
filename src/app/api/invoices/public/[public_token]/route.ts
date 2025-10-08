@@ -12,8 +12,17 @@ export async function GET(
       return NextResponse.json({ error: 'Public token is required' }, { status: 400 })
     }
 
+    // Decode the public token to handle URL encoding
+    const decodedToken = decodeURIComponent(public_token)
+    
+    console.log('Public Invoice API - Original token:', public_token)
+    console.log('Public Invoice API - Decoded token:', decodedToken)
+    console.log('Public Invoice API - Token length:', public_token.length)
+    console.log('Public Invoice API - Decoded token length:', decodedToken.length)
+
     // Fetch invoice by public token (no authentication required)
-    const { data: invoice, error } = await supabaseAdmin
+    // Try multiple approaches to handle URL encoding issues
+    let { data: invoice, error } = await supabaseAdmin
       .from('invoices')
       .select(`
         *,
@@ -24,11 +33,66 @@ export async function GET(
           address
         )
       `)
-      .eq('public_token', public_token)
+      .eq('public_token', decodedToken)
       .single()
+    
+    // If decoded token fails, try with original token
+    if (error && decodedToken !== public_token) {
+      console.log('Public Invoice API - Trying with original token:', public_token)
+      const retryResult = await supabaseAdmin
+        .from('invoices')
+        .select(`
+          *,
+          clients (
+            name,
+            email,
+            company,
+            address
+          )
+        `)
+        .eq('public_token', public_token)
+        .single()
+      
+      invoice = retryResult.data
+      error = retryResult.error
+    }
+    
+    // If both fail, try with URL decoded version (handle double encoding)
+    if (error) {
+      const doubleDecodedToken = decodeURIComponent(decodedToken)
+      console.log('Public Invoice API - Trying with double decoded token:', doubleDecodedToken)
+      const retryResult = await supabaseAdmin
+        .from('invoices')
+        .select(`
+          *,
+          clients (
+            name,
+            email,
+            company,
+            address
+          )
+        `)
+        .eq('public_token', doubleDecodedToken)
+        .single()
+      
+      invoice = retryResult.data
+      error = retryResult.error
+    }
+    
+    // If all fail, let's check if any invoices exist with similar tokens
+    if (error) {
+      console.log('Public Invoice API - All token attempts failed, checking for similar tokens...')
+      const { data: similarTokens } = await supabaseAdmin
+        .from('invoices')
+        .select('public_token')
+        .limit(5)
+      
+      console.log('Public Invoice API - Sample tokens from database:', similarTokens)
+    }
 
     if (error) {
       console.error('Error fetching public invoice:', error)
+      console.log('Public Invoice API - Query error details:', JSON.stringify(error, null, 2))
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
     }
 
@@ -62,12 +126,33 @@ export async function GET(
     const dueDate = new Date(invoice.due_date)
     const isOverdue = currentDate > dueDate && invoice.status !== 'paid'
     
-    // Calculate late fees if overdue (assuming 5% per month or as configured)
+    // Parse late fees settings from database
+    let lateFeesSettings = null
+    if (invoice.late_fees) {
+      try {
+        lateFeesSettings = typeof invoice.late_fees === 'string' ? JSON.parse(invoice.late_fees) : invoice.late_fees
+      } catch (e) {
+        console.log('Failed to parse late_fees JSON:', e)
+        lateFeesSettings = null
+      }
+    }
+    
+    // Calculate late fees only if user has enabled them and invoice is overdue
     let lateFees = 0
-    if (isOverdue && invoice.status !== 'paid') {
+    if (isOverdue && invoice.status !== 'paid' && lateFeesSettings && lateFeesSettings.enabled) {
       const daysOverdue = Math.ceil((currentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))
-      const monthsOverdue = Math.ceil(daysOverdue / 30)
-      lateFees = (invoice.total_amount || 0) * 0.05 * monthsOverdue // 5% per month
+      
+      // Check if grace period has passed
+      if (daysOverdue > (lateFeesSettings.gracePeriod || 0)) {
+        if (lateFeesSettings.type === 'percentage') {
+          // Percentage-based late fees
+          const percentage = lateFeesSettings.amount || 0
+          lateFees = (invoice.total || 0) * (percentage / 100)
+        } else {
+          // Fixed amount late fees
+          lateFees = lateFeesSettings.amount || 0
+        }
+      }
     }
 
     // Return formatted invoice data
@@ -88,15 +173,29 @@ export async function GET(
           amount: item.line_total
         })),
         subtotal: invoice.subtotal || 0,
+        discount: invoice.discount || 0,
         taxAmount: invoice.tax_amount || 0,
-        total: invoice.total_amount || 0,
+        total: invoice.total || 0,
         lateFees: lateFees,
-        totalWithLateFees: (invoice.total_amount || 0) + lateFees,
+        totalWithLateFees: (invoice.total || 0) + lateFees,
         status: isOverdue && invoice.status !== 'paid' ? 'overdue' : invoice.status,
         isOverdue: isOverdue,
         daysOverdue: isOverdue ? Math.ceil((currentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)) : 0,
         notes: invoice.notes,
         created_at: invoice.created_at,
+        theme: (() => {
+          if (typeof invoice.theme === 'string') {
+            try {
+              return JSON.parse(invoice.theme);
+            } catch (e) {
+              console.log('Failed to parse theme JSON in public API:', e);
+              return null;
+            }
+          }
+          return invoice.theme;
+        })(),
+        type: invoice.type,
+        lateFeesSettings: lateFeesSettings,
         freelancerSettings: settingsData ? {
           businessName: settingsData.business_name || 'Your Business',
           logo: settingsData.logo || '',
