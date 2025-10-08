@@ -7,6 +7,9 @@ export default function TestEmailTemplates() {
   const [selectedTemplate, setSelectedTemplate] = useState(6);
   const [emailHtml, setEmailHtml] = useState('');
 
+  // Test if the function is imported correctly
+  console.log('getEmailTemplate function:', typeof getEmailTemplate);
+
   // Mock data for testing - create fresh object each time
   const getMockInvoice = () => ({
     invoice_number: 'INV-0013',
@@ -49,10 +52,18 @@ export default function TestEmailTemplates() {
   };
 
   const generateEmail = () => {
-    const publicUrl = 'https://invoice-flow-vert.vercel.app/invoice/INV-0013';
-    const mockInvoice = getMockInvoice();
-    const html = getEmailTemplate(selectedTemplate, mockInvoice, mockBusinessSettings, publicUrl);
-    setEmailHtml(html);
+    try {
+      console.log('Generating email for template:', selectedTemplate);
+      const publicUrl = 'https://invoice-flow-vert.vercel.app/invoice/INV-0013';
+      const mockInvoice = getMockInvoice();
+      console.log('Mock invoice theme:', mockInvoice.theme);
+      const html = getEmailTemplate(selectedTemplate, mockInvoice, mockBusinessSettings, publicUrl);
+      console.log('Generated HTML length:', html.length);
+      setEmailHtml(html);
+    } catch (error) {
+      console.error('Error generating email:', error);
+      setEmailHtml('<p>Error generating email template</p>');
+    }
   };
 
   // Auto-generate email when template changes
@@ -119,7 +130,10 @@ export default function TestEmailTemplates() {
               </div>
 
               <button
-                onClick={generateEmail}
+                onClick={() => {
+                  console.log('Button clicked!');
+                  generateEmail();
+                }}
                 className="w-full mt-6 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Generate Email Preview
