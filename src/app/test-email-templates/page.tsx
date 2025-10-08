@@ -1,14 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getEmailTemplate } from '@/lib/email-templates';
 
 export default function TestEmailTemplates() {
   const [selectedTemplate, setSelectedTemplate] = useState(6);
   const [emailHtml, setEmailHtml] = useState('');
 
-  // Mock data for testing
-  const mockInvoice = {
+  // Mock data for testing - create fresh object each time
+  const getMockInvoice = () => ({
     invoice_number: 'INV-0013',
     total: 1250.00,
     due_date: '2024-02-15',
@@ -29,7 +29,7 @@ export default function TestEmailTemplates() {
       secondary_color: selectedTemplate === 4 ? '#A855F7' : selectedTemplate === 5 ? '#F59E0B' : '#8B5CF6',
       accent_color: selectedTemplate === 5 ? '#EC4899' : undefined
     }
-  };
+  });
 
   const mockBusinessSettings = {
     businessName: 'Silver Oak Creative',
@@ -50,9 +50,15 @@ export default function TestEmailTemplates() {
 
   const generateEmail = () => {
     const publicUrl = 'https://invoice-flow-vert.vercel.app/invoice/INV-0013';
+    const mockInvoice = getMockInvoice();
     const html = getEmailTemplate(selectedTemplate, mockInvoice, mockBusinessSettings, publicUrl);
     setEmailHtml(html);
   };
+
+  // Auto-generate email when template changes
+  useEffect(() => {
+    generateEmail();
+  }, [selectedTemplate]);
 
   const templateNames = {
     4: 'Modern',
@@ -100,12 +106,12 @@ export default function TestEmailTemplates() {
                     </p>
                     <div className="mt-2 flex space-x-2">
                       <div className="w-4 h-4 rounded-full" 
-                           style={{ backgroundColor: mockInvoice.theme.primary_color }}></div>
+                           style={{ backgroundColor: Number(id) === 4 ? '#7C3AED' : Number(id) === 5 ? '#8B5CF6' : '#5C2D91' }}></div>
                       <div className="w-4 h-4 rounded-full" 
-                           style={{ backgroundColor: mockInvoice.theme.secondary_color }}></div>
-                      {mockInvoice.theme.accent_color && (
+                           style={{ backgroundColor: Number(id) === 4 ? '#A855F7' : Number(id) === 5 ? '#F59E0B' : '#8B5CF6' }}></div>
+                      {Number(id) === 5 && (
                         <div className="w-4 h-4 rounded-full" 
-                             style={{ backgroundColor: mockInvoice.theme.accent_color }}></div>
+                             style={{ backgroundColor: '#EC4899' }}></div>
                       )}
                     </div>
                   </div>
