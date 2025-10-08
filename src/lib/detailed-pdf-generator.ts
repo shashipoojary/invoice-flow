@@ -2058,9 +2058,9 @@ async function generateSimpleCleanTemplatePDF(
   
   page.drawRectangle({
     x: 50,
-    y: billToY - 80,
+    y: billToY - 95,
     width: 250,
-    height: 80,
+    height: 95,
     color: rgb(0.95, 0.95, 0.95),
   });
 
@@ -2083,16 +2083,16 @@ async function generateSimpleCleanTemplatePDF(
   page.drawText(invoice.client.name, {
     x: 60,
     y: billToY - 40,
-    size: 12,
-    font: boldFont,
+    size: 10,
+    font: font,
     color: rgb(0.2, 0.2, 0.2),
   });
 
   if (invoice.client.company) {
     page.drawText(invoice.client.company, {
       x: 60,
-      y: billToY - 55,
-      size: 10,
+      y: billToY - 45, // Even closer - 5px gap
+      size: 9,
       font: font,
       color: rgb(0.4, 0.4, 0.4),
     });
@@ -2101,8 +2101,19 @@ async function generateSimpleCleanTemplatePDF(
   if (invoice.client.address) {
     page.drawText(invoice.client.address, {
       x: 60,
-      y: billToY - 70,
-      size: 9,
+      y: billToY - 50, // Even closer - 5px gap
+      size: 8,
+      font: font,
+      color: rgb(0.4, 0.4, 0.4),
+    });
+  }
+
+  // Add email if available
+  if (invoice.client.email) {
+    page.drawText(invoice.client.email, {
+      x: 60,
+      y: billToY - 55, // Even closer - 5px gap
+      size: 8,
       font: font,
       color: rgb(0.4, 0.4, 0.4),
     });
@@ -2330,18 +2341,17 @@ async function generateSimpleCleanTemplatePDF(
     color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
   });
 
-  // Creative footer with artistic elements
+  // Creative footer with artistic elements - properly aligned sections
   const footerY = 120;
-  let footerLineY = footerY;
+  const boxWidth = 200;
+  const boxHeight = 35; // Fixed height for both sections
+  const boxY = footerY - boxHeight; // Fixed Y position for both sections
 
-  // Compact payment terms section with proper text wrapping
+  // Payment Terms section - fixed position
   if (invoice.paymentTerms?.enabled && invoice.paymentTerms?.terms) {
-    const boxWidth = 200;
-    const boxHeight = 35;
-    
     page.drawRectangle({
       x: 50,
-      y: footerLineY - boxHeight,
+      y: boxY,
       width: boxWidth,
       height: boxHeight,
       color: rgb(0.95, 0.95, 0.95),
@@ -2349,7 +2359,7 @@ async function generateSimpleCleanTemplatePDF(
 
     page.drawRectangle({
       x: 50,
-      y: footerLineY - 12,
+      y: footerY - 12,
       width: boxWidth,
       height: 12,
       color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
@@ -2357,7 +2367,7 @@ async function generateSimpleCleanTemplatePDF(
 
     page.drawText('PAYMENT TERMS', {
       x: 55,
-      y: footerLineY - 10,
+      y: footerY - 10,
       size: 7,
       font: boldFont,
       color: rgb(1, 1, 1),
@@ -2384,31 +2394,27 @@ async function generateSimpleCleanTemplatePDF(
     lines.slice(0, 2).forEach((line, index) => {
       page.drawText(line, {
         x: 55,
-        y: footerLineY - 20 - (index * 8),
+        y: footerY - 20 - (index * 8),
         size: 6,
         font: font,
         color: rgb(0.2, 0.2, 0.2),
       });
     });
-    footerLineY -= 10;
   }
 
-  // Compact notes section with proper text wrapping
+  // Notes section - same fixed position and height
   if (invoice.notes) {
-    const boxWidth = 200;
-    const boxHeight = 35;
-    
     page.drawRectangle({
       x: 270,
-      y: footerLineY - boxHeight,
+      y: boxY, // Same Y position as Payment Terms
       width: boxWidth,
-      height: boxHeight,
+      height: boxHeight, // Same height as Payment Terms
       color: rgb(0.95, 0.95, 0.95),
     });
 
     page.drawRectangle({
       x: 270,
-      y: footerLineY - 12,
+      y: footerY - 12, // Same header position as Payment Terms
       width: boxWidth,
       height: 12,
       color: rgb(accentRgb.r, accentRgb.g, accentRgb.b),
@@ -2416,7 +2422,7 @@ async function generateSimpleCleanTemplatePDF(
 
     page.drawText('NOTES', {
       x: 275,
-      y: footerLineY - 10,
+      y: footerY - 10, // Same header text position as Payment Terms
       size: 7,
       font: boldFont,
       color: rgb(1, 1, 1),
@@ -2443,7 +2449,7 @@ async function generateSimpleCleanTemplatePDF(
     lines.slice(0, 2).forEach((line, index) => {
       page.drawText(line, {
         x: 275,
-        y: footerLineY - 20 - (index * 8),
+        y: footerY - 20 - (index * 8), // Same text position as Payment Terms
         size: 6,
         font: font,
         color: rgb(0.2, 0.2, 0.2),
