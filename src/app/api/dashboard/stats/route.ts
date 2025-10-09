@@ -24,12 +24,12 @@ export async function GET(request: NextRequest) {
 
     const totalRevenue = revenueData?.reduce((sum, invoice) => sum + (invoice.total || 0), 0) || 0
 
-    // Get outstanding amount (sum of sent and overdue invoices)
+    // Get outstanding amount (sum of pending/sent invoices)
     const { data: outstandingData, error: outstandingError } = await supabaseAdmin
       .from('invoices')
       .select('total')
       .eq('user_id', user.id)
-      .in('status', ['sent', 'overdue'])
+      .in('status', ['pending', 'sent'])
 
     if (outstandingError) {
       console.error('Error fetching outstanding amount:', outstandingError)
@@ -38,13 +38,13 @@ export async function GET(request: NextRequest) {
 
     const outstandingAmount = outstandingData?.reduce((sum, invoice) => sum + (invoice.total || 0), 0) || 0
 
-    // Get overdue count (only sent invoices past due date)
+    // Get overdue count and amount (pending/sent invoices past due date)
     const today = new Date().toISOString().split('T')[0]
     const { data: overdueData, error: overdueError } = await supabaseAdmin
       .from('invoices')
-      .select('id')
+      .select('id, total')
       .eq('user_id', user.id)
-      .eq('status', 'sent')
+      .in('status', ['pending', 'sent'])
       .lt('due_date', today)
 
     if (overdueError) {
@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
     }
 
     const overdueCount = overdueData?.length || 0
+    const overdueAmount = overdueData?.reduce((sum, invoice) => sum + (invoice.total || 0), 0) || 0
 
     // Get total clients count
     const { count: totalClients, error: clientsError } = await supabaseAdmin
@@ -69,6 +70,7 @@ export async function GET(request: NextRequest) {
       totalRevenue,
       outstandingAmount,
       overdueCount,
+      overdueAmount,
       totalClients: totalClients || 0
     })
 

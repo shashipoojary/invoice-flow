@@ -495,7 +495,13 @@ function InvoicesContent() {
                 </div>
               </div>
               <div className="text-right">
-                <div className={`font-semibold text-base ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                <div className={`font-semibold text-base ${
+                  invoice.status === 'paid' ? (isDarkMode ? 'text-green-400' : 'text-green-600') :
+                  dueDateStatus.status === 'overdue' ? (isDarkMode ? 'text-red-400' : 'text-red-600') :
+                  invoice.status === 'pending' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
+                  invoice.status === 'draft' ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') :
+                  (isDarkMode ? 'text-red-400' : 'text-red-600')
+                }`}>
                   ${dueCharges.totalPayable.toLocaleString()}
                 </div>
                 <div className="text-xs" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
@@ -506,11 +512,11 @@ function InvoicesContent() {
             
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                  invoice.status === 'paid' ? (isDarkMode ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-green-50 text-green-800 border border-green-200') :
-                  invoice.status === 'pending' ? (isDarkMode ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-blue-50 text-blue-800 border border-blue-200') :
-                  invoice.status === 'draft' ? (isDarkMode ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'bg-gray-50 text-gray-800 border border-gray-200') :
-                  (isDarkMode ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'bg-gray-50 text-gray-800 border border-gray-200')
+                <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
+                  invoice.status === 'paid' ? (isDarkMode ? 'text-green-400' : 'text-green-600') :
+                  invoice.status === 'pending' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
+                  invoice.status === 'draft' ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') :
+                  (isDarkMode ? 'text-red-400' : 'text-red-600')
                 }`}>
                   {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status}</span>
@@ -518,10 +524,10 @@ function InvoicesContent() {
                 <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
                   {(invoice.type || 'detailed') === 'fast' ? 'Fast' : 'Detailed'}
                 </span>
-                {invoice.status === 'pending' && dueDateStatus.status === 'overdue' && (
-                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${isDarkMode ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
                     <AlertTriangle className="h-3 w-3" />
-                    <span>{dueDateStatus.days}d</span>
+                    <span>{dueDateStatus.days}d overdue</span>
                   </span>
                 )}
               </div>
@@ -560,7 +566,7 @@ function InvoicesContent() {
                     )}
                   </button>
                 )}
-                {invoice.status === 'pending' && (
+                {(invoice.status === 'pending') && (
                   <button 
                     onClick={() => handleMarkAsPaid(invoice)}
                     disabled={loadingActions[`paid-${invoice.id}`]}
@@ -622,22 +628,28 @@ function InvoicesContent() {
             
             {/* Center Section - Amount & Status */}
             <div className="col-span-4 text-center">
-              <div className={`font-bold text-xl mb-3 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+              <div className={`font-bold text-xl mb-3 ${
+                invoice.status === 'paid' ? (isDarkMode ? 'text-green-400' : 'text-green-600') :
+                dueDateStatus.status === 'overdue' ? (isDarkMode ? 'text-red-400' : 'text-red-600') :
+                invoice.status === 'pending' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
+                invoice.status === 'draft' ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') :
+                (isDarkMode ? 'text-red-400' : 'text-red-600')
+              }`}>
                 ${dueCharges.totalPayable.toLocaleString()}
               </div>
               <div className="flex items-center justify-center">
                 <div className="relative flex items-center justify-center">
-                  <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
-                    invoice.status === 'paid' ? (isDarkMode ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-green-50 text-green-800 border border-green-200') :
-                    invoice.status === 'pending' ? (isDarkMode ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-blue-50 text-blue-800 border border-blue-200') :
-                    invoice.status === 'draft' ? (isDarkMode ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'bg-gray-50 text-gray-800 border border-gray-200') :
-                    (isDarkMode ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'bg-gray-50 text-gray-800 border border-gray-200')
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium ${
+                    invoice.status === 'paid' ? (isDarkMode ? 'text-green-400' : 'text-green-600') :
+                    invoice.status === 'pending' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
+                    invoice.status === 'draft' ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') :
+                    (isDarkMode ? 'text-red-400' : 'text-red-600')
                   }`}>
                     {getStatusIcon(invoice.status)}
                     <span className="capitalize">{invoice.status}</span>
                   </span>
-                  {invoice.status === 'pending' && dueDateStatus.status === 'overdue' && (
-                    <span className={`absolute left-full ml-1 sm:ml-2 lg:ml-3 inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${isDarkMode ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                  {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
+                    <span className={`absolute left-full ml-1 sm:ml-2 lg:ml-3 inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium whitespace-nowrap ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
                       <AlertTriangle className="h-3 w-3" />
                       <span className="hidden sm:inline">{dueDateStatus.days}d overdue</span>
                       <span className="sm:hidden">{dueDateStatus.days}d</span>
@@ -682,7 +694,7 @@ function InvoicesContent() {
                   )}
                 </button>
               )}
-              {invoice.status === 'pending' && (
+               {(invoice.status === 'pending') && (
                 <button 
                   onClick={() => handleMarkAsPaid(invoice)}
                   disabled={loadingActions[`paid-${invoice.id}`]}
