@@ -413,7 +413,7 @@ interface Invoice {
   taxRate: number;
   taxAmount: number;
   total: number;
-  status: 'draft' | 'sent' | 'paid' | 'overdue';
+  status: 'draft' | 'pending' | 'paid' | 'overdue' | 'due today';
   dueDate: string;
   createdAt: string;
   notes?: string;

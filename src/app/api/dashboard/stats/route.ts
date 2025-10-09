@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       .from('invoices')
       .select('total')
       .eq('user_id', user.id)
-      .in('status', ['sent', 'overdue'])
+      .in('status', ['pending', 'overdue'])
 
     if (outstandingError) {
       console.error('Error fetching outstanding amount:', outstandingError)
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
       .from('invoices')
       .select('id')
       .eq('user_id', user.id)
-      .eq('status', 'sent')
+      .eq('status', 'pending')
       .lt('due_date', today)
 
     if (overdueError) {

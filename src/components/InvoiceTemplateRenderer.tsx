@@ -27,7 +27,7 @@ interface Invoice {
   total: number
   lateFees: number
   totalWithLateFees: number
-  status: 'draft' | 'sent' | 'paid' | 'overdue'
+  status: 'draft' | 'pending' | 'paid' | 'overdue' | 'due today'
   isOverdue: boolean
   daysOverdue: number
   notes?: string
@@ -109,8 +109,10 @@ function FastInvoiceTemplate({ invoice, primaryColor, secondaryColor }: { invoic
     switch (status) {
       case 'paid':
         return <CheckCircle className="h-4 w-4 text-green-500" />
-      case 'sent':
+      case 'pending':
         return <Clock className="h-4 w-4 text-blue-500" />
+      case 'due today':
+        return <Clock className="h-4 w-4 text-orange-500" />
       case 'overdue':
         return <AlertCircle className="h-4 w-4 text-red-500" />
       default:
@@ -122,8 +124,10 @@ function FastInvoiceTemplate({ invoice, primaryColor, secondaryColor }: { invoic
     switch (status) {
       case 'paid':
         return 'text-green-700 bg-green-50 border-green-200'
-      case 'sent':
+      case 'pending':
         return 'text-blue-700 bg-blue-50 border-blue-200'
+      case 'due today':
+        return 'text-orange-700 bg-orange-50 border-orange-200'
       case 'overdue':
         return 'text-red-700 bg-red-50 border-red-200'
       default:
@@ -133,12 +137,12 @@ function FastInvoiceTemplate({ invoice, primaryColor, secondaryColor }: { invoic
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Modern Header with Teal Banner */}
-      <div className="bg-teal-600 text-white">
+      {/* Modern Header with Dynamic Color Banner */}
+      <div style={{ backgroundColor: primaryColor }} className="text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <h1 className="text-3xl sm:text-4xl font-bold tracking-wide">INVOICE</h1>
-            <p className="text-teal-100 mt-2 text-lg">#{invoice.invoiceNumber}</p>
+            <p className="text-white opacity-90 mt-2 text-lg">#{invoice.invoiceNumber}</p>
           </div>
         </div>
       </div>
@@ -188,13 +192,18 @@ function FastInvoiceTemplate({ invoice, primaryColor, secondaryColor }: { invoic
                   </div>
                   <div className={`inline-flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border ${getStatusColor(invoice.status)}`}>
                     {getStatusIcon(invoice.status)}
-                    <span className="capitalize">{invoice.status}</span>
+                    <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                   </div>
-                  {invoice.isOverdue && (
-                    <div className="mt-1 text-xs sm:text-sm text-red-600 font-medium">
-                      {invoice.daysOverdue} days overdue
-                    </div>
-                  )}
+                      {invoice.isOverdue && (
+                        <div className="mt-1 text-xs sm:text-sm text-red-600 font-medium">
+                          {invoice.daysOverdue} days overdue
+                        </div>
+                      )}
+                      {invoice.status === 'due today' && (
+                        <div className="mt-1 text-xs sm:text-sm text-orange-600 font-medium">
+                          Due today
+                        </div>
+                      )}
                 </div>
               </div>
             </div>
@@ -243,7 +252,7 @@ function FastInvoiceTemplate({ invoice, primaryColor, secondaryColor }: { invoic
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600 text-xs sm:text-sm">Status</span>
-                      <span className="font-medium text-xs sm:text-sm capitalize">{invoice.status}</span>
+                      <span className="font-medium text-xs sm:text-sm capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                     </div>
                   </div>
                 </div>
@@ -490,14 +499,16 @@ function FastInvoiceTemplate({ invoice, primaryColor, secondaryColor }: { invoic
   )
 }
 
-// Modern Template (Template 4) - Copy of Minimal Template
+// Modern Template (Template 4) - Modern Design with Clean Aesthetics
 function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: Invoice, primaryColor: string, secondaryColor: string }) {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'paid':
         return <CheckCircle className="h-4 w-4 text-green-500" />
-      case 'sent':
+      case 'pending':
         return <Clock className="h-4 w-4 text-blue-500" />
+      case 'due today':
+        return <Clock className="h-4 w-4 text-orange-500" />
       case 'overdue':
         return <AlertCircle className="h-4 w-4 text-red-500" />
       default:
@@ -509,8 +520,10 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
     switch (status) {
       case 'paid':
         return 'text-green-700 bg-green-50 border-green-200'
-      case 'sent':
+      case 'pending':
         return 'text-blue-700 bg-blue-50 border-blue-200'
+      case 'due today':
+        return 'text-orange-700 bg-orange-50 border-orange-200'
       case 'overdue':
         return 'text-red-700 bg-red-50 border-red-200'
       default:
@@ -519,13 +532,20 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Modern Header with Dynamic Color Banner */}
-      <div style={{ backgroundColor: primaryColor }} className="text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-wide">INVOICE</h1>
-            <p className="text-white opacity-90 mt-2 text-lg">#{invoice.invoiceNumber}</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Modern Header with Gradient and Glass Effect */}
+      <div className="relative overflow-hidden">
+        <div style={{ backgroundColor: primaryColor }} className="text-white relative">
+          {/* Modern geometric background elements */}
+          <div className="absolute top-0 right-0 w-32 h-32 opacity-10 transform rotate-45 translate-x-16 -translate-y-16 modern-bg-1" style={{ backgroundColor: 'white' }}></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 opacity-15 transform rotate-12 -translate-x-12 translate-y-12 modern-bg-2" style={{ backgroundColor: 'white' }}></div>
+          <div className="absolute top-1/2 right-1/4 w-16 h-16 opacity-20 transform rotate-45 modern-bg-3" style={{ backgroundColor: 'white' }}></div>
+          
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+            <div className="text-center">
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-wide">INVOICE</h1>
+              <p className="text-white opacity-90 mt-2 text-lg">#{invoice.invoiceNumber}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -575,13 +595,18 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                   </div>
                   <div className={`inline-flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border ${getStatusColor(invoice.status)}`}>
                     {getStatusIcon(invoice.status)}
-                    <span className="capitalize">{invoice.status}</span>
+                    <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                   </div>
-                  {invoice.isOverdue && (
-                    <div className="mt-1 text-xs sm:text-sm text-red-600 font-medium">
-                      {invoice.daysOverdue} days overdue
-                    </div>
-                  )}
+                      {invoice.isOverdue && (
+                        <div className="mt-1 text-xs sm:text-sm text-red-600 font-medium">
+                          {invoice.daysOverdue} days overdue
+                        </div>
+                      )}
+                      {invoice.status === 'due today' && (
+                        <div className="mt-1 text-xs sm:text-sm text-orange-600 font-medium">
+                          Due today
+                        </div>
+                      )}
                 </div>
               </div>
             </div>
@@ -630,7 +655,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600 text-xs sm:text-sm">Status</span>
-                      <span className="font-medium text-xs sm:text-sm capitalize">{invoice.status}</span>
+                      <span className="font-medium text-xs sm:text-sm capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                     </div>
                   </div>
                 </div>
@@ -686,12 +711,18 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                       <span className="text-gray-900 font-medium">${invoice.taxAmount.toFixed(2)}</span>
                     </div>
                   )}
-                  {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
-                    <div className="flex justify-between">
-                      <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                      <span className="text-red-600 font-medium">${invoice.lateFees.toFixed(2)}</span>
-                    </div>
-                  )}
+                      {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                        <div className="flex justify-between">
+                          <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                          <span className="text-red-600 font-medium">${invoice.lateFees.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {invoice.status === 'due today' && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                        <div className="text-sm text-orange-600 bg-orange-50 p-2 rounded border border-orange-200">
+                          <strong>Due Today Notice:</strong> This invoice is due today. 
+                          {invoice.lateFeesSettings.gracePeriod > 0 ? ` Late fees will apply after ${invoice.lateFeesSettings.gracePeriod} days grace period.` : ' Late fees may apply if payment is delayed.'}
+                        </div>
+                      )}
                   <div className="flex justify-between text-xl font-bold pt-3 border-t-2 border-gray-300">
                     <span className="text-gray-900">
                       {invoice.isOverdue && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Total'}
@@ -883,8 +914,12 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
           )}
 
           {/* Footer */}
-          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-200">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-200 relative">
+            {/* Modern geometric accent */}
+            <div className="absolute top-0 left-0 w-16 h-16 opacity-5 transform rotate-12 -translate-x-8 -translate-y-8 modern-bg-2" style={{ backgroundColor: primaryColor }}></div>
+            <div className="absolute bottom-0 right-0 w-12 h-12 opacity-8 transform rotate-45 translate-x-6 translate-y-6 modern-bg-1" style={{ backgroundColor: secondaryColor }}></div>
+            
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 relative z-10">
               <div className="text-center sm:text-left">
                 <p className="text-gray-600 font-medium text-sm sm:text-base">Thank you for your business!</p>
                 <p className="text-xs sm:text-sm text-gray-500 mt-1">
@@ -895,6 +930,37 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
           </div>
         </div>
       </div>
+      
+      {/* Modern CSS Animations */}
+      <style jsx>{`
+        @keyframes modernFloat {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-5px) rotate(2deg); }
+        }
+        
+        @keyframes modernPulse {
+          0%, 100% { opacity: 0.05; transform: scale(1); }
+          50% { opacity: 0.1; transform: scale(1.02); }
+        }
+        
+        @keyframes modernSlide {
+          0% { transform: translateX(0px) translateY(0px) rotate(0deg); }
+          50% { transform: translateX(5px) translateY(-3px) rotate(1deg); }
+          100% { transform: translateX(0px) translateY(0px) rotate(0deg); }
+        }
+        
+        .modern-bg-1 {
+          animation: modernFloat 8s ease-in-out infinite;
+        }
+        
+        .modern-bg-2 {
+          animation: modernPulse 6s ease-in-out infinite;
+        }
+        
+        .modern-bg-3 {
+          animation: modernSlide 10s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   )
 }
@@ -905,8 +971,10 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
     switch (status) {
       case 'paid':
         return <CheckCircle className="h-4 w-4 text-green-500" />
-      case 'sent':
+      case 'pending':
         return <Clock className="h-4 w-4 text-blue-500" />
+      case 'due today':
+        return <Clock className="h-4 w-4 text-orange-500" />
       case 'overdue':
         return <AlertCircle className="h-4 w-4 text-red-500" />
       default:
@@ -918,8 +986,10 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
     switch (status) {
       case 'paid':
         return 'text-green-700 bg-green-50 border-green-200'
-      case 'sent':
+      case 'pending':
         return 'text-blue-700 bg-blue-50 border-blue-200'
+      case 'due today':
+        return 'text-orange-700 bg-orange-50 border-orange-200'
       case 'overdue':
         return 'text-red-700 bg-red-50 border-red-200'
       default:
@@ -998,13 +1068,18 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                   </div>
                   <div className={`inline-flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border ${getStatusColor(invoice.status)}`}>
                     {getStatusIcon(invoice.status)}
-                    <span className="capitalize">{invoice.status}</span>
+                    <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                   </div>
-                  {invoice.isOverdue && (
-                    <div className="mt-1 text-xs sm:text-sm text-red-600 font-medium">
-                      {invoice.daysOverdue} days overdue
-                    </div>
-                  )}
+                      {invoice.isOverdue && (
+                        <div className="mt-1 text-xs sm:text-sm text-red-600 font-medium">
+                          {invoice.daysOverdue} days overdue
+                        </div>
+                      )}
+                      {invoice.status === 'due today' && (
+                        <div className="mt-1 text-xs sm:text-sm text-orange-600 font-medium">
+                          Due today
+                        </div>
+                      )}
                 </div>
               </div>
             </div>
@@ -1053,7 +1128,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600 text-xs sm:text-sm">Status</span>
-                      <span className="font-medium text-xs sm:text-sm capitalize">{invoice.status}</span>
+                      <span className="font-medium text-xs sm:text-sm capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                     </div>
                   </div>
                 </div>
@@ -1109,12 +1184,18 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                       <span className="text-gray-900 font-medium">${invoice.taxAmount.toFixed(2)}</span>
                     </div>
                   )}
-                  {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
-                    <div className="flex justify-between">
-                      <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                      <span className="text-red-600 font-medium">${invoice.lateFees.toFixed(2)}</span>
-                    </div>
-                  )}
+                      {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                        <div className="flex justify-between">
+                          <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                          <span className="text-red-600 font-medium">${invoice.lateFees.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {invoice.status === 'due today' && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                        <div className="text-sm text-orange-600 bg-orange-50 p-2 rounded border border-orange-200">
+                          <strong>Due Today Notice:</strong> This invoice is due today. 
+                          {invoice.lateFeesSettings.gracePeriod > 0 ? ` Late fees will apply after ${invoice.lateFeesSettings.gracePeriod} days grace period.` : ' Late fees may apply if payment is delayed.'}
+                        </div>
+                      )}
                   <div className="flex justify-between text-xl font-bold pt-3 border-t-2 border-gray-300">
                     <span className="text-gray-900">
                       {invoice.isOverdue && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Total'}
@@ -1377,8 +1458,10 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
     switch (status) {
       case 'paid':
         return <CheckCircle className="h-4 w-4 text-green-500" />
-      case 'sent':
+      case 'pending':
         return <Clock className="h-4 w-4 text-blue-500" />
+      case 'due today':
+        return <Clock className="h-4 w-4 text-orange-500" />
       case 'overdue':
         return <AlertCircle className="h-4 w-4 text-red-500" />
       default:
@@ -1390,8 +1473,10 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
     switch (status) {
       case 'paid':
         return 'text-green-700 bg-green-50 border-green-200'
-      case 'sent':
+      case 'pending':
         return 'text-blue-700 bg-blue-50 border-blue-200'
+      case 'due today':
+        return 'text-orange-700 bg-orange-50 border-orange-200'
       case 'overdue':
         return 'text-red-700 bg-red-50 border-red-200'
       default:
@@ -1456,13 +1541,18 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                   </div>
                   <div className={`inline-flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border ${getStatusColor(invoice.status)}`}>
                     {getStatusIcon(invoice.status)}
-                    <span className="capitalize">{invoice.status}</span>
+                    <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                   </div>
-                  {invoice.isOverdue && (
-                    <div className="mt-1 text-xs sm:text-sm text-red-600 font-medium">
-                      {invoice.daysOverdue} days overdue
-                    </div>
-                  )}
+                      {invoice.isOverdue && (
+                        <div className="mt-1 text-xs sm:text-sm text-red-600 font-medium">
+                          {invoice.daysOverdue} days overdue
+                        </div>
+                      )}
+                      {invoice.status === 'due today' && (
+                        <div className="mt-1 text-xs sm:text-sm text-orange-600 font-medium">
+                          Due today
+                        </div>
+                      )}
                 </div>
               </div>
             </div>
@@ -1511,7 +1601,7 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600 text-xs sm:text-sm">Status</span>
-                      <span className="font-medium text-xs sm:text-sm capitalize">{invoice.status}</span>
+                      <span className="font-medium text-xs sm:text-sm capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                     </div>
                   </div>
                 </div>
@@ -1567,12 +1657,18 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                       <span className="text-gray-900 font-medium">${invoice.taxAmount.toFixed(2)}</span>
                     </div>
                   )}
-                  {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
-                    <div className="flex justify-between">
-                      <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                      <span className="text-red-600 font-medium">${invoice.lateFees.toFixed(2)}</span>
-                    </div>
-                  )}
+                      {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                        <div className="flex justify-between">
+                          <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                          <span className="text-red-600 font-medium">${invoice.lateFees.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {invoice.status === 'due today' && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                        <div className="text-sm text-orange-600 bg-orange-50 p-2 rounded border border-orange-200">
+                          <strong>Due Today Notice:</strong> This invoice is due today. 
+                          {invoice.lateFeesSettings.gracePeriod > 0 ? ` Late fees will apply after ${invoice.lateFeesSettings.gracePeriod} days grace period.` : ' Late fees may apply if payment is delayed.'}
+                        </div>
+                      )}
                   <div className="flex justify-between text-xl font-bold pt-3 border-t-2 border-gray-300">
                     <span className="text-gray-900">
                       {invoice.isOverdue && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Total'}

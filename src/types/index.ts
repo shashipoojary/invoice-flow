@@ -28,7 +28,7 @@ export interface Invoice {
   taxRate: number;
   taxAmount: number;
   total: number;
-  status: 'draft' | 'sent' | 'paid' | 'overdue';
+  status: 'draft' | 'pending' | 'paid' | 'overdue' | 'due today';
   type?: 'fast' | 'detailed';
   dueDate: string;
   createdAt: string;

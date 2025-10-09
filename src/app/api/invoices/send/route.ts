@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
     if (invoice.status === 'draft') {
       await supabaseAdmin
       .from('invoices')
-        .update({ status: 'sent' })
+        .update({ status: 'pending' })
         .eq('id', invoiceId)
         .eq('user_id', user.id);
     }

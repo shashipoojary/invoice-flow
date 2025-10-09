@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     // Filter for overdue invoices
     const overdueInvoices = debugInfo.invoices.filter(invoice => 
-      invoice.status === 'sent' && invoice.isOverdue
+      invoice.status === 'pending' && invoice.isOverdue
     );
 
     return NextResponse.json({

@@ -50,7 +50,7 @@ export default function TestTemplatePage() {
     discount: 200,
     total: 4455.50,
     notes: 'Thank you for choosing our services! Payment is due within 30 days of invoice date. Please contact us if you have any questions.',
-    status: 'sent',
+    status: 'pending',
     createdAt: '2024-01-15T10:30:00Z',
     dueDate: '2024-02-14T23:59:59Z'
   }

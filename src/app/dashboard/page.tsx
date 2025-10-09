@@ -92,7 +92,7 @@ export default function DashboardOverview() {
     switch (status) {
       case 'paid':
         return <CheckCircle className="h-3 w-3" />;
-      case 'sent':
+      case 'pending':
         return <Send className="h-3 w-3" />;
       case 'overdue':
         return <AlertCircle className="h-3 w-3" />;
@@ -105,7 +105,7 @@ export default function DashboardOverview() {
     switch (status) {
       case 'paid':
         return 'dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30';
-      case 'sent':
+      case 'pending':
         return 'dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30';
       case 'overdue':
         return 'dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/30';
@@ -120,7 +120,7 @@ export default function DashboardOverview() {
     switch (status) {
       case 'paid':
         return { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' };
-      case 'sent':
+      case 'pending':
         return { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' };
       case 'overdue':
         return { backgroundColor: '#fef2f2', color: '#dc2626', borderColor: '#fecaca' };
@@ -135,7 +135,7 @@ export default function DashboardOverview() {
     switch (status) {
       case 'paid':
         return { backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#6ee7b7', borderColor: 'rgba(16, 185, 129, 0.3)' };
-      case 'sent':
+      case 'pending':
         return { backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#93c5fd', borderColor: 'rgba(59, 130, 246, 0.3)' };
       case 'overdue':
         return { backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#fca5a5', borderColor: 'rgba(239, 68, 68, 0.3)' };
@@ -199,7 +199,7 @@ export default function DashboardOverview() {
   // Helper function to calculate due charges and total payable
   const calculateDueCharges = useCallback((invoice: Invoice) => {
     // Only calculate late fees for sent invoices that are actually overdue
-    if (invoice.status !== 'sent') {
+    if (invoice.status !== 'pending') {
       return {
         hasLateFees: false,
         lateFeeAmount: 0,
@@ -350,7 +350,7 @@ export default function DashboardOverview() {
         setInvoices(prevInvoices => 
           prevInvoices.map(inv => 
             inv.id === invoice.id 
-              ? { ...inv, status: 'sent' as const }
+              ? { ...inv, status: 'pending' as const }
               : inv
           )
         );
@@ -450,6 +450,238 @@ export default function DashboardOverview() {
     }
   }, [getAuthHeaders, showSuccess, showError]);
 
+  // Modern Invoice Card Component - Responsive Design
+  const ModernInvoiceCard = useCallback(({ invoice, isDarkMode, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, handleDeleteInvoice, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions }: {
+    invoice: Invoice;
+    isDarkMode: boolean;
+    handleViewInvoice: (invoice: Invoice) => void;
+    handleDownloadPDF: (invoice: Invoice) => void;
+    handleSendInvoice: (invoice: Invoice) => void;
+    handleEditInvoice: (invoice: Invoice) => void;
+    handleMarkAsPaid: (invoice: Invoice) => void;
+    handleDeleteInvoice: (invoice: Invoice) => void;
+    getStatusIcon: (status: string) => React.ReactElement;
+    getStatusColor: (status: string) => string;
+    getDueDateStatus: (dueDate: string) => { status: string; days: number; color: string };
+    formatPaymentTerms: (paymentTerms?: { enabled: boolean; terms: string }) => string | null;
+    formatLateFees: (lateFees?: { enabled: boolean; type: 'fixed' | 'percentage'; amount: number; gracePeriod: number }) => string | null;
+    formatReminders: (reminders?: { enabled: boolean; useSystemDefaults: boolean; rules: Array<{ enabled: boolean }> }) => string | null;
+    calculateDueCharges: (invoice: Invoice) => { hasLateFees: boolean; lateFeeAmount: number; totalPayable: number; overdueDays: number };
+    loadingActions: { [key: string]: boolean };
+  }) => {
+    const dueDateStatus = getDueDateStatus(invoice.dueDate);
+    const dueCharges = calculateDueCharges(invoice);
+    
+    return (
+      <div className={`rounded-lg border transition-all duration-200 hover:shadow-sm ${isDarkMode ? 'bg-gray-800/30 border-gray-700 hover:bg-gray-800/50' : 'bg-white border-gray-200 hover:bg-gray-50/50'}`}>
+        {/* Mobile Layout */}
+        <div className="block sm:hidden p-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
+                  <FileText className="h-4 w-4 text-gray-600" />
+                </div>
+                <div>
+                  <div className="font-medium text-sm" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                    {invoice.invoiceNumber}
+                  </div>
+                  <div className="text-xs" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                    {invoice.client.name}
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="font-semibold text-base" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  ${dueCharges.totalPayable.toLocaleString()}
+                </div>
+                <div className="text-xs" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                  {new Date(invoice.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                  invoice.status === 'paid' ? (isDarkMode ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-green-50 text-green-800 border border-green-200') :
+                  invoice.status === 'pending' ? (isDarkMode ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-blue-50 text-blue-800 border border-blue-200') :
+                  invoice.status === 'draft' ? (isDarkMode ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'bg-gray-50 text-gray-800 border border-gray-200') :
+                  (isDarkMode ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'bg-gray-50 text-gray-800 border border-gray-200')
+                }`}>
+                  {getStatusIcon(invoice.status)}
+                  <span className="capitalize">{invoice.status}</span>
+                </span>
+                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+                  {(invoice.type || 'detailed') === 'fast' ? 'Fast' : 'Detailed'}
+                </span>
+                {invoice.status === 'pending' && dueDateStatus.status === 'overdue' && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-50 text-red-800 border border-red-200">
+                    <AlertTriangle className="h-3 w-3" />
+                    <span>{dueDateStatus.days}d</span>
+                  </span>
+                )}
+              </div>
+              
+              <div className="flex items-center space-x-1">
+                <button 
+                  onClick={() => handleViewInvoice(invoice)}
+                  className={`p-1.5 rounded-md transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'}`}
+                  title="View"
+                >
+                  <Eye className="h-4 w-4 text-gray-600" />
+                </button>
+                <button 
+                  onClick={() => handleDownloadPDF(invoice)}
+                  disabled={loadingActions[`pdf-${invoice.id}`]}
+                  className={`p-1.5 rounded-md transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title="PDF"
+                >
+                  {loadingActions[`pdf-${invoice.id}`] ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  ) : (
+                    <Download className="h-4 w-4 text-gray-600" />
+                  )}
+                </button>
+                {invoice.status === 'draft' && (
+                  <button 
+                    onClick={() => handleSendInvoice(invoice)}
+                    disabled={loadingActions[`send-${invoice.id}`]}
+                    className={`p-1.5 rounded-md transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title="Send"
+                  >
+                    {loadingActions[`send-${invoice.id}`] ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : (
+                      <Send className="h-4 w-4 text-gray-600" />
+                    )}
+                  </button>
+                )}
+                {invoice.status === 'pending' && (
+                  <button 
+                    onClick={() => handleMarkAsPaid(invoice)}
+                    disabled={loadingActions[`paid-${invoice.id}`]}
+                    className={`p-1.5 rounded-md transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title="Mark Paid"
+                  >
+                    {loadingActions[`paid-${invoice.id}`] ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : (
+                      <CheckCircle className="h-4 w-4 text-gray-600" />
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop Layout */}
+        <div className="hidden sm:block p-6">
+          <div className="grid grid-cols-12 gap-6 items-center">
+            {/* Left Section - Invoice Info */}
+            <div className="col-span-5 flex items-center space-x-4">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
+                <FileText className="h-6 w-6 text-gray-600" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center space-x-3 mb-2">
+                  <span className="font-semibold text-base" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                    {invoice.invoiceNumber}
+                  </span>
+                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+                    {(invoice.type || 'detailed') === 'fast' ? 'Fast' : 'Detailed'}
+                  </span>
+                </div>
+                <div className="text-sm" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                  {invoice.client.name} • {new Date(invoice.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+            </div>
+            
+            {/* Center Section - Amount & Status */}
+            <div className="col-span-4 text-center">
+              <div className="font-bold text-xl mb-3" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                ${dueCharges.totalPayable.toLocaleString()}
+              </div>
+              <div className="flex items-center justify-center">
+                <div className="relative flex items-center justify-center">
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
+                    invoice.status === 'paid' ? (isDarkMode ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-green-50 text-green-800 border border-green-200') :
+                    invoice.status === 'pending' ? (isDarkMode ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-blue-50 text-blue-800 border border-blue-200') :
+                    invoice.status === 'draft' ? (isDarkMode ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'bg-gray-50 text-gray-800 border border-gray-200') :
+                    (isDarkMode ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'bg-gray-50 text-gray-800 border border-gray-200')
+                  }`}>
+                    {getStatusIcon(invoice.status)}
+                    <span className="capitalize">{invoice.status}</span>
+                  </span>
+                  {invoice.status === 'pending' && dueDateStatus.status === 'overdue' && (
+                    <span className={`absolute left-full ml-1 sm:ml-2 lg:ml-3 inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${isDarkMode ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                      <AlertTriangle className="h-3 w-3" />
+                      <span className="hidden sm:inline">{dueDateStatus.days}d overdue</span>
+                      <span className="sm:hidden">{dueDateStatus.days}d</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* Right Section - Actions */}
+            <div className="col-span-3 flex items-center justify-end space-x-2">
+              <button 
+                onClick={() => handleViewInvoice(invoice)}
+                className={`p-2.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'}`}
+                title="View invoice"
+              >
+                <Eye className="h-4 w-4 text-gray-600" />
+              </button>
+              <button 
+                onClick={() => handleDownloadPDF(invoice)}
+                disabled={loadingActions[`pdf-${invoice.id}`]}
+                className={`p-2.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title="Download PDF"
+              >
+                {loadingActions[`pdf-${invoice.id}`] ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                ) : (
+                  <Download className="h-4 w-4 text-gray-600" />
+                )}
+              </button>
+              {invoice.status === 'draft' && (
+                <button 
+                  onClick={() => handleSendInvoice(invoice)}
+                  disabled={loadingActions[`send-${invoice.id}`]}
+                  className={`p-2.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title="Send invoice"
+                >
+                  {loadingActions[`send-${invoice.id}`] ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  ) : (
+                    <Send className="h-4 w-4 text-gray-600" />
+                  )}
+                </button>
+              )}
+              {invoice.status === 'pending' && (
+                <button 
+                  onClick={() => handleMarkAsPaid(invoice)}
+                  disabled={loadingActions[`paid-${invoice.id}`]}
+                  className={`p-2.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title="Mark as paid"
+                >
+                  {loadingActions[`paid-${invoice.id}`] ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  ) : (
+                    <CheckCircle className="h-4 w-4 text-gray-600" />
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }, [getStatusIcon, getStatusColor, getDueDateStatus, calculateDueCharges]);
+
   // Memoized Invoice Card Component
   const InvoiceCard = useCallback(({ invoice, isDarkMode, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, handleDeleteInvoice, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions }: {
     invoice: Invoice;
@@ -501,7 +733,7 @@ export default function DashboardOverview() {
               </div>
               <div className={`font-heading text-lg font-bold ${
                 invoice.status === 'paid' ? 'text-green-700 dark:text-green-400' :
-                invoice.status === 'sent' ? 'text-orange-600 dark:text-amber-400' :
+                invoice.status === 'pending' ? 'text-orange-600 dark:text-amber-400' :
                 invoice.status === 'draft' ? 'text-gray-600 dark:text-gray-400' :
                 dueDateStatus.status === 'overdue' ? 'text-red-700 dark:text-red-400' :
                 isDarkMode ? 'text-gray-300' : 'text-gray-800'
@@ -528,7 +760,7 @@ export default function DashboardOverview() {
                 {getStatusIcon(invoice.status)}
                 <span className="capitalize">{invoice.status}</span>
               </span>
-              {invoice.status === 'sent' && dueDateStatus.status === 'overdue' && (
+              {invoice.status === 'pending' && dueDateStatus.status === 'overdue' && (
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${
                   isDarkMode ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-50 text-red-800 border-red-300'
                 }`}>
@@ -572,7 +804,7 @@ export default function DashboardOverview() {
             </div>
             <div className={`font-heading text-lg font-bold ${
               invoice.status === 'paid' ? 'text-green-600 dark:text-green-400' :
-              invoice.status === 'sent' ? 'text-amber-600 dark:text-amber-400' :
+              invoice.status === 'pending' ? 'text-amber-600 dark:text-amber-400' :
               invoice.status === 'draft' ? 'text-gray-500 dark:text-gray-400' :
               dueDateStatus.status === 'overdue' ? 'text-red-600 dark:text-red-400' :
               isDarkMode ? 'text-gray-300' : 'text-gray-700'
@@ -587,7 +819,7 @@ export default function DashboardOverview() {
                 {getStatusIcon(invoice.status)}
                 <span className="capitalize">{invoice.status}</span>
               </span>
-              {invoice.status === 'sent' && dueDateStatus.status === 'overdue' && (
+              {invoice.status === 'pending' && dueDateStatus.status === 'overdue' && (
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${
                   isDarkMode ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-50 text-red-800 border-red-300'
                 }`}>
@@ -634,7 +866,7 @@ export default function DashboardOverview() {
               <span>Send</span>
             </button>
           )}
-          {invoice.status === 'sent' && (
+          {invoice.status === 'pending' && (
             <button 
               onClick={() => handleMarkAsPaid(invoice)}
               disabled={loadingActions[`paid-${invoice.id}`]}
@@ -783,7 +1015,7 @@ export default function DashboardOverview() {
   // Calculate total payable (only pending invoices, excluding draft)
   const totalPayableAmount = useMemo(() => {
     return invoices
-      .filter(invoice => invoice.status === 'sent')
+      .filter(invoice => invoice.status === 'pending')
       .reduce((total, invoice) => {
         const charges = calculateDueCharges(invoice);
         return total + charges.totalPayable;
@@ -794,7 +1026,7 @@ export default function DashboardOverview() {
   const overdueCount = useMemo(() => {
     const today = new Date();
     return invoices.filter(invoice => {
-      if (invoice.status !== 'sent') return false;
+      if (invoice.status !== 'pending') return false;
       const dueDate = new Date(invoice.dueDate);
       return dueDate < today;
     }).length;
@@ -958,7 +1190,7 @@ export default function DashboardOverview() {
                       <div className="flex items-center space-x-1 justify-start">
                         <Clock className="h-4 w-4 text-amber-500" />
                         <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                          {invoices.filter(inv => inv.status === 'sent').length} pending
+                          {invoices.filter(inv => inv.status === 'pending').length} pending
                         </span>
                         {totalLateFees > 0 && (
                           <span className="text-xs text-red-500 ml-2">
@@ -1028,28 +1260,29 @@ export default function DashboardOverview() {
             </div>
 
 
-            {/* Quick Actions */}
+            {/* Quick Actions - Modern Design */}
             <div className="mt-8">
-              <h2 className="font-heading text-2xl font-semibold mb-6" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                Quick Actions
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="font-heading text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  Quick Actions
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {/* 60-Second Invoice */}
                 <button
                   onClick={() => setShowFastInvoice(true)}
-                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] touch-manipulation border-2 ${isDarkMode ? 'bg-gray-800/50 border-gray-600 hover:border-green-500 hover:bg-green-500/10' : 'bg-white/70 border-gray-300 hover:border-green-500 hover:bg-green-50'} backdrop-blur-sm cursor-pointer`}
-                  style={{ minHeight: '80px' }}
+                  className={`group relative p-4 rounded-lg border transition-all duration-200 hover:shadow-sm ${isDarkMode ? 'bg-gray-800/30 border-gray-700 hover:border-green-500/30 hover:bg-gray-800/50' : 'bg-white border-gray-200 hover:border-green-200 hover:bg-green-50/30'}`}
                 >
-                  <div className="flex items-center space-x-4">
-                    <div className={`p-3 rounded-xl transition-colors ${isDarkMode ? 'bg-green-500/30 group-hover:bg-green-500/50' : 'bg-green-100 group-hover:bg-green-200'}`}>
-                      <Sparkles className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-green-500/10' : 'bg-green-50'}`}>
+                      <Sparkles className="h-5 w-5 text-green-600" />
                     </div>
                     <div className="text-left">
-                      <h3 className="font-semibold text-lg transition-colors" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                        60-Second Invoice
+                      <h3 className="font-medium text-sm" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                        Quick Invoice
                       </h3>
-                      <p className="text-sm transition-colors" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
-                        Fast & simple invoicing
+                      <p className="text-xs" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                        60-second invoicing
                       </p>
                     </div>
                   </div>
@@ -1058,18 +1291,18 @@ export default function DashboardOverview() {
                 {/* Detailed Invoice */}
                 <button
                   onClick={() => setShowCreateInvoice(true)}
-                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] touch-manipulation border-2 ${isDarkMode ? 'bg-gray-800/50 border-gray-600 hover:border-blue-500 hover:bg-blue-500/10' : 'bg-white/70 border-gray-300 hover:border-blue-500 hover:bg-blue-50'} backdrop-blur-sm cursor-pointer`}
+                  className={`group relative p-4 rounded-lg border transition-all duration-200 hover:shadow-sm ${isDarkMode ? 'bg-gray-800/30 border-gray-700 hover:border-blue-500/30 hover:bg-gray-800/50' : 'bg-white border-gray-200 hover:border-blue-200 hover:bg-blue-50/30'}`}
                 >
-                  <div className="flex items-center space-x-4">
-                    <div className={`p-3 rounded-xl transition-colors ${isDarkMode ? 'bg-blue-500/30 group-hover:bg-blue-500/50' : 'bg-blue-100 group-hover:bg-blue-200'}`}>
-                      <FilePlus className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
+                      <FilePlus className="h-5 w-5 text-blue-600" />
                     </div>
                     <div className="text-left">
-                      <h3 className="font-semibold text-lg transition-colors" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                      <h3 className="font-medium text-sm" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                         Detailed Invoice
                       </h3>
-                      <p className="text-sm transition-colors" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
-                        Multiple items & customization
+                      <p className="text-xs" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                        Full customization
                       </p>
                     </div>
                   </div>
@@ -1078,18 +1311,18 @@ export default function DashboardOverview() {
                 {/* Add Client */}
                 <button
                   onClick={() => setShowCreateClient(true)}
-                  className={`group relative overflow-hidden rounded-lg p-4 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] touch-manipulation border-2 ${isDarkMode ? 'bg-gray-800/50 border-gray-600 hover:border-purple-500 hover:bg-purple-500/10' : 'bg-white/70 border-gray-300 hover:border-purple-500 hover:bg-purple-50'} backdrop-blur-sm cursor-pointer`}
+                  className={`group relative p-4 rounded-lg border transition-all duration-200 hover:shadow-sm ${isDarkMode ? 'bg-gray-800/30 border-gray-700 hover:border-purple-500/30 hover:bg-gray-800/50' : 'bg-white border-gray-200 hover:border-purple-200 hover:bg-purple-50/30'}`}
                 >
-                  <div className="flex items-center space-x-4">
-                    <div className={`p-3 rounded-xl transition-colors ${isDarkMode ? 'bg-purple-500/30 group-hover:bg-purple-500/50' : 'bg-purple-100 group-hover:bg-purple-200'}`}>
-                      <UserPlus className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-purple-500/10' : 'bg-purple-50'}`}>
+                      <UserPlus className="h-5 w-5 text-purple-600" />
                     </div>
                     <div className="text-left">
-                      <h3 className="font-semibold text-lg transition-colors" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                      <h3 className="font-medium text-sm" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                         Add Client
                       </h3>
-                      <p className="text-sm transition-colors" style={{color: isDarkMode ? '#d1d5db' : '#6b7280'}}>
-                        Manage your client list
+                      <p className="text-xs" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                        Manage clients
                       </p>
                     </div>
                   </div>
@@ -1098,36 +1331,44 @@ export default function DashboardOverview() {
               </div>
             </div>
 
-            {/* Recent Invoices */}
+            {/* Recent Invoices - Modern Design */}
             <div className="mt-8">
-              <h2 className="font-heading text-2xl font-semibold mb-6" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                Recent Invoices
-              </h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="font-heading text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  Recent Invoices
+                </h2>
+                <button
+                  onClick={() => router.push('/dashboard/invoices')}
+                  className="text-sm font-medium px-3 py-2 rounded-lg transition-colors"
+                  style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}
+                >
+                  View all
+                </button>
+              </div>
+              
               {isLoadingInvoices ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className={`rounded-lg p-4 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                    <div key={i} className={`rounded-xl p-4 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white border border-gray-200'}`}>
                       <div className="animate-pulse">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
-                            <div>
-                              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-2"></div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
+                            <div className="space-y-2">
+                              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32"></div>
                               <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
                             </div>
                           </div>
-                          <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+                          <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
                         </div>
-                        <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-full mb-2"></div>
-                        <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : recentInvoices.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {recentInvoices.map((invoice) => (
-                    <InvoiceCard
+                    <ModernInvoiceCard
                       key={invoice.id}
                       invoice={invoice}
                       isDarkMode={isDarkMode}
@@ -1149,21 +1390,21 @@ export default function DashboardOverview() {
                   ))}
                 </div>
               ) : (
-                <div className={`p-8 rounded-lg border-2 border-dashed text-center ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}>
-                  <div className={`inline-flex items-center justify-center w-16 h-16 rounded-xl mb-4 ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
-                    <FileText className="h-8 w-8 text-gray-500 dark:text-gray-400" />
+                <div className={`rounded-xl p-8 text-center ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+                  <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
+                    <FileText className="h-8 w-8 text-gray-500" />
                   </div>
                   
                   <h3 className="text-lg font-semibold mb-2" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                     No invoices yet
                   </h3>
-                  <p className="text-sm mb-6 max-w-sm mx-auto" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                    Your recent invoices will appear here. Create your first invoice to start tracking your payments.
+                  <p className="text-sm mb-6 max-w-sm mx-auto" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                    Create your first invoice to start tracking payments and managing your business.
                   </p>
                   
                   <button
                     onClick={() => setShowFastInvoice(true)}
-                    className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium mx-auto"
+                    className="inline-flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                   >
                     <Sparkles className="h-4 w-4" />
                     <span>Create Invoice</span>

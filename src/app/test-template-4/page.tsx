@@ -45,7 +45,7 @@ export default function TestTemplate4Page() {
     taxRate: 8.5,
     taxAmount: 214.63, // Recalculated with discount
     total: 2739.63, // Recalculated total
-    status: 'sent' as const,
+    status: 'pending' as const,
     type: 'detailed' as const,
     dueDate: '2024-02-15',
     createdAt: '2024-01-15',

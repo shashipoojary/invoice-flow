@@ -90,7 +90,7 @@ function InvoicesContent() {
     switch (status) {
       case 'paid':
         return <CheckCircle className="h-3 w-3" />;
-      case 'sent':
+      case 'pending':
         return <Send className="h-3 w-3" />;
       case 'overdue':
         return <AlertCircle className="h-3 w-3" />;
@@ -103,7 +103,7 @@ function InvoicesContent() {
     switch (status) {
       case 'paid':
         return 'dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30';
-      case 'sent':
+      case 'pending':
         return 'dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30';
       case 'overdue':
         return 'dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/30';
@@ -118,7 +118,7 @@ function InvoicesContent() {
     switch (status) {
       case 'paid':
         return { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' };
-      case 'sent':
+      case 'pending':
         return { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' };
       case 'overdue':
         return { backgroundColor: '#fef2f2', color: '#dc2626', borderColor: '#fecaca' };
@@ -133,7 +133,7 @@ function InvoicesContent() {
     switch (status) {
       case 'paid':
         return { backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#6ee7b7', borderColor: 'rgba(16, 185, 129, 0.3)' };
-      case 'sent':
+      case 'pending':
         return { backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#93c5fd', borderColor: 'rgba(59, 130, 246, 0.3)' };
       case 'overdue':
         return { backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#fca5a5', borderColor: 'rgba(239, 68, 68, 0.3)' };
@@ -197,7 +197,7 @@ function InvoicesContent() {
   // Helper function to calculate due charges and total payable
   const calculateDueCharges = useCallback((invoice: Invoice) => {
     // Only calculate late fees for sent invoices that are actually overdue
-    if (invoice.status !== 'sent') {
+    if (invoice.status !== 'pending') {
       return {
         hasLateFees: false,
         lateFeeAmount: 0,
@@ -348,7 +348,7 @@ function InvoicesContent() {
         setInvoices(prevInvoices => 
           prevInvoices.map(inv => 
             inv.id === invoice.id 
-              ? { ...inv, status: 'sent' as const }
+              ? { ...inv, status: 'pending' as const }
               : inv
           )
         );
@@ -476,213 +476,248 @@ function InvoicesContent() {
     const reminders = formatReminders(invoice.reminders);
     
     return (
-    <div className={`rounded-lg border p-4 transition-all duration-200 hover:shadow-md ${isDarkMode ? 'bg-gray-800/30 border-gray-700 hover:bg-gray-800/40' : 'bg-white border-gray-300 hover:shadow-lg'}`}>
-      <div className="space-y-4">
-        {/* Invoice Info Row */}
-        <div className="space-y-3 sm:space-y-0">
-          {/* Mobile Layout */}
-          <div className="sm:hidden space-y-3">
+      <div className={`rounded-lg border transition-all duration-200 hover:shadow-sm ${isDarkMode ? 'bg-gray-800/30 border-gray-700 hover:bg-gray-800/50' : 'bg-white border-gray-200 hover:bg-gray-50/50'}`}>
+        {/* Mobile Layout */}
+        <div className="block sm:hidden p-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
+                  <FileText className="h-4 w-4 text-gray-600" />
+                </div>
+                <div>
+                  <div className="font-medium text-sm" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                    {invoice.invoiceNumber}
+                  </div>
+                  <div className="text-xs" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                    {invoice.client.name}
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="font-semibold text-base" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  ${dueCharges.totalPayable.toLocaleString()}
+                </div>
+                <div className="text-xs" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                  {new Date(invoice.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+            </div>
+            
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <div className="font-heading text-sm font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                  {invoice.invoiceNumber}
-                </div>
-                <span 
-                  className={`px-2 py-0.5 text-xs font-medium rounded-full border`}
-                  style={isDarkMode ? getTypeStyleDark(invoice.type || 'detailed') : ((invoice.type || 'detailed') === 'fast' 
-                    ? { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' }
-                    : { backgroundColor: '#e0e7ff', color: '#3730a3', borderColor: '#a5b4fc' }
-                  )}
-                >
+                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                  invoice.status === 'paid' ? (isDarkMode ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-green-50 text-green-800 border border-green-200') :
+                  invoice.status === 'pending' ? (isDarkMode ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-blue-50 text-blue-800 border border-blue-200') :
+                  invoice.status === 'draft' ? (isDarkMode ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'bg-gray-50 text-gray-800 border border-gray-200') :
+                  (isDarkMode ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'bg-gray-50 text-gray-800 border border-gray-200')
+                }`}>
+                  {getStatusIcon(invoice.status)}
+                  <span className="capitalize">{invoice.status}</span>
+                </span>
+                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
                   {(invoice.type || 'detailed') === 'fast' ? 'Fast' : 'Detailed'}
                 </span>
+                {invoice.status === 'pending' && dueDateStatus.status === 'overdue' && (
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${isDarkMode ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                    <AlertTriangle className="h-3 w-3" />
+                    <span>{dueDateStatus.days}d</span>
+                  </span>
+                )}
               </div>
-              <div className={`font-heading text-lg font-bold ${
-                invoice.status === 'paid' ? 'text-green-700 dark:text-green-400' :
-                invoice.status === 'sent' ? 'text-orange-600 dark:text-amber-400' :
-                invoice.status === 'draft' ? 'text-gray-600 dark:text-gray-400' :
-                dueDateStatus.status === 'overdue' ? 'text-red-700 dark:text-red-400' :
-                isDarkMode ? 'text-gray-300' : 'text-gray-800'
-              }`}>
-                ${dueCharges.totalPayable.toLocaleString()}
+              
+              <div className="flex items-center space-x-1">
+                <button 
+                  onClick={() => handleViewInvoice(invoice)}
+                  className={`p-1.5 rounded-md transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'}`}
+                  title="View"
+                >
+                  <Eye className="h-4 w-4 text-gray-600" />
+                </button>
+                <button 
+                  onClick={() => handleDownloadPDF(invoice)}
+                  disabled={loadingActions[`pdf-${invoice.id}`]}
+                  className={`p-1.5 rounded-md transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title="PDF"
+                >
+                  {loadingActions[`pdf-${invoice.id}`] ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  ) : (
+                    <Download className="h-4 w-4 text-gray-600" />
+                  )}
+                </button>
+                {invoice.status === 'draft' && (
+                  <button 
+                    onClick={() => handleSendInvoice(invoice)}
+                    disabled={loadingActions[`send-${invoice.id}`]}
+                    className={`p-1.5 rounded-md transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title="Send"
+                  >
+                    {loadingActions[`send-${invoice.id}`] ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : (
+                      <Send className="h-4 w-4 text-gray-600" />
+                    )}
+                  </button>
+                )}
+                {invoice.status === 'pending' && (
+                  <button 
+                    onClick={() => handleMarkAsPaid(invoice)}
+                    disabled={loadingActions[`paid-${invoice.id}`]}
+                    className={`p-1.5 rounded-md transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title="Mark Paid"
+                  >
+                    {loadingActions[`paid-${invoice.id}`] ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : (
+                      <CheckCircle className="h-4 w-4 text-gray-600" />
+                    )}
+                  </button>
+                )}
+                {invoice.status === 'draft' && (
+                  <button 
+                    onClick={() => handleEditInvoice(invoice)}
+                    className={`p-1.5 rounded-md transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'}`}
+                    title="Edit"
+                  >
+                    <Edit className="h-4 w-4 text-gray-600" />
+                  </button>
+                )}
+                {invoice.status === 'draft' && (
+                  <button 
+                    onClick={() => handleDeleteInvoice(invoice)}
+                    className={`p-1.5 rounded-md transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'}`}
+                    title="Delete"
+                  >
+                    <Trash2 className="h-4 w-4 text-gray-600" />
+                  </button>
+                )}
               </div>
             </div>
-            <div className="text-xs" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-              {new Date(invoice.createdAt).toLocaleDateString()}
-            </div>
-            <div className="text-sm font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-              {invoice.client.name}
-            </div>
-            {invoice.client.company && (
-              <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                {invoice.client.company}
+          </div>
+        </div>
+
+        {/* Desktop Layout */}
+        <div className="hidden sm:block p-6">
+          <div className="grid grid-cols-12 gap-6 items-center">
+            {/* Left Section - Invoice Info */}
+            <div className="col-span-5 flex items-center space-x-4">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
+                <FileText className="h-6 w-6 text-gray-600" />
               </div>
-            )}
-            <div className="flex items-center justify-between">
-              <span 
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border`}
-                style={isDarkMode ? getStatusStyleDark(invoice.status) : getStatusStyle(invoice.status)}
-              >
-                {getStatusIcon(invoice.status)}
-                <span className="capitalize">{invoice.status}</span>
-              </span>
-              {invoice.status === 'sent' && (
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
-                  dueDateStatus.status === 'overdue' 
-                    ? (isDarkMode ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-red-100 text-red-700 border border-red-200')
-                    : dueDateStatus.status === 'due-today'
-                    ? (isDarkMode ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-orange-100 text-orange-700 border border-orange-200')
-                    : dueDateStatus.status === 'due-soon'
-                    ? (isDarkMode ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' : 'bg-yellow-100 text-yellow-700 border border-yellow-200')
-                    : (isDarkMode ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-blue-100 text-blue-700 border border-blue-200')
-                }`}>
-                  <Calendar className="h-3 w-3" />
-                  <span>
-                    {dueDateStatus.status === 'overdue' ? `${dueDateStatus.days} days overdue` :
-                     dueDateStatus.status === 'due-today' ? 'Due today' :
-                     dueDateStatus.status === 'due-soon' ? `Due in ${dueDateStatus.days} days` :
-                     `Due in ${dueDateStatus.days} days`}
+              <div className="flex-1">
+                <div className="flex items-center space-x-3 mb-2">
+                  <span className="font-semibold text-base" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                    {invoice.invoiceNumber}
+                  </span>
+                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+                    {(invoice.type || 'detailed') === 'fast' ? 'Fast' : 'Detailed'}
                   </span>
                 </div>
-              )}
-            </div>
-          </div>
-          
-          {/* Desktop Layout */}
-          <div className="hidden sm:grid grid-cols-4 gap-4 items-center">
-            <div className="space-y-1">
-              <div className="flex items-center space-x-2">
-                <div className="font-heading text-sm font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                  {invoice.invoiceNumber}
+                <div className="text-sm" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                  {invoice.client.name} • {new Date(invoice.createdAt).toLocaleDateString()}
                 </div>
-                <span 
-                  className={`px-2 py-0.5 text-xs font-medium rounded-full border`}
-                  style={isDarkMode ? getTypeStyleDark(invoice.type || 'detailed') : ((invoice.type || 'detailed') === 'fast' 
-                    ? { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' }
-                    : { backgroundColor: '#e0e7ff', color: '#3730a3', borderColor: '#a5b4fc' }
+              </div>
+            </div>
+            
+            {/* Center Section - Amount & Status */}
+            <div className="col-span-4 text-center">
+              <div className="font-bold text-xl mb-3" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                ${dueCharges.totalPayable.toLocaleString()}
+              </div>
+              <div className="flex items-center justify-center">
+                <div className="relative flex items-center justify-center">
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
+                    invoice.status === 'paid' ? (isDarkMode ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-green-50 text-green-800 border border-green-200') :
+                    invoice.status === 'pending' ? (isDarkMode ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-blue-50 text-blue-800 border border-blue-200') :
+                    invoice.status === 'draft' ? (isDarkMode ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'bg-gray-50 text-gray-800 border border-gray-200') :
+                    (isDarkMode ? 'bg-gray-500/20 text-gray-400 border border-gray-500/30' : 'bg-gray-50 text-gray-800 border border-gray-200')
+                  }`}>
+                    {getStatusIcon(invoice.status)}
+                    <span className="capitalize">{invoice.status}</span>
+                  </span>
+                  {invoice.status === 'pending' && dueDateStatus.status === 'overdue' && (
+                    <span className={`absolute left-full ml-1 sm:ml-2 lg:ml-3 inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${isDarkMode ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                      <AlertTriangle className="h-3 w-3" />
+                      <span className="hidden sm:inline">{dueDateStatus.days}d overdue</span>
+                      <span className="sm:hidden">{dueDateStatus.days}d</span>
+                    </span>
                   )}
-                >
-                  {(invoice.type || 'detailed') === 'fast' ? 'Fast' : 'Detailed'}
-                </span>
-              </div>
-              <div className="text-xs" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                {new Date(invoice.createdAt).toLocaleDateString()}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm font-medium" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                {invoice.client.name}
-              </div>
-              {invoice.client.company && (
-                <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                  {invoice.client.company}
                 </div>
-              )}
+              </div>
             </div>
-            <div className={`font-heading text-lg font-bold ${
-              invoice.status === 'paid' ? 'text-green-600 dark:text-green-400' :
-              invoice.status === 'sent' ? 'text-amber-600 dark:text-amber-400' :
-              invoice.status === 'draft' ? 'text-gray-500 dark:text-gray-400' :
-              dueDateStatus.status === 'overdue' ? 'text-red-600 dark:text-red-400' :
-              isDarkMode ? 'text-gray-300' : 'text-gray-700'
-            }`}>
-              ${dueCharges.totalPayable.toLocaleString()}
-            </div>
-            <div className="flex items-center justify-between">
-              <span 
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border`}
-                style={isDarkMode ? getStatusStyleDark(invoice.status) : getStatusStyle(invoice.status)}
+            
+            {/* Right Section - Actions */}
+            <div className="col-span-3 flex items-center justify-end space-x-2">
+              <button 
+                onClick={() => handleViewInvoice(invoice)}
+                className={`p-2.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'}`}
+                title="View invoice"
               >
-                {getStatusIcon(invoice.status)}
-                <span className="capitalize">{invoice.status}</span>
-              </span>
-              {invoice.status === 'sent' && dueDateStatus.status === 'overdue' && (
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${
-                  isDarkMode ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-red-50 text-red-800 border-red-300'
-                }`}>
-                  <AlertTriangle className="h-3 w-3" />
-                  <span>{dueDateStatus.days}d overdue</span>
-                </span>
+                <Eye className="h-4 w-4 text-gray-600" />
+              </button>
+              <button 
+                onClick={() => handleDownloadPDF(invoice)}
+                disabled={loadingActions[`pdf-${invoice.id}`]}
+                className={`p-2.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title="Download PDF"
+              >
+                {loadingActions[`pdf-${invoice.id}`] ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                ) : (
+                  <Download className="h-4 w-4 text-gray-600" />
+                )}
+              </button>
+              {invoice.status === 'draft' && (
+                <button 
+                  onClick={() => handleSendInvoice(invoice)}
+                  disabled={loadingActions[`send-${invoice.id}`]}
+                  className={`p-2.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title="Send invoice"
+                >
+                  {loadingActions[`send-${invoice.id}`] ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  ) : (
+                    <Send className="h-4 w-4 text-gray-600" />
+                  )}
+                </button>
+              )}
+              {invoice.status === 'pending' && (
+                <button 
+                  onClick={() => handleMarkAsPaid(invoice)}
+                  disabled={loadingActions[`paid-${invoice.id}`]}
+                  className={`p-2.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title="Mark as paid"
+                >
+                  {loadingActions[`paid-${invoice.id}`] ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  ) : (
+                    <CheckCircle className="h-4 w-4 text-gray-600" />
+                  )}
+                </button>
+              )}
+              {invoice.status === 'draft' && (
+                <button 
+                  onClick={() => handleEditInvoice(invoice)}
+                  className={`p-2.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'}`}
+                  title="Edit invoice"
+                >
+                  <Edit className="h-4 w-4 text-gray-600" />
+                </button>
+              )}
+              {invoice.status === 'draft' && (
+                <button 
+                  onClick={() => handleDeleteInvoice(invoice)}
+                  className={`p-2.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'}`}
+                  title="Delete invoice"
+                >
+                  <Trash2 className="h-4 w-4 text-gray-600" />
+                </button>
               )}
             </div>
           </div>
-        </div>
-        
-        {/* Action Buttons Row */}
-        <div className="flex flex-wrap gap-2 pt-3">
-          <button 
-            onClick={() => handleViewInvoice(invoice)}
-            className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30' : 'bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-300'}`}
-          >
-            <Eye className="h-3.5 w-3.5" />
-            <span>View</span>
-          </button>
-          <button 
-            onClick={() => handleDownloadPDF(invoice)}
-            disabled={loadingActions[`pdf-${invoice.id}`]}
-            className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            {loadingActions[`pdf-${invoice.id}`] ? (
-              <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></div>
-            ) : (
-              <Download className="h-3.5 w-3.5" />
-            )}
-            <span>PDF</span>
-          </button>
-          {invoice.status === 'draft' && (
-            <button 
-              onClick={() => handleSendInvoice(invoice)}
-              disabled={loadingActions[`send-${invoice.id}`]}
-              className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 border border-indigo-500/30' : 'bg-indigo-50 text-indigo-800 hover:bg-indigo-100 border border-indigo-300'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {loadingActions[`send-${invoice.id}`] ? (
-                <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></div>
-              ) : (
-                <Send className="h-3.5 w-3.5" />
-              )}
-              <span>Send</span>
-            </button>
-          )}
-          {invoice.status === 'sent' && (
-            <button 
-              onClick={() => handleMarkAsPaid(invoice)}
-              disabled={loadingActions[`paid-${invoice.id}`]}
-              className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {loadingActions[`paid-${invoice.id}`] ? (
-                <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></div>
-              ) : (
-                <CheckCircle className="h-3.5 w-3.5" />
-              )}
-              <span>Mark as Paid</span>
-            </button>
-          )}
-          {invoice.status === 'draft' && (
-            <>
-              <button 
-                onClick={() => handleEditInvoice(invoice)}
-                className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-gray-500/20 text-gray-400 hover:bg-gray-500/30 border border-gray-500/30' : 'bg-gray-50 text-gray-800 hover:bg-gray-100 border border-gray-300'}`}
-              >
-                <Edit className="h-3.5 w-3.5" />
-                <span>Edit</span>
-              </button>
-              <button 
-                onClick={() => handleDeleteInvoice(invoice)}
-                disabled={loadingActions[`delete-${invoice.id}`]}
-                className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium ${isDarkMode ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30' : 'bg-red-50 text-red-800 hover:bg-red-100 border border-red-300'} ${loadingActions[`delete-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {loadingActions[`delete-${invoice.id}`] ? (
-                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></div>
-                ) : (
-                  <Trash2 className="h-3.5 w-3.5" />
-                )}
-                <span>Delete</span>
-              </button>
-            </>
-          )}
         </div>
       </div>
-    </div>
     );
   }, []);
 
@@ -805,12 +840,12 @@ function InvoicesContent() {
                     <div className="flex flex-wrap items-center gap-2">
                       <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap ${
                         searchParams.get('status') === 'paid' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                        searchParams.get('status') === 'sent' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
+                        searchParams.get('status') === 'pending' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
                         searchParams.get('status') === 'overdue' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
                         'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
                       }`}>
                         {searchParams.get('status') === 'paid' ? 'Paid Invoices' :
-                         searchParams.get('status') === 'sent' ? 'Pending Invoices' :
+                         searchParams.get('status') === 'pending' ? 'Pending Invoices' :
                          searchParams.get('status') === 'overdue' ? 'Overdue Invoices' :
                          'Filtered'}
                       </span>
@@ -872,10 +907,10 @@ function InvoicesContent() {
                       
                       if (statusFilter === 'paid') {
                         return invoice.status === 'paid';
-                      } else if (statusFilter === 'sent') {
-                        return invoice.status === 'sent';
+                      } else if (statusFilter === 'pending') {
+                        return invoice.status === 'pending';
                       } else if (statusFilter === 'overdue') {
-                        if (invoice.status !== 'sent') return false;
+                        if (invoice.status !== 'pending') return false;
                         const today = new Date();
                         const dueDate = new Date(invoice.dueDate);
                         return dueDate < today;
@@ -884,7 +919,7 @@ function InvoicesContent() {
                     })
                     .sort((a, b) => {
                       const statusFilter = searchParams.get('status');
-                      if (statusFilter === 'paid' || statusFilter === 'sent') {
+                      if (statusFilter === 'paid' || statusFilter === 'pending') {
                         // Sort by amount (highest first)
                         return b.total - a.total;
                       }

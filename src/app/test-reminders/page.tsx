@@ -165,7 +165,7 @@ export default function TestRemindersPage() {
                             <td className="py-2">{invoice.invoiceNumber}</td>
                             <td className="py-2">
                               <span className={`px-2 py-1 rounded-full text-xs ${
-                                invoice.status === 'sent' ? 'bg-blue-100 text-blue-800' :
+                                invoice.status === 'pending' ? 'bg-blue-100 text-blue-800' :
                                 invoice.status === 'paid' ? 'bg-green-100 text-green-800' :
                                 invoice.status === 'draft' ? 'bg-gray-100 text-gray-800' :
                                 'bg-red-100 text-red-800'

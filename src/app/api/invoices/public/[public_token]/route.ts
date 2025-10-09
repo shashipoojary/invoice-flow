@@ -125,6 +125,7 @@ export async function GET(
     const currentDate = new Date()
     const dueDate = new Date(invoice.due_date)
     const isOverdue = currentDate > dueDate && invoice.status !== 'paid'
+    const isDueToday = currentDate.toDateString() === dueDate.toDateString() && invoice.status !== 'paid'
     
     // Parse late fees settings from database
     let lateFeesSettings = null
@@ -178,7 +179,7 @@ export async function GET(
         total: invoice.total || 0,
         lateFees: lateFees,
         totalWithLateFees: (invoice.total || 0) + lateFees,
-        status: isOverdue && invoice.status !== 'paid' ? 'overdue' : invoice.status,
+        status: isOverdue && invoice.status !== 'paid' ? 'overdue' : (isDueToday ? 'due today' : (invoice.status === 'sent' ? 'pending' : invoice.status)),
         isOverdue: isOverdue,
         daysOverdue: isOverdue ? Math.ceil((currentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)) : 0,
         notes: invoice.notes,

@@ -28,7 +28,7 @@ interface Invoice {
   total: number
   lateFees: number
   totalWithLateFees: number
-  status: 'draft' | 'sent' | 'paid' | 'overdue'
+  status: 'draft' | 'pending' | 'paid' | 'overdue' | 'due today'
   isOverdue: boolean
   daysOverdue: number
   notes?: string

@@ -13,7 +13,8 @@ import {
   User,
   LogOut,
   Plus,
-  Loader2
+  Loader2,
+  Mail
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -81,6 +82,13 @@ const ModernSidebar = ({
       icon: FileText,
       description: 'Manage Invoices',
       route: '/dashboard/invoices'
+    },
+    {
+      id: 'reminders',
+      label: 'Reminders',
+      icon: Mail,
+      description: 'Reminder History',
+      route: '/dashboard/reminders'
     },
     {
       id: 'clients',
