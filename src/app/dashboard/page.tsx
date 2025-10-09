@@ -1159,16 +1159,16 @@ export default function DashboardOverview() {
               )}
               
               {/* Stats Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Total Revenue */}
                 <button 
                   onClick={handlePaidInvoicesClick}
-                  className={`group relative overflow-hidden rounded-lg p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-emerald-500' : 'bg-white/70 border border-gray-200 hover:border-emerald-500'} backdrop-blur-sm`}
+                  className={`group relative overflow-hidden rounded-lg p-2 sm:p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-emerald-500' : 'bg-white/70 border border-gray-200 hover:border-emerald-500'} backdrop-blur-sm`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="space-y-1 flex-1">
-                      <p className="text-sm font-medium text-left" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Revenue</p>
-                      <div className="font-heading text-3xl font-bold text-emerald-600 dark:text-emerald-400 text-left">
+                      <p className="text-xs font-medium text-left" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Revenue</p>
+                      <div className="font-heading text-lg sm:text-3xl font-bold text-emerald-600 dark:text-emerald-400 text-left">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-24 rounded"></div>
                         ) : (
@@ -1177,11 +1177,11 @@ export default function DashboardOverview() {
                       </div>
                       <div className="flex items-center space-x-1 justify-start">
                         <CheckCircle className="h-4 w-4 text-emerald-500" />
-                        <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Paid invoices</span>
+                        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Paid invoices</span>
                       </div>
                     </div>
-                    <div className={`p-2 rounded-xl ${isDarkMode ? 'bg-emerald-500/20' : 'bg-emerald-50'}`}>
-                      <Receipt className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                    <div className={`p-1 sm:p-2 rounded-xl ${isDarkMode ? 'bg-emerald-500/20' : 'bg-emerald-50'}`}>
+                      <Receipt className="h-4 w-4 sm:h-6 sm:w-6 text-emerald-600 dark:text-emerald-400" />
                     </div>
                   </div>
                 </button>
@@ -1189,12 +1189,12 @@ export default function DashboardOverview() {
                 {/* Outstanding Amount */}
                 <button 
                   onClick={handlePendingInvoicesClick}
-                  className={`group relative overflow-hidden rounded-lg p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-amber-500' : 'bg-white/70 border border-gray-200 hover:border-amber-500'} backdrop-blur-sm`}
+                  className={`group relative overflow-hidden rounded-lg p-2 sm:p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-amber-500' : 'bg-white/70 border border-gray-200 hover:border-amber-500'} backdrop-blur-sm`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="space-y-1 flex-1">
-                      <p className="text-sm font-medium text-left" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Payable</p>
-                      <div className="font-heading text-3xl font-bold text-amber-600 dark:text-amber-400 text-left">
+                      <p className="text-xs font-medium text-left" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Payable</p>
+                      <div className="font-heading text-lg sm:text-3xl font-bold text-amber-600 dark:text-amber-400 text-left">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-24 rounded"></div>
                         ) : (
@@ -1203,7 +1203,7 @@ export default function DashboardOverview() {
                       </div>
                       <div className="flex items-center space-x-1 justify-start">
                         <Clock className="h-4 w-4 text-amber-500" />
-                        <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                        <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
                           {invoices.filter(inv => inv.status === 'pending' || inv.status === 'sent').length} pending
                         </span>
                         {totalLateFees > 0 && (
@@ -1213,8 +1213,8 @@ export default function DashboardOverview() {
                         )}
                       </div>
                     </div>
-                    <div className={`p-2 rounded-xl ${isDarkMode ? 'bg-amber-500/20' : 'bg-amber-50'}`}>
-                      <Timer className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                    <div className={`p-1 sm:p-2 rounded-xl ${isDarkMode ? 'bg-amber-500/20' : 'bg-amber-50'}`}>
+                      <Timer className="h-4 w-4 sm:h-6 sm:w-6 text-amber-600 dark:text-amber-400" />
                     </div>
                   </div>
                 </button>
@@ -1222,12 +1222,12 @@ export default function DashboardOverview() {
                 {/* Overdue Invoices */}
                 <button 
                   onClick={handleOverdueInvoicesClick}
-                  className={`group relative overflow-hidden rounded-lg p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-red-500' : 'bg-white/70 border border-gray-200 hover:border-red-500'} backdrop-blur-sm`}
+                  className={`group relative overflow-hidden rounded-lg p-2 sm:p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-red-500' : 'bg-white/70 border border-gray-200 hover:border-red-500'} backdrop-blur-sm`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="space-y-1 flex-1">
-                      <p className="text-sm font-medium text-left" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Overdue</p>
-                      <div className="font-heading text-3xl font-bold text-red-600 dark:text-red-400 text-left">
+                      <p className="text-xs font-medium text-left" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Overdue</p>
+                      <div className="font-heading text-lg sm:text-3xl font-bold text-red-600 dark:text-red-400 text-left">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-8 rounded"></div>
                         ) : (
@@ -1236,11 +1236,11 @@ export default function DashboardOverview() {
                       </div>
                       <div className="flex items-center space-x-1 justify-start">
                         <AlertCircle className="h-4 w-4 text-red-500" />
-                        <span className="text-sm font-medium text-red-600 dark:text-red-400">Need attention</span>
+                        <span className="text-xs font-medium text-red-600 dark:text-red-400">Need attention</span>
                       </div>
                     </div>
-                    <div className={`p-2 rounded-xl ${isDarkMode ? 'bg-red-500/20' : 'bg-red-50'}`}>
-                      <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                    <div className={`p-1 sm:p-2 rounded-xl ${isDarkMode ? 'bg-red-500/20' : 'bg-red-50'}`}>
+                      <AlertTriangle className="h-4 w-4 sm:h-6 sm:w-6 text-red-600 dark:text-red-400" />
                     </div>
                   </div>
                 </button>
@@ -1248,12 +1248,12 @@ export default function DashboardOverview() {
                 {/* Total Clients */}
                 <button 
                   onClick={handleClientsClick}
-                  className={`group relative overflow-hidden rounded-lg p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-indigo-500' : 'bg-white/70 border border-gray-200 hover:border-indigo-500'} backdrop-blur-sm`}
+                  className={`group relative overflow-hidden rounded-lg p-2 sm:p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer ${isDarkMode ? 'bg-gray-800/50 border border-gray-700 hover:border-indigo-500' : 'bg-white/70 border border-gray-200 hover:border-indigo-500'} backdrop-blur-sm`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="space-y-1 flex-1">
-                      <p className="text-sm font-medium text-left" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Clients</p>
-                      <div className="font-heading text-3xl font-bold text-indigo-600 dark:text-indigo-400 text-left">
+                      <p className="text-xs font-medium text-left" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>Total Clients</p>
+                      <div className="font-heading text-lg sm:text-3xl font-bold text-indigo-600 dark:text-indigo-400 text-left">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-8 rounded"></div>
                         ) : (
@@ -1262,11 +1262,11 @@ export default function DashboardOverview() {
                       </div>
                       <div className="flex items-center space-x-1 justify-start">
                         <Users className="h-4 w-4 text-indigo-500" />
-                        <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">Active clients</span>
+                        <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400">Active clients</span>
                       </div>
                     </div>
-                    <div className={`p-2 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
-                      <Users className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                    <div className={`p-1 sm:p-2 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
+                      <Users className="h-4 w-4 sm:h-6 sm:w-6 text-indigo-600 dark:text-indigo-400" />
                     </div>
                   </div>
                 </button>
@@ -1285,11 +1285,11 @@ export default function DashboardOverview() {
                 {/* 60-Second Invoice */}
                 <button
                   onClick={() => setShowFastInvoice(true)}
-                  className={`group relative p-4 rounded-lg border transition-all duration-200 hover:shadow-sm ${isDarkMode ? 'bg-gray-800/30 border-gray-700 hover:border-green-500/30 hover:bg-gray-800/50' : 'bg-white border-gray-200 hover:border-green-200 hover:bg-green-50/30'}`}
+                  className={`group relative p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-sm ${isDarkMode ? 'bg-gray-800/30 border-gray-700 hover:border-green-500/30 hover:bg-gray-800/50' : 'bg-white border-gray-200 hover:border-green-200 hover:bg-green-50/30'}`}
                 >
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-green-500/10' : 'bg-green-50'}`}>
-                      <Sparkles className="h-5 w-5 text-green-600" />
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className={`p-1 sm:p-2 rounded-lg ${isDarkMode ? 'bg-green-500/10' : 'bg-green-50'}`}>
+                      <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                     </div>
                     <div className="text-left">
                       <h3 className="font-medium text-sm" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
@@ -1305,11 +1305,11 @@ export default function DashboardOverview() {
                 {/* Detailed Invoice */}
                 <button
                   onClick={() => setShowCreateInvoice(true)}
-                  className={`group relative p-4 rounded-lg border transition-all duration-200 hover:shadow-sm ${isDarkMode ? 'bg-gray-800/30 border-gray-700 hover:border-blue-500/30 hover:bg-gray-800/50' : 'bg-white border-gray-200 hover:border-blue-200 hover:bg-blue-50/30'}`}
+                  className={`group relative p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-sm ${isDarkMode ? 'bg-gray-800/30 border-gray-700 hover:border-blue-500/30 hover:bg-gray-800/50' : 'bg-white border-gray-200 hover:border-blue-200 hover:bg-blue-50/30'}`}
                 >
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
-                      <FilePlus className="h-5 w-5 text-blue-600" />
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className={`p-1 sm:p-2 rounded-lg ${isDarkMode ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
+                      <FilePlus className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                     </div>
                     <div className="text-left">
                       <h3 className="font-medium text-sm" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
@@ -1325,11 +1325,11 @@ export default function DashboardOverview() {
                 {/* Add Client */}
                 <button
                   onClick={() => setShowCreateClient(true)}
-                  className={`group relative p-4 rounded-lg border transition-all duration-200 hover:shadow-sm ${isDarkMode ? 'bg-gray-800/30 border-gray-700 hover:border-purple-500/30 hover:bg-gray-800/50' : 'bg-white border-gray-200 hover:border-purple-200 hover:bg-purple-50/30'}`}
+                  className={`group relative p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-sm ${isDarkMode ? 'bg-gray-800/30 border-gray-700 hover:border-purple-500/30 hover:bg-gray-800/50' : 'bg-white border-gray-200 hover:border-purple-200 hover:bg-purple-50/30'}`}
                 >
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-purple-500/10' : 'bg-purple-50'}`}>
-                      <UserPlus className="h-5 w-5 text-purple-600" />
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className={`p-1 sm:p-2 rounded-lg ${isDarkMode ? 'bg-purple-500/10' : 'bg-purple-50'}`}>
+                      <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
                     </div>
                     <div className="text-left">
                       <h3 className="font-medium text-sm" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
