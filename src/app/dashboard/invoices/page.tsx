@@ -922,9 +922,13 @@ function InvoicesContent() {
                       } else if (statusFilter === 'pending') {
                         return invoice.status === 'pending' || invoice.status === 'sent';
                       } else if (statusFilter === 'overdue') {
+                        // Only show invoices that are pending/sent AND past due date
                         if (invoice.status !== 'pending' && invoice.status !== 'sent') return false;
                         const today = new Date();
                         const dueDate = new Date(invoice.dueDate);
+                        // Set time to start of day for accurate comparison
+                        today.setHours(0, 0, 0, 0);
+                        dueDate.setHours(0, 0, 0, 0);
                         return dueDate < today;
                       }
                       return true;
