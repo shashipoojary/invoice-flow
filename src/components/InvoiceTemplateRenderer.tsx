@@ -928,9 +928,18 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 relative overflow-hidden">
+      {/* Creative Background Elements */}
+      <div className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-10 creative-bg-1" style={{ backgroundColor: primaryColor, transform: 'translate(50%, -50%)' }}></div>
+      <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full opacity-10 creative-bg-2" style={{ backgroundColor: secondaryColor, transform: 'translate(-50%, 50%)' }}></div>
+      <div className="absolute top-1/2 left-1/4 w-32 h-32 rounded-full opacity-8 creative-bg-3" style={{ backgroundColor: primaryColor, transform: 'translate(-50%, -50%)' }}></div>
+      <div className="absolute top-1/3 right-1/3 w-24 h-24 rounded-full opacity-12 creative-bg-4" style={{ backgroundColor: secondaryColor }}></div>
+      <div className="absolute bottom-1/3 left-1/3 w-20 h-20 rounded-full opacity-15 creative-bg-5" style={{ backgroundColor: primaryColor }}></div>
+      <div className="absolute top-1/4 right-1/4 w-16 h-16 rounded-full opacity-20 creative-bg-6" style={{ backgroundColor: secondaryColor }}></div>
+      <div className="absolute bottom-1/4 right-1/4 w-12 h-12 rounded-full opacity-25 creative-bg-7" style={{ backgroundColor: primaryColor }}></div>
+      
       {/* Modern Header with Dynamic Color Banner */}
-      <div style={{ backgroundColor: primaryColor }} className="text-white">
+      <div style={{ backgroundColor: primaryColor }} className="text-white relative z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <h1 className="text-3xl sm:text-4xl font-bold tracking-wide">INVOICE</h1>
@@ -939,9 +948,14 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+        {/* Additional Creative Background Elements */}
+        <div className="absolute top-0 left-0 w-40 h-40 rounded-full opacity-5 creative-bg-2" style={{ backgroundColor: secondaryColor, transform: 'translate(-20%, -20%)' }}></div>
+        <div className="absolute bottom-0 right-0 w-32 h-32 rounded-full opacity-8 creative-bg-3" style={{ backgroundColor: primaryColor, transform: 'translate(20%, 20%)' }}></div>
+        <div className="absolute top-1/2 right-0 w-28 h-28 rounded-full opacity-6 creative-bg-4" style={{ backgroundColor: secondaryColor, transform: 'translate(30%, -50%)' }}></div>
+        
         {/* Invoice Container */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg overflow-hidden relative border border-white/20">
           {/* Business Header */}
           <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 border-b border-gray-200">
             <div className="flex flex-col gap-4">
@@ -1304,6 +1318,55 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
           </div>
         </div>
       </div>
+      
+      {/* Creative CSS Animations */}
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-10px) rotate(5deg); }
+        }
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 0.1; transform: scale(1); }
+          50% { opacity: 0.2; transform: scale(1.05); }
+        }
+        
+        @keyframes drift {
+          0% { transform: translateX(0px) translateY(0px); }
+          25% { transform: translateX(10px) translateY(-5px); }
+          50% { transform: translateX(-5px) translateY(10px); }
+          75% { transform: translateX(-10px) translateY(-5px); }
+          100% { transform: translateX(0px) translateY(0px); }
+        }
+        
+        .creative-bg-1 {
+          animation: float 6s ease-in-out infinite;
+        }
+        
+        .creative-bg-2 {
+          animation: pulse 4s ease-in-out infinite;
+        }
+        
+        .creative-bg-3 {
+          animation: drift 8s ease-in-out infinite;
+        }
+        
+        .creative-bg-4 {
+          animation: float 5s ease-in-out infinite reverse;
+        }
+        
+        .creative-bg-5 {
+          animation: pulse 3s ease-in-out infinite;
+        }
+        
+        .creative-bg-6 {
+          animation: drift 7s ease-in-out infinite reverse;
+        }
+        
+        .creative-bg-7 {
+          animation: float 4s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   )
 }
