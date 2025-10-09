@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
 
     const byStatus = {
       paid: reminders?.filter(r => r.invoices?.status === 'paid').length || 0,
-      sent: reminders?.filter(r => r.invoices?.status === 'pending').length || 0,
+      sent: reminders?.filter(r => r.invoices?.status === 'sent').length || 0,
       overdue: reminders?.filter(r => r.invoices?.status === 'overdue').length || 0,
     };
 

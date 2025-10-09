@@ -492,7 +492,7 @@ export default function DashboardOverview() {
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-semibold text-base" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                <div className={`font-semibold text-base ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
                   ${dueCharges.totalPayable.toLocaleString()}
                 </div>
                 <div className="text-xs" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
@@ -601,7 +601,7 @@ export default function DashboardOverview() {
             
             {/* Center Section - Amount & Status */}
             <div className="col-span-4 text-center">
-              <div className="font-bold text-xl mb-3" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+              <div className={`font-bold text-xl mb-3 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
                 ${dueCharges.totalPayable.toLocaleString()}
               </div>
               <div className="flex items-center justify-center">
@@ -1049,7 +1049,7 @@ export default function DashboardOverview() {
   }, [router]);
 
   const handlePendingInvoicesClick = useCallback(() => {
-    router.push('/dashboard/invoices?status=sent');
+    router.push('/dashboard/invoices?status=pending');
   }, [router]);
 
   const handleOverdueInvoicesClick = useCallback(() => {

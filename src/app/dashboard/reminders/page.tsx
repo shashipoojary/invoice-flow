@@ -3,6 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Mail, 
+  Clock, 
+  CheckCircle, 
+  AlertTriangle, 
   Search, 
   RefreshCw,
   Send,
@@ -41,7 +44,7 @@ interface ReminderHistory {
 
 export default function ReminderHistoryPage() {
   const { user, loading: authLoading } = useAuth();
-  const { toasts, removeToast } = useToast();
+  const { toasts, removeToast, showSuccess, showError } = useToast();
   const [reminders, setReminders] = useState<ReminderHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -216,13 +219,13 @@ export default function ReminderHistoryPage() {
             <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
               Reminder History
             </h2>
-            <button
-              onClick={fetchReminderHistory}
-              className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
-            >
-              <RefreshCw className="h-4 w-4" />
-              <span>Refresh</span>
-            </button>
+             <button
+               onClick={fetchReminderHistory}
+               className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+             >
+               <RefreshCw className="h-4 w-4" />
+               <span>Refresh</span>
+             </button>
           </div>
         </div>
 
@@ -285,9 +288,9 @@ export default function ReminderHistoryPage() {
                         <div className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                           {reminder.invoice.invoice_number}
                         </div>
-                        <div className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          ${reminder.invoice.total.toLocaleString()}
-                        </div>
+                         <div className={`text-xs font-semibold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                           ${reminder.invoice.total.toLocaleString()}
+                         </div>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -371,9 +374,9 @@ export default function ReminderHistoryPage() {
                     {/* Middle Section - Amount & Status */}
                     <div className="col-span-4 flex items-center justify-center">
                       <div className="text-center">
-                        <div className={`text-lg font-semibold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                          ${reminder.invoice.total.toLocaleString()}
-                        </div>
+                         <div className={`text-lg font-semibold mb-1 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                           ${reminder.invoice.total.toLocaleString()}
+                         </div>
                         <div className="flex items-center justify-center space-x-3">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(reminder.invoice.status)}`}>
                             {reminder.invoice.status}

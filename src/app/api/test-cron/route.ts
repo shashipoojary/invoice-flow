@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Error in test cron job:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: false,
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'

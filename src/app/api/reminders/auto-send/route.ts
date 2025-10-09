@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
           tagline
         )
       `)
-      .eq('status', 'pending')
+      .eq('status', 'sent')
       .lt('due_date', new Date().toISOString());
 
     if (invoicesError) {

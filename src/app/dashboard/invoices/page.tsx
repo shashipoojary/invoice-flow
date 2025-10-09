@@ -90,7 +90,7 @@ function InvoicesContent() {
     switch (status) {
       case 'paid':
         return <CheckCircle className="h-3 w-3" />;
-      case 'pending':
+      case 'sent':
         return <Send className="h-3 w-3" />;
       case 'overdue':
         return <AlertCircle className="h-3 w-3" />;
@@ -103,7 +103,7 @@ function InvoicesContent() {
     switch (status) {
       case 'paid':
         return 'dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30';
-      case 'pending':
+      case 'sent':
         return 'dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30';
       case 'overdue':
         return 'dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/30';
@@ -118,7 +118,7 @@ function InvoicesContent() {
     switch (status) {
       case 'paid':
         return { backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' };
-      case 'pending':
+      case 'sent':
         return { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' };
       case 'overdue':
         return { backgroundColor: '#fef2f2', color: '#dc2626', borderColor: '#fecaca' };
@@ -133,7 +133,7 @@ function InvoicesContent() {
     switch (status) {
       case 'paid':
         return { backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#6ee7b7', borderColor: 'rgba(16, 185, 129, 0.3)' };
-      case 'pending':
+      case 'sent':
         return { backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#93c5fd', borderColor: 'rgba(59, 130, 246, 0.3)' };
       case 'overdue':
         return { backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#fca5a5', borderColor: 'rgba(239, 68, 68, 0.3)' };
@@ -495,7 +495,7 @@ function InvoicesContent() {
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-semibold text-base" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                <div className={`font-semibold text-base ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
                   ${dueCharges.totalPayable.toLocaleString()}
                 </div>
                 <div className="text-xs" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
@@ -622,7 +622,7 @@ function InvoicesContent() {
             
             {/* Center Section - Amount & Status */}
             <div className="col-span-4 text-center">
-              <div className="font-bold text-xl mb-3" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+              <div className={`font-bold text-xl mb-3 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
                 ${dueCharges.totalPayable.toLocaleString()}
               </div>
               <div className="flex items-center justify-center">
@@ -840,12 +840,12 @@ function InvoicesContent() {
                     <div className="flex flex-wrap items-center gap-2">
                       <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap ${
                         searchParams.get('status') === 'paid' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                        searchParams.get('status') === 'pending' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
+                        searchParams.get('status') === 'sent' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
                         searchParams.get('status') === 'overdue' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
                         'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
                       }`}>
                         {searchParams.get('status') === 'paid' ? 'Paid Invoices' :
-                         searchParams.get('status') === 'pending' ? 'Pending Invoices' :
+                         searchParams.get('status') === 'sent' ? 'Pending Invoices' :
                          searchParams.get('status') === 'overdue' ? 'Overdue Invoices' :
                          'Filtered'}
                       </span>
@@ -907,7 +907,7 @@ function InvoicesContent() {
                       
                       if (statusFilter === 'paid') {
                         return invoice.status === 'paid';
-                      } else if (statusFilter === 'pending') {
+                      } else if (statusFilter === 'sent') {
                         return invoice.status === 'pending';
                       } else if (statusFilter === 'overdue') {
                         if (invoice.status !== 'pending') return false;
@@ -919,7 +919,7 @@ function InvoicesContent() {
                     })
                     .sort((a, b) => {
                       const statusFilter = searchParams.get('status');
-                      if (statusFilter === 'paid' || statusFilter === 'pending') {
+                      if (statusFilter === 'paid' || statusFilter === 'sent') {
                         // Sort by amount (highest first)
                         return b.total - a.total;
                       }

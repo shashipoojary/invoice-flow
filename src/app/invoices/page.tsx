@@ -21,7 +21,7 @@ interface Invoice {
   subtotal: number
   tax_amount: number
   total_amount: number
-  status: 'draft' | 'pending' | 'paid' | 'overdue'
+  status: 'draft' | 'sent' | 'paid' | 'overdue'
   created_at: string
   notes?: string
   invoice_items?: InvoiceItem[]

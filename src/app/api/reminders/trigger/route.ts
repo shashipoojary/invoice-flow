@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
         )
       `)
       .eq('user_id', userId)
-      .eq('status', 'pending')
+      .eq('status', 'sent')
       .lt('due_date', today.toISOString());
 
     if (invoicesError) {

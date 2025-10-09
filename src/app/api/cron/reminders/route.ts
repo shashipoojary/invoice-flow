@@ -11,7 +11,7 @@ const supabase = createClient(
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     console.log('🔄 Starting auto-reminder cron job...');
     
@@ -26,7 +26,7 @@ export async function GET(_request: NextRequest) {
           company
         )
       `)
-      .eq('status', 'pending')
+      .eq('status', 'sent')
       .lt('due_date', new Date().toISOString());
 
     if (invoicesError) {
@@ -158,7 +158,7 @@ export async function GET(_request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Error in auto-reminder cron job:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: false,
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
