@@ -498,7 +498,7 @@ function InvoicesContent() {
                 <div className={`font-semibold text-base ${
                   invoice.status === 'paid' ? (isDarkMode ? 'text-green-400' : 'text-green-600') :
                   dueDateStatus.status === 'overdue' ? (isDarkMode ? 'text-red-400' : 'text-red-600') :
-                  invoice.status === 'pending' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
+                  invoice.status === 'pending' || invoice.status === 'sent' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
                   invoice.status === 'draft' ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') :
                   (isDarkMode ? 'text-red-400' : 'text-red-600')
                 }`}>
@@ -514,7 +514,7 @@ function InvoicesContent() {
               <div className="flex items-center space-x-2">
                 <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
                   invoice.status === 'paid' ? (isDarkMode ? 'text-green-400' : 'text-green-600') :
-                  invoice.status === 'pending' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
+                  invoice.status === 'pending' || invoice.status === 'sent' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
                   invoice.status === 'draft' ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') :
                   (isDarkMode ? 'text-red-400' : 'text-red-600')
                 }`}>
@@ -566,7 +566,7 @@ function InvoicesContent() {
                     )}
                   </button>
                 )}
-                {(invoice.status === 'pending') && (
+                {(invoice.status === 'pending' || invoice.status === 'sent') && (
                   <button 
                     onClick={() => handleMarkAsPaid(invoice)}
                     disabled={loadingActions[`paid-${invoice.id}`]}
@@ -631,7 +631,7 @@ function InvoicesContent() {
               <div className={`font-bold text-xl mb-3 ${
                 invoice.status === 'paid' ? (isDarkMode ? 'text-green-400' : 'text-green-600') :
                 dueDateStatus.status === 'overdue' ? (isDarkMode ? 'text-red-400' : 'text-red-600') :
-                invoice.status === 'pending' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
+                invoice.status === 'pending' || invoice.status === 'sent' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
                 invoice.status === 'draft' ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') :
                 (isDarkMode ? 'text-red-400' : 'text-red-600')
               }`}>
@@ -641,7 +641,7 @@ function InvoicesContent() {
                 <div className="relative flex items-center justify-center">
                   <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium ${
                     invoice.status === 'paid' ? (isDarkMode ? 'text-green-400' : 'text-green-600') :
-                    invoice.status === 'pending' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
+                    invoice.status === 'pending' || invoice.status === 'sent' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
                     invoice.status === 'draft' ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') :
                     (isDarkMode ? 'text-red-400' : 'text-red-600')
                   }`}>
@@ -694,7 +694,7 @@ function InvoicesContent() {
                   )}
                 </button>
               )}
-               {(invoice.status === 'pending') && (
+              {(invoice.status === 'pending' || invoice.status === 'sent') && (
                 <button 
                   onClick={() => handleMarkAsPaid(invoice)}
                   disabled={loadingActions[`paid-${invoice.id}`]}

@@ -495,7 +495,7 @@ export default function DashboardOverview() {
                 <div className={`font-semibold text-base ${
                   invoice.status === 'paid' ? (isDarkMode ? 'text-green-400' : 'text-green-600') :
                   dueDateStatus.status === 'overdue' ? (isDarkMode ? 'text-red-400' : 'text-red-600') :
-                  invoice.status === 'pending' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
+                  invoice.status === 'pending' || invoice.status === 'sent' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
                   invoice.status === 'draft' ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') :
                   (isDarkMode ? 'text-red-400' : 'text-red-600')
                 }`}>
@@ -511,7 +511,7 @@ export default function DashboardOverview() {
               <div className="flex items-center space-x-2">
                 <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
                   invoice.status === 'paid' ? (isDarkMode ? 'text-green-400' : 'text-green-600') :
-                  invoice.status === 'pending' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
+                  invoice.status === 'pending' || invoice.status === 'sent' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
                   invoice.status === 'draft' ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') :
                   (isDarkMode ? 'text-red-400' : 'text-red-600')
                 }`}>
@@ -565,7 +565,7 @@ export default function DashboardOverview() {
                     )}
                   </button>
                 )}
-                {(invoice.status === 'pending') && (
+                {(invoice.status === 'pending' || invoice.status === 'sent') && (
                   <button 
                     onClick={() => handleMarkAsPaid(invoice)}
                     disabled={loadingActions[`paid-${invoice.id}`]}
@@ -612,7 +612,7 @@ export default function DashboardOverview() {
               <div className={`font-bold text-xl mb-3 ${
                 invoice.status === 'paid' ? (isDarkMode ? 'text-green-400' : 'text-green-600') :
                 dueDateStatus.status === 'overdue' ? (isDarkMode ? 'text-red-400' : 'text-red-600') :
-                invoice.status === 'pending' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
+                invoice.status === 'pending' || invoice.status === 'sent' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
                 invoice.status === 'draft' ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') :
                 (isDarkMode ? 'text-red-400' : 'text-red-600')
               }`}>
@@ -622,7 +622,7 @@ export default function DashboardOverview() {
                 <div className="relative flex items-center justify-center">
                   <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium ${
                     invoice.status === 'paid' ? (isDarkMode ? 'text-green-400' : 'text-green-600') :
-                    invoice.status === 'pending' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
+                    invoice.status === 'pending' || invoice.status === 'sent' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
                     invoice.status === 'draft' ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') :
                     (isDarkMode ? 'text-red-400' : 'text-red-600')
                   }`}>
@@ -675,7 +675,7 @@ export default function DashboardOverview() {
                   )}
                 </button>
               )}
-               {(invoice.status === 'pending') && (
+              {(invoice.status === 'pending' || invoice.status === 'sent') && (
                 <button 
                   onClick={() => handleMarkAsPaid(invoice)}
                   disabled={loadingActions[`paid-${invoice.id}`]}
@@ -1029,7 +1029,7 @@ export default function DashboardOverview() {
   // Calculate total payable (only pending invoices, excluding draft)
   const totalPayableAmount = useMemo(() => {
     return invoices
-      .filter(invoice => invoice.status === 'pending')
+      .filter(invoice => invoice.status === 'pending' || invoice.status === 'sent')
       .reduce((total, invoice) => {
         const charges = calculateDueCharges(invoice);
         return total + charges.totalPayable;
@@ -1040,7 +1040,7 @@ export default function DashboardOverview() {
   const overdueCount = useMemo(() => {
     const today = new Date();
     return invoices.filter(invoice => {
-      if (invoice.status !== 'pending') return false;
+      if (invoice.status !== 'pending' && invoice.status !== 'sent') return false;
       const dueDate = new Date(invoice.dueDate);
       return dueDate < today;
     }).length;
@@ -1204,7 +1204,7 @@ export default function DashboardOverview() {
                       <div className="flex items-center space-x-1 justify-start">
                         <Clock className="h-4 w-4 text-amber-500" />
                         <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                          {invoices.filter(inv => inv.status === 'pending').length} pending
+                          {invoices.filter(inv => inv.status === 'pending' || inv.status === 'sent').length} pending
                         </span>
                         {totalLateFees > 0 && (
                           <span className="text-xs text-red-500 ml-2">
