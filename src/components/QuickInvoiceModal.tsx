@@ -151,7 +151,7 @@ export default function QuickInvoiceModal({
   
   // Reminder settings
   const [reminders, setReminders] = useState<ReminderSettings>({
-    enabled: true,
+    enabled: false,
     useSystemDefaults: true,
     rules: [
       { id: '1', type: 'before', days: 7, enabled: true },

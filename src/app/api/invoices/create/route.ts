@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
           // Only set advanced features for detailed invoices, not fast invoices
           paymentTerms: invoiceData.type === 'fast' ? undefined : (invoiceData.payment_terms || { enabled: false, terms: 'Net 30' }),
           lateFees: invoiceData.type === 'fast' ? undefined : (invoiceData.late_fees || { enabled: false, type: 'fixed', amount: 0, gracePeriod: 0 }),
-          reminders: invoiceData.type === 'fast' ? undefined : (invoiceData.reminders || { enabled: true, useSystemDefaults: true, rules: [] }),
+          reminders: invoiceData.type === 'fast' ? undefined : (invoiceData.reminders || { enabled: false, useSystemDefaults: true, rules: [] }),
           theme: invoiceData.theme || undefined,
         };
 
@@ -276,7 +276,7 @@ export async function POST(request: NextRequest) {
       // New enhanced fields - only for detailed invoices
       payment_terms: invoiceData.type === 'fast' ? null : (invoiceData.payment_terms ? JSON.stringify(invoiceData.payment_terms) : null),
       late_fees: invoiceData.type === 'fast' ? null : (invoiceData.late_fees ? JSON.stringify(invoiceData.late_fees) : null),
-      reminder_settings: invoiceData.type === 'fast' ? null : (invoiceData.reminders ? JSON.stringify(invoiceData.reminders) : JSON.stringify({ enabled: true, useSystemDefaults: true, customRules: [] })),
+      reminder_settings: invoiceData.type === 'fast' ? null : (invoiceData.reminders ? JSON.stringify(invoiceData.reminders) : JSON.stringify({ enabled: false, useSystemDefaults: true, customRules: [] })),
       theme: invoiceData.type === 'fast' ? null : (invoiceData.theme ? JSON.stringify(invoiceData.theme) : null),
     };
 
@@ -370,7 +370,7 @@ export async function POST(request: NextRequest) {
         { enabled: true, type: 'fixed', amount: 50, gracePeriod: 7 }),
       reminders: completeInvoice.type === 'fast' ? undefined : 
         (completeInvoice.reminder_settings ? JSON.parse(completeInvoice.reminder_settings) : 
-        { enabled: true, useSystemDefaults: true, rules: [] }),
+        { enabled: false, useSystemDefaults: true, rules: [] }),
       theme: completeInvoice.type === 'fast' ? undefined : 
         (completeInvoice.theme ? JSON.parse(completeInvoice.theme) : undefined),
     };

@@ -17,7 +17,7 @@ CREATE INDEX IF NOT EXISTS idx_invoice_reminders_type ON invoice_reminders(remin
 
 -- Add reminder settings to invoices table
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS reminder_settings JSONB DEFAULT '{
-  "enabled": true,
+  "enabled": false,
   "useSystemDefaults": true,
   "customRules": []
 }'::jsonb;
