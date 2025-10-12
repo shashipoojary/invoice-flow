@@ -18,7 +18,7 @@ const ReminderSettings: React.FC<ReminderSettingsProps> = ({
   isDarkMode
 }) => {
   const [reminderSettings, setReminderSettings] = useState({
-    enabled: false,
+    enabled: true,
     useSystemDefaults: true,
     customRules: [] as any[]
   });
