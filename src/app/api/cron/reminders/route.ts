@@ -52,10 +52,51 @@ export async function GET(request: NextRequest) {
         const currentDate = new Date();
         const overdueDays = Math.ceil((currentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
 
-        // Find the appropriate reminder type based on overdue days
-        const reminderConfig = reminderSchedule
-          .sort((a, b) => b.days - a.days) // Sort by days descending
-          .find(config => overdueDays >= config.days);
+        // Parse reminder settings
+        let reminderSettings = null;
+        try {
+          reminderSettings = typeof invoice.reminder_settings === 'string' 
+            ? JSON.parse(invoice.reminder_settings) 
+            : invoice.reminder_settings;
+        } catch (error) {
+          console.log(`⚠️ Invalid reminder settings for invoice ${invoice.invoice_number}`);
+          continue;
+        }
+
+        // Determine which reminder schedule to use
+        let reminderConfig = null;
+        
+        if (reminderSettings.useSystemDefaults) {
+          // Use system defaults
+          reminderConfig = reminderSchedule
+            .sort((a, b) => b.days - a.days) // Sort by days descending
+            .find(config => overdueDays >= config.days);
+        } else {
+          // Use custom rules
+          const customRules = reminderSettings.customRules || reminderSettings.rules || [];
+          const enabledRules = customRules.filter((rule: any) => rule.enabled);
+          
+          if (enabledRules.length === 0) {
+            console.log(`⏭️ Skipping invoice ${invoice.invoice_number} - no enabled custom rules`);
+            continue;
+          }
+          
+          // Handle both before and after due date reminders
+          if (overdueDays < 0) {
+            // Invoice is not yet due - check for "before" reminders
+            const daysUntilDue = Math.abs(overdueDays);
+            const beforeRules = enabledRules.filter((rule: any) => rule.type === 'before');
+            reminderConfig = beforeRules
+              .sort((a: any, b: any) => a.days - b.days) // Sort by days ascending (closest first)
+              .find((rule: any) => daysUntilDue <= rule.days);
+          } else {
+            // Invoice is overdue - check for "after" reminders
+            const afterRules = enabledRules.filter((rule: any) => rule.type === 'after');
+            reminderConfig = afterRules
+              .sort((a: any, b: any) => b.days - a.days) // Sort by days descending (highest first)
+              .find((rule: any) => overdueDays >= rule.days);
+          }
+        }
 
         if (!reminderConfig) {
           console.log(`⏭️ Skipping invoice ${invoice.invoice_number} - no matching reminder config`);

@@ -69,6 +69,7 @@ export default function ReminderHistoryPage() {
     return () => observer.disconnect();
   }, []);
 
+
   const fetchReminderHistory = async () => {
     try {
       console.log('Starting to fetch reminder history...');

@@ -71,10 +71,41 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Determine reminder type based on count
+      // Determine reminder type based on settings
       let reminderType = 'first';
-      if (reminderCount === 1) reminderType = 'second';
-      if (reminderCount === 2) reminderType = 'final';
+      
+      if (reminderSettings.useSystemDefaults) {
+        // Use system defaults - determine type by count
+        if (reminderCount === 1) reminderType = 'second';
+        if (reminderCount === 2) reminderType = 'final';
+      } else {
+        // Use custom rules - handle both before and after due date
+        const customRules = reminderSettings.customRules || reminderSettings.rules || [];
+        const enabledRules = customRules.filter((rule: any) => rule.enabled);
+        
+        if (enabledRules.length > 0) {
+          let matchingRule = null;
+          
+          if (daysOverdue < 0) {
+            // Invoice is not yet due - check for "before" reminders
+            const daysUntilDue = Math.abs(daysOverdue);
+            const beforeRules = enabledRules.filter((rule: any) => rule.type === 'before');
+            matchingRule = beforeRules
+              .sort((a: any, b: any) => a.days - b.days) // Sort by days ascending (closest first)
+              .find((rule: any) => daysUntilDue <= rule.days);
+          } else {
+            // Invoice is overdue - check for "after" reminders
+            const afterRules = enabledRules.filter((rule: any) => rule.type === 'after');
+            matchingRule = afterRules
+              .sort((a: any, b: any) => b.days - a.days) // Sort by days descending (highest first)
+              .find((rule: any) => daysOverdue >= rule.days);
+          }
+          
+          if (matchingRule) {
+            reminderType = matchingRule.type || 'friendly';
+          }
+        }
+      }
 
       remindersToSend.push({
         invoiceId: invoice.id,
