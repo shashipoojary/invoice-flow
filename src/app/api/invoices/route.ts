@@ -69,9 +69,9 @@ export async function GET(request: NextRequest) {
               (typeof invoice.late_fees === 'string' ? JSON.parse(invoice.late_fees) : invoice.late_fees) : 
               { enabled: true, type: 'fixed', amount: 50, gracePeriod: 7 }),
           reminders: invoice.type === 'fast' ? undefined : 
-            (invoice.reminders ? 
-              (typeof invoice.reminders === 'string' ? JSON.parse(invoice.reminders) : invoice.reminders) : 
-              { enabled: true, useSystemDefaults: true, rules: [] }),
+            (invoice.reminder_settings ? 
+              (typeof invoice.reminder_settings === 'string' ? JSON.parse(invoice.reminder_settings) : invoice.reminder_settings) : 
+              { enabled: false, useSystemDefaults: true, rules: [] }),
           theme: invoice.type === 'fast' ? undefined : 
             (invoice.theme ? 
               (typeof invoice.theme === 'string' ? JSON.parse(invoice.theme) : invoice.theme) : 

@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
         public_token,
         reminder_count,
         last_reminder_sent,
-        reminders,
+        reminder_settings,
         clients (
           name,
           email,
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     // Check if auto reminders are enabled for this invoice
     let reminderSettings = null;
     try {
-      reminderSettings = invoice.reminders ? JSON.parse(invoice.reminders) : null;
+      reminderSettings = invoice.reminder_settings ? JSON.parse(invoice.reminder_settings) : null;
     } catch {
       console.log(`⚠️ Invalid reminder settings for invoice ${invoice.invoice_number}`);
     }
