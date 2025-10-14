@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   FileText, 
@@ -14,7 +14,8 @@ import {
   Bell,
   Settings,
   Menu,
-  X
+  X,
+  Users
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -24,6 +25,17 @@ export default function LandingPage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeFaqCategory, setActiveFaqCategory] = useState('General');
+  const [showGuides, setShowGuides] = useState(true);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [headingPosition, setHeadingPosition] = useState({ 
+    top: 0, 
+    bottom: 0, 
+    left: 0, 
+    right: 0,
+    width: 0
+  });
+  const heroRef = useRef<HTMLDivElement | null>(null);
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
 
   useEffect(() => {
     setIsVisible(true);
@@ -33,6 +45,71 @@ export default function LandingPage() {
       setIsDarkMode(JSON.parse(savedDarkMode));
     }
   }, []);
+
+  // Handle scroll for navbar with throttling and hysteresis
+  useEffect(() => {
+    let ticking = false;
+    let lastScrollTop = 0;
+    
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+          
+          // Hysteresis: different thresholds for expanding vs collapsing
+          if (scrollTop > lastScrollTop && scrollTop > 100) {
+            // Scrolling down - collapse
+            setIsScrolled(true);
+          } else if (scrollTop < lastScrollTop && scrollTop < 50) {
+            // Scrolling up - expand
+            setIsScrolled(false);
+          }
+          
+          lastScrollTop = scrollTop;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Update heading position when guides are shown - SIMPLE approach
+  useEffect(() => {
+    if (showGuides) {
+      const updateHeadingPosition = () => {
+        const heading = headingRef.current;
+        const hero = heroRef.current;
+        if (heading && hero) {
+          const headingRect = heading.getBoundingClientRect();
+          const heroRect = hero.getBoundingClientRect();
+          
+          // Simple: just add small offsets to touch the text
+          // Most fonts have about 10-15% padding above and below the actual text
+          const fontSize = parseFloat(window.getComputedStyle(heading).fontSize);
+          const textPadding = fontSize * 0.12; // 12% of font size
+          
+          setHeadingPosition({
+            top: headingRect.top - heroRect.top + textPadding,
+            bottom: headingRect.bottom - heroRect.top - textPadding,
+            left: headingRect.left - heroRect.left,
+            right: heroRect.right - headingRect.right,
+            width: headingRect.width
+          });
+        }
+      };
+
+      updateHeadingPosition();
+      window.addEventListener('resize', updateHeadingPosition);
+      window.addEventListener('scroll', updateHeadingPosition, { passive: true });
+      return () => {
+        window.removeEventListener('resize', updateHeadingPosition);
+        window.removeEventListener('scroll', updateHeadingPosition);
+      };
+    }
+  }, [showGuides]);
 
   const toggleDarkMode = () => {
     setIsDarkMode(prev => {
@@ -52,17 +129,35 @@ export default function LandingPage() {
 
   return (
     <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
-      {/* Navigation */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-200 ${
-        isDarkMode 
-          ? 'bg-black/80 border-b border-gray-800' 
-          : 'bg-white/80 border-b border-gray-200'
-      } backdrop-blur-md`}>
-        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+      {/* Modern Dynamic Navigation */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-out ${
+        isScrolled 
+          ? `max-w-6xl mx-auto left-1/2 transform -translate-x-1/2 rounded-2xl mt-4 ${
+              isDarkMode 
+                ? 'bg-gray-900/95 backdrop-blur-xl border border-gray-800 shadow-2xl' 
+                : 'bg-white/95 backdrop-blur-xl border border-gray-200 shadow-2xl'
+            }`
+          : `${
+              isDarkMode 
+                ? 'bg-black/95 border-b border-gray-800' 
+                : 'bg-white/95 border-b border-gray-200'
+            } backdrop-blur-md`
+      }`} style={{
+        willChange: isScrolled ? 'transform, width, height' : 'auto'
+      }}>
+        <div className={`px-4 sm:px-6 lg:px-8 transition-all duration-300 ease-out ${
+          isScrolled ? 'py-3' : 'py-4'
+        }`}>
+          <div className={`flex justify-between items-center transition-all duration-300 ease-out ${
+            isScrolled ? 'h-12' : 'h-16'
+          }`}>
             {/* Logo */}
-            <div className="flex items-center flex-shrink-0 -ml-2 sm:ml-0">
-              <div className="w-40 h-10 sm:w-44 sm:h-11 lg:w-52 lg:h-13 relative">
+            <div className="flex items-center flex-shrink-0">
+              <div className={`relative transition-all duration-300 ease-out ${
+                isScrolled 
+                  ? 'w-28 h-7 sm:w-32 sm:h-8 lg:w-36 lg:h-9' 
+                  : 'w-32 h-8 sm:w-36 sm:h-9 lg:w-40 lg:h-10'
+              }`}>
                 <Image
                   src={isDarkMode ? '/logo-main-white.png' : '/logo-main-black.png'}
                   alt="InvoiceFlow Logo"
@@ -118,10 +213,10 @@ export default function LandingPage() {
             </div>
 
             {/* Mobile Menu Button */}
-            <div className="md:hidden flex items-center space-x-2">
+            <div className="md:hidden flex items-center space-x-1">
               <button
                 onClick={toggleDarkMode}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-1.5 rounded-md transition-colors ${
                   isDarkMode 
                     ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' 
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -131,13 +226,13 @@ export default function LandingPage() {
               </button>
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-1.5 rounded-md transition-colors ${
                   isDarkMode 
                     ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' 
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
               </button>
             </div>
           </div>
@@ -147,11 +242,11 @@ export default function LandingPage() {
             <div className={`md:hidden border-t ${
               isDarkMode ? 'border-gray-800' : 'border-gray-200'
             }`}>
-              <div className="px-2 pt-2 pb-3 space-y-1">
+              <div className="px-4 pt-3 pb-4 space-y-1">
                 <a
                   href="#features"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-3 py-2 text-base font-medium rounded-md transition-colors"
+                  className="block px-3 py-2.5 text-sm font-medium rounded-md transition-colors"
                   style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}
                 >
                   Features
@@ -159,7 +254,7 @@ export default function LandingPage() {
                 <a
                   href="#pricing"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-3 py-2 text-base font-medium rounded-md transition-colors"
+                  className="block px-3 py-2.5 text-sm font-medium rounded-md transition-colors"
                   style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}
                 >
                   Pricing
@@ -167,18 +262,18 @@ export default function LandingPage() {
                 <a
                   href="#about"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-3 py-2 text-base font-medium rounded-md transition-colors"
+                  className="block px-3 py-2.5 text-sm font-medium rounded-md transition-colors"
                   style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}
                 >
                   About
                 </a>
-                <div className="pt-4 pb-3 border-t border-gray-200 dark:border-gray-700">
+                <div className="pt-3 pb-2 border-t border-gray-200 dark:border-gray-700">
                   <button
                     onClick={() => {
                       handleViewDemo();
                       setIsMobileMenuOpen(false);
                     }}
-                    className="block w-full text-left px-3 py-2 text-base font-medium rounded-md transition-colors mb-2"
+                    className="block w-full text-left px-3 py-2.5 text-sm font-medium rounded-md transition-colors mb-2"
                     style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}
                   >
                     View Demo
@@ -188,7 +283,7 @@ export default function LandingPage() {
                       handleGetStarted();
                       setIsMobileMenuOpen(false);
                     }}
-                    className={`block w-full text-left px-3 py-2 text-base font-medium rounded-md transition-colors ${
+                    className={`block w-full text-left px-3 py-2.5 text-sm font-medium rounded-md transition-colors ${
                       isDarkMode 
                         ? 'bg-white text-black hover:bg-gray-200' 
                         : 'bg-black text-white hover:bg-gray-800'
@@ -204,11 +299,83 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8">
+      <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8 relative" ref={heroRef}>
+
+        {/* Hero Section Alignment Guides */}
+        <div className="absolute inset-0 pointer-events-none z-40">
+            {/* 1 line above heading - touches top of tallest letters */}
+            <div 
+              className="absolute h-px"
+              style={{
+                top: `${headingPosition.top}px`,
+                left: `${headingPosition.left}px`,
+                right: `${headingPosition.right}px`,
+                backgroundColor: '#FB923C',
+                opacity: 0.45
+              }}
+            ></div>
+            
+            {/* 1 line below heading - touches bottom of Y descender */}
+            <div 
+              className="absolute h-px"
+              style={{
+                top: `${headingPosition.bottom}px`,
+                left: `${headingPosition.left}px`,
+                right: `${headingPosition.right}px`,
+                backgroundColor: '#FB923C',
+                opacity: 0.45
+              }}
+            ></div>
+            
+            {/* 2 vertical lines on left and right of content area - responsive positioning */}
+            <div 
+              className="absolute w-px hidden lg:block"
+              style={{
+                left: 'calc(50% - 32rem)',
+                top: '0',
+                height: '100vh',
+                backgroundColor: '#FB923C',
+                opacity: 0.45
+              }}
+            ></div>
+            <div 
+              className="absolute w-px hidden lg:block"
+              style={{
+                right: 'calc(50% - 32rem)',
+                top: '0',
+                height: '100vh',
+                backgroundColor: '#FB923C',
+                opacity: 0.45
+              }}
+            ></div>
+            
+            {/* Mobile vertical lines - positioned relative to content */}
+            <div 
+              className="absolute w-px block lg:hidden"
+              style={{
+                left: '1rem',
+                top: '0',
+                height: '80vh',
+                backgroundColor: '#FB923C',
+                opacity: 0.45
+              }}
+            ></div>
+            <div 
+              className="absolute w-px block lg:hidden"
+              style={{
+                right: '1rem',
+                top: '0',
+                height: '80vh',
+                backgroundColor: '#FB923C',
+                opacity: 0.45
+              }}
+            ></div>
+          </div>
+
         <div className="max-w-7xl mx-auto">
       <div className="text-center">
-            <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              <h1 className="font-heading text-4xl sm:text-6xl lg:text-7xl font-bold mb-8 leading-tight" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+            <div>
+              <h1 ref={headingRef} className="font-heading text-4xl sm:text-6xl lg:text-7xl font-bold mb-8 leading-tight" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
                 The Fastest Way to
                 <span className="text-indigo-600"> Get Paid</span>
               </h1>
@@ -366,264 +533,153 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8" style={{backgroundColor: isDarkMode ? '#0d1117' : '#ffffff'}}>
-        <div className="max-w-7xl mx-auto">
-          {/* Section 1: Create Invoice */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
-            <div className="order-2 lg:order-1">
-              <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-6" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                Create invoices in 60 seconds
-              </h2>
-              <p className="text-lg mb-8" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                Add client details, items, and amounts. Choose from professional templates and send instantly.
-              </p>
-              <a href="#" className="text-indigo-600 hover:text-indigo-500 font-semibold">
-                Try invoice creation →
-              </a>
-            </div>
-            <div className="order-1 lg:order-2">
-              <div className="relative">
-                {/* Subtle bottom glow effect - like GitHub Copilot */}
-                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-4/5 h-12 rounded-full opacity-50 blur-xl" style={{
-                  background: isDarkMode 
-                    ? 'linear-gradient(90deg, #3b82f6, #2563eb, #1d4ed8)' 
-                    : 'linear-gradient(90deg, #60a5fa, #3b82f6, #2563eb)',
-                  zIndex: 1
-                }}></div>
-                
-                <div className={`relative z-10 rounded-lg overflow-hidden border ${
-                  isDarkMode ? 'border-gray-700' : 'border-gray-200'
-                }`} style={{
-                  boxShadow: isDarkMode 
-                    ? '0 8px 32px rgba(0, 0, 0, 0.3)' 
-                    : '0 8px 32px rgba(0, 0, 0, 0.1)'
-                }}>
-                  <Image 
-                    src="/invoice-creation-screenshot.png" 
-                    alt="Invoice Creation Interface"
-                    width={800}
-                    height={400}
-                    className="w-full h-auto object-cover"
-                  />
-                </div>
-              </div>
-            </div>
+
+
+      {/* Simple Clean Features Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8" style={{backgroundColor: isDarkMode ? '#0a0a0a' : '#ffffff'}}>
+        <div className="max-w-6xl mx-auto">
+          {/* Section Header */}
+          <div className="text-center mb-20">
+            <h2 className="font-heading text-4xl sm:text-5xl font-bold mb-6" style={{color: isDarkMode ? '#f3f4f6' : '#0f172a'}}>
+              Everything you need to get paid
+            </h2>
+            <p className="text-lg max-w-2xl mx-auto" style={{color: isDarkMode ? '#94a3b8' : '#64748b'}}>
+              Professional invoicing tools designed for freelancers, designers, and contractors.
+            </p>
           </div>
 
-          {/* Section 2: Automated Reminders */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
-            <div className="order-1">
-              <div className="relative">
-                {/* Subtle bottom glow effect - like GitHub Copilot */}
-                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-4/5 h-12 rounded-full opacity-50 blur-xl" style={{
-                  background: isDarkMode 
-                    ? 'linear-gradient(90deg, #3b82f6, #2563eb, #1d4ed8)' 
-                    : 'linear-gradient(90deg, #60a5fa, #3b82f6, #2563eb)',
-                  zIndex: 1
-                }}></div>
-                
-                <div className={`relative z-10 rounded-lg overflow-hidden border ${
-                  isDarkMode ? 'border-gray-700' : 'border-gray-200'
-                }`} style={{
-                  boxShadow: isDarkMode 
-                    ? '0 8px 32px rgba(0, 0, 0, 0.3)' 
-                    : '0 8px 32px rgba(0, 0, 0, 0.1)'
-                }}>
-                  <Image 
-                    src="/reminders-dashboard-screenshot.png" 
-                    alt="Reminders Dashboard Interface"
-                    width={800}
-                    height={400}
-                    className="w-full h-auto object-cover"
-                  />
-                </div>
+          {/* Features Grid - Simple 3x2 Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Feature 1 */}
+            <div className={`p-8 rounded-lg border transition-all duration-300 hover:border-opacity-60 ${
+              isDarkMode 
+                ? 'bg-gray-900/50 border-gray-800 hover:border-gray-600' 
+                : 'bg-white border-gray-200 hover:border-gray-400'
+            }`}>
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-6" style={{
+                backgroundColor: isDarkMode ? '#1a1a1a' : '#f8f9fa',
+                border: `1px solid ${isDarkMode ? '#333' : '#e5e7eb'}`
+              }}>
+                <svg className="w-6 h-6" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
               </div>
-            </div>
-            <div className="order-2">
-              <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-6" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                Smart automated reminders
-              </h2>
-              <p className="text-lg mb-8" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                Set up custom reminder schedules. Get paid faster with automated follow-ups that actually work.
-              </p>
-              <a href="#" className="text-indigo-600 hover:text-indigo-500 font-semibold">
-                Discover reminders →
-              </a>
-            </div>
-          </div>
-
-          {/* Section 3: Track Everything */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="order-2 lg:order-1">
-              <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-6" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                Track everything in one place
-              </h2>
-              <p className="text-lg mb-8" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                Monitor payments, overdue invoices, and client activity. Get insights that help you get paid faster.
-              </p>
-              <a href="#" className="text-indigo-600 hover:text-indigo-500 font-semibold">
-                View dashboard →
-              </a>
-            </div>
-            <div className="order-1 lg:order-2">
-              <div className="relative">
-                {/* Subtle bottom glow effect - like GitHub Copilot */}
-                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-4/5 h-12 rounded-full opacity-50 blur-xl" style={{
-                  background: isDarkMode 
-                    ? 'linear-gradient(90deg, #3b82f6, #2563eb, #1d4ed8)' 
-                    : 'linear-gradient(90deg, #60a5fa, #3b82f6, #2563eb)',
-                  zIndex: 1
-                }}></div>
-                
-                <div className={`relative z-10 rounded-lg overflow-hidden border ${
-                  isDarkMode ? 'border-gray-700' : 'border-gray-200'
-                }`} style={{
-                  boxShadow: isDarkMode 
-                    ? '0 8px 32px rgba(0, 0, 0, 0.3)' 
-                    : '0 8px 32px rgba(0, 0, 0, 0.1)'
-                }}>
-                  <Image 
-                    src="/analytics-dashboard-screenshot.png" 
-                    alt="Analytics Dashboard Interface"
-                    width={800}
-                    height={400}
-                    className="w-full h-auto object-cover"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-
-      {/* Additional Features Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8" style={{backgroundColor: isDarkMode ? '#111111' : '#f8f9fa'}}>
-        <div className="max-w-7xl mx-auto">
-          {/* Section 4: Professional Templates */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
-            <div className="order-1">
-              <div className="relative">
-                {/* Subtle bottom glow effect - like GitHub Copilot */}
-                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-4/5 h-12 rounded-full opacity-50 blur-xl" style={{
-                  background: isDarkMode 
-                    ? 'linear-gradient(90deg, #3b82f6, #2563eb, #1d4ed8)' 
-                    : 'linear-gradient(90deg, #60a5fa, #3b82f6, #2563eb)',
-                  zIndex: 1
-                }}></div>
-                
-                <div className={`relative z-10 rounded-lg overflow-hidden border ${
-                  isDarkMode ? 'border-gray-700' : 'border-gray-200'
-                }`} style={{
-                  boxShadow: isDarkMode 
-                    ? '0 8px 32px rgba(0, 0, 0, 0.3)' 
-                    : '0 8px 32px rgba(0, 0, 0, 0.1)'
-                }}>
-                  <Image 
-                    src="/template-selection-screenshot.png" 
-                    alt="Template Selection Interface"
-                    width={800}
-                    height={400}
-                    className="w-full h-auto object-cover"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="order-2">
-              <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-6" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                Beautiful professional templates
-              </h2>
-              <p className="text-lg mb-8" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+              <h3 className="font-heading text-xl font-bold mb-4" style={{color: isDarkMode ? '#f3f4f6' : '#0f172a'}}>
+                Professional Templates
+              </h3>
+              <p className="text-sm leading-relaxed" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
                 Choose from multiple professional invoice templates. Customize colors, fonts, and layout to match your brand.
               </p>
-              <a href="#" className="text-indigo-600 hover:text-indigo-500 font-semibold">
-                Explore templates →
-              </a>
             </div>
-          </div>
 
-          {/* Section 5: Client Management */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
-            <div className="order-2 lg:order-1">
-              <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-6" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                Smart client management
-              </h2>
-              <p className="text-lg mb-8" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+            {/* Feature 2 */}
+            <div className={`p-8 rounded-lg border transition-all duration-300 hover:border-opacity-60 ${
+              isDarkMode 
+                ? 'bg-gray-900/50 border-gray-800 hover:border-gray-600' 
+                : 'bg-white border-gray-200 hover:border-gray-400'
+            }`}>
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-6" style={{
+                backgroundColor: isDarkMode ? '#1a1a1a' : '#f8f9fa',
+                border: `1px solid ${isDarkMode ? '#333' : '#e5e7eb'}`
+              }}>
+                <svg className="w-6 h-6" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <h3 className="font-heading text-xl font-bold mb-4" style={{color: isDarkMode ? '#f3f4f6' : '#0f172a'}}>
+                Client Management
+              </h3>
+              <p className="text-sm leading-relaxed" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
                 Store client information, payment history, and communication logs. Never lose track of important details.
               </p>
-              <a href="#" className="text-indigo-600 hover:text-indigo-500 font-semibold">
-                Manage clients →
-              </a>
             </div>
-            <div className="order-1 lg:order-2">
-              <div className="relative">
-                {/* Subtle bottom glow effect - like GitHub Copilot */}
-                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-4/5 h-12 rounded-full opacity-50 blur-xl" style={{
-                  background: isDarkMode 
-                    ? 'linear-gradient(90deg, #3b82f6, #2563eb, #1d4ed8)' 
-                    : 'linear-gradient(90deg, #60a5fa, #3b82f6, #2563eb)',
-                  zIndex: 1
-                }}></div>
-                
-                <div className={`relative z-10 rounded-lg overflow-hidden border ${
-                  isDarkMode ? 'border-gray-700' : 'border-gray-200'
-                }`} style={{
-                  boxShadow: isDarkMode 
-                    ? '0 8px 32px rgba(0, 0, 0, 0.3)' 
-                    : '0 8px 32px rgba(0, 0, 0, 0.1)'
-                }}>
-                  <Image 
-                    src="/client-management-screenshot.png" 
-                    alt="Client Management Interface"
-                    width={800}
-                    height={400}
-                    className="w-full h-auto object-cover"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Section 6: Payment Status Management */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="order-1">
-              <div className="relative">
-                {/* Subtle bottom glow effect - like GitHub Copilot */}
-                <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-4/5 h-12 rounded-full opacity-50 blur-xl" style={{
-                  background: isDarkMode 
-                    ? 'linear-gradient(90deg, #3b82f6, #2563eb, #1d4ed8)' 
-                    : 'linear-gradient(90deg, #60a5fa, #3b82f6, #2563eb)',
-                  zIndex: 1
-                }}></div>
-                
-                <div className={`relative z-10 rounded-lg overflow-hidden border ${
-                  isDarkMode ? 'border-gray-700' : 'border-gray-200'
-                }`} style={{
-                  boxShadow: isDarkMode 
-                    ? '0 8px 32px rgba(0, 0, 0, 0.3)' 
-                    : '0 8px 32px rgba(0, 0, 0, 0.1)'
-                }}>
-                  <Image 
-                    src="/payment-status-screenshot.png" 
-                    alt="Payment Status Management Interface"
-                    width={800}
-                    height={400}
-                    className="w-full h-auto object-cover"
-                  />
-                </div>
+            {/* Feature 3 */}
+            <div className={`p-8 rounded-lg border transition-all duration-300 hover:border-opacity-60 ${
+              isDarkMode 
+                ? 'bg-gray-900/50 border-gray-800 hover:border-gray-600' 
+                : 'bg-white border-gray-200 hover:border-gray-400'
+            }`}>
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-6" style={{
+                backgroundColor: isDarkMode ? '#1a1a1a' : '#f8f9fa',
+                border: `1px solid ${isDarkMode ? '#333' : '#e5e7eb'}`
+              }}>
+                <svg className="w-6 h-6" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
               </div>
-            </div>
-            <div className="order-2">
-              <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-6" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                Easy payment status management
-              </h2>
-              <p className="text-lg mb-8" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
-                Track when clients view invoices and manually mark payments as received. Get clear visibility into payment status and overdue amounts.
+              <h3 className="font-heading text-xl font-bold mb-4" style={{color: isDarkMode ? '#f3f4f6' : '#0f172a'}}>
+                Payment Tracking
+              </h3>
+              <p className="text-sm leading-relaxed" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                Track when clients view invoices and manually mark payments as received. Get clear visibility into payment status.
               </p>
-              <a href="#" className="text-indigo-600 hover:text-indigo-500 font-semibold">
-                Manage payments →
-              </a>
+            </div>
+
+            {/* Feature 4 */}
+            <div className={`p-8 rounded-lg border transition-all duration-300 hover:border-opacity-60 ${
+              isDarkMode 
+                ? 'bg-gray-900/50 border-gray-800 hover:border-gray-600' 
+                : 'bg-white border-gray-200 hover:border-gray-400'
+            }`}>
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-6" style={{
+                backgroundColor: isDarkMode ? '#1a1a1a' : '#f8f9fa',
+                border: `1px solid ${isDarkMode ? '#333' : '#e5e7eb'}`
+              }}>
+                <svg className="w-6 h-6" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="font-heading text-xl font-bold mb-4" style={{color: isDarkMode ? '#f3f4f6' : '#0f172a'}}>
+                Automated Reminders
+              </h3>
+              <p className="text-sm leading-relaxed" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                Set up custom reminder schedules for each invoice. Choose from friendly, polite, firm, or urgent reminder types.
+              </p>
+            </div>
+
+            {/* Feature 5 */}
+            <div className={`p-8 rounded-lg border transition-all duration-300 hover:border-opacity-60 ${
+              isDarkMode 
+                ? 'bg-gray-900/50 border-gray-800 hover:border-gray-600' 
+                : 'bg-white border-gray-200 hover:border-gray-400'
+            }`}>
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-6" style={{
+                backgroundColor: isDarkMode ? '#1a1a1a' : '#f8f9fa',
+                border: `1px solid ${isDarkMode ? '#333' : '#e5e7eb'}`
+              }}>
+                <svg className="w-6 h-6" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h3 className="font-heading text-xl font-bold mb-4" style={{color: isDarkMode ? '#f3f4f6' : '#0f172a'}}>
+                Secure & Reliable
+              </h3>
+              <p className="text-sm leading-relaxed" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                Enterprise-grade security with encrypted data storage and transmission. Your data is never shared with third parties.
+              </p>
+            </div>
+
+            {/* Feature 6 */}
+            <div className={`p-8 rounded-lg border transition-all duration-300 hover:border-opacity-60 ${
+              isDarkMode 
+                ? 'bg-gray-900/50 border-gray-800 hover:border-gray-600' 
+                : 'bg-white border-gray-200 hover:border-gray-400'
+            }`}>
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-6" style={{
+                backgroundColor: isDarkMode ? '#1a1a1a' : '#f8f9fa',
+                border: `1px solid ${isDarkMode ? '#333' : '#e5e7eb'}`
+              }}>
+                <svg className="w-6 h-6" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                </svg>
+              </div>
+              <h3 className="font-heading text-xl font-bold mb-4" style={{color: isDarkMode ? '#f3f4f6' : '#0f172a'}}>
+                Easy Customization
+              </h3>
+              <p className="text-sm leading-relaxed" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                Customize your invoices with your branding, colors, and company information. Make every invoice uniquely yours.
+              </p>
             </div>
           </div>
         </div>
