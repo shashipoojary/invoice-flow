@@ -20,7 +20,13 @@ export default function SettingsPage() {
   const { toasts, removeToast, showSuccess, showError } = useToast();
   
   // State
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedDarkMode = localStorage.getItem('darkMode');
+      return savedDarkMode === 'true';
+    }
+    return false;
+  });
   const [saving, setSaving] = useState(false);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [hasLoadedData, setHasLoadedData] = useState(false);
@@ -60,9 +66,27 @@ export default function SettingsPage() {
     setIsDarkMode(prev => {
       const newMode = !prev;
       localStorage.setItem('darkMode', newMode.toString());
+      // Sync with html element
+      if (newMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
       return newMode;
     });
   }, []);
+
+  // Sync dark mode with document
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    
+    // Show content after React loads
+    document.body.classList.add('loaded');
+  }, [isDarkMode]);
 
   // Create invoice handler
   const handleCreateInvoice = useCallback(() => {

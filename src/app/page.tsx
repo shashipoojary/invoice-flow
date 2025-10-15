@@ -18,11 +18,18 @@ import {
   Users
 } from 'lucide-react';
 import Image from 'next/image';
+import Footer from '@/components/Footer';
 
 export default function LandingPage() {
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedDarkMode = localStorage.getItem('darkMode');
+      return savedDarkMode === 'true';
+    }
+    return false;
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeFaqCategory, setActiveFaqCategory] = useState('General');
   const [showGuides, setShowGuides] = useState(true);
@@ -39,12 +46,16 @@ export default function LandingPage() {
 
   useEffect(() => {
     setIsVisible(true);
-    // Check for saved dark mode preference
-    const savedDarkMode = localStorage.getItem('darkMode');
-    if (savedDarkMode !== null) {
-      setIsDarkMode(JSON.parse(savedDarkMode));
+    // Sync with html element to prevent flash
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
     }
-  }, []);
+    
+    // Show content after React loads
+    document.body.classList.add('loaded');
+  }, [isDarkMode]);
 
   // Handle scroll for navbar with throttling and hysteresis
   useEffect(() => {
@@ -115,6 +126,12 @@ export default function LandingPage() {
     setIsDarkMode(prev => {
       const newMode = !prev;
       localStorage.setItem('darkMode', newMode.toString());
+      // Sync with html element
+      if (newMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
       return newMode;
     });
   };
@@ -155,8 +172,8 @@ export default function LandingPage() {
             <div className="flex items-center flex-shrink-0">
               <div className={`relative transition-all duration-300 ease-out ${
                 isScrolled 
-                  ? 'w-28 h-7 sm:w-32 sm:h-8 lg:w-36 lg:h-9' 
-                  : 'w-32 h-8 sm:w-36 sm:h-9 lg:w-40 lg:h-10'
+                  ? 'w-28 h-7 sm:w-32 sm:h-8 md:w-36 md:h-9 lg:w-40 lg:h-10' 
+                  : 'w-32 h-8 sm:w-36 sm:h-9 md:w-40 md:h-10 lg:w-44 lg:h-11'
               }`}>
                 <Image
                   src={isDarkMode ? '/logo-main-white.png' : '/logo-main-black.png'}
@@ -168,21 +185,21 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-sm font-medium transition-colors hover:opacity-80" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+            {/* Tablet/Desktop Navigation */}
+            <div className="hidden sm:flex items-center space-x-4 lg:space-x-8">
+              <a href="#features" className="text-xs sm:text-sm font-medium transition-colors hover:opacity-80" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
                 Features
               </a>
-              <a href="#pricing" className="text-sm font-medium transition-colors hover:opacity-80" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+              <a href="#pricing" className="text-xs sm:text-sm font-medium transition-colors hover:opacity-80" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
                 Pricing
               </a>
-              <a href="#about" className="text-sm font-medium transition-colors hover:opacity-80" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+              <a href="#about" className="text-xs sm:text-sm font-medium transition-colors hover:opacity-80" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
                 About
               </a>
             </div>
 
-            {/* Desktop Actions */}
-            <div className="hidden md:flex items-center space-x-3">
+            {/* Tablet/Desktop Actions */}
+            <div className="hidden sm:flex items-center space-x-2 lg:space-x-3">
               <button
                 onClick={toggleDarkMode}
                 className={`p-2 rounded-lg transition-colors ${
@@ -195,14 +212,14 @@ export default function LandingPage() {
               </button>
               <button
                 onClick={handleViewDemo}
-                className="text-sm font-medium transition-colors px-4 py-2 rounded-lg hover:opacity-80"
+                className="text-xs sm:text-sm font-medium transition-colors px-3 py-2 sm:px-4 rounded-lg hover:opacity-80"
                 style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}
               >
                 View Demo
               </button>
               <button
                 onClick={handleGetStarted}
-                className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-4 py-2 sm:px-6 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                   isDarkMode 
                     ? 'bg-white text-black hover:bg-gray-200' 
                     : 'bg-black text-white hover:bg-gray-800'
@@ -213,7 +230,7 @@ export default function LandingPage() {
             </div>
 
             {/* Mobile Menu Button */}
-            <div className="md:hidden flex items-center space-x-1">
+            <div className="sm:hidden flex items-center space-x-1">
               <button
                 onClick={toggleDarkMode}
                 className={`p-1.5 rounded-md transition-colors ${
@@ -239,7 +256,7 @@ export default function LandingPage() {
 
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
-            <div className={`md:hidden border-t ${
+            <div className={`sm:hidden border-t ${
               isDarkMode ? 'border-gray-800' : 'border-gray-200'
             }`}>
               <div className="px-4 pt-3 pb-4 space-y-1">
@@ -303,25 +320,25 @@ export default function LandingPage() {
 
         {/* Hero Section Alignment Guides */}
         <div className="absolute inset-0 pointer-events-none z-40">
-            {/* 1 line above heading - touches top of tallest letters */}
+            {/* 1 line above heading - touches top of tallest letters, extends full width */}
             <div 
               className="absolute h-px"
               style={{
                 top: `${headingPosition.top}px`,
-                left: `${headingPosition.left}px`,
-                right: `${headingPosition.right}px`,
+                left: '0',
+                right: '0',
                 backgroundColor: '#FB923C',
                 opacity: 0.45
               }}
             ></div>
             
-            {/* 1 line below heading - touches bottom of Y descender */}
+            {/* 1 line below heading - touches bottom of Y descender, extends full width */}
             <div 
               className="absolute h-px"
               style={{
                 top: `${headingPosition.bottom}px`,
-                left: `${headingPosition.left}px`,
-                right: `${headingPosition.right}px`,
+                left: '0',
+                right: '0',
                 backgroundColor: '#FB923C',
                 opacity: 0.45
               }}
@@ -333,7 +350,7 @@ export default function LandingPage() {
               style={{
                 left: 'calc(50% - 32rem)',
                 top: '0',
-                height: '100vh',
+                height: '120vh',
                 backgroundColor: '#FB923C',
                 opacity: 0.45
               }}
@@ -343,7 +360,7 @@ export default function LandingPage() {
               style={{
                 right: 'calc(50% - 32rem)',
                 top: '0',
-                height: '100vh',
+                height: '120vh',
                 backgroundColor: '#FB923C',
                 opacity: 0.45
               }}
@@ -355,7 +372,7 @@ export default function LandingPage() {
               style={{
                 left: '1rem',
                 top: '0',
-                height: '80vh',
+                height: '100vh',
                 backgroundColor: '#FB923C',
                 opacity: 0.45
               }}
@@ -365,7 +382,7 @@ export default function LandingPage() {
               style={{
                 right: '1rem',
                 top: '0',
-                height: '80vh',
+                height: '100vh',
                 backgroundColor: '#FB923C',
                 opacity: 0.45
               }}
@@ -417,11 +434,11 @@ export default function LandingPage() {
       </section>
 
       {/* Dashboard Screenshot Section */}
-      <section className="pt-1 pb-4 sm:pt-2 sm:pb-6 px-4 sm:px-6 lg:px-8" style={{backgroundColor: isDarkMode ? '#0d1117' : '#ffffff'}}>
+      <section className="pt-1 pb-4 sm:pt-2 sm:pb-6 px-4 sm:px-6 lg:px-8" style={{backgroundColor: isDarkMode ? '#000000' : '#ffffff'}}>
         <div className="max-w-7xl mx-auto">
           <div className="w-full flex justify-center">
             <div className="relative max-w-5xl w-full">
-              {/* Indigo glow effect - positioned relative to image */}
+              {/* Single subtle glow effect */}
               <div className="absolute inset-0 rounded-2xl opacity-40 blur-3xl" style={{
                 background: isDarkMode 
                   ? 'radial-gradient(ellipse at center, #6366f1, #8b5cf6, #06b6d4, #3b82f6)' 
@@ -430,33 +447,13 @@ export default function LandingPage() {
                 zIndex: 1
               }}></div>
               
-              {/* Secondary indigo glow */}
-              <div className="absolute inset-0 rounded-2xl opacity-30 blur-2xl" style={{
-                background: isDarkMode 
-                  ? 'linear-gradient(45deg, #6366f1, #8b5cf6, #06b6d4, #3b82f6)' 
-                  : 'linear-gradient(45deg, #818cf8, #a78bfa, #22d3ee, #60a5fa)',
-                transform: 'scale(1.05)',
-                zIndex: 2
-              }}></div>
-              
-              {/* Tertiary glow for depth */}
-              <div className="absolute inset-0 rounded-2xl opacity-20 blur-xl" style={{
-                background: isDarkMode 
-                  ? 'conic-gradient(from 0deg, #6366f1, #8b5cf6, #06b6d4, #3b82f6, #6366f1)' 
-                  : 'conic-gradient(from 0deg, #818cf8, #a78bfa, #22d3ee, #60a5fa, #818cf8)',
-                transform: 'scale(1.02)',
-                zIndex: 3
-              }}></div>
-              
-              <div className={`relative z-10 rounded-lg overflow-hidden border ${
-                isDarkMode ? 'border-gray-700' : 'border-gray-200'
-              }`} style={{
+              <div className="relative z-10 rounded-lg overflow-hidden" style={{
                 boxShadow: isDarkMode 
                   ? '0 8px 32px rgba(0, 0, 0, 0.3)' 
                   : '0 8px 32px rgba(0, 0, 0, 0.1)'
               }}>
                 <Image
-                  src="/dashboard-screenshot.png"
+                  src={isDarkMode ? "/dashboard-screenshot-dark.png" : "/dashboard-screenshot-light.png"}
                   alt="InvoiceFlow Dashboard Screenshot"
                   width={1200}
                   height={800}
@@ -1184,64 +1181,13 @@ export default function LandingPage() {
             >
               View Demo
             </button>
-          </div>
+      </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className={`py-12 px-4 sm:px-6 lg:px-8 border-t ${
-        isDarkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-200'
-      }`}>
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center mb-4">
-                <div className="w-40 h-10 sm:w-44 sm:h-11 lg:w-52 lg:h-13 relative">
-                  <Image
-                    src={isDarkMode ? '/logo-main-white.png' : '/logo-main-black.png'}
-                    alt="InvoiceFlow Logo"
-                    width={208}
-                    height={52}
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              </div>
-              <p style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
-                The fastest way for freelancers to get paid.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-heading text-lg font-semibold mb-4" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Product</h3>
-              <ul className="space-y-2" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
-                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Templates</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-heading text-lg font-semibold mb-4" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Support</h3>
-              <ul className="space-y-2" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
-                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Status</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-heading text-lg font-semibold mb-4" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Company</h3>
-              <ul className="space-y-2" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
-                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Privacy</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className={`border-t mt-8 pt-8 text-center ${
-            isDarkMode ? 'border-gray-800' : 'border-gray-200'
-          }`} style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
-            <p>&copy; 2024 InvoiceFlow. All rights reserved.</p>
-      </div>
-        </div>
-      </footer>
+      <Footer isDarkMode={isDarkMode} />
     </div>
   );
 }
+

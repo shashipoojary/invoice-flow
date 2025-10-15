@@ -48,26 +48,40 @@ export default function ReminderHistoryPage() {
   const [reminders, setReminders] = useState<ReminderHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedDarkMode = localStorage.getItem('darkMode');
+      return savedDarkMode === 'true';
+    }
+    return false;
+  });
 
   // Dark mode toggle
   const toggleDarkMode = useCallback(() => {
     setIsDarkMode(prev => {
       const newMode = !prev;
       localStorage.setItem('darkMode', newMode.toString());
+      // Sync with html element
+      if (newMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
       return newMode;
     });
   }, []);
 
+  // Sync dark mode with document
   useEffect(() => {
-    const checkDarkMode = () => {
-      setIsDarkMode(document.documentElement.classList.contains('dark'));
-    };
-    checkDarkMode();
-    const observer = new MutationObserver(checkDarkMode);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    
+    // Show content after React loads
+    document.body.classList.add('loaded');
+  }, [isDarkMode]);
 
 
   const fetchReminderHistory = async () => {

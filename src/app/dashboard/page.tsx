@@ -24,7 +24,13 @@ export default function DashboardOverview() {
   const router = useRouter();
   
   // State
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedDarkMode = localStorage.getItem('darkMode');
+      return savedDarkMode === 'true';
+    }
+    return false;
+  });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [isLoadingInvoices, setIsLoadingInvoices] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -77,6 +83,12 @@ export default function DashboardOverview() {
     setIsDarkMode(prev => {
       const newMode = !prev;
       localStorage.setItem('darkMode', newMode.toString());
+      // Sync with html element
+      if (newMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
       return newMode;
     });
   }, []);
@@ -923,17 +935,17 @@ export default function DashboardOverview() {
     );
   }, []);
 
-  // Load dark mode preference
+  // Sync dark mode with document
   useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    setIsDarkMode(savedDarkMode);
-    
-    if (savedDarkMode) {
+    if (isDarkMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, []);
+    
+    // Show content after React loads
+    document.body.classList.add('loaded');
+  }, [isDarkMode]);
 
 
   // Load settings function

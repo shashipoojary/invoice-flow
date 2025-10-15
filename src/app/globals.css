@@ -162,7 +162,7 @@
   }
 
   body {
-    background: var(--background);
+    background-color: #ffffff !important;
     color: var(--foreground);
     font-family: var(--font-poppins), system-ui, -apple-system, sans-serif;
     line-height: 1.6;
@@ -171,6 +171,18 @@
     font-weight: 400;
     overflow-x: hidden;
     scroll-behavior: smooth;
+  }
+
+  .dark body {
+    background-color: #000000 !important;
+  }
+  
+  html {
+    background-color: #ffffff !important;
+  }
+  
+  .dark html {
+    background-color: #000000 !important;
   }
 
   /* Professional Scrollbar */
