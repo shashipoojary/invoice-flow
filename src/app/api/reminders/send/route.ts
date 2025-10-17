@@ -25,7 +25,9 @@ export async function POST(request: NextRequest) {
         clients (
           name,
           email,
-          company
+          company,
+          phone,
+          address
         )
       `)
       .eq('id', invoiceId)
@@ -35,16 +37,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
     }
 
-    // Fetch business settings
-    const { data: businessSettings, error: settingsError } = await supabase
-      .from('business_settings')
+    // Fetch business settings from user_settings
+    const { data: userSettings, error: settingsError } = await supabase
+      .from('user_settings')
       .select('*')
       .eq('user_id', invoice.user_id)
       .single();
 
-    if (settingsError || !businessSettings) {
-      return NextResponse.json({ error: 'Business settings not found' }, { status: 404 });
+    if (settingsError || !userSettings) {
+      return NextResponse.json({ error: 'User settings not found' }, { status: 404 });
     }
+
+    // Map user_settings to business settings format
+    const businessSettings = {
+      businessName: userSettings.business_name,
+      businessEmail: userSettings.business_email,
+      businessPhone: userSettings.business_phone,
+      address: userSettings.business_address,
+      logo: userSettings.logo || userSettings.logo_url,
+      bankAccount: userSettings.bank_account,
+      bankIfscSwift: userSettings.bank_ifsc_swift,
+      bankIban: userSettings.bank_iban,
+      paypalEmail: userSettings.paypal_email,
+      cashappId: userSettings.cashapp_id,
+      venmoId: userSettings.venmo_id,
+      googlePayUpi: userSettings.google_pay_upi,
+      applePayId: userSettings.apple_pay_id,
+      stripeAccount: userSettings.stripe_account,
+      paymentNotes: userSettings.payment_notes
+    };
 
     // Generate email template
     const emailTemplate = getReminderEmailTemplate(
@@ -56,7 +77,7 @@ export async function POST(request: NextRequest) {
 
     // Send email
     const { data, error } = await resend.emails.send({
-      from: `${businessSettings.businessName} <${businessSettings.email || 'noreply@invoiceflow.com'}>`,
+      from: `${businessSettings.businessName} <${businessSettings.businessEmail || 'noreply@invoiceflow.com'}>`,
       to: [invoice.clients.email],
       subject: emailTemplate.subject,
       html: emailTemplate.html,

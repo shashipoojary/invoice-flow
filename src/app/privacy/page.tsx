@@ -1,82 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export default function PrivacyPage() {
-  // Always start with false on server to match SSR
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  // Sync state with localStorage on mount (client-only)
-  useEffect(() => {
-    const storedDarkMode = localStorage.getItem('darkMode') === 'true';
-    setIsDarkMode(storedDarkMode);
-    
-    // Ensure the dark class is in sync
-    if (storedDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    
-    // Show content after React loads
-    document.body.classList.add('loaded');
-  }, []);
 
 
-  // Handle scroll for navbar with throttling and hysteresis
-  useEffect(() => {
-    let ticking = false;
-    let lastScrollTop = 0;
-    
-    const handleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-          
-          // Hysteresis: different thresholds for expanding vs collapsing
-          if (scrollTop > lastScrollTop && scrollTop > 100) {
-            // Scrolling down - collapse
-            setIsScrolled(true);
-          } else if (scrollTop < lastScrollTop && scrollTop < 50) {
-            // Scrolling up - expand
-            setIsScrolled(false);
-          }
-          
-          lastScrollTop = scrollTop;
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(prev => {
-      const newMode = !prev;
-      localStorage.setItem('darkMode', newMode.toString());
-      // Sync with html element
-      if (newMode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      return newMode;
-    });
-  };
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
+    <div className="min-h-screen transition-colors duration-200 bg-white">
       {/* Navigation */}
-      <Navbar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} isScrolled={isScrolled} />
+      <Navbar />
 
       {/* Main Content */}
       <main className="pt-24">
@@ -86,21 +22,21 @@ export default function PrivacyPage() {
             <Link 
               href="/" 
               className="inline-flex items-center text-sm font-medium mb-8 transition-colors hover:opacity-80"
-              style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}
+              style={{color: '#6b7280'}}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Home
             </Link>
             
-            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold mb-8" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold mb-8" style={{color: '#1f2937'}}>
               Privacy Policy
             </h1>
             
-            <p className="text-lg sm:text-xl max-w-3xl mx-auto leading-relaxed" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+            <p className="text-lg sm:text-xl max-w-3xl mx-auto leading-relaxed" style={{color: '#374151'}}>
               Your privacy is important to us. This policy explains how we collect, use, and protect your information.
             </p>
             
-            <p className="text-sm mt-4" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+            <p className="text-sm mt-4" style={{color: '#6b7280'}}>
               Last updated: December 2024
             </p>
           </div>
@@ -109,9 +45,9 @@ export default function PrivacyPage() {
         {/* Content */}
         <section className="py-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
-            <div className="prose prose-lg max-w-none" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+            <div className="prose prose-lg max-w-none" style={{color: '#374151'}}>
               
-              <h2 className="font-heading text-2xl font-bold mb-6" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+              <h2 className="font-heading text-2xl font-bold mb-6" style={{color: '#1f2937'}}>
                 Information We Collect
               </h2>
               
@@ -119,7 +55,7 @@ export default function PrivacyPage() {
                 We collect information you provide directly to us, such as when you create an account, use our services, or contact us for support.
               </p>
               
-              <h3 className="font-heading text-xl font-bold mb-4" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+              <h3 className="font-heading text-xl font-bold mb-4" style={{color: '#1f2937'}}>
                 Account Information
               </h3>
               <ul className="list-disc pl-6 mb-6 space-y-2">
@@ -129,7 +65,7 @@ export default function PrivacyPage() {
                 <li>Profile settings and preferences</li>
               </ul>
               
-              <h3 className="font-heading text-xl font-bold mb-4" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+              <h3 className="font-heading text-xl font-bold mb-4" style={{color: '#1f2937'}}>
                 Usage Information
               </h3>
               <ul className="list-disc pl-6 mb-6 space-y-2">
@@ -139,7 +75,7 @@ export default function PrivacyPage() {
                 <li>Device and browser information</li>
               </ul>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
                 How We Use Your Information
               </h2>
               
@@ -156,7 +92,7 @@ export default function PrivacyPage() {
                 <li>Ensure security and prevent fraud</li>
               </ul>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
                 Information Sharing
               </h2>
               
@@ -171,7 +107,7 @@ export default function PrivacyPage() {
                 <li>With service providers who assist in our operations (under strict confidentiality agreements)</li>
               </ul>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
                 Data Security
               </h2>
               
@@ -186,7 +122,7 @@ export default function PrivacyPage() {
                 <li>Secure data centers and infrastructure</li>
               </ul>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
                 Your Rights
               </h2>
               
@@ -202,7 +138,7 @@ export default function PrivacyPage() {
                 <li>Opt out of marketing communications</li>
               </ul>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
                 Cookies and Tracking
               </h2>
               
@@ -210,7 +146,7 @@ export default function PrivacyPage() {
                 We use cookies and similar technologies to improve your experience, analyze usage, and provide personalized content. You can control cookie settings through your browser preferences.
               </p>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
                 Changes to This Policy
               </h2>
               
@@ -218,7 +154,7 @@ export default function PrivacyPage() {
                 We may update this privacy policy from time to time. We will notify you of any material changes by email or through our service. Your continued use of our services after such changes constitutes acceptance of the updated policy.
               </p>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
                 Contact Us
               </h2>
               
@@ -227,11 +163,11 @@ export default function PrivacyPage() {
               </p>
               
               <div className={`p-6 rounded-lg border ${
-                isDarkMode 
+                false 
                   ? 'bg-gray-900/50 border-gray-800' 
                   : 'bg-white border-gray-200'
               }`}>
-                <p className="text-sm" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                <p className="text-sm" style={{color: '#6b7280'}}>
                   Email: privacy@invoiceflow.com<br />
                   Address: [Your Business Address]<br />
                   Phone: [Your Phone Number]
@@ -243,7 +179,7 @@ export default function PrivacyPage() {
       </main>
 
       {/* Footer */}
-      <Footer isDarkMode={isDarkMode} />
+      <Footer />
     </div>
   );
 }

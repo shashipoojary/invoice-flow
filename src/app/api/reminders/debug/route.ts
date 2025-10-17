@@ -26,7 +26,10 @@ export async function POST(request: NextRequest) {
         created_at,
         clients (
           name,
-          email
+          email,
+          company,
+          phone,
+          address
         )
       `)
       .eq('user_id', userId)

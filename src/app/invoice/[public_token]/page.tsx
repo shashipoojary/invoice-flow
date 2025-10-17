@@ -20,6 +20,7 @@ interface Invoice {
   clientName: string
   clientEmail: string
   clientCompany?: string
+  clientPhone?: string
   clientAddress?: string
   items: InvoiceItem[]
   subtotal: number

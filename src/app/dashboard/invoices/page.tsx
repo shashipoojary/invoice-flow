@@ -24,13 +24,6 @@ function InvoicesContent() {
   const searchParams = useSearchParams();
   
   // State
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const savedDarkMode = localStorage.getItem('darkMode');
-      return savedDarkMode === 'true';
-    }
-    return false;
-  });
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoadingInvoices, setIsLoadingInvoices] = useState(true);
@@ -76,32 +69,7 @@ function InvoicesContent() {
     paymentNotes: ''
   });
 
-  // Dark mode toggle
-  const toggleDarkMode = useCallback(() => {
-    setIsDarkMode(prev => {
-      const newMode = !prev;
-      localStorage.setItem('darkMode', newMode.toString());
-      // Sync with html element
-      if (newMode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      return newMode;
-    });
-  }, []);
 
-  // Sync dark mode with document
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    
-    // Show content after React loads
-    document.body.classList.add('loaded');
-  }, [isDarkMode]);
 
   // Create invoice handler
   const handleCreateInvoice = useCallback(() => {
@@ -473,9 +441,8 @@ function InvoicesContent() {
   }, [getAuthHeaders, showSuccess, showError]);
 
   // Memoized Invoice Card Component
-  const InvoiceCard = useCallback(({ invoice, isDarkMode, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, handleDeleteInvoice, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions }: {
+  const InvoiceCard = useCallback(({ invoice, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, handleDeleteInvoice, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions }: {
     invoice: Invoice;
-    isDarkMode: boolean;
     handleViewInvoice: (invoice: Invoice) => void;
     handleDownloadPDF: (invoice: Invoice) => void;
     handleSendInvoice: (invoice: Invoice) => void;
@@ -500,35 +467,35 @@ function InvoicesContent() {
     const reminders = formatReminders(invoice.reminders);
     
     return (
-      <div className={`rounded-lg border transition-all duration-200 hover:shadow-sm ${isDarkMode ? 'bg-gray-800/30 border-gray-700 hover:bg-gray-800/50' : 'bg-white border-gray-200 hover:bg-gray-50/50'}`}>
+      <div className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
           {/* Mobile Layout */}
         <div className="block sm:hidden p-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100`}>
                   <FileText className="h-4 w-4 text-gray-600" />
                 </div>
                 <div>
-                  <div className="font-medium text-sm" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  <div className="font-medium text-sm" style={{color: '#1f2937'}}>
                   {invoice.invoiceNumber}
                 </div>
-                  <div className="text-xs" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                  <div className="text-xs" style={{color: '#6b7280'}}>
                     {invoice.client.name}
               </div>
                 </div>
               </div>
               <div className="text-right">
                 <div className={`font-semibold text-base ${
-                  invoice.status === 'paid' ? (isDarkMode ? 'text-green-400' : 'text-green-600') :
-                  dueDateStatus.status === 'overdue' ? (isDarkMode ? 'text-red-400' : 'text-red-600') :
-                  invoice.status === 'pending' || invoice.status === 'sent' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
-                  invoice.status === 'draft' ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') :
-                  (isDarkMode ? 'text-red-400' : 'text-red-600')
+                  invoice.status === 'paid' ? ('text-green-600') :
+                  dueDateStatus.status === 'overdue' ? ('text-red-600') :
+                  invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-600') :
+                  invoice.status === 'draft' ? ('text-gray-600') :
+                  ('text-red-600')
               }`}>
                 ${dueCharges.totalPayable.toLocaleString()}
                   </div>
-                <div className="text-xs" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                <div className="text-xs" style={{color: '#6b7280'}}>
                   {new Date(invoice.createdAt).toLocaleDateString()}
               </div>
             </div>
@@ -537,19 +504,19 @@ function InvoicesContent() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
-                  invoice.status === 'paid' ? (isDarkMode ? 'text-green-400' : 'text-green-600') :
-                  invoice.status === 'pending' || invoice.status === 'sent' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
-                  invoice.status === 'draft' ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') :
-                  (isDarkMode ? 'text-red-400' : 'text-red-600')
+                  invoice.status === 'paid' ? ('text-green-600') :
+                  invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-600') :
+                  invoice.status === 'draft' ? ('text-gray-600') :
+                  ('text-red-600')
                 }`}>
                 {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status}</span>
               </span>
-                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${'bg-gray-100 text-gray-600'}`}>
                   {(invoice.type || 'detailed') === 'fast' ? 'Fast' : 'Detailed'}
                   </span>
                 {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
-                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-red-600'}`}>
                     <AlertTriangle className="h-3 w-3" />
                     <span>{dueDateStatus.days}d overdue</span>
                   </span>
@@ -559,7 +526,7 @@ function InvoicesContent() {
               <div className="flex items-center space-x-1">
                 <button 
                   onClick={() => handleViewInvoice(invoice)}
-                  className={`p-1.5 rounded-md transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'}`}
+                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
                   title="View"
                 >
                   <Eye className="h-4 w-4 text-gray-600" />
@@ -567,7 +534,7 @@ function InvoicesContent() {
                 <button 
                   onClick={() => handleDownloadPDF(invoice)}
                   disabled={loadingActions[`pdf-${invoice.id}`]}
-                  className={`p-1.5 rounded-md transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
                   title="PDF"
                 >
                   {loadingActions[`pdf-${invoice.id}`] ? (
@@ -580,7 +547,7 @@ function InvoicesContent() {
                   <button 
                     onClick={() => handleSendInvoice(invoice)}
                     disabled={loadingActions[`send-${invoice.id}`]}
-                    className={`p-1.5 rounded-md transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
                     title="Send"
                   >
                     {loadingActions[`send-${invoice.id}`] ? (
@@ -594,7 +561,7 @@ function InvoicesContent() {
                   <button 
                     onClick={() => handleMarkAsPaid(invoice)}
                     disabled={loadingActions[`paid-${invoice.id}`]}
-                    className={`p-1.5 rounded-md transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
                     title="Mark Paid"
                   >
                     {loadingActions[`paid-${invoice.id}`] ? (
@@ -607,7 +574,7 @@ function InvoicesContent() {
                 {invoice.status === 'draft' && (
                   <button 
                     onClick={() => handleEditInvoice(invoice)}
-                    className={`p-1.5 rounded-md transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'}`}
+                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
                     title="Edit"
                   >
                     <Edit className="h-4 w-4 text-gray-600" />
@@ -616,7 +583,7 @@ function InvoicesContent() {
                 {invoice.status === 'draft' && (
                   <button 
                     onClick={() => handleDeleteInvoice(invoice)}
-                    className={`p-1.5 rounded-md transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'}`}
+                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
                     title="Delete"
                   >
                     <Trash2 className="h-4 w-4 text-gray-600" />
@@ -627,147 +594,135 @@ function InvoicesContent() {
             </div>
           </div>
           
-          {/* Desktop Layout */}
-        <div className="hidden sm:block p-6">
-          <div className="grid grid-cols-12 gap-6 items-center">
-            {/* Left Section - Invoice Info */}
-            <div className="col-span-5 flex items-center space-x-4">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
-                <FileText className="h-6 w-6 text-gray-600" />
+          {/* Desktop Layout - Same as Mobile */}
+        <div className="hidden sm:block p-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100`}>
+                  <FileText className="h-4 w-4 text-gray-600" />
                 </div>
-              <div className="flex-1">
-                <div className="flex items-center space-x-3 mb-2">
-                  <span className="font-semibold text-base" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
-                    {invoice.invoiceNumber}
-                  </span>
-                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
-                  {(invoice.type || 'detailed') === 'fast' ? 'Fast' : 'Detailed'}
-                </span>
+                <div>
+                  <div className="font-medium text-sm" style={{color: '#1f2937'}}>
+                  {invoice.invoiceNumber}
+                </div>
+                  <div className="text-xs" style={{color: '#6b7280'}}>
+                    {invoice.client.name}
               </div>
-                <div className="text-sm" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
-                  {invoice.client.name} • {new Date(invoice.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className={`font-semibold text-base ${
+                  invoice.status === 'paid' ? ('text-green-600') :
+                  dueDateStatus.status === 'overdue' ? ('text-red-600') :
+                  invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-600') :
+                  invoice.status === 'draft' ? ('text-gray-600') :
+                  ('text-red-600')
+              }`}>
+                ${dueCharges.totalPayable.toLocaleString()}
+                  </div>
+                <div className="text-xs" style={{color: '#6b7280'}}>
+                  {new Date(invoice.createdAt).toLocaleDateString()}
               </div>
             </div>
-              </div>
+            </div>
             
-            {/* Center Section - Amount & Status */}
-            <div className="col-span-4 text-center">
-              <div className={`font-bold text-xl mb-3 ${
-                invoice.status === 'paid' ? (isDarkMode ? 'text-green-400' : 'text-green-600') :
-                dueDateStatus.status === 'overdue' ? (isDarkMode ? 'text-red-400' : 'text-red-600') :
-                invoice.status === 'pending' || invoice.status === 'sent' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
-                invoice.status === 'draft' ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') :
-                (isDarkMode ? 'text-red-400' : 'text-red-600')
-            }`}>
-              ${dueCharges.totalPayable.toLocaleString()}
-                </div>
-              <div className="flex items-center justify-center">
-                <div className="relative flex items-center justify-center">
-                  <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium ${
-                    invoice.status === 'paid' ? (isDarkMode ? 'text-green-400' : 'text-green-600') :
-                    invoice.status === 'pending' || invoice.status === 'sent' ? (isDarkMode ? 'text-orange-400' : 'text-orange-600') :
-                    invoice.status === 'draft' ? (isDarkMode ? 'text-gray-400' : 'text-gray-600') :
-                    (isDarkMode ? 'text-red-400' : 'text-red-600')
-                  }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
+                  invoice.status === 'paid' ? ('text-green-600') :
+                  invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-600') :
+                  invoice.status === 'draft' ? ('text-gray-600') :
+                  ('text-red-600')
+                }`}>
                 {getStatusIcon(invoice.status)}
-                    <span className="capitalize">{invoice.status}</span>
+                  <span className="capitalize">{invoice.status}</span>
               </span>
-                  {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
-                    <span className={`absolute left-full ml-1 sm:ml-2 lg:ml-3 inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium whitespace-nowrap ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
-                      <AlertTriangle className="h-3 w-3" />
-                      <span className="hidden sm:inline">{dueDateStatus.days}d overdue</span>
-                      <span className="sm:hidden">{dueDateStatus.days}d</span>
+                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${'bg-gray-100 text-gray-600'}`}>
+                  {(invoice.type || 'detailed') === 'fast' ? 'Fast' : 'Detailed'}
                   </span>
-              )}
+                {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-red-600'}`}>
+                    <AlertTriangle className="h-3 w-3" />
+                    <span>{dueDateStatus.days}d overdue</span>
+                  </span>
+                )}
+                </div>
+              
+              <div className="flex items-center space-x-1">
+                <button 
+                  onClick={() => handleViewInvoice(invoice)}
+                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                  title="View"
+                >
+                  <Eye className="h-4 w-4 text-gray-600" />
+                </button>
+                <button 
+                  onClick={() => handleDownloadPDF(invoice)}
+                  disabled={loadingActions[`pdf-${invoice.id}`]}
+                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title="PDF"
+                >
+                  {loadingActions[`pdf-${invoice.id}`] ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  ) : (
+                    <Download className="h-4 w-4 text-gray-600" />
+                  )}
+                </button>
+                {invoice.status === 'draft' && (
+                  <button 
+                    onClick={() => handleSendInvoice(invoice)}
+                    disabled={loadingActions[`send-${invoice.id}`]}
+                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title="Send"
+                  >
+                    {loadingActions[`send-${invoice.id}`] ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : (
+                      <Send className="h-4 w-4 text-gray-600" />
+                    )}
+                  </button>
+                )}
+                {(invoice.status === 'pending' || invoice.status === 'sent') && (
+                  <button 
+                    onClick={() => handleMarkAsPaid(invoice)}
+                    disabled={loadingActions[`paid-${invoice.id}`]}
+                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title="Mark Paid"
+                  >
+                    {loadingActions[`paid-${invoice.id}`] ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : (
+                      <CheckCircle className="h-4 w-4 text-gray-600" />
+                    )}
+                  </button>
+                )}
+                {invoice.status === 'draft' && (
+                  <button 
+                    onClick={() => handleEditInvoice(invoice)}
+                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                    title="Edit"
+                  >
+                    <Edit className="h-4 w-4 text-gray-600" />
+                  </button>
+                )}
+                {invoice.status === 'draft' && (
+                  <button 
+                    onClick={() => handleDeleteInvoice(invoice)}
+                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                    title="Delete"
+                  >
+                    <Trash2 className="h-4 w-4 text-gray-600" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
-        
-            {/* Right Section - Actions */}
-            <div className="col-span-3 flex items-center justify-end space-x-2">
-          <button 
-            onClick={() => handleViewInvoice(invoice)}
-                className={`p-2.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'}`}
-                title="View invoice"
-          >
-                <Eye className="h-4 w-4 text-gray-600" />
-          </button>
-          <button 
-            onClick={() => handleDownloadPDF(invoice)}
-            disabled={loadingActions[`pdf-${invoice.id}`]}
-                className={`p-2.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title="Download PDF"
-          >
-            {loadingActions[`pdf-${invoice.id}`] ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-            ) : (
-                  <Download className="h-4 w-4 text-gray-600" />
-            )}
-          </button>
-          {invoice.status === 'draft' && (
-            <button 
-              onClick={() => handleSendInvoice(invoice)}
-              disabled={loadingActions[`send-${invoice.id}`]}
-                  className={`p-2.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  title="Send invoice"
-            >
-              {loadingActions[`send-${invoice.id}`] ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-              ) : (
-                    <Send className="h-4 w-4 text-gray-600" />
-              )}
-            </button>
-          )}
-              {(invoice.status === 'pending' || invoice.status === 'sent') && (
-            <button 
-              onClick={() => handleMarkAsPaid(invoice)}
-              disabled={loadingActions[`paid-${invoice.id}`]}
-                  className={`p-2.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  title="Mark as paid"
-            >
-              {loadingActions[`paid-${invoice.id}`] ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-              ) : (
-                    <CheckCircle className="h-4 w-4 text-gray-600" />
-              )}
-            </button>
-          )}
-              {invoice.status === 'draft' && (
-              <button 
-                onClick={() => handleEditInvoice(invoice)}
-                  className={`p-2.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'}`}
-                  title="Edit invoice"
-              >
-                  <Edit className="h-4 w-4 text-gray-600" />
-              </button>
-              )}
-              {invoice.status === 'draft' && (
-              <button 
-                onClick={() => handleDeleteInvoice(invoice)}
-                  className={`p-2.5 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-100'}`}
-                  title="Delete invoice"
-                >
-                  <Trash2 className="h-4 w-4 text-gray-600" />
-              </button>
-              )}
-            </div>
-        </div>
       </div>
-    </div>
     );
   }, []);
 
-  // Load dark mode preference
-  useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    setIsDarkMode(savedDarkMode);
-    
-    if (savedDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, []);
 
   // Load settings function
   const loadSettings = useCallback(async () => {
@@ -834,7 +789,7 @@ function InvoicesContent() {
   // Only show loading spinner if user is not authenticated yet
   if (loading && !user) {
     return (
-      <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
+      <div className="min-h-screen transition-colors duration-200 bg-white">
         <div className="flex items-center justify-center h-screen">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
         </div>
@@ -844,7 +799,7 @@ function InvoicesContent() {
 
   if (!user) {
     return (
-      <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
+      <div className="min-h-screen transition-colors duration-200 bg-white">
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Please log in to access the invoices</h1>
@@ -855,11 +810,11 @@ function InvoicesContent() {
   }
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
+    <div className="min-h-screen transition-colors duration-200 bg-white">
       <div className="flex h-screen">
         <ModernSidebar 
-          isDarkMode={isDarkMode}
-          onToggleDarkMode={toggleDarkMode}
+          isDarkMode={false}
+          onToggleDarkMode={() => {}}
           onCreateInvoice={handleCreateInvoice}
         />
         
@@ -869,7 +824,7 @@ function InvoicesContent() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
                   Invoices
                 </h2>
                   {searchParams.get('status') && (
@@ -916,20 +871,20 @@ function InvoicesContent() {
               {isLoadingInvoices ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className={`rounded-lg p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                    <div key={i} className="rounded-lg p-6 bg-white/70 border border-gray-200 backdrop-blur-sm">
                       <div className="animate-pulse">
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center space-x-3">
-                            <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
+                            <div className="w-12 h-12 bg-gray-300 rounded-lg"></div>
                             <div>
-                              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-2"></div>
-                              <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
+                              <div className="h-4 bg-gray-300 rounded w-32 mb-2"></div>
+                              <div className="h-3 bg-gray-300 rounded w-24"></div>
                             </div>
                           </div>
-                          <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+                          <div className="h-6 bg-gray-300 rounded w-16"></div>
                         </div>
-                        <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-full mb-2"></div>
-                        <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
+                        <div className="h-3 bg-gray-300 rounded w-full mb-2"></div>
+                        <div className="h-3 bg-gray-300 rounded w-3/4"></div>
                       </div>
                     </div>
                   ))}
@@ -970,7 +925,6 @@ function InvoicesContent() {
                     <InvoiceCard
                       key={invoice.id}
                       invoice={invoice}
-                      isDarkMode={isDarkMode}
                       handleViewInvoice={handleViewInvoice}
                       handleDownloadPDF={handleDownloadPDF}
                       handleSendInvoice={handleSendInvoice}
@@ -989,15 +943,15 @@ function InvoicesContent() {
                   ))}
                 </div>
               ) : (
-                <div className={`rounded-lg p-12 text-center ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
-                  <div className={`inline-flex items-center justify-center w-20 h-20 rounded-xl mb-6 ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
-                    <FileText className="h-10 w-10 text-gray-500 dark:text-gray-400" />
+                <div className="rounded-lg p-12 text-center bg-white/70 border border-gray-200 backdrop-blur-sm">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl mb-6 bg-gray-100">
+                    <FileText className="h-10 w-10 text-gray-500" />
                   </div>
                   
-                  <h3 className="text-xl font-semibold mb-3" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  <h3 className="text-xl font-semibold mb-3" style={{color: '#1f2937'}}>
                     No invoices found
                   </h3>
-                  <p className="text-sm mb-8 max-w-md mx-auto" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                  <p className="text-sm mb-8 max-w-md mx-auto" style={{color: '#374151'}}>
                     Create your first invoice to start managing your business finances. 
                     Choose between our quick invoice or detailed invoice with full customization.
                   </p>
@@ -1037,7 +991,6 @@ function InvoicesContent() {
           onClose={() => setShowFastInvoice(false)}
           user={user}
           getAuthHeaders={getAuthHeaders}
-          isDarkMode={isDarkMode}
           clients={clients}
           onSuccess={() => {
             setShowFastInvoice(false);
@@ -1066,7 +1019,6 @@ function InvoicesContent() {
           isOpen={showCreateInvoice}
           onClose={() => setShowCreateInvoice(false)}
           getAuthHeaders={getAuthHeaders}
-          isDarkMode={isDarkMode}
           clients={clients}
           onSuccess={() => {
             setShowCreateInvoice(false);
@@ -1095,7 +1047,6 @@ function InvoicesContent() {
           isOpen={showCreateClient}
           onClose={() => setShowCreateClient(false)}
           getAuthHeaders={getAuthHeaders}
-          isDarkMode={isDarkMode}
           onSuccess={() => {
             setShowCreateClient(false);
             // Refresh data after successful client creation
@@ -1120,26 +1071,26 @@ function InvoicesContent() {
       {/* View Invoice Modal */}
       {showViewInvoice && selectedInvoice && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className={`rounded-xl sm:rounded-2xl p-2 sm:p-4 max-w-6xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scroll-smooth custom-scrollbar ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+          <div className="rounded-xl sm:rounded-2xl p-2 sm:p-4 max-w-6xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scroll-smooth custom-scrollbar bg-white border-gray-200">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h2 className="text-base sm:text-xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Invoice Details</h2>
+              <h2 className="text-base sm:text-xl font-bold" style={{color: '#1f2937'}}>Invoice Details</h2>
               <button
                 onClick={() => setShowViewInvoice(false)}
-                className={`p-1 sm:p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+                className="p-1 sm:p-2 rounded-lg transition-colors hover:bg-gray-100"
               >
-                <X className={`h-4 w-4 sm:h-5 sm:w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
               </button>
             </div>
             
             {/* Responsive Invoice View */}
-            <div className={`w-full ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} overflow-hidden`}>
+            <div className="w-full bg-white rounded-lg border border-gray-200 overflow-hidden">
               {/* Header */}
-              <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 sm:p-6 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 sm:p-6 border-b border-gray-200">
                 <div className="w-full sm:w-auto mb-3 sm:mb-0">
-                  <h2 className={`text-lg sm:text-2xl font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <h2 className="text-lg sm:text-2xl font-bold mb-1 text-gray-900">
                     {settings.businessName || 'Your Business Name'}
                   </h2>
-                  <div className={`text-xs sm:text-sm space-y-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <div className="text-xs sm:text-sm space-y-1 text-gray-600">
                     {settings.address && <p>{settings.address}</p>}
                     {settings.businessEmail && <p>{settings.businessEmail}</p>}
                     {settings.businessPhone && <p>{settings.businessPhone}</p>}
@@ -1148,7 +1099,7 @@ function InvoicesContent() {
                 <div className="flex items-center space-x-2">
         <div 
           className={`px-3 py-1 text-xs font-medium rounded-full border`}
-          style={isDarkMode ? getTypeStyleDark(selectedInvoice.type || 'detailed') : ((selectedInvoice.type || 'detailed') === 'fast' 
+          style={((selectedInvoice.type || 'detailed') === 'fast' 
             ? { backgroundColor: '#dbeafe', color: '#1d4ed8', borderColor: '#93c5fd' }
             : { backgroundColor: '#e0e7ff', color: '#3730a3', borderColor: '#a5b4fc' }
           )}
@@ -1162,22 +1113,22 @@ function InvoicesContent() {
               </div>
               
               {/* Invoice Details */}
-              <div className={`p-3 sm:p-6 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                <h3 className={`text-sm sm:text-base font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Invoice Details</h3>
+              <div className={`p-3 sm:p-6 border-b ${'border-gray-200'}`}>
+                <h3 className={`text-sm sm:text-base font-semibold mb-2 ${'text-gray-900'}`}>Invoice Details</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
                   <div>
-                    <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Invoice Number:</span>
-                    <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>#{selectedInvoice.invoiceNumber || 'N/A'}</p>
+                    <span className={`font-medium ${'text-gray-700'}`}>Invoice Number:</span>
+                    <p className={'text-gray-600'}>#{selectedInvoice.invoiceNumber || 'N/A'}</p>
                   </div>
                   <div>
-                    <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Date:</span>
-                    <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                    <span className={`font-medium ${'text-gray-700'}`}>Date:</span>
+                    <p className={'text-gray-600'}>
                       {selectedInvoice.createdAt ? new Date(selectedInvoice.createdAt).toLocaleDateString() : 'N/A'}
                     </p>
                   </div>
                   <div>
-                    <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Due Date:</span>
-                    <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                    <span className={`font-medium ${'text-gray-700'}`}>Due Date:</span>
+                    <p className={'text-gray-600'}>
                       {selectedInvoice.dueDate ? new Date(selectedInvoice.dueDate).toLocaleDateString() : 'N/A'}
                     </p>
                   </div>
@@ -1185,13 +1136,13 @@ function InvoicesContent() {
               </div>
 
               {/* Bill To */}
-              <div className={`p-3 sm:p-6 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                <h3 className={`text-sm sm:text-base font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Bill To</h3>
+              <div className={`p-3 sm:p-6 border-b ${'border-gray-200'}`}>
+                <h3 className={`text-sm sm:text-base font-semibold mb-2 ${'text-gray-900'}`}>Bill To</h3>
                 <div className="text-xs sm:text-sm">
-                  <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedInvoice.client?.name || 'N/A'}</p>
-                  <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>{selectedInvoice.client?.email || 'N/A'}</p>
-                  {selectedInvoice.client?.phone && <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>{selectedInvoice.client.phone}</p>}
-                  {selectedInvoice.client?.address && <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>{selectedInvoice.client.address}</p>}
+                  <p className={`font-medium ${'text-gray-900'}`}>{selectedInvoice.client?.name || 'N/A'}</p>
+                  <p className={'text-gray-600'}>{selectedInvoice.client?.email || 'N/A'}</p>
+                  {selectedInvoice.client?.phone && <p className={'text-gray-600'}>{selectedInvoice.client.phone}</p>}
+                  {selectedInvoice.client?.address && <p className={'text-gray-600'}>{selectedInvoice.client.address}</p>}
                 </div>
               </div>
               
@@ -1206,26 +1157,26 @@ function InvoicesContent() {
                       <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs sm:text-sm font-medium">Total</th>
                     </tr>
                   </thead>
-                  <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                  <tbody className={`divide-y ${'divide-gray-200'}`}>
                     {selectedInvoice.items?.map((item, index) => (
-                      <tr key={item.id || index} className={isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}>
-                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      <tr key={item.id || index} className={'hover:bg-gray-50'}>
+                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-900'}`}>
                           {item.description || 'Service'}
                         </td>
-                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>1</td>
-                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-600'}`}>1</td>
+                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right ${'text-gray-900'}`}>
                           ${(parseFloat(item.amount?.toString() || '0') || 0).toFixed(2)}
                         </td>
-                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium ${'text-gray-900'}`}>
                           ${(parseFloat(item.amount?.toString() || '0') || 0).toFixed(2)}
                         </td>
                       </tr>
                     )) || (
                       <tr>
-                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Service</td>
-                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>1</td>
-                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>$0.00</td>
-                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>$0.00</td>
+                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-900'}`}>Service</td>
+                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-600'}`}>1</td>
+                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right ${'text-gray-900'}`}>$0.00</td>
+                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium ${'text-gray-900'}`}>$0.00</td>
                       </tr>
                     )}
                   </tbody>
@@ -1236,25 +1187,25 @@ function InvoicesContent() {
               <div className="p-3 sm:p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                   <div className="w-full sm:w-auto">
-                    <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Thank you for your business!</p>
+                    <p className={`text-xs sm:text-sm ${'text-gray-600'}`}>Thank you for your business!</p>
                   </div>
                   <div className="w-full sm:w-64">
                     <div className="space-y-1">
                       <div className="flex justify-between text-xs sm:text-sm">
-                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Subtotal:</span>
-                        <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>${(selectedInvoice.subtotal || 0).toFixed(2)}</span>
+                        <span className={'text-gray-600'}>Subtotal:</span>
+                        <span className={'text-gray-900'}>${(selectedInvoice.subtotal || 0).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-xs sm:text-sm">
-                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Discount:</span>
-                        <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>${(selectedInvoice.discount || 0).toFixed(2)}</span>
+                        <span className={'text-gray-600'}>Discount:</span>
+                        <span className={'text-gray-900'}>${(selectedInvoice.discount || 0).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-xs sm:text-sm">
-                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Tax ({(selectedInvoice.taxRate || 0) * 100}%):</span>
-                        <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>${(selectedInvoice.taxAmount || 0).toFixed(2)}</span>
+                        <span className={'text-gray-600'}>Tax ({(selectedInvoice.taxRate || 0) * 100}%):</span>
+                        <span className={'text-gray-900'}>${(selectedInvoice.taxAmount || 0).toFixed(2)}</span>
                       </div>
-                      <div className={`flex justify-between text-xs sm:text-sm font-bold border-t pt-1 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                        <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>Total:</span>
-                        <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>${(selectedInvoice.total || 0).toFixed(2)}</span>
+                      <div className={`flex justify-between text-xs sm:text-sm font-bold border-t pt-1 ${'border-gray-200'}`}>
+                        <span className={'text-gray-900'}>Total:</span>
+                        <span className={'text-gray-900'}>${(selectedInvoice.total || 0).toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
@@ -1263,35 +1214,35 @@ function InvoicesContent() {
 
               {/* Notes */}
               {selectedInvoice.notes && (
-                <div className={`p-3 sm:p-6 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <h3 className={`text-sm sm:text-base font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Notes</h3>
-                  <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{selectedInvoice.notes}</p>
+                <div className={`p-3 sm:p-6 border-t ${'border-gray-200'}`}>
+                  <h3 className={`text-sm sm:text-base font-semibold mb-2 ${'text-gray-900'}`}>Notes</h3>
+                  <p className={`text-xs sm:text-sm ${'text-gray-600'}`}>{selectedInvoice.notes}</p>
                 </div>
               )}
 
               {/* Enhanced Features - Only for Detailed Invoices */}
               {selectedInvoice.type === 'detailed' && (selectedInvoice.paymentTerms || selectedInvoice.lateFees || selectedInvoice.reminders) && (
-                <div className={`p-3 sm:p-6 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <h3 className={`text-sm sm:text-base font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Enhanced Features</h3>
+                <div className={`p-3 sm:p-6 border-t ${'border-gray-200'}`}>
+                  <h3 className={`text-sm sm:text-base font-semibold mb-3 ${'text-gray-900'}`}>Enhanced Features</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs sm:text-sm">
                     {selectedInvoice.paymentTerms && (
-                      <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                      <div className="p-3 rounded-lg bg-gray-50">
                         <div className="flex items-center space-x-2 mb-2">
                           <CreditCard className="h-4 w-4 text-blue-500" />
-                          <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Payment Terms</span>
+                          <span className={`font-medium ${'text-gray-700'}`}>Payment Terms</span>
                         </div>
-                        <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                        <p className={'text-gray-600'}>
                           {selectedInvoice.paymentTerms.enabled ? selectedInvoice.paymentTerms.terms : 'Not configured'}
                         </p>
                       </div>
                     )}
                     {selectedInvoice.lateFees && (
-                      <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                      <div className="p-3 rounded-lg bg-gray-50">
                         <div className="flex items-center space-x-2 mb-2">
                           <DollarSign className="h-4 w-4 text-orange-500" />
-                          <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Late Fees</span>
+                          <span className={`font-medium ${'text-gray-700'}`}>Late Fees</span>
                         </div>
-                        <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                        <p className={'text-gray-600'}>
                           {selectedInvoice.lateFees.enabled 
                             ? `${selectedInvoice.lateFees.type === 'fixed' ? '$' : ''}${selectedInvoice.lateFees.amount}${selectedInvoice.lateFees.type === 'percentage' ? '%' : ''} after ${selectedInvoice.lateFees.gracePeriod} days`
                             : 'Not configured'
@@ -1300,12 +1251,12 @@ function InvoicesContent() {
                       </div>
                     )}
                     {selectedInvoice.reminders && (
-                      <div className={`p-3 rounded-lg ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                      <div className="p-3 rounded-lg bg-gray-50">
                         <div className="flex items-center space-x-2 mb-2">
                           <Bell className="h-4 w-4 text-green-500" />
-                          <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Auto Reminders</span>
+                          <span className={`font-medium ${'text-gray-700'}`}>Auto Reminders</span>
                         </div>
-                        <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                        <p className={'text-gray-600'}>
                           {selectedInvoice.reminders.enabled 
                             ? (selectedInvoice.reminders.useSystemDefaults 
                               ? 'Smart System' 

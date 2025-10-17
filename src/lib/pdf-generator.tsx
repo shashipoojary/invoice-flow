@@ -359,6 +359,8 @@ const formatCurrency = (amount: number) => {
         .client-section { 
           margin-bottom: 30px; 
           margin-top: 20px; 
+          min-height: 0; /* Allow flex shrinking */
+          overflow-wrap: break-word; /* Handle long text */
         }
         .section-title { 
           font-size: 11px; 
@@ -371,6 +373,8 @@ const formatCurrency = (amount: number) => {
         .client-info { 
           padding: 15px; 
           margin-top: 8px;
+          min-height: 0; /* Allow content to determine height */
+          overflow-wrap: break-word; /* Handle long text */
         }
         .client-name { 
           font-size: 13px; 
@@ -382,6 +386,8 @@ const formatCurrency = (amount: number) => {
           font-size: 10px; 
           color: #666666; 
           line-height: 1.5; 
+          overflow-wrap: break-word; /* Handle long text */
+          word-break: break-word; /* Break long words if needed */
         }
         .items-table { 
           width: 100%; 

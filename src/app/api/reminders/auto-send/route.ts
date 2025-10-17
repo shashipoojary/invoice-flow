@@ -17,14 +17,9 @@ export async function POST(request: NextRequest) {
         clients (
           name,
           email,
-          company
-        ),
-        business_settings (
-          business_name,
-          email,
+          company,
           phone,
-          logo,
-          tagline
+          address
         )
       `)
       .eq('status', 'sent')
@@ -39,24 +34,37 @@ export async function POST(request: NextRequest) {
     const sentReminders = [];
 
     for (const invoice of overdueInvoices || []) {
-      // Skip if reminders are disabled for this invoice
-      if (!invoice.reminder_settings?.enabled) {
+      // Check user-level reminder settings first
+      const { data: userSettings } = await supabase
+        .from('user_settings')
+        .select('reminders')
+        .eq('user_id', invoice.user_id)
+        .single();
+
+      // Skip if user has disabled reminders globally
+      if (userSettings?.reminders?.enabled === false) {
         continue;
       }
 
-      const dueDate = new Date(invoice.due_date);
-      const currentDate = new Date();
-      const overdueDays = Math.ceil((currentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-
-      // Parse reminder settings
+      // Parse reminder settings first
       let reminderSettings = null;
       try {
         reminderSettings = typeof invoice.reminder_settings === 'string' 
           ? JSON.parse(invoice.reminder_settings) 
           : invoice.reminder_settings;
       } catch (error) {
+        console.log(`Failed to parse reminder settings for invoice ${invoice.id}:`, error);
         continue;
       }
+
+      // Skip if reminders are disabled for this invoice
+      if (!reminderSettings?.enabled) {
+        continue;
+      }
+
+      const dueDate = new Date(invoice.due_date);
+      const currentDate = new Date();
+      const overdueDays = Math.ceil((currentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
 
       // Determine which reminder schedule to use
       let reminderConfig = null;

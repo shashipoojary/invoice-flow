@@ -61,10 +61,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 30,
+    minHeight: 0, // Allow flex shrinking
   },
   clientInfo: {
     flexDirection: 'column',
     width: '45%',
+    minHeight: 0, // Allow flex shrinking
   },
   sectionTitle: {
     fontSize: 12,
@@ -78,6 +80,8 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#6B7280',
     lineHeight: 1.4,
+    minHeight: 0, // Allow content to determine height
+    flexShrink: 1, // Allow shrinking if needed
   },
   invoiceDetails: {
     flexDirection: 'column',

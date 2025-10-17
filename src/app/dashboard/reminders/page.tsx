@@ -48,40 +48,8 @@ export default function ReminderHistoryPage() {
   const [reminders, setReminders] = useState<ReminderHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const savedDarkMode = localStorage.getItem('darkMode');
-      return savedDarkMode === 'true';
-    }
-    return false;
-  });
 
-  // Dark mode toggle
-  const toggleDarkMode = useCallback(() => {
-    setIsDarkMode(prev => {
-      const newMode = !prev;
-      localStorage.setItem('darkMode', newMode.toString());
-      // Sync with html element
-      if (newMode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      return newMode;
-    });
-  }, []);
 
-  // Sync dark mode with document
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    
-    // Show content after React loads
-    document.body.classList.add('loaded');
-  }, [isDarkMode]);
 
 
   const fetchReminderHistory = async () => {
@@ -197,7 +165,7 @@ export default function ReminderHistoryPage() {
 
   if (authLoading) {
     return (
-      <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
+      <div className={`min-h-screen transition-colors duration-200 ${'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
         </div>
@@ -207,7 +175,7 @@ export default function ReminderHistoryPage() {
 
   if (!user) {
     return (
-      <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
+      <div className={`min-h-screen transition-colors duration-200 ${'bg-white'}`}>
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Please log in to access reminders</h1>
@@ -218,11 +186,11 @@ export default function ReminderHistoryPage() {
   }
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
+    <div className={`min-h-screen transition-colors duration-200 ${'bg-white'}`}>
       <div className="flex h-screen">
         <ModernSidebar 
-          isDarkMode={isDarkMode} 
-          onToggleDarkMode={toggleDarkMode}
+          isDarkMode={false} 
+          onToggleDarkMode={() => {}}
           onCreateInvoice={() => {}} // Not needed for reminders page
         />
         
@@ -231,7 +199,7 @@ export default function ReminderHistoryPage() {
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between">
-            <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+            <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
               Reminder History
             </h2>
              <button
@@ -247,17 +215,13 @@ export default function ReminderHistoryPage() {
         {/* Search */}
         <div className="mb-6">
           <div className="relative max-w-md w-full">
-            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${'text-gray-500'}`} />
             <input
               type="text"
               placeholder="Search reminders..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={`w-full pl-10 pr-4 py-2 rounded-lg border text-sm ${
-                isDarkMode 
-                  ? 'border-gray-600 bg-gray-800 text-gray-300 placeholder-gray-400' 
-                  : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
-              } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              className="w-full pl-10 pr-4 py-2 rounded-lg border text-sm border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -265,7 +229,7 @@ export default function ReminderHistoryPage() {
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className={`rounded-lg p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+              <div key={i} className="rounded-lg p-6 bg-white/70 border border-gray-200 backdrop-blur-sm">
                 <div className="animate-pulse">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
@@ -291,19 +255,19 @@ export default function ReminderHistoryPage() {
         ) : (
           <div className="space-y-4">
             {filteredReminders.map((reminder) => (
-              <div key={reminder.id} className={`rounded-xl p-4 sm:p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm hover:shadow-lg transition-all duration-200`}>
+              <div key={reminder.id} className="rounded-xl p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm hover:shadow-lg transition-all duration-200">
                 {/* Mobile Layout */}
                 <div className="block sm:hidden">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-gray-100">
                         <Mail className="h-5 w-5 text-gray-600" />
                       </div>
                       <div>
-                        <div className={`text-sm font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        <div className="text-sm font-semibold text-gray-900">
                           {reminder.invoice.invoice_number}
                         </div>
-                         <div className={`text-xs font-semibold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                         <div className="text-xs font-semibold text-green-600">
                            ${reminder.invoice.total.toLocaleString()}
                          </div>
                       </div>
@@ -317,18 +281,18 @@ export default function ReminderHistoryPage() {
                   
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center justify-between">
-                      <span className={`text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Client:</span>
-                      <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{reminder.invoice.clients.name}</span>
+                      <span className="text-xs font-medium text-gray-700">Client:</span>
+                      <span className="text-xs text-gray-600">{reminder.invoice.clients.name}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className={`text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Status:</span>
+                      <span className="text-xs font-medium text-gray-700">Status:</span>
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(reminder.invoice.status)}`}>
                         {reminder.invoice.status}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className={`text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Sent:</span>
-                      <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <span className="text-xs font-medium text-gray-700">Sent:</span>
+                      <span className="text-xs text-gray-600">
                         {new Date(reminder.sent_at).toLocaleDateString()}
                       </span>
                     </div>
@@ -345,11 +309,7 @@ export default function ReminderHistoryPage() {
                       </button>
                       <button
                         onClick={() => window.open(`/invoice/${reminder.invoice_id}`, '_blank')}
-                        className={`p-2 rounded-lg transition-colors ${
-                          isDarkMode 
-                            ? 'bg-gray-600 text-white hover:bg-gray-700' 
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        }`}
+                        className="p-2 rounded-lg transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300"
                         title="View invoice"
                       >
                         <Eye className="h-4 w-4" />
@@ -363,12 +323,12 @@ export default function ReminderHistoryPage() {
                   <div className="grid grid-cols-12 gap-6 items-center">
                     {/* Left Section - Reminder Info */}
                     <div className="col-span-5 flex items-center space-x-4">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gray-100">
                         <Mail className="h-6 w-6 text-gray-600" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
-                          <span className="font-semibold text-base" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                          <span className="font-semibold text-base" style={{color: '#1f2937'}}>
                             {reminder.invoice.invoice_number}
                           </span>
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getReminderTypeColor(reminder.reminder_type)}`}>
@@ -376,10 +336,10 @@ export default function ReminderHistoryPage() {
                           </span>
                         </div>
                         <div className="flex items-center space-x-4 text-sm">
-                          <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>
+                          <span className={'text-gray-500'}>
                             {reminder.invoice.clients.name}
                           </span>
-                          <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>
+                          <span className={'text-gray-500'}>
                             {reminder.invoice.clients.email}
                           </span>
                         </div>
@@ -389,7 +349,7 @@ export default function ReminderHistoryPage() {
                     {/* Middle Section - Amount & Status */}
                     <div className="col-span-4 flex items-center justify-center">
                       <div className="text-center">
-                         <div className={`text-lg font-semibold mb-1 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                         <div className="text-lg font-semibold mb-1 text-green-600">
                            ${reminder.invoice.total.toLocaleString()}
                          </div>
                         <div className="flex items-center justify-center space-x-3">
@@ -397,7 +357,7 @@ export default function ReminderHistoryPage() {
                             {reminder.invoice.status}
                           </span>
                         </div>
-                        <div className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <div className={`text-xs mt-1 ${'text-gray-500'}`}>
                           Sent: {new Date(reminder.sent_at).toLocaleDateString()}
                         </div>
                       </div>
@@ -414,11 +374,7 @@ export default function ReminderHistoryPage() {
                       </button>
                       <button
                         onClick={() => window.open(`/invoice/${reminder.invoice_id}`, '_blank')}
-                        className={`p-2 rounded-lg transition-colors ${
-                          isDarkMode 
-                            ? 'bg-gray-600 text-white hover:bg-gray-700' 
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        }`}
+                        className="p-2 rounded-lg transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300"
                         title="View invoice"
                       >
                         <Eye className="h-4 w-4" />
@@ -430,13 +386,13 @@ export default function ReminderHistoryPage() {
             ))}
 
             {filteredReminders.length === 0 && !loading && (
-              <div className={`rounded-lg p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+              <div className="rounded-lg p-6 bg-white/70 border border-gray-200 backdrop-blur-sm">
                 <div className="text-center py-12">
-                  <Mail className={`mx-auto h-12 w-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`} />
-                  <h3 className={`mt-2 text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <Mail className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">
                     No reminders found
                   </h3>
-                  <p className={`mt-1 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <p className={`mt-1 text-sm ${'text-gray-500'}`}>
                     {searchTerm ? 'Try adjusting your search terms.' : 'No automated reminders have been sent yet.'}
                   </p>
                 </div>

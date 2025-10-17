@@ -143,13 +143,6 @@
   --shadow-enterprise-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-@theme dark {
-  --color-background: #000000;
-  --color-foreground: #ffffff;
-  --color-muted: #111111;
-  --color-muted-foreground: #888888;
-  --color-border: #333333;
-}
 
 @layer base {
   * {
@@ -162,7 +155,7 @@
   }
 
   body {
-    background-color: #ffffff !important;
+    background-color: #ffffff;
     color: var(--foreground);
     font-family: var(--font-poppins), system-ui, -apple-system, sans-serif;
     line-height: 1.6;
@@ -171,18 +164,6 @@
     font-weight: 400;
     overflow-x: hidden;
     scroll-behavior: smooth;
-  }
-
-  .dark body {
-    background-color: #000000 !important;
-  }
-  
-  html {
-    background-color: #ffffff !important;
-  }
-  
-  .dark html {
-    background-color: #000000 !important;
   }
 
   /* Professional Scrollbar */
@@ -237,13 +218,6 @@
     background: rgba(0, 0, 0, 0.4);
   }
 
-  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-  }
-
-  .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.4);
-  }
 }
 
 @layer components {
@@ -265,8 +239,4 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
-  .dark .glass-effect {
-    background: rgba(15, 20, 25, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
 }

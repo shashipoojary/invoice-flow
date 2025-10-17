@@ -19,13 +19,6 @@ export default function ClientsPage() {
   const { toasts, removeToast, showSuccess, showError } = useToast();
   
   // State
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const savedDarkMode = localStorage.getItem('darkMode');
-      return savedDarkMode === 'true';
-    }
-    return false;
-  });
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [hasLoadedData, setHasLoadedData] = useState(false);
@@ -44,32 +37,7 @@ export default function ClientsPage() {
     isLoading: false
   });
 
-  // Dark mode toggle
-  const toggleDarkMode = useCallback(() => {
-    setIsDarkMode(prev => {
-      const newMode = !prev;
-      localStorage.setItem('darkMode', newMode.toString());
-      // Sync with html element
-      if (newMode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      return newMode;
-    });
-  }, []);
 
-  // Sync dark mode with document
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    
-    // Show content after React loads
-    document.body.classList.add('loaded');
-  }, [isDarkMode]);
 
   // Create invoice handler
   const handleCreateInvoice = useCallback(() => {
@@ -127,17 +95,16 @@ export default function ClientsPage() {
   }, [getAuthHeaders, showSuccess, showError]);
 
   // Memoized Client Card Component
-  const ClientCard = useCallback(({ client, isDarkMode, handleViewClient, handleEditClient, handleDeleteClient, isDeleting }: {
+  const ClientCard = useCallback(({ client, handleViewClient, handleEditClient, handleDeleteClient, isDeleting }: {
     client: Client;
-    isDarkMode: boolean;
     handleViewClient: (client: Client) => void;
     handleEditClient: (client: Client) => void;
     handleDeleteClient: (client: Client) => void;
     isDeleting: string | null;
   }) => (
-    <div className={`rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm ${isDeleting === client.id ? 'opacity-50 pointer-events-none' : ''}`}>
+    <div className={`rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] bg-white/70 border border-gray-200 backdrop-blur-sm ${isDeleting === client.id ? 'opacity-50 pointer-events-none' : ''}`}>
       <div className="flex items-start justify-between mb-4">
-        <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
+        <div className="p-3 rounded-xl bg-indigo-50">
           <Building2 className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
         </div>
         <div className="flex space-x-2">
@@ -184,40 +151,29 @@ export default function ClientsPage() {
         </div>
       </div>
       
-      <h3 className="font-heading text-lg font-semibold mb-2" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+      <h3 className="font-heading text-lg font-semibold mb-2" style={{color: '#1f2937'}}>
         {client.name}
       </h3>
       {client.company && (
-        <p className="text-sm mb-1" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+        <p className="text-sm mb-1" style={{color: '#374151'}}>
           {client.company}
         </p>
       )}
-      <p className="text-sm mb-4" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+      <p className="text-sm mb-4" style={{color: '#374151'}}>
         {client.email}
       </p>
       
       <div className="flex items-center justify-between">
-        <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+        <div className="text-sm" style={{color: '#374151'}}>
           Added {client.createdAt ? new Date(client.createdAt).toLocaleDateString() : 'Recently'}
         </div>
-        <div className="text-sm" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+        <div className="text-sm" style={{color: '#374151'}}>
           Client
         </div>
       </div>
     </div>
   ), []);
 
-  // Load dark mode preference
-  useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    setIsDarkMode(savedDarkMode);
-    
-    if (savedDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, []);
 
   // Load data on mount - prevent infinite loop with hasLoadedData flag
   useEffect(() => {
@@ -247,7 +203,7 @@ export default function ClientsPage() {
   // Only show loading spinner if user is not authenticated yet
   if (loading && !user) {
     return (
-      <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
+      <div className="min-h-screen transition-colors duration-200 bg-white">
         <div className="flex items-center justify-center h-screen">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
         </div>
@@ -257,7 +213,7 @@ export default function ClientsPage() {
 
   if (!user) {
     return (
-      <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
+      <div className="min-h-screen transition-colors duration-200 bg-white">
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Please log in to access the clients</h1>
@@ -268,12 +224,12 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
+    <div className="min-h-screen transition-colors duration-200 bg-white">
       <div className="flex h-screen">
         <ModernSidebar 
-          isDarkMode={isDarkMode}
-          onToggleDarkMode={toggleDarkMode}
           onCreateInvoice={handleCreateInvoice}
+          isDarkMode={false}
+          onToggleDarkMode={() => {}}
         />
         
         <main className="flex-1 lg:ml-0 overflow-y-auto scroll-smooth custom-scrollbar">
@@ -282,7 +238,7 @@ export default function ClientsPage() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
                     Clients
                   </h2>
                 </div>
@@ -299,7 +255,7 @@ export default function ClientsPage() {
               {isLoadingClients ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className={`rounded-lg p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                    <div key={i} className="rounded-lg p-6 bg-white/70 border border-gray-200 backdrop-blur-sm">
                       <div className="animate-pulse">
                         <div className="flex items-center space-x-3 mb-4">
                           <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
@@ -320,7 +276,6 @@ export default function ClientsPage() {
                     <ClientCard
                       key={client.id}
                       client={client}
-                      isDarkMode={isDarkMode}
                       handleViewClient={handleViewClient}
                       handleEditClient={handleEditClient}
                       handleDeleteClient={handleDeleteClient}
@@ -329,15 +284,15 @@ export default function ClientsPage() {
                   ))}
                 </div>
               ) : (
-                <div className={`rounded-lg p-12 text-center ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
-                  <div className={`inline-flex items-center justify-center w-20 h-20 rounded-xl mb-6 ${isDarkMode ? 'bg-gray-700/50' : 'bg-gray-100'}`}>
+                <div className="rounded-lg p-12 text-center bg-white/70 border border-gray-200 backdrop-blur-sm">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl mb-6 bg-gray-100">
                     <Users className="h-10 w-10 text-gray-500 dark:text-gray-400" />
                   </div>
                   
-                  <h3 className="text-xl font-semibold mb-3" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  <h3 className="text-xl font-semibold mb-3" style={{color: '#1f2937'}}>
                     No clients found
                   </h3>
-                  <p className="text-sm mb-8 max-w-md mx-auto" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                  <p className="text-sm mb-8 max-w-md mx-auto" style={{color: '#374151'}}>
                     Start building your client base by adding your first client. 
                     You can add contact information, company details, and more.
                   </p>
@@ -367,7 +322,6 @@ export default function ClientsPage() {
           isOpen={showCreateClient}
           onClose={() => setShowCreateClient(false)}
           getAuthHeaders={getAuthHeaders}
-          isDarkMode={isDarkMode}
           onSuccess={() => {
             setShowCreateClient(false);
             // Refresh data after successful client creation
@@ -397,7 +351,6 @@ export default function ClientsPage() {
             setSelectedClient(null);
           }}
           getAuthHeaders={getAuthHeaders}
-          isDarkMode={isDarkMode}
           editingClient={selectedClient}
           onSuccess={() => {
             setShowEditClient(false);
@@ -423,34 +376,34 @@ export default function ClientsPage() {
       {/* View Client Modal */}
       {showViewClient && selectedClient && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className={`rounded-xl sm:rounded-2xl p-2 sm:p-4 max-w-2xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scroll-smooth custom-scrollbar ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
+          <div className="rounded-xl sm:rounded-2xl p-2 sm:p-4 max-w-2xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scroll-smooth custom-scrollbar bg-white border-gray-200">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h2 className="text-base sm:text-xl font-bold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>Client Details</h2>
+              <h2 className="text-base sm:text-xl font-bold" style={{color: '#1f2937'}}>Client Details</h2>
               <button
                 onClick={() => {
                   setShowViewClient(false);
                   setSelectedClient(null);
                 }}
-                className={`p-1 sm:p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+                className="p-1 sm:p-2 rounded-lg transition-colors hover:bg-gray-100"
               >
-                <X className={`h-4 w-4 sm:h-5 sm:w-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
               </button>
             </div>
             
             {/* Client Details */}
-            <div className={`w-full ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} overflow-hidden`}>
+            <div className="w-full bg-white rounded-lg border border-gray-200 overflow-hidden">
               {/* Header */}
-              <div className={`p-3 sm:p-6 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <div className="p-3 sm:p-6 border-b border-gray-200">
                 <div className="flex items-center space-x-4">
-                  <div className={`p-3 rounded-xl ${isDarkMode ? 'bg-indigo-500/20' : 'bg-indigo-50'}`}>
+                  <div className="p-3 rounded-xl bg-indigo-50">
                     <Users className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
                   </div>
                   <div>
-                    <h3 className={`text-lg sm:text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                    <h3 className="text-lg sm:text-2xl font-bold text-gray-900">
                       {selectedClient.name}
                     </h3>
                     {selectedClient.company && (
-                      <p className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      <p className="text-sm sm:text-base text-gray-600">
                         {selectedClient.company}
                       </p>
                     )}
@@ -461,22 +414,22 @@ export default function ClientsPage() {
               {/* Contact Information */}
               <div className="p-3 sm:p-6 space-y-4">
                 <div>
-                  <h4 className={`text-sm sm:text-base font-semibold mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Contact Information</h4>
+                  <h4 className="text-sm sm:text-base font-semibold mb-2 text-gray-900">Contact Information</h4>
                   <div className="space-y-3">
                     <div className="flex items-center space-x-3">
-                      <Mail className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                      <span className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{selectedClient.email}</span>
+                      <Mail className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm sm:text-base text-gray-600">{selectedClient.email}</span>
                     </div>
                     {selectedClient.phone && (
                       <div className="flex items-center space-x-3">
-                        <Phone className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                        <span className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{selectedClient.phone}</span>
+                        <Phone className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm sm:text-base text-gray-600">{selectedClient.phone}</span>
                       </div>
                     )}
                     {selectedClient.address && (
                       <div className="flex items-start space-x-3">
-                        <MapPin className={`h-4 w-4 mt-0.5 flex-shrink-0 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                        <span className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{selectedClient.address}</span>
+                        <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-gray-500" />
+                        <span className="text-sm sm:text-base text-gray-600">{selectedClient.address}</span>
                       </div>
                     )}
                   </div>
@@ -484,10 +437,10 @@ export default function ClientsPage() {
                 
                 {/* Additional Info */}
                 <div>
-                  <h4 className={`text-sm sm:text-base font-semibold mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Additional Information</h4>
+                  <h4 className="text-sm sm:text-base font-semibold mb-2 text-gray-900">Additional Information</h4>
                   <div className="flex items-center space-x-3">
-                    <Calendar className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                    <span className={`text-sm sm:text-base ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm sm:text-base text-gray-600">
                       Client since {new Date(selectedClient.createdAt).toLocaleDateString()}
                     </span>
                   </div>
@@ -504,7 +457,6 @@ export default function ClientsPage() {
           isOpen={showCreateInvoice}
           onClose={() => setShowCreateInvoice(false)}
           getAuthHeaders={getAuthHeaders}
-          isDarkMode={isDarkMode}
           clients={clients}
           onSuccess={() => {
             setShowCreateInvoice(false);

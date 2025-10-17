@@ -141,6 +141,71 @@ export async function PUT(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    // Get authenticated user
+    const user = await getAuthenticatedUser(request)
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { id: invoiceId } = await params
+
+    if (!invoiceId) {
+      return NextResponse.json({ error: 'Invoice ID is required' }, { status: 400 })
+    }
+
+    const body = await request.json()
+    const { reminderSettings, paymentTerms, lateFees, theme } = body
+
+    // Prepare update data
+    const updateData: any = {}
+    
+    if (reminderSettings !== undefined) {
+      updateData.reminder_settings = JSON.stringify(reminderSettings)
+    }
+    
+    if (paymentTerms !== undefined) {
+      updateData.payment_terms = JSON.stringify(paymentTerms)
+    }
+    
+    if (lateFees !== undefined) {
+      updateData.late_fees = JSON.stringify(lateFees)
+    }
+    
+    if (theme !== undefined) {
+      updateData.theme = JSON.stringify(theme)
+    }
+
+    // Update invoice in Supabase
+    const { data, error } = await supabaseAdmin
+      .from('invoices')
+      .update(updateData)
+      .eq('id', invoiceId)
+      .eq('user_id', user.id) // Ensure user can only update their own invoices
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error updating invoice:', error)
+      return NextResponse.json({ error: 'Failed to update invoice' }, { status: 500 })
+    }
+
+    if (!data) {
+      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
+    }
+
+    return NextResponse.json({ invoice: data })
+
+  } catch (error) {
+    console.error('Error updating invoice:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

@@ -39,7 +39,9 @@ export async function POST(request: NextRequest) {
         clients (
           name,
           email,
-          company
+          company,
+          phone,
+          address
         )
       `)
       .eq('id', invoiceId)
@@ -73,18 +75,60 @@ export async function POST(request: NextRequest) {
       console.error('Error fetching user settings:', settingsError);
     }
 
+    // Parse payment terms, late fees, and reminder settings from JSON strings
+    let paymentTerms = null;
+    let lateFees = null;
+    let reminders = null;
+    
+    if (invoice.payment_terms) {
+      try {
+        paymentTerms = typeof invoice.payment_terms === 'string' 
+          ? JSON.parse(invoice.payment_terms) 
+          : invoice.payment_terms;
+      } catch (e) {
+        console.log('Failed to parse payment_terms:', e);
+      }
+    }
+    
+    if (invoice.late_fees) {
+      try {
+        lateFees = typeof invoice.late_fees === 'string' 
+          ? JSON.parse(invoice.late_fees) 
+          : invoice.late_fees;
+      } catch (e) {
+        console.log('Failed to parse late_fees:', e);
+      }
+    }
+    
+    if (invoice.reminder_settings) {
+      try {
+        reminders = typeof invoice.reminder_settings === 'string' 
+          ? JSON.parse(invoice.reminder_settings) 
+          : invoice.reminder_settings;
+      } catch (e) {
+        console.log('Failed to parse reminder_settings:', e);
+      }
+    }
+
     // Prepare invoice data for PDF generation
     const mappedInvoice = {
       ...invoice,
       invoiceNumber: invoice.invoice_number,
       dueDate: invoice.due_date,
       createdAt: invoice.created_at,
+      issueDate: invoice.issue_date,
       client: invoice.clients,
       items: (itemsData || []).map(item => ({
         id: item.id,
         description: item.description,
         amount: item.line_total
-      }))
+      })),
+      taxRate: invoice.tax_rate || 0,
+      taxAmount: invoice.tax_amount || 0,
+      notes: invoice.notes,
+      paymentTerms,
+      lateFees,
+      reminders
     };
 
     // Prepare business settings for PDF

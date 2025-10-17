@@ -82,9 +82,11 @@ const styles = StyleSheet.create({
     marginTop: 15, // Added space to move section down
     flexDirection: 'row',
     gap: 40,
+    minHeight: 0, // Allow flex shrinking
   },
   addressColumn: {
     flex: 1,
+    minHeight: 0, // Allow flex shrinking
   },
   sectionTitleWithLine: {
     fontSize: 12,
@@ -113,6 +115,8 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#666666',
     lineHeight: 1.4,
+    minHeight: 0, // Allow content to determine height
+    flexShrink: 1, // Allow shrinking if needed
   },
   itemsTable: {
     marginBottom: 12,

@@ -590,6 +590,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
               </div>
             </div>
           )}
+
         </form>
       </div>
     </div>

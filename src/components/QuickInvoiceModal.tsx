@@ -372,10 +372,10 @@ export default function QuickInvoiceModal({
           amount: lateFees.amount,
           gracePeriod: lateFees.gracePeriod
         } : undefined,
-        reminders: reminders.enabled ? {
+        reminderSettings: reminders.enabled ? {
           enabled: true,
           useSystemDefaults: reminders.useSystemDefaults,
-          rules: reminders.rules.filter(rule => rule.enabled)
+          customRules: reminders.rules.filter(rule => rule.enabled)
         } : undefined,
         theme: {
           template: getPdfTemplate(theme.template), // Map to correct PDF template
@@ -445,10 +445,10 @@ export default function QuickInvoiceModal({
         // New features
         invoice_number: invoiceNumber,
         issue_date: issueDate,
-        reminders: reminders.enabled ? {
+        reminderSettings: reminders.enabled ? {
           enabled: true,
-          use_system_defaults: reminders.useSystemDefaults,
-          rules: reminders.rules.filter(rule => rule.enabled).map(rule => ({
+          useSystemDefaults: reminders.useSystemDefaults,
+          customRules: reminders.rules.filter(rule => rule.enabled).map(rule => ({
             type: rule.type,
             days: rule.days
           }))
@@ -572,10 +572,10 @@ export default function QuickInvoiceModal({
         // New features
         invoice_number: invoiceNumber,
         issue_date: issueDate,
-        reminders: reminders.enabled ? {
+        reminderSettings: reminders.enabled ? {
           enabled: true,
-          use_system_defaults: reminders.useSystemDefaults,
-          rules: reminders.rules.filter(rule => rule.enabled).map(rule => ({
+          useSystemDefaults: reminders.useSystemDefaults,
+          customRules: reminders.rules.filter(rule => rule.enabled).map(rule => ({
             type: rule.type,
             days: rule.days
           }))

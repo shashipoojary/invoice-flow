@@ -30,7 +30,9 @@ export async function POST(request: NextRequest) {
         clients (
           name,
           email,
-          company
+          company,
+          phone,
+          address
         )
       `)
       .eq('user_id', userId)

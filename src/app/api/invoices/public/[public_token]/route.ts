@@ -30,6 +30,7 @@ export async function GET(
           name,
           email,
           company,
+          phone,
           address
         )
       `)
@@ -47,6 +48,7 @@ export async function GET(
             name,
             email,
             company,
+            phone,
             address
           )
         `)
@@ -69,6 +71,7 @@ export async function GET(
             name,
             email,
             company,
+            phone,
             address
           )
         `)
@@ -166,6 +169,7 @@ export async function GET(
         clientName: invoice.clients?.name || 'N/A',
         clientEmail: invoice.clients?.email || 'N/A',
         clientCompany: invoice.clients?.company,
+        clientPhone: invoice.clients?.phone,
         clientAddress: invoice.clients?.address,
         items: (itemsData || []).map(item => ({
           id: item.id,

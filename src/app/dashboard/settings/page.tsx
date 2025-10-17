@@ -20,13 +20,6 @@ export default function SettingsPage() {
   const { toasts, removeToast, showSuccess, showError } = useToast();
   
   // State
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const savedDarkMode = localStorage.getItem('darkMode');
-      return savedDarkMode === 'true';
-    }
-    return false;
-  });
   const [saving, setSaving] = useState(false);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [hasLoadedData, setHasLoadedData] = useState(false);
@@ -61,32 +54,8 @@ export default function SettingsPage() {
     paymentNotes: ''
   });
 
-  // Dark mode toggle
-  const toggleDarkMode = useCallback(() => {
-    setIsDarkMode(prev => {
-      const newMode = !prev;
-      localStorage.setItem('darkMode', newMode.toString());
-      // Sync with html element
-      if (newMode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      return newMode;
-    });
-  }, []);
+  // Dark mode toggle (removed)
 
-  // Sync dark mode with document
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    
-    // Show content after React loads
-    document.body.classList.add('loaded');
-  }, [isDarkMode]);
 
   // Create invoice handler
   const handleCreateInvoice = useCallback(() => {
@@ -95,16 +64,7 @@ export default function SettingsPage() {
   }, []);
 
   // Load dark mode preference
-  useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    setIsDarkMode(savedDarkMode);
-    
-    if (savedDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, []);
+  // Dark mode useEffect (removed)
 
   // Load settings data
   useEffect(() => {
@@ -291,7 +251,7 @@ export default function SettingsPage() {
   // Only show loading spinner if user is not authenticated yet
   if (loading && !user) {
     return (
-      <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
+      <div className="min-h-screen transition-colors duration-200 bg-white">
         <div className="flex items-center justify-center h-screen">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
         </div>
@@ -301,7 +261,7 @@ export default function SettingsPage() {
 
   if (!user) {
     return (
-      <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
+      <div className="min-h-screen transition-colors duration-200 bg-white">
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Please log in to access settings</h1>
@@ -312,11 +272,11 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-black' : 'bg-white'}`}>
+    <div className="min-h-screen transition-colors duration-200 bg-white">
       <div className="flex h-screen">
         <ModernSidebar 
-          isDarkMode={isDarkMode}
-          onToggleDarkMode={toggleDarkMode}
+          isDarkMode={false}
+          onToggleDarkMode={() => {}}
           onCreateInvoice={handleCreateInvoice}
         />
         
@@ -326,7 +286,7 @@ export default function SettingsPage() {
             <div className="space-y-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
                     Settings
                   </h2>
                 </div>
@@ -346,7 +306,7 @@ export default function SettingsPage() {
 
               {/* Business Information */}
               {isLoadingSettings ? (
-                <div className={`rounded-lg p-4 sm:p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                <div className={`rounded-lg p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
                   <div className="animate-pulse">
                     <div className="flex items-center space-x-3 mb-6">
                       <div className="w-9 h-9 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
@@ -363,94 +323,90 @@ export default function SettingsPage() {
                   </div>
                 </div>
               ) : (
-                <div className={`rounded-lg p-4 sm:p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                <div className={`rounded-lg p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
                 <div className="flex items-center space-x-3 mb-6">
-                  <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`}>
+                  <div className={`p-2 rounded-lg bg-blue-100`}>
                     <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <h3 className="text-lg font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  <h3 className="text-lg font-semibold" style={{color: '#1f2937'}}>
                     Business Information
                   </h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
                       Business Name *
                     </label>
                     <input
                       type="text"
                       value={settings.businessName}
                       onChange={(e) => setSettings(prev => ({ ...prev, businessName: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
                       placeholder="Your Business Name"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
                       Business Email *
                     </label>
                     <input
                       type="email"
                       value={settings.businessEmail}
                       onChange={(e) => setSettings(prev => ({ ...prev, businessEmail: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
                       placeholder="business@example.com"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
                       Phone Number
                     </label>
                     <input
                       type="tel"
                       value={settings.businessPhone}
                       onChange={(e) => setSettings(prev => ({ ...prev, businessPhone: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
                       placeholder="+1 (555) 123-4567"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
                       Website
                     </label>
                     <input
                       type="url"
                       value={settings.website}
                       onChange={(e) => setSettings(prev => ({ ...prev, website: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
                       placeholder="https://yourwebsite.com"
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
                       Business Address
                     </label>
                     <textarea
                       value={settings.address}
                       onChange={(e) => setSettings(prev => ({ ...prev, address: e.target.value }))}
                       rows={3}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors resize-none ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors resize-none border-gray-300 bg-white text-black`}
                       placeholder="123 Business St, City, State 12345"
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
                       Business Logo
                     </label>
                     
                     
                     {/* Upload Area */}
-                    <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                      isDarkMode 
-                        ? 'border-gray-600 hover:border-gray-500 bg-gray-800/50' 
-                        : 'border-gray-300 hover:border-gray-400 bg-gray-50'
-                    }`}>
+                    <div                     className="border-2 border-dashed rounded-lg p-6 text-center transition-colors border-gray-300 hover:border-gray-400 bg-gray-50">
                       {settings.logo && settings.logo.trim() !== '' ? (
                         <div className="space-y-4">
                           <div className="flex justify-center">
@@ -465,10 +421,10 @@ export default function SettingsPage() {
                             </div>
                           </div>
                           <div>
-                            <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                            <p className="text-sm font-medium" style={{color: '#374151'}}>
                               Logo Preview
                             </p>
-                            <p className="text-xs" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                            <p className="text-xs" style={{color: '#6b7280'}}>
                               This is how your logo will appear on invoices
                             </p>
                           </div>
@@ -484,11 +440,11 @@ export default function SettingsPage() {
                               htmlFor="logo-upload"
                               className={`cursor-pointer ${isUploadingLogo ? 'pointer-events-none opacity-50' : ''}`}
                             >
-                              <div className={`flex items-center space-x-2 px-4 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:text-gray-100' : 'border-gray-300 text-gray-700 hover:text-gray-900'}`}>
+                              <div className={`flex items-center space-x-2 px-4 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-gray-300 text-gray-700 hover:text-gray-900`}>
                                 {isUploadingLogo ? (
-                                  <Loader2 className={`h-4 w-4 animate-spin ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                                  <Loader2 className={`h-4 w-4 animate-spin text-gray-500`} />
                                 ) : (
-                                  <Upload className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                                  <Upload className={`h-4 w-4 text-gray-500`} />
                                 )}
                                 <span className="text-sm">
                                   {isUploadingLogo ? 'Optimizing...' : 'Change Logo'}
@@ -502,7 +458,7 @@ export default function SettingsPage() {
                               className={`flex items-center space-x-2 px-4 py-2 border rounded-lg transition-colors ${
                                 isRemovingLogo 
                                   ? 'opacity-50 cursor-not-allowed border-gray-300 text-gray-500 dark:border-gray-600 dark:text-gray-400'
-                                  : isDarkMode 
+                                  : false 
                                     ? 'border-red-600 text-red-400 hover:text-red-300 hover:bg-red-900/20' 
                                     : 'border-red-300 text-red-600 hover:text-red-800 hover:bg-red-50'
                               }`}
@@ -522,16 +478,16 @@ export default function SettingsPage() {
                         <div className="space-y-4">
                           <div className="flex justify-center">
                             <div className={`w-24 h-24 border-2 border-dashed rounded-lg flex items-center justify-center ${
-                              isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-300 bg-gray-100'
+                              'border-gray-300 bg-gray-100'
                             }`}>
-                              <Upload className={`h-8 w-8 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                              <Upload className={`h-8 w-8 text-gray-400`} />
                             </div>
                           </div>
                           <div>
-                            <p className="text-sm font-medium" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                            <p className="text-sm font-medium" style={{color: '#374151'}}>
                               Upload your business logo
                             </p>
-                            <p className="text-xs" style={{color: isDarkMode ? '#9ca3af' : '#6b7280'}}>
+                            <p className="text-xs" style={{color: '#6b7280'}}>
                               PNG, JPG, or GIF up to 5MB
                             </p>
                           </div>
@@ -546,11 +502,11 @@ export default function SettingsPage() {
                             htmlFor="logo-upload"
                             className={`cursor-pointer ${isUploadingLogo ? 'pointer-events-none opacity-50' : ''}`}
                           >
-                            <div className={`inline-flex items-center space-x-2 px-6 py-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isDarkMode ? 'border-gray-600 text-gray-300 hover:text-gray-100' : 'border-gray-300 text-gray-700 hover:text-gray-900'}`}>
+                            <div className={`inline-flex items-center space-x-2 px-6 py-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-gray-300 text-gray-700 hover:text-gray-900`}>
                               {isUploadingLogo ? (
-                                <Loader2 className={`h-4 w-4 animate-spin ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                                <Loader2 className={`h-4 w-4 animate-spin text-gray-500`} />
                               ) : (
-                                <Upload className={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                                <Upload className={`h-4 w-4 text-gray-500`} />
                               )}
                               <span className="text-sm font-medium">
                                 {isUploadingLogo ? 'Optimizing...' : 'Choose Logo File'}
@@ -567,7 +523,7 @@ export default function SettingsPage() {
 
               {/* Payment Methods */}
               {isLoadingSettings ? (
-                <div className={`rounded-lg p-4 sm:p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+                <div className={`rounded-lg p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
                   <div className="animate-pulse">
                     <div className="flex items-center space-x-3 mb-6">
                       <div className="w-9 h-9 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
@@ -584,143 +540,143 @@ export default function SettingsPage() {
                   </div>
                 </div>
               ) : (
-              <div className={`rounded-lg p-4 sm:p-6 ${isDarkMode ? 'bg-gray-800/50 border border-gray-700' : 'bg-white/70 border border-gray-200'} backdrop-blur-sm`}>
+              <div className={`rounded-lg p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
                 <div className="flex items-center space-x-3 mb-6">
-                  <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-green-500/20' : 'bg-green-100'}`}>
+                  <div className={`p-2 rounded-lg bg-green-100`}>
                     <CreditCard className="h-5 w-5 text-green-600 dark:text-green-400" />
                   </div>
-                  <h3 className="text-lg font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  <h3 className="text-lg font-semibold" style={{color: '#1f2937'}}>
                     Payment Methods
                   </h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
                       PayPal Email
                     </label>
                     <input
                       type="email"
                       value={settings.paypalEmail}
                       onChange={(e) => setSettings(prev => ({ ...prev, paypalEmail: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
                       placeholder="paypal@example.com"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
                       Cash App ID
                     </label>
                     <input
                       type="text"
                       value={settings.cashappId}
                       onChange={(e) => setSettings(prev => ({ ...prev, cashappId: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
                       placeholder="$yourcashappid"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
                       Venmo ID
                     </label>
                     <input
                       type="text"
                       value={settings.venmoId}
                       onChange={(e) => setSettings(prev => ({ ...prev, venmoId: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
                       placeholder="@yourvenmoid"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
                       Google Pay UPI
                     </label>
                     <input
                       type="text"
                       value={settings.googlePayUpi}
                       onChange={(e) => setSettings(prev => ({ ...prev, googlePayUpi: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
                       placeholder="yourname@paytm"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
                       Apple Pay ID
                     </label>
                     <input
                       type="text"
                       value={settings.applePayId}
                       onChange={(e) => setSettings(prev => ({ ...prev, applePayId: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
                       placeholder="your-apple-pay-id"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
                       Stripe Account
                     </label>
                     <input
                       type="text"
                       value={settings.stripeAccount}
                       onChange={(e) => setSettings(prev => ({ ...prev, stripeAccount: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
                       placeholder="acct_xxxxxxxxx"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
                       Bank Account
                     </label>
                     <input
                       type="text"
                       value={settings.bankAccount}
                       onChange={(e) => setSettings(prev => ({ ...prev, bankAccount: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
                       placeholder="Account Number"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
                       Bank IFSC/SWIFT
                     </label>
                     <input
                       type="text"
                       value={settings.bankIfscSwift}
                       onChange={(e) => setSettings(prev => ({ ...prev, bankIfscSwift: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
                       placeholder="IFSC/SWIFT Code"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
                       Bank IBAN
                     </label>
                     <input
                       type="text"
                       value={settings.bankIban}
                       onChange={(e) => setSettings(prev => ({ ...prev, bankIban: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
                       placeholder="IBAN Number"
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
                       Payment Notes
                     </label>
                     <textarea
                       value={settings.paymentNotes}
                       onChange={(e) => setSettings(prev => ({ ...prev, paymentNotes: e.target.value }))}
                       rows={3}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors resize-none ${isDarkMode ? 'border-gray-600 bg-gray-800 text-white' : 'border-gray-300 bg-white text-black'}`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors resize-none border-gray-300 bg-white text-black`}
                       placeholder="Additional payment instructions or notes..."
                     />
                   </div>
@@ -744,7 +700,7 @@ export default function SettingsPage() {
           isOpen={showCreateInvoice}
           onClose={() => setShowCreateInvoice(false)}
           getAuthHeaders={getAuthHeaders}
-          isDarkMode={isDarkMode}
+          isDarkMode={false}
           clients={clients}
           onSuccess={() => {
             setShowCreateInvoice(false);

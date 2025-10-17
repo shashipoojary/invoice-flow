@@ -91,6 +91,7 @@ const styles = StyleSheet.create({
   billTo: {
     flex: 1,
     marginRight: 30,
+    minHeight: 0, // Allow flex shrinking
   },
   billToTitle: {
     fontSize: 11,
@@ -103,22 +104,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 4,
     marginBottom: 4,
+    minHeight: 0, // Allow content to determine height
+    flexShrink: 1, // Allow shrinking if needed
   },
   clientName: {
     fontSize: 10,
     fontWeight: 'normal',
     color: '#374151',
+    flexWrap: 'wrap', // Allow text wrapping
+    wordBreak: 'break-word', // Break long words if needed
   },
   clientDetailField: {
     paddingVertical: 6,
     paddingHorizontal: 10,
     marginBottom: 4,
     borderRadius: 4,
+    minHeight: 0, // Allow content to determine height
+    flexShrink: 1, // Allow shrinking if needed
   },
   clientDetailText: {
     fontSize: 10,
     color: '#374151',
     fontWeight: 'normal',
+    flexWrap: 'wrap', // Allow text wrapping
+    wordBreak: 'break-word', // Break long words if needed
   },
   invoiceDetails: {
     flex: 1,

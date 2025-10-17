@@ -276,7 +276,7 @@ export async function POST(request: NextRequest) {
       // New enhanced fields - only for detailed invoices
       payment_terms: invoiceData.type === 'fast' ? null : (invoiceData.payment_terms ? JSON.stringify(invoiceData.payment_terms) : null),
       late_fees: invoiceData.type === 'fast' ? null : (invoiceData.late_fees ? JSON.stringify(invoiceData.late_fees) : null),
-      reminder_settings: invoiceData.type === 'fast' ? null : (invoiceData.reminders ? JSON.stringify(invoiceData.reminders) : JSON.stringify({ enabled: false, useSystemDefaults: true, customRules: [] })),
+      reminder_settings: invoiceData.type === 'fast' ? null : (invoiceData.reminderSettings || invoiceData.reminders ? JSON.stringify(invoiceData.reminderSettings || invoiceData.reminders) : JSON.stringify({ enabled: false, useSystemDefaults: true, customRules: [] })),
       theme: invoiceData.type === 'fast' ? null : (invoiceData.theme ? JSON.stringify(invoiceData.theme) : null),
     };
 

@@ -32,7 +32,9 @@ export async function POST(request: NextRequest) {
         clients (
           name,
           email,
-          company
+          company,
+          phone,
+          address
         ),
         user_id
       `)
@@ -56,12 +58,32 @@ export async function POST(request: NextRequest) {
     // Get user settings for payment methods and business info
     const { data: userData } = await supabase
       .from('user_settings')
-      .select('business_settings, payment_methods')
+      .select('*')
       .eq('user_id', invoice.user_id)
       .single();
 
-    const userSettings = userData?.payment_methods || {};
-    const businessSettings = userData?.business_settings || {};
+    if (!userData) {
+      return NextResponse.json({ error: 'User settings not found' }, { status: 404 });
+    }
+
+    // Map user_settings to business settings format
+    const businessSettings = {
+      businessName: userData.business_name,
+      businessEmail: userData.business_email,
+      businessPhone: userData.business_phone,
+      address: userData.business_address,
+      logo: userData.logo || userData.logo_url,
+      bankAccount: userData.bank_account,
+      bankIfscSwift: userData.bank_ifsc_swift,
+      bankIban: userData.bank_iban,
+      paypalEmail: userData.paypal_email,
+      cashappId: userData.cashapp_id,
+      venmoId: userData.venmo_id,
+      googlePayUpi: userData.google_pay_upi,
+      applePayId: userData.apple_pay_id,
+      stripeAccount: userData.stripe_account,
+      paymentNotes: userData.payment_notes
+    };
 
     // Create reminder message based on type
     const reminderMessages = {
@@ -129,27 +151,20 @@ export async function POST(request: NextRequest) {
               </div>
 
               <!-- Payment Information -->
-              ${userSettings.paymentMethods ? `
+              ${businessSettings.paypalEmail || businessSettings.cashappId || businessSettings.venmoId || businessSettings.googlePayUpi || businessSettings.applePayId || businessSettings.bankAccount ? `
                 <div style="background-color: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 20px; margin: 24px 0;">
                   <h3 style="margin: 0 0 16px 0; color: #0369a1; font-size: 16px; font-weight: 600;">
                     Payment Methods
                   </h3>
                   <div style="color: #0369a1; font-size: 14px; line-height: 1.5;">
-                    ${Object.entries(userSettings.paymentMethods)
-                      .filter(([, value]) => value && value !== '')
-                      .map(([method, details]) => {
-                        const methodNames = {
-                          paypal: 'PayPal',
-                          cashapp: 'Cash App',
-                          venmo: 'Venmo',
-                          googlepay: 'Google Pay',
-                          applepay: 'Apple Pay',
-                          bankTransfer: 'Bank Transfer',
-                          stripe: 'Stripe',
-                          other: 'Other'
-                        };
-                        return `<div style="margin-bottom: 8px;"><strong>${methodNames[method as keyof typeof methodNames] || method}:</strong> ${details}</div>`;
-                      }).join('')}
+                    ${[
+                      businessSettings.paypalEmail ? `<div style="margin-bottom: 8px;"><strong>PayPal:</strong> ${businessSettings.paypalEmail}</div>` : '',
+                      businessSettings.cashappId ? `<div style="margin-bottom: 8px;"><strong>Cash App:</strong> ${businessSettings.cashappId}</div>` : '',
+                      businessSettings.venmoId ? `<div style="margin-bottom: 8px;"><strong>Venmo:</strong> ${businessSettings.venmoId}</div>` : '',
+                      businessSettings.googlePayUpi ? `<div style="margin-bottom: 8px;"><strong>Google Pay:</strong> ${businessSettings.googlePayUpi}</div>` : '',
+                      businessSettings.applePayId ? `<div style="margin-bottom: 8px;"><strong>Apple Pay:</strong> ${businessSettings.applePayId}</div>` : '',
+                      businessSettings.bankAccount ? `<div style="margin-bottom: 8px;"><strong>Bank Transfer:</strong> ${businessSettings.bankAccount}</div>` : ''
+                    ].filter(Boolean).join('')}
                   </div>
                 </div>
               ` : ''}

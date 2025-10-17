@@ -239,27 +239,31 @@ async function generateTemplate1DetailedPDF(
     color: rgb(0, 0, 0),
   });
 
-  // Bill to section
+  // Bill to section - Dynamic positioning
+  let billToY = height - 180;
+  
   page.drawText('Bill To:', {
     x: 50,
-    y: height - 180,
+    y: billToY,
     size: 12,
     font: boldFont,
     color: rgb(0, 0, 0),
   });
 
+  billToY -= 20;
   page.drawText(invoice.client.name, {
     x: 50,
-    y: height - 200,
+    y: billToY,
     size: 11,
     font: boldFont,
     color: rgb(0, 0, 0),
   });
 
   if (invoice.client.email) {
+    billToY -= 15;
     page.drawText(invoice.client.email, {
       x: 50,
-      y: height - 215,
+      y: billToY,
       size: 9,
       font: font,
       color: rgb(0, 0, 0),
@@ -267,9 +271,10 @@ async function generateTemplate1DetailedPDF(
   }
 
   if (invoice.client.address) {
+    billToY -= 15;
     page.drawText(invoice.client.address, {
       x: 50,
-      y: height - 230,
+      y: billToY,
       size: 9,
       font: font,
       color: rgb(0, 0, 0),
@@ -647,27 +652,31 @@ async function generateTemplate2PDF(
     color: rgb(0, 0, 0),
   });
 
-  // Bill to section
+  // Bill to section - Dynamic positioning
+  let billToY = height - 200;
+  
   page.drawText('Bill To:', {
     x: 50,
-    y: height - 200,
+    y: billToY,
     size: 12,
     font: boldFont,
     color: rgb(0, 0, 0),
   });
 
+  billToY -= 20;
   page.drawText(invoice.client.name, {
     x: 50,
-    y: height - 220,
+    y: billToY,
     size: 11,
     font: boldFont,
     color: rgb(0, 0, 0),
   });
 
   if (invoice.client.email) {
+    billToY -= 15;
     page.drawText(invoice.client.email, {
       x: 50,
-      y: height - 235,
+      y: billToY,
       size: 9,
       font: font,
       color: rgb(0, 0, 0),
@@ -675,9 +684,10 @@ async function generateTemplate2PDF(
   }
 
   if (invoice.client.address) {
+    billToY -= 15;
     page.drawText(invoice.client.address, {
       x: 50,
-      y: height - 250,
+      y: billToY,
       size: 9,
       font: font,
       color: rgb(0, 0, 0),
@@ -1587,14 +1597,24 @@ async function generateModernTemplatePDF(
     color: rgb(0.4, 0.4, 0.4),
   });
 
-  // Bill to section with modern card
-  const billToY = height - 260; // Moved up 40px total
+  // Bill to section with modern card - Dynamic positioning
+  const billToY = height - 230; // Moved up to create more space
+  let modernCurrentY = billToY - 20;
+  
+  // Calculate dynamic height based on content
+  let contentHeight = 20; // Base height for title
+  if (invoice.client.name) contentHeight += 15;
+  if (invoice.client.email) contentHeight += 15;
+  if (invoice.client.phone) contentHeight += 15;
+  if (invoice.client.company) contentHeight += 15;
+  if (invoice.client.address) contentHeight += 15; // Address includes postal code
+  contentHeight = Math.max(contentHeight, 110); // Added more bottom padding to prevent touching
   
   page.drawRectangle({
     x: 50,
-    y: billToY - 80,
-    width: 250,
-    height: 80,
+    y: billToY - contentHeight,
+    width: 280, // Reduced width
+    height: contentHeight,
     color: rgb(0.98, 0.98, 0.98),
     borderColor: rgb(0.9, 0.9, 0.9),
     borderWidth: 1,
@@ -1602,24 +1622,50 @@ async function generateModernTemplatePDF(
 
   page.drawText('BILL TO', {
     x: 60,
-    y: billToY - 20,
+    y: modernCurrentY,
     size: 10,
     font: boldFont,
     color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
   });
 
-  page.drawText(invoice.client.name, {
-    x: 60,
-    y: billToY - 35,
-    size: 9,
-    font: font,
-    color: rgb(0.4, 0.4, 0.4),
-  });
+  if (invoice.client.name) {
+    modernCurrentY -= 15;
+    page.drawText(invoice.client.name, {
+      x: 60,
+      y: modernCurrentY,
+      size: 9,
+      font: font,
+      color: rgb(0.4, 0.4, 0.4),
+    });
+  }
 
   if (invoice.client.email) {
+    modernCurrentY -= 15;
     page.drawText(invoice.client.email, {
       x: 60,
-      y: billToY - 50,
+      y: modernCurrentY,
+      size: 9,
+      font: font,
+      color: rgb(0.4, 0.4, 0.4),
+    });
+  }
+
+  if (invoice.client.phone) {
+    modernCurrentY -= 15;
+    page.drawText(invoice.client.phone, {
+      x: 60,
+      y: modernCurrentY,
+      size: 9,
+      font: font,
+      color: rgb(0.4, 0.4, 0.4),
+    });
+  }
+
+  if (invoice.client.company) {
+    modernCurrentY -= 15;
+    page.drawText(invoice.client.company, {
+      x: 60,
+      y: modernCurrentY,
       size: 9,
       font: font,
       color: rgb(0.4, 0.4, 0.4),
@@ -1627,9 +1673,12 @@ async function generateModernTemplatePDF(
   }
 
   if (invoice.client.address) {
-    page.drawText(invoice.client.address, {
+    modernCurrentY -= 15;
+    // Remove newlines and replace with spaces to keep address on one line
+    const addressText = invoice.client.address.replace(/\n/g, ', ').replace(/\r/g, '');
+    page.drawText(addressText, {
       x: 60,
-      y: billToY - 65,
+      y: modernCurrentY,
       size: 9,
       font: font,
       color: rgb(0.4, 0.4, 0.4),
@@ -1637,7 +1686,7 @@ async function generateModernTemplatePDF(
   }
 
   // Modern services table with geometric header
-  const tableY = height - 360; // Moved up 40px total
+  const tableY = height - 390; // Moved further down to prevent overlap with wider Bill To box
   
   // Geometric table header
   page.drawRectangle({
@@ -2054,13 +2103,26 @@ async function generateSimpleCleanTemplatePDF(
   });
 
   // Creative bill to section with artistic background - aligned with description column
-  const billToY = height - 200;
+  // Bill to section - Dynamic positioning to prevent overlaps
+  const billToY = height - 180; // Moved up to create more space
+  let creativeCurrentY = billToY - 15;
+  
+  // Calculate dynamic height based on content
+  let contentHeight = 20; // Base height for header
+  if (invoice.client.name) contentHeight += 18;
+  if (invoice.client.email) contentHeight += 18;
+  if (invoice.client.phone) contentHeight += 18;
+  if (invoice.client.company) contentHeight += 18;
+  if (invoice.client.address) contentHeight += 18; // Address includes postal code
+  // Add extra padding for proper spacing
+  contentHeight += 15; // Extra padding for proper spacing
+  contentHeight = Math.max(contentHeight, 100); // Increased minimum height
   
   page.drawRectangle({
     x: 50,
-    y: billToY - 95,
+    y: billToY - contentHeight,
     width: 250,
-    height: 95,
+    height: contentHeight,
     color: rgb(0.95, 0.95, 0.95),
   });
 
@@ -2074,24 +2136,50 @@ async function generateSimpleCleanTemplatePDF(
 
   page.drawText('BILL TO', {
     x: 60,
-    y: billToY - 15,
+    y: creativeCurrentY,
     size: 10,
     font: boldFont,
     color: rgb(1, 1, 1),
   });
 
-  page.drawText(invoice.client.name, {
-    x: 60,
-    y: billToY - 40,
-    size: 10,
-    font: font,
-    color: rgb(0.2, 0.2, 0.2),
-  });
+  if (invoice.client.name) {
+    creativeCurrentY -= 18;
+    page.drawText(invoice.client.name, {
+      x: 60,
+      y: creativeCurrentY,
+      size: 10,
+      font: font,
+      color: rgb(0.2, 0.2, 0.2),
+    });
+  }
+
+  if (invoice.client.email) {
+    creativeCurrentY -= 18;
+    page.drawText(invoice.client.email, {
+      x: 60,
+      y: creativeCurrentY,
+      size: 8,
+      font: font,
+      color: rgb(0.4, 0.4, 0.4),
+    });
+  }
+
+  if (invoice.client.phone) {
+    creativeCurrentY -= 18;
+    page.drawText(invoice.client.phone, {
+      x: 60,
+      y: creativeCurrentY,
+      size: 8,
+      font: font,
+      color: rgb(0.4, 0.4, 0.4),
+    });
+  }
 
   if (invoice.client.company) {
+    creativeCurrentY -= 18;
     page.drawText(invoice.client.company, {
       x: 60,
-      y: billToY - 45, // Even closer - 5px gap
+      y: creativeCurrentY,
       size: 9,
       font: font,
       color: rgb(0.4, 0.4, 0.4),
@@ -2099,20 +2187,12 @@ async function generateSimpleCleanTemplatePDF(
   }
 
   if (invoice.client.address) {
-    page.drawText(invoice.client.address, {
+    creativeCurrentY -= 18;
+    // Remove newlines and replace with spaces to keep address on one line
+    const addressText = invoice.client.address.replace(/\n/g, ', ').replace(/\r/g, '');
+    page.drawText(addressText, {
       x: 60,
-      y: billToY - 50, // Even closer - 5px gap
-      size: 8,
-      font: font,
-      color: rgb(0.4, 0.4, 0.4),
-    });
-  }
-
-  // Add email if available
-  if (invoice.client.email) {
-    page.drawText(invoice.client.email, {
-      x: 60,
-      y: billToY - 55, // Even closer - 5px gap
+      y: creativeCurrentY,
       size: 8,
       font: font,
       color: rgb(0.4, 0.4, 0.4),
@@ -2120,7 +2200,7 @@ async function generateSimpleCleanTemplatePDF(
   }
 
   // Creative services table with artistic header
-  const tableY = height - 320;
+  const tableY = height - 350; // Moved further down to create proper spacing
   const tableWidth = width - 100;
   const rowHeight = 25;
 
@@ -2580,14 +2660,24 @@ async function generateMinimalTemplatePDF(
     color: rgb(0.3, 0.3, 0.3),
   });
 
-  // Enhanced Bill to section with light borders (pushed down more)
+  // Enhanced Bill to section with light borders - Dynamic positioning
   const billToY = height - 210;
+  let minimalCurrentY = billToY - 30;
+  
+  // Calculate dynamic height based on content
+  let contentHeight = 30; // Base height for title
+  if (invoice.client.name) contentHeight += 15;
+  if (invoice.client.email) contentHeight += 15;
+  if (invoice.client.phone) contentHeight += 15;
+  if (invoice.client.company) contentHeight += 15;
+  if (invoice.client.address) contentHeight += 15; // Address includes postal code
+  contentHeight = Math.max(contentHeight, 120); // Increased minimum height for more bottom space
   
   page.drawRectangle({
     x: 50,
-    y: billToY - 90,
-    width: 280,
-    height: 90,
+    y: billToY - contentHeight,
+    width: 280, // Reduced width back to original size
+    height: contentHeight,
     borderColor: rgb(0.8, 0.8, 0.8),
     borderWidth: 1,
     color: rgb(0.98, 0.98, 0.98),
@@ -2595,24 +2685,50 @@ async function generateMinimalTemplatePDF(
   
   page.drawText('Bill To', {
     x: 60,
-    y: billToY - 30,
+    y: minimalCurrentY,
     size: 11,
     font: boldFont,
     color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
   });
 
-  page.drawText(invoice.client.name, {
-    x: 60,
-    y: billToY - 45,
-    size: 9,
-    font: font,
-    color: rgb(0.3, 0.3, 0.3),
-  });
+  if (invoice.client.name) {
+    minimalCurrentY -= 15;
+    page.drawText(invoice.client.name, {
+      x: 60,
+      y: minimalCurrentY,
+      size: 9,
+      font: font,
+      color: rgb(0.3, 0.3, 0.3),
+    });
+  }
 
   if (invoice.client.email) {
+    minimalCurrentY -= 15;
     page.drawText(invoice.client.email, {
       x: 60,
-      y: billToY - 60,
+      y: minimalCurrentY,
+      size: 9,
+      font: font,
+      color: rgb(0.3, 0.3, 0.3),
+    });
+  }
+
+  if (invoice.client.phone) {
+    minimalCurrentY -= 15;
+    page.drawText(invoice.client.phone, {
+      x: 60,
+      y: minimalCurrentY,
+      size: 9,
+      font: font,
+      color: rgb(0.3, 0.3, 0.3),
+    });
+  }
+
+  if (invoice.client.company) {
+    minimalCurrentY -= 15;
+    page.drawText(invoice.client.company, {
+      x: 60,
+      y: minimalCurrentY,
       size: 9,
       font: font,
       color: rgb(0.3, 0.3, 0.3),
@@ -2620,9 +2736,12 @@ async function generateMinimalTemplatePDF(
   }
 
   if (invoice.client.address) {
-    page.drawText(invoice.client.address, {
+    minimalCurrentY -= 15;
+    // Remove newlines and replace with spaces to keep address on one line
+    const addressText = invoice.client.address.replace(/\n/g, ', ').replace(/\r/g, '');
+    page.drawText(addressText, {
       x: 60,
-      y: billToY - 75,
+      y: minimalCurrentY,
       size: 9,
       font: font,
       color: rgb(0.3, 0.3, 0.3),
