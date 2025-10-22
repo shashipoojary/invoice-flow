@@ -105,13 +105,13 @@ export default function ClientsPage() {
     <div className={`rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] bg-white/70 border border-gray-200 backdrop-blur-sm ${isDeleting === client.id ? 'opacity-50 pointer-events-none' : ''}`}>
       <div className="flex items-start justify-between mb-4">
         <div className="p-3 rounded-xl bg-indigo-50">
-          <Building2 className="h-6 w-6 text-indigo-700 dark:text-indigo-400" />
+          <Building2 className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
         </div>
         <div className="flex space-x-2">
           <button 
             onClick={() => handleViewClient(client)}
             disabled={isDeleting === client.id}
-            className={`p-3 sm:p-2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors min-h-[44px] sm:min-h-auto touch-manipulation ${
+            className={`p-3 sm:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] sm:min-h-auto touch-manipulation ${
               isDeleting === client.id
                 ? 'opacity-50 cursor-not-allowed' 
                 : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
@@ -123,7 +123,7 @@ export default function ClientsPage() {
           <button 
             onClick={() => handleEditClient(client)}
             disabled={isDeleting === client.id}
-            className={`p-3 sm:p-2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors min-h-[44px] sm:min-h-auto touch-manipulation ${
+            className={`p-3 sm:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] sm:min-h-auto touch-manipulation ${
               isDeleting === client.id
                 ? 'opacity-50 cursor-not-allowed' 
                 : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
@@ -135,7 +135,7 @@ export default function ClientsPage() {
           <button 
             onClick={() => handleDeleteClient(client)}
             disabled={isDeleting === client.id}
-            className={`p-3 sm:p-2 text-gray-400 hover:text-red-700 dark:hover:text-red-400 transition-colors min-h-[44px] sm:min-h-auto touch-manipulation ${
+            className={`p-3 sm:p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors min-h-[44px] sm:min-h-auto touch-manipulation ${
               isDeleting === client.id 
                 ? 'opacity-50 cursor-not-allowed' 
                 : 'hover:bg-red-50 dark:hover:bg-red-900/20'
@@ -396,14 +396,14 @@ export default function ClientsPage() {
               <div className="p-3 sm:p-6 border-b border-gray-200">
                 <div className="flex items-center space-x-4">
                   <div className="p-3 rounded-xl bg-indigo-50">
-                    <Users className="h-8 w-8 text-indigo-700 dark:text-indigo-400" />
+                    <Users className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
                   </div>
                   <div>
                     <h3 className="text-lg sm:text-2xl font-bold text-gray-900">
                       {selectedClient.name}
                     </h3>
                     {selectedClient.company && (
-                      <p className="text-sm sm:text-base text-gray-700">
+                      <p className="text-sm sm:text-base text-gray-600">
                         {selectedClient.company}
                       </p>
                     )}
@@ -418,18 +418,18 @@ export default function ClientsPage() {
                   <div className="space-y-3">
                     <div className="flex items-center space-x-3">
                       <Mail className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm sm:text-base text-gray-700">{selectedClient.email}</span>
+                      <span className="text-sm sm:text-base text-gray-600">{selectedClient.email}</span>
                     </div>
                     {selectedClient.phone && (
                       <div className="flex items-center space-x-3">
                         <Phone className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm sm:text-base text-gray-700">{selectedClient.phone}</span>
+                        <span className="text-sm sm:text-base text-gray-600">{selectedClient.phone}</span>
                       </div>
                     )}
                     {selectedClient.address && (
                       <div className="flex items-start space-x-3">
                         <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-gray-500" />
-                        <span className="text-sm sm:text-base text-gray-700">{selectedClient.address}</span>
+                        <span className="text-sm sm:text-base text-gray-600">{selectedClient.address}</span>
                       </div>
                     )}
                   </div>
@@ -440,7 +440,7 @@ export default function ClientsPage() {
                   <h4 className="text-sm sm:text-base font-semibold mb-2 text-gray-900">Additional Information</h4>
                   <div className="flex items-center space-x-3">
                     <Calendar className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm sm:text-base text-gray-700">
+                    <span className="text-sm sm:text-base text-gray-600">
                       Client since {new Date(selectedClient.createdAt).toLocaleDateString()}
                     </span>
                   </div>

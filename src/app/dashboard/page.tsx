@@ -156,9 +156,9 @@ export default function DashboardOverview() {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays < 0) {
-      return { status: 'overdue', days: Math.abs(diffDays), color: 'text-red-700 dark:text-red-400' };
+      return { status: 'overdue', days: Math.abs(diffDays), color: 'text-red-600 dark:text-red-400' };
     } else if (diffDays === 0) {
-      return { status: 'due-today', days: 0, color: 'text-orange-700 dark:text-orange-400' };
+      return { status: 'due-today', days: 0, color: 'text-orange-500 dark:text-orange-400' };
     } else if (diffDays <= 3) {
       return { status: 'due-soon', days: diffDays, color: 'text-yellow-600 dark:text-yellow-400' };
     } else {
@@ -484,10 +484,10 @@ export default function DashboardOverview() {
               <div className="text-right">
                 <div className={`font-semibold text-base ${
                   invoice.status === 'paid' ? 'text-green-700' :
-                  dueDateStatus.status === 'overdue' ? 'text-red-700' :
-                  invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-700' :
+                  dueDateStatus.status === 'overdue' ? 'text-red-600' :
+                  invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-500' :
                   invoice.status === 'draft' ? 'text-gray-700' :
-                  'text-red-700'
+                  'text-red-600'
                 }`}>
                   ${dueCharges.totalPayable.toLocaleString()}
                 </div>
@@ -501,9 +501,9 @@ export default function DashboardOverview() {
               <div className="flex items-center space-x-2">
                 <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
                   invoice.status === 'paid' ? 'text-green-700' :
-                  invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-700' :
+                  invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-500' :
                   invoice.status === 'draft' ? 'text-gray-700' :
-                  'text-red-700'
+                  'text-red-600'
                 }`}>
                   {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status}</span>
@@ -512,7 +512,7 @@ export default function DashboardOverview() {
                   {(invoice.type || 'detailed') === 'fast' ? 'Fast' : 'Detailed'}
                 </span>
                 {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-700">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600">
                     <AlertTriangle className="h-3 w-3" />
                     <span>{dueDateStatus.days}d overdue</span>
                   </span>
@@ -592,10 +592,10 @@ export default function DashboardOverview() {
               <div className="text-right">
                 <div className={`font-semibold text-base ${
                   invoice.status === 'paid' ? 'text-green-700' :
-                  dueDateStatus.status === 'overdue' ? 'text-red-700' :
-                  invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-700' :
+                  dueDateStatus.status === 'overdue' ? 'text-red-600' :
+                  invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-500' :
                   invoice.status === 'draft' ? 'text-gray-700' :
-                  'text-red-700'
+                  'text-red-600'
               }`}>
                 ${dueCharges.totalPayable.toLocaleString()}
                   </div>
@@ -609,9 +609,9 @@ export default function DashboardOverview() {
               <div className="flex items-center space-x-2">
                 <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
                   invoice.status === 'paid' ? 'text-green-700' :
-                  invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-700' :
+                  invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-500' :
                   invoice.status === 'draft' ? 'text-gray-700' :
-                  'text-red-700'
+                  'text-red-600'
                 }`}>
                 {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status}</span>
@@ -620,7 +620,7 @@ export default function DashboardOverview() {
                   {(invoice.type || 'detailed') === 'fast' ? 'Fast' : 'Detailed'}
                   </span>
                 {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-700">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600">
                     <AlertTriangle className="h-3 w-3" />
                     <span>{dueDateStatus.days}d overdue</span>
                   </span>
@@ -733,9 +733,9 @@ export default function DashboardOverview() {
               </div>
               <div className={`font-heading text-lg font-bold ${
                 invoice.status === 'paid' ? 'text-green-700' :
-                invoice.status === 'pending' ? 'text-orange-700' :
+                invoice.status === 'pending' ? 'text-orange-500' :
                 invoice.status === 'draft' ? 'text-gray-700' :
-                dueDateStatus.status === 'overdue' ? 'text-red-700' :
+                dueDateStatus.status === 'overdue' ? 'text-red-600' :
                 'text-gray-800'
               }`}>
                 ${dueCharges.totalPayable.toLocaleString()}
@@ -802,9 +802,9 @@ export default function DashboardOverview() {
             </div>
             <div className={`font-heading text-lg font-bold ${
               invoice.status === 'paid' ? 'text-green-700' :
-              invoice.status === 'pending' ? 'text-amber-700' :
+              invoice.status === 'pending' ? 'text-amber-500' :
               invoice.status === 'draft' ? 'text-gray-500' :
-              dueDateStatus.status === 'overdue' ? 'text-red-700' :
+              dueDateStatus.status === 'overdue' ? 'text-red-600' :
               'text-gray-700'
             }`}>
               ${dueCharges.totalPayable.toLocaleString()}
@@ -1093,13 +1093,13 @@ export default function DashboardOverview() {
                 <div className="rounded-lg p-6 mb-8 bg-white/70 border border-gray-200 backdrop-blur-sm">
                   <div className="flex items-center space-x-4 mb-4">
                     <div className="p-3 rounded-xl bg-indigo-50">
-                      <Sparkles className="h-6 w-6 text-indigo-700 dark:text-indigo-400" />
+                      <Sparkles className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold" style={{color: '#1f2937'}}>
                         Ready to get started?
                       </h3>
-                      <p className="text-sm font-medium text-indigo-700 dark:text-indigo-400">
+                      <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
                         Let&apos;s create your first invoice
                       </p>
                     </div>
@@ -1139,7 +1139,7 @@ export default function DashboardOverview() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-1 flex-1">
                       <p className="text-xs font-medium text-left" style={{color: '#374151'}}>Total Revenue</p>
-                      <div className="font-heading text-lg sm:text-3xl font-bold text-emerald-700 text-left">
+                      <div className="font-heading text-lg sm:text-3xl font-bold text-emerald-600 text-left">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-24 rounded"></div>
                         ) : (
@@ -1148,11 +1148,11 @@ export default function DashboardOverview() {
                       </div>
                       <div className="flex items-center space-x-1 justify-start">
                         <CheckCircle className="h-4 w-4 text-emerald-500" />
-                        <span className="text-xs font-medium text-emerald-700">Paid invoices</span>
+                        <span className="text-xs font-medium text-emerald-600">Paid invoices</span>
                       </div>
                     </div>
                     <div className="p-1 sm:p-2 rounded-xl bg-emerald-50">
-                      <Receipt className="h-4 w-4 sm:h-6 sm:w-6 text-emerald-700" />
+                      <Receipt className="h-4 w-4 sm:h-6 sm:w-6 text-emerald-600" />
                     </div>
                   </div>
                 </button>
@@ -1165,7 +1165,7 @@ export default function DashboardOverview() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-1 flex-1">
                       <p className="text-xs font-medium text-left" style={{color: '#374151'}}>Total Payable</p>
-                      <div className="font-heading text-lg sm:text-3xl font-bold text-amber-700 text-left">
+                      <div className="font-heading text-lg sm:text-3xl font-bold text-amber-500 text-left">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-24 rounded"></div>
                         ) : (
@@ -1174,7 +1174,7 @@ export default function DashboardOverview() {
                       </div>
                       <div className="flex items-center space-x-1 justify-start">
                         <Clock className="h-4 w-4 text-amber-500" />
-                        <span className="text-xs font-medium text-amber-700">
+                        <span className="text-xs font-medium text-amber-500">
                           {invoices.filter(inv => inv.status === 'pending' || inv.status === 'sent').length} pending
                         </span>
                         {totalLateFees > 0 && (
@@ -1185,7 +1185,7 @@ export default function DashboardOverview() {
                       </div>
                     </div>
                     <div className="p-1 sm:p-2 rounded-xl bg-amber-50">
-                      <Timer className="h-4 w-4 sm:h-6 sm:w-6 text-amber-700" />
+                      <Timer className="h-4 w-4 sm:h-6 sm:w-6 text-amber-500" />
                     </div>
                   </div>
                 </button>
@@ -1198,7 +1198,7 @@ export default function DashboardOverview() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-1 flex-1">
                       <p className="text-xs font-medium text-left" style={{color: '#374151'}}>Overdue</p>
-                      <div className="font-heading text-lg sm:text-3xl font-bold text-red-700 text-left">
+                      <div className="font-heading text-lg sm:text-3xl font-bold text-red-600 text-left">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-8 rounded"></div>
                         ) : (
@@ -1207,11 +1207,11 @@ export default function DashboardOverview() {
                       </div>
                       <div className="flex items-center space-x-1 justify-start">
                         <AlertCircle className="h-4 w-4 text-red-500" />
-                        <span className="text-xs font-medium text-red-700">Need attention</span>
+                        <span className="text-xs font-medium text-red-600">Need attention</span>
                       </div>
                     </div>
                     <div className="p-1 sm:p-2 rounded-xl bg-red-50">
-                      <AlertTriangle className="h-4 w-4 sm:h-6 sm:w-6 text-red-700" />
+                      <AlertTriangle className="h-4 w-4 sm:h-6 sm:w-6 text-red-600" />
                     </div>
                   </div>
                 </button>
@@ -1224,7 +1224,7 @@ export default function DashboardOverview() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-1 flex-1">
                       <p className="text-xs font-medium text-left" style={{color: '#374151'}}>Total Clients</p>
-                      <div className="font-heading text-lg sm:text-3xl font-bold text-indigo-700 text-left">
+                      <div className="font-heading text-lg sm:text-3xl font-bold text-indigo-600 text-left">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-8 rounded"></div>
                         ) : (
@@ -1233,11 +1233,11 @@ export default function DashboardOverview() {
                       </div>
                       <div className="flex items-center space-x-1 justify-start">
                         <Users className="h-4 w-4 text-indigo-500" />
-                        <span className="text-xs font-medium text-indigo-700">Active clients</span>
+                        <span className="text-xs font-medium text-indigo-600">Active clients</span>
                       </div>
                     </div>
                     <div className="p-1 sm:p-2 rounded-xl bg-indigo-50">
-                      <Users className="h-4 w-4 sm:h-6 sm:w-6 text-indigo-700" />
+                      <Users className="h-4 w-4 sm:h-6 sm:w-6 text-indigo-600" />
                     </div>
                   </div>
                 </button>
@@ -1280,7 +1280,7 @@ export default function DashboardOverview() {
                 >
                   <div className="flex items-center space-x-2 sm:space-x-3">
                     <div className="p-1 sm:p-2 rounded-lg bg-blue-50">
-                      <FilePlus className="h-4 w-4 sm:h-5 sm:w-5 text-blue-700" />
+                      <FilePlus className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                     </div>
                     <div className="text-left">
                       <h3 className="font-medium text-sm" style={{color: '#1f2937'}}>
@@ -1300,7 +1300,7 @@ export default function DashboardOverview() {
                 >
                   <div className="flex items-center space-x-2 sm:space-x-3">
                     <div className="p-1 sm:p-2 rounded-lg bg-purple-50">
-                      <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-purple-700" />
+                      <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
                     </div>
                     <div className="text-left">
                       <h3 className="font-medium text-sm" style={{color: '#1f2937'}}>

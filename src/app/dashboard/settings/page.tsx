@@ -326,7 +326,7 @@ export default function SettingsPage() {
                 <div className={`rounded-lg p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
                 <div className="flex items-center space-x-3 mb-6">
                   <div className={`p-2 rounded-lg bg-blue-100`}>
-                    <Building2 className="h-5 w-5 text-blue-700 dark:text-blue-400" />
+                    <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <h3 className="text-lg font-semibold" style={{color: '#1f2937'}}>
                     Business Information
@@ -460,7 +460,7 @@ export default function SettingsPage() {
                                   ? 'opacity-50 cursor-not-allowed border-gray-300 text-gray-500 dark:border-gray-600 dark:text-gray-400'
                                   : false 
                                     ? 'border-red-600 text-red-400 hover:text-red-300 hover:bg-red-900/20' 
-                                    : 'border-red-300 text-red-700 hover:text-red-800 hover:bg-red-50'
+                                    : 'border-red-300 text-red-600 hover:text-red-800 hover:bg-red-50'
                               }`}
                             >
                               {isRemovingLogo ? (
@@ -543,7 +543,7 @@ export default function SettingsPage() {
               <div className={`rounded-lg p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
                 <div className="flex items-center space-x-3 mb-6">
                   <div className={`p-2 rounded-lg bg-green-100`}>
-                    <CreditCard className="h-5 w-5 text-green-700 dark:text-green-400" />
+                    <CreditCard className="h-5 w-5 text-green-600 dark:text-green-400" />
                   </div>
                   <h3 className="text-lg font-semibold" style={{color: '#1f2937'}}>
                     Payment Methods

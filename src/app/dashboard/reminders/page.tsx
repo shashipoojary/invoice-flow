@@ -261,13 +261,13 @@ export default function ReminderHistoryPage() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-gray-100">
-                        <Mail className="h-5 w-5 text-gray-700" />
+                        <Mail className="h-5 w-5 text-gray-600" />
                       </div>
                       <div>
                         <div className="text-sm font-semibold text-gray-900">
                           {reminder.invoice.invoice_number}
                         </div>
-                         <div className="text-xs font-semibold text-green-700">
+                         <div className="text-xs font-semibold text-green-600">
                            ${reminder.invoice.total.toLocaleString()}
                          </div>
                       </div>
@@ -281,18 +281,18 @@ export default function ReminderHistoryPage() {
                   
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-gray-700">Client:</span>
-                      <span className="text-xs text-gray-700">{reminder.invoice.clients.name}</span>
+                      <span className="text-xs font-medium text-gray-600">Client:</span>
+                      <span className="text-xs text-gray-600">{reminder.invoice.clients.name}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-gray-700">Status:</span>
+                      <span className="text-xs font-medium text-gray-600">Status:</span>
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(reminder.invoice.status)}`}>
                         {reminder.invoice.status}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-gray-700">Sent:</span>
-                      <span className="text-xs text-gray-700">
+                      <span className="text-xs font-medium text-gray-600">Sent:</span>
+                      <span className="text-xs text-gray-600">
                         {new Date(reminder.sent_at).toLocaleDateString()}
                       </span>
                     </div>
@@ -309,7 +309,7 @@ export default function ReminderHistoryPage() {
                       </button>
                       <button
                         onClick={() => window.open(`/invoice/${reminder.invoice_id}`, '_blank')}
-                        className="p-2 rounded-lg transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300"
+                        className="p-2 rounded-lg transition-colors bg-gray-200 text-gray-600 hover:bg-gray-300"
                         title="View invoice"
                       >
                         <Eye className="h-4 w-4" />
@@ -324,7 +324,7 @@ export default function ReminderHistoryPage() {
                     {/* Left Section - Reminder Info */}
                     <div className="col-span-5 flex items-center space-x-4">
                       <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gray-100">
-                        <Mail className="h-6 w-6 text-gray-700" />
+                        <Mail className="h-6 w-6 text-gray-600" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
@@ -349,7 +349,7 @@ export default function ReminderHistoryPage() {
                     {/* Middle Section - Amount & Status */}
                     <div className="col-span-4 flex items-center justify-center">
                       <div className="text-center">
-                         <div className="text-lg font-semibold mb-1 text-green-700">
+                         <div className="text-lg font-semibold mb-1 text-green-600">
                            ${reminder.invoice.total.toLocaleString()}
                          </div>
                         <div className="flex items-center justify-center space-x-3">
@@ -374,7 +374,7 @@ export default function ReminderHistoryPage() {
                       </button>
                       <button
                         onClick={() => window.open(`/invoice/${reminder.invoice_id}`, '_blank')}
-                        className="p-2 rounded-lg transition-colors bg-gray-200 text-gray-700 hover:bg-gray-300"
+                        className="p-2 rounded-lg transition-colors bg-gray-200 text-gray-600 hover:bg-gray-300"
                         title="View invoice"
                       >
                         <Eye className="h-4 w-4" />
