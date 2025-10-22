@@ -487,7 +487,7 @@ function InvoicesContent() {
               </div>
               <div className="text-right">
                 <div className={`font-semibold text-base ${
-                  invoice.status === 'paid' ? ('text-green-600') :
+                  invoice.status === 'paid' ? ('text-emerald-600') :
                   dueDateStatus.status === 'overdue' ? ('text-red-600') :
                   invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-500') :
                   invoice.status === 'draft' ? ('text-gray-600') :
@@ -504,7 +504,7 @@ function InvoicesContent() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
-                  invoice.status === 'paid' ? ('text-green-600') :
+                  invoice.status === 'paid' ? ('text-emerald-600') :
                   invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-500') :
                   invoice.status === 'draft' ? ('text-gray-600') :
                   ('text-red-600')
@@ -613,7 +613,7 @@ function InvoicesContent() {
               </div>
               <div className="text-right">
                 <div className={`font-semibold text-base ${
-                  invoice.status === 'paid' ? ('text-green-600') :
+                  invoice.status === 'paid' ? ('text-emerald-600') :
                   dueDateStatus.status === 'overdue' ? ('text-red-600') :
                   invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-500') :
                   invoice.status === 'draft' ? ('text-gray-600') :
@@ -630,7 +630,7 @@ function InvoicesContent() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
-                  invoice.status === 'paid' ? ('text-green-600') :
+                  invoice.status === 'paid' ? ('text-emerald-600') :
                   invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-500') :
                   invoice.status === 'draft' ? ('text-gray-600') :
                   ('text-red-600')

@@ -483,10 +483,10 @@ export default function DashboardOverview() {
               </div>
               <div className="text-right">
                 <div className={`font-semibold text-base ${
-                  invoice.status === 'paid' ? 'text-green-700' :
+                  invoice.status === 'paid' ? 'text-emerald-600' :
                   dueDateStatus.status === 'overdue' ? 'text-red-600' :
                   invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-500' :
-                  invoice.status === 'draft' ? 'text-gray-700' :
+                  invoice.status === 'draft' ? 'text-gray-600' :
                   'text-red-600'
                 }`}>
                   ${dueCharges.totalPayable.toLocaleString()}
@@ -500,9 +500,9 @@ export default function DashboardOverview() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
-                  invoice.status === 'paid' ? 'text-green-700' :
+                  invoice.status === 'paid' ? 'text-emerald-600' :
                   invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-500' :
-                  invoice.status === 'draft' ? 'text-gray-700' :
+                  invoice.status === 'draft' ? 'text-gray-600' :
                   'text-red-600'
                 }`}>
                   {getStatusIcon(invoice.status)}
@@ -591,10 +591,10 @@ export default function DashboardOverview() {
               </div>
               <div className="text-right">
                 <div className={`font-semibold text-base ${
-                  invoice.status === 'paid' ? 'text-green-700' :
+                  invoice.status === 'paid' ? 'text-emerald-600' :
                   dueDateStatus.status === 'overdue' ? 'text-red-600' :
                   invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-500' :
-                  invoice.status === 'draft' ? 'text-gray-700' :
+                  invoice.status === 'draft' ? 'text-gray-600' :
                   'text-red-600'
               }`}>
                 ${dueCharges.totalPayable.toLocaleString()}
@@ -608,9 +608,9 @@ export default function DashboardOverview() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
-                  invoice.status === 'paid' ? 'text-green-700' :
+                  invoice.status === 'paid' ? 'text-emerald-600' :
                   invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-500' :
-                  invoice.status === 'draft' ? 'text-gray-700' :
+                  invoice.status === 'draft' ? 'text-gray-600' :
                   'text-red-600'
                 }`}>
                 {getStatusIcon(invoice.status)}
@@ -732,9 +732,9 @@ export default function DashboardOverview() {
                 </span>
               </div>
               <div className={`font-heading text-lg font-bold ${
-                invoice.status === 'paid' ? 'text-green-700' :
+                invoice.status === 'paid' ? 'text-emerald-600' :
                 invoice.status === 'pending' ? 'text-orange-500' :
-                invoice.status === 'draft' ? 'text-gray-700' :
+                invoice.status === 'draft' ? 'text-gray-600' :
                 dueDateStatus.status === 'overdue' ? 'text-red-600' :
                 'text-gray-800'
               }`}>
@@ -802,8 +802,8 @@ export default function DashboardOverview() {
             </div>
             <div className={`font-heading text-lg font-bold ${
               invoice.status === 'paid' ? 'text-green-700' :
-              invoice.status === 'pending' ? 'text-amber-500' :
-              invoice.status === 'draft' ? 'text-gray-500' :
+                invoice.status === 'pending' ? 'text-orange-500' :
+                invoice.status === 'draft' ? 'text-gray-600' :
               dueDateStatus.status === 'overdue' ? 'text-red-600' :
               'text-gray-700'
             }`}>
@@ -1165,7 +1165,7 @@ export default function DashboardOverview() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-1 flex-1">
                       <p className="text-xs font-medium text-left" style={{color: '#374151'}}>Total Payable</p>
-                      <div className="font-heading text-lg sm:text-3xl font-bold text-amber-500 text-left">
+                      <div className="font-heading text-lg sm:text-3xl font-bold text-orange-500 text-left">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-24 rounded"></div>
                         ) : (
@@ -1173,8 +1173,8 @@ export default function DashboardOverview() {
                         )}
                       </div>
                       <div className="flex items-center space-x-1 justify-start">
-                        <Clock className="h-4 w-4 text-amber-500" />
-                        <span className="text-xs font-medium text-amber-500">
+                        <Clock className="h-4 w-4 text-orange-500" />
+                        <span className="text-xs font-medium text-orange-500">
                           {invoices.filter(inv => inv.status === 'pending' || inv.status === 'sent').length} pending
                         </span>
                         {totalLateFees > 0 && (
@@ -1184,8 +1184,8 @@ export default function DashboardOverview() {
                         )}
                       </div>
                     </div>
-                    <div className="p-1 sm:p-2 rounded-xl bg-amber-50">
-                      <Timer className="h-4 w-4 sm:h-6 sm:w-6 text-amber-500" />
+                    <div className="p-1 sm:p-2 rounded-xl bg-orange-50">
+                      <Timer className="h-4 w-4 sm:h-6 sm:w-6 text-orange-500" />
                     </div>
                   </div>
                 </button>
