@@ -828,24 +828,29 @@ function InvoicesContent() {
                   Invoices
                 </h2>
                   {searchParams.get('status') && (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap ${
-                        searchParams.get('status') === 'paid' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                        searchParams.get('status') === 'pending' ? 'bg-orange-100 text-orange-700 border border-orange-200 dark:bg-orange-900/30 dark:text-orange-400' :
-                        searchParams.get('status') === 'overdue' ? 'bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-400' :
-                        'bg-gray-100 text-gray-700 border border-gray-200 dark:bg-gray-900/30 dark:text-gray-400'
-                      }`}>
-                        {searchParams.get('status') === 'paid' ? 'Paid Invoices' :
-                         searchParams.get('status') === 'pending' ? 'Pending Invoices' :
-                         searchParams.get('status') === 'overdue' ? 'Overdue Invoices' :
-                         'Filtered'}
-                      </span>
-                      <button
-                        onClick={() => window.history.replaceState({}, '', '/dashboard/invoices')}
-                        className="text-xs sm:text-sm text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200 underline whitespace-nowrap"
-                      >
-                        Clear Filter
-                      </button>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm">
+                        <div className={`w-2 h-2 rounded-full ${
+                          searchParams.get('status') === 'paid' ? 'bg-emerald-500' :
+                          searchParams.get('status') === 'pending' ? 'bg-orange-500' :
+                          searchParams.get('status') === 'overdue' ? 'bg-red-500' :
+                          'bg-gray-500'
+                        }`}></div>
+                        <span className="text-sm font-medium text-gray-700">
+                          {searchParams.get('status') === 'paid' ? 'Paid Invoices' :
+                           searchParams.get('status') === 'pending' ? 'Pending Invoices' :
+                           searchParams.get('status') === 'overdue' ? 'Overdue Invoices' :
+                           'Filtered'}
+                        </span>
+                        <button
+                          onClick={() => window.history.replaceState({}, '', '/dashboard/invoices')}
+                          className="ml-2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+                        >
+                          <svg className="w-4 h-4 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
