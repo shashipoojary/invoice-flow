@@ -156,13 +156,13 @@ export default function DashboardOverview() {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays < 0) {
-      return { status: 'overdue', days: Math.abs(diffDays), color: 'text-red-600 dark:text-red-400' };
+      return { status: 'overdue', days: Math.abs(diffDays), color: 'text-red-700 dark:text-red-400' };
     } else if (diffDays === 0) {
-      return { status: 'due-today', days: 0, color: 'text-orange-600 dark:text-orange-400' };
+      return { status: 'due-today', days: 0, color: 'text-orange-700 dark:text-orange-400' };
     } else if (diffDays <= 3) {
       return { status: 'due-soon', days: diffDays, color: 'text-yellow-600 dark:text-yellow-400' };
     } else {
-      return { status: 'upcoming', days: diffDays, color: 'text-gray-600 dark:text-gray-400' };
+      return { status: 'upcoming', days: diffDays, color: 'text-gray-700 dark:text-gray-400' };
     }
   }, []);
 
@@ -470,7 +470,7 @@ export default function DashboardOverview() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
-                  <FileText className="h-4 w-4 text-gray-600" />
+                  <FileText className="h-4 w-4 text-gray-700" />
                 </div>
                 <div>
                   <div className="font-medium text-sm" style={{color: '#1f2937'}}>
@@ -483,11 +483,11 @@ export default function DashboardOverview() {
               </div>
               <div className="text-right">
                 <div className={`font-semibold text-base ${
-                  invoice.status === 'paid' ? 'text-green-600' :
-                  dueDateStatus.status === 'overdue' ? 'text-red-600' :
-                  invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-600' :
-                  invoice.status === 'draft' ? 'text-gray-600' :
-                  'text-red-600'
+                  invoice.status === 'paid' ? 'text-green-700' :
+                  dueDateStatus.status === 'overdue' ? 'text-red-700' :
+                  invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-700' :
+                  invoice.status === 'draft' ? 'text-gray-700' :
+                  'text-red-700'
                 }`}>
                   ${dueCharges.totalPayable.toLocaleString()}
                 </div>
@@ -500,19 +500,19 @@ export default function DashboardOverview() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
-                  invoice.status === 'paid' ? 'text-green-600' :
-                  invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-600' :
-                  invoice.status === 'draft' ? 'text-gray-600' :
-                  'text-red-600'
+                  invoice.status === 'paid' ? 'text-green-700' :
+                  invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-700' :
+                  invoice.status === 'draft' ? 'text-gray-700' :
+                  'text-red-700'
                 }`}>
                   {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status}</span>
                 </span>
-                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
+                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
                   {(invoice.type || 'detailed') === 'fast' ? 'Fast' : 'Detailed'}
                 </span>
                 {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-700">
                     <AlertTriangle className="h-3 w-3" />
                     <span>{dueDateStatus.days}d overdue</span>
                   </span>
@@ -525,7 +525,7 @@ export default function DashboardOverview() {
                   className="p-1.5 rounded-md transition-colors hover:bg-gray-100"
                   title="View"
                 >
-                  <Eye className="h-4 w-4 text-gray-600" />
+                  <Eye className="h-4 w-4 text-gray-700" />
                 </button>
                 <button 
                   onClick={() => handleDownloadPDF(invoice)}
@@ -536,7 +536,7 @@ export default function DashboardOverview() {
                   {loadingActions[`pdf-${invoice.id}`] ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                   ) : (
-                    <Download className="h-4 w-4 text-gray-600" />
+                    <Download className="h-4 w-4 text-gray-700" />
                   )}
                 </button>
                 {invoice.status === 'draft' && (
@@ -549,7 +549,7 @@ export default function DashboardOverview() {
                     {loadingActions[`send-${invoice.id}`] ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                     ) : (
-                      <Send className="h-4 w-4 text-gray-600" />
+                      <Send className="h-4 w-4 text-gray-700" />
                     )}
                   </button>
                 )}
@@ -563,7 +563,7 @@ export default function DashboardOverview() {
                     {loadingActions[`paid-${invoice.id}`] ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                     ) : (
-                      <CheckCircle className="h-4 w-4 text-gray-600" />
+                      <CheckCircle className="h-4 w-4 text-gray-700" />
                     )}
                   </button>
                 )}
@@ -578,7 +578,7 @@ export default function DashboardOverview() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
-                  <FileText className="h-4 w-4 text-gray-600" />
+                  <FileText className="h-4 w-4 text-gray-700" />
                 </div>
                 <div>
                   <div className="font-medium text-sm" style={{color: '#1f2937'}}>
@@ -591,11 +591,11 @@ export default function DashboardOverview() {
               </div>
               <div className="text-right">
                 <div className={`font-semibold text-base ${
-                  invoice.status === 'paid' ? 'text-green-600' :
-                  dueDateStatus.status === 'overdue' ? 'text-red-600' :
-                  invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-600' :
-                  invoice.status === 'draft' ? 'text-gray-600' :
-                  'text-red-600'
+                  invoice.status === 'paid' ? 'text-green-700' :
+                  dueDateStatus.status === 'overdue' ? 'text-red-700' :
+                  invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-700' :
+                  invoice.status === 'draft' ? 'text-gray-700' :
+                  'text-red-700'
               }`}>
                 ${dueCharges.totalPayable.toLocaleString()}
                   </div>
@@ -608,19 +608,19 @@ export default function DashboardOverview() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
-                  invoice.status === 'paid' ? 'text-green-600' :
-                  invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-600' :
-                  invoice.status === 'draft' ? 'text-gray-600' :
-                  'text-red-600'
+                  invoice.status === 'paid' ? 'text-green-700' :
+                  invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-700' :
+                  invoice.status === 'draft' ? 'text-gray-700' :
+                  'text-red-700'
                 }`}>
                 {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status}</span>
               </span>
-                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
+                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
                   {(invoice.type || 'detailed') === 'fast' ? 'Fast' : 'Detailed'}
                   </span>
                 {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-700">
                     <AlertTriangle className="h-3 w-3" />
                     <span>{dueDateStatus.days}d overdue</span>
                   </span>
@@ -633,7 +633,7 @@ export default function DashboardOverview() {
                   className="p-1.5 rounded-md transition-colors hover:bg-gray-100"
                   title="View"
                 >
-                  <Eye className="h-4 w-4 text-gray-600" />
+                  <Eye className="h-4 w-4 text-gray-700" />
                 </button>
                 <button 
                   onClick={() => handleDownloadPDF(invoice)}
@@ -644,7 +644,7 @@ export default function DashboardOverview() {
                   {loadingActions[`pdf-${invoice.id}`] ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                   ) : (
-                    <Download className="h-4 w-4 text-gray-600" />
+                    <Download className="h-4 w-4 text-gray-700" />
                   )}
                 </button>
                 {invoice.status === 'draft' && (
@@ -657,7 +657,7 @@ export default function DashboardOverview() {
                     {loadingActions[`send-${invoice.id}`] ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                     ) : (
-                      <Send className="h-4 w-4 text-gray-600" />
+                      <Send className="h-4 w-4 text-gray-700" />
                     )}
                   </button>
                 )}
@@ -671,7 +671,7 @@ export default function DashboardOverview() {
                     {loadingActions[`paid-${invoice.id}`] ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                     ) : (
-                      <CheckCircle className="h-4 w-4 text-gray-600" />
+                      <CheckCircle className="h-4 w-4 text-gray-700" />
                     )}
                   </button>
                 )}
@@ -733,8 +733,8 @@ export default function DashboardOverview() {
               </div>
               <div className={`font-heading text-lg font-bold ${
                 invoice.status === 'paid' ? 'text-green-700' :
-                invoice.status === 'pending' ? 'text-orange-600' :
-                invoice.status === 'draft' ? 'text-gray-600' :
+                invoice.status === 'pending' ? 'text-orange-700' :
+                invoice.status === 'draft' ? 'text-gray-700' :
                 dueDateStatus.status === 'overdue' ? 'text-red-700' :
                 'text-gray-800'
               }`}>
@@ -801,10 +801,10 @@ export default function DashboardOverview() {
               )}
             </div>
             <div className={`font-heading text-lg font-bold ${
-              invoice.status === 'paid' ? 'text-green-600' :
-              invoice.status === 'pending' ? 'text-amber-600' :
+              invoice.status === 'paid' ? 'text-green-700' :
+              invoice.status === 'pending' ? 'text-amber-700' :
               invoice.status === 'draft' ? 'text-gray-500' :
-              dueDateStatus.status === 'overdue' ? 'text-red-600' :
+              dueDateStatus.status === 'overdue' ? 'text-red-700' :
               'text-gray-700'
             }`}>
               ${dueCharges.totalPayable.toLocaleString()}
@@ -1093,13 +1093,13 @@ export default function DashboardOverview() {
                 <div className="rounded-lg p-6 mb-8 bg-white/70 border border-gray-200 backdrop-blur-sm">
                   <div className="flex items-center space-x-4 mb-4">
                     <div className="p-3 rounded-xl bg-indigo-50">
-                      <Sparkles className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                      <Sparkles className="h-6 w-6 text-indigo-700 dark:text-indigo-400" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold" style={{color: '#1f2937'}}>
                         Ready to get started?
                       </h3>
-                      <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                      <p className="text-sm font-medium text-indigo-700 dark:text-indigo-400">
                         Let&apos;s create your first invoice
                       </p>
                     </div>
@@ -1139,7 +1139,7 @@ export default function DashboardOverview() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-1 flex-1">
                       <p className="text-xs font-medium text-left" style={{color: '#374151'}}>Total Revenue</p>
-                      <div className="font-heading text-lg sm:text-3xl font-bold text-emerald-600 dark:text-emerald-400 text-left">
+                      <div className="font-heading text-lg sm:text-3xl font-bold text-emerald-700 text-left">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-24 rounded"></div>
                         ) : (
@@ -1148,11 +1148,11 @@ export default function DashboardOverview() {
                       </div>
                       <div className="flex items-center space-x-1 justify-start">
                         <CheckCircle className="h-4 w-4 text-emerald-500" />
-                        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Paid invoices</span>
+                        <span className="text-xs font-medium text-emerald-700">Paid invoices</span>
                       </div>
                     </div>
                     <div className="p-1 sm:p-2 rounded-xl bg-emerald-50">
-                      <Receipt className="h-4 w-4 sm:h-6 sm:w-6 text-emerald-600 dark:text-emerald-400" />
+                      <Receipt className="h-4 w-4 sm:h-6 sm:w-6 text-emerald-700" />
                     </div>
                   </div>
                 </button>
@@ -1165,7 +1165,7 @@ export default function DashboardOverview() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-1 flex-1">
                       <p className="text-xs font-medium text-left" style={{color: '#374151'}}>Total Payable</p>
-                      <div className="font-heading text-lg sm:text-3xl font-bold text-amber-600 dark:text-amber-400 text-left">
+                      <div className="font-heading text-lg sm:text-3xl font-bold text-amber-700 text-left">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-24 rounded"></div>
                         ) : (
@@ -1174,7 +1174,7 @@ export default function DashboardOverview() {
                       </div>
                       <div className="flex items-center space-x-1 justify-start">
                         <Clock className="h-4 w-4 text-amber-500" />
-                        <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                        <span className="text-xs font-medium text-amber-700">
                           {invoices.filter(inv => inv.status === 'pending' || inv.status === 'sent').length} pending
                         </span>
                         {totalLateFees > 0 && (
@@ -1185,7 +1185,7 @@ export default function DashboardOverview() {
                       </div>
                     </div>
                     <div className="p-1 sm:p-2 rounded-xl bg-amber-50">
-                      <Timer className="h-4 w-4 sm:h-6 sm:w-6 text-amber-600 dark:text-amber-400" />
+                      <Timer className="h-4 w-4 sm:h-6 sm:w-6 text-amber-700" />
                     </div>
                   </div>
                 </button>
@@ -1198,7 +1198,7 @@ export default function DashboardOverview() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-1 flex-1">
                       <p className="text-xs font-medium text-left" style={{color: '#374151'}}>Overdue</p>
-                      <div className="font-heading text-lg sm:text-3xl font-bold text-red-600 dark:text-red-400 text-left">
+                      <div className="font-heading text-lg sm:text-3xl font-bold text-red-700 text-left">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-8 rounded"></div>
                         ) : (
@@ -1207,11 +1207,11 @@ export default function DashboardOverview() {
                       </div>
                       <div className="flex items-center space-x-1 justify-start">
                         <AlertCircle className="h-4 w-4 text-red-500" />
-                        <span className="text-xs font-medium text-red-600 dark:text-red-400">Need attention</span>
+                        <span className="text-xs font-medium text-red-700">Need attention</span>
                       </div>
                     </div>
                     <div className="p-1 sm:p-2 rounded-xl bg-red-50">
-                      <AlertTriangle className="h-4 w-4 sm:h-6 sm:w-6 text-red-600 dark:text-red-400" />
+                      <AlertTriangle className="h-4 w-4 sm:h-6 sm:w-6 text-red-700" />
                     </div>
                   </div>
                 </button>
@@ -1224,7 +1224,7 @@ export default function DashboardOverview() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-1 flex-1">
                       <p className="text-xs font-medium text-left" style={{color: '#374151'}}>Total Clients</p>
-                      <div className="font-heading text-lg sm:text-3xl font-bold text-indigo-600 dark:text-indigo-400 text-left">
+                      <div className="font-heading text-lg sm:text-3xl font-bold text-indigo-700 text-left">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-8 rounded"></div>
                         ) : (
@@ -1233,11 +1233,11 @@ export default function DashboardOverview() {
                       </div>
                       <div className="flex items-center space-x-1 justify-start">
                         <Users className="h-4 w-4 text-indigo-500" />
-                        <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400">Active clients</span>
+                        <span className="text-xs font-medium text-indigo-700">Active clients</span>
                       </div>
                     </div>
                     <div className="p-1 sm:p-2 rounded-xl bg-indigo-50">
-                      <Users className="h-4 w-4 sm:h-6 sm:w-6 text-indigo-600 dark:text-indigo-400" />
+                      <Users className="h-4 w-4 sm:h-6 sm:w-6 text-indigo-700" />
                     </div>
                   </div>
                 </button>
@@ -1260,7 +1260,7 @@ export default function DashboardOverview() {
                 >
                   <div className="flex items-center space-x-2 sm:space-x-3">
                     <div className="p-1 sm:p-2 rounded-lg bg-green-50">
-                      <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                      <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-green-700" />
                     </div>
                     <div className="text-left">
                       <h3 className="font-medium text-sm" style={{color: '#1f2937'}}>
@@ -1280,7 +1280,7 @@ export default function DashboardOverview() {
                 >
                   <div className="flex items-center space-x-2 sm:space-x-3">
                     <div className="p-1 sm:p-2 rounded-lg bg-blue-50">
-                      <FilePlus className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                      <FilePlus className="h-4 w-4 sm:h-5 sm:w-5 text-blue-700" />
                     </div>
                     <div className="text-left">
                       <h3 className="font-medium text-sm" style={{color: '#1f2937'}}>
@@ -1300,7 +1300,7 @@ export default function DashboardOverview() {
                 >
                   <div className="flex items-center space-x-2 sm:space-x-3">
                     <div className="p-1 sm:p-2 rounded-lg bg-purple-50">
-                      <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+                      <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-purple-700" />
                     </div>
                     <div className="text-left">
                       <h3 className="font-medium text-sm" style={{color: '#1f2937'}}>
@@ -1531,7 +1531,7 @@ export default function DashboardOverview() {
                    <h2 className="text-lg sm:text-2xl font-bold mb-1 text-gray-900">
                      {settings.businessName || 'Your Business Name'}
                    </h2>
-                   <div className="text-xs sm:text-sm space-y-1 text-gray-600">
+                   <div className="text-xs sm:text-sm space-y-1 text-gray-700">
                      {settings.address && <p>{settings.address}</p>}
                      {settings.businessEmail && <p>{settings.businessEmail}</p>}
                      {settings.businessPhone && <p>{settings.businessPhone}</p>}
@@ -1559,17 +1559,17 @@ export default function DashboardOverview() {
                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
                    <div>
                      <span className="font-medium text-gray-700">Invoice Number:</span>
-                     <p className="text-gray-600">#{selectedInvoice.invoiceNumber || 'N/A'}</p>
+                     <p className="text-gray-700">#{selectedInvoice.invoiceNumber || 'N/A'}</p>
                    </div>
                    <div>
                      <span className="font-medium text-gray-700">Date:</span>
-                     <p className="text-gray-600">
+                     <p className="text-gray-700">
                        {selectedInvoice.createdAt ? new Date(selectedInvoice.createdAt).toLocaleDateString() : 'N/A'}
                      </p>
                    </div>
                    <div>
                      <span className="font-medium text-gray-700">Due Date:</span>
-                     <p className="text-gray-600">
+                     <p className="text-gray-700">
                        {selectedInvoice.dueDate ? new Date(selectedInvoice.dueDate).toLocaleDateString() : 'N/A'}
                      </p>
                    </div>
@@ -1581,9 +1581,9 @@ export default function DashboardOverview() {
                  <h3 className="text-sm sm:text-base font-semibold mb-2 text-gray-900">Bill To</h3>
                  <div className="text-xs sm:text-sm">
                    <p className="font-medium text-gray-900">{selectedInvoice.client?.name || 'N/A'}</p>
-                   <p className="text-gray-600">{selectedInvoice.client?.email || 'N/A'}</p>
-                   {selectedInvoice.client?.phone && <p className="text-gray-600">{selectedInvoice.client.phone}</p>}
-                   {selectedInvoice.client?.address && <p className="text-gray-600">{selectedInvoice.client.address}</p>}
+                   <p className="text-gray-700">{selectedInvoice.client?.email || 'N/A'}</p>
+                   {selectedInvoice.client?.phone && <p className="text-gray-700">{selectedInvoice.client.phone}</p>}
+                   {selectedInvoice.client?.address && <p className="text-gray-700">{selectedInvoice.client.address}</p>}
                  </div>
                </div>
                
@@ -1604,7 +1604,7 @@ export default function DashboardOverview() {
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
                            {item.description || 'Service'}
                          </td>
-                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-600">1</td>
+                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-700">1</td>
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right text-gray-900">
                             ${(parseFloat(item.amount?.toString() || '0') || 0).toFixed(2)}
                          </td>
@@ -1615,7 +1615,7 @@ export default function DashboardOverview() {
                      )) || (
                        <tr>
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">Service</td>
-                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-600">1</td>
+                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-700">1</td>
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right text-gray-900">$0.00</td>
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium text-gray-900">$0.00</td>
                        </tr>
@@ -1628,20 +1628,20 @@ export default function DashboardOverview() {
                <div className="p-3 sm:p-6">
                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                    <div className="w-full sm:w-auto">
-                     <p className="text-xs sm:text-sm text-gray-600">Thank you for your business!</p>
+                     <p className="text-xs sm:text-sm text-gray-700">Thank you for your business!</p>
                    </div>
                    <div className="w-full sm:w-64">
                      <div className="space-y-1">
                        <div className="flex justify-between text-xs sm:text-sm">
-                         <span className="text-gray-600">Subtotal:</span>
+                         <span className="text-gray-700">Subtotal:</span>
                          <span className="text-gray-900">${(selectedInvoice.subtotal || 0).toFixed(2)}</span>
                        </div>
                        <div className="flex justify-between text-xs sm:text-sm">
-                         <span className="text-gray-600">Discount:</span>
+                         <span className="text-gray-700">Discount:</span>
                          <span className="text-gray-900">${(selectedInvoice.discount || 0).toFixed(2)}</span>
                        </div>
                        <div className="flex justify-between text-xs sm:text-sm">
-                         <span className="text-gray-600">Tax ({(selectedInvoice.taxRate || 0) * 100}%):</span>
+                         <span className="text-gray-700">Tax ({(selectedInvoice.taxRate || 0) * 100}%):</span>
                          <span className="text-gray-900">${(selectedInvoice.taxAmount || 0).toFixed(2)}</span>
                        </div>
                        <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1 border-gray-200">
@@ -1657,7 +1657,7 @@ export default function DashboardOverview() {
                {selectedInvoice.notes && (
                  <div className="p-3 sm:p-6 border-t border-gray-200">
                    <h3 className="text-sm sm:text-base font-semibold mb-2 text-gray-900">Notes</h3>
-                   <p className="text-xs sm:text-sm text-gray-600">{selectedInvoice.notes}</p>
+                   <p className="text-xs sm:text-sm text-gray-700">{selectedInvoice.notes}</p>
                  </div>
                )}
 
@@ -1672,7 +1672,7 @@ export default function DashboardOverview() {
                            <CreditCard className="h-4 w-4 text-blue-500" />
                            <span className="font-medium text-gray-700">Payment Terms</span>
                          </div>
-                         <p className="text-gray-600">
+                         <p className="text-gray-700">
                            {selectedInvoice.paymentTerms.enabled ? selectedInvoice.paymentTerms.terms : 'Not configured'}
                          </p>
                        </div>
@@ -1683,7 +1683,7 @@ export default function DashboardOverview() {
                            <DollarSign className="h-4 w-4 text-orange-500" />
                            <span className="font-medium text-gray-700">Late Fees</span>
                          </div>
-                         <p className="text-gray-600">
+                         <p className="text-gray-700">
                            {selectedInvoice.lateFees.enabled 
                              ? `${selectedInvoice.lateFees.type === 'fixed' ? '$' : ''}${selectedInvoice.lateFees.amount}${selectedInvoice.lateFees.type === 'percentage' ? '%' : ''} after ${selectedInvoice.lateFees.gracePeriod} days`
                              : 'Not configured'
@@ -1697,7 +1697,7 @@ export default function DashboardOverview() {
                            <Bell className="h-4 w-4 text-green-500" />
                            <span className="font-medium text-gray-700">Auto Reminders</span>
                          </div>
-                         <p className="text-gray-600">
+                         <p className="text-gray-700">
                            {selectedInvoice.reminders.enabled 
                              ? (selectedInvoice.reminders.useSystemDefaults 
                                ? 'Smart System' 

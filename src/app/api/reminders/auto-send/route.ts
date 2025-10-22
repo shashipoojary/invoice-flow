@@ -7,8 +7,23 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+export async function GET() {
+  return NextResponse.json({ 
+    message: 'Auto-send reminders endpoint is working',
+    cronSchedule: '0 9 * * * (Daily at 9:00 AM UTC)',
+    status: 'active'
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
+    // Verify cron job authorization
+    const authHeader = request.headers.get('authorization');
+    const cronSecret = process.env.CRON_SECRET;
+    
+    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     // Get all sent invoices that are overdue
     const { data: overdueInvoices, error: invoicesError } = await supabase
       .from('invoices')
@@ -66,14 +81,51 @@ export async function POST(request: NextRequest) {
       const currentDate = new Date();
       const overdueDays = Math.ceil((currentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
 
+      // Parse payment terms for smart logic
+      let paymentTerms = null;
+      try {
+        paymentTerms = invoice.payment_terms ? 
+          (typeof invoice.payment_terms === 'string' ? JSON.parse(invoice.payment_terms) : invoice.payment_terms) : 
+          null;
+      } catch (error) {
+        console.log(`Failed to parse payment terms for invoice ${invoice.id}:`, error);
+      }
+
       // Determine which reminder schedule to use
       let reminderConfig = null;
       
       if (reminderSettings.useSystemDefaults) {
-        // Use system defaults
-        reminderConfig = reminderSchedule
-          .sort((a, b) => b.days - a.days) // Sort by days descending
-          .find(config => overdueDays >= config.days);
+        // Smart system defaults based on payment terms
+        if (paymentTerms?.enabled && paymentTerms.terms === 'Due on Receipt') {
+          // Special logic for "Due on Receipt" - only send after due date
+          if (overdueDays === 1) {
+            reminderConfig = { type: 'after', days: 1 };
+          } else if (overdueDays === 3) {
+            reminderConfig = { type: 'after', days: 3 };
+          } else if (overdueDays === 7) {
+            reminderConfig = { type: 'after', days: 7 };
+          } else if (overdueDays === 14) {
+            reminderConfig = { type: 'after', days: 14 };
+          }
+        } else {
+          // Standard logic for other payment terms
+          if (overdueDays < 0) {
+            // Before due date
+            const daysUntilDue = Math.abs(overdueDays);
+            if (daysUntilDue === 7) {
+              reminderConfig = { type: 'before', days: 7 };
+            } else if (daysUntilDue === 3) {
+              reminderConfig = { type: 'before', days: 3 };
+            }
+          } else {
+            // After due date
+            if (overdueDays === 1) {
+              reminderConfig = { type: 'after', days: 1 };
+            } else if (overdueDays === 7) {
+              reminderConfig = { type: 'after', days: 7 };
+            }
+          }
+        }
       } else {
         // Use custom rules
         const customRules = reminderSettings.customRules || reminderSettings.rules || [];

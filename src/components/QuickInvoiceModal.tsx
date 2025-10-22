@@ -7,7 +7,7 @@ import {
   ArrowRight, ArrowLeft, Hash, MessageSquare, 
   Bell, Palette, Settings, CheckCircle, Sparkles,
   Clock, CreditCard, AlertTriangle, Trash2,
-  Zap
+  Zap, AlertCircle
 } from 'lucide-react'
 import TemplateSelector from './TemplateSelector'
 import { Invoice } from '@/types'
@@ -1232,6 +1232,134 @@ export default function QuickInvoiceModal({
                 />
               </div>
 
+              {/* Payment Terms */}
+              <div className={`p-5 rounded-lg border ${
+                isDarkMode ? 'border-gray-700' : 'border-gray-200'
+              }`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className={`text-sm font-semibold flex items-center ${
+                    isDarkMode ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    <CreditCard className="h-4 w-4 mr-2 text-green-600" />
+                    Payment Terms
+                  </h4>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={paymentTerms.enabled}
+                      onChange={(e) => setPaymentTerms({...paymentTerms, enabled: e.target.checked})}
+                      className="sr-only peer"
+                    />
+                    <div className={`w-11 h-6 rounded-full peer transition-colors ${
+                      paymentTerms.enabled 
+                        ? 'bg-green-600' 
+                        : isDarkMode ? 'bg-gray-600' : 'bg-gray-300'
+                    }`}>
+                      <div className={`absolute top-0.5 left-0.5 bg-white rounded-full h-5 w-5 transition-transform ${
+                        paymentTerms.enabled ? 'translate-x-5' : ''
+                      }`}></div>
+                    </div>
+                  </label>
+                </div>
+
+                {paymentTerms.enabled && (
+                  <div className="space-y-4">
+                    {/* Payment Terms Info */}
+                    <div className="flex items-start space-x-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                      <Zap className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5" />
+                      <div>
+                        <p className={`text-xs font-medium ${
+                          isDarkMode ? 'text-blue-300' : 'text-blue-700'
+                        }`}>
+                          What are Payment Terms?
+                        </p>
+                        <p className={`text-xs mt-1 ${
+                          isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                        }`}>
+                          This helps set clear expectations and improves cash flow.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className={`block text-xs font-medium mb-2 ${
+                        isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
+                        Select Payment Terms
+                      </label>
+                      <select
+                        value={paymentTerms.defaultOption}
+                        onChange={(e) => {
+                          const selectedTerm = e.target.value
+                          setPaymentTerms({...paymentTerms, defaultOption: selectedTerm})
+                          
+                          // Smart due date adjustment based on payment terms
+                          if (selectedTerm === 'Due on Receipt') {
+                            setDueDate(issueDate) // Set due date to issue date (today)
+                          } else if (selectedTerm === 'Net 15') {
+                            const newDueDate = new Date(issueDate)
+                            newDueDate.setDate(newDueDate.getDate() + 15)
+                            setDueDate(newDueDate.toISOString().split('T')[0])
+                          } else if (selectedTerm === 'Net 30') {
+                            const newDueDate = new Date(issueDate)
+                            newDueDate.setDate(newDueDate.getDate() + 30)
+                            setDueDate(newDueDate.toISOString().split('T')[0])
+                          } else if (selectedTerm === '2/10 Net 30') {
+                            const newDueDate = new Date(issueDate)
+                            newDueDate.setDate(newDueDate.getDate() + 30)
+                            setDueDate(newDueDate.toISOString().split('T')[0])
+                          }
+                        }}
+                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-colors ${
+                          isDarkMode 
+                            ? 'border-gray-700 bg-gray-800 text-white' 
+                            : 'border-gray-300 bg-white text-gray-900'
+                        }`}
+                      >
+                        {paymentTerms.options.map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Payment Terms Explanation */}
+                    <div className="space-y-2">
+                      <h5 className={`text-xs font-medium ${
+                        isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
+                        What each term means:
+                      </h5>
+                      <div className="space-y-1 text-xs">
+                        <div className={`flex justify-between ${
+                          isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
+                          <span>Due on Receipt:</span>
+                          <span>Payment due immediately</span>
+                        </div>
+                        <div className={`flex justify-between ${
+                          isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
+                          <span>Net 15:</span>
+                          <span>Payment due in 15 days</span>
+                        </div>
+                        <div className={`flex justify-between ${
+                          isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
+                          <span>Net 30:</span>
+                          <span>Payment due in 30 days</span>
+                        </div>
+                        <div className={`flex justify-between ${
+                          isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
+                          <span>2/10 Net 30:</span>
+                          <span>2% discount if paid in 10 days, otherwise 30 days</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Auto Reminders */}
               <div className={`p-5 rounded-lg border ${
                 isDarkMode ? 'border-gray-700' : 'border-gray-200'
@@ -1264,6 +1392,30 @@ export default function QuickInvoiceModal({
 
                 {reminders.enabled && (
                   <div className="space-y-4">
+                    {/* Smart Reminder Logic Based on Payment Terms */}
+                    {paymentTerms.enabled && (
+                      <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                        <div className="flex items-start space-x-2">
+                          <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5" />
+                          <div>
+                            <p className={`text-xs font-medium ${
+                              isDarkMode ? 'text-amber-300' : 'text-amber-700'
+                            }`}>
+                              Smart Reminder System
+                            </p>
+                            <p className={`text-xs mt-1 ${
+                              isDarkMode ? 'text-amber-400' : 'text-amber-600'
+                            }`}>
+                              {paymentTerms.defaultOption === 'Due on Receipt' 
+                                ? 'For "Due on Receipt" invoices, reminders will be sent immediately after due date to encourage quick payment.'
+                                : `For "${paymentTerms.defaultOption}" invoices, reminders will be sent before and after the due date for optimal collection.`
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* System vs Custom Choice */}
                     <div className="flex items-center justify-between">
                       <span className={`text-sm font-medium ${
@@ -1307,7 +1459,7 @@ export default function QuickInvoiceModal({
                     </div>
 
                     {reminders.useSystemDefaults ? (
-                      /* Smart Defaults - Clean Design */
+                      /* Smart Defaults - Payment Terms Aware */
                       <div className="p-4">
                         <div className="flex items-center space-x-2 mb-3">
                           <Clock className="h-4 w-4 text-indigo-600" />
@@ -1320,33 +1472,69 @@ export default function QuickInvoiceModal({
                         <p className={`text-xs mb-3 ${
                           isDarkMode ? 'text-gray-400' : 'text-gray-600'
                         }`}>
-                          System will automatically send reminders at optimal times
+                          {paymentTerms.enabled 
+                            ? `System will automatically send reminders optimized for "${paymentTerms.defaultOption}" payment terms`
+                            : 'System will automatically send reminders at optimal times'
+                          }
                         </p>
                         <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div className={`flex items-center space-x-2 ${
-                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                          }`}>
-                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                            <span>7 days before</span>
-                          </div>
-                          <div className={`flex items-center space-x-2 ${
-                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                          }`}>
-                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                            <span>3 days before</span>
-                          </div>
-                          <div className={`flex items-center space-x-2 ${
-                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                          }`}>
-                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                            <span>1 day after</span>
-                          </div>
-                          <div className={`flex items-center space-x-2 ${
-                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                          }`}>
-                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                            <span>7 days after</span>
-                          </div>
+                          {paymentTerms.enabled && paymentTerms.defaultOption === 'Due on Receipt' ? (
+                            // Special logic for "Due on Receipt"
+                            <>
+                              <div className={`flex items-center space-x-2 ${
+                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span>1 day after</span>
+                              </div>
+                              <div className={`flex items-center space-x-2 ${
+                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span>3 days after</span>
+                              </div>
+                              <div className={`flex items-center space-x-2 ${
+                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span>7 days after</span>
+                              </div>
+                              <div className={`flex items-center space-x-2 ${
+                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span>14 days after</span>
+                              </div>
+                            </>
+                          ) : (
+                            // Standard logic for other payment terms
+                            <>
+                              <div className={`flex items-center space-x-2 ${
+                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
+                                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                <span>7 days before</span>
+                              </div>
+                              <div className={`flex items-center space-x-2 ${
+                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
+                                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                <span>3 days before</span>
+                              </div>
+                              <div className={`flex items-center space-x-2 ${
+                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span>1 day after</span>
+                              </div>
+                              <div className={`flex items-center space-x-2 ${
+                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span>7 days after</span>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -1550,134 +1738,6 @@ export default function QuickInvoiceModal({
                 )}
               </div>
 
-              {/* Payment Terms */}
-              <div className={`p-5 rounded-lg border ${
-                isDarkMode ? 'border-gray-700' : 'border-gray-200'
-              }`}>
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className={`text-sm font-semibold flex items-center ${
-                    isDarkMode ? 'text-white' : 'text-gray-900'
-                  }`}>
-                    <CreditCard className="h-4 w-4 mr-2 text-green-600" />
-                    Payment Terms
-                  </h4>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={paymentTerms.enabled}
-                      onChange={(e) => setPaymentTerms({...paymentTerms, enabled: e.target.checked})}
-                      className="sr-only peer"
-                    />
-                    <div className={`w-11 h-6 rounded-full peer transition-colors ${
-                      paymentTerms.enabled 
-                        ? 'bg-green-600' 
-                        : isDarkMode ? 'bg-gray-600' : 'bg-gray-300'
-                    }`}>
-                      <div className={`absolute top-0.5 left-0.5 bg-white rounded-full h-5 w-5 transition-transform ${
-                        paymentTerms.enabled ? 'translate-x-5' : ''
-                      }`}></div>
-                    </div>
-                  </label>
-                </div>
-
-                {paymentTerms.enabled && (
-                  <div className="space-y-4">
-                    {/* Explanation */}
-                    <div className={`p-3 rounded-lg ${
-                      isDarkMode ? 'bg-blue-500/10' : 'bg-blue-50'
-                    }`}>
-                      <div className="flex items-start space-x-2">
-                        <Zap className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5" />
-                        <div>
-                          <p className={`text-xs font-medium ${
-                            isDarkMode ? 'text-blue-300' : 'text-blue-700'
-                          }`}>
-                            What are Payment Terms?
-                          </p>
-                          <p className={`text-xs mt-1 ${
-                            isDarkMode ? 'text-blue-400' : 'text-blue-600'
-                          }`}>
-                            Payment terms define when and how clients should pay your invoice. 
-                            This helps set clear expectations and improves cash flow.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className={`block text-xs font-medium mb-2 ${
-                        isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                      }`}>
-                        Select Payment Terms
-                      </label>
-                      <select
-                        value={paymentTerms.defaultOption}
-                        onChange={(e) => {
-                          const selectedTerm = e.target.value
-                          setPaymentTerms({...paymentTerms, defaultOption: selectedTerm})
-                          
-                          // Auto-update due date based on payment terms
-                          if (selectedTerm === 'Due on Receipt') {
-                            setDueDate(issueDate) // Set due date to issue date (today)
-                          } else if (selectedTerm === 'Net 15') {
-                            const newDueDate = new Date(issueDate)
-                            newDueDate.setDate(newDueDate.getDate() + 15)
-                            setDueDate(newDueDate.toISOString().split('T')[0])
-                          } else if (selectedTerm === 'Net 30') {
-                            const newDueDate = new Date(issueDate)
-                            newDueDate.setDate(newDueDate.getDate() + 30)
-                            setDueDate(newDueDate.toISOString().split('T')[0])
-                          } else if (selectedTerm === '2/10 Net 30') {
-                            const newDueDate = new Date(issueDate)
-                            newDueDate.setDate(newDueDate.getDate() + 30)
-                            setDueDate(newDueDate.toISOString().split('T')[0])
-                          }
-                        }}
-                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                          isDarkMode 
-                            ? 'border-gray-700 bg-gray-800 text-white' 
-                            : 'border-gray-300 bg-white text-gray-900'
-                        }`}
-                      >
-                        {paymentTerms.options.map(option => (
-                          <option key={option} value={option}>{option}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Payment Terms Explanation */}
-                    <div className="space-y-2">
-                      <h5 className={`text-xs font-medium ${
-                        isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                      }`}>
-                        What each term means:
-                      </h5>
-                      <div className="space-y-1 text-xs">
-                        <div className={`flex justify-between ${
-                          isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                        }`}>
-                          <span><strong>Net 15:</strong> Payment due within 15 days</span>
-                        </div>
-                        <div className={`flex justify-between ${
-                          isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                        }`}>
-                          <span><strong>Net 30:</strong> Payment due within 30 days</span>
-                        </div>
-                        <div className={`flex justify-between ${
-                          isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                        }`}>
-                          <span><strong>Due on Receipt:</strong> Payment due immediately</span>
-                        </div>
-                        <div className={`flex justify-between ${
-                          isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                        }`}>
-                          <span><strong>2/10 Net 30:</strong> 2% discount if paid in 10 days, otherwise 30 days</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
 
 
               <div className="flex flex-col sm:flex-row gap-3">

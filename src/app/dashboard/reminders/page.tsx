@@ -261,13 +261,13 @@ export default function ReminderHistoryPage() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-gray-100">
-                        <Mail className="h-5 w-5 text-gray-600" />
+                        <Mail className="h-5 w-5 text-gray-700" />
                       </div>
                       <div>
                         <div className="text-sm font-semibold text-gray-900">
                           {reminder.invoice.invoice_number}
                         </div>
-                         <div className="text-xs font-semibold text-green-600">
+                         <div className="text-xs font-semibold text-green-700">
                            ${reminder.invoice.total.toLocaleString()}
                          </div>
                       </div>
@@ -282,7 +282,7 @@ export default function ReminderHistoryPage() {
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-gray-700">Client:</span>
-                      <span className="text-xs text-gray-600">{reminder.invoice.clients.name}</span>
+                      <span className="text-xs text-gray-700">{reminder.invoice.clients.name}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-gray-700">Status:</span>
@@ -292,7 +292,7 @@ export default function ReminderHistoryPage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-gray-700">Sent:</span>
-                      <span className="text-xs text-gray-600">
+                      <span className="text-xs text-gray-700">
                         {new Date(reminder.sent_at).toLocaleDateString()}
                       </span>
                     </div>
@@ -324,7 +324,7 @@ export default function ReminderHistoryPage() {
                     {/* Left Section - Reminder Info */}
                     <div className="col-span-5 flex items-center space-x-4">
                       <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gray-100">
-                        <Mail className="h-6 w-6 text-gray-600" />
+                        <Mail className="h-6 w-6 text-gray-700" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
@@ -349,7 +349,7 @@ export default function ReminderHistoryPage() {
                     {/* Middle Section - Amount & Status */}
                     <div className="col-span-4 flex items-center justify-center">
                       <div className="text-center">
-                         <div className="text-lg font-semibold mb-1 text-green-600">
+                         <div className="text-lg font-semibold mb-1 text-green-700">
                            ${reminder.invoice.total.toLocaleString()}
                          </div>
                         <div className="flex items-center justify-center space-x-3">
