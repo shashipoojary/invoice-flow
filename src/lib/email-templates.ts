@@ -187,40 +187,101 @@ export function generateMinimalEmailTemplate(
             text-decoration: none;
             border-radius: 6px;
             font-weight: 600;
-            font-size: 15px;
+            font-size: 16px;
+            margin: 24px 0;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          }
+          .cta-button:hover {
+            background: #1557b0;
+            transform: translateY(-1px);
           }
           .payment-methods {
             margin: 32px 0;
+            width: 100%;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 1;
+          }
+          .payment-methods::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            width: 50px;
+            height: 50px;
+            background: #8B5CF608;
+            border-radius: 12px;
+            transform: rotate(-15deg);
+            z-index: 0;
+          }
+          .payment-methods::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            right: -15px;
+            width: 35px;
+            height: 35px;
+            background: #3B82F615;
+            border-radius: 50%;
+            z-index: 0;
           }
           .payment-methods h3 {
             font-size: 18px;
             font-weight: 600;
-            color: #202124;
-            margin-bottom: 16px;
-            text-align: center;
+            color: #1e293b;
+            margin-bottom: 20px;
+            text-align: left;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
           }
           .payment-notice {
-            background: #fff3cd;
-            padding: 16px;
+            background: #f8fafc;
+            padding: 20px;
             border-radius: 6px;
-            margin-bottom: 20px;
-            text-align: center;
+            margin-bottom: 24px;
+            width: 100%;
+            box-sizing: border-box;
           }
           .payment-notice p {
             margin: 0;
             font-size: 14px;
-            color: #856404;
+            color: #1e40af;
             line-height: 1.5;
             font-weight: 500;
           }
           .payment-list {
-            margin-bottom: 20px;
+            margin-bottom: 28px;
+            width: 100%;
+            box-sizing: border-box;
+          }
+          .payment-method-item {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e5e7eb;
+          }
+          .payment-method-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
           }
           .payment-item {
             margin-bottom: 12px;
             padding: 12px;
             background: #ffffff;
             border-radius: 4px;
+          }
+          .payment-method-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1a73e8;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .payment-method-details {
+            font-size: 14px;
+            color: #5f6368;
+            line-height: 1.4;
           }
           .payment-method {
             font-size: 15px;
@@ -326,6 +387,14 @@ export function generateMinimalEmailTemplate(
             .payment-notice p {
               font-size: 13px;
             }
+            .cta-button {
+              display: block;
+              width: 100%;
+              text-align: center;
+              padding: 14px 28px;
+              font-size: 16px;
+              margin: 24px 0;
+            }
           }
         </style>
       </head>
@@ -335,11 +404,6 @@ export function generateMinimalEmailTemplate(
             <div class="header-content">
               <div class="business-info">
                 <div class="business-name">${businessSettings.businessName}</div>
-                <div class="business-details">
-                  ${businessSettings.address ? `${businessSettings.address}<br>` : ''}
-                  ${businessSettings.businessPhone ? `${businessSettings.businessPhone}<br>` : ''}
-                  ${businessSettings.businessEmail}
-                </div>
               </div>
               <div class="invoice-info">
                 <div class="invoice-title">Invoice</div>
@@ -378,44 +442,44 @@ export function generateMinimalEmailTemplate(
 
             ${(businessSettings.paypalEmail || businessSettings.cashappId || businessSettings.venmoId || businessSettings.googlePayUpi || businessSettings.applePayId || businessSettings.bankAccount || businessSettings.stripeAccount || businessSettings.paymentNotes) ? `
             <div class="payment-methods">
-              <h3>Payment Information</h3>
+              <h3>Payment Methods</h3>
               <div class="payment-notice">
                 <p>Please use one of the following payment methods to settle this invoice. All payments are processed securely.</p>
               </div>
               <div class="payment-list">
                 ${businessSettings.paypalEmail ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">PAYPAL:</div>
+                    <div class="payment-method-name">PAYPAL</div>
                     <div class="payment-method-details">Send payment to: ${businessSettings.paypalEmail}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.cashappId ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">CASH APP:</div>
+                    <div class="payment-method-name">CASH APP</div>
                     <div class="payment-method-details">Send to: $${businessSettings.cashappId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.venmoId ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">VENMO:</div>
+                    <div class="payment-method-name">VENMO</div>
                     <div class="payment-method-details">Send to: @${businessSettings.venmoId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.googlePayUpi ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">GOOGLE PAY:</div>
+                    <div class="payment-method-name">GOOGLE PAY</div>
                     <div class="payment-method-details">UPI ID: ${businessSettings.googlePayUpi}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.applePayId ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">APPLE PAY:</div>
+                    <div class="payment-method-name">APPLE PAY</div>
                     <div class="payment-method-details">Send to: ${businessSettings.applePayId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.bankAccount ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">BANK TRANSFER:</div>
+                    <div class="payment-method-name">BANK TRANSFER</div>
                     <div class="payment-method-details">
                       Bank: ${businessSettings.bankAccount}<br>
                       ${businessSettings.bankIfscSwift ? `IFSC/SWIFT: ${businessSettings.bankIfscSwift}<br>` : ''}
@@ -425,13 +489,13 @@ export function generateMinimalEmailTemplate(
                 ` : ''}
                 ${businessSettings.stripeAccount ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">CREDIT/DEBIT CARD:</div>
+                    <div class="payment-method-name">CREDIT/DEBIT CARD</div>
                     <div class="payment-method-details">Processed securely via Stripe</div>
                   </div>
                 ` : ''}
                 ${businessSettings.paymentNotes ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">OTHER:</div>
+                    <div class="payment-method-name">OTHER</div>
                     <div class="payment-method-details">${businessSettings.paymentNotes}</div>
                   </div>
                 ` : ''}
@@ -575,7 +639,7 @@ export function generateModernEmailTemplate(
             background: #f8f9fa;
             padding: 32px;
             margin-bottom: 48px;
-            border-radius: 8px;
+            border-radius: 6px;
           }
           .message-section p {
             margin: 0 0 16px 0;
@@ -599,8 +663,8 @@ export function generateModernEmailTemplate(
             text-decoration: none;
             font-weight: 600;
             font-size: 15px;
-            border-radius: 8px;
-            transition: all 0.2s ease;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             letter-spacing: -0.01em;
           }
           .cta-button:hover {
@@ -907,7 +971,7 @@ export function generateCreativeEmailTemplate(
             max-width: 600px;
             margin: 0 auto;
             background: #ffffff;
-            border-radius: 8px;
+            border-radius: 6px;
             overflow: hidden;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             box-sizing: border-box;
@@ -1004,7 +1068,7 @@ export function generateCreativeEmailTemplate(
             width: 40px;
             height: 40px;
             background: ${accentColor}10;
-            border-radius: 8px;
+            border-radius: 6px;
             transform: rotate(15deg);
             z-index: 0;
           }
@@ -1426,37 +1490,37 @@ export function generateCreativeEmailTemplate(
               <div class="payment-list">
                 ${businessSettings.paypalEmail ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">PAYPAL:</div>
+                    <div class="payment-method-name">PAYPAL</div>
                     <div class="payment-method-details">Send payment to: ${businessSettings.paypalEmail}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.cashappId ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">CASH APP:</div>
+                    <div class="payment-method-name">CASH APP</div>
                     <div class="payment-method-details">Send to: $${businessSettings.cashappId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.venmoId ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">VENMO:</div>
+                    <div class="payment-method-name">VENMO</div>
                     <div class="payment-method-details">Send to: @${businessSettings.venmoId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.googlePayUpi ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">GOOGLE PAY:</div>
+                    <div class="payment-method-name">GOOGLE PAY</div>
                     <div class="payment-method-details">UPI ID: ${businessSettings.googlePayUpi}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.applePayId ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">APPLE PAY:</div>
+                    <div class="payment-method-name">APPLE PAY</div>
                     <div class="payment-method-details">Send to: ${businessSettings.applePayId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.bankAccount ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">BANK TRANSFER:</div>
+                    <div class="payment-method-name">BANK TRANSFER</div>
                     <div class="payment-method-details">
                       Bank: ${businessSettings.bankAccount}<br>
                       ${businessSettings.bankIfscSwift ? `IFSC/SWIFT: ${businessSettings.bankIfscSwift}<br>` : ''}
@@ -1466,13 +1530,13 @@ export function generateCreativeEmailTemplate(
                 ` : ''}
                 ${businessSettings.stripeAccount ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">CREDIT/DEBIT CARD:</div>
+                    <div class="payment-method-name">CREDIT/DEBIT CARD</div>
                     <div class="payment-method-details">Processed securely via Stripe</div>
                   </div>
                 ` : ''}
                 ${businessSettings.paymentNotes ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">OTHER:</div>
+                    <div class="payment-method-name">OTHER</div>
                     <div class="payment-method-details">${businessSettings.paymentNotes}</div>
                   </div>
                 ` : ''}
@@ -1645,41 +1709,103 @@ export function generateOriginalFastInvoiceEmailTemplate(
             display: inline-block;
             background: #1a73e8;
             color: white;
-            padding: 12px 24px;
+            padding: 14px 28px;
             text-decoration: none;
-            border-radius: 4px;
-            font-weight: 500;
-            font-size: 14px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 24px 0;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          }
+          .cta-button:hover {
+            background: #1557b0;
+            transform: translateY(-1px);
           }
           .payment-methods {
             margin: 32px 0;
-            padding: 0;
+            width: 100%;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 1;
+          }
+          .payment-methods::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            width: 50px;
+            height: 50px;
+            background: #8B5CF608;
+            border-radius: 12px;
+            transform: rotate(-15deg);
+            z-index: 0;
+          }
+          .payment-methods::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            right: -15px;
+            width: 35px;
+            height: 35px;
+            background: #3B82F615;
+            border-radius: 50%;
+            z-index: 0;
           }
           .payment-methods h3 {
             font-size: 18px;
             font-weight: 600;
-            color: #202124;
-            margin-bottom: 16px;
+            color: #1e293b;
+            margin-bottom: 20px;
+            text-align: left;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
           }
           .payment-notice {
-            background: #f8f9fa;
-            padding: 16px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            border-left: 4px solid #1a73e8;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 24px;
+            width: 100%;
+            box-sizing: border-box;
           }
           .payment-notice p {
             margin: 0;
             font-size: 14px;
-            color: #202124;
+            color: #1e40af;
             line-height: 1.5;
+            font-weight: 500;
           }
           .payment-list {
-            margin-bottom: 20px;
+            margin-bottom: 28px;
+            width: 100%;
+            box-sizing: border-box;
+          }
+          .payment-method-item {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e5e7eb;
+          }
+          .payment-method-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
           }
           .payment-item {
             margin-bottom: 16px;
             padding: 0;
+          }
+          .payment-method-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1a73e8;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .payment-method-details {
+            font-size: 14px;
+            color: #5f6368;
+            line-height: 1.4;
           }
           .payment-method {
             font-size: 16px;
@@ -1750,26 +1876,117 @@ export function generateOriginalFastInvoiceEmailTemplate(
             text-decoration: none;
           }
           @media (max-width: 600px) {
+            .email-container {
+              max-width: 100%;
+              margin: 0;
+            }
             .header {
-              padding: 24px 16px;
+              padding: 20px 16px;
             }
             .header-content {
               flex-direction: column;
-              gap: 16px;
+              gap: 20px;
             }
             .business-info {
               max-width: 100%;
+              order: 2;
             }
             .invoice-info {
               max-width: 100%;
               text-align: left;
               margin-left: 0;
+              order: 1;
+            }
+            .business-name {
+              font-size: 16px;
+            }
+            .business-details {
+              font-size: 12px;
+            }
+            .invoice-title {
+              font-size: 18px;
+            }
+            .invoice-number {
+              font-size: 12px;
+            }
+            .amount {
+              font-size: 20px;
             }
             .content {
-              padding: 24px 16px;
+              padding: 20px 16px;
+            }
+            .detail-row {
+              flex-direction: column;
+              gap: 4px;
+              padding: 16px 0;
+            }
+            .detail-label {
+              font-size: 13px;
+              margin-bottom: 4px;
+            }
+            .detail-value {
+              font-size: 13px;
+            }
+            .message-section {
+              margin: 24px 0;
+              padding: 20px 0;
+            }
+            .message-section p {
+              font-size: 13px;
+            }
+            .cta-section {
+              margin: 24px 0;
+            }
+            .cta-button {
+              display: block;
+              width: 100%;
+              text-align: center;
+              padding: 14px 28px;
+              font-size: 16px;
+              margin: 24px 0;
+            }
+            .payment-methods {
+              margin: 24px 0;
+            }
+            .payment-methods h3 {
+              font-size: 16px;
+            }
+            .payment-notice {
+              padding: 12px;
+              margin-bottom: 16px;
+            }
+            .payment-notice p {
+              font-size: 13px;
+            }
+            .payment-method {
+              font-size: 14px;
+            }
+            .payment-info {
+              font-size: 13px;
+            }
+            .payment-security {
+              padding: 12px;
+            }
+            .payment-security p {
+              font-size: 13px;
             }
             .footer {
-              padding: 24px 16px;
+              padding: 20px 16px;
+            }
+            .footer p {
+              font-size: 13px;
+            }
+            .business-name {
+              font-size: 14px;
+            }
+            .business-contact {
+              font-size: 13px;
+            }
+            .invoiceflow-disclaimer {
+              font-size: 10px;
+            }
+            .invoiceflow-link {
+              font-size: 10px;
             }
           }
         </style>
@@ -1780,11 +1997,6 @@ export function generateOriginalFastInvoiceEmailTemplate(
             <div class="header-content">
               <div class="business-info">
                 <div class="business-name">${businessSettings.businessName}</div>
-                <div class="business-details">
-                  ${businessSettings.address ? `${businessSettings.address}<br>` : ''}
-                  ${businessSettings.businessPhone ? `${businessSettings.businessPhone}<br>` : ''}
-                  ${businessSettings.businessEmail}
-                </div>
               </div>
               <div class="invoice-info">
                 <div class="invoice-title">Invoice</div>
@@ -1823,44 +2035,44 @@ export function generateOriginalFastInvoiceEmailTemplate(
 
             ${(businessSettings.paypalEmail || businessSettings.cashappId || businessSettings.venmoId || businessSettings.googlePayUpi || businessSettings.applePayId || businessSettings.bankAccount || businessSettings.stripeAccount || businessSettings.paymentNotes) ? `
             <div class="payment-methods">
-              <h3>Payment Information</h3>
+              <h3>Payment Methods</h3>
               <div class="payment-notice">
                 <p>Please use one of the following payment methods to settle this invoice. All payments are processed securely.</p>
               </div>
               <div class="payment-list">
                 ${businessSettings.paypalEmail ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">PAYPAL:</div>
+                    <div class="payment-method-name">PAYPAL</div>
                     <div class="payment-method-details">Send payment to: ${businessSettings.paypalEmail}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.cashappId ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">CASH APP:</div>
+                    <div class="payment-method-name">CASH APP</div>
                     <div class="payment-method-details">Send to: $${businessSettings.cashappId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.venmoId ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">VENMO:</div>
+                    <div class="payment-method-name">VENMO</div>
                     <div class="payment-method-details">Send to: @${businessSettings.venmoId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.googlePayUpi ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">GOOGLE PAY:</div>
+                    <div class="payment-method-name">GOOGLE PAY</div>
                     <div class="payment-method-details">UPI ID: ${businessSettings.googlePayUpi}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.applePayId ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">APPLE PAY:</div>
+                    <div class="payment-method-name">APPLE PAY</div>
                     <div class="payment-method-details">Send to: ${businessSettings.applePayId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.bankAccount ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">BANK TRANSFER:</div>
+                    <div class="payment-method-name">BANK TRANSFER</div>
                     <div class="payment-method-details">
                       Bank: ${businessSettings.bankAccount}<br>
                       ${businessSettings.bankIfscSwift ? `IFSC/SWIFT: ${businessSettings.bankIfscSwift}<br>` : ''}
@@ -1870,13 +2082,13 @@ export function generateOriginalFastInvoiceEmailTemplate(
                 ` : ''}
                 ${businessSettings.stripeAccount ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">CREDIT/DEBIT CARD:</div>
+                    <div class="payment-method-name">CREDIT/DEBIT CARD</div>
                     <div class="payment-method-details">Processed securely via Stripe</div>
                   </div>
                 ` : ''}
                 ${businessSettings.paymentNotes ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">OTHER:</div>
+                    <div class="payment-method-name">OTHER</div>
                     <div class="payment-method-details">${businessSettings.paymentNotes}</div>
                   </div>
                 ` : ''}

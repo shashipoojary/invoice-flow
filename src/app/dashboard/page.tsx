@@ -1701,7 +1701,7 @@ export default function DashboardOverview() {
                            {selectedInvoice.reminders.enabled 
                              ? (selectedInvoice.reminders.useSystemDefaults 
                                ? 'Smart System' 
-                               : `${selectedInvoice.reminders.rules.filter(rule => rule.enabled).length} Custom Rule${selectedInvoice.reminders.rules.filter(rule => rule.enabled).length !== 1 ? 's' : ''}`)
+                               : `${selectedInvoice.reminders.rules?.filter(rule => rule.enabled).length || 0} Custom Rule${(selectedInvoice.reminders.rules?.filter(rule => rule.enabled).length || 0) !== 1 ? 's' : ''}`)
                              : 'Not configured'
                            }
                          </p>

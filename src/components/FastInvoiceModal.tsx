@@ -89,8 +89,10 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
     onClose()
   }
 
-  const handleCreateInvoice = async (showToast = true) => {
-    setLoading(true)
+  const handleCreateInvoice = async (showToast = true, isSending = false) => {
+    if (!isSending) {
+      setLoading(true)
+    }
 
     try {
       // Parse description for smart defaults
@@ -129,19 +131,23 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
           }],
           due_date: dueDate,
           notes: notes,
-          billing_choice: 'subscription', // For now, assume subscription
-          type: 'fast' // Mark as fast invoice
+          billing_choice: 'per_invoice',
+          type: 'fast', // Mark as fast invoice
+          status: 'sent' // Create as sent, not draft
         })
       })
 
       if (invoiceResponse.ok) {
         const result = await invoiceResponse.json()
         if (showToast) {
-          showSuccess('Invoice created and saved as draft!')
+          showSuccess('Invoice created successfully!')
+          onSuccess()
+          onClose()
+          resetForm()
+        } else {
+          // For create & send, don't close yet
+          return result.invoice
         }
-        onSuccess()
-        onClose()
-        resetForm()
         return result.invoice
       } else {
         throw new Error('Failed to create invoice')
@@ -150,7 +156,9 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
       console.error('Error creating invoice:', error)
       showError('Failed to create invoice. Please try again.')
     } finally {
-      setLoading(false)
+      if (!isSending) {
+        setLoading(false)
+      }
     }
   }
 
@@ -158,8 +166,8 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
     setSendLoading(true)
 
     try {
-      // First create the invoice (without showing toast)
-      const invoice = await handleCreateInvoice(false)
+      // First create the invoice (without showing toast or loading state)
+      const invoice = await handleCreateInvoice(false, true)
       
       if (invoice) {
         // Then send it
@@ -183,6 +191,10 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         } else {
           showWarning('Invoice created but failed to send. You can send it later from the invoice list.')
         }
+        
+        onSuccess()
+        onClose()
+        resetForm()
       }
     } catch (error) {
       console.error('Error creating and sending invoice:', error)

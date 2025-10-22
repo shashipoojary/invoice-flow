@@ -34,6 +34,11 @@ function InvoicesContent() {
   const [showViewInvoice, setShowViewInvoice] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [showFilters, setShowFilters] = useState(false);
+  
   // Loading states for action buttons
   const [loadingActions, setLoadingActions] = useState<{
     [key: string]: boolean;
@@ -148,12 +153,26 @@ function InvoicesContent() {
   }, []);
 
   // Helper function to calculate due date status
-  const getDueDateStatus = useCallback((dueDate: string) => {
+  const getDueDateStatus = useCallback((dueDate: string, invoiceStatus: string) => {
     const today = new Date();
     const due = new Date(dueDate);
     const diffTime = due.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
+    // Draft invoices should never be marked as overdue, even if past due date
+    if (invoiceStatus === 'draft') {
+      if (diffDays < 0) {
+        return { status: 'draft-past-due', days: Math.abs(diffDays), color: 'text-gray-500 dark:text-gray-400' };
+      } else if (diffDays === 0) {
+        return { status: 'draft-due-today', days: 0, color: 'text-gray-500 dark:text-gray-400' };
+      } else if (diffDays <= 3) {
+        return { status: 'draft-due-soon', days: diffDays, color: 'text-gray-500 dark:text-gray-400' };
+      } else {
+        return { status: 'draft-upcoming', days: diffDays, color: 'text-gray-500 dark:text-gray-400' };
+      }
+    }
+    
+    // Only sent/pending invoices can be overdue
     if (diffDays < 0) {
       return { status: 'overdue', days: Math.abs(diffDays), color: 'text-red-600 dark:text-red-400' };
     } else if (diffDays === 0) {
@@ -182,9 +201,57 @@ function InvoicesContent() {
   const formatReminders = useCallback((reminders?: { enabled: boolean; useSystemDefaults: boolean; rules: Array<{ enabled: boolean }> }) => {
     if (!reminders?.enabled) return null;
     if (reminders.useSystemDefaults) return 'Smart System';
-    const activeRules = reminders.rules.filter(rule => rule.enabled).length;
+    const activeRules = reminders.rules?.filter(rule => rule.enabled).length || 0;
     return `${activeRules} Custom Rule${activeRules !== 1 ? 's' : ''}`;
   }, []);
+
+  // Search and filter logic
+  const filteredInvoices = useCallback(() => {
+    let filtered = invoices;
+
+    // Apply search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(invoice => {
+        // Search in client name
+        const clientName = invoice.client?.name?.toLowerCase() || '';
+        // Search in invoice number
+        const invoiceNumber = invoice.invoiceNumber?.toLowerCase() || '';
+        // Search in invoice type
+        const invoiceType = invoice.type?.toLowerCase() || '';
+        // Search in amount
+        const amount = invoice.total?.toString() || '';
+        
+        return clientName.includes(query) || 
+               invoiceNumber.includes(query) || 
+               invoiceType.includes(query) || 
+               amount.includes(query);
+      });
+    }
+
+    // Apply status filter
+    if (statusFilter) {
+      filtered = filtered.filter(invoice => {
+        if (statusFilter === 'paid') {
+          return invoice.status === 'paid';
+        } else if (statusFilter === 'pending') {
+          return invoice.status === 'pending' || invoice.status === 'sent';
+        } else if (statusFilter === 'overdue') {
+          if (invoice.status !== 'pending' && invoice.status !== 'sent') return false;
+          const today = new Date();
+          const dueDate = new Date(invoice.dueDate);
+          today.setHours(0, 0, 0, 0);
+          dueDate.setHours(0, 0, 0, 0);
+          return dueDate < today;
+        } else if (statusFilter === 'draft') {
+          return invoice.status === 'draft';
+        }
+        return true;
+      });
+    }
+
+    return filtered;
+  }, [invoices, searchQuery, statusFilter]);
 
   // Helper function to calculate due charges and total payable
   const calculateDueCharges = useCallback((invoice: Invoice) => {
@@ -451,14 +518,14 @@ function InvoicesContent() {
     handleDeleteInvoice: (invoice: Invoice) => void;
     getStatusIcon: (status: string) => React.ReactElement;
     getStatusColor: (status: string) => string;
-    getDueDateStatus: (dueDate: string) => { status: string; days: number; color: string };
+    getDueDateStatus: (dueDate: string, invoiceStatus: string) => { status: string; days: number; color: string };
     formatPaymentTerms: (paymentTerms?: { enabled: boolean; terms: string }) => string | null;
     formatLateFees: (lateFees?: { enabled: boolean; type: 'fixed' | 'percentage'; amount: number; gracePeriod: number }) => string | null;
     formatReminders: (reminders?: { enabled: boolean; useSystemDefaults: boolean; rules: Array<{ enabled: boolean }> }) => string | null;
     calculateDueCharges: (invoice: Invoice) => { hasLateFees: boolean; lateFeeAmount: number; totalPayable: number; overdueDays: number };
     loadingActions: { [key: string]: boolean };
   }) => {
-    const dueDateStatus = getDueDateStatus(invoice.dueDate);
+    const dueDateStatus = getDueDateStatus(invoice.dueDate, invoice.status);
     const dueCharges = calculateDueCharges(invoice);
     
     // Show enhanced features for all invoice statuses
@@ -489,6 +556,7 @@ function InvoicesContent() {
                 <div className={`font-semibold text-base ${
                   invoice.status === 'paid' ? ('text-emerald-600') :
                   dueDateStatus.status === 'overdue' ? ('text-red-600') :
+                  dueDateStatus.status === 'draft-past-due' ? ('text-gray-500') :
                   invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-500') :
                   invoice.status === 'draft' ? ('text-gray-600') :
                   ('text-red-600')
@@ -519,6 +587,12 @@ function InvoicesContent() {
                   <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-red-600'}`}>
                     <AlertTriangle className="h-3 w-3" />
                     <span>{dueDateStatus.days}d overdue</span>
+                  </span>
+                )}
+                {dueDateStatus.status === 'draft-past-due' && (
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-gray-500'}`}>
+                    <Clock className="h-3 w-3" />
+                    <span>Draft - {dueDateStatus.days}d past due</span>
                   </span>
                 )}
                 </div>
@@ -615,6 +689,7 @@ function InvoicesContent() {
                 <div className={`font-semibold text-base ${
                   invoice.status === 'paid' ? ('text-emerald-600') :
                   dueDateStatus.status === 'overdue' ? ('text-red-600') :
+                  dueDateStatus.status === 'draft-past-due' ? ('text-gray-500') :
                   invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-500') :
                   invoice.status === 'draft' ? ('text-gray-600') :
                   ('text-red-600')
@@ -645,6 +720,12 @@ function InvoicesContent() {
                   <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-red-600'}`}>
                     <AlertTriangle className="h-3 w-3" />
                     <span>{dueDateStatus.days}d overdue</span>
+                  </span>
+                )}
+                {dueDateStatus.status === 'draft-past-due' && (
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-gray-500'}`}>
+                    <Clock className="h-3 w-3" />
+                    <span>Draft - {dueDateStatus.days}d past due</span>
                   </span>
                 )}
                 </div>
@@ -871,6 +952,139 @@ function InvoicesContent() {
                   </button>
                 )}
               </div>
+
+              {/* Search and Filter Section */}
+              <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+                <div className="flex flex-col lg:flex-row gap-4">
+                  {/* Search Bar */}
+                  <div className="flex-1">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Search by client name, invoice number, type, or amount..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Filter Button */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowFilters(!showFilters)}
+                      className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                    >
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                      </svg>
+                      Filter
+                      {statusFilter && (
+                        <span className="bg-indigo-100 text-indigo-800 text-xs px-2 py-0.5 rounded-full">
+                          {statusFilter}
+                        </span>
+                      )}
+                    </button>
+
+                    {/* Clear Filters */}
+                    {(searchQuery || statusFilter) && (
+                      <button
+                        onClick={() => {
+                          setSearchQuery('');
+                          setStatusFilter('');
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors text-sm font-medium"
+                      >
+                        <X className="h-4 w-4" />
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Filter Options */}
+                {showFilters && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setStatusFilter('')}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          !statusFilter 
+                            ? 'bg-gray-900 text-white' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        All
+                      </button>
+                      <button
+                        onClick={() => setStatusFilter('paid')}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          statusFilter === 'paid' 
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        Paid
+                      </button>
+                      <button
+                        onClick={() => setStatusFilter('pending')}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          statusFilter === 'pending' 
+                            ? 'bg-orange-100 text-orange-800 border border-orange-200' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        Pending
+                      </button>
+                      <button
+                        onClick={() => setStatusFilter('overdue')}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          statusFilter === 'overdue' 
+                            ? 'bg-red-100 text-red-800 border border-red-200' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        Overdue
+                      </button>
+                      <button
+                        onClick={() => setStatusFilter('draft')}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                          statusFilter === 'draft' 
+                            ? 'bg-gray-100 text-gray-800 border border-gray-200' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        Draft
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Results Counter */}
+              {!isLoadingInvoices && (
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <div>
+                    {filteredInvoices().length === 0 ? (
+                      <span>No invoices found</span>
+                    ) : (
+                      <span>
+                        {filteredInvoices().length} invoice{filteredInvoices().length !== 1 ? 's' : ''} found
+                        {(searchQuery || statusFilter) && (
+                          <span className="ml-2 text-gray-500">
+                            (filtered from {invoices.length} total)
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
                 
               {/* Invoice List */}
               {isLoadingInvoices ? (
@@ -896,29 +1110,8 @@ function InvoicesContent() {
                 </div>
               ) : invoices.length > 0 ? (
                 <div className="space-y-4">
-                  {invoices
-                    .filter((invoice) => {
-                      const statusFilter = searchParams.get('status');
-                      if (!statusFilter) return true;
-                      
-                      if (statusFilter === 'paid') {
-                        return invoice.status === 'paid';
-                      } else if (statusFilter === 'pending') {
-                        return invoice.status === 'pending' || invoice.status === 'sent';
-                      } else if (statusFilter === 'overdue') {
-                        // Only show invoices that are pending/sent AND past due date
-                        if (invoice.status !== 'pending' && invoice.status !== 'sent') return false;
-                        const today = new Date();
-                        const dueDate = new Date(invoice.dueDate);
-                        // Set time to start of day for accurate comparison
-                        today.setHours(0, 0, 0, 0);
-                        dueDate.setHours(0, 0, 0, 0);
-                        return dueDate < today;
-                      }
-                      return true;
-                    })
+                  {filteredInvoices()
                     .sort((a, b) => {
-                      const statusFilter = searchParams.get('status');
                       if (statusFilter === 'paid' || statusFilter === 'pending') {
                         // Sort by amount (highest first)
                         return b.total - a.total;

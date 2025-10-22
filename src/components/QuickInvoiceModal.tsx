@@ -146,6 +146,8 @@ export default function QuickInvoiceModal({
   ])
   
   const [loading, setLoading] = useState(false)
+  const [creatingLoading, setCreatingLoading] = useState(false)
+  const [sendingLoading, setSendingLoading] = useState(false)
   const [pdfLoading, setPdfLoading] = useState(false)
   const [discount, setDiscount] = useState('')
   
@@ -332,7 +334,7 @@ export default function QuickInvoiceModal({
   }
 
   const handleCreateDraft = async () => {
-    setLoading(true)
+    setCreatingLoading(true)
 
     try {
       calculateTotals()
@@ -359,8 +361,9 @@ export default function QuickInvoiceModal({
         })),
         due_date: dueDate,
         notes: notes,
-        billing_choice: 'subscription',
+        billing_choice: 'per_invoice',
         type: 'detailed',
+        status: 'sent', // Create as sent, not draft
         // Enhanced features
         payment_terms: paymentTerms.enabled ? {
           enabled: true,
@@ -395,7 +398,7 @@ export default function QuickInvoiceModal({
       const result = await response.json()
 
       if (response.ok && result.invoice) {
-        showSuccess('Invoice created and saved as draft!')
+        showSuccess('Invoice created successfully!')
         onSuccess()
         onClose()
       } else {
@@ -406,13 +409,13 @@ export default function QuickInvoiceModal({
       console.error('Error creating invoice:', error)
       showError('Failed to create invoice. Please try again.')
     } finally {
-      setLoading(false)
+      setCreatingLoading(false)
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
+    setSendingLoading(true)
 
     try {
       calculateTotals()
@@ -512,7 +515,7 @@ export default function QuickInvoiceModal({
       console.error('Error creating invoice:', error)
       showError('Failed to create invoice. Please try again.')
     } finally {
-      setLoading(false)
+      setSendingLoading(false)
     }
   }
 
@@ -1984,14 +1987,14 @@ export default function QuickInvoiceModal({
                 <button
                   type="button"
                   onClick={handleCreateDraft}
-                  disabled={loading}
+                  disabled={creatingLoading || sendingLoading}
                   className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 ${
                     isDarkMode 
                       ? 'bg-gray-600 text-white hover:bg-gray-700' 
                       : 'bg-gray-500 text-white hover:bg-gray-600'
                   }`}
                 >
-                  {loading ? (
+                  {creatingLoading ? (
                     <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                       <span>Creating...</span>
@@ -2006,17 +2009,17 @@ export default function QuickInvoiceModal({
                 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={creatingLoading || sendingLoading}
                   className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 ${
                     isDarkMode 
                       ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
                       : 'bg-indigo-600 text-white hover:bg-indigo-700'
                   }`}
                 >
-                  {loading ? (
+                  {sendingLoading ? (
                     <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Creating...</span>
+                      <span>Sending...</span>
                     </>
                   ) : (
                     <>
