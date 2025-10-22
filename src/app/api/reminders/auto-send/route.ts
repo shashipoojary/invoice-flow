@@ -17,6 +17,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Log environment for debugging (optional)
+    console.log('Cron job running in:', process.env.NODE_ENV);
+    
     // Verify cron job authorization
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
