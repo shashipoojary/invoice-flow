@@ -828,25 +828,25 @@ function InvoicesContent() {
                   Invoices
                 </h2>
                   {searchParams.get('status') && (
-                    <div className="flex flex-wrap items-center gap-3">
-                      <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm">
-                        <div className={`w-2 h-2 rounded-full ${
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-gray-200 rounded-md shadow-sm">
+                        <div className={`w-1.5 h-1.5 rounded-full ${
                           searchParams.get('status') === 'paid' ? 'bg-emerald-500' :
                           searchParams.get('status') === 'pending' ? 'bg-orange-500' :
                           searchParams.get('status') === 'overdue' ? 'bg-red-500' :
                           'bg-gray-500'
                         }`}></div>
-                        <span className="text-sm font-medium text-gray-700">
-                          {searchParams.get('status') === 'paid' ? 'Paid Invoices' :
-                           searchParams.get('status') === 'pending' ? 'Pending Invoices' :
-                           searchParams.get('status') === 'overdue' ? 'Overdue Invoices' :
+                        <span className="text-xs font-medium text-gray-700">
+                          {searchParams.get('status') === 'paid' ? 'Paid' :
+                           searchParams.get('status') === 'pending' ? 'Pending' :
+                           searchParams.get('status') === 'overdue' ? 'Overdue' :
                            'Filtered'}
                         </span>
                         <button
                           onClick={() => window.history.replaceState({}, '', '/dashboard/invoices')}
-                          className="ml-2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+                          className="ml-1 p-0.5 hover:bg-gray-100 rounded-full transition-colors"
                         >
-                          <svg className="w-4 h-4 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3 h-3 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </button>
