@@ -830,10 +830,10 @@ function InvoicesContent() {
                   {searchParams.get('status') && (
                     <div className="flex flex-wrap items-center gap-2">
                       <span className={`px-3 py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap ${
-                        searchParams.get('status') === 'paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                        searchParams.get('status') === 'pending' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
-                        searchParams.get('status') === 'overdue' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                        'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
+                        searchParams.get('status') === 'paid' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                        searchParams.get('status') === 'pending' ? 'bg-orange-100 text-orange-700 border border-orange-200 dark:bg-orange-900/30 dark:text-orange-400' :
+                        searchParams.get('status') === 'overdue' ? 'bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-400' :
+                        'bg-gray-100 text-gray-700 border border-gray-200 dark:bg-gray-900/30 dark:text-gray-400'
                       }`}>
                         {searchParams.get('status') === 'paid' ? 'Paid Invoices' :
                          searchParams.get('status') === 'pending' ? 'Pending Invoices' :
