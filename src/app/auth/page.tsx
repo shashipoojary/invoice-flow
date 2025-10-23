@@ -353,6 +353,19 @@ export default function AuthPage() {
               )}
             </button>
 
+            {/* Forgot Password Link - Only show for login */}
+            {isLogin && (
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => router.push('/auth/forgot-password')}
+                  className="text-indigo-600 hover:text-indigo-700 font-medium text-sm"
+                >
+                  Forgot your password?
+                </button>
+              </div>
+            )}
+
             {/* Toggle between login/signup */}
             <div className="text-center mt-8">
               <button
@@ -362,7 +375,7 @@ export default function AuthPage() {
               >
                 {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
               </button>
-          </div>
+            </div>
           </form>
           </div>
         </div>
