@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, Loader2, X } from 'lucide-react';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -63,9 +63,9 @@ export default function AuthPage() {
 
   return (
     <div className="w-full min-h-screen bg-white flex items-center justify-center p-4">
-      <div className="flex flex-col md:flex-row w-full max-w-6xl bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
-        {/* Left Panel */}
-        <div className="flex-1 relative overflow-hidden md:block hidden bg-gray-50">
+      <div className="flex flex-col lg:flex-row w-full max-w-6xl bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+        {/* Left Panel - Desktop Only */}
+        <div className="flex-1 relative overflow-hidden lg:block hidden bg-gray-50">
           <div className="absolute top-6 left-6 z-10">
             <button
               onClick={() => router.push('/')}
@@ -81,9 +81,9 @@ export default function AuthPage() {
               <div className="relative">
                 {/* Background Elements */}
                 <div className="absolute inset-0">
-                  <div className="w-32 h-32 bg-blue-100 rounded-full absolute -top-8 -right-8 opacity-60"></div>
-                  <div className="w-24 h-24 bg-indigo-100 rounded-full absolute -bottom-4 -left-4 opacity-40"></div>
-                  <div className="w-16 h-16 bg-purple-100 rounded-full absolute top-1/2 -right-2 opacity-50"></div>
+                  <div className="w-32 h-32 bg-indigo-100 rounded-full absolute -top-8 -right-8 opacity-60"></div>
+                  <div className="w-24 h-24 bg-purple-100 rounded-full absolute -bottom-4 -left-4 opacity-40"></div>
+                  <div className="w-16 h-16 bg-blue-100 rounded-full absolute top-1/2 -right-2 opacity-50"></div>
                 </div>
 
                 {/* Main Illustration */}
@@ -112,29 +112,29 @@ export default function AuthPage() {
                   </div>
 
                   {/* Payment Success */}
-                  <div className="bg-green-50 rounded-lg p-4 transform -rotate-1">
+                  <div className="bg-emerald-50 rounded-lg p-4 transform -rotate-1">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                      <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                       </div>
                       <div>
-                        <div className="font-medium text-green-900">Payment Received</div>
-                        <div className="text-sm text-green-700">$2,500.00</div>
+                        <div className="font-medium text-emerald-900">Payment Received</div>
+                        <div className="text-sm text-emerald-700">$2,500.00</div>
                       </div>
                     </div>
                   </div>
 
                   {/* Floating Elements */}
-                  <div className="absolute -top-4 -right-4 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
+                  <div className="absolute -top-4 -right-4 w-6 h-6 bg-indigo-400 rounded-full flex items-center justify-center">
                     <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
                     </svg>
                   </div>
 
-                  <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                  <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-indigo-500 rounded-full flex items-center justify-center">
                     <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
@@ -144,35 +144,107 @@ export default function AuthPage() {
 
               {/* Brand Text */}
               <div className="text-center mt-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">InvoiceFlow</h2>
+                <h2 className="font-heading text-2xl font-bold text-gray-900 mb-2">InvoiceFlow</h2>
                 <p className="text-gray-600">Create • Send • Get Paid</p>
               </div>
-            </div>
+      </div>
           </div>
         </div>
 
         {/* Right Panel */}
-        <div className="flex-1 p-8 md:p-12 flex flex-col justify-center max-w-md mx-auto w-full">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {isLogin ? 'Welcome Back' : 'Create an Account'}
-            </h1>
-            <p className="text-gray-600">
-              {isLogin ? "Don't have an account? " : 'Already have an account? '}
-              <button 
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-blue-600 hover:text-blue-700 font-medium"
-              >
-                {isLogin ? 'Sign up' : 'Log in'}
-              </button>
-            </p>
+        <div className="flex-1 p-8 lg:p-12 flex flex-col justify-center max-w-md mx-auto w-full">
+          {/* Back Button - Mobile Only */}
+          <div className="mb-6 lg:hidden">
+            <button
+              onClick={() => router.push('/')}
+              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              <span className="text-sm font-medium">Back</span>
+            </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Main Content */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+            {/* Welcome Message */}
+            <div className="text-center mb-8">
+              <div className="text-sm text-indigo-600 font-medium mb-2">Welcome</div>
+              <h1 className="font-heading text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+                {isLogin ? 'Welcome back!' : 'Sign in or create an account'}
+              </h1>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                {isLogin
+                  ? "We found an account with this email. Please enter your password."
+                  : "Your everyday invoicing is here! Please enter your email address to start."
+                }
+              </p>
+                </div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
                 {error}
               </div>
+            )}
+
+            {/* Email Field */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email address
+              </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="my.account@email.com"
+                  className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                  required
+                />
+                {formData.email && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, email: '' }))}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center"
+                  >
+                    <X className="w-3 h-3 text-white" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Password Field - Only show for login */}
+            {isLogin && (
+            <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                    placeholder="Enter your password"
+                    className="w-full px-4 py-3 pr-12 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5 text-gray-500" />
+                    ) : (
+                      <Eye className="w-5 h-5 text-gray-500" />
+                    )}
+                </button>
+              </div>
+            </div>
             )}
 
             {/* Name Fields - Only show for signup */}
@@ -189,7 +261,7 @@ export default function AuthPage() {
                     value={formData.firstName}
                     onChange={handleInputChange}
                     placeholder="John"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                    className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
                     required={!isLogin}
                   />
                 </div>
@@ -204,59 +276,44 @@ export default function AuthPage() {
                     value={formData.lastName}
                     onChange={handleInputChange}
                     placeholder="Doe"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                    className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
                     required={!isLogin}
                   />
                 </div>
               </div>
             )}
 
-            {/* Email Field */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Email Address"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                required
-              />
-            </div>
-
-            {/* Password Field */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  placeholder="Password"
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5 text-gray-500" />
-                  ) : (
-                    <Eye className="w-5 h-5 text-gray-500" />
-                  )}
-                </button>
+            {/* Password Field for Signup */}
+            {!isLogin && (
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    placeholder="Create a password"
+                    className="w-full px-4 py-3 pr-12 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5 text-gray-500" />
+                    ) : (
+                      <Eye className="w-5 h-5 text-gray-500" />
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Terms Checkbox - Only show for signup */}
             {!isLogin && (
@@ -267,13 +324,17 @@ export default function AuthPage() {
                   name="agreeToTerms"
                   checked={formData.agreeToTerms}
                   onChange={handleInputChange}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded-lg focus:ring-blue-500"
+                  className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                   required={!isLogin}
                 />
                 <label htmlFor="agreeToTerms" className="text-sm text-gray-600">
-                  I agree to the{' '}
-                  <button type="button" className="text-black font-medium hover:underline">
-                    Terms & Conditions
+                  By creating an account, I agree to{' '}
+                  <button type="button" className="text-indigo-600 font-medium hover:underline">
+                    Terms of Service
+                  </button>
+                  {' '}and{' '}
+                  <button type="button" className="text-indigo-600 font-medium hover:underline">
+                    Privacy Policy
                   </button>
                 </label>
               </div>
@@ -283,15 +344,27 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-black text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full bg-indigo-600 text-white py-3 px-4 text-base rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
-                isLogin ? 'Sign In' : 'Create Account'
+                'Continue'
               )}
             </button>
+
+            {/* Toggle between login/signup */}
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-indigo-600 hover:text-indigo-700 font-medium text-sm"
+              >
+                {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+              </button>
+            </div>
           </form>
+          </div>
         </div>
       </div>
     </div>
