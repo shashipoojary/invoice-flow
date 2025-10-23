@@ -62,8 +62,8 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-white flex items-center justify-center p-4">
-      <div className="flex flex-col lg:flex-row w-full max-w-6xl bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+    <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6">
+      <div className="flex flex-col lg:flex-row w-full max-w-6xl bg-white rounded-lg shadow-lg overflow-hidden">
         {/* Left Panel - Desktop Only */}
         <div className="flex-1 relative overflow-hidden lg:block hidden bg-gray-50">
           <div className="absolute top-6 left-6 z-10">
@@ -152,7 +152,7 @@ export default function AuthPage() {
         </div>
 
         {/* Right Panel */}
-        <div className="flex-1 p-8 lg:p-12 flex flex-col justify-center max-w-md mx-auto w-full">
+        <div className="flex-1 p-6 lg:p-16 flex flex-col justify-center max-w-lg mx-auto w-full">
           {/* Back Button - Mobile Only */}
           <div className="mb-6 lg:hidden">
             <button
@@ -165,14 +165,14 @@ export default function AuthPage() {
           </div>
 
           {/* Main Content */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div className="w-full">
             {/* Welcome Message */}
-            <div className="text-center mb-8">
-              <div className="text-sm text-indigo-600 font-medium mb-2">Welcome</div>
-              <h1 className="font-heading text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+            <div className="text-center mb-10">
+              <div className="text-sm text-indigo-600 font-medium mb-3">Welcome</div>
+              <h1 className="font-heading text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
                 {isLogin ? 'Welcome back!' : 'Sign in or create an account'}
               </h1>
-              <p className="text-sm text-gray-600 leading-relaxed">
+              <p className="text-base text-gray-600 leading-relaxed">
                 {isLogin
                   ? "We found an account with this email. Please enter your password."
                   : "Your everyday invoicing is here! Please enter your email address to start."
@@ -180,7 +180,7 @@ export default function AuthPage() {
               </p>
                 </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-8">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
                 {error}
@@ -200,7 +200,7 @@ export default function AuthPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   placeholder="my.account@email.com"
-                  className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                  className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
                   required
                 />
                 {formData.email && (
@@ -261,7 +261,7 @@ export default function AuthPage() {
                     value={formData.firstName}
                     onChange={handleInputChange}
                     placeholder="John"
-                    className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                    className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
                     required={!isLogin}
                   />
                 </div>
@@ -276,7 +276,7 @@ export default function AuthPage() {
                     value={formData.lastName}
                     onChange={handleInputChange}
                     placeholder="Doe"
-                    className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                    className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
                     required={!isLogin}
                   />
                 </div>
@@ -344,7 +344,7 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 text-white py-3 px-4 text-base rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full bg-indigo-600 text-white py-4 px-6 text-base rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -354,7 +354,7 @@ export default function AuthPage() {
             </button>
 
             {/* Toggle between login/signup */}
-            <div className="text-center">
+            <div className="text-center mt-8">
               <button
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}
@@ -362,7 +362,7 @@ export default function AuthPage() {
               >
                 {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
               </button>
-            </div>
+          </div>
           </form>
           </div>
         </div>
