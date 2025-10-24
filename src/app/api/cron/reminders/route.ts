@@ -6,14 +6,16 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: NextRequest) {
   try {
-    const { invoiceId, reminderType = 'friendly' } = await request.json();
-
-    if (!invoiceId) {
-      return NextResponse.json({ error: 'Invoice ID is required' }, { status: 400 });
+    // Verify this is a legitimate cron request (you can add authentication here)
+    const authHeader = request.headers.get('authorization');
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get invoice details with reminder settings
-    const { data: invoice, error: invoiceError } = await supabaseAdmin
+    console.log('🔄 Starting automated reminder cron job...');
+
+    // Get all invoices with enabled reminders that are due for reminders
+    const { data: invoices, error: invoicesError } = await supabaseAdmin
       .from('invoices')
       .select(`
         id,
@@ -34,36 +36,176 @@ export async function POST(request: NextRequest) {
         ),
         user_id
       `)
-      .eq('id', invoiceId)
-      .single();
+      .eq('status', 'sent')
+      .not('reminder_settings', 'is', null);
 
-    if (invoiceError || !invoice) {
-      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+    if (invoicesError) {
+      console.error('Error fetching invoices:', invoicesError);
+      return NextResponse.json({ error: 'Failed to fetch invoices' }, { status: 500 });
     }
 
-    // Check if auto reminders are enabled for this invoice
-    let reminderSettings = null;
-    try {
-      reminderSettings = invoice.reminder_settings ? JSON.parse(invoice.reminder_settings) : null;
-    } catch {
-      console.log(`⚠️ Invalid reminder settings for invoice ${invoice.invoice_number}`);
+    if (!invoices || invoices.length === 0) {
+      console.log('✅ No invoices found for reminders');
+      return NextResponse.json({ message: 'No invoices found for reminders' });
     }
 
-    // Check if auto reminders are enabled
-    if (!reminderSettings || !reminderSettings.enabled) {
-      return NextResponse.json({ error: 'Auto reminders are not enabled for this invoice' }, { status: 400 });
+    console.log(`📊 Found ${invoices.length} invoices to check for reminders`);
+
+    let remindersSent = 0;
+    let remindersScheduled = 0;
+    let errors = 0;
+
+    for (const invoice of invoices) {
+      try {
+        // Parse reminder settings
+        let reminderSettings = null;
+        try {
+          reminderSettings = typeof invoice.reminder_settings === 'string' 
+            ? JSON.parse(invoice.reminder_settings) 
+            : invoice.reminder_settings;
+        } catch (e) {
+          console.log(`⚠️ Invalid reminder settings for invoice ${invoice.invoice_number}`);
+          continue;
+        }
+
+        if (!reminderSettings || !reminderSettings.enabled) {
+          continue;
+        }
+
+        const dueDate = new Date(invoice.due_date);
+        const today = new Date();
+        const isOverdue = today > dueDate;
+        const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+        const daysUntilDue = Math.floor((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+        // Determine if a reminder should be sent
+        let shouldSendReminder = false;
+        let reminderType = 'friendly';
+        let reminderReason = '';
+
+        if (reminderSettings.useSystemDefaults) {
+          // Use system defaults: 1 day after due, 7 days after due, 14 days after due
+          if (isOverdue && daysOverdue >= 1 && daysOverdue <= 2) {
+            shouldSendReminder = true;
+            reminderType = 'friendly';
+            reminderReason = 'First overdue reminder (system default)';
+          } else if (isOverdue && daysOverdue >= 7 && daysOverdue <= 8) {
+            shouldSendReminder = true;
+            reminderType = 'polite';
+            reminderReason = 'Second overdue reminder (system default)';
+          } else if (isOverdue && daysOverdue >= 14 && daysOverdue <= 15) {
+            shouldSendReminder = true;
+            reminderType = 'firm';
+            reminderReason = 'Final overdue reminder (system default)';
+          }
+        } else {
+          // Use custom rules
+          const customRules = reminderSettings.customRules || reminderSettings.rules || [];
+          const enabledRules = customRules.filter((rule: any) => rule.enabled);
+
+          for (const rule of enabledRules) {
+            if (rule.type === 'before' && daysUntilDue <= rule.days && daysUntilDue > 0) {
+              shouldSendReminder = true;
+              reminderType = rule.reminderType || 'friendly';
+              reminderReason = `Before due date reminder (${rule.days} days before)`;
+              break;
+            } else if (rule.type === 'after' && isOverdue && daysOverdue >= rule.days) {
+              shouldSendReminder = true;
+              reminderType = rule.reminderType || 'friendly';
+              reminderReason = `After due date reminder (${rule.days} days after)`;
+              break;
+            }
+          }
+        }
+
+        // Check if we already sent a reminder recently (within 24 hours)
+        if (shouldSendReminder && invoice.last_reminder_sent) {
+          const lastReminderDate = new Date(invoice.last_reminder_sent);
+          const hoursSinceLastReminder = (today.getTime() - lastReminderDate.getTime()) / (1000 * 60 * 60);
+          
+          if (hoursSinceLastReminder < 24) {
+            console.log(`⏭️ Skipping ${invoice.invoice_number} - reminder sent recently`);
+            continue;
+          }
+        }
+
+        if (shouldSendReminder) {
+          console.log(`📧 Sending reminder for ${invoice.invoice_number}: ${reminderReason}`);
+          
+          // Send the reminder email
+          const emailResult = await sendReminderEmail(invoice, reminderType, reminderReason);
+          
+          if (emailResult.success) {
+            // Record the reminder in the database
+            const { error: reminderError } = await supabaseAdmin
+              .from('invoice_reminders')
+              .insert({
+                invoice_id: invoice.id,
+                reminder_type: reminderType,
+                overdue_days: daysOverdue,
+                email_id: emailResult.emailId,
+                reminder_status: 'sent'
+              });
+
+            if (reminderError) {
+              console.error(`Error recording reminder for ${invoice.invoice_number}:`, reminderError);
+            }
+
+            // Update invoice reminder count
+            await supabaseAdmin
+              .from('invoices')
+              .update({
+                reminder_count: (invoice.reminder_count || 0) + 1,
+                last_reminder_sent: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', invoice.id);
+
+            remindersSent++;
+            console.log(`✅ Reminder sent for ${invoice.invoice_number}`);
+          } else {
+            console.error(`❌ Failed to send reminder for ${invoice.invoice_number}:`, emailResult.error);
+            errors++;
+          }
+        } else {
+          // Schedule for future if it's a "before due" reminder
+          if (!isOverdue && reminderSettings.customRules) {
+            const beforeRules = reminderSettings.customRules.filter((rule: any) => 
+              rule.enabled && rule.type === 'before' && daysUntilDue <= rule.days
+            );
+            
+            if (beforeRules.length > 0) {
+              remindersScheduled++;
+              console.log(`📅 Scheduled reminder for ${invoice.invoice_number} (${daysUntilDue} days until due)`);
+            }
+          }
+        }
+
+      } catch (error) {
+        console.error(`Error processing invoice ${invoice.invoice_number}:`, error);
+        errors++;
+      }
     }
 
-    // Check if invoice is overdue
-    const dueDate = new Date(invoice.due_date);
-    const today = new Date();
-    const isOverdue = today > dueDate;
-    const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    const result = {
+      message: 'Automated reminder cron job completed',
+      invoicesProcessed: invoices.length,
+      remindersSent,
+      remindersScheduled,
+      errors
+    };
 
-    if (!isOverdue) {
-      return NextResponse.json({ error: 'Invoice is not overdue yet' }, { status: 400 });
-    }
+    console.log('✅ Automated reminder cron job completed:', result);
+    return NextResponse.json(result);
 
+  } catch (error) {
+    console.error('Error in automated reminder cron job:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+async function sendReminderEmail(invoice: any, reminderType: string, reason: string) {
+  try {
     // Get user business settings
     const { data: businessSettings } = await supabaseAdmin
       .from('business_settings')
@@ -129,7 +271,7 @@ export async function POST(request: NextRequest) {
               </div>
 
               <p style="margin: 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
-                Dear ${invoice.clients?.[0]?.name || 'Valued Customer'},
+                Dear ${invoice.clients?.name || 'Valued Customer'},
               </p>
 
               <p style="margin: 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
@@ -152,7 +294,7 @@ export async function POST(request: NextRequest) {
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="color: #64748b;">Days Overdue:</span>
-                  <span style="color: #dc2626; font-weight: 500;">${Math.max(0, daysOverdue)}</span>
+                  <span style="color: #dc2626; font-weight: 500;">${Math.max(0, Math.floor((new Date().getTime() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24)))}</span>
                 </div>
               </div>
 
@@ -196,73 +338,19 @@ export async function POST(request: NextRequest) {
     // Send email using Resend
     const emailResult = await resend.emails.send({
       from: 'FlowInvoicer <noreply@flowinvoicer.com>',
-      to: invoice.clients?.[0]?.email || '',
+      to: invoice.clients?.email || '',
       subject: `Payment Reminder - Invoice #${invoice.invoice_number}`,
       html: emailHtml,
     });
 
     if (emailResult.error) {
-      console.error('Email sending failed:', emailResult.error);
-      
-      // Record failed reminder
-      const { error: reminderError } = await supabaseAdmin
-        .from('invoice_reminders')
-        .insert({
-          invoice_id: invoice.id,
-          reminder_type: reminderType,
-          overdue_days: daysOverdue,
-          email_id: null,
-          reminder_status: 'failed',
-          failure_reason: emailResult.error.message || 'Email sending failed'
-        });
-
-      return NextResponse.json({ 
-        error: 'Failed to send reminder email', 
-        details: emailResult.error.message || emailResult.error,
-        hasApiKey: !!process.env.RESEND_API_KEY
-      }, { status: 500 });
+      return { success: false, error: emailResult.error };
     }
 
-    // Record successful reminder
-    const { data: reminderData, error: reminderError } = await supabaseAdmin
-      .from('invoice_reminders')
-      .insert({
-        invoice_id: invoice.id,
-        reminder_type: reminderType,
-        overdue_days: daysOverdue,
-        email_id: emailResult.data?.id,
-        reminder_status: 'sent'
-      })
-      .select()
-      .single();
-
-    if (reminderError) {
-      console.error('Error recording reminder:', reminderError);
-    }
-
-    // Update invoice with reminder count
-    const { error: updateError } = await supabaseAdmin
-      .from('invoices')
-      .update({
-        reminder_count: (invoice.reminder_count || 0) + 1,
-        last_reminder_sent: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', invoiceId);
-
-    if (updateError) {
-      console.error('Error updating invoice reminder count:', updateError);
-    }
-
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Reminder sent successfully',
-      reminderId: reminderData?.id,
-      emailId: emailResult.data?.id
-    });
+    return { success: true, emailId: emailResult.data?.id };
 
   } catch (error) {
-    console.error('Error sending reminder:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error sending reminder email:', error);
+    return { success: false, error };
   }
 }

@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
           invoiceNumber: invoice.invoice_number,
           dueDate: invoice.due_date,
           createdAt: invoice.created_at,
+          clientId: invoice.client_id, // Map client_id to clientId
           client: invoice.clients,
           // Map client fields to invoice level for easier access
           clientName: invoice.clients?.name || '',

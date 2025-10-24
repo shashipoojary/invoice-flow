@@ -252,7 +252,7 @@ export default function QuickInvoiceModal({
 
   // Pre-fill form when editing an invoice
   useEffect(() => {
-    if (isOpen && editingInvoice) {
+    if (isOpen && editingInvoice && clients.length > 0) {
       setSelectedClientId(editingInvoice.clientId || '')
       setInvoiceNumber(editingInvoice.invoiceNumber || '')
       setIssueDate(editingInvoice.issueDate || '')
@@ -292,14 +292,14 @@ export default function QuickInvoiceModal({
       if (editingInvoice.theme) {
         const invoiceTheme = editingInvoice.theme as { template?: number; primaryColor: string; secondaryColor: string; accentColor: string };
         setTheme({
-          template: invoiceTheme.template || 1,
+          template: invoiceTheme.template ? getUiTemplate(invoiceTheme.template) : 1,
           primaryColor: invoiceTheme.primaryColor,
           secondaryColor: invoiceTheme.secondaryColor,
           accentColor: invoiceTheme.accentColor
         })
       }
     }
-  }, [isOpen, editingInvoice])
+  }, [isOpen, editingInvoice, clients])
 
   const addItem = () => {
     setItems([...items, { 
@@ -475,21 +475,34 @@ export default function QuickInvoiceModal({
       }
 
       const headers = await getAuthHeaders()
-      const response = await fetch('/api/invoices/create', {
-        method: 'POST',
+      
+      // Determine if we're editing or creating
+      const isEditing = editingInvoice && editingInvoice.id
+      const endpoint = isEditing ? '/api/invoices/update' : '/api/invoices/create'
+      const method = isEditing ? 'PUT' : 'POST'
+      
+      // Add invoice ID to payload if editing
+      if (isEditing) {
+        (payload as any).invoiceId = editingInvoice.id
+      }
+      
+      const response = await fetch(endpoint, {
+        method,
         headers,
         body: JSON.stringify(payload)
       })
 
       const result = await response.json()
 
-      if (response.ok && result.invoice) {
-        // Send the invoice to the client
-        const sendResponse = await fetch('/api/invoices/send', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            invoiceId: result.invoice.id,
+      if (response.ok && (result.invoice || result.success)) {
+        // Only send invoice if creating new one, not when editing
+        if (!isEditing && result.invoice) {
+          // Send the invoice to the client
+          const sendResponse = await fetch('/api/invoices/send', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              invoiceId: result.invoice.id,
             clientEmail: selectedClientId ? 
               (clients.find(c => c.id === selectedClientId)?.email || newClient.email) : 
               newClient.email,
@@ -499,13 +512,17 @@ export default function QuickInvoiceModal({
           })
         })
 
-        if (sendResponse.ok) {
-          showSuccess('Invoice created and sent successfully!')
+          if (sendResponse.ok) {
+            showSuccess('Invoice created and sent successfully!')
+          } else {
+            showWarning('Invoice created but failed to send. You can send it later from the invoice list.')
+          }
         } else {
-          showWarning('Invoice created but failed to send. You can send it later from the invoice list.')
+          // Show success message for editing
+          showSuccess(isEditing ? 'Invoice updated successfully!' : 'Invoice created successfully!')
         }
       } else {
-        throw new Error(result.error || 'Failed to create invoice')
+        throw new Error(result.error || (isEditing ? 'Failed to update invoice' : 'Failed to create invoice'))
       }
 
       onSuccess()
@@ -542,6 +559,16 @@ export default function QuickInvoiceModal({
       case 2: return 4; // Modern -> Template 4
       case 3: return 5; // Creative -> Template 5 (Simple Clean)
       default: return 6; // Default to Template 6
+    }
+  }
+
+  // Helper function to map PDF template back to UI template
+  const getUiTemplate = (pdfTemplateId: number): number => {
+    switch (pdfTemplateId) {
+      case 6: return 1; // Template 6 -> Minimal
+      case 4: return 2; // Template 4 -> Modern
+      case 5: return 3; // Template 5 -> Creative
+      default: return 1; // Default to Minimal
     }
   }
 

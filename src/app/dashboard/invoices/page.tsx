@@ -87,11 +87,13 @@ function InvoicesContent() {
   // Handle invoice type selection
   const handleSelectFastInvoice = useCallback(() => {
     setShowInvoiceTypeSelection(false);
+    setSelectedInvoice(null); // Clear selected invoice for new invoice
     setShowFastInvoice(true);
   }, []);
 
   const handleSelectDetailedInvoice = useCallback(() => {
     setShowInvoiceTypeSelection(false);
+    setSelectedInvoice(null); // Clear selected invoice for new invoice
     setShowCreateInvoice(true);
   }, []);
 
@@ -1236,13 +1238,20 @@ function InvoicesContent() {
       {showFastInvoice && (
         <FastInvoiceModal
           isOpen={showFastInvoice}
-          onClose={() => setShowFastInvoice(false)}
+          onClose={() => {
+            setShowFastInvoice(false);
+            setSelectedInvoice(null);
+          }}
           user={user}
           getAuthHeaders={getAuthHeaders}
           clients={clients}
+          editingInvoice={selectedInvoice}
+          showSuccess={showSuccess}
+          showError={showError}
           onSuccess={() => {
             setShowFastInvoice(false);
-            // Refresh data after successful invoice creation
+            setSelectedInvoice(null);
+            // Refresh data after successful invoice creation/update
             if (user && !loading) {
               const loadData = async () => {
                 try {
@@ -1265,12 +1274,19 @@ function InvoicesContent() {
       {showCreateInvoice && (
         <QuickInvoiceModal
           isOpen={showCreateInvoice}
-          onClose={() => setShowCreateInvoice(false)}
+          onClose={() => {
+            setShowCreateInvoice(false);
+            setSelectedInvoice(null);
+          }}
           getAuthHeaders={getAuthHeaders}
           clients={clients}
+          editingInvoice={selectedInvoice}
+          showSuccess={showSuccess}
+          showError={showError}
           onSuccess={() => {
             setShowCreateInvoice(false);
-            // Refresh data after successful invoice creation
+            setSelectedInvoice(null);
+            // Refresh data after successful invoice creation/update
             if (user && !loading) {
               const loadData = async () => {
                 try {

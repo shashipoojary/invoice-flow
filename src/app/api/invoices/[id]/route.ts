@@ -60,6 +60,7 @@ export async function GET(
         invoiceNumber: invoice.invoice_number,
         dueDate: invoice.due_date,
         createdAt: invoice.created_at,
+        clientId: invoice.client_id, // Map client_id to clientId
         client: invoice.clients,
         items: (itemsData || []).map(item => ({
           id: item.id,
