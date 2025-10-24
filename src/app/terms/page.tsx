@@ -33,7 +33,7 @@ export default function TermsPage() {
             </h1>
             
             <p className="text-lg sm:text-xl max-w-3xl mx-auto leading-relaxed" style={{color: '#374151'}}>
-              These terms govern your use of InvoiceFlow and our services.
+              These terms govern your use of FlowInvoicer and our services.
             </p>
             
             <p className="text-sm mt-4" style={{color: '#6b7280'}}>
@@ -52,7 +52,7 @@ export default function TermsPage() {
               </h2>
               
               <p className="text-lg leading-relaxed mb-6">
-                By accessing or using InvoiceFlow, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using this service.
+                By accessing or using FlowInvoicer, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using this service.
               </p>
 
               <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
@@ -60,7 +60,7 @@ export default function TermsPage() {
               </h2>
               
               <p className="text-lg leading-relaxed mb-6">
-                InvoiceFlow provides online invoicing and payment tracking services for freelancers, designers, and contractors. Our service includes:
+                FlowInvoicer provides online invoicing and payment tracking services for freelancers, designers, and contractors. Our service includes:
               </p>
               
               <ul className="list-disc pl-6 mb-6 space-y-2">
@@ -131,7 +131,7 @@ export default function TermsPage() {
               </h2>
               
               <p className="text-lg leading-relaxed mb-6">
-                The InvoiceFlow service and its original content, features, and functionality are owned by InvoiceFlow and are protected by international copyright, trademark, and other intellectual property laws.
+                The FlowInvoicer service and its original content, features, and functionality are owned by FlowInvoicer and are protected by international copyright, trademark, and other intellectual property laws.
               </p>
 
               <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
@@ -147,7 +147,7 @@ export default function TermsPage() {
               </h2>
               
               <p className="text-lg leading-relaxed mb-6">
-                To the maximum extent permitted by law, InvoiceFlow shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses.
+                To the maximum extent permitted by law, FlowInvoicer shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses.
               </p>
 
               <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>

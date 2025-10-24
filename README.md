@@ -1,4 +1,4 @@
-# InvoiceFlow - Fast Freelancer Invoicing
+# FlowInvoicer - Fast Freelancer Invoicing
 
 > The fastest way for freelancers & contractors to get paid
 

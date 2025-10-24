@@ -9,7 +9,7 @@ interface ConfirmationModalProps {
   message: string;
   confirmText?: string;
   cancelText?: string;
-  type?: 'danger' | 'warning' | 'info';
+  type?: 'danger' | 'warning' | 'info' | 'success';
   isLoading?: boolean;
 }
 
@@ -45,6 +45,12 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           icon: <Check className="h-6 w-6 text-blue-500" />,
           confirmButton: 'bg-blue-600 hover:bg-blue-700 text-white',
           iconBg: 'bg-blue-50 dark:bg-blue-900/20'
+        };
+      case 'success':
+        return {
+          icon: <Check className="h-6 w-6 text-green-500" />,
+          confirmButton: 'bg-green-600 hover:bg-green-700 text-white',
+          iconBg: 'bg-green-50 dark:bg-green-900/20'
         };
       default:
         return {

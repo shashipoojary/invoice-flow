@@ -489,7 +489,7 @@ function FastInvoiceTemplate({ invoice, primaryColor, secondaryColor }: { invoic
               <div className="text-center sm:text-left">
                 <p className="text-gray-600 font-medium text-sm sm:text-base">Thank you for your business!</p>
                 <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                  Generated with <a href="https://invoice-flow-vert.vercel.app/" className="text-indigo-600 hover:text-indigo-700">InvoiceFlow</a>
+                  Generated with <a href="https://invoice-flow-vert.vercel.app/" className="text-indigo-600 hover:text-indigo-700">FlowInvoicer</a>
                 </p>
               </div>
             </div>
@@ -924,7 +924,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
               <div className="text-center sm:text-left">
                 <p className="text-gray-600 font-medium text-sm sm:text-base">Thank you for your business!</p>
                 <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                  Generated with <a href="https://invoice-flow-vert.vercel.app/" className="text-indigo-600 hover:text-indigo-700">InvoiceFlow</a>
+                  Generated with <a href="https://invoice-flow-vert.vercel.app/" className="text-indigo-600 hover:text-indigo-700">FlowInvoicer</a>
                 </p>
               </div>
             </div>
@@ -1393,7 +1393,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
               <div className="text-center sm:text-left">
                 <p className="text-gray-600 font-medium text-sm sm:text-base">Thank you for your business!</p>
                 <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                  Generated with <a href="https://invoice-flow-vert.vercel.app/" className="text-indigo-600 hover:text-indigo-700">InvoiceFlow</a>
+                  Generated with <a href="https://invoice-flow-vert.vercel.app/" className="text-indigo-600 hover:text-indigo-700">FlowInvoicer</a>
                 </p>
               </div>
             </div>
@@ -1866,7 +1866,7 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
               <div className="text-center sm:text-left">
                 <p className="text-gray-600 font-medium text-sm sm:text-base">Thank you for your business!</p>
                 <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                  Generated with <a href="https://invoice-flow-vert.vercel.app/" className="text-indigo-600 hover:text-indigo-700">InvoiceFlow</a>
+                  Generated with <a href="https://invoice-flow-vert.vercel.app/" className="text-indigo-600 hover:text-indigo-700">FlowInvoicer</a>
                 </p>
               </div>
             </div>

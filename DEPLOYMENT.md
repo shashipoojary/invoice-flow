@@ -1,4 +1,4 @@
-# Deployment Guide for InvoiceFlow
+# Deployment Guide for FlowInvoicer
 
 ## 🚀 Deploy to Vercel with Supabase
 
@@ -109,7 +109,7 @@ The application is fully responsive and works on:
 
 ## 🎉 Success!
 
-Once deployed, your InvoiceFlow application will be:
+Once deployed, your FlowInvoicer application will be:
 - ✅ **Fully responsive** on all devices
 - ✅ **Secure** with JWT authentication
 - ✅ **Fast** with optimized builds

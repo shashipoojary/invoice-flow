@@ -23,13 +23,13 @@ export async function POST(request: NextRequest) {
 
     // Send test email
     const { data, error } = await resend.emails.send({
-      from: 'InvoiceFlow <onboarding@resend.dev>',
+      from: 'FlowInvoicer <onboarding@resend.dev>',
       to: [testEmail],
-      subject: 'Test Email from InvoiceFlow',
+      subject: 'Test Email from FlowInvoicer',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h2 style="color: #3b82f6;">🎉 Email Test Successful!</h2>
-          <p>This is a test email from InvoiceFlow to verify that your Resend API key is working correctly.</p>
+          <p>This is a test email from FlowInvoicer to verify that your Resend API key is working correctly.</p>
           <p>If you received this email, your email service is properly configured and ready to send invoices to clients.</p>
           <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
             <p><strong>✅ Resend API Key:</strong> Configured</p>

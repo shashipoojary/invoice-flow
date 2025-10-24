@@ -519,10 +519,10 @@ export function generateMinimalEmailTemplate(
 
             <div class="invoiceflow-branding">
               <div class="invoiceflow-disclaimer">
-                This invoice was created and sent using InvoiceFlow
+                This invoice was created and sent using FlowInvoicer
               </div>
               <a href="https://invoiceflow.com" class="invoiceflow-link">
-                Powered by InvoiceFlow
+                Powered by FlowInvoicer
               </a>
             </div>
           </div>
@@ -909,10 +909,10 @@ export function generateModernEmailTemplate(
 
             <div class="invoiceflow-branding">
               <div class="invoiceflow-disclaimer">
-                This invoice was created and sent using InvoiceFlow
+                This invoice was created and sent using FlowInvoicer
               </div>
               <a href="https://invoiceflow.com" class="invoiceflow-link">
-                Powered by InvoiceFlow
+                Powered by FlowInvoicer
               </a>
             </div>
           </div>
@@ -1560,10 +1560,10 @@ export function generateCreativeEmailTemplate(
 
             <div class="invoiceflow-branding">
               <div class="invoiceflow-disclaimer">
-                This invoice was created and sent using InvoiceFlow
+                This invoice was created and sent using FlowInvoicer
               </div>
               <a href="https://invoiceflow.com" class="invoiceflow-link">
-                Powered by InvoiceFlow
+                Powered by FlowInvoicer
               </a>
             </div>
           </div>
@@ -2114,10 +2114,10 @@ export function generateOriginalFastInvoiceEmailTemplate(
 
             <div class="invoiceflow-branding">
               <div class="invoiceflow-disclaimer">
-                This invoice was created and sent using InvoiceFlow
+                This invoice was created and sent using FlowInvoicer
               </div>
               <a href="https://invoiceflow.com" class="invoiceflow-link">
-                Powered by InvoiceFlow
+                Powered by FlowInvoicer
               </a>
             </div>
           </div>

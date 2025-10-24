@@ -101,7 +101,7 @@ const ModernSidebar = ({
       id: 'settings',
       label: 'Settings',
       icon: Settings,
-      description: 'Account & Preferences',
+      description: 'Preferences',
       route: '/dashboard/settings'
     }
   ];
@@ -148,32 +148,32 @@ const ModernSidebar = ({
       }`}>
         {!isCollapsed ? (
           <div className="flex items-center justify-center w-full">
-            <Image
-              src={isDarkMode ? "/logo-white-final.png" : "/logo-black-final.png"}
-              alt="InvoiceFlow Logo"
-              width={200}
-              height={64}
-              className="h-16 w-auto max-w-full"
-            />
+        <Image
+          src="/logo-main-black.png"
+          alt="FlowInvoicer Logo"
+          width={420}
+          height={140}
+          className="h-40 w-auto max-w-full"
+        />
           </div>
         ) : (
           <button
             onClick={handleToggleCollapse}
-            className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors bg-transparent border-none outline-none"
+            className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors bg-transparent border-none outline-none overflow-hidden"
             style={{ backgroundColor: 'transparent' }}
           >
-            <Image
-              src={isDarkMode ? "/logo-icon-white-clean.png" : "/logo-icon-black-clean.png"}
-              alt="InvoiceFlow Logo"
-              width={28}
-              height={20}
-              className="w-7 h-5 object-contain"
-              style={{ 
-                backgroundColor: 'transparent',
-                border: 'none',
-                outline: 'none'
-              }}
-            />
+        <Image
+          src="/sidebar-logo.png"
+          alt="FlowInvoicer Sidebar Logo - Collapsed"
+          width={400}
+          height={160}
+          className="w-16 h-16 object-contain scale-300"
+          style={{
+            backgroundColor: 'transparent',
+            border: 'none',
+            outline: 'none'
+          }}
+        />
           </button>
         )}
 
@@ -293,12 +293,15 @@ const ModernSidebar = ({
       }`}>
         {!isCollapsed ? (
           <div className="space-y-4">
-            {/* User Info */}
-            <div className={`flex items-center space-x-3 p-3 rounded-lg border ${
-              isDarkMode 
-                ? 'bg-gray-800 border-gray-700' 
-                : 'bg-white border-gray-200'
-            }`}>
+            {/* Profile Button */}
+            <button
+              onClick={() => router.push('/dashboard/profile')}
+              className={`w-full flex items-center space-x-3 p-3 rounded-lg border transition-colors hover:scale-105 ${
+                isDarkMode 
+                  ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' 
+                  : 'bg-white border-gray-200 hover:bg-gray-50'
+              }`}
+            >
               <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                 isDarkMode 
                   ? 'bg-white' 
@@ -310,7 +313,7 @@ const ModernSidebar = ({
                     : 'text-white'
                 }`} />
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 text-left">
                 <div className={`font-medium text-sm truncate ${
                   isDarkMode 
                     ? 'text-white' 
@@ -323,10 +326,10 @@ const ModernSidebar = ({
                     ? 'text-gray-400' 
                     : 'text-gray-500'
                 }`}>
-                  {user?.email?.split('@')[0]}@...
+                  View Profile
                 </div>
               </div>
-            </div>
+            </button>
 
             {/* Action Buttons */}
             <div className="grid grid-cols-2 gap-2">

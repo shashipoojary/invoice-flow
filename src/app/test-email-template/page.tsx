@@ -382,7 +382,7 @@ export default function TestEmailTemplate() {
             
             <div class="invoiceflow-branding">
               <div class="invoiceflow-disclaimer">
-                This invoice was generated using InvoiceFlow
+                This invoice was generated using FlowInvoicer
               </div>
               <a href="https://invoice-flow-vert.vercel.app/" class="invoiceflow-link">
                 invoice-flow-vert.vercel.app

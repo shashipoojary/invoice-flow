@@ -1,4 +1,4 @@
--- InvoiceFlow Pro - Initial Schema Migration
+-- FlowInvoicer Pro - Initial Schema Migration
 -- Run this in your Supabase SQL editor
 
 -- Enable UUID extension

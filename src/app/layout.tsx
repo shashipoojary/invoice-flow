@@ -10,8 +10,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "InvoiceFlow - The Fastest Way for Freelancers to Get Paid",
+  title: "FlowInvoicer - The Fastest Way for Freelancers to Get Paid",
   description: "60-second invoicing for freelancers, designers, developers, and contractors. Simple, fast, and professional.",
+  icons: {
+    icon: '/favicon.png',
+  },
 };
 
 export default function RootLayout({

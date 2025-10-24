@@ -29,7 +29,7 @@ export default function AboutPage() {
             </Link>
             
             <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold mb-8" style={{color: '#1f2937'}}>
-              About InvoiceFlow
+              About FlowInvoicer
             </h1>
             
             <p className="text-lg sm:text-xl max-w-3xl mx-auto leading-relaxed" style={{color: '#374151'}}>
@@ -50,7 +50,7 @@ export default function AboutPage() {
                   We believe that getting paid shouldn&apos;t be complicated. Too many talented professionals struggle with late payments, forgotten invoices, and complex billing systems.
                 </p>
                 <p className="text-lg leading-relaxed" style={{color: '#374151'}}>
-                  InvoiceFlow exists to change that. We&apos;re creating tools that make invoicing simple, automated, and effective—so you can focus on what you do best.
+                  FlowInvoicer exists to change that. We&apos;re creating tools that make invoicing simple, automated, and effective—so you can focus on what you do best.
                 </p>
               </div>
               
@@ -130,7 +130,7 @@ export default function AboutPage() {
             
             <div className="prose prose-lg max-w-none" style={{color: '#374151'}}>
               <p className="text-lg leading-relaxed mb-6">
-                InvoiceFlow was born from frustration. As freelancers ourselves, we experienced the same pain points you face: late payments, forgotten invoices, and time-consuming billing processes.
+                FlowInvoicer was born from frustration. As freelancers ourselves, we experienced the same pain points you face: late payments, forgotten invoices, and time-consuming billing processes.
               </p>
               
               <p className="text-lg leading-relaxed mb-6">
@@ -138,11 +138,11 @@ export default function AboutPage() {
               </p>
               
               <p className="text-lg leading-relaxed mb-6">
-                So we built InvoiceFlow from the ground up, focusing on three core principles: simplicity, automation, and reliability. Every feature is designed to save you time and help you get paid faster.
+                So we built FlowInvoicer from the ground up, focusing on three core principles: simplicity, automation, and reliability. Every feature is designed to save you time and help you get paid faster.
               </p>
               
               <p className="text-lg leading-relaxed">
-                Today, thousands of freelancers, designers, and contractors trust InvoiceFlow to handle their invoicing needs. We&apos;re proud to be part of their success stories.
+                Today, thousands of freelancers, designers, and contractors trust FlowInvoicer to handle their invoicing needs. We&apos;re proud to be part of their success stories.
               </p>
             </div>
           </div>
@@ -175,7 +175,7 @@ export default function AboutPage() {
                   Reliability Matters
                 </h3>
                 <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
-                  Your business depends on getting paid. We&apos;ve built InvoiceFlow with enterprise-grade reliability, so you can trust it to work when you need it most.
+                  Your business depends on getting paid. We&apos;ve built FlowInvoicer with enterprise-grade reliability, so you can trust it to work when you need it most.
                 </p>
               </div>
 
@@ -198,7 +198,7 @@ export default function AboutPage() {
               Ready to get started?
             </h2>
             <p className="text-lg mb-8" style={{color: '#374151'}}>
-              Join thousands of freelancers who are already getting paid faster with InvoiceFlow.
+              Join thousands of freelancers who are already getting paid faster with FlowInvoicer.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link

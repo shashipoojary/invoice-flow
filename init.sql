@@ -1,4 +1,4 @@
--- Initialize the database with required tables for InvoiceFlow Pro
+-- Initialize the database with required tables for FlowInvoicer Pro
 
 -- Create extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

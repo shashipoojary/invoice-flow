@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
   Save, Building2, Upload, CreditCard, 
-  Loader2
+  Loader2, Trash2
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -400,35 +400,30 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
+                    <label className="block text-sm font-medium mb-3" style={{color: '#374151'}}>
                       Business Logo
                     </label>
                     
-                    
-                    {/* Upload Area */}
-                    <div                     className="border-2 border-dashed rounded-lg p-6 text-center transition-colors border-gray-300 hover:border-gray-400 bg-gray-50">
+                    {/* Minimal Logo Section */}
+                    <div className="space-y-4">
                       {settings.logo && settings.logo.trim() !== '' ? (
-                        <div className="space-y-4">
-                          <div className="flex justify-center">
-                            <div className="w-24 h-24 border rounded-lg flex items-center justify-center bg-white dark:bg-gray-700 overflow-hidden">
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 bg-white border border-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
                               <LazyLogo 
                                 src={settings.logo} 
-                                alt="Business Logo Preview" 
-                                className="w-full h-full"
-                                width={96}
-                                height={96}
+                                alt="Logo" 
+                                className="w-full h-full object-contain"
+                                width={48}
+                                height={48}
                               />
                             </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">Current logo</p>
+                              <p className="text-xs text-gray-500">Appears on invoices</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-medium" style={{color: '#374151'}}>
-                              Logo Preview
-                            </p>
-                            <p className="text-xs" style={{color: '#6b7280'}}>
-                              This is how your logo will appear on invoices
-                            </p>
-                          </div>
-                          <div className="flex items-center justify-center space-x-4">
+                          <div className="flex items-center space-x-2">
                             <input
                               type="file"
                               accept="image/*"
@@ -440,79 +435,57 @@ export default function SettingsPage() {
                               htmlFor="logo-upload"
                               className={`cursor-pointer ${isUploadingLogo ? 'pointer-events-none opacity-50' : ''}`}
                             >
-                              <div className={`flex items-center space-x-2 px-4 py-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-gray-300 text-gray-700 hover:text-gray-900`}>
+                              <div className="w-9 h-9 bg-indigo-100 hover:bg-indigo-200 rounded-lg flex items-center justify-center transition-colors">
                                 {isUploadingLogo ? (
-                                  <Loader2 className={`h-4 w-4 animate-spin text-gray-500`} />
+                                  <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
                                 ) : (
-                                  <Upload className={`h-4 w-4 text-gray-500`} />
+                                  <Upload className="h-4 w-4 text-indigo-600" />
                                 )}
-                                <span className="text-sm">
-                                  {isUploadingLogo ? 'Optimizing...' : 'Change Logo'}
-                                </span>
                               </div>
                             </label>
                             <button
                               type="button"
                               onClick={handleRemoveLogo}
                               disabled={isRemovingLogo}
-                              className={`flex items-center space-x-2 px-4 py-2 border rounded-lg transition-colors ${
+                              className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
                                 isRemovingLogo 
-                                  ? 'opacity-50 cursor-not-allowed border-gray-300 text-gray-500 dark:border-gray-600 dark:text-gray-400'
-                                  : false 
-                                    ? 'border-red-600 text-red-400 hover:text-red-300 hover:bg-red-900/20' 
-                                    : 'border-red-300 text-red-600 hover:text-red-800 hover:bg-red-50'
+                                  ? 'opacity-50 cursor-not-allowed bg-gray-100'
+                                  : 'bg-red-100 hover:bg-red-200'
                               }`}
                             >
                               {isRemovingLogo ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
-                                  <span className="text-sm">Removing...</span>
-                                </>
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
                               ) : (
-                                <span className="text-sm">Remove</span>
+                                <Trash2 className="h-4 w-4 text-red-600" />
                               )}
                             </button>
                           </div>
                         </div>
                       ) : (
-                        <div className="space-y-4">
-                          <div className="flex justify-center">
-                            <div className={`w-24 h-24 border-2 border-dashed rounded-lg flex items-center justify-center ${
-                              'border-gray-300 bg-gray-100'
-                            }`}>
-                              <Upload className={`h-8 w-8 text-gray-400`} />
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-gray-400 transition-colors">
+                          <div className="flex items-center justify-center space-x-4">
+                            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                              <Upload className="h-5 w-5 text-gray-400" />
+                            </div>
+                            <div className="flex-1">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleLogoUpload}
+                                className="hidden"
+                                id="logo-upload"
+                              />
+                              <label
+                                htmlFor="logo-upload"
+                                className={`cursor-pointer ${isUploadingLogo ? 'pointer-events-none opacity-50' : ''}`}
+                              >
+                                <span className="text-sm text-gray-600 hover:text-gray-800">
+                                  {isUploadingLogo ? 'Uploading...' : 'Click to upload logo'}
+                                </span>
+                              </label>
+                              <p className="text-xs text-gray-500 mt-1">PNG, JPG, or GIF up to 5MB</p>
                             </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-medium" style={{color: '#374151'}}>
-                              Upload your business logo
-                            </p>
-                            <p className="text-xs" style={{color: '#6b7280'}}>
-                              PNG, JPG, or GIF up to 5MB
-                            </p>
-                          </div>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleLogoUpload}
-                            className="hidden"
-                            id="logo-upload"
-                          />
-                          <label
-                            htmlFor="logo-upload"
-                            className={`cursor-pointer ${isUploadingLogo ? 'pointer-events-none opacity-50' : ''}`}
-                          >
-                            <div className={`inline-flex items-center space-x-2 px-6 py-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-gray-300 text-gray-700 hover:text-gray-900`}>
-                              {isUploadingLogo ? (
-                                <Loader2 className={`h-4 w-4 animate-spin text-gray-500`} />
-                              ) : (
-                                <Upload className={`h-4 w-4 text-gray-500`} />
-                              )}
-                              <span className="text-sm font-medium">
-                                {isUploadingLogo ? 'Optimizing...' : 'Choose Logo File'}
-                              </span>
-                            </div>
-                          </label>
                         </div>
                       )}
                     </div>
@@ -724,3 +697,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

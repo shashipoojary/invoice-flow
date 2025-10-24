@@ -243,7 +243,7 @@ export async function POST(request: NextRequest) {
             <!-- Footer -->
             <div style="background-color: #f8fafc; padding: 24px; text-align: center; border-top: 1px solid #e2e8f0;">
               <p style="margin: 0; color: #64748b; font-size: 14px;">
-                Powered by <a href="https://invoiceflow.com" style="color: #0D9488; text-decoration: none;">InvoiceFlow</a>
+                Powered by <a href="https://invoiceflow.com" style="color: #0D9488; text-decoration: none;">FlowInvoicer</a>
               </p>
             </div>
           </div>
@@ -253,7 +253,7 @@ export async function POST(request: NextRequest) {
 
     // Send email using Resend
     const emailResult = await resend.emails.send({
-      from: 'InvoiceFlow <noreply@invoiceflow.com>',
+      from: 'FlowInvoicer <noreply@invoiceflow.com>',
       to: invoice.clients?.[0]?.email || '',
       subject: `Payment Reminder - Invoice #${invoice.invoice_number}`,
       html: emailHtml,

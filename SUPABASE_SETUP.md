@@ -1,4 +1,4 @@
-# 🚀 Supabase Setup Guide for InvoiceFlow
+# 🚀 Supabase Setup Guide for FlowInvoicer
 
 ## Step 1: Create Supabase Project
 
@@ -111,4 +111,4 @@ Once everything works locally:
 - ✅ Public invoice pages
 - ✅ Mobile responsive design
 
-**Your InvoiceFlow app is ready to help freelancers get paid! 🎉**
+**Your FlowInvoicer app is ready to help freelancers get paid! 🎉**

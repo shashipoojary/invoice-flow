@@ -16,7 +16,7 @@ export default function Footer({}: FooterProps) {
               <div className="w-40 h-10 sm:w-44 sm:h-11 lg:w-52 lg:h-13 relative mb-3" style={{marginLeft: '-2px'}}>
                 <Image
                   src="/logo-main-black.png"
-                  alt="InvoiceFlow Logo"
+                  alt="FlowInvoicer Logo"
                   width={208}
                   height={52}
                   className="w-full h-full object-contain object-left"
@@ -51,7 +51,7 @@ export default function Footer({}: FooterProps) {
           </div>
         </div>
         <div className="border-t mt-8 pt-8 text-center border-gray-200" style={{color: '#6b7280'}}>
-          <p>&copy; 2024 InvoiceFlow. All rights reserved.</p>
+          <p>&copy; 2024 FlowInvoicer. All rights reserved.</p>
         </div>
       </div>
     </footer>

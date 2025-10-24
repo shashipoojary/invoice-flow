@@ -13,8 +13,6 @@ import {
   BarChart3,
   Bell,
   Settings,
-  Menu,
-  X,
   Users
 } from 'lucide-react';
 import Image from 'next/image';
@@ -23,16 +21,7 @@ import Footer from '@/components/Footer';
 export default function LandingPage() {
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeFaqCategory, setActiveFaqCategory] = useState('General');
-  const [showGuides, setShowGuides] = useState(true);
-  const [headingPosition, setHeadingPosition] = useState({ 
-    top: 0, 
-    bottom: 0, 
-    left: 0, 
-    right: 0,
-    width: 0
-  });
   const heroRef = useRef<HTMLDivElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
 
@@ -41,40 +30,6 @@ export default function LandingPage() {
   }, []);
 
 
-  // Update heading position when guides are shown - SIMPLE approach
-  useEffect(() => {
-    if (showGuides) {
-      const updateHeadingPosition = () => {
-        const heading = headingRef.current;
-        const hero = heroRef.current;
-        if (heading && hero) {
-          const headingRect = heading.getBoundingClientRect();
-          const heroRect = hero.getBoundingClientRect();
-          
-          // Simple: just add small offsets to touch the text
-          // Most fonts have about 10-15% padding above and below the actual text
-          const fontSize = parseFloat(window.getComputedStyle(heading).fontSize);
-          const textPadding = fontSize * 0.12; // 12% of font size
-          
-          setHeadingPosition({
-            top: headingRect.top - heroRect.top + textPadding,
-            bottom: headingRect.bottom - heroRect.top - textPadding,
-            left: headingRect.left - heroRect.left,
-            right: heroRect.right - headingRect.right,
-            width: headingRect.width
-          });
-        }
-      };
-
-      updateHeadingPosition();
-      window.addEventListener('resize', updateHeadingPosition);
-      window.addEventListener('scroll', updateHeadingPosition, { passive: true });
-      return () => {
-        window.removeEventListener('resize', updateHeadingPosition);
-        window.removeEventListener('scroll', updateHeadingPosition);
-      };
-    }
-  }, [showGuides]);
 
 
   const handleGetStarted = () => {
@@ -87,219 +42,37 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen transition-colors duration-200 bg-white">
-      {/* Modern Dynamic Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 max-w-6xl mx-auto left-1/2 transform -translate-x-1/2 rounded-lg mt-4 bg-white/95 backdrop-blur-md border border-gray-200">
-        <div className="px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex justify-between items-center h-12">
-            {/* Logo */}
-            <div className="flex items-center flex-shrink-0">
-              <div className="relative w-28 h-7 sm:w-32 sm:h-8 lg:w-36 lg:h-9">
-                <Image
-                  src="/logo-main-black.png"
-                  alt="InvoiceFlow Logo"
-                  width={208}
-                  height={52}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            </div>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-sm font-medium transition-colors hover:opacity-80 text-gray-600">
-                Features
-              </a>
-              <a href="#pricing" className="text-sm font-medium transition-colors hover:opacity-80 text-gray-600">
-                Pricing
-              </a>
-              <a href="/about" className="text-sm font-medium transition-colors hover:opacity-80 text-gray-600">
-                About
-              </a>
-            </div>
-
-            {/* Desktop Actions */}
-            <div className="hidden md:flex items-center space-x-3">
-              <button
-                onClick={handleViewDemo}
-                className="text-sm font-medium transition-colors px-4 py-2 rounded-lg hover:opacity-80 text-gray-600"
-              >
-                View Demo
-              </button>
-              <button
-                onClick={handleGetStarted}
-                className="px-6 py-2 rounded-lg text-sm font-medium transition-colors bg-black text-white hover:bg-gray-800"
-              >
-                Get Started
-              </button>
-            </div>
-
-            {/* Mobile Menu Button */}
-            <div className="md:hidden flex items-center space-x-1">
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-1.5 rounded-md transition-colors bg-gray-100 text-gray-600 hover:bg-gray-200"
-              >
-                {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile Menu */}
-          {isMobileMenuOpen && (
-            <div className="md:hidden border-t border-gray-200">
-              <div className="px-4 pt-3 pb-4 space-y-1">
-                <a
-                  href="#features"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-3 py-2.5 text-sm font-medium rounded-md transition-colors text-gray-600"
-                >
-                  Features
-                </a>
-                <a
-                  href="#pricing"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-3 py-2.5 text-sm font-medium rounded-md transition-colors text-gray-600"
-                >
-                  Pricing
-                </a>
-                <a
-                  href="/about"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-3 py-2.5 text-sm font-medium rounded-md transition-colors text-gray-600"
-                >
-                  About
-                </a>
-                <div className="pt-3 pb-2 border-t border-gray-200">
-                  <button
-                    onClick={() => {
-                      handleViewDemo();
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="block w-full text-left px-3 py-2.5 text-sm font-medium rounded-md transition-colors mb-2 text-gray-600"
-                  >
-                    View Demo
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleGetStarted();
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="block w-full text-left px-3 py-2.5 text-sm font-medium rounded-md transition-colors bg-black text-white hover:bg-gray-800"
-                  >
-                    Get Started
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8 relative" ref={heroRef}>
-
-        {/* Hero Section Alignment Guides */}
-        <div className="absolute inset-0 pointer-events-none z-40">
-            {/* 1 line above heading - touches top of tallest letters */}
-            <div 
-              className="absolute h-px"
-              style={{
-                top: `${headingPosition.top}px`,
-                left: `${headingPosition.left}px`,
-                right: `${headingPosition.right}px`,
-                backgroundColor: '#FB923C',
-                opacity: 0.45
-              }}
-            ></div>
-            
-            {/* 1 line below heading - touches bottom of Y descender */}
-            <div 
-              className="absolute h-px"
-              style={{
-                top: `${headingPosition.bottom}px`,
-                left: `${headingPosition.left}px`,
-                right: `${headingPosition.right}px`,
-                backgroundColor: '#FB923C',
-                opacity: 0.45
-              }}
-            ></div>
-            
-            {/* 2 vertical lines on left and right of content area - responsive positioning */}
-            <div 
-              className="absolute w-px hidden lg:block"
-              style={{
-                left: 'calc(50% - 32rem)',
-                top: '0',
-                height: '100vh',
-                backgroundColor: '#FB923C',
-                opacity: 0.45
-              }}
-            ></div>
-            <div 
-              className="absolute w-px hidden lg:block"
-              style={{
-                right: 'calc(50% - 32rem)',
-                top: '0',
-                height: '100vh',
-                backgroundColor: '#FB923C',
-                opacity: 0.45
-              }}
-            ></div>
-            
-            {/* Mobile vertical lines - positioned relative to content */}
-            <div 
-              className="absolute w-px block lg:hidden"
-              style={{
-                left: '1rem',
-                top: '0',
-                height: '80vh',
-                backgroundColor: '#FB923C',
-                opacity: 0.45
-              }}
-            ></div>
-            <div 
-              className="absolute w-px block lg:hidden"
-              style={{
-                right: '1rem',
-                top: '0',
-                height: '80vh',
-                backgroundColor: '#FB923C',
-                opacity: 0.45
-              }}
-            ></div>
-          </div>
-
+      <section className="pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8 relative" ref={heroRef}>
         <div className="max-w-7xl mx-auto">
       <div className="text-center">
             <div>
-              <h1 ref={headingRef} className="font-heading text-4xl sm:text-6xl lg:text-7xl font-bold mb-8 leading-tight text-gray-900">
+              <h1 ref={headingRef} className="font-heading text-3xl sm:text-5xl lg:text-7xl font-bold mb-6 sm:mb-8 leading-tight text-gray-900">
                 The Fastest Way to
                 <span className="text-indigo-600"> Get Paid</span>
               </h1>
-              <p className="text-sm sm:text-lg lg:text-xl mb-12 max-w-4xl mx-auto leading-relaxed text-gray-600">
+              <p className="text-base sm:text-lg lg:text-xl mb-8 sm:mb-12 max-w-3xl mx-auto leading-relaxed text-gray-600">
                 Create professional invoices in 60 seconds. Send automated reminders. Get paid faster.
               </p>
               
-               {/* CTA Buttons */}
-               <div className="flex flex-row gap-2 sm:gap-4 justify-center mb-2 sm:mb-4">
-                 <button
-                   onClick={handleGetStarted}
-                   className="group flex items-center justify-center space-x-2 px-4 py-3 sm:px-8 sm:py-4 rounded-lg text-sm sm:text-base font-semibold transition-all duration-200 hover:scale-105 w-[calc(50%-0.25rem)] sm:w-auto bg-black text-white hover:bg-gray-800 shadow-lg"
-                 >
-                   <span className="hidden sm:inline">Start Creating Invoices</span>
-                   <span className="sm:hidden">Start Creating</span>
-                   <ArrowRight className="w-4 h-4 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
-                 </button>
-                 <button
-                   onClick={handleViewDemo}
-                   className="group flex items-center justify-center space-x-2 px-4 py-3 sm:px-8 sm:py-4 rounded-lg text-sm sm:text-base font-semibold transition-all duration-200 hover:scale-105 border-2 w-[calc(50%-0.25rem)] sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
-                 >
-                   <Play className="w-4 h-4 sm:w-4 sm:h-4 group-hover:scale-110 transition-transform" />
-                   <span className="hidden sm:inline">View Demo</span>
-                   <span className="sm:hidden">Demo</span>
-                 </button>
-               </div>
-
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+                <button
+                  onClick={handleGetStarted}
+                  className="group flex items-center justify-center space-x-2 px-6 py-3 sm:px-8 sm:py-4 rounded-lg text-base sm:text-base font-semibold transition-all duration-200 hover:scale-105 w-full sm:w-auto bg-black text-white hover:bg-gray-800 shadow-lg"
+                >
+                  <span>Start Creating Invoices</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+                <button
+                  onClick={handleViewDemo}
+                  className="group flex items-center justify-center space-x-2 px-6 py-3 sm:px-8 sm:py-4 rounded-lg text-base sm:text-base font-semibold transition-all duration-200 hover:scale-105 border-2 w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+                >
+                  <Play className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                  <span>View Demo</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -336,7 +109,7 @@ export default function LandingPage() {
               }}>
                 <Image
                   src="/dashboard-screenshot.png"
-                  alt="InvoiceFlow Dashboard Screenshot"
+                  alt="FlowInvoicer Dashboard Screenshot"
                   width={1200}
                   height={800}
                   className="w-full h-auto object-cover"
@@ -353,15 +126,15 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="font-heading text-4xl sm:text-5xl font-bold mb-6 text-gray-900">
-                Your invoicing doesn&apos;t stand a chance
-              </h2>
-              <p className="text-lg mb-8 text-gray-600">
-                Delegate invoice management to InvoiceFlow and let your automated system create, send, and track payments in the background.
-              </p>
-              <a href="#" className="text-indigo-600 hover:text-indigo-500 font-semibold">
-                Discover InvoiceFlow automation →
-              </a>
+                <h2 className="font-heading text-4xl sm:text-5xl font-bold mb-6 text-gray-900">
+                  Your invoicing doesn&apos;t stand a chance
+                </h2>
+                <p className="text-lg mb-8 text-gray-600">
+                  Delegate invoice management to FlowInvoicer and let your automated system create, send, and track payments in the background.
+                </p>
+                <a href="#" className="text-indigo-600 hover:text-indigo-500 font-semibold">
+                  Discover FlowInvoicer automation →
+                </a>
             </div>
             <div className="space-y-8">
               <div className="flex items-start">
@@ -374,7 +147,7 @@ export default function LandingPage() {
                     Handles your invoices.
                   </h3>
                   <p className="text-gray-600">
-                    When you create invoices, InvoiceFlow plans, sends, tracks, and follows up—using automated reminders to ensure payment and deliver ready-to-pay invoices.
+                    When you create invoices, FlowInvoicer plans, sends, tracks, and follows up—using automated reminders to ensure payment and deliver ready-to-pay invoices.
                   </p>
                 </div>
               </div>
@@ -389,7 +162,7 @@ export default function LandingPage() {
                     Works like a professional.
                   </h3>
                   <p className="text-gray-600">
-                    InvoiceFlow integrates with your business data to draw on client information and payment history—working like an experienced accountant from day one.
+                    FlowInvoicer integrates with your business data to draw on client information and payment history—working like an experienced accountant from day one.
                   </p>
                 </div>
               </div>
@@ -403,7 +176,7 @@ export default function LandingPage() {
                     Human and automation in the loop.
                   </h3>
                   <p className="text-gray-600">
-                    Customize to guide InvoiceFlow, review invoices before sending, or take over manually in your dashboard.
+                    Customize to guide FlowInvoicer, review invoices before sending, or take over manually in your dashboard.
                   </p>
                 </div>
               </div>
@@ -674,7 +447,7 @@ export default function LandingPage() {
               Frequently Asked Questions
             </h2>
             <p className="text-lg text-gray-600">
-              Everything you need to know about InvoiceFlow
+              Everything you need to know about FlowInvoicer
             </p>
           </div>
           
@@ -734,13 +507,13 @@ export default function LandingPage() {
                     <div className="rounded-lg border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
                       <button className="w-full px-6 py-4 text-left flex items-center justify-between">
                         <h3 className="font-heading text-lg font-semibold text-gray-900">
-                          What is InvoiceFlow?
+                          What is FlowInvoicer?
                         </h3>
                         <span className="text-2xl font-light text-gray-600">+</span>
                       </button>
                       <div className="px-6 pb-4">
                         <p className="text-sm leading-relaxed text-gray-600">
-                          InvoiceFlow is a professional invoicing platform designed for freelancers, designers, and contractors. Create beautiful invoices, send automated reminders, and get paid faster with our streamlined workflow.
+                          FlowInvoicer is a professional invoicing platform designed for freelancers, designers, and contractors. Create beautiful invoices, send automated reminders, and get paid faster with our streamlined workflow.
                         </p>
                       </div>
                     </div>
@@ -748,13 +521,13 @@ export default function LandingPage() {
                     <div className="rounded-lg border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
                       <button className="w-full px-6 py-4 text-left flex items-center justify-between">
                         <h3 className="font-heading text-lg font-semibold text-gray-900">
-                          Who can use InvoiceFlow?
+                          Who can use FlowInvoicer?
                         </h3>
                         <span className="text-2xl font-light text-gray-600">+</span>
                       </button>
                       <div className="px-6 pb-4">
                         <p className="text-sm leading-relaxed text-gray-600">
-                          InvoiceFlow is perfect for freelancers, designers, contractors, consultants, agencies, and any business that needs to send professional invoices. Whether you&apos;re just starting out or managing hundreds of clients.
+                          FlowInvoicer is perfect for freelancers, designers, contractors, consultants, agencies, and any business that needs to send professional invoices. Whether you&apos;re just starting out or managing hundreds of clients.
                         </p>
                       </div>
                     </div>
@@ -928,7 +701,7 @@ export default function LandingPage() {
             Ready to Get Paid Faster?
           </h2>
           <p className="text-xl mb-8 text-gray-600">
-            Join thousands of freelancers who are already getting paid faster with InvoiceFlow.
+            Join thousands of freelancers who are already getting paid faster with FlowInvoicer.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
@@ -943,7 +716,7 @@ export default function LandingPage() {
             >
               View Demo
             </button>
-          </div>
+      </div>
         </div>
       </section>
 

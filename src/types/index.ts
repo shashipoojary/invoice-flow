@@ -1,4 +1,4 @@
-// Shared types for the InvoiceFlow application
+// Shared types for the FlowInvoicer application
 
 export interface Client {
   id: string;

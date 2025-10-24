@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { 
   FileText, Users, 
   Clock, CheckCircle, AlertCircle, AlertTriangle, UserPlus, FilePlus, Sparkles, Receipt, Timer,
-  Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2
+  Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2, ArrowRight
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -34,6 +34,7 @@ export default function DashboardOverview() {
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   const [showCreateClient, setShowCreateClient] = useState(false);
   const [showViewInvoice, setShowViewInvoice] = useState(false);
+  const [showInvoiceTypeSelection, setShowInvoiceTypeSelection] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   
   // Loading states for action buttons
@@ -46,7 +47,7 @@ export default function DashboardOverview() {
     isOpen: false,
     title: '',
     message: '',
-    type: 'danger' as 'danger' | 'warning' | 'info',
+    type: 'danger' as 'danger' | 'warning' | 'info' | 'success',
     onConfirm: () => {},
     isLoading: false
   });
@@ -74,7 +75,18 @@ export default function DashboardOverview() {
 
   // Create invoice handler
   const handleCreateInvoice = useCallback(() => {
-    // Show the detailed invoice modal by default
+    // Show the invoice type selection modal
+    setShowInvoiceTypeSelection(true);
+  }, []);
+
+  // Handle invoice type selection
+  const handleSelectFastInvoice = useCallback(() => {
+    setShowInvoiceTypeSelection(false);
+    setShowFastInvoice(true);
+  }, []);
+
+  const handleSelectDetailedInvoice = useCallback(() => {
+    setShowInvoiceTypeSelection(false);
     setShowCreateInvoice(true);
   }, []);
 
@@ -366,9 +378,21 @@ export default function DashboardOverview() {
     }
   }, []);
 
-  const handleMarkAsPaid = useCallback(async (invoice: Invoice) => {
+  const handleMarkAsPaid = useCallback((invoice: Invoice) => {
+    setConfirmationModal({
+      isOpen: true,
+      title: 'Mark Invoice as Paid',
+      message: `Are you sure you want to mark invoice ${invoice.invoiceNumber} as paid? This will update the invoice status and cannot be easily undone.`,
+      type: 'success',
+      onConfirm: () => performMarkAsPaid(invoice),
+      isLoading: false
+    });
+  }, []);
+
+  const performMarkAsPaid = useCallback(async (invoice: Invoice) => {
     const actionKey = `paid-${invoice.id}`;
     setLoadingActions(prev => ({ ...prev, [actionKey]: true }));
+    setConfirmationModal(prev => ({ ...prev, isLoading: true }));
     
     try {
       const headers = await getAuthHeaders();
@@ -391,12 +415,15 @@ export default function DashboardOverview() {
           )
         );
         showSuccess('Invoice Updated', `Invoice ${invoice.invoiceNumber} has been marked as paid.`);
+        setConfirmationModal(prev => ({ ...prev, isOpen: false, isLoading: false }));
       } else {
         showError('Update Failed', 'Failed to mark invoice as paid. Please try again.');
+        setConfirmationModal(prev => ({ ...prev, isLoading: false }));
       }
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
       showError('Update Failed', 'Failed to mark invoice as paid. Please try again.');
+      setConfirmationModal(prev => ({ ...prev, isLoading: false }));
     } finally {
       setLoadingActions(prev => ({ ...prev, [actionKey]: false }));
     }
@@ -442,7 +469,7 @@ export default function DashboardOverview() {
   }, [getAuthHeaders, showSuccess, showError]);
 
   // Modern Invoice Card Component - Responsive Design
-  const ModernInvoiceCard = useCallback(({ invoice, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, handleDeleteInvoice, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions }: {
+  const ModernInvoiceCard = ({ invoice, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, handleDeleteInvoice, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions }: {
     invoice: Invoice;
     handleViewInvoice: (invoice: Invoice) => void;
     handleDownloadPDF: (invoice: Invoice) => void;
@@ -572,10 +599,10 @@ export default function DashboardOverview() {
           </div>
         </div>
 
-        {/* Desktop Layout - Same as Mobile */}
+        {/* Desktop Layout - Compact */}
         <div className="hidden sm:block p-4">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
                   <FileText className="h-4 w-4 text-gray-700" />
@@ -589,7 +616,7 @@ export default function DashboardOverview() {
               </div>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-center">
                 <div className={`font-semibold text-base ${
                   invoice.status === 'paid' ? 'text-emerald-600' :
                   dueDateStatus.status === 'overdue' ? 'text-red-600' :
@@ -605,7 +632,7 @@ export default function DashboardOverview() {
             </div>
             </div>
             
-            <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
               <div className="flex items-center space-x-2">
                 <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
                   invoice.status === 'paid' ? 'text-emerald-600' :
@@ -681,7 +708,7 @@ export default function DashboardOverview() {
         </div>
       </div>
     );
-  }, [getStatusIcon, getStatusColor, getDueDateStatus, calculateDueCharges]);
+  };
 
   // Memoized Invoice Card Component
   const InvoiceCard = useCallback(({ invoice, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, handleDeleteInvoice, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions }: {
@@ -770,14 +797,55 @@ export default function DashboardOverview() {
           </div>
           
           {/* Desktop Layout */}
-          <div className="hidden sm:grid grid-cols-4 gap-4 items-center">
-            <div className="space-y-1">
-              <div className="flex items-center space-x-2">
-                <div className="font-heading text-sm font-semibold" style={{color: '#1f2937'}}>
-                  {invoice.invoiceNumber}
+          <div className="hidden sm:flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2">
+                  <div className="font-heading text-sm font-semibold" style={{color: '#1f2937'}}>
+                    {invoice.invoiceNumber}
+                  </div>
                 </div>
+                <div className="text-xs" style={{color: '#374151'}}>
+                  {new Date(invoice.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm font-medium" style={{color: '#1f2937'}}>
+                  {invoice.client.name}
+                </div>
+                {invoice.client.company && (
+                  <div className="text-sm" style={{color: '#374151'}}>
+                    {invoice.client.company}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <div className="text-center">
+                <div className={`font-heading text-lg font-bold ${
+                  invoice.status === 'paid' ? 'text-green-700' :
+                    invoice.status === 'pending' ? 'text-orange-500' :
+                    invoice.status === 'draft' ? 'text-gray-600' :
+                  dueDateStatus.status === 'overdue' ? 'text-red-600' :
+                  'text-gray-700'
+                }`}>
+                  ${dueCharges.totalPayable.toLocaleString()}
+                </div>
+                <div className="text-xs" style={{color: '#6b7280'}}>
+                  {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'No due date'}
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
                 <span 
-                  className={`px-2 py-0.5 text-xs font-medium rounded-full border`}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border`}
+                  style={getStatusStyle(invoice.status)}
+                >
+                  {getStatusIcon(invoice.status)}
+                  <span className="capitalize">{invoice.status}</span>
+                </span>
+                <span className={`px-2 py-0.5 text-xs font-medium rounded-full border`}
                   style={((invoice.type || 'detailed') === 'fast' 
                     ? { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' }
                     : { backgroundColor: '#e0e7ff', color: '#3730a3', borderColor: '#a5b4fc' }
@@ -785,44 +853,13 @@ export default function DashboardOverview() {
                 >
                   {(invoice.type || 'detailed') === 'fast' ? 'Fast' : 'Detailed'}
                 </span>
+                {invoice.status === 'pending' && dueDateStatus.status === 'overdue' && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border bg-red-50 text-red-800 border-red-300">
+                    <AlertTriangle className="h-3 w-3" />
+                    <span>{dueDateStatus.days}d overdue</span>
+                  </span>
+                )}
               </div>
-              <div className="text-xs" style={{color: '#374151'}}>
-                {new Date(invoice.createdAt).toLocaleDateString()}
-              </div>
-            </div>
-            <div>
-              <div className="text-sm font-medium" style={{color: '#1f2937'}}>
-                {invoice.client.name}
-              </div>
-              {invoice.client.company && (
-                <div className="text-sm" style={{color: '#374151'}}>
-                  {invoice.client.company}
-                </div>
-              )}
-            </div>
-            <div className={`font-heading text-lg font-bold ${
-              invoice.status === 'paid' ? 'text-green-700' :
-                invoice.status === 'pending' ? 'text-orange-500' :
-                invoice.status === 'draft' ? 'text-gray-600' :
-              dueDateStatus.status === 'overdue' ? 'text-red-600' :
-              'text-gray-700'
-            }`}>
-              ${dueCharges.totalPayable.toLocaleString()}
-            </div>
-            <div className="flex items-center justify-between">
-              <span 
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border`}
-                style={getStatusStyle(invoice.status)}
-              >
-                {getStatusIcon(invoice.status)}
-                <span className="capitalize">{invoice.status}</span>
-              </span>
-              {invoice.status === 'pending' && dueDateStatus.status === 'overdue' && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border bg-red-50 text-red-800 border-red-300">
-                  <AlertTriangle className="h-3 w-3" />
-                  <span>{dueDateStatus.days}d overdue</span>
-                </span>
-              )}
             </div>
           </div>
         </div>
@@ -988,7 +1025,7 @@ export default function DashboardOverview() {
   }, [isLoadingStats, isLoadingInvoices]);
 
   // Memoize calculations
-  const recentInvoices = useMemo(() => Array.isArray(invoices) ? invoices.slice(0, 5) : [], [invoices]);
+  const recentInvoices = useMemo(() => Array.isArray(invoices) ? invoices.slice(0, 8) : [], [invoices]);
   
   // Calculate total revenue (only paid invoices)
   const totalRevenue = useMemo(() => {
@@ -1106,7 +1143,7 @@ export default function DashboardOverview() {
                   </div>
                   
                   <p className="text-sm mb-6 leading-relaxed" style={{color: '#374151'}}>
-                    InvoiceFlow makes it incredibly easy to create professional invoices and get paid faster. 
+                    FlowInvoicer makes it incredibly easy to create professional invoices and get paid faster. 
                     Start by adding a client or create your first invoice in under 60 seconds.
                   </p>
                   
@@ -1324,10 +1361,10 @@ export default function DashboardOverview() {
                 </h2>
                 <button
                   onClick={() => router.push('/dashboard/invoices')}
-                  className="text-sm font-medium px-3 py-2 rounded-lg transition-colors"
-                  style={{color: '#6b7280'}}
+                  className="group flex items-center space-x-2 text-sm font-medium px-4 py-2 rounded-lg transition-all duration-200 hover:scale-105 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 hover:border-indigo-300"
                 >
-                  View all
+                  <span>View all</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
               
@@ -1351,27 +1388,275 @@ export default function DashboardOverview() {
                   ))}
                 </div>
               ) : recentInvoices.length > 0 ? (
-                <div className="space-y-3">
-                  {recentInvoices.map((invoice) => (
-                    <ModernInvoiceCard
-                      key={invoice.id}
-                      invoice={invoice}
-                      handleViewInvoice={handleViewInvoice}
-                      handleDownloadPDF={handleDownloadPDF}
-                      handleSendInvoice={handleSendInvoice}
-                      handleEditInvoice={handleEditInvoice}
-                      handleMarkAsPaid={handleMarkAsPaid}
-                      handleDeleteInvoice={handleDeleteInvoice}
-                      getStatusIcon={getStatusIcon}
-                      getStatusColor={getStatusColor}
-                      getDueDateStatus={getDueDateStatus}
-                      formatPaymentTerms={formatPaymentTerms}
-                      formatLateFees={formatLateFees}
-                      formatReminders={formatReminders}
-                      calculateDueCharges={calculateDueCharges}
-                      loadingActions={loadingActions}
-                    />
-                  ))}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {recentInvoices.map((invoice) => {
+                    const dueDateStatus = getDueDateStatus(invoice.dueDate);
+                    const dueCharges = calculateDueCharges(invoice);
+                    
+                    return (
+                      <div key={invoice.id} className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
+                        {/* Mobile Layout */}
+                        <div className="block sm:hidden p-4">
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100`}>
+                                  <FileText className="h-4 w-4 text-gray-600" />
+                                </div>
+                                <div>
+                                  <div className="font-medium text-sm" style={{color: '#1f2937'}}>
+                                    {invoice.invoiceNumber}
+                                  </div>
+                                  <div className="text-xs" style={{color: '#6b7280'}}>
+                                    {invoice.client.name}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className={`font-semibold text-base ${
+                                  invoice.status === 'paid' ? ('text-emerald-600') :
+                                  dueDateStatus.status === 'overdue' ? ('text-red-600') :
+                                  dueDateStatus.status === 'draft-past-due' ? ('text-gray-500') :
+                                  invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-500') :
+                                  invoice.status === 'draft' ? ('text-gray-600') :
+                                  ('text-red-600')
+                                }`}>
+                                  ${dueCharges.totalPayable.toLocaleString()}
+                                </div>
+                                <div className="text-xs" style={{color: '#6b7280'}}>
+                                  {new Date(invoice.createdAt).toLocaleDateString()}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
+                                  invoice.status === 'paid' ? ('text-emerald-600') :
+                                  invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-500') :
+                                  invoice.status === 'draft' ? ('text-gray-600') :
+                                  ('text-red-600')
+                                }`}>
+                                  {getStatusIcon(invoice.status)}
+                                  <span className="capitalize">{invoice.status}</span>
+                                </span>
+                                {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
+                                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-red-600'}`}>
+                                    <AlertTriangle className="h-3 w-3" />
+                                    <span>{dueDateStatus.days}d overdue</span>
+                                  </span>
+                                )}
+                                {dueDateStatus.status === 'draft-past-due' && (
+                                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-gray-500'}`}>
+                                    <Clock className="h-3 w-3" />
+                                    <span>{dueDateStatus.days}d past due</span>
+                                  </span>
+                                )}
+                              </div>
+                              
+                              <div className="flex items-center space-x-1">
+                                <button 
+                                  onClick={() => handleViewInvoice(invoice)}
+                                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                                  title="View"
+                                >
+                                  <Eye className="h-4 w-4 text-gray-600" />
+                                </button>
+                                <button 
+                                  onClick={() => handleDownloadPDF(invoice)}
+                                  disabled={loadingActions[`pdf-${invoice.id}`]}
+                                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                  title="PDF"
+                                >
+                                  {loadingActions[`pdf-${invoice.id}`] ? (
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                                  ) : (
+                                    <Download className="h-4 w-4 text-gray-600" />
+                                  )}
+                                </button>
+                                {invoice.status === 'draft' && (
+                                  <button 
+                                    onClick={() => handleSendInvoice(invoice)}
+                                    disabled={loadingActions[`send-${invoice.id}`]}
+                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    title="Send"
+                                  >
+                                    {loadingActions[`send-${invoice.id}`] ? (
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                                    ) : (
+                                      <Send className="h-4 w-4 text-gray-600" />
+                                    )}
+                                  </button>
+                                )}
+                                {(invoice.status === 'pending' || invoice.status === 'sent') && (
+                                  <button 
+                                    onClick={() => handleMarkAsPaid(invoice)}
+                                    disabled={loadingActions[`paid-${invoice.id}`]}
+                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    title="Mark Paid"
+                                  >
+                                    {loadingActions[`paid-${invoice.id}`] ? (
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                                    ) : (
+                                      <CheckCircle className="h-4 w-4 text-gray-600" />
+                                    )}
+                                  </button>
+                                )}
+                                {invoice.status === 'draft' && (
+                                  <button 
+                                    onClick={() => handleEditInvoice(invoice)}
+                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                                    title="Edit"
+                                  >
+                                    <Edit className="h-4 w-4 text-gray-600" />
+                                  </button>
+                                )}
+                                {invoice.status === 'draft' && (
+                                  <button 
+                                    onClick={() => handleDeleteInvoice(invoice)}
+                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="h-4 w-4 text-gray-600" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Desktop Layout - Same as Mobile */}
+                        <div className="hidden sm:block p-4">
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100`}>
+                                  <FileText className="h-4 w-4 text-gray-600" />
+                                </div>
+                                <div>
+                                  <div className="font-medium text-sm" style={{color: '#1f2937'}}>
+                                    {invoice.invoiceNumber}
+                                  </div>
+                                  <div className="text-xs" style={{color: '#6b7280'}}>
+                                    {invoice.client.name}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className={`font-semibold text-base ${
+                                  invoice.status === 'paid' ? ('text-emerald-600') :
+                                  dueDateStatus.status === 'overdue' ? ('text-red-600') :
+                                  dueDateStatus.status === 'draft-past-due' ? ('text-gray-500') :
+                                  invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-500') :
+                                  invoice.status === 'draft' ? ('text-gray-600') :
+                                  ('text-red-600')
+                                }`}>
+                                  ${dueCharges.totalPayable.toLocaleString()}
+                                </div>
+                                <div className="text-xs" style={{color: '#6b7280'}}>
+                                  {new Date(invoice.createdAt).toLocaleDateString()}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
+                                  invoice.status === 'paid' ? ('text-emerald-600') :
+                                  invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-500') :
+                                  invoice.status === 'draft' ? ('text-gray-600') :
+                                  ('text-red-600')
+                                }`}>
+                                  {getStatusIcon(invoice.status)}
+                                  <span className="capitalize">{invoice.status}</span>
+                                </span>
+                                {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
+                                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-red-600'}`}>
+                                    <AlertTriangle className="h-3 w-3" />
+                                    <span>{dueDateStatus.days}d overdue</span>
+                                  </span>
+                                )}
+                                {dueDateStatus.status === 'draft-past-due' && (
+                                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-gray-500'}`}>
+                                    <Clock className="h-3 w-3" />
+                                    <span>{dueDateStatus.days}d past due</span>
+                                  </span>
+                                )}
+                              </div>
+                              
+                              <div className="flex items-center space-x-1">
+                                <button 
+                                  onClick={() => handleViewInvoice(invoice)}
+                                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                                  title="View"
+                                >
+                                  <Eye className="h-4 w-4 text-gray-600" />
+                                </button>
+                                <button 
+                                  onClick={() => handleDownloadPDF(invoice)}
+                                  disabled={loadingActions[`pdf-${invoice.id}`]}
+                                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                  title="PDF"
+                                >
+                                  {loadingActions[`pdf-${invoice.id}`] ? (
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                                  ) : (
+                                    <Download className="h-4 w-4 text-gray-600" />
+                                  )}
+                                </button>
+                                {invoice.status === 'draft' && (
+                                  <button 
+                                    onClick={() => handleSendInvoice(invoice)}
+                                    disabled={loadingActions[`send-${invoice.id}`]}
+                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    title="Send"
+                                  >
+                                    {loadingActions[`send-${invoice.id}`] ? (
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                                    ) : (
+                                      <Send className="h-4 w-4 text-gray-600" />
+                                    )}
+                                  </button>
+                                )}
+                                {(invoice.status === 'pending' || invoice.status === 'sent') && (
+                                  <button 
+                                    onClick={() => handleMarkAsPaid(invoice)}
+                                    disabled={loadingActions[`paid-${invoice.id}`]}
+                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    title="Mark Paid"
+                                  >
+                                    {loadingActions[`paid-${invoice.id}`] ? (
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                                    ) : (
+                                      <CheckCircle className="h-4 w-4 text-gray-600" />
+                                    )}
+                                  </button>
+                                )}
+                                {invoice.status === 'draft' && (
+                                  <button 
+                                    onClick={() => handleEditInvoice(invoice)}
+                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                                    title="Edit"
+                                  >
+                                    <Edit className="h-4 w-4 text-gray-600" />
+                                  </button>
+                                )}
+                                {invoice.status === 'draft' && (
+                                  <button 
+                                    onClick={() => handleDeleteInvoice(invoice)}
+                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="h-4 w-4 text-gray-600" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="rounded-xl p-8 text-center bg-white border border-gray-200">
@@ -1404,6 +1689,76 @@ export default function DashboardOverview() {
         toasts={toasts}
         onRemove={removeToast}
       />
+
+      {/* Invoice Type Selection Modal */}
+      {showInvoiceTypeSelection && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full p-6">
+            <div className="text-center mb-6">
+              <h3 className="font-heading text-xl font-semibold mb-2" style={{color: '#1f2937'}}>
+                Choose Invoice Type
+              </h3>
+              <p className="text-gray-600 text-sm">
+                Select the type of invoice you want to create
+              </p>
+            </div>
+            
+            <div className="space-y-3">
+              {/* Fast Invoice Option */}
+              <button
+                onClick={handleSelectFastInvoice}
+                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                    <Sparkles className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <h4 className="font-medium text-gray-900">Fast Invoice</h4>
+                    <p className="text-sm text-gray-500">Quick invoice with minimal details</p>
+                  </div>
+                  <div className="text-indigo-600 group-hover:text-indigo-700">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </button>
+
+              {/* Detailed Invoice Option */}
+              <button
+                onClick={handleSelectDetailedInvoice}
+                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                    <FileText className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <h4 className="font-medium text-gray-900">Detailed Invoice</h4>
+                    <p className="text-sm text-gray-500">Complete invoice with all details and customization</p>
+                  </div>
+                  <div className="text-indigo-600 group-hover:text-indigo-700">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            {/* Cancel Button */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => setShowInvoiceTypeSelection(false)}
+                className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Fast Invoice Modal */}
       {showFastInvoice && (
@@ -1728,7 +2083,7 @@ export default function DashboardOverview() {
          message={confirmationModal.message}
          type={confirmationModal.type}
          isLoading={confirmationModal.isLoading}
-         confirmText="Delete Invoice"
+         confirmText={confirmationModal.type === 'success' ? 'Mark as Paid' : 'Delete Invoice'}
          cancelText="Cancel"
        />
 

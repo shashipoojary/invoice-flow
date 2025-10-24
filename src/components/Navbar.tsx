@@ -1,133 +1,157 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
-import Link from 'next/link';
 import Image from 'next/image';
 
 export default function Navbar() {
+  const router = useRouter();
+  const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
   const handleGetStarted = () => {
-    window.location.href = '/auth';
+    router.push('/auth');
   };
 
   const handleViewDemo = () => {
-    window.location.href = '/dashboard';
+    router.push('/dashboard');
   };
 
+  const handleLogoClick = () => {
+    router.push('/');
+  };
+
+  // Don't show navbar on auth pages
+  if (pathname.startsWith('/auth') || pathname.startsWith('/dashboard')) {
+    return null;
+  }
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 max-w-6xl mx-auto left-1/2 transform -translate-x-1/2 rounded-lg mt-4 bg-white/95 backdrop-blur-md border border-gray-200">
-      <div className="px-4 sm:px-6 lg:px-8 py-3">
-        <div className="flex justify-between items-center h-12">
-          {/* Logo */}
-          <div className="flex items-center flex-shrink-0">
-            <Link href="/" className="flex items-center">
-              <div className="relative w-28 h-7 sm:w-32 sm:h-8 md:w-36 md:h-9 lg:w-40 lg:h-10">
+    <nav
+      data-state={isMobileMenuOpen && 'active'}
+      className="fixed left-0 w-full z-20 px-2"
+    >
+      <div className="mx-auto mt-2 max-w-6xl px-6 lg:px-12 bg-white border-b border-gray-100">
+        <div className="relative flex flex-wrap items-center justify-between gap-6 lg:gap-0 py-3">
+          <div className="flex w-full justify-between lg:w-auto">
+            {/* Logo */}
+            <div className="flex items-center cursor-pointer" onClick={handleLogoClick}>
+              <div className="relative w-48 h-16 sm:w-56 lg:w-64 flex items-center justify-start overflow-hidden">
                 <Image
                   src="/logo-main-black.png"
-                  alt="InvoiceFlow Logo"
-                  width={208}
-                  height={52}
-                  className="w-full h-full object-contain"
+                  alt="FlowInvoicer Logo"
+                  width={420}
+                  height={140}
+                  className="h-full w-auto object-contain scale-150 origin-center"
                 />
               </div>
-            </Link>
-          </div>
+            </div>
 
-          {/* Tablet/Desktop Navigation */}
-          <div className="hidden sm:flex items-center space-x-4 lg:space-x-8">
-            <Link href="/" className="text-xs sm:text-sm font-medium transition-colors hover:opacity-80" style={{color: '#6b7280'}}>
-              Home
-            </Link>
-            <Link href="/about" className="text-xs sm:text-sm font-medium transition-colors hover:opacity-80" style={{color: '#6b7280'}}>
-              About
-            </Link>
-            <Link href="/contact" className="text-xs sm:text-sm font-medium transition-colors hover:opacity-80" style={{color: '#6b7280'}}>
-              Contact
-            </Link>
-          </div>
-
-          {/* Tablet/Desktop Actions */}
-          <div className="hidden sm:flex items-center space-x-2 lg:space-x-3">
-            <button
-              onClick={handleViewDemo}
-              className="text-xs sm:text-sm font-medium transition-colors px-3 py-2 sm:px-4 rounded-lg hover:opacity-80"
-              style={{color: '#6b7280'}}
-            >
-              View Demo
-            </button>
-            <button
-              onClick={handleGetStarted}
-              className="px-4 py-2 sm:px-6 rounded-lg text-xs sm:text-sm font-medium transition-colors bg-black text-white hover:bg-gray-800"
-            >
-              Get Started
-            </button>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="sm:hidden flex items-center space-x-1">
+            {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-1.5 rounded-md transition-colors bg-gray-100 text-gray-600 hover:bg-gray-200"
+              aria-label={isMobileMenuOpen ? 'Close Menu' : 'Open Menu'}
+              className="relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5 lg:hidden"
             >
-              {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              <Menu className={`m-auto size-6 duration-200 ${isMobileMenuOpen ? 'rotate-180 scale-0 opacity-0' : ''}`} />
+              <X className={`absolute inset-0 m-auto size-6 -rotate-180 scale-0 opacity-0 duration-200 ${isMobileMenuOpen ? 'rotate-0 scale-100 opacity-100' : ''}`} />
             </button>
           </div>
-        </div>
 
-        {/* Mobile Menu */}
-        {isMobileMenuOpen && (
-          <div className="sm:hidden border-t border-gray-200 animate-in slide-in-from-top-2 duration-300">
-            <div className="px-4 pt-3 pb-4 space-y-1">
-              <Link
-                href="/"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block px-3 py-2.5 text-sm font-medium rounded-md transition-colors"
-                style={{color: '#6b7280'}}
+          {/* Desktop Navigation Links */}
+          <div className="absolute inset-0 m-auto hidden size-fit lg:block">
+            <ul className="flex gap-8 text-sm">
+              <li>
+                <a href="#features" className="text-gray-600 hover:text-gray-900 block duration-150 font-medium">
+                  <span>Features</span>
+                </a>
+              </li>
+              <li>
+                <a href="#pricing" className="text-gray-600 hover:text-gray-900 block duration-150 font-medium">
+                  <span>Pricing</span>
+                </a>
+              </li>
+              <li>
+                <a href="#about" className="text-gray-600 hover:text-gray-900 block duration-150 font-medium">
+                  <span>About</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Desktop Action Buttons */}
+          <div className="absolute right-0 top-1/2 hidden -translate-y-1/2 lg:block">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleViewDemo}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
               >
-                Home
-              </Link>
-              <Link
-                href="/about"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block px-3 py-2.5 text-sm font-medium rounded-md transition-colors"
-                style={{color: '#6b7280'}}
+                View Demo
+              </button>
+              <button
+                onClick={handleGetStarted}
+                className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800"
               >
-                About
-              </Link>
-              <Link
-                href="/contact"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block px-3 py-2.5 text-sm font-medium rounded-md transition-colors"
-                style={{color: '#6b7280'}}
-              >
-                Contact
-              </Link>
-              <div className="pt-3 pb-2 border-t border-gray-200 dark:border-gray-700">
-                <button
-                  onClick={() => {
-                    handleViewDemo();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="block w-full text-left px-3 py-2.5 text-sm font-medium rounded-md transition-colors mb-2"
-                  style={{color: '#6b7280'}}
-                >
-                  View Demo
-                </button>
-                <button
-                  onClick={() => {
-                    handleGetStarted();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="block w-full text-left px-3 py-2.5 text-sm font-medium rounded-md transition-colors bg-black text-white hover:bg-gray-800"
-                >
-                  Get Started
-                </button>
-              </div>
+                Get Started
+              </button>
             </div>
           </div>
-        )}
+
+          {/* Mobile Menu */}
+          {isMobileMenuOpen && (
+            <div className="absolute top-full left-0 right-0 bg-white border-0 lg:border border-gray-100 shadow-lg md:hidden">
+              <div className="px-4 py-6 space-y-1">
+                <a
+                  href="#features"
+                  className="block py-3 text-base font-medium text-gray-900 hover:text-indigo-600"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Features
+                </a>
+                <a
+                  href="#pricing"
+                  className="block py-3 text-base font-medium text-gray-900 hover:text-indigo-600"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Pricing
+                </a>
+                <a
+                  href="#about"
+                  className="block py-3 text-base font-medium text-gray-900 hover:text-indigo-600"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  About
+                </a>
+                <div className="pt-4 space-y-2">
+                  <button
+                    onClick={() => {
+                      handleViewDemo();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="block w-full py-3 px-4 text-base font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    View Demo
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleGetStarted();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="block w-full py-3 px-4 text-base font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800"
+                  >
+                    Get Started
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </nav>
   );

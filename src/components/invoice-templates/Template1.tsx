@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
   },
-  // Footer with InvoiceFlow branding - positioned at bottom
+  // Footer with FlowInvoicer branding - positioned at bottom
   footer: {
     position: 'absolute',
     bottom: 20,
@@ -475,7 +475,7 @@ export default function Template1({ invoice, businessSettings, primaryColor = '#
         {/* Footer with disclaimer only */}
         <View style={styles.footer}>
           <Text style={styles.disclaimer}>
-          This invoice was generated with InvoiceFlow. Create professional invoices in seconds.
+          This invoice was generated with FlowInvoicer. Create professional invoices in seconds.
           </Text>
         </View>
       </Page>

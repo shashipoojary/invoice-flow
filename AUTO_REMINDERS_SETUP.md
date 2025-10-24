@@ -1,7 +1,7 @@
 # 🤖 Automated Reminder System Setup
 
 ## **Overview**
-Your InvoiceFlow app now has a **fully automated reminder system** that sends professional email reminders to clients with overdue invoices.
+Your FlowInvoicer app now has a **fully automated reminder system** that sends professional email reminders to clients with overdue invoices.
 
 ## **How It Works**
 

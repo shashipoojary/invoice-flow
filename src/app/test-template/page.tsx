@@ -339,10 +339,10 @@ export default function TestTemplatePage() {
                   className="text-sm font-bold"
                   style={{ color: '#8B5CF6' }}
                 >
-                  InvoiceFlow
+                  FlowInvoicer
                 </div>
                 <div className="text-xs text-gray-500 mt-2">
-                  This invoice was generated with InvoiceFlow. Create professional invoices in seconds.
+                  This invoice was generated with FlowInvoicer. Create professional invoices in seconds.
                 </div>
               </div>
             </div>

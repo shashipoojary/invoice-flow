@@ -106,8 +106,8 @@ export default function ForgotPasswordPage() {
 
                 {/* Brand Text */}
                 <div className="text-center mt-8">
-                  <h2 className="font-heading text-2xl font-bold text-gray-900 mb-2">InvoiceFlow</h2>
-                  <p className="text-gray-600">Create • Send • Get Paid</p>
+                     <h2 className="font-heading text-2xl font-bold text-gray-900 mb-2">FlowInvoicer</h2>
+                     <p className="text-gray-600">Create • Send • Get Paid</p>
                 </div>
               </div>
             </div>
@@ -245,8 +245,8 @@ export default function ForgotPasswordPage() {
 
               {/* Brand Text */}
               <div className="text-center mt-8">
-                <h2 className="font-heading text-2xl font-bold text-gray-900 mb-2">InvoiceFlow</h2>
-                <p className="text-gray-600">Create • Send • Get Paid</p>
+                     <h2 className="font-heading text-2xl font-bold text-gray-900 mb-2">FlowInvoicer</h2>
+                     <p className="text-gray-600">Create • Send • Get Paid</p>
               </div>
             </div>
           </div>
