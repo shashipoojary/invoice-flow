@@ -211,16 +211,10 @@ export default function ClientsPage() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen transition-colors duration-200 bg-white">
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Please log in to access the clients</h1>
-          </div>
-        </div>
-      </div>
-    );
+  if (!user && !loading) {
+    // Redirect to auth page with session expired feedback
+    window.location.href = '/auth?message=session_expired';
+    return null;
   }
 
   return (

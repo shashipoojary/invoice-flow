@@ -6,6 +6,72 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Function to create scheduled reminders
+async function createScheduledReminders(invoiceId: string, reminderSettings: any, dueDate: string) {
+  try {
+    const dueDateObj = new Date(dueDate);
+    const scheduledReminders = [];
+
+    if (reminderSettings.useSystemDefaults) {
+      // Use system default reminder schedule
+      const defaultSchedule = [
+        { type: 'friendly', days: 1 }, // 1 day before due
+        { type: 'polite', days: 0 },   // On due date
+        { type: 'firm', days: -3 },    // 3 days after due
+        { type: 'urgent', days: -7 }   // 7 days after due
+      ];
+
+      for (const reminder of defaultSchedule) {
+        const scheduledDate = new Date(dueDateObj);
+        scheduledDate.setDate(scheduledDate.getDate() + reminder.days);
+        
+        scheduledReminders.push({
+          invoice_id: invoiceId,
+          reminder_type: reminder.type,
+          overdue_days: reminder.days,
+          sent_at: scheduledDate.toISOString(),
+          reminder_status: 'scheduled',
+          email_id: null
+        });
+      }
+    } else if (reminderSettings.customRules && reminderSettings.customRules.length > 0) {
+      // Use custom reminder rules
+      for (const rule of reminderSettings.customRules) {
+        if (rule.enabled) {
+          const scheduledDate = new Date(dueDateObj);
+          scheduledDate.setDate(scheduledDate.getDate() + rule.days);
+          
+          scheduledReminders.push({
+            invoice_id: invoiceId,
+            reminder_type: rule.type,
+            overdue_days: rule.days,
+            sent_at: scheduledDate.toISOString(),
+            reminder_status: 'scheduled',
+            email_id: null
+          });
+        }
+      }
+    }
+
+    // Insert scheduled reminders
+    if (scheduledReminders.length > 0) {
+      const { error } = await supabase
+        .from('invoice_reminders')
+        .insert(scheduledReminders);
+
+      if (error) {
+        console.error('Error creating scheduled reminders:', error);
+        throw error;
+      }
+
+      console.log(`Created ${scheduledReminders.length} scheduled reminders for invoice ${invoiceId}`);
+    }
+  } catch (error) {
+    console.error('Error in createScheduledReminders:', error);
+    throw error;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const invoiceData = await request.json();
@@ -276,7 +342,23 @@ export async function POST(request: NextRequest) {
       // New enhanced fields - only for detailed invoices
       payment_terms: invoiceData.type === 'fast' ? null : (invoiceData.payment_terms ? JSON.stringify(invoiceData.payment_terms) : null),
       late_fees: invoiceData.type === 'fast' ? null : (invoiceData.late_fees ? JSON.stringify(invoiceData.late_fees) : null),
-      reminder_settings: invoiceData.type === 'fast' ? null : (invoiceData.reminderSettings || invoiceData.reminders ? JSON.stringify(invoiceData.reminderSettings || invoiceData.reminders) : JSON.stringify({ enabled: false, useSystemDefaults: true, customRules: [] })),
+      reminder_settings: invoiceData.type === 'fast' ? null : (invoiceData.reminderSettings || invoiceData.reminders ? (() => {
+        const settings = invoiceData.reminderSettings || invoiceData.reminders;
+        // Ensure all rules have enabled property
+        if (settings.rules) {
+          settings.rules = settings.rules.map((rule: any) => ({
+            ...rule,
+            enabled: rule.enabled !== undefined ? rule.enabled : true
+          }));
+        }
+        if (settings.customRules) {
+          settings.customRules = settings.customRules.map((rule: any) => ({
+            ...rule,
+            enabled: rule.enabled !== undefined ? rule.enabled : true
+          }));
+        }
+        return JSON.stringify(settings);
+      })() : JSON.stringify({ enabled: false, useSystemDefaults: true, customRules: [] })),
       theme: invoiceData.type === 'fast' ? null : (invoiceData.theme ? JSON.stringify(invoiceData.theme) : null),
     };
 
@@ -375,6 +457,18 @@ export async function POST(request: NextRequest) {
         (completeInvoice.theme ? JSON.parse(completeInvoice.theme) : undefined),
     };
 
+    // Create scheduled reminders if reminder settings are enabled
+    if (completeInvoice.type !== 'fast' && completeInvoice.reminder_settings) {
+      try {
+        const reminderSettings = JSON.parse(completeInvoice.reminder_settings);
+        if (reminderSettings.enabled) {
+          await createScheduledReminders(completeInvoice.id, reminderSettings, completeInvoice.due_date);
+        }
+      } catch (reminderError) {
+        console.error('Error creating scheduled reminders:', reminderError);
+        // Don't fail the invoice creation if reminder creation fails
+      }
+    }
 
     return NextResponse.json({ 
       success: true, 

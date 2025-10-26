@@ -68,6 +68,7 @@ interface ReminderSettings {
   enabled: boolean
   useSystemDefaults: boolean
   rules: ReminderRule[]
+  customRules?: ReminderRule[]
 }
 
 interface LateFeeSettings {
@@ -285,7 +286,21 @@ export default function QuickInvoiceModal({
       
       // Set reminders
       if (editingInvoice.reminders) {
-        setReminders(editingInvoice.reminders)
+        const reminderData = editingInvoice.reminders as any;
+        // Ensure we have rules array (convert customRules to rules if needed)
+        const rules = reminderData.rules || reminderData.customRules || [];
+        setReminders({
+          ...reminderData,
+          rules: rules
+        });
+      } else if ((editingInvoice as any).reminderSettings) {
+        const reminderData = (editingInvoice as any).reminderSettings;
+        // Ensure we have rules array (convert customRules to rules if needed)
+        const rules = reminderData.rules || reminderData.customRules || [];
+        setReminders({
+          ...reminderData,
+          rules: rules
+        });
       }
       
       // Set theme
@@ -378,7 +393,18 @@ export default function QuickInvoiceModal({
         reminderSettings: reminders.enabled ? {
           enabled: true,
           useSystemDefaults: reminders.useSystemDefaults,
-          customRules: reminders.rules.filter(rule => rule.enabled)
+          rules: reminders.rules.filter(rule => rule.enabled).map(rule => ({
+            id: rule.id,
+            type: rule.type,
+            days: rule.days,
+            enabled: true
+          })),
+          customRules: reminders.rules.filter(rule => rule.enabled).map(rule => ({
+            id: rule.id,
+            type: rule.type,
+            days: rule.days,
+            enabled: true
+          }))
         } : undefined,
         theme: {
           template: getPdfTemplate(theme.template), // Map to correct PDF template
@@ -451,9 +477,17 @@ export default function QuickInvoiceModal({
         reminderSettings: reminders.enabled ? {
           enabled: true,
           useSystemDefaults: reminders.useSystemDefaults,
-          customRules: reminders.rules.filter(rule => rule.enabled).map(rule => ({
+          rules: reminders.rules.filter(rule => rule.enabled).map(rule => ({
+            id: rule.id,
             type: rule.type,
-            days: rule.days
+            days: rule.days,
+            enabled: true
+          })),
+          customRules: reminders.rules.filter(rule => rule.enabled).map(rule => ({
+            id: rule.id,
+            type: rule.type,
+            days: rule.days,
+            enabled: true
           }))
         } : { enabled: false },
         late_fees: lateFees.enabled ? {
@@ -605,9 +639,17 @@ export default function QuickInvoiceModal({
         reminderSettings: reminders.enabled ? {
           enabled: true,
           useSystemDefaults: reminders.useSystemDefaults,
-          customRules: reminders.rules.filter(rule => rule.enabled).map(rule => ({
+          rules: reminders.rules.filter(rule => rule.enabled).map(rule => ({
+            id: rule.id,
             type: rule.type,
-            days: rule.days
+            days: rule.days,
+            enabled: true
+          })),
+          customRules: reminders.rules.filter(rule => rule.enabled).map(rule => ({
+            id: rule.id,
+            type: rule.type,
+            days: rule.days,
+            enabled: true
           }))
         } : { enabled: false },
         late_fees: lateFees.enabled ? {
@@ -1934,7 +1976,11 @@ export default function QuickInvoiceModal({
                     }`} />
                     <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>
                       Auto Reminders: {reminders.enabled ? 
-                        (reminders.useSystemDefaults ? 'Smart System' : `${reminders.rules.filter(r => r.enabled).length} Custom Rules`) 
+                        (reminders.useSystemDefaults ? 'Smart System' : (() => {
+                          const rules = reminders.rules || reminders.customRules || [];
+                          const enabledRules = rules.filter(r => r.enabled);
+                          return `${enabledRules.length} Custom Rules`;
+                        })()) 
                         : 'Disabled'
                       }
                     </span>

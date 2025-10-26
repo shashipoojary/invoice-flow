@@ -117,30 +117,43 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         clientId = clientData.client.id
       }
 
-      // Create invoice
+      // Create or update invoice
       const headers = await getAuthHeaders()
-      const invoiceResponse = await fetch('/api/invoices/create', {
-        method: 'POST',
+      
+      // Determine if we're editing or creating
+      const isEditing = editingInvoice && editingInvoice.id
+      const endpoint = isEditing ? '/api/invoices/update' : '/api/invoices/create'
+      const method = isEditing ? 'PUT' : 'POST'
+      
+      const payload = {
+        client_id: clientId,
+        items: [{
+          description: parsedDescription,
+          rate: parsedAmount,
+          line_total: parsedAmount
+        }],
+        due_date: dueDate,
+        notes: notes,
+        billing_choice: 'per_invoice',
+        type: 'fast', // Mark as fast invoice
+        status: 'sent' // Create as sent, not draft
+      }
+      
+      // Add invoice ID to payload if editing
+      if (isEditing) {
+        (payload as any).invoiceId = editingInvoice.id
+      }
+      
+      const invoiceResponse = await fetch(endpoint, {
+        method,
         headers,
-        body: JSON.stringify({
-          client_id: clientId,
-          items: [{
-            description: parsedDescription,
-            rate: parsedAmount,
-            line_total: parsedAmount
-          }],
-          due_date: dueDate,
-          notes: notes,
-          billing_choice: 'per_invoice',
-          type: 'fast', // Mark as fast invoice
-          status: 'sent' // Create as sent, not draft
-        })
+        body: JSON.stringify(payload)
       })
 
       if (invoiceResponse.ok) {
         const result = await invoiceResponse.json()
         if (showToast) {
-          showSuccess('Invoice created successfully!')
+          showSuccess(isEditing ? 'Invoice updated successfully!' : 'Invoice created successfully!')
           onSuccess()
           onClose()
           resetForm()
@@ -150,11 +163,11 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         }
         return result.invoice
       } else {
-        throw new Error('Failed to create invoice')
+        throw new Error(editingInvoice ? 'Failed to update invoice' : 'Failed to create invoice')
       }
     } catch (error) {
       console.error('Error creating invoice:', error)
-      showError('Failed to create invoice. Please try again.')
+      showError(editingInvoice ? 'Failed to update invoice. Please try again.' : 'Failed to create invoice. Please try again.')
     } finally {
       if (!isSending) {
         setLoading(false)

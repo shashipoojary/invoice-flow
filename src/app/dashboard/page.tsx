@@ -163,12 +163,35 @@ export default function DashboardOverview() {
   }, []);
 
   // Helper function to calculate due date status
-  const getDueDateStatus = useCallback((dueDate: string) => {
+  const getDueDateStatus = useCallback((dueDate: string, invoiceStatus: string, paymentTerms?: { enabled: boolean; terms: string }, updatedAt?: string) => {
     const today = new Date();
-    const due = new Date(dueDate);
-    const diffTime = due.getTime() - today.getTime();
+    let effectiveDueDate = new Date(dueDate);
+    
+    // For "Due on Receipt" invoices, the due date should be the day after the invoice was sent
+    if (paymentTerms?.enabled && paymentTerms.terms === 'Due on Receipt' && invoiceStatus !== 'draft') {
+      // Use updated_at as proxy for when invoice was sent, or fallback to due_date
+      const sentDate = updatedAt ? new Date(updatedAt) : new Date(dueDate);
+      effectiveDueDate = new Date(sentDate);
+      effectiveDueDate.setDate(effectiveDueDate.getDate() + 1); // Due the day after sending
+    }
+    
+    const diffTime = effectiveDueDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
+    // Draft invoices should never be marked as overdue, even if past due date
+    if (invoiceStatus === 'draft') {
+      if (diffDays < 0) {
+        return { status: 'draft-past-due', days: Math.abs(diffDays), color: 'text-gray-500 dark:text-gray-400' };
+      } else if (diffDays === 0) {
+        return { status: 'draft-due-today', days: 0, color: 'text-gray-500 dark:text-gray-400' };
+      } else if (diffDays <= 3) {
+        return { status: 'draft-due-soon', days: diffDays, color: 'text-gray-500 dark:text-gray-400' };
+      } else {
+        return { status: 'draft-upcoming', days: diffDays, color: 'text-gray-500 dark:text-gray-400' };
+      }
+    }
+    
+    // Only sent/pending invoices can be overdue
     if (diffDays < 0) {
       return { status: 'overdue', days: Math.abs(diffDays), color: 'text-red-600 dark:text-red-400' };
     } else if (diffDays === 0) {
@@ -176,7 +199,7 @@ export default function DashboardOverview() {
     } else if (diffDays <= 3) {
       return { status: 'due-soon', days: diffDays, color: 'text-yellow-600 dark:text-yellow-400' };
     } else {
-      return { status: 'upcoming', days: diffDays, color: 'text-gray-700 dark:text-gray-400' };
+      return { status: 'upcoming', days: diffDays, color: 'text-gray-600 dark:text-gray-400' };
     }
   }, []);
 
@@ -194,10 +217,11 @@ export default function DashboardOverview() {
   }, []);
 
   // Helper function to format reminders
-  const formatReminders = useCallback((reminders?: { enabled: boolean; useSystemDefaults: boolean; rules: Array<{ enabled: boolean }> }) => {
+  const formatReminders = useCallback((reminders?: { enabled: boolean; useSystemDefaults: boolean; rules?: Array<{ enabled: boolean }>; customRules?: Array<{ enabled: boolean }> }) => {
     if (!reminders?.enabled) return null;
     if (reminders.useSystemDefaults) return 'Smart System';
-    const activeRules = reminders.rules.filter(rule => rule.enabled).length;
+    const rules = reminders.rules || reminders.customRules || [];
+    const activeRules = rules.filter(rule => rule.enabled).length;
     return `${activeRules} Custom Rule${activeRules !== 1 ? 's' : ''}`;
   }, []);
 
@@ -214,8 +238,17 @@ export default function DashboardOverview() {
     }
 
     const today = new Date();
-    const due = new Date(invoice.dueDate);
-    const diffTime = due.getTime() - today.getTime();
+    let effectiveDueDate = new Date(invoice.dueDate);
+    
+    // For "Due on Receipt" invoices, the due date should be the day after the invoice was sent
+    if (invoice.paymentTerms?.enabled && invoice.paymentTerms.terms === 'Due on Receipt') {
+      // Use updated_at as proxy for when invoice was sent, or fallback to due_date
+      const sentDate = (invoice as any).updatedAt ? new Date((invoice as any).updatedAt) : new Date(invoice.dueDate);
+      effectiveDueDate = new Date(sentDate);
+      effectiveDueDate.setDate(effectiveDueDate.getDate() + 1); // Due the day after sending
+    }
+    
+    const diffTime = effectiveDueDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     // Only calculate late fees if invoice is overdue and late fees are enabled
@@ -481,14 +514,14 @@ export default function DashboardOverview() {
     handleDeleteInvoice: (invoice: Invoice) => void;
     getStatusIcon: (status: string) => React.ReactElement;
     getStatusColor: (status: string) => string;
-    getDueDateStatus: (dueDate: string) => { status: string; days: number; color: string };
+    getDueDateStatus: (dueDate: string, invoiceStatus: string, paymentTerms?: { enabled: boolean; terms: string }, updatedAt?: string) => { status: string; days: number; color: string };
     formatPaymentTerms: (paymentTerms?: { enabled: boolean; terms: string }) => string | null;
     formatLateFees: (lateFees?: { enabled: boolean; type: 'fixed' | 'percentage'; amount: number; gracePeriod: number }) => string | null;
-    formatReminders: (reminders?: { enabled: boolean; useSystemDefaults: boolean; rules: Array<{ enabled: boolean }> }) => string | null;
+    formatReminders: (reminders?: { enabled: boolean; useSystemDefaults: boolean; rules?: Array<{ enabled: boolean }>; customRules?: Array<{ enabled: boolean }> }) => string | null;
     calculateDueCharges: (invoice: Invoice) => { hasLateFees: boolean; lateFeeAmount: number; totalPayable: number; overdueDays: number };
     loadingActions: { [key: string]: boolean };
   }) => {
-    const dueDateStatus = getDueDateStatus(invoice.dueDate);
+    const dueDateStatus = getDueDateStatus(invoice.dueDate, invoice.status, invoice.paymentTerms, (invoice as any).updatedAt);
     const dueCharges = calculateDueCharges(invoice);
     
     return (
@@ -723,14 +756,14 @@ export default function DashboardOverview() {
     handleDeleteInvoice: (invoice: Invoice) => void;
     getStatusIcon: (status: string) => React.ReactElement;
     getStatusColor: (status: string) => string;
-    getDueDateStatus: (dueDate: string) => { status: string; days: number; color: string };
+    getDueDateStatus: (dueDate: string, invoiceStatus: string, paymentTerms?: { enabled: boolean; terms: string }, updatedAt?: string) => { status: string; days: number; color: string };
     formatPaymentTerms: (paymentTerms?: { enabled: boolean; terms: string }) => string | null;
     formatLateFees: (lateFees?: { enabled: boolean; type: 'fixed' | 'percentage'; amount: number; gracePeriod: number }) => string | null;
-    formatReminders: (reminders?: { enabled: boolean; useSystemDefaults: boolean; rules: Array<{ enabled: boolean }> }) => string | null;
+    formatReminders: (reminders?: { enabled: boolean; useSystemDefaults: boolean; rules?: Array<{ enabled: boolean }>; customRules?: Array<{ enabled: boolean }> }) => string | null;
     calculateDueCharges: (invoice: Invoice) => { hasLateFees: boolean; lateFeeAmount: number; totalPayable: number; overdueDays: number };
     loadingActions: { [key: string]: boolean };
   }) => {
-    const dueDateStatus = getDueDateStatus(invoice.dueDate);
+    const dueDateStatus = getDueDateStatus(invoice.dueDate, invoice.status, invoice.paymentTerms, (invoice as any).updatedAt);
     const dueCharges = calculateDueCharges(invoice);
     
     // Show enhanced features for all invoice statuses
@@ -768,8 +801,8 @@ export default function DashboardOverview() {
                 'text-gray-800'
               }`}>
                 ${dueCharges.totalPayable.toLocaleString()}
+                  </div>
               </div>
-            </div>
             <div className="text-xs" style={{color: '#374151'}}>
               {new Date(invoice.createdAt).toLocaleDateString()}
             </div>
@@ -793,7 +826,7 @@ export default function DashboardOverview() {
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border bg-red-50 text-red-800 border-red-300">
                   <AlertTriangle className="h-3 w-3" />
                   <span>{dueDateStatus.days}d overdue</span>
-                </span>
+                  </span>
               )}
             </div>
           </div>
@@ -801,52 +834,52 @@ export default function DashboardOverview() {
           {/* Desktop Layout */}
           <div className="hidden sm:flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="space-y-1">
-                <div className="flex items-center space-x-2">
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
                   <div className="font-heading text-sm font-semibold" style={{color: '#1f2937'}}>
-                    {invoice.invoiceNumber}
-                  </div>
+                  {invoice.invoiceNumber}
                 </div>
+              </div>
                 <div className="text-xs" style={{color: '#374151'}}>
                   {new Date(invoice.createdAt).toLocaleDateString()}
-                </div>
               </div>
-              <div>
+            </div>
+            <div>
                 <div className="text-sm font-medium" style={{color: '#1f2937'}}>
-                  {invoice.client.name}
-                </div>
+                {invoice.client.name}
+              </div>
                 {invoice.client.company && (
                   <div className="text-sm" style={{color: '#374151'}}>
-                    {invoice.client.company}
-                  </div>
-                )}
+                {invoice.client.company}
               </div>
+                )}
+            </div>
             </div>
             
             <div className="flex items-center space-x-4">
               <div className="text-center">
-                <div className={`font-heading text-lg font-bold ${
+            <div className={`font-heading text-lg font-bold ${
                   invoice.status === 'paid' ? 'text-green-700' :
                     invoice.status === 'pending' ? 'text-orange-500' :
                     invoice.status === 'draft' ? 'text-gray-600' :
                   dueDateStatus.status === 'overdue' ? 'text-red-600' :
                   'text-gray-700'
-                }`}>
-                  ${dueCharges.totalPayable.toLocaleString()}
+            }`}>
+              ${dueCharges.totalPayable.toLocaleString()}
                 </div>
                 <div className="text-xs" style={{color: '#6b7280'}}>
                   {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'No due date'}
-                </div>
+            </div>
               </div>
               
               <div className="flex items-center space-x-2">
-                <span 
+              <span 
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border`}
                   style={getStatusStyle(invoice.status)}
-                >
-                  {getStatusIcon(invoice.status)}
+              >
+                {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status}</span>
-                </span>
+              </span>
                 <span className={`px-2 py-0.5 text-xs font-medium rounded-full border`}
                   style={((invoice.type || 'detailed') === 'fast' 
                     ? { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' }
@@ -854,14 +887,14 @@ export default function DashboardOverview() {
                   )}
                 >
                   {(invoice.type || 'detailed') === 'fast' ? 'Fast' : 'Detailed'}
-                </span>
+                  </span>
                 {invoice.status === 'pending' && dueDateStatus.status === 'overdue' && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border bg-red-50 text-red-800 border-red-300">
                     <AlertTriangle className="h-3 w-3" />
                     <span>{dueDateStatus.days}d overdue</span>
                   </span>
                 )}
-              </div>
+                </div>
             </div>
           </div>
         </div>
@@ -1041,9 +1074,9 @@ export default function DashboardOverview() {
     return invoices
       .filter(invoice => invoice.status === 'pending' || invoice.status === 'sent')
       .reduce((total, invoice) => {
-        const charges = calculateDueCharges(invoice);
-        return total + charges.totalPayable;
-      }, 0);
+      const charges = calculateDueCharges(invoice);
+      return total + charges.totalPayable;
+    }, 0);
   }, [invoices, calculateDueCharges]);
   
   // Calculate overdue count (pending/sent invoices that are overdue)
@@ -1095,16 +1128,10 @@ export default function DashboardOverview() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen transition-colors duration-200 bg-white">
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Please log in to access the dashboard</h1>
-          </div>
-        </div>
-      </div>
-    );
+  if (!user && !loading) {
+    // Redirect to auth page with session expired feedback
+    window.location.href = '/auth?message=session_expired';
+    return null;
   }
 
   return (
@@ -1288,8 +1315,8 @@ export default function DashboardOverview() {
             <div className="mt-8">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-heading text-2xl font-semibold" style={{color: '#1f2937'}}>
-                  Quick Actions
-                </h2>
+                Quick Actions
+              </h2>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 {/* 60-Second Invoice */}
@@ -1359,8 +1386,8 @@ export default function DashboardOverview() {
             <div className="mt-8">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-heading text-2xl font-semibold" style={{color: '#1f2937'}}>
-                  Recent Invoices
-                </h2>
+                Recent Invoices
+              </h2>
                 <button
                   onClick={() => router.push('/dashboard/invoices')}
                   className="group flex items-center space-x-2 text-sm font-medium px-4 py-2 rounded-lg transition-all duration-200 hover:scale-105 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 hover:border-indigo-300"
@@ -1392,7 +1419,7 @@ export default function DashboardOverview() {
               ) : recentInvoices.length > 0 ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {recentInvoices.map((invoice) => {
-                    const dueDateStatus = getDueDateStatus(invoice.dueDate);
+                    const dueDateStatus = getDueDateStatus(invoice.dueDate, invoice.status, invoice.paymentTerms, (invoice as any).updatedAt);
                     const dueCharges = calculateDueCharges(invoice);
                     
                     return (
@@ -1404,7 +1431,7 @@ export default function DashboardOverview() {
                               <div className="flex items-center space-x-3">
                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100`}>
                                   <FileText className="h-4 w-4 text-gray-600" />
-                                </div>
+                </div>
                                 <div>
                                   <div className="font-medium text-sm" style={{color: '#1f2937'}}>
                                     {invoice.invoiceNumber}
@@ -1525,8 +1552,8 @@ export default function DashboardOverview() {
                               </div>
                             </div>
                           </div>
-                        </div>
-                        
+                  </div>
+                  
                         {/* Desktop Layout - Same as Mobile */}
                         <div className="hidden sm:block p-4">
                           <div className="space-y-3">
@@ -1770,7 +1797,7 @@ export default function DashboardOverview() {
             setShowFastInvoice(false);
             setSelectedInvoice(null);
           }}
-          user={user}
+          user={user!}
           getAuthHeaders={getAuthHeaders}
           clients={clients}
           editingInvoice={selectedInvoice}
@@ -1782,25 +1809,25 @@ export default function DashboardOverview() {
             setSelectedInvoice(null);
             // Delay data refresh to allow toast to be visible
             setTimeout(() => {
-              if (user && !loading) {
-                const loadData = async () => {
-                  try {
-                    const headers = await getAuthHeaders();
-                    await Promise.all([
-                      fetch('/api/dashboard/stats', { headers, cache: 'no-store' })
-                        .then(res => res.json())
-                        .catch(err => console.error('Error fetching dashboard stats:', err)),
-                      fetch('/api/invoices', { headers, cache: 'no-store' })
-                        .then(res => res.json())
-                        .then(data => setInvoices(Array.isArray(data.invoices) ? data.invoices : []))
-                        .catch(err => console.error('Error fetching invoices:', err))
-                    ]);
-                  } catch (error) {
-                    console.error('Error refreshing data:', error);
-                  }
-                };
-                loadData();
-              }
+            if (user && !loading) {
+              const loadData = async () => {
+                try {
+                  const headers = await getAuthHeaders();
+                  await Promise.all([
+                    fetch('/api/dashboard/stats', { headers, cache: 'no-store' })
+                      .then(res => res.json())
+                      .catch(err => console.error('Error fetching dashboard stats:', err)),
+                    fetch('/api/invoices', { headers, cache: 'no-store' })
+                      .then(res => res.json())
+                      .then(data => setInvoices(Array.isArray(data.invoices) ? data.invoices : []))
+                      .catch(err => console.error('Error fetching invoices:', err))
+                  ]);
+                } catch (error) {
+                  console.error('Error refreshing data:', error);
+                }
+              };
+              loadData();
+            }
             }, 2000); // Wait 2 seconds for toast to be visible
           }}
         />
@@ -2070,7 +2097,12 @@ export default function DashboardOverview() {
                            {selectedInvoice.reminders.enabled 
                              ? (selectedInvoice.reminders.useSystemDefaults 
                                ? 'Smart System' 
-                               : `${selectedInvoice.reminders.rules?.filter(rule => rule.enabled).length || 0} Custom Rule${(selectedInvoice.reminders.rules?.filter(rule => rule.enabled).length || 0) !== 1 ? 's' : ''}`)
+                               : (() => {
+                                  const reminders = selectedInvoice.reminders as any;
+                                  const rules = reminders.rules || reminders.customRules || [];
+                                  const enabledRules = rules.filter((rule: any) => rule.enabled);
+                                  return `${enabledRules.length} Custom Rule${enabledRules.length !== 1 ? 's' : ''}`;
+                                })())
                              : 'Not configured'
                            }
                          </p>

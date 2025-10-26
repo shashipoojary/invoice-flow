@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Eye, EyeOff, ArrowLeft, Loader2, X } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, Loader2, X, AlertCircle } from 'lucide-react';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -19,6 +19,17 @@ export default function AuthPage() {
   });
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  useEffect(() => {
+    const message = searchParams.get('message');
+    if (message === 'session_expired') {
+      setSessionExpired(true);
+      // Clear the URL parameter after showing the message
+      router.replace('/auth');
+    }
+  }, [searchParams, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,6 +190,14 @@ export default function AuthPage() {
                 }
               </p>
                 </div>
+
+            {/* Session Expired Message */}
+            {sessionExpired && (
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm mb-6 flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>Your session has expired. Please sign in again to continue.</span>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-8">
             {error && (

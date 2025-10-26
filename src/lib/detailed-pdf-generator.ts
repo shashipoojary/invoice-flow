@@ -1983,25 +1983,25 @@ async function generateSimpleCleanTemplatePDF(
 ): Promise<Uint8Array> {
   const { width, height } = page.getSize();
 
-  // Parse accent color (pink for creative design)
-  const accentRgb = hexToRgb('#EC4899');
+  // Parse accent color (softer pink for better readability)
+  const accentRgb = hexToRgb('#F8BBD9');
 
-  // Creative gradient-like header with artistic elements
+  // Creative gradient-like header with softer colors for better readability
   page.drawRectangle({
     x: 0,
     y: height - 120,
     width: width,
     height: 120,
-    color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
+    color: rgb(primaryRgb.r * 0.8, primaryRgb.g * 0.8, primaryRgb.b * 0.8),
   });
 
-  // Artistic diagonal accent shapes
+  // Artistic diagonal accent shapes with softer colors
   page.drawRectangle({
     x: 0,
     y: height - 40,
     width: 200,
     height: 40,
-    color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
+    color: rgb(secondaryRgb.r * 0.7, secondaryRgb.g * 0.7, secondaryRgb.b * 0.7),
   });
 
   page.drawRectangle({
@@ -2009,27 +2009,12 @@ async function generateSimpleCleanTemplatePDF(
     y: height - 80,
     width: 150,
     height: 80,
-    color: rgb(accentRgb.r, accentRgb.g, accentRgb.b),
+    color: rgb(accentRgb.r * 0.6, accentRgb.g * 0.6, accentRgb.b * 0.6),
   });
 
-  // Creative corner accents
-  page.drawRectangle({
-    x: 0,
-    y: height - 20,
-    width: 20,
-    height: 20,
-    color: rgb(1, 1, 1),
-  });
+  // Creative corner accents removed for cleaner design
 
-  page.drawRectangle({
-    x: width - 20,
-    y: height - 20,
-    width: 20,
-    height: 20,
-    color: rgb(1, 1, 1),
-  });
-
-  // Artistic business name with creative styling
+  // Properly aligned business name with creative styling
   page.drawText(businessSettings.businessName || 'Creative Studio', {
     x: 50,
     y: height - 50,
@@ -2038,7 +2023,7 @@ async function generateSimpleCleanTemplatePDF(
     color: rgb(1, 1, 1), // White text on colorful background
   });
 
-  // Creative tagline
+  // Creative tagline - properly aligned
   page.drawText('Bringing Ideas to Life', {
     x: 50,
     y: height - 70,
@@ -2047,7 +2032,7 @@ async function generateSimpleCleanTemplatePDF(
     color: rgb(1, 1, 1),
   });
 
-  // Contact info with artistic styling
+  // Contact info with proper alignment
   if (businessSettings.businessEmail) {
     page.drawText(businessSettings.businessEmail, {
       x: 50,
@@ -2068,35 +2053,35 @@ async function generateSimpleCleanTemplatePDF(
     });
   }
 
-  // Creative invoice title without white box
+  // Properly aligned invoice title - fixed positioning
   page.drawText('INVOICE', {
-    x: 420,
-    y: height - 45,
+    x: 450,
+    y: height - 50,
     size: 24,
     font: boldFont,
     color: rgb(1, 1, 1), // White text on colorful background
   });
 
-  // Invoice details with creative styling
+  // Invoice details with proper alignment - aligned with business name
   page.drawText(`#${invoice.invoiceNumber}`, {
-    x: 400,
-    y: height - 85,
+    x: 450,
+    y: height - 75,
     size: 12,
     font: boldFont,
     color: rgb(1, 1, 1),
   });
 
   page.drawText(`Date: ${formatDate(invoice.createdAt)}`, {
-    x: 400,
-    y: height - 100,
+    x: 450,
+    y: height - 90,
     size: 9,
     font: font,
     color: rgb(1, 1, 1),
   });
 
   page.drawText(`Due: ${formatDate(invoice.dueDate)}`, {
-    x: 400,
-    y: height - 115,
+    x: 450,
+    y: height - 105,
     size: 9,
     font: font,
     color: rgb(1, 1, 1),
@@ -2131,7 +2116,7 @@ async function generateSimpleCleanTemplatePDF(
     y: billToY - 20,
     width: 250,
     height: 20,
-    color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
+    color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7),
   });
 
   page.drawText('BILL TO', {
@@ -2204,13 +2189,13 @@ async function generateSimpleCleanTemplatePDF(
   const tableWidth = width - 100;
   const rowHeight = 25;
 
-  // Artistic table header with gradient effect
+  // Artistic table header with softer gradient effect
   page.drawRectangle({
     x: 50,
     y: tableY - 30,
     width: tableWidth,
     height: 30,
-    color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
+    color: rgb(primaryRgb.r * 0.8, primaryRgb.g * 0.8, primaryRgb.b * 0.8),
   });
 
   page.drawRectangle({
@@ -2218,16 +2203,16 @@ async function generateSimpleCleanTemplatePDF(
     y: tableY - 25,
     width: tableWidth,
     height: 5,
-    color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
+    color: rgb(secondaryRgb.r * 0.6, secondaryRgb.g * 0.6, secondaryRgb.b * 0.6),
   });
 
-  // Creative corner accents for table header
+  // Creative corner accents for table header with softer colors
   page.drawRectangle({
     x: 50,
     y: tableY - 30,
     width: 10,
     height: 10,
-    color: rgb(accentRgb.r, accentRgb.g, accentRgb.b),
+    color: rgb(accentRgb.r * 0.5, accentRgb.g * 0.5, accentRgb.b * 0.5),
   });
 
   page.drawRectangle({
@@ -2235,7 +2220,7 @@ async function generateSimpleCleanTemplatePDF(
     y: tableY - 30,
     width: 10,
     height: 10,
-    color: rgb(accentRgb.r, accentRgb.g, accentRgb.b),
+    color: rgb(accentRgb.r * 0.5, accentRgb.g * 0.5, accentRgb.b * 0.5),
   });
 
   page.drawText('DESCRIPTION', {
@@ -2442,7 +2427,7 @@ async function generateSimpleCleanTemplatePDF(
       y: footerY - 12,
       width: boxWidth,
       height: 12,
-      color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
+      color: rgb(secondaryRgb.r * 0.7, secondaryRgb.g * 0.7, secondaryRgb.b * 0.7),
     });
 
     page.drawText('PAYMENT TERMS', {
@@ -2497,7 +2482,7 @@ async function generateSimpleCleanTemplatePDF(
       y: footerY - 12, // Same header position as Payment Terms
       width: boxWidth,
       height: 12,
-      color: rgb(accentRgb.r, accentRgb.g, accentRgb.b),
+      color: rgb(accentRgb.r * 0.6, accentRgb.g * 0.6, accentRgb.b * 0.6),
     });
 
     page.drawText('NOTES', {
@@ -2537,26 +2522,26 @@ async function generateSimpleCleanTemplatePDF(
     });
   }
 
-  // Creative footer line with artistic elements
+  // Creative footer line with softer artistic elements
   page.drawLine({
     start: { x: 0, y: 50 },
     end: { x: width, y: 50 },
     thickness: 3,
-    color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
+    color: rgb(primaryRgb.r * 0.6, primaryRgb.g * 0.6, primaryRgb.b * 0.6),
   });
 
   page.drawLine({
     start: { x: 0, y: 45 },
     end: { x: width, y: 45 },
     thickness: 1,
-    color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
+    color: rgb(secondaryRgb.r * 0.5, secondaryRgb.g * 0.5, secondaryRgb.b * 0.5),
   });
 
   page.drawLine({
     start: { x: 0, y: 40 },
     end: { x: width, y: 40 },
     thickness: 1,
-    color: rgb(accentRgb.r, accentRgb.g, accentRgb.b),
+    color: rgb(accentRgb.r * 0.4, accentRgb.g * 0.4, accentRgb.b * 0.4),
   });
 
   return await pdfDoc.save();

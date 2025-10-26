@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     // Handle browser extension attributes that cause hydration mismatches
@@ -37,9 +39,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     return null;
   }
 
+  // Don't show navbar on public invoice pages
+  const shouldShowNavbar = !pathname.startsWith('/invoice/');
+
   return (
     <>
-      <Navbar />
+      {shouldShowNavbar && <Navbar />}
       {children}
     </>
   );

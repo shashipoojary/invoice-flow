@@ -32,6 +32,7 @@ export interface Invoice {
   type?: 'fast' | 'detailed';
   dueDate: string;
   createdAt: string;
+  updatedAt?: string;
   notes?: string;
   clientName: string;
   clientEmail: string;
@@ -52,7 +53,13 @@ export interface Invoice {
   reminders?: {
     enabled: boolean;
     useSystemDefaults: boolean;
-    rules: Array<{
+    rules?: Array<{
+      id: string;
+      type: 'before' | 'after';
+      days: number;
+      enabled: boolean;
+    }>;
+    customRules?: Array<{
       id: string;
       type: 'before' | 'after';
       days: number;

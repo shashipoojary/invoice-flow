@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
           invoiceNumber: invoice.invoice_number,
           dueDate: invoice.due_date,
           createdAt: invoice.created_at,
+          updatedAt: invoice.updated_at,
           clientId: invoice.client_id, // Map client_id to clientId
           client: invoice.clients,
           // Map client fields to invoice level for easier access
@@ -71,7 +72,19 @@ export async function GET(request: NextRequest) {
               { enabled: true, type: 'fixed', amount: 50, gracePeriod: 7 }),
           reminders: invoice.type === 'fast' ? undefined : 
             (invoice.reminder_settings ? 
-              (typeof invoice.reminder_settings === 'string' ? JSON.parse(invoice.reminder_settings) : invoice.reminder_settings) : 
+              (() => {
+                const settings = typeof invoice.reminder_settings === 'string' ? JSON.parse(invoice.reminder_settings) : invoice.reminder_settings;
+                // Convert customRules to rules for frontend compatibility and ensure enabled property
+                const rules = settings.customRules || settings.rules || [];
+                const rulesWithEnabled = rules.map((rule: any) => ({
+                  ...rule,
+                  enabled: rule.enabled !== undefined ? rule.enabled : true
+                }));
+                return {
+                  ...settings,
+                  rules: rulesWithEnabled
+                };
+              })() : 
               { enabled: false, useSystemDefaults: true, rules: [] }),
           theme: invoice.type === 'fast' ? undefined : 
             (invoice.theme ? 

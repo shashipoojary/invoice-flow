@@ -7,309 +7,169 @@ interface Template1Props {
   businessSettings: BusinessSettings
 }
 
-// Create styles for the PDF matching the exact design from images
+// Clean, minimal styles for Fast Invoice
 const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: '#FFFFFF',
-    padding: 0,
-    fontSize: 10,
-    lineHeight: 1.3,
-    color: '#1a1a1a',
+    padding: 40,
+    fontSize: 11,
+    lineHeight: 1.4,
+    color: '#333333',
     fontFamily: 'Helvetica',
   },
-  // Professional header section with teal banner
+  // Simple header
   header: {
-    paddingVertical: 20,
-    paddingHorizontal: 30,
-    marginBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#0D9488', // Teal matching other sections
+    marginBottom: 30,
+    paddingBottom: 20,
+    borderBottomWidth: 2,
+    borderBottomColor: '#0D9488',
   },
   invoiceTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#FFFFFF', // White text on teal background
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  // Professional company section
-  companySection: {
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-  },
-  logo: {
-    width: 50,
-    height: 50,
-    borderRadius: 6,
-    marginBottom: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f8f9fa',
-    border: '1px solid #e9ecef',
-  },
-  logoText: {
-    fontSize: 16,
-    color: '#495057',
-    fontWeight: 'bold',
+    color: '#0D9488',
   },
   companyName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#1a1a1a',
+    color: '#333333',
+    textAlign: 'right',
   },
-  // Business details with light gray input fields - ultra compact
-  businessDetails: {
-    alignItems: 'center',
-    marginBottom: 6,
+  // Simple business info
+  businessInfo: {
+    marginBottom: 20,
+    alignItems: 'flex-end',
   },
-  detailField: {
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    marginBottom: 3,
-    borderRadius: 3,
-    width: 220,
-    alignItems: 'center',
-  },
-  detailFieldText: {
+  businessText: {
     fontSize: 10,
-    color: '#374151',
-    fontWeight: 'normal',
+    color: '#666666',
+    marginBottom: 2,
   },
-  // Divider line
-  divider: {
-    height: 1,
-    marginBottom: 25,
-    marginHorizontal: 30,
-  },
-  // Bill To and Invoice Details section
+  // Clean bill to section
   billToSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 25,
-    paddingHorizontal: 30,
+    marginBottom: 30,
   },
   billTo: {
     flex: 1,
-    marginRight: 30,
-    minHeight: 0, // Allow flex shrinking
   },
   billToTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 8,
+  },
+  clientInfo: {
+    fontSize: 11,
+    color: '#333333',
+    lineHeight: 1.5,
+  },
+  invoiceInfo: {
+    alignItems: 'flex-end',
+    maxWidth: 200,
+  },
+  invoiceRow: {
+    flexDirection: 'row',
+    marginBottom: 4,
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  invoiceLabel: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 10,
+    color: '#333333',
+    width: 70,
   },
-  clientNameContainer: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 4,
-    marginBottom: 4,
-    minHeight: 0, // Allow content to determine height
-    flexShrink: 1, // Allow shrinking if needed
+  invoiceValue: {
+    fontSize: 11,
+    color: '#333333',
+    width: 80,
+    textAlign: 'right',
   },
-  clientName: {
-    fontSize: 10,
-    fontWeight: 'normal',
-    color: '#374151',
-    flexWrap: 'wrap', // Allow text wrapping
-    wordBreak: 'break-word', // Break long words if needed
-  },
-  clientDetailField: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    marginBottom: 4,
-    borderRadius: 4,
-    minHeight: 0, // Allow content to determine height
-    flexShrink: 1, // Allow shrinking if needed
-  },
-  clientDetailText: {
-    fontSize: 10,
-    color: '#374151',
-    fontWeight: 'normal',
-    flexWrap: 'wrap', // Allow text wrapping
-    wordBreak: 'break-word', // Break long words if needed
-  },
-  invoiceDetails: {
-    flex: 1,
-    alignItems: 'flex-end',
-  },
-  invoiceDetailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-    width: 200,
-    alignItems: 'center',
-  },
-  invoiceDetailLabel: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-  },
-  invoiceDetailValue: {
-    fontSize: 10,
-    fontWeight: 'normal',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 3,
-    minWidth: 80,
-    textAlign: 'center',
-  },
-  // Services table with teal header
-  servicesTable: {
-    marginBottom: 25,
-    marginTop: 10,
-    paddingHorizontal: 30,
+  // Simple table
+  table: {
+    marginBottom: 30,
   },
   tableHeader: {
     flexDirection: 'row',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    backgroundColor: '#0D9488',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
   tableHeaderText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
   tableRow: {
     flexDirection: 'row',
     paddingVertical: 8,
-    paddingLeft: 8,
-  },
-  tableRowEven: {
-    flexDirection: 'row',
-    paddingVertical: 8,
-    paddingLeft: 8,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   tableCell: {
-    fontSize: 10,
-    color: '#1a1a1a',
-    fontWeight: 'normal',
-  },
-  tableCellBold: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-  },
-  tableCellCenter: {
-    fontSize: 10,
-    color: '#1a1a1a',
-    textAlign: 'center',
-    fontWeight: 'normal',
-  },
-  tableCellRight: {
-    fontSize: 10,
-    color: '#1a1a1a',
-    textAlign: 'right',
-    fontWeight: 'normal',
-  },
-  // Notes and Total section
-  notesTotalSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-    paddingHorizontal: 30,
-    alignItems: 'flex-start',
-  },
-  notesSection: {
-    width: 200,
-    marginRight: 30,
-    marginTop: 35,
-  },
-  notesTitle: {
     fontSize: 11,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 8,
+    color: '#333333',
   },
-  notesBox: {
-    padding: 12,
-    borderRadius: 4,
-  },
-  notesText: {
-    fontSize: 10,
-    color: '#374151',
-    lineHeight: 1.4,
-    fontWeight: 'normal',
-  },
+  // Simple total section
   totalSection: {
     alignItems: 'flex-end',
-    minWidth: 200,
-    alignSelf: 'flex-start',
-    marginLeft: 15,
-  },
-  totalBreakdown: {
-    marginBottom: 10,
-    width: 160,
+    marginBottom: 30,
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 4,
-    width: 160,
+    minWidth: 200,
   },
   totalLabel: {
-    fontSize: 10,
-    color: '#6B7280',
-    fontWeight: 'normal',
+    fontSize: 11,
+    color: '#666666',
   },
   totalValue: {
-    fontSize: 10,
-    color: '#1a1a1a',
-    fontWeight: 'normal',
-  },
-  finalTotalLabel: {
     fontSize: 11,
-    color: '#1a1a1a',
+    color: '#333333',
+    fontWeight: 'bold',
+  },
+  finalTotal: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#0D9488',
+    marginTop: 8,
+  },
+  // Simple notes
+  notes: {
+    marginBottom: 20,
+  },
+  notesTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#333333',
     marginBottom: 8,
-    marginTop: 10,
-    fontWeight: 'bold',
   },
-  finalTotalValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  notesText: {
+    fontSize: 11,
+    color: '#666666',
+    lineHeight: 1.5,
   },
-  // Footer with FlowInvoicer branding - positioned at bottom
+  // Simple footer
   footer: {
     position: 'absolute',
     bottom: 20,
-    left: 30,
-    right: 30,
+    left: 40,
+    right: 40,
     alignItems: 'center',
   },
-  poweredBy: {
-    fontSize: 10,
-    color: '#6B7280',
-    marginBottom: 8,
-    fontWeight: 'normal',
-  },
-  invoiceFlowBrand: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  invoiceFlowLogo: {
-    width: 80,
-    height: 25,
-  },
-  invoiceFlowText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#8B5CF6',
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  disclaimer: {
+  footerText: {
     fontSize: 9,
-    color: '#6B7280',
+    color: '#999999',
     textAlign: 'center',
-    lineHeight: 1.3,
-    fontWeight: 'normal',
   },
 })
 
@@ -358,142 +218,105 @@ export default function Template1({ invoice, businessSettings }: Template1Props)
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Professional Header Section with Purple Banner */}
+        {/* Clean Header */}
         <View style={styles.header}>
-          <Text style={styles.invoiceTitle}>Invoice</Text>
+          <Text style={styles.invoiceTitle}>INVOICE</Text>
+          <Text style={styles.companyName}>{businessSettings.businessName}</Text>
         </View>
 
-        {/* Professional Company Section */}
-        <View style={styles.companySection}>
-          <View style={styles.logo}>
-            <Text style={styles.logoText}>
-              {businessSettings.businessName?.charAt(0) || 'B'}
-            </Text>
-          </View>
-          <Text style={[styles.companyName, { color: secondaryColor }]}>{businessSettings.businessName}</Text>
-        </View>
-
-        {/* Business details - no borders, just text */}
-        <View style={styles.businessDetails}>
+        {/* Simple Business Info */}
+        <View style={styles.businessInfo}>
           {businessSettings.address && (
-            <Text style={styles.detailFieldText}>{businessSettings.address}</Text>
+            <Text style={styles.businessText}>{businessSettings.address}</Text>
           )}
           {businessSettings.businessPhone && (
-            <Text style={styles.detailFieldText}>{businessSettings.businessPhone}</Text>
+            <Text style={styles.businessText}>{businessSettings.businessPhone}</Text>
           )}
           {businessSettings.businessEmail && (
-            <Text style={styles.detailFieldText}>{businessSettings.businessEmail}</Text>
+            <Text style={styles.businessText}>{businessSettings.businessEmail}</Text>
           )}
         </View>
-
-        {/* Divider line */}
-        <View style={[styles.divider, { backgroundColor: `${primaryColor}30` }]} />
 
         {/* Bill To and Invoice Details */}
         <View style={styles.billToSection}>
           <View style={styles.billTo}>
             <Text style={styles.billToTitle}>BILL TO:</Text>
-            <View style={[styles.clientNameContainer, { backgroundColor: `${primaryColor}15` }]}>
-              <Text style={styles.clientName}>{invoice.client.name}</Text>
-            </View>
-            {invoice.client.company && (
-              <View style={[styles.clientDetailField, { backgroundColor: `${primaryColor}15` }]}>
-                <Text style={styles.clientDetailText}>{invoice.client.company}</Text>
-              </View>
-            )}
-            {invoice.client.address && (
-              <View style={[styles.clientDetailField, { backgroundColor: `${primaryColor}15` }]}>
-                <Text style={styles.clientDetailText}>{invoice.client.address}</Text>
-              </View>
-            )}
-            <View style={[styles.clientDetailField, { backgroundColor: `${primaryColor}15` }]}>
-              <Text style={styles.clientDetailText}>{invoice.client.email}</Text>
-            </View>
-            {invoice.client.phone && (
-              <View style={[styles.clientDetailField, { backgroundColor: `${primaryColor}15` }]}>
-                <Text style={styles.clientDetailText}>{invoice.client.phone}</Text>
-              </View>
-            )}
+            <Text style={styles.clientInfo}>
+              {invoice.client.name}
+              {invoice.client.company && `\n${invoice.client.company}`}
+              {invoice.client.address && `\n${invoice.client.address}`}
+              {`\n${invoice.client.email}`}
+              {invoice.client.phone && `\n${invoice.client.phone}`}
+            </Text>
           </View>
-          <View style={styles.invoiceDetails}>
-            <View style={styles.invoiceDetailRow}>
-              <Text style={styles.invoiceDetailLabel}>INVOICE #</Text>
-              <Text style={[styles.invoiceDetailValue, { backgroundColor: `${primaryColor}15` }]}>{invoice.invoiceNumber}</Text>
+          <View style={styles.invoiceInfo}>
+            <View style={styles.invoiceRow}>
+              <Text style={styles.invoiceLabel}>INVOICE #</Text>
+              <Text style={styles.invoiceValue}>{invoice.invoiceNumber}</Text>
             </View>
-            <View style={styles.invoiceDetailRow}>
-              <Text style={styles.invoiceDetailLabel}>DATE</Text>
-              <Text style={[styles.invoiceDetailValue, { backgroundColor: `${primaryColor}15` }]}>{formatDate(invoice.createdAt)}</Text>
+            <View style={styles.invoiceRow}>
+              <Text style={styles.invoiceLabel}>DATE</Text>
+              <Text style={styles.invoiceValue}>{formatDate(invoice.createdAt)}</Text>
             </View>
-            <View style={styles.invoiceDetailRow}>
-              <Text style={styles.invoiceDetailLabel}>INVOICE DUE DATE</Text>
-              <Text style={[styles.invoiceDetailValue, { backgroundColor: `${primaryColor}15` }]}>{formatDate(invoice.dueDate)}</Text>
+            <View style={styles.invoiceRow}>
+              <Text style={styles.invoiceLabel}>DUE DATE</Text>
+              <Text style={styles.invoiceValue}>{formatDate(invoice.dueDate)}</Text>
             </View>
           </View>
         </View>
 
-        {/* Services Table with teal header */}
-        <View style={styles.servicesTable}>
-          <View style={[styles.tableHeader, { backgroundColor: primaryColor }]}>
-            <Text style={[styles.tableHeaderText, { flex: 1 }]}>ITEMS</Text>
-            <Text style={[styles.tableHeaderText, { flex: 2 }]}>DESCRIPTION</Text>
-            <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'center' }]}>QUANTITY</Text>
+        {/* Simple Table */}
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={[styles.tableHeaderText, { flex: 1 }]}>ITEM</Text>
+            <Text style={[styles.tableHeaderText, { flex: 3 }]}>DESCRIPTION</Text>
+            <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'center' }]}>QTY</Text>
             <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'right' }]}>PRICE</Text>
-            <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'center' }]}>TAX</Text>
             <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'right' }]}>AMOUNT</Text>
           </View>
           {invoice.items.map((item, index) => (
-            <View key={index} style={[
-              index % 2 === 0 ? styles.tableRow : styles.tableRowEven,
-              index % 2 === 1 ? { backgroundColor: `${primaryColor}08` } : {}
-            ]}>
-              <Text style={[styles.tableCell, { flex: 1 }]}>Item {index + 1}</Text>
-              <Text style={[styles.tableCell, { flex: 2 }]}>{item.description}</Text>
-              <Text style={[styles.tableCellCenter, { flex: 1 }]}>1</Text>
-              <Text style={[styles.tableCellRight, { flex: 1 }]}>{formatCurrency(parseFloat(item.amount?.toString() || '0') || 0)}</Text>
-              <Text style={[styles.tableCellCenter, { flex: 1 }]}>{invoice.taxRate}%</Text>
-              <Text style={[styles.tableCellRight, { flex: 1 }]}>{formatCurrency(parseFloat(item.amount?.toString() || '0') || 0)}</Text>
+            <View key={index} style={styles.tableRow}>
+              <Text style={[styles.tableCell, { flex: 1 }]}>{index + 1}</Text>
+              <Text style={[styles.tableCell, { flex: 3 }]}>{item.description}</Text>
+              <Text style={[styles.tableCell, { flex: 1, textAlign: 'center' }]}>1</Text>
+              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>{formatCurrency(parseFloat(item.amount?.toString() || '0') || 0)}</Text>
+              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>{formatCurrency(parseFloat(item.amount?.toString() || '0') || 0)}</Text>
             </View>
           ))}
         </View>
 
-        {/* Notes and Total Section */}
-        <View style={styles.notesTotalSection}>
-          <View style={styles.notesSection}>
-            <Text style={styles.notesTitle}>NOTES:</Text>
-            <View style={[styles.notesBox, { backgroundColor: `${primaryColor}15` }]}>
-              <Text style={styles.notesText}>
-                {invoice.notes || 'Thank you for your business! We appreciate your prompt payment.'}
-              </Text>
-            </View>
+        {/* Simple Total */}
+        <View style={styles.totalSection}>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Subtotal:</Text>
+            <Text style={styles.totalValue}>{formatCurrency(calculateSubtotal())}</Text>
           </View>
-          <View style={styles.totalSection}>
-            <View style={styles.totalBreakdown}>
-              <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>Subtotal:</Text>
-                <Text style={styles.totalValue}>{formatCurrency(calculateSubtotal())}</Text>
-              </View>
-              {invoice.discount && invoice.discount > 0 && (
-                <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>Discount:</Text>
-                  <Text style={styles.totalValue}>-{formatCurrency(invoice.discount)}</Text>
-                </View>
-              )}
-              {invoice.taxRate && invoice.taxRate > 0 && (
-                <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>Tax ({invoice.taxRate}%):</Text>
-                  <Text style={styles.totalValue}>{formatCurrency(calculateTax())}</Text>
-                </View>
-              )}
+          {invoice.discount && invoice.discount > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Discount:</Text>
+              <Text style={styles.totalValue}>-{formatCurrency(invoice.discount)}</Text>
             </View>
-            <Text style={styles.finalTotalLabel}>TOTAL</Text>
-            <Text style={[styles.finalTotalValue, { color: secondaryColor }]}>{formatCurrency(calculateTotal())}</Text>
-          </View>
+          )}
+          {invoice.taxRate && invoice.taxRate > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Tax ({invoice.taxRate}%):</Text>
+              <Text style={styles.totalValue}>{formatCurrency(calculateTax())}</Text>
+            </View>
+          )}
+          <Text style={styles.finalTotal}>{formatCurrency(calculateTotal())}</Text>
         </View>
 
+        {/* Simple Notes */}
+        <View style={styles.notes}>
+          <Text style={styles.notesTitle}>NOTES:</Text>
+          <Text style={styles.notesText}>
+            {invoice.notes || 'Thank you for your business! We appreciate your prompt payment.'}
+          </Text>
+        </View>
 
-        {/* Footer with disclaimer only */}
+        {/* Simple Footer */}
         <View style={styles.footer}>
-          <Text style={styles.disclaimer}>
+          <Text style={styles.footerText}>
             This invoice was generated with FlowInvoicer. Create professional invoices in seconds.
           </Text>
         </View>

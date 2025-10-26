@@ -137,363 +137,118 @@ function FastInvoiceTemplate({ invoice, primaryColor, secondaryColor }: { invoic
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Modern Header with Dynamic Color Banner */}
-      <div style={{ backgroundColor: primaryColor }} className="text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-wide">INVOICE</h1>
-            <p className="text-white opacity-90 mt-2 text-lg">#{invoice.invoiceNumber}</p>
+    <div className="min-h-screen bg-white">
+      {/* Clean Header */}
+      <div className="border-b-2" style={{ borderBottomColor: primaryColor }}>
+        <div className="max-w-4xl mx-auto px-8 py-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold" style={{ color: primaryColor }}>INVOICE</h1>
+            <div className="text-right">
+              <h2 className="text-xl font-bold text-gray-900">
+                {invoice.freelancerSettings?.businessName || 'Your Business Name'}
+              </h2>
+              <p className="text-sm text-gray-600">#{invoice.invoiceNumber}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Invoice Container */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          {/* Business Header */}
-          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 border-b border-gray-200">
-            <div className="flex flex-col gap-4">
-              {/* Mobile: Stack vertically, Desktop: Side by side */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="flex items-center gap-3 sm:gap-4">
-                  {/* Logo Placeholder */}
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    {invoice.freelancerSettings?.logo ? (
-                      <Image
-                        src={invoice.freelancerSettings.logo}
-                        alt="Business Logo"
-                        width={48}
-                        height={48}
-                        className="rounded-lg object-cover w-full h-full"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          const fallback = target.nextElementSibling as HTMLElement;
-                          if (fallback) fallback.classList.remove('hidden');
-                        }}
-                      />
-                    ) : null}
-                    <span className="text-sm sm:text-lg font-bold text-gray-600 hidden">
-                      {invoice.freelancerSettings?.businessName?.charAt(0) || 'B'}
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
-                      {invoice.freelancerSettings?.businessName || 'Your Business Name'}
-                    </h2>
-                    {invoice.freelancerSettings?.email && (
-                      <p className="text-xs sm:text-sm text-gray-600 truncate">{invoice.freelancerSettings.email}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="text-left sm:text-right w-full sm:w-auto">
-                  <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
-                    ${invoice.total.toFixed(2)}
-                  </div>
-                  <div className={`inline-flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border ${getStatusColor(invoice.status)}`}>
-                    {getStatusIcon(invoice.status)}
-                    <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
-                  </div>
-                      {invoice.isOverdue && (
-                        <div className="mt-1 text-xs sm:text-sm text-red-600 font-medium">
-                          {invoice.daysOverdue} days overdue
-                        </div>
-                      )}
-                      {invoice.status === 'due today' && (
-                        <div className="mt-1 text-xs sm:text-sm text-orange-600 font-medium">
-                          Due today
-                        </div>
-                      )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Invoice Details Grid */}
-          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-              {/* Bill To */}
-              <div>
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Bill To</h3>
-                <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
-                  <div className="text-gray-900">
-                    <p className="font-semibold text-base sm:text-lg">{invoice.clientName}</p>
-                    {invoice.clientCompany && (
-                      <p className="text-gray-600 mt-1 text-sm sm:text-base">{invoice.clientCompany}</p>
-                    )}
-                    <div className="mt-3 space-y-2">
-                      <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                        <Mail className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
-                        <span className="truncate">{invoice.clientEmail}</span>
-                      </div>
-                      {invoice.clientAddress && (
-                        <div className="flex items-start text-xs sm:text-sm text-gray-600">
-                          <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-2 mt-0.5 flex-shrink-0" />
-                          <span className="break-words">{invoice.clientAddress}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Invoice Info */}
-              <div>
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Invoice Details</h3>
-                <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
-                  <div className="space-y-2 sm:space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600 text-xs sm:text-sm">Issue Date</span>
-                      <span className="font-medium text-xs sm:text-sm">{new Date(invoice.issueDate).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600 text-xs sm:text-sm">Due Date</span>
-                      <span className="font-medium text-xs sm:text-sm">{new Date(invoice.dueDate).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600 text-xs sm:text-sm">Status</span>
-                      <span className="font-medium text-xs sm:text-sm capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Services Table */}
-          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Services</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[300px]">
-                <thead>
-                  <tr className="bg-teal-600 text-white">
-                    <th className="text-left py-3 sm:py-4 px-3 sm:px-4 font-semibold text-sm sm:text-base">Service</th>
-                    <th className="text-right py-3 sm:py-4 px-3 sm:px-4 font-semibold text-sm sm:text-base">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoice.items.map((item, index) => (
-                    <tr key={item.id} className={`border-b border-gray-100 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                      <td className="py-3 sm:py-4 px-3 sm:px-4 text-gray-900 text-sm sm:text-base">
-                        {item.description}
-                      </td>
-                      <td className="py-3 sm:py-4 px-3 sm:px-4 text-right text-gray-900 font-semibold text-sm sm:text-base">
-                        ${item.rate.toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Totals */}
-          <div className="px-6 sm:px-8 py-6 bg-gray-50">
-            <div className="flex justify-end">
-              <div className="w-full sm:w-80">
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Subtotal</span>
-                    <span className="text-gray-900 font-medium">${invoice.subtotal.toFixed(2)}</span>
-                  </div>
-                  {invoice.taxAmount > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Tax</span>
-                      <span className="text-gray-900 font-medium">${invoice.taxAmount.toFixed(2)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-xl font-bold pt-3 border-t-2 border-gray-300">
-                    <span className="text-gray-900">Total</span>
-                    <span className="text-gray-900 font-bold">${invoice.total.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Status Message */}
-          {invoice.status === 'paid' && (
-            <div className="px-6 sm:px-8 py-6 border-t border-gray-200">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-green-800">Payment Received</h3>
-                    <p className="text-green-700">Thank you! This invoice has been paid in full.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+      <div className="max-w-4xl mx-auto px-8 py-8">
+        {/* Business Info */}
+        <div className="text-right mb-8">
+          {invoice.freelancerSettings?.address && (
+            <p className="text-sm text-gray-600">{invoice.freelancerSettings.address}</p>
           )}
+          {invoice.freelancerSettings?.phone && (
+            <p className="text-sm text-gray-600">{invoice.freelancerSettings.phone}</p>
+          )}
+          {invoice.freelancerSettings?.email && (
+            <p className="text-sm text-gray-600">{invoice.freelancerSettings.email}</p>
+          )}
+        </div>
 
-          {invoice.isOverdue && (
-            <div className="px-6 sm:px-8 py-6 border-t border-gray-200">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-center gap-3">
-                  <AlertCircle className="h-6 w-6 text-red-600" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-red-800">Payment Overdue</h3>
-                    <p className="text-red-700">
-                      This invoice is {invoice.daysOverdue} days past due. Please remit payment immediately to avoid additional charges.
-                    </p>
-                  </div>
+        {/* Bill To and Invoice Details */}
+        <div className="flex justify-between mb-8">
+          <div className="flex-1">
+            <h3 className="text-sm font-bold text-gray-900 mb-3">BILL TO:</h3>
+            <div className="text-sm text-gray-700">
+              <p className="font-medium">{invoice.clientName}</p>
+              <p>{invoice.clientEmail}</p>
+            </div>
+          </div>
+           <div className="text-right">
+             <div className="text-sm">
+               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '20px' }}>
+                 <div style={{ textAlign: 'left', minWidth: '100px' }}>
+                   <div style={{ marginBottom: '4px', fontWeight: 'bold', color: '#111827' }}>INVOICE #:</div>
+                   <div style={{ marginBottom: '4px', fontWeight: 'bold', color: '#111827' }}>DATE:</div>
+                   <div style={{ marginBottom: '4px', fontWeight: 'bold', color: '#111827' }}>DUE DATE:</div>
+                   <div style={{ fontWeight: 'bold', color: '#111827' }}>STATUS:</div>
+                 </div>
+                 <div style={{ textAlign: 'left', minWidth: '100px' }}>
+                   <div style={{ marginBottom: '4px', color: '#374151' }}>{invoice.invoiceNumber}</div>
+                   <div style={{ marginBottom: '4px', color: '#374151' }}>{new Date(invoice.issueDate).toLocaleDateString()}</div>
+                   <div style={{ marginBottom: '4px', color: '#374151' }}>{new Date(invoice.dueDate).toLocaleDateString()}</div>
+                   <div className={`capitalize ${getStatusColor(invoice.status).split(' ')[0]}`}>
+                     {invoice.status === 'due today' ? 'Due Today' : invoice.status}
+                   </div>
+                 </div>
+               </div>
+             </div>
+           </div>
+        </div>
+
+        {/* Items Table */}
+        <div className="mb-8">
+          <div className="overflow-hidden rounded-lg border border-gray-200">
+            <div className="px-4 py-3 text-white font-bold text-sm" style={{ backgroundColor: primaryColor }}>
+              <div className="grid grid-cols-6 gap-4">
+                <div>ITEM</div>
+                <div className="col-span-3">DESCRIPTION</div>
+                <div className="text-center">QTY</div>
+                <div className="text-right">AMOUNT</div>
+              </div>
+            </div>
+            {invoice.items.map((item, index) => (
+              <div key={index} className="px-4 py-3 border-b border-gray-200 last:border-b-0">
+                <div className="grid grid-cols-6 gap-4 text-sm">
+                  <div className="text-gray-700">{index + 1}</div>
+                  <div className="col-span-3 text-gray-700">{item.description}</div>
+                  <div className="text-center text-gray-700">1</div>
+                  <div className="text-right text-gray-700">${item.amount.toFixed(2)}</div>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Total */}
+        <div className="flex justify-end mb-8">
+          <div className="w-64">
+            <div className="flex justify-between text-sm mb-1">
+              <span className="text-gray-600">Subtotal:</span>
+              <span className="text-gray-700">${invoice.total.toFixed(2)}</span>
             </div>
-          )}
-
-          {/* Payment Information - Modern Design */}
-          {invoice.freelancerSettings && invoice.status !== 'paid' && (
-            <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 border-t border-gray-200">
-              <div className="flex items-center gap-2 mb-4 sm:mb-6">
-                <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Payment Information</h3>
-              </div>
-              
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-                <p className="text-xs sm:text-sm text-green-800">
-                  <strong>Security:</strong> All payment methods are secure and encrypted. Please include invoice number #{invoice.invoiceNumber} in your payment reference.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                {/* PayPal */}
-                {invoice.freelancerSettings.paypalEmail && (
-                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
-                      </div>
-                      <span className="font-semibold text-gray-900 text-sm sm:text-base">PayPal</span>
-                    </div>
-                    <p className="text-xs sm:text-sm text-gray-600 break-all">{invoice.freelancerSettings.paypalEmail}</p>
-                  </div>
-                )}
-
-                {/* Cash App */}
-                {invoice.freelancerSettings.cashappId && (
-                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
-                      </div>
-                      <span className="font-semibold text-gray-900 text-sm sm:text-base">Cash App</span>
-                    </div>
-                    <p className="text-xs sm:text-sm text-gray-600">${invoice.freelancerSettings.cashappId}</p>
-                  </div>
-                )}
-
-                {/* Venmo */}
-                {invoice.freelancerSettings.venmoId && (
-                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Smartphone className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
-                      </div>
-                      <span className="font-semibold text-gray-900 text-sm sm:text-base">Venmo</span>
-                    </div>
-                    <p className="text-xs sm:text-sm text-gray-600">@{invoice.freelancerSettings.venmoId}</p>
-                  </div>
-                )}
-
-                {/* Google Pay */}
-                {invoice.freelancerSettings.googlePayUpi && (
-                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Smartphone className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
-                      </div>
-                      <span className="font-semibold text-gray-900 text-sm sm:text-base">Google Pay</span>
-                    </div>
-                    <p className="text-xs sm:text-sm text-gray-600 break-all">{invoice.freelancerSettings.googlePayUpi}</p>
-                  </div>
-                )}
-
-                {/* Apple Pay */}
-                {invoice.freelancerSettings.applePayId && (
-                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Smartphone className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
-                      </div>
-                      <span className="font-semibold text-gray-900 text-sm sm:text-base">Apple Pay</span>
-                    </div>
-                    <p className="text-xs sm:text-sm text-gray-600 break-all">{invoice.freelancerSettings.applePayId}</p>
-                  </div>
-                )}
-
-                {/* Bank Transfer */}
-                {invoice.freelancerSettings.bankAccount && (
-                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Building2 className="h-3 w-3 sm:h-4 sm:w-4 text-indigo-600" />
-                      </div>
-                      <span className="font-semibold text-gray-900 text-sm sm:text-base">Bank Transfer</span>
-                    </div>
-                    <div className="text-xs sm:text-sm text-gray-600 space-y-1">
-                      <p className="break-words">{invoice.freelancerSettings.bankAccount}</p>
-                      {invoice.freelancerSettings.bankIfscSwift && (
-                        <p className="break-words">IFSC/SWIFT: {invoice.freelancerSettings.bankIfscSwift}</p>
-                      )}
-                      {invoice.freelancerSettings.bankIban && (
-                        <p className="break-words">IBAN: {invoice.freelancerSettings.bankIban}</p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Stripe */}
-                {invoice.freelancerSettings.stripeAccount && (
-                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
-                      </div>
-                      <span className="font-semibold text-gray-900 text-sm sm:text-base">Credit/Debit Card</span>
-                    </div>
-                    <p className="text-xs sm:text-sm text-gray-600">Processed securely via Stripe</p>
-                  </div>
-                )}
-
-                {/* Other Payment Methods */}
-                {invoice.freelancerSettings.paymentNotes && (
-                  <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
-                      </div>
-                      <span className="font-semibold text-gray-900 text-sm sm:text-base">Other Methods</span>
-                    </div>
-                    <p className="text-xs sm:text-sm text-gray-600 break-words">{invoice.freelancerSettings.paymentNotes}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Notes */}
-          {invoice.notes && (
-            <div className="px-6 sm:px-8 py-6 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Notes</h3>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-gray-700">{invoice.notes}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Footer */}
-          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-200">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-              <div className="text-center sm:text-left">
-                <p className="text-gray-600 font-medium text-sm sm:text-base">Thank you for your business!</p>
-                <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                  Generated with <a href="https://invoice-flow-vert.vercel.app/" className="text-indigo-600 hover:text-indigo-700">FlowInvoicer</a>
-                </p>
+            <div className="border-t border-gray-200 pt-2">
+              <div className="flex justify-between">
+                <span className="font-bold text-gray-900">TOTAL:</span>
+                <span className="text-xl font-bold" style={{ color: primaryColor }}>${invoice.total.toFixed(2)}</span>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Notes */}
+        {invoice.notes && (
+          <div className="mb-8">
+            <h3 className="text-sm font-bold text-gray-900 mb-2">NOTES:</h3>
+            <p className="text-sm text-gray-600">{invoice.notes}</p>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="text-center text-xs text-gray-500 pt-8 border-t border-gray-200">
+          This invoice was generated with FlowInvoicer. Create professional invoices in seconds.
         </div>
       </div>
     </div>

@@ -206,16 +206,10 @@ export default function ReminderHistoryPage() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className={`min-h-screen transition-colors duration-200 ${'bg-white'}`}>
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Please log in to access reminders</h1>
-          </div>
-        </div>
-      </div>
-    );
+  if (!user && !loading) {
+    // Redirect to auth page with session expired feedback
+    window.location.href = '/auth?message=session_expired';
+    return null;
   }
 
   return (
@@ -233,7 +227,7 @@ export default function ReminderHistoryPage() {
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
-              Automated Reminder History - v2.0
+              History
             </h2>
              <button
                onClick={fetchReminderHistory}

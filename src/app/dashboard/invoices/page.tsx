@@ -168,10 +168,19 @@ function InvoicesContent() {
   }, []);
 
   // Helper function to calculate due date status
-  const getDueDateStatus = useCallback((dueDate: string, invoiceStatus: string) => {
+  const getDueDateStatus = useCallback((dueDate: string, invoiceStatus: string, paymentTerms?: { enabled: boolean; terms: string }, updatedAt?: string) => {
     const today = new Date();
-    const due = new Date(dueDate);
-    const diffTime = due.getTime() - today.getTime();
+    let effectiveDueDate = new Date(dueDate);
+    
+    // For "Due on Receipt" invoices, the due date should be the day after the invoice was sent
+    if (paymentTerms?.enabled && paymentTerms.terms === 'Due on Receipt' && invoiceStatus !== 'draft') {
+      // Use updated_at as proxy for when invoice was sent, or fallback to due_date
+      const sentDate = updatedAt ? new Date(updatedAt) : new Date(dueDate);
+      effectiveDueDate = new Date(sentDate);
+      effectiveDueDate.setDate(effectiveDueDate.getDate() + 1); // Due the day after sending
+    }
+    
+    const diffTime = effectiveDueDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     // Draft invoices should never be marked as overdue, even if past due date
@@ -213,10 +222,11 @@ function InvoicesContent() {
   }, []);
 
   // Helper function to format reminders
-  const formatReminders = useCallback((reminders?: { enabled: boolean; useSystemDefaults: boolean; rules: Array<{ enabled: boolean }> }) => {
+  const formatReminders = useCallback((reminders?: { enabled: boolean; useSystemDefaults: boolean; rules?: Array<{ enabled: boolean }>; customRules?: Array<{ enabled: boolean }> }) => {
     if (!reminders?.enabled) return null;
     if (reminders.useSystemDefaults) return 'Smart System';
-    const activeRules = reminders.rules?.filter(rule => rule.enabled).length || 0;
+    const rules = reminders.rules || reminders.customRules || [];
+    const activeRules = rules.filter(rule => rule.enabled).length;
     return `${activeRules} Custom Rule${activeRules !== 1 ? 's' : ''}`;
   }, []);
 
@@ -254,10 +264,19 @@ function InvoicesContent() {
         } else if (statusFilter === 'overdue') {
           if (invoice.status !== 'pending' && invoice.status !== 'sent') return false;
           const today = new Date();
-          const dueDate = new Date(invoice.dueDate);
+          let effectiveDueDate = new Date(invoice.dueDate);
+          
+          // For "Due on Receipt" invoices, the due date should be the day after the invoice was sent
+          if (invoice.paymentTerms?.enabled && invoice.paymentTerms.terms === 'Due on Receipt') {
+            // Use updated_at as proxy for when invoice was sent, or fallback to due_date
+            const sentDate = (invoice as any).updatedAt ? new Date((invoice as any).updatedAt) : new Date(invoice.dueDate);
+            effectiveDueDate = new Date(sentDate);
+            effectiveDueDate.setDate(effectiveDueDate.getDate() + 1); // Due the day after sending
+          }
+          
           today.setHours(0, 0, 0, 0);
-          dueDate.setHours(0, 0, 0, 0);
-          return dueDate < today;
+          effectiveDueDate.setHours(0, 0, 0, 0);
+          return effectiveDueDate < today;
         } else if (statusFilter === 'draft') {
           return invoice.status === 'draft';
         }
@@ -281,8 +300,17 @@ function InvoicesContent() {
     }
 
     const today = new Date();
-    const due = new Date(invoice.dueDate);
-    const diffTime = due.getTime() - today.getTime();
+    let effectiveDueDate = new Date(invoice.dueDate);
+    
+    // For "Due on Receipt" invoices, the due date should be the day after the invoice was sent
+    if (invoice.paymentTerms?.enabled && invoice.paymentTerms.terms === 'Due on Receipt') {
+      // Use updated_at as proxy for when invoice was sent, or fallback to due_date
+      const sentDate = (invoice as any).updatedAt ? new Date((invoice as any).updatedAt) : new Date(invoice.dueDate);
+      effectiveDueDate = new Date(sentDate);
+      effectiveDueDate.setDate(effectiveDueDate.getDate() + 1); // Due the day after sending
+    }
+    
+    const diffTime = effectiveDueDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     // Only calculate late fees if invoice is overdue and late fees are enabled
@@ -548,14 +576,14 @@ function InvoicesContent() {
     handleDeleteInvoice: (invoice: Invoice) => void;
     getStatusIcon: (status: string) => React.ReactElement;
     getStatusColor: (status: string) => string;
-    getDueDateStatus: (dueDate: string, invoiceStatus: string) => { status: string; days: number; color: string };
+    getDueDateStatus: (dueDate: string, invoiceStatus: string, paymentTerms?: { enabled: boolean; terms: string }, updatedAt?: string) => { status: string; days: number; color: string };
     formatPaymentTerms: (paymentTerms?: { enabled: boolean; terms: string }) => string | null;
     formatLateFees: (lateFees?: { enabled: boolean; type: 'fixed' | 'percentage'; amount: number; gracePeriod: number }) => string | null;
-    formatReminders: (reminders?: { enabled: boolean; useSystemDefaults: boolean; rules: Array<{ enabled: boolean }> }) => string | null;
+    formatReminders: (reminders?: { enabled: boolean; useSystemDefaults: boolean; rules?: Array<{ enabled: boolean }>; customRules?: Array<{ enabled: boolean }> }) => string | null;
     calculateDueCharges: (invoice: Invoice) => { hasLateFees: boolean; lateFeeAmount: number; totalPayable: number; overdueDays: number };
     loadingActions: { [key: string]: boolean };
   }) => {
-    const dueDateStatus = getDueDateStatus(invoice.dueDate, invoice.status);
+    const dueDateStatus = getDueDateStatus(invoice.dueDate, invoice.status, invoice.paymentTerms, (invoice as any).updatedAt);
     const dueCharges = calculateDueCharges(invoice);
     
     // Show enhanced features for all invoice statuses
@@ -622,8 +650,8 @@ function InvoicesContent() {
                     <span>{dueDateStatus.days}d past due</span>
                   </span>
                 )}
-                </div>
-              
+          </div>
+          
               <div className="flex items-center space-x-1">
                 <button 
                   onClick={() => handleViewInvoice(invoice)}
@@ -691,7 +719,7 @@ function InvoicesContent() {
                   </button>
                 )}
               </div>
-            </div>
+              </div>
             </div>
           </div>
           
@@ -702,16 +730,16 @@ function InvoicesContent() {
               <div className="flex items-center space-x-3">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100`}>
                   <FileText className="h-4 w-4 text-gray-600" />
-                </div>
-                <div>
+            </div>
+            <div>
                   <div className="font-medium text-sm" style={{color: '#1f2937'}}>
                   {invoice.invoiceNumber}
                 </div>
                   <div className="text-xs" style={{color: '#6b7280'}}>
-                    {invoice.client.name}
+                {invoice.client.name}
               </div>
-                </div>
               </div>
+            </div>
               <div className="text-right">
                 <div className={`font-semibold text-base ${
                   invoice.status === 'paid' ? ('text-emerald-600') :
@@ -720,17 +748,17 @@ function InvoicesContent() {
                   invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-500') :
                   invoice.status === 'draft' ? ('text-gray-600') :
                   ('text-red-600')
-              }`}>
-                ${dueCharges.totalPayable.toLocaleString()}
-                  </div>
+            }`}>
+              ${dueCharges.totalPayable.toLocaleString()}
+                </div>
                 <div className="text-xs" style={{color: '#6b7280'}}>
                   {new Date(invoice.createdAt).toLocaleDateString()}
-              </div>
             </div>
-            </div>
-            
+          </div>
+        </div>
+        
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2">
                 <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
                   invoice.status === 'paid' ? ('text-emerald-600') :
                   invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-500') :
@@ -739,7 +767,7 @@ function InvoicesContent() {
                 }`}>
                 {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status}</span>
-              </span>
+                  </span>
                 {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
                   <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-red-600'}`}>
                     <AlertTriangle className="h-3 w-3" />
@@ -751,80 +779,80 @@ function InvoicesContent() {
                     <Clock className="h-3 w-3" />
                     <span>{dueDateStatus.days}d past due</span>
                   </span>
-                )}
-                </div>
-              
+              )}
+            </div>
+        
               <div className="flex items-center space-x-1">
-                <button 
-                  onClick={() => handleViewInvoice(invoice)}
+          <button 
+            onClick={() => handleViewInvoice(invoice)}
                   className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
                   title="View"
-                >
+          >
                   <Eye className="h-4 w-4 text-gray-600" />
-                </button>
-                <button 
-                  onClick={() => handleDownloadPDF(invoice)}
-                  disabled={loadingActions[`pdf-${invoice.id}`]}
+          </button>
+          <button 
+            onClick={() => handleDownloadPDF(invoice)}
+            disabled={loadingActions[`pdf-${invoice.id}`]}
                   className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
                   title="PDF"
-                >
-                  {loadingActions[`pdf-${invoice.id}`] ? (
+          >
+            {loadingActions[`pdf-${invoice.id}`] ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                  ) : (
+            ) : (
                     <Download className="h-4 w-4 text-gray-600" />
-                  )}
-                </button>
-                {invoice.status === 'draft' && (
-                  <button 
-                    onClick={() => handleSendInvoice(invoice)}
-                    disabled={loadingActions[`send-${invoice.id}`]}
+            )}
+          </button>
+          {invoice.status === 'draft' && (
+            <button 
+              onClick={() => handleSendInvoice(invoice)}
+              disabled={loadingActions[`send-${invoice.id}`]}
                     className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
                     title="Send"
-                  >
-                    {loadingActions[`send-${invoice.id}`] ? (
+            >
+              {loadingActions[`send-${invoice.id}`] ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                    ) : (
+              ) : (
                       <Send className="h-4 w-4 text-gray-600" />
-                    )}
-                  </button>
-                )}
+              )}
+            </button>
+          )}
                 {(invoice.status === 'pending' || invoice.status === 'sent') && (
-                  <button 
-                    onClick={() => handleMarkAsPaid(invoice)}
-                    disabled={loadingActions[`paid-${invoice.id}`]}
+            <button 
+              onClick={() => handleMarkAsPaid(invoice)}
+              disabled={loadingActions[`paid-${invoice.id}`]}
                     className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
                     title="Mark Paid"
-                  >
-                    {loadingActions[`paid-${invoice.id}`] ? (
+            >
+              {loadingActions[`paid-${invoice.id}`] ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                    ) : (
+              ) : (
                       <CheckCircle className="h-4 w-4 text-gray-600" />
-                    )}
-                  </button>
-                )}
+              )}
+            </button>
+          )}
                 {invoice.status === 'draft' && (
-                  <button 
-                    onClick={() => handleEditInvoice(invoice)}
+              <button 
+                onClick={() => handleEditInvoice(invoice)}
                     className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
                     title="Edit"
-                  >
+              >
                     <Edit className="h-4 w-4 text-gray-600" />
-                  </button>
+              </button>
                 )}
                 {invoice.status === 'draft' && (
-                  <button 
-                    onClick={() => handleDeleteInvoice(invoice)}
+              <button 
+                onClick={() => handleDeleteInvoice(invoice)}
                     className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
                     title="Delete"
                   >
                     <Trash2 className="h-4 w-4 text-gray-600" />
-                  </button>
+              </button>
                 )}
               </div>
             </div>
-          </div>
         </div>
       </div>
+    </div>
     );
   };
 
@@ -911,16 +939,10 @@ function InvoicesContent() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen transition-colors duration-200 bg-white">
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Please log in to access the invoices</h1>
-          </div>
-        </div>
-      </div>
-    );
+  if (!user && !loading) {
+    // Redirect to auth page with session expired feedback
+    window.location.href = '/auth?message=session_expired';
+    return null;
   }
 
   return (
@@ -941,7 +963,7 @@ function InvoicesContent() {
                 <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
                   Invoices
                 </h2>
-                  {statusFilter && filterAppliedManually && (
+                  {statusFilter && !searchParams.get('status') && (
                     <div className="flex flex-wrap items-center gap-2">
                       <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-gray-200 rounded-md shadow-sm">
                         <div className={`w-1.5 h-1.5 rounded-full ${
@@ -974,7 +996,10 @@ function InvoicesContent() {
                 </div>
                 {user ? (
                   <button
-                    onClick={() => setShowCreateInvoice(true)}
+                    onClick={() => {
+                      setSelectedInvoice(null);
+                      setShowCreateInvoice(true);
+                    }}
                     className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                   >
                     <Plus className="h-4 w-4" />
@@ -1021,7 +1046,7 @@ function InvoicesContent() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                       </svg>
                       Filter
-                      {statusFilter && (
+                      {statusFilter && !searchParams.get('status') && (
                         <span className="bg-indigo-100 text-indigo-800 text-xs px-2 py-0.5 rounded-full">
                           {statusFilter}
                         </span>
@@ -1029,11 +1054,13 @@ function InvoicesContent() {
                     </button>
 
                     {/* Clear Filters */}
-                    {(searchQuery || statusFilter) && (
+                    {(searchQuery || (statusFilter && !searchParams.get('status'))) && (
                       <button
                         onClick={() => {
                           setSearchQuery('');
                           setStatusFilter('');
+                          setFilterAppliedManually(false);
+                          window.history.replaceState({}, '', '/dashboard/invoices');
                         }}
                         className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors text-sm font-medium"
                       >
@@ -1053,7 +1080,7 @@ function InvoicesContent() {
                           setStatusFilter('');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center ${
                           !statusFilter 
                             ? 'bg-gray-900 text-white' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1066,7 +1093,7 @@ function InvoicesContent() {
                           setStatusFilter('paid');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center ${
                           statusFilter === 'paid' 
                             ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1079,7 +1106,7 @@ function InvoicesContent() {
                           setStatusFilter('pending');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center ${
                           statusFilter === 'pending' 
                             ? 'bg-orange-100 text-orange-800 border border-orange-200' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1092,7 +1119,7 @@ function InvoicesContent() {
                           setStatusFilter('overdue');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center ${
                           statusFilter === 'overdue' 
                             ? 'bg-red-100 text-red-800 border border-red-200' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1105,7 +1132,7 @@ function InvoicesContent() {
                           setStatusFilter('draft');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center ${
                           statusFilter === 'draft' 
                             ? 'bg-gray-100 text-gray-800 border border-gray-200' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1208,14 +1235,20 @@ function InvoicesContent() {
                   
                   <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-sm mx-auto">
                     <button
-                      onClick={() => setShowFastInvoice(true)}
+                      onClick={() => {
+                        setSelectedInvoice(null);
+                        setShowFastInvoice(true);
+                      }}
                       className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                     >
                       <Sparkles className="h-4 w-4" />
                       <span>Quick Invoice</span>
                     </button>
                     <button
-                      onClick={() => setShowCreateInvoice(true)}
+                      onClick={() => {
+                        setSelectedInvoice(null);
+                        setShowCreateInvoice(true);
+                      }}
                       className="flex items-center justify-center space-x-2 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
                     >
                       <FilePlus className="h-4 w-4" />
@@ -1242,7 +1275,7 @@ function InvoicesContent() {
             setShowFastInvoice(false);
             setSelectedInvoice(null);
           }}
-          user={user}
+          user={user!}
           getAuthHeaders={getAuthHeaders}
           clients={clients}
           editingInvoice={selectedInvoice}
@@ -1524,7 +1557,12 @@ function InvoicesContent() {
                           {selectedInvoice.reminders.enabled 
                             ? (selectedInvoice.reminders.useSystemDefaults 
                               ? 'Smart System' 
-                              : `${selectedInvoice.reminders.rules.filter(rule => rule.enabled).length} Custom Rule${selectedInvoice.reminders.rules.filter(rule => rule.enabled).length !== 1 ? 's' : ''}`)
+                              : (() => {
+                                  const reminders = selectedInvoice.reminders as any;
+                                  const rules = reminders.rules || reminders.customRules || [];
+                                  const enabledRules = rules.filter((rule: any) => rule.enabled);
+                                  return `${enabledRules.length} Custom Rule${enabledRules.length !== 1 ? 's' : ''}`;
+                                })())
                             : 'Not configured'
                           }
                         </p>

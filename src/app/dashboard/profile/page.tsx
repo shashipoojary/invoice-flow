@@ -283,8 +283,9 @@ export default function ProfilePage() {
     );
   }
 
-  if (!user) {
-    router.push('/auth');
+  if (!user && !loading) {
+    // Redirect to auth page with session expired feedback
+    window.location.href = '/auth?message=session_expired';
     return null;
   }
 
