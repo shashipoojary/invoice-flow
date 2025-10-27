@@ -438,12 +438,12 @@ export default function ProfilePage() {
                     <div className="space-y-3">
                       <button
                         onClick={() => setShowPasswordModal(true)}
-                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] border border-transparent hover:border-gray-200"
+                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-blue-50 rounded-lg transition-colors text-blue-600"
                       >
-                        <Lock className="w-5 h-5 text-gray-600" />
+                        <Lock className="w-5 h-5" />
                         <div>
-                          <p className="font-medium text-gray-900">Change Password</p>
-                          <p className="text-sm text-gray-500">Update your account password</p>
+                          <p className="font-medium">Change Password</p>
+                          <p className="text-sm text-blue-500">Update your account password</p>
                         </div>
                       </button>
                     </div>
@@ -457,12 +457,12 @@ export default function ProfilePage() {
                     <div className="space-y-3">
                       <button
                         onClick={handleShowFormatSelection}
-                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-all duration-200 hover:shadow-md hover:scale-[1.02] border border-transparent hover:border-gray-200"
+                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-green-50 rounded-lg transition-colors text-green-600"
                       >
-                        <Download className="w-5 h-5 text-gray-600" />
+                        <Download className="w-5 h-5" />
                         <div>
-                          <p className="font-medium text-gray-900">Export Data</p>
-                          <p className="text-sm text-gray-500">Download in your preferred format</p>
+                          <p className="font-medium">Export Data</p>
+                          <p className="text-sm text-green-500">Download in your preferred format</p>
                         </div>
                       </button>
                     </div>
