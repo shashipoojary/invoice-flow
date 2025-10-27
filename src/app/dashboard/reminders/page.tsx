@@ -9,7 +9,8 @@ import {
   Search, 
   RefreshCw,
   Send,
-  Eye
+  Eye,
+  X
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -50,6 +51,8 @@ export default function ReminderHistoryPage() {
   const [reminders, setReminders] = useState<ReminderHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedReminder, setSelectedReminder] = useState<ReminderHistory | null>(null);
+  const [showReminderModal, setShowReminderModal] = useState(false);
 
 
 
@@ -138,6 +141,17 @@ export default function ReminderHistoryPage() {
       reminder.invoice.clients.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       reminder.invoice.clients.email.toLowerCase().includes(searchTerm.toLowerCase());
 
+    // For scheduled reminders, only show those that are coming up soon (within next 7 days)
+    if (reminder.reminder_status === 'scheduled') {
+      const scheduledDate = new Date(reminder.sent_at);
+      const now = new Date();
+      const daysUntilScheduled = Math.ceil((scheduledDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Only show if scheduled within next 7 days
+      return matchesSearch && daysUntilScheduled >= 0 && daysUntilScheduled <= 7;
+    }
+
+    // For other statuses (sent, delivered, failed, bounced), show all
     return matchesSearch;
   });
 
@@ -193,6 +207,16 @@ export default function ReminderHistoryPage() {
       console.error('Error sending reminder:', error);
       alert('Error sending reminder');
     }
+  };
+
+  const handleViewReminder = (reminder: ReminderHistory) => {
+    setSelectedReminder(reminder);
+    setShowReminderModal(true);
+  };
+
+  const closeReminderModal = () => {
+    setShowReminderModal(false);
+    setSelectedReminder(null);
   };
 
 
@@ -340,9 +364,9 @@ export default function ReminderHistoryPage() {
                           </button>
                         )}
                         <button
-                          onClick={() => window.open(`/invoice/${reminder.invoice_id}`, '_blank')}
+                          onClick={() => handleViewReminder(reminder)}
                           className="p-1.5 rounded-md transition-colors hover:bg-gray-100"
-                          title="View invoice"
+                          title="View reminder details"
                         >
                           <Eye className="h-4 w-4 text-gray-600" />
                         </button>
@@ -415,9 +439,9 @@ export default function ReminderHistoryPage() {
                         </button>
                       )}
                       <button
-                        onClick={() => window.open(`/invoice/${reminder.invoice_id}`, '_blank')}
+                        onClick={() => handleViewReminder(reminder)}
                         className="p-1.5 rounded-md transition-colors hover:bg-gray-100"
-                        title="View invoice"
+                        title="View reminder details"
                       >
                         <Eye className="h-4 w-4 text-gray-600" />
                       </button>
@@ -447,6 +471,155 @@ export default function ReminderHistoryPage() {
           </div>
         </main>
       </div>
+
+      {/* Sliding Modal for Reminder Details */}
+      {showReminderModal && selectedReminder && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
+            onClick={closeReminderModal}
+          />
+          
+          {/* Sliding Panel */}
+          <div className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Reminder Details</h3>
+                <button
+                  onClick={closeReminderModal}
+                  className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+                >
+                  <X className="h-5 w-5 text-gray-500" />
+                </button>
+              </div>
+              
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="space-y-6">
+                  {/* Invoice Info */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">Invoice Information</h4>
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Invoice Number:</span>
+                        <span className="text-sm font-medium text-gray-900">{selectedReminder.invoice.invoice_number}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Amount:</span>
+                        <span className="text-sm font-medium text-green-600">${selectedReminder.invoice.total.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Due Date:</span>
+                        <span className="text-sm font-medium text-gray-900">{new Date(selectedReminder.invoice.due_date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Status:</span>
+                        <span className={`text-sm font-medium capitalize ${
+                          selectedReminder.invoice.status === 'paid' ? 'text-green-600' :
+                          selectedReminder.invoice.status === 'sent' ? 'text-blue-600' :
+                          selectedReminder.invoice.status === 'overdue' ? 'text-red-600' :
+                          'text-gray-600'
+                        }`}>
+                          {selectedReminder.invoice.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Client Info */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">Client Information</h4>
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Name:</span>
+                        <span className="text-sm font-medium text-gray-900">{selectedReminder.invoice.clients.name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Email:</span>
+                        <span className="text-sm font-medium text-gray-900">{selectedReminder.invoice.clients.email}</span>
+                      </div>
+                      {selectedReminder.invoice.clients.company && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Company:</span>
+                          <span className="text-sm font-medium text-gray-900">{selectedReminder.invoice.clients.company}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Reminder Info */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">Reminder Information</h4>
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Type:</span>
+                        <span className={`text-sm font-medium capitalize ${
+                          selectedReminder.reminder_type === 'friendly' ? 'text-blue-600' :
+                          selectedReminder.reminder_type === 'polite' ? 'text-emerald-600' :
+                          selectedReminder.reminder_type === 'firm' ? 'text-yellow-600' :
+                          'text-red-600'
+                        }`}>
+                          {selectedReminder.reminder_type}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Status:</span>
+                        <span className={`text-sm font-medium capitalize ${getReminderStatusColor(selectedReminder.reminder_status)}`}>
+                          {selectedReminder.reminder_status}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Scheduled/Sent:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {new Date(selectedReminder.sent_at).toLocaleString()}
+                        </span>
+                      </div>
+                      {selectedReminder.overdue_days !== 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Overdue Days:</span>
+                          <span className="text-sm font-medium text-gray-900">{selectedReminder.overdue_days}</span>
+                        </div>
+                      )}
+                      {selectedReminder.failure_reason && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Failure Reason:</span>
+                          <span className="text-sm font-medium text-red-600">{selectedReminder.failure_reason}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Footer */}
+              <div className="p-6 border-t border-gray-200">
+                <div className="flex space-x-3">
+                  <button
+                    onClick={closeReminderModal}
+                    className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    Close
+                  </button>
+                  {selectedReminder.reminder_status === 'failed' && (
+                    <button
+                      onClick={() => {
+                        sendManualReminder(selectedReminder.invoice_id, selectedReminder.reminder_type);
+                        closeReminderModal();
+                      }}
+                      className="flex-1 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      Send Again
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
