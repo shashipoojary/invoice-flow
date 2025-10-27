@@ -566,7 +566,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                       </div>
                       <span className="font-semibold text-gray-900 text-sm sm:text-base">Cash App</span>
                     </div>
-                    <p className="text-xs sm:text-sm text-gray-600">${invoice.freelancerSettings.cashappId}</p>
+                    <p className="text-xs sm:text-sm text-gray-600">{invoice.freelancerSettings.cashappId.startsWith('$') ? invoice.freelancerSettings.cashappId : '$' + invoice.freelancerSettings.cashappId}</p>
                   </div>
                 )}
 
@@ -579,7 +579,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                       </div>
                       <span className="font-semibold text-gray-900 text-sm sm:text-base">Venmo</span>
                     </div>
-                    <p className="text-xs sm:text-sm text-gray-600">@{invoice.freelancerSettings.venmoId}</p>
+                    <p className="text-xs sm:text-sm text-gray-600">{invoice.freelancerSettings.venmoId.startsWith('@') ? invoice.freelancerSettings.venmoId : '@' + invoice.freelancerSettings.venmoId}</p>
                   </div>
                 )}
 
@@ -1039,7 +1039,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                       </div>
                       <span className="font-semibold text-gray-900 text-sm sm:text-base">Cash App</span>
                     </div>
-                    <p className="text-xs sm:text-sm text-gray-600">${invoice.freelancerSettings.cashappId}</p>
+                    <p className="text-xs sm:text-sm text-gray-600">{invoice.freelancerSettings.cashappId.startsWith('$') ? invoice.freelancerSettings.cashappId : '$' + invoice.freelancerSettings.cashappId}</p>
                   </div>
                 )}
 
@@ -1052,7 +1052,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                       </div>
                       <span className="font-semibold text-gray-900 text-sm sm:text-base">Venmo</span>
                     </div>
-                    <p className="text-xs sm:text-sm text-gray-600">@{invoice.freelancerSettings.venmoId}</p>
+                    <p className="text-xs sm:text-sm text-gray-600">{invoice.freelancerSettings.venmoId.startsWith('@') ? invoice.freelancerSettings.venmoId : '@' + invoice.freelancerSettings.venmoId}</p>
                   </div>
                 )}
 
@@ -1512,7 +1512,7 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                       </div>
                       <span className="font-semibold text-gray-900 text-sm sm:text-base">Cash App</span>
                     </div>
-                    <p className="text-xs sm:text-sm text-gray-600">${invoice.freelancerSettings.cashappId}</p>
+                    <p className="text-xs sm:text-sm text-gray-600">{invoice.freelancerSettings.cashappId.startsWith('$') ? invoice.freelancerSettings.cashappId : '$' + invoice.freelancerSettings.cashappId}</p>
                   </div>
                 )}
 
@@ -1525,7 +1525,7 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                       </div>
                       <span className="font-semibold text-gray-900 text-sm sm:text-base">Venmo</span>
                     </div>
-                    <p className="text-xs sm:text-sm text-gray-600">@{invoice.freelancerSettings.venmoId}</p>
+                    <p className="text-xs sm:text-sm text-gray-600">{invoice.freelancerSettings.venmoId.startsWith('@') ? invoice.freelancerSettings.venmoId : '@' + invoice.freelancerSettings.venmoId}</p>
                   </div>
                 )}
 

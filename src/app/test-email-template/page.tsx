@@ -322,13 +322,13 @@ export default function TestEmailTemplate() {
                 ${cashappId ? `
                   <div class="payment-item">
                     <div class="payment-method">Cash App</div>
-                    <div class="payment-info">Send to: $${cashappId}</div>
+                    <div class="payment-info">Send to: ${cashappId.startsWith('$') ? cashappId : '$' + cashappId}</div>
                   </div>
                 ` : ''}
                 ${venmoId ? `
                   <div class="payment-item">
                     <div class="payment-method">Venmo</div>
-                    <div class="payment-info">Send to: @${venmoId}</div>
+                    <div class="payment-info">Send to: ${venmoId.startsWith('@') ? venmoId : '@' + venmoId}</div>
                   </div>
                 ` : ''}
                 ${googlePayUpi ? `

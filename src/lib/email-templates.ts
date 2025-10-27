@@ -456,13 +456,13 @@ export function generateMinimalEmailTemplate(
                 ${businessSettings.cashappId ? `
                   <div class="payment-method-item">
                     <div class="payment-method-name">CASH APP</div>
-                    <div class="payment-method-details">Send to: $${businessSettings.cashappId}</div>
+                    <div class="payment-method-details">Send to: ${businessSettings.cashappId.startsWith('$') ? businessSettings.cashappId : '$' + businessSettings.cashappId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.venmoId ? `
                   <div class="payment-method-item">
                     <div class="payment-method-name">VENMO</div>
-                    <div class="payment-method-details">Send to: @${businessSettings.venmoId}</div>
+                    <div class="payment-method-details">Send to: ${businessSettings.venmoId.startsWith('@') ? businessSettings.venmoId : '@' + businessSettings.venmoId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.googlePayUpi ? `
@@ -846,13 +846,13 @@ export function generateModernEmailTemplate(
                 ${businessSettings.cashappId ? `
                   <div class="payment-method-item">
                     <div class="payment-method-name">CASH APP</div>
-                    <div class="payment-method-details">Send to: $${businessSettings.cashappId}</div>
+                    <div class="payment-method-details">Send to: ${businessSettings.cashappId.startsWith('$') ? businessSettings.cashappId : '$' + businessSettings.cashappId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.venmoId ? `
                   <div class="payment-method-item">
                     <div class="payment-method-name">VENMO</div>
-                    <div class="payment-method-details">Send to: @${businessSettings.venmoId}</div>
+                    <div class="payment-method-details">Send to: ${businessSettings.venmoId.startsWith('@') ? businessSettings.venmoId : '@' + businessSettings.venmoId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.googlePayUpi ? `
@@ -1497,13 +1497,13 @@ export function generateCreativeEmailTemplate(
                 ${businessSettings.cashappId ? `
                   <div class="payment-method-item">
                     <div class="payment-method-name">CASH APP</div>
-                    <div class="payment-method-details">Send to: $${businessSettings.cashappId}</div>
+                    <div class="payment-method-details">Send to: ${businessSettings.cashappId.startsWith('$') ? businessSettings.cashappId : '$' + businessSettings.cashappId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.venmoId ? `
                   <div class="payment-method-item">
                     <div class="payment-method-name">VENMO</div>
-                    <div class="payment-method-details">Send to: @${businessSettings.venmoId}</div>
+                    <div class="payment-method-details">Send to: ${businessSettings.venmoId.startsWith('@') ? businessSettings.venmoId : '@' + businessSettings.venmoId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.googlePayUpi ? `
@@ -2049,13 +2049,13 @@ export function generateOriginalFastInvoiceEmailTemplate(
                 ${businessSettings.cashappId ? `
                   <div class="payment-method-item">
                     <div class="payment-method-name">CASH APP</div>
-                    <div class="payment-method-details">Send to: $${businessSettings.cashappId}</div>
+                    <div class="payment-method-details">Send to: ${businessSettings.cashappId.startsWith('$') ? businessSettings.cashappId : '$' + businessSettings.cashappId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.venmoId ? `
                   <div class="payment-method-item">
                     <div class="payment-method-name">VENMO</div>
-                    <div class="payment-method-details">Send to: @${businessSettings.venmoId}</div>
+                    <div class="payment-method-details">Send to: ${businessSettings.venmoId.startsWith('@') ? businessSettings.venmoId : '@' + businessSettings.venmoId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.googlePayUpi ? `

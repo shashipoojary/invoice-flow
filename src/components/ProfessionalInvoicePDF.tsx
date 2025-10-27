@@ -604,13 +604,13 @@ const formatCurrency = (amount: number) => {
             {businessSettings?.cashappId && (
               <View style={styles.paymentMethodRow}>
                 <Text style={styles.paymentMethodLabel}>Cash App:</Text>
-                <Text style={styles.paymentMethodValue}>${businessSettings.cashappId}</Text>
+                <Text style={styles.paymentMethodValue}>{businessSettings.cashappId.startsWith('$') ? businessSettings.cashappId : '$' + businessSettings.cashappId}</Text>
               </View>
             )}
             {businessSettings?.venmoId && (
               <View style={styles.paymentMethodRow}>
                 <Text style={styles.paymentMethodLabel}>Venmo:</Text>
-                <Text style={styles.paymentMethodValue}>@{businessSettings.venmoId}</Text>
+                <Text style={styles.paymentMethodValue}>{businessSettings.venmoId.startsWith('@') ? businessSettings.venmoId : '@' + businessSettings.venmoId}</Text>
               </View>
             )}
             {businessSettings?.googlePayUpi && (
