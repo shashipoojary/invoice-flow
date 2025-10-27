@@ -197,10 +197,8 @@ function InvoicesContent() {
     }
     
     // Only sent/pending invoices can be overdue
-    if (diffDays < 0) {
+    if (diffDays <= 0) {
       return { status: 'overdue', days: Math.abs(diffDays), color: 'text-red-600 dark:text-red-400' };
-    } else if (diffDays === 0) {
-      return { status: 'due-today', days: 0, color: 'text-orange-500 dark:text-orange-400' };
     } else if (diffDays <= 3) {
       return { status: 'due-soon', days: diffDays, color: 'text-yellow-600 dark:text-yellow-400' };
     } else {
@@ -314,7 +312,7 @@ function InvoicesContent() {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     // Only calculate late fees if invoice is overdue and late fees are enabled
-    if (diffDays < 0 && invoice.lateFees?.enabled) {
+    if (diffDays <= 0 && invoice.lateFees?.enabled) {
       const overdueDays = Math.abs(diffDays);
       const gracePeriod = invoice.lateFees.gracePeriod || 0;
       
