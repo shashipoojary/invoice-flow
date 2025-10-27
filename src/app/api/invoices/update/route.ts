@@ -3,12 +3,61 @@ import { supabaseAdmin } from '@/lib/supabase'
 import { getAuthenticatedUser } from '@/lib/auth-middleware'
 
 // Function to create scheduled reminders
-async function createScheduledReminders(invoiceId: string, reminderSettings: any, dueDate: string) {
+async function createScheduledReminders(invoiceId: string, reminderSettings: any, dueDate: string, paymentTerms?: any, invoiceStatus?: string, updatedAt?: string) {
   try {
-    const dueDateObj = new Date(dueDate);
+    // For "Due on Receipt" invoices, use updated_at (when sent) as base date, otherwise use due_date
+    let baseDate = new Date(dueDate);
+    if (paymentTerms?.enabled && paymentTerms.terms === 'Due on Receipt' && invoiceStatus !== 'draft' && updatedAt) {
+      baseDate = new Date(updatedAt);
+    }
+    
     const scheduledReminders = [];
 
-    if (reminderSettings.useSystemDefaults) {
+    // Prioritize custom rules over system defaults if custom rules exist
+    if (reminderSettings.customRules && reminderSettings.customRules.length > 0) {
+      // Use custom reminder rules
+      const enabledRules = reminderSettings.customRules.filter((rule: any) => rule.enabled);
+      
+      // Create reminders with their scheduled dates first
+      const remindersWithDates = enabledRules.map((rule: any) => {
+        const scheduledDate = new Date(baseDate);
+        
+        // Fix scheduling logic: for "before" reminders, subtract days; for "after", add days
+        if (rule.type === 'before') {
+          scheduledDate.setDate(scheduledDate.getDate() - rule.days);
+        } else {
+          scheduledDate.setDate(scheduledDate.getDate() + rule.days);
+        }
+        
+        return {
+          rule,
+          scheduledDate,
+          overdue_days: rule.type === 'before' ? -rule.days : rule.days
+        };
+      });
+      
+      // Sort by scheduled date (earliest first) to get correct chronological order
+      remindersWithDates.sort((a: any, b: any) => a.scheduledDate.getTime() - b.scheduledDate.getTime());
+      
+      // Determine reminder types based on chronological sequence
+      const reminderTypes = ['friendly', 'polite', 'firm', 'urgent'];
+      
+      for (let i = 0; i < remindersWithDates.length; i++) {
+        const { rule, scheduledDate, overdue_days } = remindersWithDates[i];
+        
+        // Assign reminder type based on chronological sequence (friendly -> polite -> firm -> urgent)
+        const reminderType = reminderTypes[Math.min(i, reminderTypes.length - 1)];
+        
+        scheduledReminders.push({
+          invoice_id: invoiceId,
+          reminder_type: reminderType,
+          overdue_days,
+          sent_at: scheduledDate.toISOString(),
+          reminder_status: 'scheduled',
+          email_id: null
+        });
+      }
+    } else if (reminderSettings.useSystemDefaults) {
       // Use system default reminder schedule
       const defaultSchedule = [
         { type: 'friendly', days: 1 }, // 1 day before due
@@ -18,7 +67,7 @@ async function createScheduledReminders(invoiceId: string, reminderSettings: any
       ];
 
       for (const reminder of defaultSchedule) {
-        const scheduledDate = new Date(dueDateObj);
+        const scheduledDate = new Date(baseDate);
         scheduledDate.setDate(scheduledDate.getDate() + reminder.days);
         
         scheduledReminders.push({
@@ -29,23 +78,6 @@ async function createScheduledReminders(invoiceId: string, reminderSettings: any
           reminder_status: 'scheduled',
           email_id: null
         });
-      }
-    } else if (reminderSettings.customRules && reminderSettings.customRules.length > 0) {
-      // Use custom reminder rules
-      for (const rule of reminderSettings.customRules) {
-        if (rule.enabled) {
-          const scheduledDate = new Date(dueDateObj);
-          scheduledDate.setDate(scheduledDate.getDate() + rule.days);
-          
-          scheduledReminders.push({
-            invoice_id: invoiceId,
-            reminder_type: rule.type,
-            overdue_days: rule.days,
-            sent_at: scheduledDate.toISOString(),
-            reminder_status: 'scheduled',
-            email_id: null
-          });
-        }
       }
     }
 
@@ -174,19 +206,33 @@ export async function PUT(request: NextRequest) {
 
     // Handle client data if provided (for new clients)
     if (client_data && !client_id) {
-      const { error: clientError } = await supabaseAdmin
+      // First check if a client with this email already exists
+      const { data: existingClient, error: checkError } = await supabaseAdmin
         .from('clients')
-        .insert({
-          user_id: user.id,
-          name: client_data.name,
-          email: client_data.email,
-          company: client_data.company || null,
-          address: client_data.address || null
-        })
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('email', client_data.email)
+        .single();
 
-      if (clientError) {
-        console.error('Error creating client:', clientError)
-        // Don't fail the entire operation for client creation error
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows found
+        console.error('Error checking existing client:', checkError);
+        // Don't fail the entire operation for client check error
+      } else if (!existingClient) {
+        // Only create new client if one doesn't exist
+        const { error: clientError } = await supabaseAdmin
+          .from('clients')
+          .insert({
+            user_id: user.id,
+            name: client_data.name,
+            email: client_data.email,
+            company: client_data.company || null,
+            address: client_data.address || null
+          })
+
+        if (clientError) {
+          console.error('Error creating client:', clientError)
+          // Don't fail the entire operation for client creation error
+        }
       }
     }
 
@@ -202,7 +248,14 @@ export async function PUT(request: NextRequest) {
 
         // Create new scheduled reminders if enabled
         if (reminderSettings.enabled) {
-          await createScheduledReminders(invoiceId, reminderSettings, due_date);
+          await createScheduledReminders(
+            invoiceId, 
+            reminderSettings, 
+            due_date,
+            payment_terms,
+            status,
+            new Date().toISOString()
+          );
         }
       } catch (reminderError) {
         console.error('Error updating scheduled reminders:', reminderError);

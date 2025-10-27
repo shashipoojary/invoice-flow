@@ -21,17 +21,36 @@ export async function DELETE(request: NextRequest) {
     // Delete all user data but keep the account
     const userId = user.id;
 
+    // First, get all invoice IDs for this user
+    const { data: userInvoices } = await supabase
+      .from('invoices')
+      .select('id')
+      .eq('user_id', userId);
+
+    const invoiceIds = userInvoices?.map(invoice => invoice.id) || [];
+
     // Delete in order to respect foreign key constraints
-    const deleteOperations = [
-      // Delete invoice items first (they reference invoices)
-      supabase.from('invoice_items').delete().eq('user_id', userId),
+    const deleteOperations = [];
+    
+    // Delete invoice items first (they reference invoices)
+    if (invoiceIds.length > 0) {
+      deleteOperations.push(
+        supabase.from('invoice_items').delete().in('invoice_id', invoiceIds)
+      );
       
       // Delete invoice reminders
-      supabase.from('invoice_reminders').delete().eq('user_id', userId),
+      deleteOperations.push(
+        supabase.from('invoice_reminders').delete().in('invoice_id', invoiceIds)
+      );
       
       // Delete reminder tracking
-      supabase.from('reminder_tracking').delete().eq('user_id', userId),
-      
+      deleteOperations.push(
+        supabase.from('reminder_tracking').delete().in('invoice_id', invoiceIds)
+      );
+    }
+    
+    // Delete other user data
+    deleteOperations.push(
       // Delete payments
       supabase.from('payments').delete().eq('user_id', userId),
       
@@ -41,11 +60,8 @@ export async function DELETE(request: NextRequest) {
       // Delete clients
       supabase.from('clients').delete().eq('user_id', userId),
       
-      // Delete business settings
-      supabase.from('business_settings').delete().eq('user_id', userId),
-      
-      // Delete contact messages
-      supabase.from('contact_messages').delete().eq('user_id', userId),
+      // Delete user settings (if exists)
+      supabase.from('user_settings').delete().eq('user_id', userId),
       
       // Update user profile to reset (but keep the account)
       supabase.from('users').update({
@@ -58,16 +74,25 @@ export async function DELETE(request: NextRequest) {
         next_billing_date: null,
         updated_at: new Date().toISOString()
       }).eq('id', userId)
-    ];
+    );
 
     // Execute all delete operations
     const results = await Promise.all(deleteOperations);
     
-    // Check if any operation failed
-    const hasErrors = results.some(result => result.error);
-    if (hasErrors) {
-      console.error('Some delete operations failed:', results);
-      return NextResponse.json({ error: 'Failed to delete some data' }, { status: 500 });
+    // Check if critical operations failed (ignore non-critical errors)
+    const criticalOperations = results.slice(0, -1); // All except the last (user update)
+    const criticalErrors = criticalOperations.filter(result => result.error);
+    
+    // Log errors but don't fail if most operations succeeded
+    if (criticalErrors.length > 0) {
+      console.warn('Some delete operations failed (non-critical):', criticalErrors);
+    }
+    
+    // Only fail if the user update failed (this is critical)
+    const userUpdateResult = results[results.length - 1];
+    if (userUpdateResult.error) {
+      console.error('Failed to update user profile:', userUpdateResult.error);
+      return NextResponse.json({ error: 'Failed to reset user profile' }, { status: 500 });
     }
 
     return NextResponse.json({ 

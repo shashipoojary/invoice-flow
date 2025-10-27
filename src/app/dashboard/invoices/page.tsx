@@ -963,36 +963,6 @@ function InvoicesContent() {
                 <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
                   Invoices
                 </h2>
-                  {statusFilter && !searchParams.get('status') && (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-gray-200 rounded-md shadow-sm">
-                        <div className={`w-1.5 h-1.5 rounded-full ${
-                          statusFilter === 'paid' ? 'bg-emerald-500' :
-                          statusFilter === 'pending' ? 'bg-orange-500' :
-                          statusFilter === 'overdue' ? 'bg-red-500' :
-                          'bg-gray-500'
-                        }`}></div>
-                        <span className="text-xs font-medium text-gray-700">
-                          {statusFilter === 'paid' ? 'Paid' :
-                           statusFilter === 'pending' ? 'Pending' :
-                           statusFilter === 'overdue' ? 'Overdue' :
-                           'Filtered'}
-                        </span>
-                        <button
-                          onClick={() => {
-                            setStatusFilter('');
-                            setFilterAppliedManually(false);
-                            window.history.replaceState({}, '', '/dashboard/invoices');
-                          }}
-                          className="ml-1 p-0.5 hover:bg-gray-100 rounded-full transition-colors"
-                        >
-                          <svg className="w-3 h-3 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
                 {user ? (
                   <button
@@ -1046,15 +1016,10 @@ function InvoicesContent() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                       </svg>
                       Filter
-                      {statusFilter && !searchParams.get('status') && (
-                        <span className="bg-indigo-100 text-indigo-800 text-xs px-2 py-0.5 rounded-full">
-                          {statusFilter}
-                        </span>
-                      )}
                     </button>
 
                     {/* Clear Filters */}
-                    {(searchQuery || (statusFilter && !searchParams.get('status'))) && (
+                    {(searchQuery || (statusFilter && filterAppliedManually)) && (
                       <button
                         onClick={() => {
                           setSearchQuery('');

@@ -827,49 +827,6 @@ export default function ProfilePage() {
                 </div>
               </label>
 
-              <label className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                <input
-                  type="radio"
-                  name="format"
-                  value="pdf"
-                  checked={selectedFormat === 'pdf'}
-                  onChange={(e) => setSelectedFormat(e.target.value)}
-                  className="w-4 h-4 text-indigo-600"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-                      <span className="text-red-600 font-bold text-sm">PDF</span>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">PDF Document</p>
-                      <p className="text-sm text-gray-500">Professional formatted report for sharing</p>
-                    </div>
-                  </div>
-                </div>
-              </label>
-
-              <label className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                <input
-                  type="radio"
-                  name="format"
-                  value="xlsx"
-                  checked={selectedFormat === 'xlsx'}
-                  onChange={(e) => setSelectedFormat(e.target.value)}
-                  className="w-4 h-4 text-indigo-600"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <span className="text-blue-600 font-bold text-xs">XLSX</span>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">Excel Workbook</p>
-                      <p className="text-sm text-gray-500">Native Excel format with multiple sheets</p>
-                    </div>
-                  </div>
-                </div>
-              </label>
 
               <label className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
                 <input

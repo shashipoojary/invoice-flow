@@ -32,6 +32,7 @@ interface ReminderHistory {
   email_id: string;
   reminder_status: 'sent' | 'failed' | 'scheduled' | 'delivered' | 'bounced';
   failure_reason?: string;
+  created_at?: string;
   invoice: {
     invoice_number: string;
     total: number;
@@ -74,11 +75,12 @@ export default function ReminderHistoryPage() {
         .from('invoice_reminders')
         .select(`
           *,
-          invoices (
+          invoices!inner (
             invoice_number,
             total,
             due_date,
             status,
+            user_id,
             clients (
               name,
               email,
@@ -100,6 +102,8 @@ export default function ReminderHistoryPage() {
       }
 
       if (reminderData) {
+        console.log('🔍 Debug - Raw reminder data:', reminderData);
+        
         const formattedReminders: ReminderHistory[] = reminderData.map(reminder => ({
           id: reminder.id,
           invoice_id: reminder.invoice_id,
@@ -109,6 +113,7 @@ export default function ReminderHistoryPage() {
           email_id: reminder.email_id,
           reminder_status: reminder.reminder_status || 'sent',
           failure_reason: reminder.failure_reason,
+          created_at: reminder.created_at,
           invoice: {
             invoice_number: reminder.invoices.invoice_number,
             total: reminder.invoices.total,
@@ -118,7 +123,10 @@ export default function ReminderHistoryPage() {
           }
         }));
         
+        console.log('🔍 Debug - Formatted reminders:', formattedReminders);
         setReminders(formattedReminders);
+      } else {
+        console.log('🔍 Debug - No reminder data found');
       }
 
     } catch (error) {
@@ -141,18 +149,36 @@ export default function ReminderHistoryPage() {
       reminder.invoice.clients.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       reminder.invoice.clients.email.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // For scheduled reminders, only show those that are coming up soon (within next 7 days)
+    // For scheduled reminders, only show next day's reminders
     if (reminder.reminder_status === 'scheduled') {
-      const scheduledDate = new Date(reminder.sent_at);
-      const now = new Date();
-      const daysUntilScheduled = Math.ceil((scheduledDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
       
-      // Only show if scheduled within next 7 days
-      return matchesSearch && daysUntilScheduled >= 0 && daysUntilScheduled <= 7;
+      const reminderDate = new Date(reminder.sent_at);
+      const isNextDay = reminderDate.toDateString() === tomorrow.toDateString();
+      
+      return matchesSearch && isNextDay;
     }
 
-    // For other statuses (sent, delivered, failed, bounced), show all
+    // For sent/failed/delivered/bounced, show all
     return matchesSearch;
+  }).sort((a, b) => {
+    // Sort by status priority: sent/failed first, then scheduled
+    const statusPriority = { 'sent': 1, 'delivered': 1, 'failed': 1, 'bounced': 1, 'scheduled': 2 };
+    const aPriority = statusPriority[a.reminder_status] || 3;
+    const bPriority = statusPriority[b.reminder_status] || 3;
+    
+    if (aPriority !== bPriority) {
+      return aPriority - bPriority;
+    }
+    
+    // Within same status, sort by date (newest first for sent/failed, earliest first for scheduled)
+    if (a.reminder_status === 'scheduled' && b.reminder_status === 'scheduled') {
+      return new Date(a.sent_at).getTime() - new Date(b.sent_at).getTime();
+    }
+    
+    return new Date(b.sent_at || b.created_at || 0).getTime() - new Date(a.sent_at || a.created_at || 0).getTime();
   });
 
   const getReminderTypeColor = (type: string) => {
@@ -460,7 +486,7 @@ export default function ReminderHistoryPage() {
                       No reminders found
                     </h3>
                     <p className="mt-1 text-sm text-gray-500">
-                      {searchTerm ? 'Try adjusting your search terms.' : 'No automated reminders have been sent yet.'}
+                      {searchTerm ? 'Try adjusting your search terms.' : 'No reminders found. Sent/failed reminders and next day scheduled reminders will appear here.'}
                     </p>
                   </div>
                 </div>
@@ -477,7 +503,7 @@ export default function ReminderHistoryPage() {
         <div className="fixed inset-0 z-50 overflow-hidden">
           {/* Backdrop */}
           <div 
-            className="absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300"
+            className="absolute inset-0 backdrop-blur-sm bg-white/20 transition-all duration-300"
             onClick={closeReminderModal}
           />
           

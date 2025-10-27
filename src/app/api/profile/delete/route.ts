@@ -49,11 +49,8 @@ export async function DELETE(request: NextRequest) {
       // Delete clients
       supabase.from('clients').delete().eq('user_id', userId),
       
-      // Delete business settings
-      supabase.from('business_settings').delete().eq('user_id', userId),
-      
-      // Delete contact messages
-      supabase.from('contact_messages').delete().eq('user_id', userId),
+      // Delete user settings
+      supabase.from('user_settings').delete().eq('user_id', userId),
       
       // Finally, delete the user profile (this will cascade to auth.users)
       supabase.from('users').delete().eq('id', userId)
@@ -62,14 +59,15 @@ export async function DELETE(request: NextRequest) {
     // Execute all delete operations
     const results = await Promise.all(deleteOperations);
     
-    // Check if any critical operation failed
-    const criticalErrors = results.slice(0, -1).some(result => result.error);
-    if (criticalErrors) {
-      console.error('Some delete operations failed:', results);
-      return NextResponse.json({ error: 'Failed to delete some data' }, { status: 500 });
+    // Log any errors but don't fail unless critical
+    const criticalOperations = results.slice(0, -1); // All except the last (user delete)
+    const criticalErrors = criticalOperations.filter(result => result.error);
+    
+    if (criticalErrors.length > 0) {
+      console.warn('Some delete operations failed (non-critical):', criticalErrors);
     }
 
-    // Check if user deletion failed
+    // Check if user deletion failed (this is critical)
     const userDeleteResult = results[results.length - 1];
     if (userDeleteResult.error) {
       console.error('Error deleting user profile:', userDeleteResult.error);

@@ -1178,7 +1178,7 @@ export default function DashboardOverview() {
                   
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <button
-                      onClick={() => setShowFastInvoice(true)}
+                      onClick={handleCreateInvoice}
                       className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                     >
                       <Sparkles className="h-4 w-4" />
@@ -1701,7 +1701,7 @@ export default function DashboardOverview() {
                   </p>
                   
                   <button
-                    onClick={() => setShowFastInvoice(true)}
+                    onClick={handleCreateInvoice}
                     className="inline-flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
                   >
                     <Sparkles className="h-4 w-4" />

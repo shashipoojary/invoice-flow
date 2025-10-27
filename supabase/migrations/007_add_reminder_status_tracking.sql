@@ -138,18 +138,30 @@ BEGIN
     -- Handle custom rules
     custom_rules := reminder_settings->'customRules';
     
-    FOR rule IN SELECT * FROM jsonb_array_elements(custom_rules)
-    LOOP
-      IF (rule->>'enabled')::boolean THEN
-        IF (rule->>'type') = 'before' AND days_until_due <= (rule->>'days')::INTEGER AND days_until_due > 0 THEN
-          INSERT INTO invoice_reminders (invoice_id, reminder_type, overdue_days, reminder_status)
-          VALUES (invoice_uuid, COALESCE(rule->>'reminderType', 'friendly'), 0, 'scheduled');
-        ELSIF (rule->>'type') = 'after' AND days_overdue >= (rule->>'days')::INTEGER THEN
-          INSERT INTO invoice_reminders (invoice_id, reminder_type, overdue_days, reminder_status)
-          VALUES (invoice_uuid, COALESCE(rule->>'reminderType', 'friendly'), days_overdue, 'scheduled');
+    -- Create a sequence for reminder types
+    DECLARE
+      rule_index INTEGER := 0;
+      reminder_types TEXT[] := ARRAY['friendly', 'polite', 'firm', 'urgent'];
+    BEGIN
+      FOR rule IN SELECT * FROM jsonb_array_elements(custom_rules)
+      LOOP
+        IF (rule->>'enabled')::boolean THEN
+          -- Determine reminder type based on sequence
+          rule_index := rule_index + 1;
+          DECLARE
+            reminder_type TEXT := reminder_types[LEAST(rule_index, array_length(reminder_types, 1))];
+          BEGIN
+            IF (rule->>'type') = 'before' AND days_until_due <= (rule->>'days')::INTEGER AND days_until_due > 0 THEN
+              INSERT INTO invoice_reminders (invoice_id, reminder_type, overdue_days, reminder_status)
+              VALUES (invoice_uuid, reminder_type, 0, 'scheduled');
+            ELSIF (rule->>'type') = 'after' AND days_overdue >= (rule->>'days')::INTEGER THEN
+              INSERT INTO invoice_reminders (invoice_id, reminder_type, overdue_days, reminder_status)
+              VALUES (invoice_uuid, reminder_type, days_overdue, 'scheduled');
+            END IF;
+          END;
         END IF;
-      END IF;
-    END LOOP;
+      END LOOP;
+    END;
   END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

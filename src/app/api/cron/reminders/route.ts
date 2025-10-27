@@ -14,184 +14,123 @@ export async function POST(request: NextRequest) {
 
     console.log('🔄 Starting automated reminder cron job...');
 
-    // Get all invoices with enabled reminders that are due for reminders
-    const { data: invoices, error: invoicesError } = await supabaseAdmin
-      .from('invoices')
+    // Get all scheduled reminders that are due to be sent today
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+    const { data: scheduledReminders, error: remindersError } = await supabaseAdmin
+      .from('invoice_reminders')
       .select(`
-        id,
-        invoice_number,
-        due_date,
-        status,
-        total,
-        public_token,
-        reminder_count,
-        last_reminder_sent,
-        reminder_settings,
-        clients (
-          name,
-          email,
-          company,
-          phone,
-          address
-        ),
-        user_id
+        *,
+        invoices!inner (
+          id,
+          invoice_number,
+          due_date,
+          status,
+          total,
+          public_token,
+          reminder_count,
+          last_reminder_sent,
+          user_id,
+          clients (
+            name,
+            email,
+            company,
+            phone,
+            address
+          )
+        )
       `)
-      .eq('status', 'sent')
-      .not('reminder_settings', 'is', null);
+      .eq('reminder_status', 'scheduled')
+      .eq('invoices.status', 'sent')
+      .gte('sent_at', todayStart.toISOString())
+      .lt('sent_at', todayEnd.toISOString());
 
-    if (invoicesError) {
-      console.error('Error fetching invoices:', invoicesError);
-      return NextResponse.json({ error: 'Failed to fetch invoices' }, { status: 500 });
+    if (remindersError) {
+      console.error('Error fetching scheduled reminders:', remindersError);
+      return NextResponse.json({ error: 'Failed to fetch scheduled reminders' }, { status: 500 });
     }
 
-    if (!invoices || invoices.length === 0) {
-      console.log('✅ No invoices found for reminders');
-      return NextResponse.json({ message: 'No invoices found for reminders' });
+    if (!scheduledReminders || scheduledReminders.length === 0) {
+      console.log('✅ No scheduled reminders found for today');
+      return NextResponse.json({ message: 'No scheduled reminders found for today' });
     }
 
-    console.log(`📊 Found ${invoices.length} invoices to check for reminders`);
+    console.log(`📊 Found ${scheduledReminders.length} scheduled reminders to send today`);
 
     let remindersSent = 0;
-    let remindersScheduled = 0;
     let errors = 0;
 
-    for (const invoice of invoices) {
+    for (const reminder of scheduledReminders) {
       try {
-        // Parse reminder settings
-        let reminderSettings = null;
-        try {
-          reminderSettings = typeof invoice.reminder_settings === 'string' 
-            ? JSON.parse(invoice.reminder_settings) 
-            : invoice.reminder_settings;
-        } catch (e) {
-          console.log(`⚠️ Invalid reminder settings for invoice ${invoice.invoice_number}`);
-          continue;
-        }
+        const invoice = reminder.invoices;
+        console.log(`📧 Processing scheduled reminder for ${invoice.invoice_number} (${reminder.reminder_type})`);
+        
+        // Send the reminder email
+        const emailResult = await sendReminderEmail(invoice, reminder.reminder_type, `Scheduled ${reminder.reminder_type} reminder`);
+        
+        if (emailResult.success) {
+          // Update the reminder status to sent
+          const { error: updateError } = await supabaseAdmin
+            .from('invoice_reminders')
+            .update({
+              reminder_status: 'sent',
+              email_id: emailResult.emailId,
+              sent_at: new Date().toISOString()
+            })
+            .eq('id', reminder.id);
 
-        if (!reminderSettings || !reminderSettings.enabled) {
-          continue;
-        }
-
-        const dueDate = new Date(invoice.due_date);
-        const today = new Date();
-        const isOverdue = today > dueDate;
-        const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-        const daysUntilDue = Math.floor((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-        // Determine if a reminder should be sent
-        let shouldSendReminder = false;
-        let reminderType = 'friendly';
-        let reminderReason = '';
-
-        if (reminderSettings.useSystemDefaults) {
-          // Use system defaults: 1 day after due, 7 days after due, 14 days after due
-          if (isOverdue && daysOverdue >= 1 && daysOverdue <= 2) {
-            shouldSendReminder = true;
-            reminderType = 'friendly';
-            reminderReason = 'First overdue reminder (system default)';
-          } else if (isOverdue && daysOverdue >= 7 && daysOverdue <= 8) {
-            shouldSendReminder = true;
-            reminderType = 'polite';
-            reminderReason = 'Second overdue reminder (system default)';
-          } else if (isOverdue && daysOverdue >= 14 && daysOverdue <= 15) {
-            shouldSendReminder = true;
-            reminderType = 'firm';
-            reminderReason = 'Final overdue reminder (system default)';
+          if (updateError) {
+            console.error(`Error updating reminder status for ${invoice.invoice_number}:`, updateError);
           }
+
+          // Update invoice reminder count
+          await supabaseAdmin
+            .from('invoices')
+            .update({
+              reminder_count: (invoice.reminder_count || 0) + 1,
+              last_reminder_sent: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', invoice.id);
+
+          remindersSent++;
+          console.log(`✅ Reminder sent for ${invoice.invoice_number}`);
         } else {
-          // Use custom rules
-          const customRules = reminderSettings.customRules || reminderSettings.rules || [];
-          const enabledRules = customRules.filter((rule: any) => rule.enabled);
+          // Mark as failed
+          await supabaseAdmin
+            .from('invoice_reminders')
+            .update({
+              reminder_status: 'failed',
+              failure_reason: (emailResult.error as any)?.message || 'Email sending failed'
+            })
+            .eq('id', reminder.id);
 
-          for (const rule of enabledRules) {
-            if (rule.type === 'before' && daysUntilDue <= rule.days && daysUntilDue > 0) {
-              shouldSendReminder = true;
-              reminderType = rule.reminderType || 'friendly';
-              reminderReason = `Before due date reminder (${rule.days} days before)`;
-              break;
-            } else if (rule.type === 'after' && isOverdue && daysOverdue >= rule.days) {
-              shouldSendReminder = true;
-              reminderType = rule.reminderType || 'friendly';
-              reminderReason = `After due date reminder (${rule.days} days after)`;
-              break;
-            }
-          }
-        }
-
-        // Check if we already sent a reminder recently (within 24 hours)
-        if (shouldSendReminder && invoice.last_reminder_sent) {
-          const lastReminderDate = new Date(invoice.last_reminder_sent);
-          const hoursSinceLastReminder = (today.getTime() - lastReminderDate.getTime()) / (1000 * 60 * 60);
-          
-          if (hoursSinceLastReminder < 24) {
-            console.log(`⏭️ Skipping ${invoice.invoice_number} - reminder sent recently`);
-            continue;
-          }
-        }
-
-        if (shouldSendReminder) {
-          console.log(`📧 Sending reminder for ${invoice.invoice_number}: ${reminderReason}`);
-          
-          // Send the reminder email
-          const emailResult = await sendReminderEmail(invoice, reminderType, reminderReason);
-          
-          if (emailResult.success) {
-            // Record the reminder in the database
-            const { error: reminderError } = await supabaseAdmin
-              .from('invoice_reminders')
-              .insert({
-                invoice_id: invoice.id,
-                reminder_type: reminderType,
-                overdue_days: daysOverdue,
-                email_id: emailResult.emailId,
-                reminder_status: 'sent'
-              });
-
-            if (reminderError) {
-              console.error(`Error recording reminder for ${invoice.invoice_number}:`, reminderError);
-            }
-
-            // Update invoice reminder count
-            await supabaseAdmin
-              .from('invoices')
-              .update({
-                reminder_count: (invoice.reminder_count || 0) + 1,
-                last_reminder_sent: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', invoice.id);
-
-            remindersSent++;
-            console.log(`✅ Reminder sent for ${invoice.invoice_number}`);
-          } else {
-            console.error(`❌ Failed to send reminder for ${invoice.invoice_number}:`, emailResult.error);
-            errors++;
-          }
-        } else {
-          // Schedule for future if it's a "before due" reminder
-          if (!isOverdue && reminderSettings.customRules) {
-            const beforeRules = reminderSettings.customRules.filter((rule: any) => 
-              rule.enabled && rule.type === 'before' && daysUntilDue <= rule.days
-            );
-            
-            if (beforeRules.length > 0) {
-              remindersScheduled++;
-              console.log(`📅 Scheduled reminder for ${invoice.invoice_number} (${daysUntilDue} days until due)`);
-            }
-          }
+          console.error(`❌ Failed to send reminder for ${invoice.invoice_number}:`, emailResult.error);
+          errors++;
         }
 
       } catch (error) {
-        console.error(`Error processing invoice ${invoice.invoice_number}:`, error);
+        console.error(`Error processing reminder for ${reminder.invoices.invoice_number}:`, error);
+        
+        // Mark as failed
+        await supabaseAdmin
+          .from('invoice_reminders')
+          .update({
+            reminder_status: 'failed',
+            failure_reason: error instanceof Error ? error.message : 'Unknown error'
+          })
+          .eq('id', reminder.id);
+        
         errors++;
       }
     }
 
     const result = {
       message: 'Automated reminder cron job completed',
-      invoicesProcessed: invoices.length,
+      scheduledRemindersFound: scheduledReminders.length,
       remindersSent,
-      remindersScheduled,
       errors
     };
 

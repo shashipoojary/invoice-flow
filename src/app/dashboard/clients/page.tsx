@@ -45,6 +45,7 @@ export default function ClientsPage() {
     setShowCreateInvoice(true);
   }, []);
 
+
   // Client handler functions
   const handleViewClient = useCallback((client: Client) => {
     setSelectedClient(client);
@@ -184,6 +185,18 @@ export default function ClientsPage() {
         try {
           // Call getAuthHeaders directly in each fetch to avoid dependency issues
           const headers = await getAuthHeaders();
+          
+          // First, cleanup any existing duplicates
+          try {
+            await fetch('/api/auto-cleanup-duplicates', { 
+              method: 'POST', 
+              headers,
+              cache: 'no-store' 
+            });
+          } catch (cleanupError) {
+            console.warn('Cleanup duplicates failed:', cleanupError);
+            // Don't fail the entire operation if cleanup fails
+          }
           
           // Fetch clients
           const response = await fetch('/api/clients', { headers, cache: 'no-store' });

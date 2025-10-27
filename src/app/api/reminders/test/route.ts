@@ -78,16 +78,20 @@ export async function POST(request: NextRequest) {
       // Custom rules
       const customRules = reminderSettings.customRules || reminderSettings.rules || [];
       const enabledRules = customRules.filter((rule: any) => rule.enabled);
+      const reminderTypes = ['friendly', 'polite', 'firm', 'urgent'];
 
-      for (const rule of enabledRules) {
+      for (let i = 0; i < enabledRules.length; i++) {
+        const rule = enabledRules[i];
+        const reminderTypeForRule = reminderTypes[Math.min(i, reminderTypes.length - 1)];
+        
         if (rule.type === 'before' && daysUntilDue <= rule.days && daysUntilDue > 0) {
           shouldSendReminder = true;
-          reminderType = rule.reminderType || 'friendly';
+          reminderType = reminderTypeForRule;
           reminderReason = `Before due date reminder (${rule.days} days before)`;
           break;
         } else if (rule.type === 'after' && isOverdue && daysOverdue >= rule.days) {
           shouldSendReminder = true;
-          reminderType = rule.reminderType || 'friendly';
+          reminderType = reminderTypeForRule;
           reminderReason = `After due date reminder (${rule.days} days after)`;
           break;
         }
