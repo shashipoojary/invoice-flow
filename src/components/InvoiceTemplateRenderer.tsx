@@ -358,11 +358,6 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                           {invoice.daysOverdue} days overdue
                         </div>
                       )}
-                      {invoice.status === 'due today' && (
-                        <div className="mt-1 text-xs sm:text-sm text-orange-600 font-medium">
-                          Due today
-                        </div>
-                      )}
                 </div>
               </div>
             </div>
@@ -831,11 +826,6 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                           {invoice.daysOverdue} days overdue
                         </div>
                       )}
-                      {invoice.status === 'due today' && (
-                        <div className="mt-1 text-xs sm:text-sm text-orange-600 font-medium">
-                          Due today
-                        </div>
-                      )}
                 </div>
               </div>
             </div>
@@ -1302,11 +1292,6 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                       {invoice.isOverdue && (
                         <div className="mt-1 text-xs sm:text-sm text-red-600 font-medium">
                           {invoice.daysOverdue} days overdue
-                        </div>
-                      )}
-                      {invoice.status === 'due today' && (
-                        <div className="mt-1 text-xs sm:text-sm text-orange-600 font-medium">
-                          Due today
                         </div>
                       )}
                 </div>
