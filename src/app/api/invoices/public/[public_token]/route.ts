@@ -127,8 +127,14 @@ export async function GET(
     // Calculate overdue status and late fees
     const currentDate = new Date()
     const dueDate = new Date(invoice.due_date)
-    const isOverdue = currentDate > dueDate && invoice.status !== 'paid'
-    const isDueToday = currentDate.toDateString() === dueDate.toDateString() && invoice.status !== 'paid'
+    
+    // Set time to start of day for accurate date comparison
+    const todayStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate())
+    const dueDateStart = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate())
+    
+    // Invoice is overdue only if due date has passed (not on the due date itself)
+    const isOverdue = dueDateStart < todayStart && invoice.status !== 'paid'
+    const isDueToday = dueDateStart.getTime() === todayStart.getTime() && invoice.status !== 'paid'
     
     // Parse late fees settings from database
     let lateFeesSettings = null
@@ -144,7 +150,7 @@ export async function GET(
     // Calculate late fees only if user has enabled them and invoice is overdue
     let lateFees = 0
     if (isOverdue && invoice.status !== 'paid' && lateFeesSettings && lateFeesSettings.enabled) {
-      const daysOverdue = Math.ceil((currentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))
+      const daysOverdue = Math.round((todayStart.getTime() - dueDateStart.getTime()) / (1000 * 60 * 60 * 24))
       
       // Check if grace period has passed
       if (daysOverdue > (lateFeesSettings.gracePeriod || 0)) {
@@ -185,7 +191,7 @@ export async function GET(
         totalWithLateFees: (invoice.total || 0) + lateFees,
         status: isOverdue && invoice.status !== 'paid' ? 'overdue' : (isDueToday ? 'due today' : (invoice.status === 'sent' ? 'pending' : invoice.status)),
         isOverdue: isOverdue,
-        daysOverdue: isOverdue ? Math.ceil((currentDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)) : 0,
+        daysOverdue: isOverdue ? Math.round((todayStart.getTime() - dueDateStart.getTime()) / (1000 * 60 * 60 * 24)) : 0,
         notes: invoice.notes,
         created_at: invoice.created_at,
         theme: (() => {
