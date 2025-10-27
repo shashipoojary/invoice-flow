@@ -180,8 +180,12 @@ function InvoicesContent() {
       effectiveDueDate.setDate(effectiveDueDate.getDate() + 1); // Due the day after sending
     }
     
-    const diffTime = effectiveDueDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    // Set time to start of day for accurate date comparison
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const dueDateStart = new Date(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate());
+    
+    const diffTime = dueDateStart.getTime() - todayStart.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     
     // Draft invoices should never be marked as overdue, even if past due date
     if (invoiceStatus === 'draft') {
@@ -197,8 +201,10 @@ function InvoicesContent() {
     }
     
     // Only sent/pending invoices can be overdue
-    if (diffDays <= 0) {
+    if (diffDays < 0) {
       return { status: 'overdue', days: Math.abs(diffDays), color: 'text-red-600 dark:text-red-400' };
+    } else if (diffDays === 0) {
+      return { status: 'due-today', days: 0, color: 'text-orange-500 dark:text-orange-400' };
     } else if (diffDays <= 3) {
       return { status: 'due-soon', days: diffDays, color: 'text-yellow-600 dark:text-yellow-400' };
     } else {
@@ -272,9 +278,10 @@ function InvoicesContent() {
             effectiveDueDate.setDate(effectiveDueDate.getDate() + 1); // Due the day after sending
           }
           
-          today.setHours(0, 0, 0, 0);
-          effectiveDueDate.setHours(0, 0, 0, 0);
-          return effectiveDueDate < today;
+          // Set time to start of day for accurate date comparison
+          const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          const dueDateStart = new Date(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate());
+          return dueDateStart < todayStart; // Only overdue if due date has passed (not on the due date itself)
         } else if (statusFilter === 'draft') {
           return invoice.status === 'draft';
         }
@@ -308,11 +315,15 @@ function InvoicesContent() {
       effectiveDueDate.setDate(effectiveDueDate.getDate() + 1); // Due the day after sending
     }
     
-    const diffTime = effectiveDueDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    // Set time to start of day for accurate date comparison
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const dueDateStart = new Date(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate());
+    
+    const diffTime = dueDateStart.getTime() - todayStart.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     
     // Only calculate late fees if invoice is overdue and late fees are enabled
-    if (diffDays <= 0 && invoice.lateFees?.enabled) {
+    if (diffDays < 0 && invoice.lateFees?.enabled) {
       const overdueDays = Math.abs(diffDays);
       const gracePeriod = invoice.lateFees.gracePeriod || 0;
       

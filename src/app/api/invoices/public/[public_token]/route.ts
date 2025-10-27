@@ -127,7 +127,7 @@ export async function GET(
     // Calculate overdue status and late fees
     const currentDate = new Date()
     const dueDate = new Date(invoice.due_date)
-    const isOverdue = currentDate >= dueDate && invoice.status !== 'paid'
+    const isOverdue = currentDate > dueDate && invoice.status !== 'paid'
     const isDueToday = currentDate.toDateString() === dueDate.toDateString() && invoice.status !== 'paid'
     
     // Parse late fees settings from database

@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     // Calculate days
     const dueDate = new Date(invoice.due_date);
     const today = new Date();
-    const isOverdue = today >= dueDate;
+    const isOverdue = today > dueDate;
     const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
     const daysUntilDue = Math.floor((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
