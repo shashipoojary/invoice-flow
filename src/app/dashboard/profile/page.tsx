@@ -1235,6 +1235,7 @@ export default function ProfilePage() {
             setShowFastInvoice(false);
             setSelectedInvoice(null);
           }}
+          user={user!}
           onSuccess={() => {
             setShowFastInvoice(false);
             setSelectedInvoice(null);

@@ -124,7 +124,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Return file based on format
-    return new NextResponse(exportData, {
+    const body = typeof exportData === 'string'
+      ? exportData
+      : (() => {
+          const u8 = exportData as Uint8Array;
+          return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength);
+        })();
+
+    return new Response(body as unknown as BodyInit, {
       headers: {
         'Content-Type': contentType,
         'Content-Disposition': `attachment; filename="business-report-${new Date().toISOString().split('T')[0]}.${fileExtension}"`

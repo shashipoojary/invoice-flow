@@ -163,7 +163,7 @@ export default function DashboardOverview() {
 
   const getDueDateStatus = useCallback((dueDate: string, invoiceStatus: string, paymentTerms?: { enabled: boolean; terms: string }, updatedAt?: string) => {
     const today = new Date();
-    let effectiveDueDate = parseDateOnly(dueDate);
+    const effectiveDueDate = parseDateOnly(dueDate);
     
     // Note: "Due on Receipt" logic disabled to match public invoice page behavior
     // The public invoice page uses the raw due_date directly without "Due on Receipt" adjustments
@@ -950,6 +950,8 @@ export default function DashboardOverview() {
     </div>
     );
   });
+
+  InvoiceCard.displayName = 'InvoiceCard';
 
 
 

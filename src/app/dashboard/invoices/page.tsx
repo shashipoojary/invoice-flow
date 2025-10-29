@@ -184,7 +184,7 @@ function InvoicesContent(): React.JSX.Element {
 
   const getDueDateStatus = useCallback((dueDate: string, invoiceStatus: string, paymentTerms?: { enabled: boolean; terms: string }, updatedAt?: string) => {
     const today = new Date();
-    let effectiveDueDate = parseDateOnly(dueDate);
+    const effectiveDueDate = parseDateOnly(dueDate);
     
     
     // Note: "Due on Receipt" logic disabled to match public invoice page behavior
@@ -875,6 +875,8 @@ function InvoicesContent(): React.JSX.Element {
     </div>
     );
   });
+
+  InvoiceCard.displayName = 'InvoiceCard';
 
   // Settings are now loaded by SettingsContext
 
