@@ -2,7 +2,6 @@
 
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export default function PrivacyPage() {
@@ -10,12 +9,9 @@ export default function PrivacyPage() {
 
 
   return (
-    <div className="min-h-screen transition-colors duration-200 bg-white">
-      {/* Navigation */}
-      <Navbar />
-
+    <div className="min-h-screen transition-colors duration-200 bg-gradient-to-b from-white to-gray-50">
       {/* Main Content */}
-      <main className="pt-24">
+      <main className="pt-4">
         {/* Hero Section */}
         <section className="py-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">

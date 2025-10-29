@@ -1065,7 +1065,7 @@ export default function TestReminderTemplates() {
                     type="number"
                     value={overdueDays}
                     onChange={(e) => setOverdueDays(parseInt(e.target.value) || 0)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     min="0"
                     max="30"
                   />

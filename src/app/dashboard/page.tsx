@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   FileText, Users, 
@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
+import { useSettings } from '@/contexts/SettingsContext';
+import { useData } from '@/contexts/DataContext';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
 import FastInvoiceModal from '@/components/FastInvoiceModal';
@@ -21,15 +23,13 @@ import { Client, Invoice } from '@/types';
 export default function DashboardOverview() {
   const { user, loading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError, showWarning } = useToast();
+  const { settings } = useSettings();
+  const { invoices, clients, isLoadingInvoices, isLoadingClients, updateInvoice, deleteInvoice } = useData();
   const router = useRouter();
   
-  // State
+  // Local state for UI
   const [isLoadingStats, setIsLoadingStats] = useState(true);
-  const [isLoadingInvoices, setIsLoadingInvoices] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [hasLoadedData, setHasLoadedData] = useState(false);
   const [showFastInvoice, setShowFastInvoice] = useState(false);
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   const [showCreateClient, setShowCreateClient] = useState(false);
@@ -52,25 +52,7 @@ export default function DashboardOverview() {
     isLoading: false
   });
   
-  // Business settings state
-  const [settings, setSettings] = useState({
-    businessName: '',
-    businessEmail: '',
-    businessPhone: '',
-    website: '',
-    address: '',
-    logo: '',
-    paypalEmail: '',
-    cashappId: '',
-    venmoId: '',
-    googlePayUpi: '',
-    applePayId: '',
-    bankAccount: '',
-    bankIfscSwift: '',
-    bankIban: '',
-    stripeAccount: '',
-    paymentNotes: ''
-  });
+  // Business settings are now managed by SettingsContext
 
 
   // Create invoice handler
@@ -163,21 +145,32 @@ export default function DashboardOverview() {
   }, []);
 
   // Helper function to calculate due date status
+  // Parse a YYYY-MM-DD or MM/DD/YYYY date string as a local date (no timezone shifts)
+  const parseDateOnly = useCallback((input: string) => {
+    if (!input) return new Date(NaN);
+    // ISO date from DB e.g., 2025-10-27 - use UTC to avoid timezone issues
+    if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+      const [y, m, d] = input.split('-').map(Number);
+      return new Date(Date.UTC(y, m - 1, d));
+    }
+    // Fallback for MM/DD/YYYY
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(input)) {
+      const [mm, dd, yyyy] = input.split('/').map(Number);
+      return new Date(Date.UTC(yyyy, (mm as number) - 1, dd));
+    }
+    return new Date(input);
+  }, []);
+
   const getDueDateStatus = useCallback((dueDate: string, invoiceStatus: string, paymentTerms?: { enabled: boolean; terms: string }, updatedAt?: string) => {
     const today = new Date();
-    let effectiveDueDate = new Date(dueDate);
+    let effectiveDueDate = parseDateOnly(dueDate);
     
-    // For "Due on Receipt" invoices, the due date should be the day after the invoice was sent
-    if (paymentTerms?.enabled && paymentTerms.terms === 'Due on Receipt' && invoiceStatus !== 'draft') {
-      // Use updated_at as proxy for when invoice was sent, or fallback to due_date
-      const sentDate = updatedAt ? new Date(updatedAt) : new Date(dueDate);
-      effectiveDueDate = new Date(sentDate);
-      effectiveDueDate.setDate(effectiveDueDate.getDate() + 1); // Due the day after sending
-    }
+    // Note: "Due on Receipt" logic disabled to match public invoice page behavior
+    // The public invoice page uses the raw due_date directly without "Due on Receipt" adjustments
     
     // Set time to start of day for accurate date comparison
-    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const dueDateStart = new Date(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate());
+    const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+    const dueDateStart = new Date(Date.UTC(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate()));
     
     const diffTime = dueDateStart.getTime() - todayStart.getTime();
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
@@ -243,19 +236,12 @@ export default function DashboardOverview() {
     }
 
     const today = new Date();
-    let effectiveDueDate = new Date(invoice.dueDate);
+    // Use raw due_date directly (no "Due on Receipt" adjustments) to match invoice card logic
+    const effectiveDueDate = parseDateOnly(invoice.dueDate);
     
-    // For "Due on Receipt" invoices, the due date should be the day after the invoice was sent
-    if (invoice.paymentTerms?.enabled && invoice.paymentTerms.terms === 'Due on Receipt') {
-      // Use updated_at as proxy for when invoice was sent, or fallback to due_date
-      const sentDate = (invoice as any).updatedAt ? new Date((invoice as any).updatedAt) : new Date(invoice.dueDate);
-      effectiveDueDate = new Date(sentDate);
-      effectiveDueDate.setDate(effectiveDueDate.getDate() + 1); // Due the day after sending
-    }
-    
-    // Set time to start of day for accurate date comparison
-    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const dueDateStart = new Date(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate());
+    // Set time to start of day for accurate date comparison (use UTC to match parseDateOnly)
+    const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+    const dueDateStart = new Date(Date.UTC(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate()));
     
     const diffTime = dueDateStart.getTime() - todayStart.getTime();
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
@@ -291,7 +277,7 @@ export default function DashboardOverview() {
       totalPayable: invoice.total,
       overdueDays: 0
     };
-  }, []);
+  }, [parseDateOnly]);
 
   // Invoice handler functions
   const handleViewInvoice = useCallback((invoice: Invoice) => {
@@ -305,7 +291,6 @@ export default function DashboardOverview() {
     
     try {
       // Debug: Log current settings
-      console.log('PDF Download - Current Settings:', settings);
       
       // Prepare business settings for PDF
       const businessSettings = {
@@ -327,7 +312,6 @@ export default function DashboardOverview() {
       };
       
       // Debug: Log business settings being passed to PDF
-      console.log('PDF Download - Business Settings:', businessSettings);
 
       const { generateTemplatePDFBlob } = await import('@/lib/template-pdf-generator');
       
@@ -372,12 +356,6 @@ export default function DashboardOverview() {
       const headers = await getAuthHeaders();
       
       // Debug: Log the invoice data being sent
-      console.log('Send Invoice - Invoice data:', {
-        id: invoice.id,
-        clientEmail: invoice.clientEmail,
-        clientName: invoice.clientName,
-        client: invoice.client
-      });
       
       const response = await fetch(`/api/invoices/send`, {
         method: 'POST',
@@ -393,14 +371,8 @@ export default function DashboardOverview() {
       });
 
       if (response.ok) {
-        // Update local state instead of refetching
-        setInvoices(prevInvoices => 
-          prevInvoices.map(inv => 
-            inv.id === invoice.id 
-              ? { ...inv, status: 'pending' as const }
-              : inv
-          )
-        );
+        // Update global state
+        updateInvoice({ ...invoice, status: 'pending' as const });
         showSuccess('Invoice Sent', `Invoice ${invoice.invoiceNumber} has been sent successfully.`);
       } else {
         showError('Send Failed', 'Failed to send invoice. Please try again.');
@@ -450,14 +422,8 @@ export default function DashboardOverview() {
       });
 
       if (response.ok) {
-        // Update local state instead of refetching
-        setInvoices(prevInvoices => 
-          prevInvoices.map(inv => 
-            inv.id === invoice.id 
-              ? { ...inv, status: 'paid' as const }
-              : inv
-          )
-        );
+        // Update global state
+        updateInvoice({ ...invoice, status: 'paid' as const });
         showSuccess('Invoice Updated', `Invoice ${invoice.invoiceNumber} has been marked as paid.`);
         setConfirmationModal(prev => ({ ...prev, isOpen: false, isLoading: false }));
       } else {
@@ -496,9 +462,7 @@ export default function DashboardOverview() {
 
       if (response.ok) {
         // Update local state instead of refetching
-        setInvoices(prevInvoices => 
-          prevInvoices.filter(inv => inv.id !== invoice.id)
-        );
+        deleteInvoice(invoice.id);
         showSuccess('Invoice Deleted', `Invoice ${invoice.invoiceNumber} has been deleted successfully.`);
         setConfirmationModal(prev => ({ ...prev, isOpen: false, isLoading: false }));
       } else {
@@ -548,7 +512,7 @@ export default function DashboardOverview() {
                     {invoice.invoiceNumber}
                   </div>
                   <div className="text-xs" style={{color: '#6b7280'}}>
-                    {invoice.client.name}
+                    {invoice.client?.name || 'Unknown Client'}
                   </div>
                 </div>
               </div>
@@ -593,7 +557,7 @@ export default function DashboardOverview() {
               <div className="flex items-center space-x-1">
                 <button 
                   onClick={() => handleViewInvoice(invoice)}
-                  className="p-1.5 rounded-md transition-colors hover:bg-gray-100"
+                  className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
                   title="View"
                 >
                   <Eye className="h-4 w-4 text-gray-700" />
@@ -601,7 +565,7 @@ export default function DashboardOverview() {
                 <button 
                   onClick={() => handleDownloadPDF(invoice)}
                   disabled={loadingActions[`pdf-${invoice.id}`]}
-                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   title="PDF"
                 >
                   {loadingActions[`pdf-${invoice.id}`] ? (
@@ -614,7 +578,7 @@ export default function DashboardOverview() {
                   <button 
                     onClick={() => handleSendInvoice(invoice)}
                     disabled={loadingActions[`send-${invoice.id}`]}
-                    className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     title="Send"
                   >
                     {loadingActions[`send-${invoice.id}`] ? (
@@ -628,7 +592,7 @@ export default function DashboardOverview() {
                   <button 
                     onClick={() => handleMarkAsPaid(invoice)}
                     disabled={loadingActions[`paid-${invoice.id}`]}
-                    className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     title="Mark Paid"
                   >
                     {loadingActions[`paid-${invoice.id}`] ? (
@@ -656,7 +620,7 @@ export default function DashboardOverview() {
                   {invoice.invoiceNumber}
                 </div>
                   <div className="text-xs" style={{color: '#6b7280'}}>
-                    {invoice.client.name}
+                    {invoice.client?.name || 'Unknown Client'}
               </div>
                 </div>
               </div>
@@ -701,7 +665,7 @@ export default function DashboardOverview() {
               <div className="flex items-center space-x-1">
                 <button 
                   onClick={() => handleViewInvoice(invoice)}
-                  className="p-1.5 rounded-md transition-colors hover:bg-gray-100"
+                  className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
                   title="View"
                 >
                   <Eye className="h-4 w-4 text-gray-700" />
@@ -709,7 +673,7 @@ export default function DashboardOverview() {
                 <button 
                   onClick={() => handleDownloadPDF(invoice)}
                   disabled={loadingActions[`pdf-${invoice.id}`]}
-                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   title="PDF"
                 >
                   {loadingActions[`pdf-${invoice.id}`] ? (
@@ -722,7 +686,7 @@ export default function DashboardOverview() {
                   <button 
                     onClick={() => handleSendInvoice(invoice)}
                     disabled={loadingActions[`send-${invoice.id}`]}
-                    className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     title="Send"
                   >
                     {loadingActions[`send-${invoice.id}`] ? (
@@ -736,7 +700,7 @@ export default function DashboardOverview() {
                   <button 
                     onClick={() => handleMarkAsPaid(invoice)}
                     disabled={loadingActions[`paid-${invoice.id}`]}
-                    className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     title="Mark Paid"
                   >
                     {loadingActions[`paid-${invoice.id}`] ? (
@@ -754,8 +718,8 @@ export default function DashboardOverview() {
     );
   };
 
-  // Memoized Invoice Card Component
-  const InvoiceCard = useCallback(({ invoice, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, handleDeleteInvoice, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions }: {
+  // Memoized Invoice Card Component - optimized with React.memo
+  const InvoiceCard = React.memo(({ invoice, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, handleDeleteInvoice, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions }: {
     invoice: Invoice;
     handleViewInvoice: (invoice: Invoice) => void;
     handleDownloadPDF: (invoice: Invoice) => void;
@@ -774,6 +738,7 @@ export default function DashboardOverview() {
   }) => {
     const dueDateStatus = getDueDateStatus(invoice.dueDate, invoice.status, invoice.paymentTerms, (invoice as any).updatedAt);
     const dueCharges = calculateDueCharges(invoice);
+    
     
     // Show enhanced features for all invoice statuses
     const paymentTerms = formatPaymentTerms(invoice.paymentTerms);
@@ -816,11 +781,11 @@ export default function DashboardOverview() {
               {new Date(invoice.createdAt).toLocaleDateString()}
             </div>
             <div className="text-sm font-medium" style={{color: '#1f2937'}}>
-              {invoice.client.name}
+              {invoice.client?.name || 'Unknown Client'}
             </div>
-            {invoice.client.company && (
+            {invoice.client?.company && (
               <div className="text-sm" style={{color: '#374151'}}>
-                {invoice.client.company}
+                {invoice.client?.company}
               </div>
             )}
             <div className="flex items-center justify-between">
@@ -831,7 +796,7 @@ export default function DashboardOverview() {
                 {getStatusIcon(invoice.status)}
                 <span className="capitalize">{invoice.status}</span>
               </span>
-              {invoice.status === 'pending' && dueDateStatus.status === 'overdue' && (
+              {(invoice.status === 'pending' || invoice.status === 'sent') && dueDateStatus.status === 'overdue' && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border bg-red-50 text-red-800 border-red-300">
                   <AlertTriangle className="h-3 w-3" />
                   <span>{dueDateStatus.days}d overdue</span>
@@ -855,11 +820,11 @@ export default function DashboardOverview() {
             </div>
             <div>
                 <div className="text-sm font-medium" style={{color: '#1f2937'}}>
-                {invoice.client.name}
+                {invoice.client?.name || 'Unknown Client'}
               </div>
-                {invoice.client.company && (
+                {invoice.client?.company && (
                   <div className="text-sm" style={{color: '#374151'}}>
-                {invoice.client.company}
+                {invoice.client?.company}
               </div>
                 )}
             </div>
@@ -912,7 +877,7 @@ export default function DashboardOverview() {
         <div className="flex flex-wrap gap-2 pt-3">
           <button 
             onClick={() => handleViewInvoice(invoice)}
-            className="flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-300"
+            className="flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-300 cursor-pointer"
           >
             <Eye className="h-3.5 w-3.5" />
             <span>View</span>
@@ -920,7 +885,7 @@ export default function DashboardOverview() {
           <button 
             onClick={() => handleDownloadPDF(invoice)}
             disabled={loadingActions[`pdf-${invoice.id}`]}
-            className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             {loadingActions[`pdf-${invoice.id}`] ? (
               <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></div>
@@ -933,7 +898,7 @@ export default function DashboardOverview() {
             <button 
               onClick={() => handleSendInvoice(invoice)}
               disabled={loadingActions[`send-${invoice.id}`]}
-              className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-indigo-50 text-indigo-800 hover:bg-indigo-100 border border-indigo-300 ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-indigo-50 text-indigo-800 hover:bg-indigo-100 border border-indigo-300 ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             >
               {loadingActions[`send-${invoice.id}`] ? (
                 <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></div>
@@ -947,7 +912,7 @@ export default function DashboardOverview() {
             <button 
               onClick={() => handleMarkAsPaid(invoice)}
               disabled={loadingActions[`paid-${invoice.id}`]}
-              className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             >
               {loadingActions[`paid-${invoice.id}`] ? (
                 <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></div>
@@ -961,7 +926,7 @@ export default function DashboardOverview() {
             <>
               <button 
                 onClick={() => handleEditInvoice(invoice)}
-                className="flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-gray-50 text-gray-800 hover:bg-gray-100 border border-gray-300"
+                className="flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-gray-50 text-gray-800 hover:bg-gray-100 border border-gray-300 cursor-pointer"
               >
                 <Edit className="h-3.5 w-3.5" />
                 <span>Edit</span>
@@ -969,7 +934,7 @@ export default function DashboardOverview() {
               <button 
                 onClick={() => handleDeleteInvoice(invoice)}
                 disabled={loadingActions[`delete-${invoice.id}`]}
-                className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-red-50 text-red-800 hover:bg-red-100 border border-red-300 ${loadingActions[`delete-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-red-50 text-red-800 hover:bg-red-100 border border-red-300 ${loadingActions[`delete-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
               >
                 {loadingActions[`delete-${invoice.id}`] ? (
                   <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></div>
@@ -984,82 +949,43 @@ export default function DashboardOverview() {
       </div>
     </div>
     );
-  }, []);
+  });
 
 
 
-  // Load settings function
-  const loadSettings = useCallback(async () => {
+  // Settings are now loaded by SettingsContext
+
+  // Optimized data loading - only handle stats since invoices/clients are global
+  const loadData = useCallback(async () => {
+    if (!user || loading || dataLoaded) return;
+    
     try {
       const headers = await getAuthHeaders();
-      const response = await fetch('/api/settings', {
-        headers,
-        cache: 'no-store'
-      });
-      const data = await response.json();
       
-      if (data.settings) {
-        setSettings(data.settings);
+      // Only load stats since invoices and clients are managed globally
+      const response = await fetch('/api/dashboard/stats', { 
+        headers,
+        cache: 'force-cache' 
+      });
+      
+      if (response.ok) {
+        setIsLoadingStats(false);
+        setDataLoaded(true);
+      } else {
+        throw new Error('Failed to fetch dashboard stats');
       }
     } catch (error) {
-      console.error('Error fetching settings:', error);
+      console.error('Error loading dashboard stats:', error);
+      setIsLoadingStats(false);
+      setHasError(true);
+      setErrorMessage('Failed to load dashboard stats. Please try refreshing the page.');
     }
-  }, [getAuthHeaders]);
+  }, [user, loading, dataLoaded, getAuthHeaders]);
 
-  // Load data on mount - prevent infinite loop with hasLoadedData flag
+  // Load data on mount
   useEffect(() => {
-    if (user && !loading && !hasLoadedData) {
-      setHasLoadedData(true); // Set flag immediately to prevent re-runs
-      
-      const loadData = async () => {
-        try {
-          // Call getAuthHeaders directly in each fetch to avoid dependency issues
-          const headers = await getAuthHeaders();
-          
-          // Load data progressively without blocking the UI
-          // Fetch dashboard stats
-          fetch('/api/dashboard/stats', { headers, cache: 'no-store' })
-            .then(res => res.json())
-            .then(() => {
-              setIsLoadingStats(false);
-            })
-            .catch(err => {
-              console.error('Error fetching dashboard stats:', err);
-              setIsLoadingStats(false);
-            });
-          
-          // Fetch invoices
-          fetch('/api/invoices', { headers, cache: 'no-store' })
-            .then(res => res.json())
-            .then(data => {
-              setInvoices(Array.isArray(data.invoices) ? data.invoices : []);
-              setIsLoadingInvoices(false);
-            })
-            .catch(err => {
-              console.error('Error fetching invoices:', err);
-              setInvoices([]);
-              setIsLoadingInvoices(false);
-            });
-          
-          // Fetch clients
-          fetch('/api/clients', { headers, cache: 'no-store' })
-            .then(res => res.json())
-            .then(data => {
-              setClients(data.clients || []);
-            })
-            .catch(err => {
-              console.error('Error fetching clients:', err);
-            });
-          
-          // Load settings
-          loadSettings();
-        } catch (error) {
-          console.error('Error loading data:', error);
-        }
-      };
       loadData();
-    }
-  }, [user, loading, hasLoadedData, getAuthHeaders, loadSettings]); // Include hasLoadedData to prevent re-runs
+  }, [loadData]);
 
   // Set dataLoaded to true when both loading states are false
   useEffect(() => {
@@ -1068,58 +994,92 @@ export default function DashboardOverview() {
     }
   }, [isLoadingStats, isLoadingInvoices]);
 
-  // Memoize calculations
-  const recentInvoices = useMemo(() => Array.isArray(invoices) ? invoices.slice(0, 8) : [], [invoices]);
-  
-  // Calculate total revenue (only paid invoices)
-  const totalRevenue = useMemo(() => {
-    return invoices
-      .filter(invoice => invoice.status === 'paid')
-      .reduce((total, invoice) => total + invoice.total, 0);
-  }, [invoices]);
-  
-  // Calculate total payable (only pending invoices, excluding draft)
-  const totalPayableAmount = useMemo(() => {
-    return invoices
-      .filter(invoice => invoice.status === 'pending' || invoice.status === 'sent')
-      .reduce((total, invoice) => {
-      const charges = calculateDueCharges(invoice);
-      return total + charges.totalPayable;
-    }, 0);
-  }, [invoices, calculateDueCharges]);
-  
-  // Calculate overdue count (pending/sent invoices that are overdue)
-  const overdueCount = useMemo(() => {
+  // Error boundary state
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Reset error state when data loads successfully
+  useEffect(() => {
+    if (dataLoaded && !hasError) {
+      setErrorMessage('');
+    }
+  }, [dataLoaded, hasError]);
+
+  // Update selectedInvoice when invoices are updated globally
+  useEffect(() => {
+    if (selectedInvoice && invoices.length > 0) {
+      const updatedInvoice = invoices.find(invoice => invoice.id === selectedInvoice.id);
+      if (updatedInvoice && JSON.stringify(updatedInvoice) !== JSON.stringify(selectedInvoice)) {
+        setSelectedInvoice(updatedInvoice);
+      }
+    }
+  }, [invoices, selectedInvoice]);
+
+  // Optimized calculations with better memoization and early returns
+  const dashboardStats = useMemo(() => {
+    if (!Array.isArray(invoices) || invoices.length === 0) {
+      return {
+        recentInvoices: [],
+        totalRevenue: 0,
+        totalPayableAmount: 0,
+        overdueCount: 0,
+        totalLateFees: 0
+      };
+    }
+
+    // Pre-calculate today's start time once
     const today = new Date();
-    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
     
-    return invoices.filter(invoice => {
-      if (invoice.status !== 'pending' && invoice.status !== 'sent') return false;
+    let totalRevenue = 0;
+    let totalPayableAmount = 0;
+    let overdueCount = 0;
+    let totalLateFees = 0;
+    
+    // Use for...of for better performance than forEach
+    for (const invoice of invoices) {
+      const { status, total, dueDate } = invoice;
       
-      let effectiveDueDate = new Date(invoice.dueDate);
-      
-      // For "Due on Receipt" invoices, the due date should be the day after the invoice was sent
-      if (invoice.paymentTerms?.enabled && invoice.paymentTerms.terms === 'Due on Receipt') {
-        const sentDate = (invoice as any).updatedAt ? new Date((invoice as any).updatedAt) : new Date(invoice.dueDate);
-        effectiveDueDate = new Date(sentDate);
-        effectiveDueDate.setDate(effectiveDueDate.getDate() + 1);
+      // Total revenue (only paid invoices) - early return for non-paid
+      if (status === 'paid') {
+        totalRevenue += total;
+        continue;
       }
       
-      const dueDateStart = new Date(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate());
-      return dueDateStart < todayStart; // Only overdue if due date has passed (not on the due date itself)
-    }).length;
-  }, [invoices]);
-  
-  // Calculate total clients
-  const totalClients = useMemo(() => clients.length, [clients]);
-  
-  // Calculate total late fees
-  const totalLateFees = useMemo(() => {
-    return invoices.reduce((total, invoice) => {
+      // Total payable and overdue count (pending/sent invoices only)
+      if (status === 'pending' || status === 'sent') {
       const charges = calculateDueCharges(invoice);
-      return total + charges.lateFeeAmount;
-    }, 0);
-  }, [invoices, calculateDueCharges]);
+        totalPayableAmount += charges.totalPayable;
+        totalLateFees += charges.lateFeeAmount;
+        
+        // Check if overdue - optimized date comparison
+        const effectiveDueDate = parseDateOnly(dueDate);
+        const dueDateStart = new Date(Date.UTC(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate()));
+        if (dueDateStart < todayStart) {
+          overdueCount++;
+        }
+      }
+    }
+    
+    // Deduplicate invoices by ID to prevent duplicate keys
+    const uniqueInvoices = invoices.filter((invoice, index, self) => 
+      index === self.findIndex(i => i.id === invoice.id)
+    );
+    
+    return {
+      recentInvoices: uniqueInvoices.slice(0, 8),
+      totalRevenue,
+      totalPayableAmount,
+      overdueCount,
+      totalLateFees
+    };
+  }, [invoices, calculateDueCharges, parseDateOnly]);
+  
+  // Extract individual values for easier access
+  const { recentInvoices, totalRevenue, totalPayableAmount, overdueCount, totalLateFees } = dashboardStats;
+  
+  // Calculate total clients (simple, no need to include in complex calculation)
+  const totalClients = clients.length;
 
   // Navigation functions for dashboard cards
   const handlePaidInvoicesClick = useCallback(() => {
@@ -1200,14 +1160,14 @@ export default function DashboardOverview() {
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <button
                       onClick={handleCreateInvoice}
-                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
                     >
                       <Sparkles className="h-4 w-4" />
                       <span>Create Invoice</span>
                     </button>
                     <button
                       onClick={() => setShowCreateClient(true)}
-                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
+                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium cursor-pointer"
                     >
                       <UserPlus className="h-4 w-4" />
                       <span>Add Client</span>
@@ -1343,7 +1303,7 @@ export default function DashboardOverview() {
                 {/* 60-Second Invoice */}
                 <button
                   onClick={() => setShowFastInvoice(true)}
-                  className="group relative p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-green-200 hover:bg-green-50/30"
+                  className="group relative p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-green-200 hover:bg-green-50/30 cursor-pointer"
                 >
                   <div className="flex items-center space-x-2 sm:space-x-3">
                     <div className="p-1 sm:p-2 rounded-lg bg-green-50">
@@ -1363,7 +1323,7 @@ export default function DashboardOverview() {
                 {/* Detailed Invoice */}
                 <button
                   onClick={() => setShowCreateInvoice(true)}
-                  className="group relative p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-blue-200 hover:bg-blue-50/30"
+                  className="group relative p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-blue-200 hover:bg-blue-50/30 cursor-pointer"
                 >
                   <div className="flex items-center space-x-2 sm:space-x-3">
                     <div className="p-1 sm:p-2 rounded-lg bg-blue-50">
@@ -1383,7 +1343,7 @@ export default function DashboardOverview() {
                 {/* Add Client */}
                 <button
                   onClick={() => setShowCreateClient(true)}
-                  className="group relative p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-purple-200 hover:bg-purple-50/30"
+                  className="group relative p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-purple-200 hover:bg-purple-50/30 cursor-pointer"
                 >
                   <div className="flex items-center space-x-2 sm:space-x-3">
                     <div className="p-1 sm:p-2 rounded-lg bg-purple-50">
@@ -1411,7 +1371,7 @@ export default function DashboardOverview() {
               </h2>
                 <button
                   onClick={() => router.push('/dashboard/invoices')}
-                  className="group flex items-center space-x-2 text-sm font-medium px-4 py-2 rounded-lg transition-all duration-200 hover:scale-105 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 hover:border-indigo-300"
+                  className="group flex items-center space-x-2 text-sm font-medium px-4 py-2 rounded-lg transition-all duration-200 hover:scale-105 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 hover:border-indigo-300 cursor-pointer"
                 >
                   <span>View all</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -1458,7 +1418,7 @@ export default function DashboardOverview() {
                                     {invoice.invoiceNumber}
                                   </div>
                                   <div className="text-xs" style={{color: '#6b7280'}}>
-                                    {invoice.client.name}
+                                    {invoice.client?.name || 'Unknown Client'}
                                   </div>
                                 </div>
                               </div>
@@ -1507,7 +1467,7 @@ export default function DashboardOverview() {
                               <div className="flex items-center space-x-1">
                                 <button 
                                   onClick={() => handleViewInvoice(invoice)}
-                                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
                                   title="View"
                                 >
                                   <Eye className="h-4 w-4 text-gray-600" />
@@ -1555,7 +1515,7 @@ export default function DashboardOverview() {
                                 {invoice.status === 'draft' && (
                                   <button 
                                     onClick={() => handleEditInvoice(invoice)}
-                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
                                     title="Edit"
                                   >
                                     <Edit className="h-4 w-4 text-gray-600" />
@@ -1564,7 +1524,7 @@ export default function DashboardOverview() {
                                 {invoice.status === 'draft' && (
                                   <button 
                                     onClick={() => handleDeleteInvoice(invoice)}
-                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
                                     title="Delete"
                                   >
                                     <Trash2 className="h-4 w-4 text-gray-600" />
@@ -1588,7 +1548,7 @@ export default function DashboardOverview() {
                                     {invoice.invoiceNumber}
                                   </div>
                                   <div className="text-xs" style={{color: '#6b7280'}}>
-                                    {invoice.client.name}
+                                    {invoice.client?.name || 'Unknown Client'}
                                   </div>
                                 </div>
                               </div>
@@ -1637,7 +1597,7 @@ export default function DashboardOverview() {
                               <div className="flex items-center space-x-1">
                                 <button 
                                   onClick={() => handleViewInvoice(invoice)}
-                                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
                                   title="View"
                                 >
                                   <Eye className="h-4 w-4 text-gray-600" />
@@ -1685,7 +1645,7 @@ export default function DashboardOverview() {
                                 {invoice.status === 'draft' && (
                                   <button 
                                     onClick={() => handleEditInvoice(invoice)}
-                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
                                     title="Edit"
                                   >
                                     <Edit className="h-4 w-4 text-gray-600" />
@@ -1694,7 +1654,7 @@ export default function DashboardOverview() {
                                 {invoice.status === 'draft' && (
                                   <button 
                                     onClick={() => handleDeleteInvoice(invoice)}
-                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
                                     title="Delete"
                                   >
                                     <Trash2 className="h-4 w-4 text-gray-600" />
@@ -1757,7 +1717,7 @@ export default function DashboardOverview() {
               {/* Fast Invoice Option */}
               <button
                 onClick={handleSelectFastInvoice}
-                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group"
+                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
               >
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
@@ -1778,7 +1738,7 @@ export default function DashboardOverview() {
               {/* Detailed Invoice Option */}
               <button
                 onClick={handleSelectDetailedInvoice}
-                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group"
+                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
               >
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
@@ -1801,7 +1761,7 @@ export default function DashboardOverview() {
             <div className="mt-6 pt-4 border-t border-gray-200">
               <button
                 onClick={() => setShowInvoiceTypeSelection(false)}
-                className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
+                className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -1838,10 +1798,7 @@ export default function DashboardOverview() {
                     fetch('/api/dashboard/stats', { headers, cache: 'no-store' })
                       .then(res => res.json())
                       .catch(err => console.error('Error fetching dashboard stats:', err)),
-                    fetch('/api/invoices', { headers, cache: 'no-store' })
-                      .then(res => res.json())
-                      .then(data => setInvoices(Array.isArray(data.invoices) ? data.invoices : []))
-                      .catch(err => console.error('Error fetching invoices:', err))
+                    // Data is now managed globally, no need to refresh manually
                   ]);
                 } catch (error) {
                   console.error('Error refreshing data:', error);
@@ -1879,10 +1836,7 @@ export default function DashboardOverview() {
                     fetch('/api/dashboard/stats', { headers, cache: 'no-store' })
                       .then(res => res.json())
                       .catch(err => console.error('Error fetching dashboard stats:', err)),
-                    fetch('/api/invoices', { headers, cache: 'no-store' })
-                      .then(res => res.json())
-                      .then(data => setInvoices(Array.isArray(data.invoices) ? data.invoices : []))
-                      .catch(err => console.error('Error fetching invoices:', err))
+                    // Data is now managed globally, no need to refresh manually
                   ]);
                 } catch (error) {
                   console.error('Error refreshing data:', error);
@@ -1911,10 +1865,7 @@ export default function DashboardOverview() {
                     fetch('/api/dashboard/stats', { headers, cache: 'no-store' })
                       .then(res => res.json())
                       .catch(err => console.error('Error fetching dashboard stats:', err)),
-                    fetch('/api/clients', { headers, cache: 'no-store' })
-                      .then(res => res.json())
-                      .then(data => setClients(data))
-                      .catch(err => console.error('Error fetching clients:', err))
+                    // Data is now managed globally, no need to refresh manually
                   ]);
                 } catch (error) {
                   console.error('Error refreshing data:', error);
@@ -1934,7 +1885,7 @@ export default function DashboardOverview() {
                <h2 className="text-base sm:text-xl font-bold" style={{color: '#1f2937'}}>Invoice Details</h2>
                <button
                  onClick={() => setShowViewInvoice(false)}
-                 className="p-1 sm:p-2 rounded-lg transition-colors hover:bg-gray-100"
+                 className="p-1 sm:p-2 rounded-lg transition-colors hover:bg-gray-100 cursor-pointer"
                >
                  <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
                </button>

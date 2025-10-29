@@ -185,7 +185,10 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update invoice items' }, { status: 500 })
     }
 
-    // Insert new invoice items
+    // Insert new invoice items and calculate totals
+    let subtotal = 0;
+    let total = 0;
+    
     if (items && items.length > 0) {
       const itemsToInsert = items.map((item: any) => ({
         invoice_id: invoiceId,
@@ -201,6 +204,31 @@ export async function PUT(request: NextRequest) {
       if (insertItemsError) {
         console.error('Error inserting new items:', insertItemsError)
         return NextResponse.json({ error: 'Failed to update invoice items' }, { status: 500 })
+      }
+
+      // Calculate subtotal from items
+      subtotal = items.reduce((sum: number, item: any) => sum + (item.line_total || 0), 0);
+      
+      // Calculate total with discount
+      const discountAmount = discount || 0;
+      total = subtotal - discountAmount;
+    }
+
+    // Update invoice with calculated totals
+    if (items && items.length > 0) {
+      const { error: updateTotalsError } = await supabaseAdmin
+        .from('invoices')
+        .update({
+          subtotal,
+          total,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', invoiceId)
+        .eq('user_id', user.id)
+
+      if (updateTotalsError) {
+        console.error('Error updating invoice totals:', updateTotalsError)
+        return NextResponse.json({ error: 'Failed to update invoice totals' }, { status: 500 })
       }
     }
 
@@ -263,10 +291,66 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // Fetch the complete updated invoice with client data and items
+    const { data: completeInvoice, error: fetchError } = await supabaseAdmin
+      .from('invoices')
+      .select(`
+        *,
+        clients:client_id (
+          id,
+          name,
+          email,
+          company,
+          address,
+          phone,
+          created_at
+        ),
+        invoice_items (
+          id,
+          description,
+          rate,
+          line_total
+        )
+      `)
+      .eq('id', invoiceId)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching updated invoice:', fetchError);
+      return NextResponse.json({ error: 'Failed to fetch updated invoice' }, { status: 500 });
+    }
+
+    // Map database fields to frontend interface
+    const mappedInvoice = {
+      ...completeInvoice,
+      invoiceNumber: completeInvoice.invoice_number,
+      issueDate: completeInvoice.issue_date,
+      dueDate: completeInvoice.due_date,
+      createdAt: completeInvoice.created_at,
+      client: completeInvoice.clients,
+      clientId: completeInvoice.client_id,
+      clientName: completeInvoice.clients?.name,
+      clientEmail: completeInvoice.clients?.email,
+      discount: completeInvoice.discount || 0,
+      // Map invoice items to expected format
+      items: completeInvoice.invoice_items?.map((item: any) => ({
+        id: item.id,
+        description: item.description,
+        rate: item.rate,
+        amount: item.rate, // For compatibility with FastInvoiceModal
+        line_total: item.line_total
+      })) || [],
+      // Parse JSON fields with fallbacks
+      paymentTerms: completeInvoice.payment_terms ? JSON.parse(completeInvoice.payment_terms) : undefined,
+      lateFees: completeInvoice.late_fees ? JSON.parse(completeInvoice.late_fees) : undefined,
+      reminders: completeInvoice.reminder_settings ? JSON.parse(completeInvoice.reminder_settings) : undefined,
+      theme: completeInvoice.theme ? JSON.parse(completeInvoice.theme) : undefined,
+    };
+
     return NextResponse.json({ 
       success: true, 
       message: 'Invoice updated successfully',
-      invoice 
+      invoice: mappedInvoice 
     })
 
   } catch (error) {

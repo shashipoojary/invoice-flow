@@ -125,7 +125,7 @@ export default function PublicInvoicePage() {
       <div className="fixed bottom-4 right-4 z-50">
         <button
           onClick={handleDownloadPDF}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-lg"
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-lg cursor-pointer"
         >
           <Download className="h-4 w-4" />
           <span>Download PDF</span>

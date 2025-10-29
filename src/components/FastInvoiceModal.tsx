@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { X, DollarSign, Calendar, FileText, User, Mail, ArrowRight, ArrowLeft, Clock, CheckCircle, Send } from 'lucide-react'
 import { Invoice } from '@/types'
 import { useToast } from '@/hooks/useToast'
+import { useData } from '@/contexts/DataContext'
 
 interface Client {
   id: string
@@ -33,6 +34,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   const [loading, setLoading] = useState(false)
   const [sendLoading, setSendLoading] = useState(false)
   const { showSuccess: localShowSuccess, showError: localShowError, showWarning: localShowWarning } = useToast()
+  const { addInvoice, addClient, updateInvoice, clients: globalClients } = useData()
   
   // Use passed toast functions if available, otherwise use local ones
   const showSuccess = propShowSuccess || localShowSuccess
@@ -60,18 +62,29 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   // Pre-fill form when editing an invoice
   useEffect(() => {
     if (isOpen && editingInvoice) {
-      setSelectedClientId(editingInvoice.clientId || '')
+      setSelectedClientId(editingInvoice.clientId || editingInvoice.client_id || '')
       setClientName(editingInvoice.clientName || '')
       setClientEmail(editingInvoice.clientEmail || '')
       setDescription(editingInvoice.items?.[0]?.description || '')
-      setAmount(editingInvoice.items?.[0]?.amount?.toString() || '')
+      setAmount(editingInvoice.items?.[0]?.rate?.toString() || editingInvoice.items?.[0]?.amount?.toString() || '')
       setDueDate(editingInvoice.dueDate || '')
       setNotes(editingInvoice.notes || '')
+      
+  // If the client doesn't exist in the clients list, add it
+  const clientId = editingInvoice.clientId || editingInvoice.client_id;
+  if (clientId && editingInvoice.client && !globalClients.find(c => c.id === clientId)) {
+        try { 
+          addClient && addClient(editingInvoice.client);
+          console.log('FastInvoiceModal: Added client to global state:', editingInvoice.client);
+        } catch (e) {
+          console.error('FastInvoiceModal: Error adding client:', e);
+        }
+      }
     } else if (isOpen && !editingInvoice) {
       // Reset form when creating new invoice
       resetForm()
     }
-  }, [isOpen, editingInvoice])
+  }, [isOpen, editingInvoice, addClient])
 
   const resetForm = () => {
     setStep(1)
@@ -115,6 +128,8 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         })
         const clientData = await clientResponse.json()
         clientId = clientData.client.id
+        // update global clients cache
+        try { addClient && addClient(clientData.client) } catch {}
       }
 
       // Create or update invoice
@@ -136,7 +151,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         notes: notes,
         billing_choice: 'per_invoice',
         type: 'fast', // Mark as fast invoice
-        status: 'sent' // Create as sent, not draft
+        status: isEditing ? editingInvoice.status : 'sent' // Keep existing status when editing
       }
       
       // Add invoice ID to payload if editing
@@ -154,6 +169,12 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         const result = await invoiceResponse.json()
         if (showToast) {
           showSuccess(isEditing ? 'Invoice updated successfully!' : 'Invoice created successfully!')
+          // update global invoices cache immediately
+          if (isEditing) {
+            try { updateInvoice && updateInvoice(result.invoice) } catch {}
+          } else {
+            try { addInvoice && addInvoice(result.invoice) } catch {}
+          }
           onSuccess()
           onClose()
           resetForm()
@@ -179,6 +200,9 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
     setSendLoading(true)
 
     try {
+      // Determine if we're editing or creating
+      const isEditing = editingInvoice && editingInvoice.id
+      
       // First create the invoice (without showing toast or loading state)
       const invoice = await handleCreateInvoice(false, true)
       
@@ -205,6 +229,13 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
           showWarning('Invoice created but failed to send. You can send it later from the invoice list.')
         }
         
+        // update global invoices cache
+        if (isEditing) {
+          try { updateInvoice && updateInvoice(invoice) } catch {}
+        } else {
+          try { addInvoice && addInvoice(invoice) } catch {}
+        }
+
         onSuccess()
         onClose()
         resetForm()
@@ -265,7 +296,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
           </div>
           <button
             onClick={handleClose}
-            className={`transition-colors p-1.5 rounded-lg ${
+            className={`transition-colors p-1.5 rounded-lg cursor-pointer ${
               isDarkMode 
                 ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' 
                 : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
@@ -338,8 +369,9 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                       </div>
                       <button
                         type="button"
+                        data-testid="clear-client-selection"
                         onClick={() => setSelectedClientId('')}
-                        className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors ${
+                        className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
                           isDarkMode 
                             ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
                             : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
@@ -369,6 +401,12 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                                 {client.name} {client.company && `(${client.company})`}
                               </option>
                             ))}
+                            {/* Show current client even if not in clients list */}
+                            {selectedClientId && !clients.find(c => c.id === selectedClientId) && editingInvoice?.client && (
+                              <option value={selectedClientId}>
+                                {editingInvoice.client.name} {editingInvoice.client.company && `(${editingInvoice.client.company})`}
+                              </option>
+                            )}
                           </select>
                           <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                             <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -441,8 +479,9 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
 
               <button
                 type="button"
+                data-testid="fast-invoice-next-step"
                 onClick={() => setStep(2)}
-                className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm"
+                className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer"
               >
                 <span>Continue</span>
                 <ArrowRight className="h-4 w-4" />
@@ -547,6 +586,11 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                         }`}
                       />
                     </div>
+                    <p className={`text-xs mt-1 ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      Due Date
+                    </p>
                   </div>
                 </div>
 
@@ -568,8 +612,9 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
               <div className="flex space-x-3">
                 <button
                   type="button"
+                  data-testid="fast-invoice-back-step"
                   onClick={() => setStep(1)}
-                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm ${
+                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
                     isDarkMode 
                       ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -580,9 +625,10 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                 </button>
                 <button
                   type="button"
+                  data-testid="fast-invoice-create-and-send"
                   onClick={() => handleCreateInvoice(true)}
                   disabled={loading || sendLoading}
-                  className={`flex-1 px-3 py-2 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-xs disabled:opacity-50 ${
+                  className={`flex-1 px-3 py-2 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-xs disabled:opacity-50 cursor-pointer ${
                     isDarkMode 
                       ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
                       : 'bg-indigo-600 text-white hover:bg-indigo-700'
@@ -597,9 +643,10 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                 </button>
                 <button
                   type="button"
+                  data-testid="fast-invoice-create-draft"
                   onClick={handleCreateAndSend}
                   disabled={loading || sendLoading}
-                  className={`flex-1 px-3 py-2 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-xs disabled:opacity-50 ${
+                  className={`flex-1 px-3 py-2 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-xs disabled:opacity-50 cursor-pointer ${
                     isDarkMode 
                       ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
                       : 'bg-indigo-600 text-white hover:bg-indigo-700'

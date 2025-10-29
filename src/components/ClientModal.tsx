@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { UserPlus, X, User, Mail, Phone, Building2, MapPin, Loader2 } from 'lucide-react';
+import { useData } from '@/contexts/DataContext';
+import { useToast } from '@/hooks/useToast';
 
 interface Client {
   id: string;
@@ -30,6 +32,9 @@ export default function ClientModal({
   isDarkMode = false,
   editingClient = null
 }: ClientModalProps) {
+  const { addClient, updateClient } = useData();
+  const { showSuccess, showError } = useToast();
+  
   const [newClient, setNewClient] = useState({
     name: '',
     email: '',
@@ -81,6 +86,12 @@ export default function ClientModal({
       });
 
       if (response.ok) {
+        const result = await response.json();
+        showSuccess('Client created successfully!');
+        // Update global state immediately
+        if (result.client) {
+          try { addClient && addClient(result.client) } catch {}
+        }
         onSuccess();
         onClose();
         setNewClient({
@@ -90,9 +101,13 @@ export default function ClientModal({
           phone: '',
           address: ''
         });
+      } else {
+        const errorData = await response.json();
+        showError(errorData.error || 'Failed to create client');
       }
     } catch (error) {
       console.error('Error creating client:', error);
+      showError('Failed to create client. Please try again.');
     } finally {
       setIsCreatingClient(false);
     }
@@ -116,6 +131,12 @@ export default function ClientModal({
       });
 
       if (response.ok) {
+        const result = await response.json();
+        showSuccess('Client updated successfully!');
+        // Update global state immediately
+        if (result.client) {
+          try { updateClient && updateClient(result.client) } catch {}
+        }
         onSuccess();
         onClose();
         setNewClient({
@@ -125,9 +146,13 @@ export default function ClientModal({
           phone: '',
           address: ''
         });
+      } else {
+        const errorData = await response.json();
+        showError(errorData.error || 'Failed to update client');
       }
     } catch (error) {
       console.error('Error updating client:', error);
+      showError('Failed to update client. Please try again.');
     } finally {
       setIsUpdatingClient(false);
     }
@@ -187,7 +212,7 @@ export default function ClientModal({
             </div>
             <button
               onClick={handleClose}
-              className={`transition-colors p-1.5 rounded-lg ${
+              className={`transition-colors p-1.5 rounded-lg cursor-pointer ${
                 isDarkMode 
                   ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' 
                   : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
@@ -332,7 +357,7 @@ export default function ClientModal({
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <button
                   onClick={handleClose}
-                  className={`flex-1 py-2.5 px-4 rounded-lg transition-colors font-medium text-sm ${
+                  className={`flex-1 py-2.5 px-4 rounded-lg transition-colors font-medium text-sm cursor-pointer ${
                     isDarkMode 
                       ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700' 
                       : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
@@ -343,7 +368,7 @@ export default function ClientModal({
                 <button 
                   onClick={editingClient ? handleUpdateClient : handleCreateClient}
                   disabled={isCreatingClient || isUpdatingClient}
-                  className="flex-1 bg-indigo-600 text-white py-2.5 px-4 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 bg-indigo-600 text-white py-2.5 px-4 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {(isCreatingClient || isUpdatingClient) ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

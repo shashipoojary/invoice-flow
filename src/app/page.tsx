@@ -44,7 +44,7 @@ export default function LandingPage() {
     <div className="min-h-screen transition-colors duration-200 bg-white">
 
       {/* Hero Section */}
-      <section className="pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8 relative" ref={heroRef}>
+      <section className="pt-8 sm:pt-12 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8 relative bg-gradient-to-b from-white to-gray-50" ref={heroRef}>
         <div className="max-w-7xl mx-auto">
       <div className="text-center">
             <div>
@@ -60,14 +60,14 @@ export default function LandingPage() {
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
                 <button
                   onClick={handleGetStarted}
-                  className="group flex items-center justify-center space-x-2 px-6 py-3 sm:px-8 sm:py-4 rounded-lg text-base sm:text-base font-semibold transition-all duration-200 hover:scale-105 w-full sm:w-auto bg-black text-white hover:bg-gray-800 shadow-lg"
+                  className="group flex items-center justify-center space-x-2 px-6 py-3 sm:px-8 sm:py-4 rounded-lg text-base sm:text-base font-semibold transition-all duration-200 hover:scale-105 w-full sm:w-auto bg-black text-white hover:bg-gray-800 shadow-lg cursor-pointer"
                 >
                   <span>Start Creating Invoices</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
                 <button
                   onClick={handleViewDemo}
-                  className="group flex items-center justify-center space-x-2 px-6 py-3 sm:px-8 sm:py-4 rounded-lg text-base sm:text-base font-semibold transition-all duration-200 hover:scale-105 border-2 w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+                  className="group flex items-center justify-center space-x-2 px-6 py-3 sm:px-8 sm:py-4 rounded-lg text-base sm:text-base font-semibold transition-all duration-200 hover:scale-105 border-2 w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 cursor-pointer"
                 >
                   <Play className="w-4 h-4 group-hover:scale-110 transition-transform" />
                   <span>View Demo</span>
@@ -353,7 +353,7 @@ export default function LandingPage() {
               </ul>
               <button
                 onClick={handleGetStarted}
-                className="w-full py-3 rounded-lg font-medium transition-colors bg-black text-white hover:bg-gray-800"
+                className="w-full py-3 rounded-lg font-medium transition-colors bg-black text-white hover:bg-gray-800 cursor-pointer"
               >
                 Get Started Free
               </button>
@@ -386,7 +386,7 @@ export default function LandingPage() {
               </ul>
               <button
                 onClick={handleGetStarted}
-                className="w-full py-3 rounded-lg font-medium transition-colors bg-black text-white hover:bg-gray-800"
+                className="w-full py-3 rounded-lg font-medium transition-colors bg-black text-white hover:bg-gray-800 cursor-pointer"
               >
                 Start Paying Per Invoice
               </button>
@@ -430,7 +430,7 @@ export default function LandingPage() {
               </ul>
               <button
                 onClick={handleGetStarted}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-medium transition-colors"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-medium transition-colors cursor-pointer"
               >
                 Start Pro Trial
               </button>
@@ -457,7 +457,7 @@ export default function LandingPage() {
               <div className="sticky top-8 space-y-2 bg-white border-gray-200 rounded-lg border p-4 backdrop-blur-sm">
                 <button 
                   onClick={() => setActiveFaqCategory('General')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors cursor-pointer ${
                     activeFaqCategory === 'General'
                       ? 'bg-gray-100 text-gray-900'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -467,7 +467,7 @@ export default function LandingPage() {
                 </button>
                 <button 
                   onClick={() => setActiveFaqCategory('Plans & Pricing')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors cursor-pointer ${
                     activeFaqCategory === 'Plans & Pricing'
                       ? 'bg-gray-100 text-gray-900'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -477,7 +477,7 @@ export default function LandingPage() {
                 </button>
                 <button 
                   onClick={() => setActiveFaqCategory('Features')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors cursor-pointer ${
                     activeFaqCategory === 'Features'
                       ? 'bg-gray-100 text-gray-900'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -487,7 +487,7 @@ export default function LandingPage() {
                 </button>
                 <button 
                   onClick={() => setActiveFaqCategory('Security')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors cursor-pointer ${
                     activeFaqCategory === 'Security'
                       ? 'bg-gray-100 text-gray-900'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -706,13 +706,13 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={handleGetStarted}
-              className="px-8 py-4 rounded-lg text-lg font-medium transition-colors bg-black text-white hover:bg-gray-800"
+              className="px-8 py-4 rounded-lg text-lg font-medium transition-colors bg-black text-white hover:bg-gray-800 cursor-pointer"
             >
               Start Creating Invoices
             </button>
             <button
               onClick={handleViewDemo}
-              className="px-8 py-4 rounded-lg text-lg font-medium transition-colors border border-gray-300 text-gray-700 hover:bg-gray-50"
+              className="px-8 py-4 rounded-lg text-lg font-medium transition-colors border border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer"
             >
               View Demo
             </button>

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { ArrowLeft, Mail, Send } from 'lucide-react';
 import Link from 'next/link';
-import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export default function ContactPage() {
@@ -63,12 +62,9 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen transition-colors duration-200 bg-white">
-      {/* Navigation */}
-      <Navbar />
-
+    <div className="min-h-screen transition-colors duration-200 bg-gradient-to-b from-white to-gray-50">
       {/* Main Content */}
-      <main className="pt-24">
+      <main className="pt-4">
         {/* Hero Section */}
         <section className="py-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
@@ -164,7 +160,7 @@ export default function ContactPage() {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400"
                     style={{
                       backgroundColor: '#ffffff',
                       borderColor: '#d1d5db',
@@ -185,7 +181,7 @@ export default function ContactPage() {
                     onChange={handleChange}
                     required
                     rows={6}
-                    className="w-full px-4 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    className="w-full px-4 py-3 rounded-lg border transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 resize-none"
                     style={{
                       backgroundColor: '#ffffff',
                       borderColor: '#d1d5db',

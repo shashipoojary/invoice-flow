@@ -1,27 +1,113 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { 
   Save, Building2, Upload, CreditCard, 
   Loader2, Trash2
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
+import { useSettings } from '@/contexts/SettingsContext';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
-import QuickInvoiceModal from '@/components/QuickInvoiceModal';
 import LazyLogo from '@/components/LazyLogo';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { FreelancerSettings, Client } from '@/types';
 import { optimizeLogo, validateLogoFile } from '@/lib/logo-optimizer';
+import dynamic from 'next/dynamic';
+
+// Lazy load heavy components
+const QuickInvoiceModal = dynamic(() => import('@/components/QuickInvoiceModal'), {
+  loading: () => <div className="flex items-center justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+});
+
+// Memoized components for better performance
+const BusinessInfoSection = memo(({ settings, updateSettings, isLoadingSettings }: {
+  settings: any;
+  updateSettings: (settings: any) => void;
+  isLoadingSettings: boolean;
+}) => {
+  const handleInputChange = useCallback((field: string, value: string) => {
+    updateSettings({ ...settings, [field]: value });
+  }, [settings, updateSettings]);
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-medium mb-3" style={{color: '#374151'}}>
+            Business Name
+          </label>
+          <input
+            type="text"
+            value={settings.businessName}
+            onChange={(e) => handleInputChange('businessName', e.target.value)}
+            className="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black"
+            placeholder="Your Business Name"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-3" style={{color: '#374151'}}>
+            Business Email
+          </label>
+          <input
+            type="email"
+            value={settings.businessEmail}
+            onChange={(e) => handleInputChange('businessEmail', e.target.value)}
+            className="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black"
+            placeholder="business@example.com"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-3" style={{color: '#374151'}}>
+            Business Phone
+          </label>
+          <input
+            type="tel"
+            value={settings.businessPhone}
+            onChange={(e) => handleInputChange('businessPhone', e.target.value)}
+            className="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black"
+            placeholder="+1 (555) 123-4567"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-3" style={{color: '#374151'}}>
+            Website
+          </label>
+          <input
+            type="url"
+            value={settings.website}
+            onChange={(e) => handleInputChange('website', e.target.value)}
+            className="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black"
+            placeholder="https://yourwebsite.com"
+          />
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-3" style={{color: '#374151'}}>
+          Business Address
+        </label>
+        <textarea
+          value={settings.address}
+          onChange={(e) => handleInputChange('address', e.target.value)}
+          rows={3}
+          className="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors resize-none border-gray-300 bg-white text-black"
+          placeholder="123 Business St, City, State 12345"
+        />
+      </div>
+    </div>
+  );
+});
+
+BusinessInfoSection.displayName = 'BusinessInfoSection';
 
 export default function SettingsPage() {
   const { user, loading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
+  const { settings, isLoadingSettings, error, updateSettings, refreshSettings } = useSettings();
   
-  // State
+  // Local state for UI
   const [saving, setSaving] = useState(false);
-  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
@@ -35,31 +121,9 @@ export default function SettingsPage() {
     onConfirm: () => {},
     isLoading: false
   });
-  const [settings, setSettings] = useState<FreelancerSettings>({
-    businessName: '',
-    businessEmail: '',
-    businessPhone: '',
-    address: '',
-    website: '',
-    logo: '',
-    paypalEmail: '',
-    cashappId: '',
-    venmoId: '',
-    googlePayUpi: '',
-    applePayId: '',
-    bankAccount: '',
-    bankIfscSwift: '',
-    bankIban: '',
-    stripeAccount: '',
-    paymentNotes: ''
-  });
-
-  // Dark mode toggle (removed)
-
 
   // Create invoice handler
   const handleCreateInvoice = useCallback(() => {
-    // Show the detailed invoice modal by default
     setShowCreateInvoice(true);
   }, []);
 
@@ -70,7 +134,6 @@ export default function SettingsPage() {
   useEffect(() => {
     if (user && !loading && !hasLoadedData) {
       setHasLoadedData(true);
-      loadSettings();
       loadClients();
     }
   }, [user, loading, hasLoadedData]);
@@ -86,24 +149,12 @@ export default function SettingsPage() {
     }
   };
 
-  const loadSettings = async () => {
-    try {
-      setIsLoadingSettings(true);
-      const headers = await getAuthHeaders();
-      
-      const response = await fetch('/api/settings', { headers, cache: 'no-store' });
-      const data = await response.json();
-      
-      if (response.ok && data.settings) {
-        setSettings(data.settings);
-      }
-    } catch (error) {
-      console.error('Error loading settings:', error);
-      showError('Failed to load settings');
-    } finally {
-      setIsLoadingSettings(false);
+  // Settings loading is now handled by SettingsContext
+  useEffect(() => {
+    if (user && !loading) {
+      setHasLoadedData(true);
     }
-  };
+  }, [user, loading]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -120,6 +171,8 @@ export default function SettingsPage() {
       
       if (response.ok) {
         showSuccess('Settings saved successfully!');
+        // Update global settings context
+        updateSettings(settings);
         // Also save to localStorage as backup
         if (typeof window !== 'undefined') {
           localStorage.setItem('freelancerSettings', JSON.stringify(settings));
@@ -176,7 +229,7 @@ export default function SettingsPage() {
 
       if (response.ok) {
         // Update settings with the new logo URL
-        setSettings(prev => ({ ...prev, logo: data.logoUrl }));
+        updateSettings({ ...settings, logo: data.logoUrl });
         
         // Show success message
         const fileSize = (file.size / 1024).toFixed(1);
@@ -221,7 +274,7 @@ export default function SettingsPage() {
 
           if (response.ok) {
             // Update settings to remove logo
-            setSettings(prev => ({ ...prev, logo: '' }));
+            updateSettings({ ...settings, logo: '' });
             showSuccess('Logo Removed', 'Logo has been removed successfully.');
             
             // Clear any file input values
@@ -287,7 +340,7 @@ export default function SettingsPage() {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {saving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -335,8 +388,8 @@ export default function SettingsPage() {
                     <input
                       type="text"
                       value={settings.businessName}
-                      onChange={(e) => setSettings(prev => ({ ...prev, businessName: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
+                      onChange={(e) => updateSettings({ ...settings, businessName: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="Your Business Name"
                     />
                   </div>
@@ -348,8 +401,8 @@ export default function SettingsPage() {
                     <input
                       type="email"
                       value={settings.businessEmail}
-                      onChange={(e) => setSettings(prev => ({ ...prev, businessEmail: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
+                      onChange={(e) => updateSettings({ ...settings, businessEmail: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="business@example.com"
                     />
                   </div>
@@ -361,8 +414,8 @@ export default function SettingsPage() {
                     <input
                       type="tel"
                       value={settings.businessPhone}
-                      onChange={(e) => setSettings(prev => ({ ...prev, businessPhone: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
+                      onChange={(e) => updateSettings({ ...settings, businessPhone: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="+1 (555) 123-4567"
                     />
                   </div>
@@ -374,8 +427,8 @@ export default function SettingsPage() {
                     <input
                       type="url"
                       value={settings.website}
-                      onChange={(e) => setSettings(prev => ({ ...prev, website: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
+                      onChange={(e) => updateSettings({ ...settings, website: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="https://yourwebsite.com"
                     />
                   </div>
@@ -386,9 +439,9 @@ export default function SettingsPage() {
                     </label>
                     <textarea
                       value={settings.address}
-                      onChange={(e) => setSettings(prev => ({ ...prev, address: e.target.value }))}
+                      onChange={(e) => updateSettings({ ...settings, address: e.target.value })}
                       rows={3}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors resize-none border-gray-300 bg-white text-black`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors resize-none border-gray-300 bg-white text-black`}
                       placeholder="123 Business St, City, State 12345"
                     />
                   </div>
@@ -401,7 +454,7 @@ export default function SettingsPage() {
                     {/* Minimal Logo Section */}
                     <div className="space-y-4">
                       {settings.logo && settings.logo.trim() !== '' ? (
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
                           <div className="flex items-center space-x-4">
                             <div className="w-12 h-12 bg-white border border-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
                               <LazyLogo 
@@ -444,7 +497,7 @@ export default function SettingsPage() {
                               className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
                                 isRemovingLogo 
                                   ? 'opacity-50 cursor-not-allowed bg-gray-100'
-                                  : 'bg-red-100 hover:bg-red-200'
+                                  : 'bg-red-100 hover:bg-red-200 cursor-pointer'
                               }`}
                             >
                               {isRemovingLogo ? (
@@ -456,7 +509,7 @@ export default function SettingsPage() {
                           </div>
                         </div>
                       ) : (
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-gray-400 transition-colors">
+                        <div className="border border-dashed border-gray-200 rounded-lg p-6 hover:border-gray-300 transition-colors">
                           <div className="flex items-center justify-center space-x-4">
                             <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
                               <Upload className="h-5 w-5 text-gray-400" />
@@ -525,8 +578,8 @@ export default function SettingsPage() {
                     <input
                       type="email"
                       value={settings.paypalEmail}
-                      onChange={(e) => setSettings(prev => ({ ...prev, paypalEmail: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
+                      onChange={(e) => updateSettings({ ...settings, paypalEmail: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="paypal@example.com"
                     />
                   </div>
@@ -538,8 +591,8 @@ export default function SettingsPage() {
                     <input
                       type="text"
                       value={settings.cashappId}
-                      onChange={(e) => setSettings(prev => ({ ...prev, cashappId: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
+                      onChange={(e) => updateSettings({ ...settings, cashappId: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="$yourcashappid"
                     />
                   </div>
@@ -551,8 +604,8 @@ export default function SettingsPage() {
                     <input
                       type="text"
                       value={settings.venmoId}
-                      onChange={(e) => setSettings(prev => ({ ...prev, venmoId: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
+                      onChange={(e) => updateSettings({ ...settings, venmoId: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="@yourvenmoid"
                     />
                   </div>
@@ -564,8 +617,8 @@ export default function SettingsPage() {
                     <input
                       type="text"
                       value={settings.googlePayUpi}
-                      onChange={(e) => setSettings(prev => ({ ...prev, googlePayUpi: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
+                      onChange={(e) => updateSettings({ ...settings, googlePayUpi: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="yourname@paytm"
                     />
                   </div>
@@ -577,8 +630,8 @@ export default function SettingsPage() {
                     <input
                       type="text"
                       value={settings.applePayId}
-                      onChange={(e) => setSettings(prev => ({ ...prev, applePayId: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
+                      onChange={(e) => updateSettings({ ...settings, applePayId: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="your-apple-pay-id"
                     />
                   </div>
@@ -590,8 +643,8 @@ export default function SettingsPage() {
                     <input
                       type="text"
                       value={settings.stripeAccount}
-                      onChange={(e) => setSettings(prev => ({ ...prev, stripeAccount: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
+                      onChange={(e) => updateSettings({ ...settings, stripeAccount: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="acct_xxxxxxxxx"
                     />
                   </div>
@@ -603,8 +656,8 @@ export default function SettingsPage() {
                     <input
                       type="text"
                       value={settings.bankAccount}
-                      onChange={(e) => setSettings(prev => ({ ...prev, bankAccount: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
+                      onChange={(e) => updateSettings({ ...settings, bankAccount: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="Account Number"
                     />
                   </div>
@@ -616,8 +669,8 @@ export default function SettingsPage() {
                     <input
                       type="text"
                       value={settings.bankIfscSwift}
-                      onChange={(e) => setSettings(prev => ({ ...prev, bankIfscSwift: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
+                      onChange={(e) => updateSettings({ ...settings, bankIfscSwift: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="IFSC/SWIFT Code"
                     />
                   </div>
@@ -629,8 +682,8 @@ export default function SettingsPage() {
                     <input
                       type="text"
                       value={settings.bankIban}
-                      onChange={(e) => setSettings(prev => ({ ...prev, bankIban: e.target.value }))}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors border-gray-300 bg-white text-black`}
+                      onChange={(e) => updateSettings({ ...settings, bankIban: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="IBAN Number"
                     />
                   </div>
@@ -641,9 +694,9 @@ export default function SettingsPage() {
                     </label>
                     <textarea
                       value={settings.paymentNotes}
-                      onChange={(e) => setSettings(prev => ({ ...prev, paymentNotes: e.target.value }))}
+                      onChange={(e) => updateSettings({ ...settings, paymentNotes: e.target.value })}
                       rows={3}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors resize-none border-gray-300 bg-white text-black`}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors resize-none border-gray-300 bg-white text-black`}
                       placeholder="Additional payment instructions or notes..."
                     />
                   </div>

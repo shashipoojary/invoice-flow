@@ -73,6 +73,7 @@ export interface Invoice {
   };
   // Database field names (for compatibility)
   client_id?: string;
+  issue_date?: string;
   due_date?: string;
   tax_rate?: number;
   invoice_number?: string;

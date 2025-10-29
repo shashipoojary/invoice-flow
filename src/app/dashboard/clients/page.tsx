@@ -1,26 +1,125 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { 
   Plus, Users, UserPlus, Edit, Trash2, Mail, Phone, Building2, MapPin, Calendar,
   Eye, X, Loader2
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
+import { useData } from '@/contexts/DataContext';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
-import ClientModal from '@/components/ClientModal';
-import ConfirmationModal from '@/components/ConfirmationModal';
-import QuickInvoiceModal from '@/components/QuickInvoiceModal';
 import { Client } from '@/types';
+import dynamic from 'next/dynamic';
+
+// Lazy load heavy components
+const ClientModal = dynamic(() => import('@/components/ClientModal'), {
+  loading: () => <div className="flex items-center justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+});
+
+const ConfirmationModal = dynamic(() => import('@/components/ConfirmationModal'), {
+  loading: () => null
+});
+
+const QuickInvoiceModal = dynamic(() => import('@/components/QuickInvoiceModal'), {
+  loading: () => <div className="flex items-center justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+});
+
+// Memoized client card component for better performance
+const ClientCard = memo(({ client, onView, onEdit, onDelete, isDeleting }: {
+  client: Client;
+  onView: (client: Client) => void;
+  onEdit: (client: Client) => void;
+  onDelete: (client: Client) => void;
+  isDeleting: string | null;
+}) => {
+  const formatDate = useCallback((dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  }, []);
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
+            <Users className="w-6 h-6 text-indigo-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">{client.name}</h3>
+            <p className="text-sm text-gray-500">{client.email}</p>
+          </div>
+        </div>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => onView(client)}
+            className="p-2 text-gray-400 hover:text-indigo-600 transition-colors cursor-pointer"
+            title="View Details"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onEdit(client)}
+            className="p-2 text-gray-400 hover:text-blue-600 transition-colors cursor-pointer"
+            title="Edit Client"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onDelete(client)}
+            disabled={isDeleting === client.id}
+            className="p-2 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            title="Delete Client"
+          >
+            {isDeleting === client.id ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Trash2 className="w-4 h-4" />
+            )}
+          </button>
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+        {client.company && (
+          <div className="flex items-center text-sm text-gray-600">
+            <Building2 className="w-4 h-4 mr-2" />
+            <span>{client.company}</span>
+          </div>
+        )}
+        {client.phone && (
+          <div className="flex items-center text-sm text-gray-600">
+            <Phone className="w-4 h-4 mr-2" />
+            <span>{client.phone}</span>
+          </div>
+        )}
+        {client.address && (
+          <div className="flex items-center text-sm text-gray-600">
+            <MapPin className="w-4 h-4 mr-2" />
+            <span className="truncate">{client.address}</span>
+          </div>
+        )}
+        <div className="flex items-center text-sm text-gray-500">
+          <Calendar className="w-4 h-4 mr-2" />
+          <span>Added {formatDate(client.created_at)}</span>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+ClientCard.displayName = 'ClientCard';
 
 export default function ClientsPage() {
   const { user, loading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
+  const { clients, isLoadingClients, updateClient, deleteClient } = useData();
   
-  // State
-  const [clients, setClients] = useState<Client[]>([]);
-  const [isLoadingClients, setIsLoadingClients] = useState(true);
+  // Local state for UI
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [showCreateClient, setShowCreateClient] = useState(false);
   const [showEditClient, setShowEditClient] = useState(false);
@@ -77,9 +176,7 @@ export default function ClientsPage() {
           if (response.ok) {
             showSuccess('Client deleted successfully');
             // Refresh clients data
-            const clientsResponse = await fetch('/api/clients', { headers, cache: 'no-store' });
-            const clientsData = await clientsResponse.json();
-            setClients(clientsData.clients || []);
+            // Data is now managed globally, no need to refresh manually
           } else {
             showError('Failed to delete client');
           }
@@ -110,36 +207,39 @@ export default function ClientsPage() {
         </div>
         <div className="flex space-x-2">
           <button 
+            data-testid={`client-${client.id}-view`}
             onClick={() => handleViewClient(client)}
             disabled={isDeleting === client.id}
             className={`p-3 sm:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] sm:min-h-auto touch-manipulation ${
               isDeleting === client.id
                 ? 'opacity-50 cursor-not-allowed' 
-                : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer'
             }`}
             aria-label={`View ${client.name}`}
           >
             <Eye className="h-5 w-5 sm:h-4 sm:w-4" />
           </button>
           <button 
+            data-testid={`client-${client.id}-edit`}
             onClick={() => handleEditClient(client)}
             disabled={isDeleting === client.id}
             className={`p-3 sm:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] sm:min-h-auto touch-manipulation ${
               isDeleting === client.id
                 ? 'opacity-50 cursor-not-allowed' 
-                : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer'
             }`}
             aria-label={`Edit ${client.name}`}
           >
             <Edit className="h-5 w-5 sm:h-4 sm:w-4" />
           </button>
           <button 
+            data-testid={`client-${client.id}-delete`}
             onClick={() => handleDeleteClient(client)}
             disabled={isDeleting === client.id}
             className={`p-3 sm:p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors min-h-[44px] sm:min-h-auto touch-manipulation ${
               isDeleting === client.id 
                 ? 'opacity-50 cursor-not-allowed' 
-                : 'hover:bg-red-50 dark:hover:bg-red-900/20'
+                : 'hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer'
             }`}
             aria-label={`Delete ${client.name}`}
           >
@@ -176,42 +276,12 @@ export default function ClientsPage() {
   ), []);
 
 
-  // Load data on mount - prevent infinite loop with hasLoadedData flag
+  // Data loading is now handled by DataContext
   useEffect(() => {
-    if (user && !loading && !hasLoadedData) {
-      setHasLoadedData(true); // Set flag immediately to prevent re-runs
-      
-      const loadData = async () => {
-        try {
-          // Call getAuthHeaders directly in each fetch to avoid dependency issues
-          const headers = await getAuthHeaders();
-          
-          // First, cleanup any existing duplicates
-          try {
-            await fetch('/api/auto-cleanup-duplicates', { 
-              method: 'POST', 
-              headers,
-              cache: 'no-store' 
-            });
-          } catch (cleanupError) {
-            console.warn('Cleanup duplicates failed:', cleanupError);
-            // Don't fail the entire operation if cleanup fails
-          }
-          
-          // Fetch clients
-          const response = await fetch('/api/clients', { headers, cache: 'no-store' });
-          const data = await response.json();
-          setClients(data.clients || []);
-          setIsLoadingClients(false);
-        } catch (error) {
-          console.error('Error loading clients:', error);
-          setClients([]);
-          setIsLoadingClients(false);
-        }
-      };
-      loadData();
+    if (user && !loading) {
+      setHasLoadedData(true);
     }
-  }, [user, loading, hasLoadedData]); // Include hasLoadedData to prevent re-runs
+  }, [user, loading]);
 
   // Only show loading spinner if user is not authenticated yet
   if (loading && !user) {
@@ -250,8 +320,9 @@ export default function ClientsPage() {
                   </h2>
                 </div>
                 <button
+                  data-testid="add-client-button"
                   onClick={() => setShowCreateClient(true)}
-                  className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                  className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
                 >
                   <Plus className="h-4 w-4" />
                   <span>Add Client</span>
@@ -305,8 +376,9 @@ export default function ClientsPage() {
                   </p>
                   
                   <button
+                    data-testid="add-first-client-button"
                     onClick={() => setShowCreateClient(true)}
-                    className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium mx-auto"
+                    className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium mx-auto cursor-pointer"
                   >
                     <UserPlus className="h-4 w-4" />
                     <span>Add Your First Client</span>
@@ -334,14 +406,7 @@ export default function ClientsPage() {
             // Refresh data after successful client creation
             if (user && !loading) {
               const loadData = async () => {
-                try {
-                  const headers = await getAuthHeaders();
-                  const response = await fetch('/api/clients', { headers, cache: 'no-store' });
-                  const data = await response.json();
-                  setClients(data.clients || []);
-                } catch (error) {
-                  console.error('Error refreshing clients:', error);
-                }
+                // Data is now managed globally, no need to refresh manually
               };
               loadData();
             }
@@ -365,14 +430,7 @@ export default function ClientsPage() {
             // Refresh data after successful client update
             if (user && !loading) {
               const loadData = async () => {
-                try {
-                  const headers = await getAuthHeaders();
-                  const response = await fetch('/api/clients', { headers, cache: 'no-store' });
-                  const data = await response.json();
-                  setClients(data.clients || []);
-                } catch (error) {
-                  console.error('Error refreshing clients:', error);
-                }
+                // Data is now managed globally, no need to refresh manually
               };
               loadData();
             }
@@ -391,7 +449,7 @@ export default function ClientsPage() {
                   setShowViewClient(false);
                   setSelectedClient(null);
                 }}
-                className="p-1 sm:p-2 rounded-lg transition-colors hover:bg-gray-100"
+                className="p-1 sm:p-2 rounded-lg transition-colors hover:bg-gray-100 cursor-pointer"
               >
                 <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
               </button>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, Suspense, lazy } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { 
   Plus, FileText, Clock, CheckCircle, AlertCircle, AlertTriangle, FilePlus, Sparkles,
@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
+import { useSettings } from '@/contexts/SettingsContext';
+import { useData } from '@/contexts/DataContext';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
 import FastInvoiceModal from '@/components/FastInvoiceModal';
@@ -18,15 +20,14 @@ import ClientModal from '@/components/ClientModal';
 // Types
 import { Client, Invoice } from '@/types';
 
-function InvoicesContent() {
+function InvoicesContent(): React.JSX.Element {
   const { user, loading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
+  const { settings } = useSettings();
+  const { invoices, clients, isLoadingInvoices, updateInvoice, deleteInvoice } = useData();
   const searchParams = useSearchParams();
   
-  // State
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [isLoadingInvoices, setIsLoadingInvoices] = useState(true);
+  // Local state for UI
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [showFastInvoice, setShowFastInvoice] = useState(false);
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
@@ -37,9 +38,14 @@ function InvoicesContent() {
   
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
   const [filterAppliedManually, setFilterAppliedManually] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(20); // Show 20 items per page
   
   // Loading states for action buttons
   const [loadingActions, setLoadingActions] = useState<{
@@ -56,25 +62,7 @@ function InvoicesContent() {
     isLoading: false
   });
   
-  // Business settings state
-  const [settings, setSettings] = useState({
-    businessName: '',
-    businessEmail: '',
-    businessPhone: '',
-    website: '',
-    address: '',
-    logo: '',
-    paypalEmail: '',
-    cashappId: '',
-    venmoId: '',
-    googlePayUpi: '',
-    applePayId: '',
-    bankAccount: '',
-    bankIfscSwift: '',
-    bankIban: '',
-    stripeAccount: '',
-    paymentNotes: ''
-  });
+  // Business settings are now managed by SettingsContext
 
 
 
@@ -168,24 +156,47 @@ function InvoicesContent() {
   }, []);
 
   // Helper function to calculate due date status
+  // Parse a YYYY-MM-DD or MM/DD/YYYY date string as a local date (no timezone shifts)
+  const parseDateOnly = useCallback((input: string) => {
+    if (!input) return new Date(NaN);
+    // ISO date from DB e.g., 2025-10-27 - use UTC to avoid timezone issues
+    if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+      const [y, m, d] = input.split('-').map(Number);
+      return new Date(Date.UTC(y, m - 1, d));
+    }
+    // Fallback for MM/DD/YYYY
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(input)) {
+      const [mm, dd, yyyy] = input.split('/').map(Number);
+      return new Date(Date.UTC(yyyy, (mm as number) - 1, dd));
+    }
+    // Last resort
+    return new Date(input);
+  }, []);
+
+  // Debounced search query for better performance
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const getDueDateStatus = useCallback((dueDate: string, invoiceStatus: string, paymentTerms?: { enabled: boolean; terms: string }, updatedAt?: string) => {
     const today = new Date();
-    let effectiveDueDate = new Date(dueDate);
+    let effectiveDueDate = parseDateOnly(dueDate);
     
-    // For "Due on Receipt" invoices, the due date should be the day after the invoice was sent
-    if (paymentTerms?.enabled && paymentTerms.terms === 'Due on Receipt' && invoiceStatus !== 'draft') {
-      // Use updated_at as proxy for when invoice was sent, or fallback to due_date
-      const sentDate = updatedAt ? new Date(updatedAt) : new Date(dueDate);
-      effectiveDueDate = new Date(sentDate);
-      effectiveDueDate.setDate(effectiveDueDate.getDate() + 1); // Due the day after sending
-    }
+    
+    // Note: "Due on Receipt" logic disabled to match public invoice page behavior
+    // The public invoice page uses the raw due_date directly without "Due on Receipt" adjustments
     
     // Set time to start of day for accurate date comparison
-    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const dueDateStart = new Date(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate());
+    const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+    const dueDateStart = new Date(Date.UTC(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate()));
     
     const diffTime = dueDateStart.getTime() - todayStart.getTime();
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    
     
     // Draft invoices should never be marked as overdue, even if past due date
     if (invoiceStatus === 'draft') {
@@ -235,20 +246,19 @@ function InvoicesContent() {
   }, []);
 
   // Search and filter logic
-  const filteredInvoices = useCallback(() => {
+  // Optimized search and filter logic with useMemo and debounced search
+  const filteredInvoices = useMemo(() => {
+    if (!Array.isArray(invoices)) return [];
+
     let filtered = invoices;
 
-    // Apply search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
+    // Apply debounced search query for better performance
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase().trim();
       filtered = filtered.filter(invoice => {
-        // Search in client name
         const clientName = invoice.client?.name?.toLowerCase() || '';
-        // Search in invoice number
         const invoiceNumber = invoice.invoiceNumber?.toLowerCase() || '';
-        // Search in invoice type
         const invoiceType = invoice.type?.toLowerCase() || '';
-        // Search in amount
         const amount = invoice.total?.toString() || '';
         
         return clientName.includes(query) || 
@@ -260,42 +270,58 @@ function InvoicesContent() {
 
     // Apply status filter
     if (statusFilter) {
-      filtered = filtered.filter(invoice => {
-        if (statusFilter === 'paid') {
-          return invoice.status === 'paid';
-        } else if (statusFilter === 'pending') {
-          return invoice.status === 'pending' || invoice.status === 'sent';
-        } else if (statusFilter === 'overdue') {
+      if (statusFilter === 'overdue') {
+        const today = new Date();
+        const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+        
+        filtered = filtered.filter(invoice => {
           if (invoice.status !== 'pending' && invoice.status !== 'sent') return false;
-          const today = new Date();
-          let effectiveDueDate = new Date(invoice.dueDate);
           
-          // For "Due on Receipt" invoices, the due date should be the day after the invoice was sent
-          if (invoice.paymentTerms?.enabled && invoice.paymentTerms.terms === 'Due on Receipt') {
-            // Use updated_at as proxy for when invoice was sent, or fallback to due_date
-            const sentDate = (invoice as any).updatedAt ? new Date((invoice as any).updatedAt) : new Date(invoice.dueDate);
-            effectiveDueDate = new Date(sentDate);
-            effectiveDueDate.setDate(effectiveDueDate.getDate() + 1); // Due the day after sending
+          const effectiveDueDate = parseDateOnly(invoice.dueDate);
+          const dueDateStart = new Date(Date.UTC(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate()));
+          return dueDateStart < todayStart;
+        });
+      } else {
+        filtered = filtered.filter(invoice => {
+          switch (statusFilter) {
+            case 'paid': return invoice.status === 'paid';
+            case 'pending': return invoice.status === 'pending' || invoice.status === 'sent';
+            case 'draft': return invoice.status === 'draft';
+            default: return true;
           }
-          
-          // Set time to start of day for accurate date comparison
-          const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-          const dueDateStart = new Date(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate());
-          return dueDateStart < todayStart; // Only overdue if due date has passed (not on the due date itself)
-        } else if (statusFilter === 'draft') {
-          return invoice.status === 'draft';
-        }
-        return true;
-      });
+        });
+      }
     }
 
-    return filtered;
-  }, [invoices, searchQuery, statusFilter]);
+    // Deduplicate invoices by ID to prevent duplicate keys
+    const uniqueInvoices = filtered.filter((invoice, index, self) => 
+      index === self.findIndex(i => i.id === invoice.id)
+    );
+    
+    return uniqueInvoices;
+  }, [invoices, debouncedSearchQuery, statusFilter, parseDateOnly]);
+
+  // Pagination logic
+  const paginatedInvoices = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredInvoices.slice(startIndex, endIndex);
+  }, [filteredInvoices, currentPage, itemsPerPage]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchQuery, statusFilter]);
+
+  // Calculate pagination info
+  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
+  const hasNextPage = currentPage < totalPages;
+  const hasPrevPage = currentPage > 1;
 
   // Helper function to calculate due charges and total payable
   const calculateDueCharges = useCallback((invoice: Invoice) => {
     // Only calculate late fees for sent invoices that are actually overdue
-    if (invoice.status !== 'pending') {
+    if (invoice.status !== 'pending' && invoice.status !== 'sent') {
       return {
         hasLateFees: false,
         lateFeeAmount: 0,
@@ -305,19 +331,12 @@ function InvoicesContent() {
     }
 
     const today = new Date();
-    let effectiveDueDate = new Date(invoice.dueDate);
+    // Use raw due_date directly (no "Due on Receipt" adjustments) to match invoice card logic
+    const effectiveDueDate = parseDateOnly(invoice.dueDate);
     
-    // For "Due on Receipt" invoices, the due date should be the day after the invoice was sent
-    if (invoice.paymentTerms?.enabled && invoice.paymentTerms.terms === 'Due on Receipt') {
-      // Use updated_at as proxy for when invoice was sent, or fallback to due_date
-      const sentDate = (invoice as any).updatedAt ? new Date((invoice as any).updatedAt) : new Date(invoice.dueDate);
-      effectiveDueDate = new Date(sentDate);
-      effectiveDueDate.setDate(effectiveDueDate.getDate() + 1); // Due the day after sending
-    }
-    
-    // Set time to start of day for accurate date comparison
-    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const dueDateStart = new Date(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate());
+    // Set time to start of day for accurate date comparison (use UTC to match parseDateOnly)
+    const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+    const dueDateStart = new Date(Date.UTC(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate()));
     
     const diffTime = dueDateStart.getTime() - todayStart.getTime();
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
@@ -353,7 +372,7 @@ function InvoicesContent() {
       totalPayable: invoice.total,
       overdueDays: 0
     };
-  }, []);
+  }, [parseDateOnly]);
 
   // Invoice handler functions
   const handleViewInvoice = useCallback((invoice: Invoice) => {
@@ -367,7 +386,6 @@ function InvoicesContent() {
     
     try {
       // Debug: Log current settings
-      console.log('PDF Download - Current Settings:', settings);
       
       // Prepare business settings for PDF
       const businessSettings = {
@@ -389,7 +407,6 @@ function InvoicesContent() {
       };
       
       // Debug: Log business settings being passed to PDF
-      console.log('PDF Download - Business Settings:', businessSettings);
 
       const { generateTemplatePDFBlob } = await import('@/lib/template-pdf-generator');
       
@@ -434,12 +451,6 @@ function InvoicesContent() {
       const headers = await getAuthHeaders();
       
       // Debug: Log the invoice data being sent
-      console.log('Send Invoice - Invoice data:', {
-        id: invoice.id,
-        clientEmail: invoice.clientEmail,
-        clientName: invoice.clientName,
-        client: invoice.client
-      });
       
       const response = await fetch(`/api/invoices/send`, {
         method: 'POST',
@@ -455,14 +466,8 @@ function InvoicesContent() {
       });
 
       if (response.ok) {
-        // Update local state instead of refetching
-        setInvoices(prevInvoices => 
-          prevInvoices.map(inv => 
-            inv.id === invoice.id 
-              ? { ...inv, status: 'pending' as const }
-              : inv
-          )
-        );
+        // Update global state
+        updateInvoice({ ...invoice, status: 'pending' as const });
         showSuccess('Invoice Sent', `Invoice ${invoice.invoiceNumber} has been sent successfully.`);
       } else {
         showError('Send Failed', 'Failed to send invoice. Please try again.');
@@ -512,14 +517,8 @@ function InvoicesContent() {
       });
 
       if (response.ok) {
-        // Update local state instead of refetching
-        setInvoices(prevInvoices => 
-          prevInvoices.map(inv => 
-            inv.id === invoice.id 
-              ? { ...inv, status: 'paid' as const }
-              : inv
-          )
-        );
+        // Update global state
+        updateInvoice({ ...invoice, status: 'paid' as const });
         showSuccess('Invoice Updated', `Invoice ${invoice.invoiceNumber} has been marked as paid.`);
         setConfirmationModal(prev => ({ ...prev, isOpen: false, isLoading: false }));
       } else {
@@ -557,10 +556,8 @@ function InvoicesContent() {
       });
 
       if (response.ok) {
-        // Update local state instead of refetching
-        setInvoices(prevInvoices => 
-          prevInvoices.filter(inv => inv.id !== invoice.id)
-        );
+        // Update global state
+        deleteInvoice(invoice.id);
         showSuccess('Invoice Deleted', `Invoice ${invoice.invoiceNumber} has been deleted successfully.`);
         setConfirmationModal(prev => ({ ...prev, isOpen: false, isLoading: false }));
       } else {
@@ -574,8 +571,8 @@ function InvoicesContent() {
     }
   }, [getAuthHeaders, showSuccess, showError]);
 
-  // Memoized Invoice Card Component
-  const InvoiceCard = ({ invoice, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, handleDeleteInvoice, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions }: {
+  // Memoized Invoice Card Component - optimized with React.memo
+  const InvoiceCard = React.memo(({ invoice, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, handleDeleteInvoice, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions }: {
     invoice: Invoice;
     handleViewInvoice: (invoice: Invoice) => void;
     handleDownloadPDF: (invoice: Invoice) => void;
@@ -594,6 +591,8 @@ function InvoicesContent() {
   }) => {
     const dueDateStatus = getDueDateStatus(invoice.dueDate, invoice.status, invoice.paymentTerms, (invoice as any).updatedAt);
     const dueCharges = calculateDueCharges(invoice);
+    
+    
     
     // Show enhanced features for all invoice statuses
     const paymentTerms = formatPaymentTerms(invoice.paymentTerms);
@@ -615,7 +614,7 @@ function InvoicesContent() {
                   {invoice.invoiceNumber}
                 </div>
                   <div className="text-xs" style={{color: '#6b7280'}}>
-                    {invoice.client.name}
+                    {invoice.client?.name || 'Unknown Client'}
               </div>
                 </div>
               </div>
@@ -663,16 +662,18 @@ function InvoicesContent() {
           
               <div className="flex items-center space-x-1">
                 <button 
+                  data-testid={`invoice-${invoice.id}-view`}
                   onClick={() => handleViewInvoice(invoice)}
-                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
                   title="View"
                 >
                   <Eye className="h-4 w-4 text-gray-600" />
                 </button>
                 <button 
+                  data-testid={`invoice-${invoice.id}-pdf`}
                   onClick={() => handleDownloadPDF(invoice)}
                   disabled={loadingActions[`pdf-${invoice.id}`]}
-                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   title="PDF"
                 >
                   {loadingActions[`pdf-${invoice.id}`] ? (
@@ -683,9 +684,10 @@ function InvoicesContent() {
                 </button>
                 {invoice.status === 'draft' && (
                   <button 
+                    data-testid={`invoice-${invoice.id}-send`}
                     onClick={() => handleSendInvoice(invoice)}
                     disabled={loadingActions[`send-${invoice.id}`]}
-                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     title="Send"
                   >
                     {loadingActions[`send-${invoice.id}`] ? (
@@ -697,9 +699,10 @@ function InvoicesContent() {
                 )}
                 {(invoice.status === 'pending' || invoice.status === 'sent') && (
                   <button 
+                    data-testid={`invoice-${invoice.id}-mark-paid`}
                     onClick={() => handleMarkAsPaid(invoice)}
                     disabled={loadingActions[`paid-${invoice.id}`]}
-                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     title="Mark Paid"
                   >
                     {loadingActions[`paid-${invoice.id}`] ? (
@@ -711,8 +714,9 @@ function InvoicesContent() {
                 )}
                 {invoice.status === 'draft' && (
                   <button 
+                    data-testid={`invoice-${invoice.id}-edit`}
                     onClick={() => handleEditInvoice(invoice)}
-                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
                     title="Edit"
                   >
                     <Edit className="h-4 w-4 text-gray-600" />
@@ -720,8 +724,9 @@ function InvoicesContent() {
                 )}
                 {invoice.status === 'draft' && (
                   <button 
+                    data-testid={`invoice-${invoice.id}-delete`}
                     onClick={() => handleDeleteInvoice(invoice)}
-                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
                     title="Delete"
                   >
                     <Trash2 className="h-4 w-4 text-gray-600" />
@@ -743,11 +748,11 @@ function InvoicesContent() {
             <div>
                   <div className="font-medium text-sm" style={{color: '#1f2937'}}>
                   {invoice.invoiceNumber}
-                </div>
+              </div>
                   <div className="text-xs" style={{color: '#6b7280'}}>
-                {invoice.client.name}
+                {invoice.client?.name || 'Unknown Client'}
               </div>
-              </div>
+            </div>
             </div>
               <div className="text-right">
                 <div className={`font-semibold text-base ${
@@ -777,7 +782,7 @@ function InvoicesContent() {
                 {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status}</span>
                   </span>
-                {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
+                {dueDateStatus.status === 'overdue' && (invoice.status === 'pending' || invoice.status === 'sent') && (
                   <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-red-600'}`}>
                     <AlertTriangle className="h-3 w-3" />
                     <span>{dueDateStatus.days}d overdue</span>
@@ -793,16 +798,18 @@ function InvoicesContent() {
         
               <div className="flex items-center space-x-1">
           <button 
+            data-testid={`invoice-${invoice.id}-view`}
             onClick={() => handleViewInvoice(invoice)}
-                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
                   title="View"
           >
                   <Eye className="h-4 w-4 text-gray-600" />
           </button>
           <button 
+            data-testid={`invoice-${invoice.id}-pdf`}
             onClick={() => handleDownloadPDF(invoice)}
             disabled={loadingActions[`pdf-${invoice.id}`]}
-                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   title="PDF"
           >
             {loadingActions[`pdf-${invoice.id}`] ? (
@@ -813,9 +820,10 @@ function InvoicesContent() {
           </button>
           {invoice.status === 'draft' && (
             <button 
+              data-testid={`invoice-${invoice.id}-send`}
               onClick={() => handleSendInvoice(invoice)}
               disabled={loadingActions[`send-${invoice.id}`]}
-                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     title="Send"
             >
               {loadingActions[`send-${invoice.id}`] ? (
@@ -827,9 +835,10 @@ function InvoicesContent() {
           )}
                 {(invoice.status === 'pending' || invoice.status === 'sent') && (
             <button 
+              data-testid={`invoice-${invoice.id}-mark-paid`}
               onClick={() => handleMarkAsPaid(invoice)}
               disabled={loadingActions[`paid-${invoice.id}`]}
-                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     title="Mark Paid"
             >
               {loadingActions[`paid-${invoice.id}`] ? (
@@ -841,8 +850,9 @@ function InvoicesContent() {
           )}
                 {invoice.status === 'draft' && (
               <button 
+              data-testid={`invoice-${invoice.id}-edit`}
                 onClick={() => handleEditInvoice(invoice)}
-                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
                     title="Edit"
               >
                     <Edit className="h-4 w-4 text-gray-600" />
@@ -850,8 +860,9 @@ function InvoicesContent() {
                 )}
                 {invoice.status === 'draft' && (
               <button 
+              data-testid={`invoice-${invoice.id}-delete`}
                 onClick={() => handleDeleteInvoice(invoice)}
-                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'}`}
+                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
                     title="Delete"
                   >
                     <Trash2 className="h-4 w-4 text-gray-600" />
@@ -863,26 +874,9 @@ function InvoicesContent() {
       </div>
     </div>
     );
-  };
+  });
 
-
-  // Load settings function
-  const loadSettings = useCallback(async () => {
-    try {
-      const headers = await getAuthHeaders();
-      const response = await fetch('/api/settings', {
-        headers,
-        cache: 'no-store'
-      });
-      const data = await response.json();
-      
-      if (data.settings) {
-        setSettings(data.settings);
-      }
-    } catch (error) {
-      console.error('Error fetching settings:', error);
-    }
-  }, [getAuthHeaders]);
+  // Settings are now loaded by SettingsContext
 
   // Initialize filters from URL parameters
   useEffect(() => {
@@ -894,48 +888,12 @@ function InvoicesContent() {
   }, [searchParams]);
 
   // Load data on mount - prevent infinite loop with hasLoadedData flag
+  // Data loading is now handled by DataContext
   useEffect(() => {
-    if (user && !loading && !hasLoadedData) {
-      setHasLoadedData(true); // Set flag immediately to prevent re-runs
-      
-      const loadData = async () => {
-        try {
-          // Call getAuthHeaders directly in each fetch to avoid dependency issues
-          const headers = await getAuthHeaders();
-          
-          // Load data progressively without blocking the UI
-          // Fetch invoices
-          fetch('/api/invoices', { headers, cache: 'no-store' })
-            .then(res => res.json())
-            .then(data => {
-              setInvoices(Array.isArray(data.invoices) ? data.invoices : []);
-              setIsLoadingInvoices(false);
-            })
-            .catch(err => {
-              console.error('Error fetching invoices:', err);
-              setInvoices([]);
-              setIsLoadingInvoices(false);
-            });
-          
-          // Fetch clients
-          fetch('/api/clients', { headers, cache: 'no-store' })
-            .then(res => res.json())
-            .then(data => {
-              setClients(data.clients || []);
-            })
-            .catch(err => {
-              console.error('Error fetching clients:', err);
-            });
-          
-          // Load settings
-          loadSettings();
-        } catch (error) {
-          console.error('Error loading data:', error);
-        }
-      };
-      loadData();
+    if (user && !loading) {
+      setHasLoadedData(true);
     }
-  }, [user, loading, hasLoadedData, getAuthHeaders, loadSettings]); // Include hasLoadedData to prevent re-runs
+  }, [user, loading]);
 
   // Only show loading spinner if user is not authenticated yet
   if (loading && !user) {
@@ -951,7 +909,7 @@ function InvoicesContent() {
   if (!user && !loading) {
     // Redirect to auth page with session expired feedback
     window.location.href = '/auth?message=session_expired';
-    return null;
+    return <div></div>;
   }
 
   return (
@@ -979,7 +937,7 @@ function InvoicesContent() {
                       setSelectedInvoice(null);
                       setShowCreateInvoice(true);
                     }}
-                    className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                    className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
                   >
                     <Plus className="h-4 w-4" />
                     <span>Add Invoice</span>
@@ -987,7 +945,7 @@ function InvoicesContent() {
                 ) : (
                   <button
                     onClick={() => setShowCreateInvoice(true)}
-                    className="flex items-center space-x-1 sm:space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                    className="flex items-center space-x-1 sm:space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
                   >
                     <span>Sign In</span>
                   </button>
@@ -1010,7 +968,7 @@ function InvoicesContent() {
                         placeholder="Search by client name, invoice number, type, or amount..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 text-sm transition-colors"
                       />
                     </div>
                   </div>
@@ -1019,7 +977,7 @@ function InvoicesContent() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setShowFilters(!showFilters)}
-                      className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                      className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium cursor-pointer"
                     >
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -1036,7 +994,7 @@ function InvoicesContent() {
                           setFilterAppliedManually(false);
                           window.history.replaceState({}, '', '/dashboard/invoices');
                         }}
-                        className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors text-sm font-medium"
+                        className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors text-sm font-medium cursor-pointer"
                       >
                         <X className="h-4 w-4" />
                         Clear
@@ -1054,7 +1012,7 @@ function InvoicesContent() {
                           setStatusFilter('');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center ${
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           !statusFilter 
                             ? 'bg-gray-900 text-white' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1067,7 +1025,7 @@ function InvoicesContent() {
                           setStatusFilter('paid');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center ${
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'paid' 
                             ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1080,7 +1038,7 @@ function InvoicesContent() {
                           setStatusFilter('pending');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center ${
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'pending' 
                             ? 'bg-orange-100 text-orange-800 border border-orange-200' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1093,7 +1051,7 @@ function InvoicesContent() {
                           setStatusFilter('overdue');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center ${
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'overdue' 
                             ? 'bg-red-100 text-red-800 border border-red-200' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1106,7 +1064,7 @@ function InvoicesContent() {
                           setStatusFilter('draft');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center ${
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'draft' 
                             ? 'bg-gray-100 text-gray-800 border border-gray-200' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1123,11 +1081,11 @@ function InvoicesContent() {
               {!isLoadingInvoices && (
                 <div className="flex items-center justify-between text-sm text-gray-600">
                   <div>
-                    {filteredInvoices().length === 0 ? (
+                    {filteredInvoices.length === 0 ? (
                       <span>No invoices found</span>
                     ) : (
                       <span>
-                        {filteredInvoices().length} invoice{filteredInvoices().length !== 1 ? 's' : ''} found
+                        {filteredInvoices.length} invoice{filteredInvoices.length !== 1 ? 's' : ''} found
                         {(searchQuery || statusFilter) && (
                           <span className="ml-2 text-gray-500">
                             (filtered from {invoices.length} total)
@@ -1162,17 +1120,18 @@ function InvoicesContent() {
                   ))}
                 </div>
               ) : invoices.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {filteredInvoices()
-                    .sort((a, b) => {
-                      if (statusFilter === 'paid' || statusFilter === 'pending') {
-                        // Sort by amount (highest first)
-                        return b.total - a.total;
-                      }
-                      // Default sort by date (newest first)
-                      return new Date(b.created_at || b.createdAt || 0).getTime() - new Date(a.created_at || a.createdAt || 0).getTime();
-                    })
-                    .map((invoice) => (
+                <>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {paginatedInvoices
+                      .sort((a, b) => {
+                        if (statusFilter === 'paid' || statusFilter === 'pending') {
+                          // Sort by amount (highest first)
+                          return b.total - a.total;
+                        }
+                        // Default sort by date (newest first)
+                        return new Date(b.created_at || b.createdAt || 0).getTime() - new Date(a.created_at || a.createdAt || 0).getTime();
+                      })
+                      .map((invoice) => (
                     <InvoiceCard
                       key={invoice.id}
                       invoice={invoice}
@@ -1193,6 +1152,78 @@ function InvoicesContent() {
                     />
                   ))}
                 </div>
+                  
+                  {/* Pagination Controls */}
+                  {filteredInvoices.length > itemsPerPage && (
+                    <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6 mt-6">
+                      <div className="flex-1 flex justify-between sm:hidden">
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                          disabled={!hasPrevPage}
+                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                          disabled={!hasNextPage}
+                          className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                          Next
+                        </button>
+                      </div>
+                      <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-sm text-gray-700">
+                            Showing{' '}
+                            <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span>
+                            {' '}to{' '}
+                            <span className="font-medium">
+                              {Math.min(currentPage * itemsPerPage, filteredInvoices.length)}
+                            </span>
+                            {' '}of{' '}
+                            <span className="font-medium">{filteredInvoices.length}</span>
+                            {' '}results
+                          </p>
+                        </div>
+                        <div>
+                          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            <button
+                              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                              disabled={!hasPrevPage}
+                              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                              Previous
+                            </button>
+                            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                              const page = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+                              return (
+                                <button
+                                  key={page}
+                                  onClick={() => setCurrentPage(page)}
+                                  className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium cursor-pointer ${
+                                    page === currentPage
+                                      ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
+                                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                  }`}
+                                >
+                                  {page}
+                                </button>
+                              );
+                            })}
+                            <button
+                              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                              disabled={!hasNextPage}
+                              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                            >
+                              Next
+                            </button>
+                          </nav>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="rounded-lg p-12 text-center bg-white/70 border border-gray-200 backdrop-blur-sm">
                   <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl mb-6 bg-gray-100">
@@ -1258,21 +1289,7 @@ function InvoicesContent() {
           onSuccess={() => {
             setShowFastInvoice(false);
             setSelectedInvoice(null);
-            // Refresh data after successful invoice creation/update
-            if (user && !loading) {
-              const loadData = async () => {
-                try {
-                  const headers = await getAuthHeaders();
-                  await fetch('/api/invoices', { headers, cache: 'no-store' })
-                    .then(res => res.json())
-                    .then(data => setInvoices(Array.isArray(data.invoices) ? data.invoices : []))
-                    .catch(err => console.error('Error fetching invoices:', err));
-                } catch (error) {
-                  console.error('Error refreshing data:', error);
-                }
-              };
-              loadData();
-            }
+            // Data is now managed globally, no need to refresh manually
           }}
         />
       )}
@@ -1293,21 +1310,7 @@ function InvoicesContent() {
           onSuccess={() => {
             setShowCreateInvoice(false);
             setSelectedInvoice(null);
-            // Refresh data after successful invoice creation/update
-            if (user && !loading) {
-              const loadData = async () => {
-                try {
-                  const headers = await getAuthHeaders();
-                  await fetch('/api/invoices', { headers, cache: 'no-store' })
-                    .then(res => res.json())
-                    .then(data => setInvoices(Array.isArray(data.invoices) ? data.invoices : []))
-                    .catch(err => console.error('Error fetching invoices:', err));
-                } catch (error) {
-                  console.error('Error refreshing data:', error);
-                }
-              };
-              loadData();
-            }
+            // Data is now managed globally, no need to refresh manually
           }}
         />
       )}
@@ -1327,7 +1330,7 @@ function InvoicesContent() {
                   const headers = await getAuthHeaders();
                   await fetch('/api/clients', { headers, cache: 'no-store' })
                     .then(res => res.json())
-                    .then(data => setClients(data))
+                    // Data is managed globally; no manual setClients here
                     .catch(err => console.error('Error fetching clients:', err));
                 } catch (error) {
                   console.error('Error refreshing data:', error);
@@ -1347,7 +1350,7 @@ function InvoicesContent() {
               <h2 className="text-base sm:text-xl font-bold" style={{color: '#1f2937'}}>Invoice Details</h2>
               <button
                 onClick={() => setShowViewInvoice(false)}
-                className="p-1 sm:p-2 rounded-lg transition-colors hover:bg-gray-100"
+                className="p-1 sm:p-2 rounded-lg transition-colors hover:bg-gray-100 cursor-pointer"
               >
                 <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
               </button>
@@ -1570,7 +1573,7 @@ function InvoicesContent() {
               {/* Fast Invoice Option */}
               <button
                 onClick={handleSelectFastInvoice}
-                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group"
+                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
               >
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
@@ -1591,7 +1594,7 @@ function InvoicesContent() {
               {/* Detailed Invoice Option */}
               <button
                 onClick={handleSelectDetailedInvoice}
-                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group"
+                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
               >
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
@@ -1614,7 +1617,7 @@ function InvoicesContent() {
             <div className="mt-6 pt-4 border-t border-gray-200">
               <button
                 onClick={() => setShowInvoiceTypeSelection(false)}
-                className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
+                className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
               >
                 Cancel
               </button>

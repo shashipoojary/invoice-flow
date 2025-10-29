@@ -1,17 +1,32 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
   User, Mail, Phone, Building, MapPin, Calendar, Shield, CreditCard, 
   Trash2, AlertTriangle, Eye, EyeOff, Save, X, CheckCircle, Settings,
-  Bell, Lock, Key, Download, Upload, Edit, LogOut, RotateCcw
+  Bell, Lock, Key, Download, Upload, Edit, LogOut, RotateCcw, Loader2,
+  Sparkles, FileText
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
+import { useData } from '@/contexts/DataContext';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
-import ConfirmationModal from '@/components/ConfirmationModal';
+import dynamic from 'next/dynamic';
+
+// Lazy load heavy components
+const ConfirmationModal = dynamic(() => import('@/components/ConfirmationModal'), {
+  loading: () => null
+});
+
+const FastInvoiceModal = dynamic(() => import('@/components/FastInvoiceModal'), {
+  loading: () => null
+});
+
+const QuickInvoiceModal = dynamic(() => import('@/components/QuickInvoiceModal'), {
+  loading: () => null
+});
 
 interface UserProfile {
   id: string;
@@ -29,9 +44,151 @@ interface UserProfile {
   };
 }
 
+// Memoized profile info section
+const ProfileInfoSection = memo(({ profile, isEditing, formData, onFormChange, onSave, onCancel }: {
+  profile: UserProfile | null;
+  isEditing: boolean;
+  formData: any;
+  onFormChange: (field: string, value: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) => {
+  const formatDate = useCallback((dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }, []);
+
+  if (!profile) return null;
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-gray-900">Profile Information</h2>
+        {!isEditing ? (
+          <button
+            onClick={() => {/* Handle edit */}}
+            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors cursor-pointer"
+          >
+            <Edit className="w-4 h-4" />
+            <span>Edit Profile</span>
+          </button>
+        ) : (
+          <div className="flex space-x-3">
+            <button
+              onClick={onSave}
+              className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer"
+            >
+              <Save className="w-4 h-4" />
+              <span>Save Changes</span>
+            </button>
+            <button
+              onClick={onCancel}
+              className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-700 text-sm font-medium transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+              <span>Cancel</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+          {isEditing ? (
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => onFormChange('name', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+            />
+          ) : (
+            <p className="text-gray-900">{profile.name}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+          {isEditing ? (
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => onFormChange('email', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+            />
+          ) : (
+            <p className="text-gray-900">{profile.email}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+          {isEditing ? (
+            <input
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => onFormChange('phone', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+            />
+          ) : (
+            <p className="text-gray-900">{profile.phone || 'Not provided'}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Company</label>
+          {isEditing ? (
+            <input
+              type="text"
+              value={formData.company}
+              onChange={(e) => onFormChange('company', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+            />
+          ) : (
+            <p className="text-gray-900">{profile.company || 'Not provided'}</p>
+          )}
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+          {isEditing ? (
+            <textarea
+              value={formData.address}
+              onChange={(e) => onFormChange('address', e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors resize-none"
+            />
+          ) : (
+            <p className="text-gray-900">{profile.address || 'Not provided'}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-6 pt-6 border-t border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+          <div className="flex items-center space-x-2">
+            <Calendar className="w-4 h-4" />
+            <span>Member since {formatDate(profile.createdAt)}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Calendar className="w-4 h-4" />
+            <span>Last login {formatDate(profile.lastLogin)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+ProfileInfoSection.displayName = 'ProfileInfoSection';
+
 export default function ProfilePage() {
   const { user, loading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
+  const { refreshInvoices, refreshClients, clearData } = useData();
   const router = useRouter();
   const pathname = usePathname();
   
@@ -48,12 +205,31 @@ export default function ProfilePage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeletingProgress, setIsDeletingProgress] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [selectedFormat, setSelectedFormat] = useState('csv');
+  const [selectedFormat, setSelectedFormat] = useState('pdf');
+  
+  // Invoice modal states
+  const [showInvoiceTypeSelection, setShowInvoiceTypeSelection] = useState(false);
+  const [showFastInvoice, setShowFastInvoice] = useState(false);
+  const [showCreateInvoice, setShowCreateInvoice] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
   
   // Create invoice handler
   const handleCreateInvoice = useCallback(() => {
-    router.push('/dashboard/invoices/new');
-  }, [router]);
+    setShowInvoiceTypeSelection(true);
+  }, []);
+
+  // Handle invoice type selection
+  const handleSelectFastInvoice = useCallback(() => {
+    setShowInvoiceTypeSelection(false);
+    setSelectedInvoice(null);
+    setShowFastInvoice(true);
+  }, []);
+
+  const handleSelectDetailedInvoice = useCallback(() => {
+    setShowInvoiceTypeSelection(false);
+    setSelectedInvoice(null);
+    setShowCreateInvoice(true);
+  }, []);
   
   // Form states
   const [formData, setFormData] = useState({
@@ -189,8 +365,17 @@ export default function ProfilePage() {
 
       if (response.ok) {
         showSuccess('All data deleted successfully. Your account is now fresh!');
-        // Refresh the page to show empty state
-        window.location.reload();
+        // Clear and refresh global data to show empty state immediately
+        try {
+          clearData();
+          await Promise.all([
+            refreshInvoices(),
+            refreshClients()
+          ]);
+        } catch {}
+        // Ensure any server components revalidate
+        router.refresh();
+        setShowDeleteProgressModal(false);
       } else {
         const data = await response.json();
         showError(data.error || 'Failed to delete progress');
@@ -320,7 +505,7 @@ export default function ProfilePage() {
                       {!isEditing ? (
                         <button
                           onClick={() => setIsEditing(true)}
-                          className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+                          className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors cursor-pointer"
                         >
                           <Edit className="w-4 h-4" />
                           <span>Edit</span>
@@ -329,14 +514,14 @@ export default function ProfilePage() {
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={() => setIsEditing(false)}
-                            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-700 transition-colors"
+                            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-700 transition-colors cursor-pointer"
                           >
                             <X className="w-4 h-4" />
                             <span>Cancel</span>
                           </button>
                           <button
                             onClick={handleUpdateProfile}
-                            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+                            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
                           >
                             <Save className="w-4 h-4" />
                             <span>Save</span>
@@ -356,7 +541,7 @@ export default function ProfilePage() {
                               type="text"
                               value={formData.name}
                               onChange={(e) => setFormData({...formData, name: e.target.value})}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                             />
                           ) : (
                             <p className="text-gray-900">{profile?.name || 'Not provided'}</p>
@@ -372,7 +557,7 @@ export default function ProfilePage() {
                               type="email"
                               value={formData.email}
                               onChange={(e) => setFormData({...formData, email: e.target.value})}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                             />
                           ) : (
                             <p className="text-gray-900">{profile?.email || 'Not provided'}</p>
@@ -388,7 +573,7 @@ export default function ProfilePage() {
                               type="tel"
                               value={formData.phone}
                               onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                             />
                           ) : (
                             <p className="text-gray-900">{profile?.phone || 'Not provided'}</p>
@@ -404,7 +589,7 @@ export default function ProfilePage() {
                               type="text"
                               value={formData.company}
                               onChange={(e) => setFormData({...formData, company: e.target.value})}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                             />
                           ) : (
                             <p className="text-gray-900">{profile?.company || 'Not provided'}</p>
@@ -421,7 +606,7 @@ export default function ProfilePage() {
                             value={formData.address}
                             onChange={(e) => setFormData({...formData, address: e.target.value})}
                             rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                           />
                         ) : (
                           <p className="text-gray-900">{profile?.address || 'Not provided'}</p>
@@ -438,7 +623,7 @@ export default function ProfilePage() {
                     <div className="space-y-3">
                       <button
                         onClick={() => setShowPasswordModal(true)}
-                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-blue-50 rounded-lg transition-colors text-blue-600"
+                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-blue-50 rounded-lg transition-colors text-blue-600 cursor-pointer"
                       >
                         <Lock className="w-5 h-5" />
                         <div>
@@ -457,7 +642,7 @@ export default function ProfilePage() {
                     <div className="space-y-3">
                       <button
                         onClick={handleShowFormatSelection}
-                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-green-50 rounded-lg transition-colors text-green-600"
+                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-green-50 rounded-lg transition-colors text-green-600 cursor-pointer"
                       >
                         <Download className="w-5 h-5" />
                         <div>
@@ -488,7 +673,7 @@ export default function ProfilePage() {
                         </div>
                         <button
                           onClick={() => setShowSubscriptionModal(true)}
-                          className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+                          className="text-indigo-600 hover:text-indigo-700 text-sm font-medium cursor-pointer"
                         >
                           Manage
                         </button>
@@ -504,7 +689,7 @@ export default function ProfilePage() {
                     <div className="space-y-3">
                       <button
                         onClick={() => setShowDeleteProgressModal(true)}
-                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-orange-50 rounded-lg transition-colors text-orange-600"
+                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-orange-50 rounded-lg transition-colors text-orange-600 cursor-pointer"
                       >
                         <RotateCcw className="w-5 h-5" />
                         <div>
@@ -514,7 +699,7 @@ export default function ProfilePage() {
                       </button>
                       <button
                         onClick={() => setShowDeleteModal(true)}
-                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-red-50 rounded-lg transition-colors text-red-600"
+                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-red-50 rounded-lg transition-colors text-red-600 cursor-pointer"
                       >
                         <Trash2 className="w-5 h-5" />
                         <div>
@@ -541,7 +726,7 @@ export default function ProfilePage() {
               </h3>
               <button
                 onClick={() => setShowPasswordModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -557,12 +742,12 @@ export default function ProfilePage() {
                     type={showPasswords.current ? 'text' : 'password'}
                     value={passwordData.current}
                     onChange={(e) => setPasswordData({...passwordData, current: e.target.value})}
-                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPasswords({...showPasswords, current: !showPasswords.current})}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
                   >
                     {showPasswords.current ? (
                       <EyeOff className="w-4 h-4 text-gray-400" />
@@ -582,12 +767,12 @@ export default function ProfilePage() {
                     type={showPasswords.new ? 'text' : 'password'}
                     value={passwordData.new}
                     onChange={(e) => setPasswordData({...passwordData, new: e.target.value})}
-                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPasswords({...showPasswords, new: !showPasswords.new})}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
                   >
                     {showPasswords.new ? (
                       <EyeOff className="w-4 h-4 text-gray-400" />
@@ -607,12 +792,12 @@ export default function ProfilePage() {
                     type={showPasswords.confirm ? 'text' : 'password'}
                     value={passwordData.confirm}
                     onChange={(e) => setPasswordData({...passwordData, confirm: e.target.value})}
-                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPasswords({...showPasswords, confirm: !showPasswords.confirm})}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
                   >
                     {showPasswords.confirm ? (
                       <EyeOff className="w-4 h-4 text-gray-400" />
@@ -627,13 +812,13 @@ export default function ProfilePage() {
             <div className="flex items-center justify-end space-x-3 mt-6">
               <button
                 onClick={() => setShowPasswordModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleChangePassword}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
               >
                 Change Password
               </button>
@@ -667,14 +852,14 @@ export default function ProfilePage() {
             <div className="flex items-center justify-end space-x-3">
               <button
                 onClick={() => setShowDeleteProgressModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteProgress}
                 disabled={isDeletingProgress}
-                className="px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
               >
                 {isDeletingProgress ? 'Deleting...' : 'Delete Progress'}
               </button>
@@ -708,14 +893,14 @@ export default function ProfilePage() {
             <div className="flex items-center justify-end space-x-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteAccount}
                 disabled={isDeleting}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
               >
                 {isDeleting ? 'Deleting...' : 'Delete Account'}
               </button>
@@ -734,7 +919,7 @@ export default function ProfilePage() {
               </h3>
               <button
                 onClick={() => setShowSubscriptionModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -766,7 +951,7 @@ export default function ProfilePage() {
             <div className="flex items-center justify-end space-x-3 mt-6">
               <button
                 onClick={() => setShowSubscriptionModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
               >
                 Close
               </button>
@@ -775,7 +960,7 @@ export default function ProfilePage() {
                   showSuccess('Subscription management coming soon!');
                   setShowSubscriptionModal(false);
                 }}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
               >
                 Upgrade Plan
               </button>
@@ -794,7 +979,7 @@ export default function ProfilePage() {
               </h3>
               <button
                 onClick={() => setShowFormatModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -832,6 +1017,28 @@ export default function ProfilePage() {
                 <input
                   type="radio"
                   name="format"
+                  value="pdf"
+                  checked={selectedFormat === 'pdf'}
+                  onChange={(e) => setSelectedFormat(e.target.value)}
+                  className="w-4 h-4 text-indigo-600"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                      <span className="text-red-600 font-bold text-xs">PDF</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">PDF Report</p>
+                      <p className="text-sm text-gray-500">Professional formatted report for printing</p>
+                    </div>
+                  </div>
+                </div>
+              </label>
+
+              <label className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="radio"
+                  name="format"
                   value="json"
                   checked={selectedFormat === 'json'}
                   onChange={(e) => setSelectedFormat(e.target.value)}
@@ -854,14 +1061,14 @@ export default function ProfilePage() {
             <div className="flex items-center justify-end space-x-3">
               <button
                 onClick={() => setShowFormatModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleExportData}
                 disabled={isExporting}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
               >
                 {isExporting ? 'Exporting...' : 'Export Data'}
               </button>
@@ -880,7 +1087,7 @@ export default function ProfilePage() {
               </h3>
               <button
                 onClick={() => setShowExportModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -935,19 +1142,133 @@ export default function ProfilePage() {
             <div className="flex items-center justify-end space-x-3">
               <button
                 onClick={() => setShowExportModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleExportData}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
               >
                 Export Data
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Invoice Type Selection Modal */}
+      {showInvoiceTypeSelection && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full p-6">
+            <div className="text-center mb-6">
+              <h3 className="font-heading text-xl font-semibold mb-2" style={{color: '#1f2937'}}>
+                Choose Invoice Type
+              </h3>
+              <p className="text-gray-600 text-sm">
+                Select the type of invoice you want to create
+              </p>
+            </div>
+            
+            <div className="space-y-3">
+              {/* Fast Invoice Option */}
+              <button
+                onClick={handleSelectFastInvoice}
+                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                    <Sparkles className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <h4 className="font-medium text-gray-900">Fast Invoice</h4>
+                    <p className="text-sm text-gray-500">Quick invoice with minimal details</p>
+                  </div>
+                  <div className="text-indigo-600 group-hover:text-indigo-700">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </button>
+
+              {/* Detailed Invoice Option */}
+              <button
+                onClick={handleSelectDetailedInvoice}
+                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                    <FileText className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <h4 className="font-medium text-gray-900">Detailed Invoice</h4>
+                    <p className="text-sm text-gray-500">Complete invoice with all details and customization</p>
+                  </div>
+                  <div className="text-indigo-600 group-hover:text-indigo-700">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            {/* Cancel Button */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => setShowInvoiceTypeSelection(false)}
+                className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fast Invoice Modal */}
+      {showFastInvoice && (
+        <FastInvoiceModal
+          isOpen={showFastInvoice}
+          onClose={() => {
+            setShowFastInvoice(false);
+            setSelectedInvoice(null);
+          }}
+          onSuccess={() => {
+            setShowFastInvoice(false);
+            setSelectedInvoice(null);
+            showSuccess('Invoice created successfully!');
+          }}
+          getAuthHeaders={getAuthHeaders}
+          isDarkMode={false}
+          editingInvoice={selectedInvoice}
+          showSuccess={showSuccess}
+          showError={showError}
+          showWarning={showError}
+        />
+      )}
+
+      {/* Detailed Invoice Modal */}
+      {showCreateInvoice && (
+        <QuickInvoiceModal
+          isOpen={showCreateInvoice}
+          onClose={() => {
+            setShowCreateInvoice(false);
+            setSelectedInvoice(null);
+          }}
+          onSuccess={() => {
+            setShowCreateInvoice(false);
+            setSelectedInvoice(null);
+            showSuccess('Invoice created successfully!');
+          }}
+          getAuthHeaders={getAuthHeaders}
+          isDarkMode={false}
+          editingInvoice={selectedInvoice}
+          showSuccess={showSuccess}
+          showError={showError}
+          showWarning={showError}
+        />
       )}
 
       <ToastContainer toasts={toasts} onRemove={removeToast} />

@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 });
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       id: user.id,
       name: profile?.name || user.user_metadata?.full_name || '',
       email: user.email,
@@ -45,6 +45,11 @@ export async function GET(request: NextRequest) {
         nextBilling: profile?.next_billing_date || null
       }
     });
+
+    // Add caching headers for better performance
+    response.headers.set('Cache-Control', 'private, max-age=60, stale-while-revalidate=120');
+    
+    return response;
   } catch (error) {
     console.error('Profile API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

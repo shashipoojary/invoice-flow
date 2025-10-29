@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Mail, 
   Clock, 
@@ -52,6 +52,7 @@ export default function ReminderHistoryPage() {
   const [reminders, setReminders] = useState<ReminderHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedReminder, setSelectedReminder] = useState<ReminderHistory | null>(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
 
@@ -60,11 +61,9 @@ export default function ReminderHistoryPage() {
 
   const fetchReminderHistory = async () => {
     try {
-      console.log('Starting to fetch reminder history...');
       setLoading(true);
       
       if (!user?.id) {
-        console.log('No user ID, setting empty reminders');
         setReminders([]);
         return;
       }
@@ -93,7 +92,6 @@ export default function ReminderHistoryPage() {
 
       if (reminderError) {
         if (reminderError.code === 'PGRST205' || reminderError.message?.includes('Could not find the table')) {
-          console.log('Reminders table not found - this is expected if migration hasn\'t been run yet');
           setReminders([]);
           return;
         }
@@ -102,7 +100,6 @@ export default function ReminderHistoryPage() {
       }
 
       if (reminderData) {
-        console.log('🔍 Debug - Raw reminder data:', reminderData);
         
         const formattedReminders: ReminderHistory[] = reminderData.map(reminder => ({
           id: reminder.id,
@@ -123,10 +120,8 @@ export default function ReminderHistoryPage() {
           }
         }));
         
-        console.log('🔍 Debug - Formatted reminders:', formattedReminders);
         setReminders(formattedReminders);
       } else {
-        console.log('🔍 Debug - No reminder data found');
       }
 
     } catch (error) {
@@ -143,43 +138,55 @@ export default function ReminderHistoryPage() {
     }
   }, [user?.id]);
 
-  const filteredReminders = reminders.filter(reminder => {
-    const matchesSearch = 
-      reminder.invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reminder.invoice.clients.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reminder.invoice.clients.email.toLowerCase().includes(searchTerm.toLowerCase());
+  // Debounced search term for better performance
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // 300ms debounce
 
-    // For scheduled reminders, only show next day's reminders
-    if (reminder.reminder_status === 'scheduled') {
-      const today = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      
-      const reminderDate = new Date(reminder.sent_at);
-      const isNextDay = reminderDate.toDateString() === tomorrow.toDateString();
-      
-      return matchesSearch && isNextDay;
-    }
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-    // For sent/failed/delivered/bounced, show all
-    return matchesSearch;
-  }).sort((a, b) => {
-    // Sort by status priority: sent/failed first, then scheduled
-    const statusPriority = { 'sent': 1, 'delivered': 1, 'failed': 1, 'bounced': 1, 'scheduled': 2 };
-    const aPriority = statusPriority[a.reminder_status] || 3;
-    const bPriority = statusPriority[b.reminder_status] || 3;
-    
-    if (aPriority !== bPriority) {
-      return aPriority - bPriority;
-    }
-    
-    // Within same status, sort by date (newest first for sent/failed, earliest first for scheduled)
-    if (a.reminder_status === 'scheduled' && b.reminder_status === 'scheduled') {
-      return new Date(a.sent_at).getTime() - new Date(b.sent_at).getTime();
-    }
-    
-    return new Date(b.sent_at || b.created_at || 0).getTime() - new Date(a.sent_at || a.created_at || 0).getTime();
-  });
+  // Optimized filtering and sorting with useMemo and debounced search
+  const filteredReminders = useMemo(() => {
+    return reminders.filter(reminder => {
+      const matchesSearch = 
+        reminder.invoice.invoice_number.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        reminder.invoice.clients.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        reminder.invoice.clients.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+
+      // For scheduled reminders, only show next day's reminders
+      if (reminder.reminder_status === 'scheduled') {
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        const reminderDate = new Date(reminder.sent_at);
+        const isNextDay = reminderDate.toDateString() === tomorrow.toDateString();
+        
+        return matchesSearch && isNextDay;
+      }
+
+      // For sent/failed/delivered/bounced, show all
+      return matchesSearch;
+    }).sort((a, b) => {
+      // Sort by status priority: sent/failed first, then scheduled
+      const statusPriority = { 'sent': 1, 'delivered': 1, 'failed': 1, 'bounced': 1, 'scheduled': 2 };
+      const aPriority = statusPriority[a.reminder_status] || 3;
+      const bPriority = statusPriority[b.reminder_status] || 3;
+      
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+      
+      // Within same status, sort by date (newest first for sent/failed, earliest first for scheduled)
+      if (a.reminder_status === 'scheduled' && b.reminder_status === 'scheduled') {
+        return new Date(a.sent_at).getTime() - new Date(b.sent_at).getTime();
+      }
+      
+      return new Date(b.sent_at || b.created_at || 0).getTime() - new Date(a.sent_at || a.created_at || 0).getTime();
+    });
+  }, [reminders, debouncedSearchTerm]);
 
   const getReminderTypeColor = (type: string) => {
     switch (type) {
@@ -281,7 +288,7 @@ export default function ReminderHistoryPage() {
             </h2>
              <button
                onClick={fetchReminderHistory}
-               className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+               className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
              >
                <RefreshCw className="h-4 w-4" />
                <span>Refresh</span>
@@ -298,7 +305,7 @@ export default function ReminderHistoryPage() {
               placeholder="Search reminders..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border text-sm border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 rounded-lg border text-sm border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
             />
           </div>
         </div>
@@ -383,7 +390,7 @@ export default function ReminderHistoryPage() {
                         {reminder.reminder_status === 'failed' && (
                           <button
                             onClick={() => sendManualReminder(reminder.invoice_id, reminder.reminder_type)}
-                            className="p-1.5 rounded-md transition-colors hover:bg-gray-100"
+                            className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
                             title="Send again"
                           >
                             <Send className="h-4 w-4 text-gray-600" />
@@ -391,7 +398,7 @@ export default function ReminderHistoryPage() {
                         )}
                         <button
                           onClick={() => handleViewReminder(reminder)}
-                          className="p-1.5 rounded-md transition-colors hover:bg-gray-100"
+                          className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
                           title="View reminder details"
                         >
                           <Eye className="h-4 w-4 text-gray-600" />
@@ -458,7 +465,7 @@ export default function ReminderHistoryPage() {
                       {reminder.reminder_status === 'failed' && (
                         <button
                           onClick={() => sendManualReminder(reminder.invoice_id, reminder.reminder_type)}
-                          className="p-1.5 rounded-md transition-colors hover:bg-gray-100"
+                          className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
                           title="Send again"
                         >
                           <Send className="h-4 w-4 text-gray-600" />
@@ -515,7 +522,7 @@ export default function ReminderHistoryPage() {
                 <h3 className="text-lg font-semibold text-gray-900">Reminder Details</h3>
                 <button
                   onClick={closeReminderModal}
-                  className="p-2 rounded-md hover:bg-gray-100 transition-colors"
+                  className="p-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
                 >
                   <X className="h-5 w-5 text-gray-500" />
                 </button>
@@ -624,7 +631,7 @@ export default function ReminderHistoryPage() {
                 <div className="flex space-x-3">
                   <button
                     onClick={closeReminderModal}
-                    className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
                   >
                     Close
                   </button>
@@ -634,7 +641,7 @@ export default function ReminderHistoryPage() {
                         sendManualReminder(selectedReminder.invoice_id, selectedReminder.reminder_type);
                         closeReminderModal();
                       }}
-                      className="flex-1 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      className="flex-1 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
                     >
                       Send Again
                     </button>

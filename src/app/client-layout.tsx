@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import Navbar from '@/components/Navbar';
+import { Navbar1 } from '@/components/Navbar1';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
@@ -39,12 +39,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     return null;
   }
 
-  // Don't show navbar on public invoice pages
-  const shouldShowNavbar = !pathname.startsWith('/invoice/');
+  // Don't show navbar on dashboard pages or public invoice pages
+  const shouldShowNavbar = !pathname.startsWith('/dashboard') && !pathname.startsWith('/invoice/') && !pathname.startsWith('/auth');
 
   return (
     <>
-      {shouldShowNavbar && <Navbar />}
+      {shouldShowNavbar && <Navbar1 />}
       {children}
     </>
   );

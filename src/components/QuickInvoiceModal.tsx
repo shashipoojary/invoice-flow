@@ -12,6 +12,8 @@ import {
 import TemplateSelector from './TemplateSelector'
 import { Invoice } from '@/types'
 import { useToast } from '@/hooks/useToast'
+import { useData } from '@/contexts/DataContext'
+import { useSettings } from '@/contexts/SettingsContext'
 
 interface QuickInvoiceModalProps {
   isOpen: boolean
@@ -105,12 +107,35 @@ export default function QuickInvoiceModal({
 }: QuickInvoiceModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const { showSuccess: localShowSuccess, showError: localShowError, showWarning: localShowWarning } = useToast()
+  const { addInvoice, addClient, updateInvoice } = useData()
+  const { settings, isLoadingSettings } = useSettings()
   
   // Use passed toast functions if available, otherwise use local ones
   const showSuccess = propShowSuccess || localShowSuccess
   const showError = propShowError || localShowError
   const showWarning = propShowWarning || localShowWarning
-  const [clients, setClients] = useState<Client[]>([])
+  const [localClients, setLocalClients] = useState<Client[]>([])
+  const { clients, isLoadingClients } = useData()
+  
+  // Use global clients if available, otherwise fall back to local clients
+  let effectiveClients = clients.length > 0 ? clients : localClients;
+  
+  // If editing an invoice and the client is not in the list, add it temporarily
+  if (isOpen && editingInvoice?.client) {
+    const clientId = editingInvoice.clientId || editingInvoice.client_id;
+    if (clientId) {
+      const clientExists = effectiveClients.find(c => c.id === clientId);
+      if (!clientExists) {
+        effectiveClients = [...effectiveClients, editingInvoice.client];
+      }
+    }
+  }
+  
+  // Remove duplicates based on client ID
+  effectiveClients = effectiveClients.filter((client, index, self) => 
+    index === self.findIndex(c => c.id === client.id)
+  );
+  
   const [selectedClientId, setSelectedClientId] = useState('')
   const [newClient, setNewClient] = useState({
     name: '',
@@ -125,7 +150,7 @@ export default function QuickInvoiceModal({
   const [dueDate, setDueDate] = useState('')
   const [notes, setNotes] = useState('Thank you for your business!')
   
-  // Business details
+  // Business details - initialize empty, will be populated by useEffect
   const [businessDetails, setBusinessDetails] = useState<BusinessDetails>({
     name: '',
     address: '',
@@ -140,6 +165,48 @@ export default function QuickInvoiceModal({
       other: ''
     }
   })
+
+  // Update business details when settings change
+  useEffect(() => {
+    if (settings && Object.keys(settings).length > 0) {
+      const newBusinessDetails = {
+        name: settings.businessName || '',
+        address: settings.address || '',
+        phone: settings.businessPhone || '',
+        email: settings.businessEmail || '',
+        website: settings.website || '',
+        paymentDetails: {
+          paypal: settings.paypalEmail || '',
+          bankAccount: settings.bankAccount || '',
+          upiId: settings.googlePayUpi || '',
+          venmo: settings.venmoId || '',
+          other: settings.paymentNotes || ''
+        }
+      }
+      setBusinessDetails(newBusinessDetails)
+    }
+  }, [settings])
+
+  // Force refresh settings when modal opens
+  useEffect(() => {
+    if (isOpen && settings && Object.keys(settings).length > 0) {
+      const newBusinessDetails = {
+        name: settings.businessName || '',
+        address: settings.address || '',
+        phone: settings.businessPhone || '',
+        email: settings.businessEmail || '',
+        website: settings.website || '',
+        paymentDetails: {
+          paypal: settings.paypalEmail || '',
+          bankAccount: settings.bankAccount || '',
+          upiId: settings.googlePayUpi || '',
+          venmo: settings.venmoId || '',
+          other: settings.paymentNotes || ''
+        }
+      }
+      setBusinessDetails(newBusinessDetails)
+    }
+  }, [isOpen, settings])
   
   // Invoice items
   const [items, setItems] = useState<InvoiceItem[]>([
@@ -173,8 +240,8 @@ export default function QuickInvoiceModal({
   // Payment terms
   const [paymentTerms, setPaymentTerms] = useState<PaymentTerms>({
     enabled: false,
-    options: ['Net 15', 'Net 30', 'Due on Receipt', '2/10 Net 30'],
-    defaultOption: 'Net 30'
+    options: ['Due on Receipt', 'Net 15', 'Net 30', '2/10 Net 30'],
+    defaultOption: 'Due on Receipt'
   })
   
   // Invoice theme
@@ -193,89 +260,147 @@ export default function QuickInvoiceModal({
         headers
       })
       const data = await response.json()
-      setClients(data.clients || [])
+      setLocalClients(data.clients || [])
     } catch (error) {
       console.error('Error fetching clients:', error)
     }
   }, [getAuthHeaders])
 
-  const fetchBusinessSettings = useCallback(async () => {
-    try {
-      const headers = await getAuthHeaders()
-      const response = await fetch('/api/settings', {
-        headers
-      })
-      const data = await response.json()
-      if (data.settings) {
-        setBusinessDetails({
-          name: data.settings.business_name || '',
-          address: data.settings.address || '',
-          phone: data.settings.phone || '',
-          email: data.settings.email || '',
-          website: data.settings.website || '',
-          paymentDetails: {
-            paypal: data.settings.paypal_email || '',
-            bankAccount: data.settings.bank_account || '',
-            upiId: data.settings.google_pay_upi || '',
-            venmo: data.settings.venmo_id || '',
-            other: data.settings.payment_notes || ''
-          }
-        })
-      }
-    } catch (error) {
-      console.error('Error fetching business settings:', error)
-    }
-  }, [getAuthHeaders])
+  // fetchBusinessSettings function removed - using SettingsContext instead
 
   useEffect(() => {
     if (isOpen) {
       // Use prop clients if available, otherwise fetch
       if (propClients.length > 0) {
-        setClients(propClients)
+        setLocalClients(propClients)
       } else {
         fetchClients()
       }
-      fetchBusinessSettings()
+      // fetchBusinessSettings() - Removed, using SettingsContext instead
       
-      // Set default dates
-      const today = new Date()
-      const defaultDueDate = new Date()
-      defaultDueDate.setDate(defaultDueDate.getDate() + 30)
-      
-      setIssueDate(today.toISOString().split('T')[0])
-      setDueDate(defaultDueDate.toISOString().split('T')[0])
-      
-      // Generate invoice number
-      const invoiceNum = `INV-${Date.now().toString().slice(-6)}`
-      setInvoiceNumber(invoiceNum)
+      // Only set default dates for NEW invoices (not when editing)
+      if (!editingInvoice) {
+        const today = new Date()
+        const defaultDueDate = new Date()
+        defaultDueDate.setDate(defaultDueDate.getDate() + 30)
+        
+        setIssueDate(today.toISOString().split('T')[0])
+        setDueDate(defaultDueDate.toISOString().split('T')[0])
+        
+        // Generate invoice number
+        const invoiceNum = `INV-${Date.now().toString().slice(-6)}`
+        setInvoiceNumber(invoiceNum)
+      }
     }
-  }, [isOpen, fetchClients, fetchBusinessSettings, propClients])
+  }, [isOpen, fetchClients, propClients, editingInvoice])
+
+  // Auto-calculate due date when payment terms are enabled or issue date changes
+  useEffect(() => {
+    if (paymentTerms.enabled) {
+      const selectedTerm = paymentTerms.defaultOption
+      const baseDate = issueDate || new Date().toISOString().split('T')[0]
+      
+      if (selectedTerm === 'Due on Receipt') {
+        setDueDate(baseDate)
+      } else if (selectedTerm === 'Net 15') {
+        const newDueDate = new Date(baseDate)
+        newDueDate.setDate(newDueDate.getDate() + 15)
+        setDueDate(newDueDate.toISOString().split('T')[0])
+      } else if (selectedTerm === 'Net 30') {
+        const newDueDate = new Date(baseDate)
+        newDueDate.setDate(newDueDate.getDate() + 30)
+        setDueDate(newDueDate.toISOString().split('T')[0])
+      } else if (selectedTerm === '2/10 Net 30') {
+        const newDueDate = new Date(baseDate)
+        newDueDate.setDate(newDueDate.getDate() + 30)
+        setDueDate(newDueDate.toISOString().split('T')[0])
+      }
+    }
+  }, [paymentTerms.enabled, paymentTerms.defaultOption, issueDate])
 
   // Pre-fill form when editing an invoice
   useEffect(() => {
-    if (isOpen && editingInvoice && clients.length > 0) {
-      setSelectedClientId(editingInvoice.clientId || '')
+    if (isOpen && editingInvoice) {
       setInvoiceNumber(editingInvoice.invoiceNumber || '')
-      setIssueDate(editingInvoice.issueDate || '')
+      // Handle issue date with proper formatting
+      const issueDateValue = editingInvoice.issueDate || editingInvoice.issue_date || '';
+      
+      // Format date for HTML date input (YYYY-MM-DD)
+      let formattedIssueDate = issueDateValue;
+      if (issueDateValue && issueDateValue.includes('-')) {
+        // If it's already in YYYY-MM-DD format, use as is
+        formattedIssueDate = issueDateValue;
+      } else if (issueDateValue) {
+        // Try to parse and format the date
+        try {
+          const date = new Date(issueDateValue);
+          if (!isNaN(date.getTime())) {
+            formattedIssueDate = date.toISOString().split('T')[0];
+          }
+        } catch (e) {
+          console.error('Error formatting issue date:', e);
+        }
+      }
+      
+      setIssueDate(formattedIssueDate)
       setDueDate(editingInvoice.dueDate || '')
       setNotes(editingInvoice.notes || 'Thank you for your business!')
       setDiscount(editingInvoice.discount?.toString() || '')
       
-      // Set invoice items
+      // Set client information immediately (don't wait for clients to load)
+      const clientId = editingInvoice.clientId || editingInvoice.client_id;
+      if (clientId) {
+        setSelectedClientId(clientId)
+        
+        // If the client doesn't exist in the clients list, add it immediately
+        if (editingInvoice.client && !clients.find(c => c.id === clientId)) {
+          try { 
+            addClient && addClient(editingInvoice.client);
+          } catch (e) { 
+            console.error('QuickInvoiceModal: Error adding client:', e) 
+          }
+        }
+      }
+      // Set new client data for manual entry if needed
+      if (editingInvoice.clientName) {
+        setNewClient(prev => ({ ...prev, name: editingInvoice.clientName || '' }))
+      }
+      if (editingInvoice.clientEmail) {
+        setNewClient(prev => ({ ...prev, email: editingInvoice.clientEmail || '' }))
+      }
+      
+      // Set invoice items (always do this regardless of clients)
       if (editingInvoice.items && editingInvoice.items.length > 0) {
         setItems(editingInvoice.items.map(item => ({
           id: item.id || Date.now().toString(),
           description: item.description || '',
-          amount: item.amount?.toString() || ''
+          amount: item.amount?.toString() || item.rate?.toString() || ''
         })))
+      } else {
+        // If no items, set a default empty item
+        setItems([{
+          id: Date.now().toString(),
+          description: '',
+          amount: ''
+        }])
+      }
+    }
+  }, [isOpen, editingInvoice])
+
+  // Pre-fill client-dependent fields when clients are loaded
+  useEffect(() => {
+    if (isOpen && editingInvoice) {
+      // Only set client selection if not already set (to avoid overriding the immediate setting above)
+      if (!selectedClientId && editingInvoice.clientId) {
+        setSelectedClientId(editingInvoice.clientId)
       }
       
       // Set payment terms
       if (editingInvoice.paymentTerms) {
         setPaymentTerms({
           enabled: editingInvoice.paymentTerms.enabled,
-          options: ['Due on Receipt', 'Net 15', 'Net 30', 'Net 45', 'Net 60'],
-          defaultOption: editingInvoice.paymentTerms.terms || 'Net 30'
+          options: ['Due on Receipt', 'Net 15', 'Net 30', '2/10 Net 30'],
+          defaultOption: editingInvoice.paymentTerms.terms || 'Due on Receipt'
         })
       }
       
@@ -314,7 +439,7 @@ export default function QuickInvoiceModal({
         })
       }
     }
-  }, [isOpen, editingInvoice, clients])
+  }, [isOpen, editingInvoice])
 
   const addItem = () => {
     setItems([...items, { 
@@ -366,6 +491,9 @@ export default function QuickInvoiceModal({
         return
       }
 
+      // Determine if we're editing or creating
+      const isEditing = editingInvoice && editingInvoice.id
+
       const payload = {
         client_id: selectedClientId || undefined,
         client_data: selectedClientId ? undefined : newClient,
@@ -375,10 +503,11 @@ export default function QuickInvoiceModal({
           line_total: parseFloat(item.amount.toString()) || 0
         })),
         due_date: dueDate,
+        discount: parseFloat(discount.toString()) || 0,
         notes: notes,
         billing_choice: 'per_invoice',
         type: 'detailed',
-        status: 'sent', // Create as sent, not draft
+        status: isEditing ? editingInvoice?.status : 'sent', // Keep existing status when editing
         // Enhanced features
         payment_terms: paymentTerms.enabled ? {
           enabled: true,
@@ -414,9 +543,17 @@ export default function QuickInvoiceModal({
         }
       }
 
+      // Add invoice ID to payload if editing
+      if (isEditing) {
+        (payload as any).invoiceId = editingInvoice.id
+      }
+
       const headers = await getAuthHeaders()
-      const response = await fetch('/api/invoices/create', {
-        method: 'POST',
+      const endpoint = isEditing ? '/api/invoices/update' : '/api/invoices/create'
+      const method = isEditing ? 'PUT' : 'POST'
+      
+      const response = await fetch(endpoint, {
+        method,
         headers,
         body: JSON.stringify(payload)
       })
@@ -424,11 +561,23 @@ export default function QuickInvoiceModal({
       const result = await response.json()
 
       if (response.ok && result.invoice) {
-        showSuccess('Invoice created successfully!')
+        showSuccess(isEditing ? 'Invoice updated successfully!' : 'Invoice created successfully!')
+        // Update global state immediately
+        if (isEditing) {
+          // Update existing invoice
+          try { updateInvoice && updateInvoice(result.invoice) } catch {}
+        } else {
+          // Add new invoice
+          try { addInvoice && addInvoice(result.invoice) } catch {}
+        }
+        // If a new client was created, add it to global state
+        if (result.invoice.client && !selectedClientId) {
+          try { addClient && addClient(result.invoice.client) } catch {}
+        }
         onSuccess()
         onClose()
       } else {
-        throw new Error(result.error || 'Failed to create invoice')
+        throw new Error(result.error || (isEditing ? 'Failed to update invoice' : 'Failed to create invoice'))
       }
 
     } catch (error) {
@@ -554,6 +703,21 @@ export default function QuickInvoiceModal({
         } else {
           // Show success message for editing
           showSuccess(isEditing ? 'Invoice updated successfully!' : 'Invoice created successfully!')
+        }
+        
+        // Update global state immediately
+        if (result.invoice) {
+          if (isEditing) {
+            // Update existing invoice
+            try { updateInvoice && updateInvoice(result.invoice) } catch {}
+          } else {
+            // Add new invoice
+            try { addInvoice && addInvoice(result.invoice) } catch {}
+          }
+          // If a new client was created, add it to global state
+          if (result.invoice.client && !selectedClientId) {
+            try { addClient && addClient(result.invoice.client) } catch {}
+          }
         }
       } else {
         throw new Error(result.error || (isEditing ? 'Failed to update invoice' : 'Failed to create invoice'))
@@ -789,7 +953,7 @@ export default function QuickInvoiceModal({
           </div>
           <button
             onClick={handleClose}
-            className={`transition-colors p-1.5 rounded-lg ${
+            className={`transition-colors p-1.5 rounded-lg cursor-pointer ${
               isDarkMode 
                 ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' 
                 : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
@@ -890,8 +1054,9 @@ export default function QuickInvoiceModal({
                     </div>
                     <button
                       type="button"
+                      data-testid="quick-invoice-clear-client"
                       onClick={() => setSelectedClientId('')}
-                      className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors ${
+                      className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
                         isDarkMode 
                           ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
@@ -902,7 +1067,7 @@ export default function QuickInvoiceModal({
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {clients.length > 0 && (
+                    {effectiveClients.length > 0 && (
                     <div className="relative">
                       <select
                         value={selectedClientId}
@@ -914,11 +1079,17 @@ export default function QuickInvoiceModal({
                             }`}
                       >
                           <option value="">Select existing client</option>
-                        {clients.map(client => (
+                        {effectiveClients.map(client => (
                           <option key={client.id} value={client.id}>
                               {client.name} {client.company && `(${client.company})`}
                           </option>
                         ))}
+                        {/* Show current client even if not in clients list */}
+                        {selectedClientId && !effectiveClients.find(c => c.id === selectedClientId) && editingInvoice?.client && (
+                          <option value={selectedClientId}>
+                            {editingInvoice.client.name} {editingInvoice.client.company && `(${editingInvoice.client.company})`}
+                          </option>
+                        )}
                       </select>
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                           <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -928,7 +1099,7 @@ export default function QuickInvoiceModal({
                     </div>
                     )}
                     
-                    {clients.length > 0 && (
+                    {effectiveClients.length > 0 && (
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">
                         <div className={`w-full border-t ${
@@ -985,39 +1156,68 @@ export default function QuickInvoiceModal({
                 )}
               </div>
 
-              {/* Invoice Details */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <div className="relative">
-                    <Hash className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
-                      isDarkMode ? 'text-gray-500' : 'text-gray-400'
-                    }`} />
-                    <input
-                      type="text"
-                      value={invoiceNumber}
-                      readOnly
-                      className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg transition-colors ${
-                        isDarkMode 
-                          ? 'border-gray-700 bg-gray-800 text-gray-300' 
-                          : 'border-gray-300 bg-gray-50 text-gray-600'
-                      }`}
-                      placeholder="Auto-generated"
-                      required
-                    />
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                      <div className={`w-2 h-2 rounded-full ${
-                        isDarkMode ? 'bg-green-400' : 'bg-green-500'
-                      }`} title="Auto-generated by system"></div>
+                {/* Invoice Details */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <div className="relative">
+                      <Hash className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+                        isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                      }`} />
+                      <input
+                        type="text"
+                        value={invoiceNumber}
+                        readOnly
+                        className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg transition-colors ${
+                          isDarkMode 
+                            ? 'border-gray-700 bg-gray-800 text-gray-300' 
+                            : 'border-gray-300 bg-gray-50 text-gray-600'
+                        }`}
+                        placeholder="Auto-generated"
+                        required
+                      />
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className={`w-2 h-2 rounded-full ${
+                          isDarkMode ? 'bg-green-400' : 'bg-green-500'
+                        }`} title="Auto-generated by system"></div>
+                    </div>
+                    </div>
+                    <p className={`text-xs mt-1 ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      Auto-generated by system
+                    </p>
                   </div>
-                  </div>
-                  <p className={`text-xs mt-1 ${
-                    isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                  }`}>
-                    Auto-generated by system
-                  </p>
-                </div>
 
-                <div>
+                  <div>
+                    <div className="relative">
+                      <Calendar className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+                        isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                      }`} />
+                      <input
+                        type="date"
+                        value={issueDate}
+                        onChange={(e) => setIssueDate(e.target.value)}
+                        className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                          isDarkMode 
+                            ? 'border-gray-700 bg-gray-800 text-white' 
+                            : 'border-gray-300 bg-white text-gray-900'
+                        }`}
+                        required
+                      />
+                      <div className="absolute right-8 top-1/2 transform -translate-y-1/2">
+                        <div className={`w-2 h-2 rounded-full ${
+                          isDarkMode ? 'bg-blue-400' : 'bg-blue-500'
+                        }`} title="Auto-selected current date"></div>
+                    </div>
+                    </div>
+                    <p className={`text-xs mt-1 ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      Issue Date {!editingInvoice ? '(Auto-selected)' : ''}
+                    </p>
+                  </div>
+
+                  <div>
                   <div className="relative">
                     <Calendar className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
                       isDarkMode ? 'text-gray-500' : 'text-gray-400'
@@ -1034,18 +1234,23 @@ export default function QuickInvoiceModal({
                       required
                     />
                     {paymentTerms.enabled && paymentTerms.defaultOption === 'Due on Receipt' && (
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <div className="absolute right-8 top-1/2 transform -translate-y-1/2">
                         <div className={`w-2 h-2 rounded-full ${
                           isDarkMode ? 'bg-orange-400' : 'bg-orange-500'
                         }`} title="Auto-updated by payment terms"></div>
                   </div>
                     )}
                   </div>
-                  {paymentTerms.enabled && paymentTerms.defaultOption === 'Due on Receipt' && (
+                  <p className={`text-xs mt-1 ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
+                    Due Date
+                  </p>
+                  {paymentTerms.enabled && (
                     <p className={`text-xs mt-1 ${
                       isDarkMode ? 'text-orange-400' : 'text-orange-600'
                     }`}>
-                      Auto-updated to match &quot;Due on Receipt&quot;
+                      Auto-updated to match the payment terms
                     </p>
                   )}
                 </div>
@@ -1055,7 +1260,7 @@ export default function QuickInvoiceModal({
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="w-full sm:w-auto bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm"
+                  className="w-full sm:w-auto bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer"
                 >
                   <span>Next</span>
                   <ArrowRight className="h-4 w-4" />
@@ -1089,7 +1294,7 @@ export default function QuickInvoiceModal({
                   <button
                     type="button"
                     onClick={addItem}
-                    className={`flex items-center text-sm font-medium px-3 py-2 rounded-lg transition-colors ${
+                    className={`flex items-center text-sm font-medium px-3 py-2 rounded-lg transition-colors cursor-pointer ${
                       isDarkMode 
                         ? 'text-indigo-400 hover:text-indigo-200 hover:bg-indigo-800/30' 
                         : 'text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50'
@@ -1150,8 +1355,9 @@ export default function QuickInvoiceModal({
                           {items.length > 1 && (
                             <button
                               type="button"
+                              data-testid={`remove-item-${item.id}`}
                               onClick={() => removeItem(item.id)}
-                              className={`p-2 rounded-lg transition-colors ml-2 ${
+                              className={`p-2 rounded-lg transition-colors ml-2 cursor-pointer ${
                                 isDarkMode 
                                   ? 'text-red-400 hover:text-red-200 hover:bg-red-900/20' 
                                   : 'text-red-500 hover:text-red-700 hover:bg-red-50'
@@ -1258,7 +1464,7 @@ export default function QuickInvoiceModal({
                 <button
                   type="button"
                   onClick={prevStep}
-                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm ${
+                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
                     isDarkMode 
                       ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1270,7 +1476,7 @@ export default function QuickInvoiceModal({
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm"
+                  className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer"
                 >
                   <span>Next</span>
                   <ArrowRight className="h-4 w-4" />
@@ -1382,7 +1588,7 @@ export default function QuickInvoiceModal({
                             setDueDate(newDueDate.toISOString().split('T')[0])
                           }
                         }}
-                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-colors ${
+                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-colors cursor-pointer ${
                           isDarkMode 
                             ? 'border-gray-700 bg-gray-800 text-white' 
                             : 'border-gray-300 bg-white text-gray-900'
@@ -1621,7 +1827,7 @@ export default function QuickInvoiceModal({
                           <button
                             type="button"
                             onClick={addReminderRule}
-                            className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors ${
+                            className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer ${
                               isDarkMode 
                                 ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
                                 : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
@@ -1637,7 +1843,7 @@ export default function QuickInvoiceModal({
                             <select
                               value={rule.type}
                               onChange={(e) => updateReminderRule(rule.id, { type: e.target.value as 'before' | 'after' })}
-                              className={`px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                              className={`px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors cursor-pointer ${
                                 isDarkMode 
                                   ? 'border-gray-700 bg-gray-800' 
                                   : 'border-gray-300 bg-white'
@@ -1671,8 +1877,9 @@ export default function QuickInvoiceModal({
                             
                             <button
                               type="button"
+                              data-testid={`remove-reminder-rule-${rule.id}`}
                               onClick={() => removeReminderRule(rule.id)}
-                              className="ml-auto text-red-500 hover:text-red-700 p-1"
+                              className="ml-auto text-red-500 hover:text-red-700 p-1 cursor-pointer"
                               title="Delete rule"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -1738,7 +1945,7 @@ export default function QuickInvoiceModal({
                         <select
                           value={lateFees.type}
                           onChange={(e) => setLateFees({...lateFees, type: e.target.value as 'fixed' | 'percentage'})}
-                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors cursor-pointer ${
                             isDarkMode 
                               ? 'border-gray-700 bg-gray-800 text-white' 
                               : 'border-gray-300 bg-white text-gray-900'
@@ -1816,7 +2023,7 @@ export default function QuickInvoiceModal({
                 <button
                   type="button"
                   onClick={prevStep}
-                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm ${
+                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
                     isDarkMode 
                       ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1828,7 +2035,7 @@ export default function QuickInvoiceModal({
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm"
+                  className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer"
                 >
                   <span>Review</span>
                   <ArrowRight className="h-4 w-4" />
@@ -2024,7 +2231,7 @@ export default function QuickInvoiceModal({
                 <button
                   type="button"
                   onClick={prevStep}
-                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm ${
+                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
                     isDarkMode 
                       ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -2038,7 +2245,7 @@ export default function QuickInvoiceModal({
                   type="button"
                   onClick={handleGeneratePDF}
                   disabled={pdfLoading}
-                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 ${
+                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
                     isDarkMode 
                       ? 'bg-blue-600 text-white hover:bg-blue-700' 
                       : 'bg-blue-600 text-white hover:bg-blue-700'
@@ -2059,9 +2266,10 @@ export default function QuickInvoiceModal({
                 
                 <button
                   type="button"
+                  data-testid="quick-invoice-create-draft"
                   onClick={handleCreateDraft}
                   disabled={creatingLoading || sendingLoading}
-                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 ${
+                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
                     isDarkMode 
                       ? 'bg-gray-600 text-white hover:bg-gray-700' 
                       : 'bg-gray-500 text-white hover:bg-gray-600'
@@ -2082,8 +2290,9 @@ export default function QuickInvoiceModal({
                 
                 <button
                   type="submit"
+                  data-testid="quick-invoice-create-and-send"
                   disabled={creatingLoading || sendingLoading}
-                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 ${
+                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
                     isDarkMode 
                       ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
                       : 'bg-indigo-600 text-white hover:bg-indigo-700'

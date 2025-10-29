@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, useTransition } from 'react';
 import Image from 'next/image';
 import { 
   LayoutDashboard, 
@@ -14,7 +14,7 @@ import {
   LogOut,
   Plus,
   Loader2,
-  Mail
+  Mail,
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -33,9 +33,16 @@ const ModernSidebar = ({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
   const { user, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  
+  // Refs for performance optimization
+  const buttonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const animationFrameRef = useRef<number | null>(null);
+  const lastClickTime = useRef<number>(0);
 
   // Auto-collapse on mobile and handle resize
   useEffect(() => {
@@ -68,7 +75,8 @@ const ModernSidebar = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const navigationItems = [
+  // Memoized navigation items for better performance
+  const navigationItems = useMemo(() => [
     {
       id: 'dashboard',
       label: 'Dashboard',
@@ -103,10 +111,77 @@ const ModernSidebar = ({
       icon: Settings,
       description: 'Preferences',
       route: '/dashboard/settings'
-    }
-  ];
+    },
+  ], []);
 
-  const handleSignOut = async () => {
+  // Ultra-fast navigation handler with advanced optimizations
+  const handleNavigation = useCallback((route: string) => {
+    const now = Date.now();
+    
+    // Debounce rapid clicks (prevent spam clicking)
+    if (now - lastClickTime.current < 100) {
+      return;
+    }
+    lastClickTime.current = now;
+    
+    // Cancel any pending animation frame
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    
+    // Use React 18's startTransition for non-blocking updates
+    startTransition(() => {
+      setNavigatingTo(route);
+    });
+    
+    // Get button reference for instant feedback
+    const button = buttonRefs.current.get(route);
+    if (button) {
+      // Simple visual feedback without scaling
+      animationFrameRef.current = requestAnimationFrame(() => {
+        button.classList.add('opacity-75', 'transition-none');
+        
+        // Remove classes after animation
+        setTimeout(() => {
+          button.classList.remove('opacity-75', 'transition-none');
+        }, 150);
+      });
+    }
+    
+    // Preload route for instant navigation
+    router.prefetch(route);
+    
+    // Navigate with priority
+    router.push(route, { scroll: false });
+    
+    // Close mobile menu if open
+    if (window.innerWidth < 1024) {
+      setIsMobileOpen(false);
+    }
+    
+    // Clear loading state after navigation
+    setTimeout(() => {
+      setNavigatingTo(null);
+    }, 200);
+  }, [router, startTransition]);
+
+  // Removed mouse and touch event handlers to prevent hover issues
+
+  // Memory optimization and cleanup
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      // Clear button refs to prevent memory leaks
+      buttonRefs.current.clear();
+    };
+  }, []);
+
+  // NOTE: Avoid prefetching all routes on mount to prevent blocking LCP
+  // Prefetch happens on hover only (below) and during navigation
+
+  const handleSignOut = useCallback(async () => {
     setIsLoggingOut(true);
     try {
       const result = await signOut();
@@ -126,7 +201,7 @@ const ModernSidebar = ({
     } finally {
       setIsLoggingOut(false);
     }
-  };
+  }, [signOut]);
 
   const handleToggleCollapse = () => {
     const newCollapsed = !isCollapsed;
@@ -138,12 +213,12 @@ const ModernSidebar = ({
   };
 
   const sidebarContent = (
-    <div className={`h-full flex flex-col transition-all duration-300 ${
+    <div className={`h-full flex flex-col transition-all duration-300 ease-in-out ${
       isDarkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-200'
     } ${isCollapsed ? 'w-16' : 'w-80'}`}>
       
       {/* Header */}
-      <div className={`flex items-center ${isCollapsed ? 'justify-center p-4' : 'justify-between p-6'} border-b ${
+      <div className={`flex items-center transition-all duration-300 ease-in-out ${isCollapsed ? 'justify-center p-4' : 'justify-between p-6'} border-b ${
         isDarkMode ? 'border-gray-800' : 'border-gray-200'
       }`}>
         {!isCollapsed ? (
@@ -159,7 +234,7 @@ const ModernSidebar = ({
         ) : (
           <button
             onClick={handleToggleCollapse}
-            className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors bg-transparent border-none outline-none overflow-hidden"
+            className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors bg-transparent border-none outline-none overflow-hidden cursor-pointer"
             style={{ backgroundColor: 'transparent' }}
           >
         <Image
@@ -167,7 +242,7 @@ const ModernSidebar = ({
           alt="FlowInvoicer Sidebar Logo - Collapsed"
           width={400}
           height={160}
-          className="w-16 h-16 object-contain scale-300"
+          className="w-20 h-20 object-contain"
           style={{
             backgroundColor: 'transparent',
             border: 'none',
@@ -181,7 +256,7 @@ const ModernSidebar = ({
         {!isCollapsed && (
           <button
             onClick={handleToggleCollapse}
-            className={`hidden lg:flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+            className={`hidden lg:flex items-center justify-center w-8 h-8 rounded-lg transition-colors cursor-pointer ${
               isDarkMode 
                 ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-300' 
                 : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
@@ -194,7 +269,7 @@ const ModernSidebar = ({
 
       {/* Quick Actions */}
       {!isCollapsed && (
-        <div className="px-6 py-4">
+        <div className="px-6 py-4 transition-all duration-300 ease-in-out">
           <button
             onClick={() => {
               onCreateInvoice();
@@ -203,7 +278,7 @@ const ModernSidebar = ({
                 setIsMobileOpen(false);
               }
             }}
-            className={`w-full flex items-center justify-center space-x-2 px-6 py-3 rounded-lg transition-colors text-sm font-medium ${
+            className={`w-full flex items-center justify-center space-x-2 px-6 py-3 rounded-lg transition-colors text-sm font-medium cursor-pointer ${
               isDarkMode 
                 ? 'bg-white text-black hover:bg-gray-200' 
                 : 'bg-black text-white hover:bg-gray-800'
@@ -216,7 +291,7 @@ const ModernSidebar = ({
       )}
 
       {isCollapsed && (
-        <div className="px-3 py-4">
+        <div className="px-3 py-4 transition-all duration-300 ease-in-out">
           <button
             onClick={() => {
               onCreateInvoice();
@@ -225,7 +300,7 @@ const ModernSidebar = ({
                 setIsMobileOpen(false);
               }
             }}
-            className={`w-full flex items-center justify-center p-3 rounded-lg transition-colors ${
+            className={`w-full flex items-center justify-center p-3 rounded-lg transition-colors cursor-pointer ${
               isDarkMode 
                 ? 'bg-white text-black hover:bg-gray-200' 
                 : 'bg-black text-white hover:bg-gray-800'
@@ -238,35 +313,42 @@ const ModernSidebar = ({
       )}
 
       {/* Navigation */}
-      <nav className={`flex-1 ${isCollapsed ? 'px-3 py-4' : 'px-6 py-4'}`}>
+      <nav className={`flex-1 transition-all duration-300 ease-in-out ${isCollapsed ? 'px-3 py-4' : 'px-6 py-4'}`}>
         <div className="space-y-3">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.route;
             
+            const isNavigating = navigatingTo === item.route;
+            
             return (
               <button
                 key={item.id}
-                onClick={() => {
-                  router.push(item.route);
-                  // Close mobile menu when navigating
-                  if (window.innerWidth < 1024) {
-                    setIsMobileOpen(false);
+                ref={(el) => {
+                  if (el) {
+                    buttonRefs.current.set(item.route, el);
                   }
                 }}
-                className={`w-full flex items-center ${isCollapsed ? 'justify-center p-3' : 'space-x-3 px-3 py-3'} rounded-lg transition-colors group ${
+                data-route={item.route}
+                onClick={() => handleNavigation(item.route)}
+                disabled={isNavigating || isPending}
+                className={`w-full flex items-center ${isCollapsed ? 'justify-center p-3' : 'space-x-3 px-3 py-3'} rounded-lg group disabled:opacity-50 disabled:cursor-wait transition-colors duration-200 cursor-pointer ${
                   isActive
                     ? isDarkMode
                       ? 'bg-gray-800 text-white'
                       : 'bg-gray-100 text-black'
                     : isDarkMode
-                    ? 'text-gray-400 hover:text-white hover:bg-gray-800'
-                    : 'text-gray-600 hover:text-black hover:bg-gray-50'
+                    ? 'text-gray-200 hover:text-white hover:bg-gray-800'
+                    : 'text-gray-800 hover:text-black hover:bg-gray-50'
                 }`}
                 title={isCollapsed ? item.label : undefined}
               >
                 <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-                  <Icon className="w-5 h-5" />
+                  {isNavigating ? (
+                    <Loader2 className="w-4 h-4 loading-spinner" />
+                  ) : (
+                    <Icon className="w-5 h-5" />
+                  )}
                 </div>
                 
                 {!isCollapsed && (
@@ -274,8 +356,8 @@ const ModernSidebar = ({
                     <div className="font-medium text-sm">{item.label}</div>
                     <div className={`text-xs ${
                       isActive 
-                        ? isDarkMode ? 'text-gray-300' : 'text-gray-600'
-                        : isDarkMode ? 'text-gray-500' : 'text-gray-500'
+                        ? isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                        : isDarkMode ? 'text-gray-300' : 'text-gray-600'
                     }`}>
                       {item.description}
                     </div>
@@ -288,15 +370,22 @@ const ModernSidebar = ({
       </nav>
 
       {/* User Profile & Actions */}
-      <div className={`${isCollapsed ? 'p-3' : 'p-6'} border-t ${
+      <div className={`transition-all duration-300 ease-in-out ${isCollapsed ? 'p-3' : 'p-6'} border-t ${
         isDarkMode ? 'border-gray-800' : 'border-gray-200'
       }`}>
         {!isCollapsed ? (
           <div className="space-y-4">
             {/* Profile Button */}
             <button
-              onClick={() => router.push('/dashboard/profile')}
-              className={`w-full flex items-center space-x-3 p-3 rounded-lg border transition-colors hover:scale-105 ${
+              ref={(el) => {
+                if (el) {
+                  buttonRefs.current.set('/dashboard/profile', el);
+                }
+              }}
+              data-route="/dashboard/profile"
+              onClick={() => handleNavigation('/dashboard/profile')}
+              disabled={isPending}
+              className={`w-full flex items-center space-x-3 p-3 rounded-lg border transition-colors duration-200 cursor-pointer ${
                 isDarkMode 
                   ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' 
                   : 'bg-white border-gray-200 hover:bg-gray-50'
@@ -323,8 +412,8 @@ const ModernSidebar = ({
                 </div>
                 <div className={`text-xs truncate ${
                   isDarkMode 
-                    ? 'text-gray-400' 
-                    : 'text-gray-500'
+                    ? 'text-gray-300' 
+                    : 'text-gray-600'
                 }`}>
                   View Profile
                 </div>
@@ -335,10 +424,10 @@ const ModernSidebar = ({
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={onToggleDarkMode}
-                className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-lg text-sm font-medium transition-colors border ${
+                className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-lg text-sm font-medium border transition-colors duration-200 cursor-pointer ${
                   isDarkMode 
-                    ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border-gray-700' 
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-200'
+                    ? 'bg-gray-800 text-gray-200 border-gray-700 hover:bg-gray-700' 
+                    : 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50'
                 }`}
               >
                 <Settings className="w-4 h-4" />
@@ -348,10 +437,10 @@ const ModernSidebar = ({
               <button
                 onClick={handleSignOut}
                 disabled={isLoggingOut}
-                className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-lg text-sm font-medium transition-colors border disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-lg text-sm font-medium border disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer ${
                   isDarkMode 
-                    ? 'text-red-400 bg-red-900/20 hover:bg-red-900/30 border-red-800' 
-                    : 'text-red-600 bg-white hover:bg-red-50 border-red-200'
+                    ? 'text-red-400 bg-red-900/20 border-red-800 hover:bg-red-900/30' 
+                    : 'text-red-600 bg-white border-red-200 hover:bg-red-50'
                 }`}
               >
                 {isLoggingOut ? (
@@ -364,13 +453,13 @@ const ModernSidebar = ({
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 transition-all duration-300 ease-in-out">
             <button
               onClick={onToggleDarkMode}
-              className={`w-full flex items-center justify-center p-3 rounded-lg transition-colors border ${
+              className={`w-full flex items-center justify-center p-3 rounded-lg border transition-colors duration-200 cursor-pointer ${
                 isDarkMode 
-                  ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border-gray-700' 
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-200'
+                  ? 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700' 
+                  : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
               }`}
               title="Toggle Theme"
             >
@@ -379,10 +468,10 @@ const ModernSidebar = ({
             
             <button
               onClick={handleSignOut}
-              className={`w-full flex items-center justify-center p-3 rounded-lg transition-colors border ${
+              className={`w-full flex items-center justify-center p-3 rounded-lg border transition-colors duration-200 cursor-pointer ${
                 isDarkMode 
-                  ? 'text-red-400 bg-red-900/20 hover:bg-red-900/30 border-red-800' 
-                  : 'text-red-600 bg-white hover:bg-red-50 border-red-200'
+                  ? 'text-red-400 bg-red-900/20 border-red-800 hover:bg-red-900/30' 
+                  : 'text-red-600 bg-white border-red-200 hover:bg-red-50'
               }`}
               title="Logout"
             >
@@ -407,7 +496,7 @@ const ModernSidebar = ({
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        className={`lg:hidden fixed top-4 left-4 z-50 p-3 rounded-xl shadow-lg border transition-colors ${
+        className={`lg:hidden fixed top-4 left-4 z-50 p-3 rounded-xl shadow-lg border transition-all duration-150 ease-out hover:scale-105 active:scale-95 cursor-pointer ${
           isDarkMode 
             ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' 
             : 'bg-white border-gray-200 hover:bg-gray-50'
@@ -421,7 +510,7 @@ const ModernSidebar = ({
       </button>
 
       {/* Sidebar */}
-      <div className={`fixed left-0 top-0 h-full z-50 transition-transform duration-300 lg:relative lg:z-auto ${
+      <div className={`fixed left-0 top-0 h-full z-50 transition-all duration-300 ease-in-out lg:relative lg:z-auto ${
         isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
         {sidebarContent}
@@ -431,7 +520,7 @@ const ModernSidebar = ({
       {isMobileOpen && (
         <button
           onClick={() => setIsMobileOpen(false)}
-          className={`lg:hidden fixed top-4 right-4 z-50 p-3 rounded-xl shadow-lg border transition-colors ${
+          className={`lg:hidden fixed top-4 right-4 z-50 p-3 rounded-xl shadow-lg border transition-colors cursor-pointer ${
             isDarkMode 
               ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' 
               : 'bg-white border-gray-200 hover:bg-gray-50'

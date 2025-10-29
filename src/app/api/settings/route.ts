@@ -8,12 +8,9 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('GET /api/settings - Fetching settings');
-    
     // Get the authorization header
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('GET /api/settings - No auth header');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -22,11 +19,8 @@ export async function GET(request: NextRequest) {
     // Verify the user
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
-      console.log('GET /api/settings - Auth error:', authError);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
-    console.log('GET /api/settings - User authenticated:', user.id);
 
     // Fetch user settings
     const { data: settings, error: settingsError } = await supabase
@@ -35,10 +29,8 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
       .single();
 
-    console.log('GET /api/settings - Settings query result:', { settings, settingsError });
-
     if (settingsError && settingsError.code !== 'PGRST116') {
-      console.log('GET /api/settings - Settings error:', settingsError);
+      console.error('GET /api/settings - Settings error:', settingsError);
       return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 });
     }
 
@@ -79,7 +71,12 @@ export async function GET(request: NextRequest) {
       paymentNotes: '',
     };
     
-    return NextResponse.json({ settings: formattedSettings });
+    const response = NextResponse.json({ settings: formattedSettings });
+    
+    // Add caching headers for better performance
+    response.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60');
+    
+    return response;
 
   } catch (error) {
     console.error('Settings fetch error:', error);
@@ -90,7 +87,6 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const settingsData = await request.json();
-    console.log('Settings data received:', settingsData);
 
     // Get the authorization header
     const authHeader = request.headers.get('authorization');
@@ -107,7 +103,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    console.log('User authenticated:', user.id);
 
     // Prepare settings data - now with all payment method fields
     const settings = {
@@ -132,7 +127,6 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    console.log('Settings to save (with all payment methods):', settings);
 
     // Check if settings exist
     const { data: existingSettings } = await supabase
@@ -163,7 +157,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to save settings', details: result.error }, { status: 500 });
     }
 
-    console.log('Settings saved successfully');
     return NextResponse.json({ success: true, message: 'Settings saved successfully' });
 
   } catch (error) {

@@ -51,7 +51,15 @@ const colorPresets = [
   { name: 'Orange', primary: '#EA580C', secondary: '#F97316' },
   { name: 'Pink', primary: '#DB2777', secondary: '#EC4899' },
   { name: 'Indigo', primary: '#4338CA', secondary: '#6366F1' },
-  { name: 'Teal', primary: '#0D9488', secondary: '#14B8A6' }
+  { name: 'Teal', primary: '#0D9488', secondary: '#14B8A6' },
+  { name: 'Black', primary: '#1F2937', secondary: '#374151' },
+  { name: 'Dark Gray', primary: '#374151', secondary: '#6B7280' },
+  { name: 'Navy', primary: '#1E3A8A', secondary: '#3B82F6' },
+  { name: 'Emerald', primary: '#047857', secondary: '#10B981' },
+  { name: 'Rose', primary: '#BE185D', secondary: '#F43F5E' },
+  { name: 'Amber', primary: '#D97706', secondary: '#F59E0B' },
+  { name: 'Cyan', primary: '#0891B2', secondary: '#06B6D4' },
+  { name: 'Violet', primary: '#7C2D12', secondary: '#A855F7' }
 ]
 
 export default function TemplateSelector({
@@ -97,6 +105,7 @@ export default function TemplateSelector({
             return (
               <div
                 key={template.id}
+                data-testid={`template-${template.id}`}
                 onClick={() => handleTemplateSelect(template.id)}
                 className={`relative cursor-pointer rounded-lg border p-3 transition-all duration-200 ${
                   isSelected
@@ -150,8 +159,9 @@ export default function TemplateSelector({
           </h3>
           <button
             type="button"
+            data-testid="toggle-color-picker"
             onClick={() => setShowColorPicker(!showColorPicker)}
-            className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
+            className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
               showColorPicker
                 ? 'bg-indigo-600 text-white'
                 : isDarkMode
@@ -174,25 +184,26 @@ export default function TemplateSelector({
               }`}>
                 Quick Presets
               </h4>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
                 {colorPresets.map((preset) => (
                   <button
                     key={preset.name}
                     type="button"
+                    data-testid={`color-preset-${preset.name.toLowerCase()}`}
                     onClick={() => handleColorPreset(preset.primary, preset.secondary)}
-                    className={`p-2 rounded-lg border text-xs font-medium transition-colors ${
+                    className={`p-2 sm:p-2.5 rounded-lg border text-xs font-medium transition-colors min-h-[60px] flex flex-col items-center justify-center ${
                       isDarkMode
                         ? 'border-gray-600 bg-gray-700 text-gray-300 hover:bg-gray-600'
                         : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
                     }`}
                   >
-                    <div className="flex items-center space-x-1 mb-1">
+                    <div className="flex items-center space-x-1.5 mb-1.5">
                       <div 
-                        className="w-2.5 h-2.5 rounded-full"
+                        className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-500"
                         style={{ backgroundColor: preset.primary }}
                       ></div>
                       <div 
-                        className="w-2.5 h-2.5 rounded-full"
+                        className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-500"
                         style={{ backgroundColor: preset.secondary }}
                       ></div>
                     </div>
@@ -203,7 +214,7 @@ export default function TemplateSelector({
             </div>
 
             {/* Custom Color Inputs */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={`block text-xs font-medium mb-1 ${
                   isDarkMode ? 'text-gray-300' : 'text-gray-700'
@@ -221,7 +232,7 @@ export default function TemplateSelector({
                     type="text"
                     value={primaryColor}
                     onChange={(e) => onPrimaryColorChange(e.target.value)}
-                    className={`flex-1 px-2 py-1.5 text-xs border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                    className={`flex-1 px-2 py-1.5 text-xs border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors ${
                       isDarkMode
                         ? 'border-gray-600 bg-gray-800 text-white'
                         : 'border-gray-300 bg-white text-gray-900'
@@ -247,7 +258,7 @@ export default function TemplateSelector({
                     type="text"
                     value={secondaryColor}
                     onChange={(e) => onSecondaryColorChange(e.target.value)}
-                    className={`flex-1 px-2 py-1.5 text-xs border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                    className={`flex-1 px-2 py-1.5 text-xs border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors ${
                       isDarkMode
                         ? 'border-gray-600 bg-gray-800 text-white'
                         : 'border-gray-300 bg-white text-gray-900'
@@ -259,27 +270,38 @@ export default function TemplateSelector({
             </div>
 
             {/* Preview */}
-            <div className="mt-3">
-              <h4 className={`text-xs font-medium mb-2 ${
+            <div className="mt-4">
+              <h4 className={`text-xs font-medium mb-3 ${
                 isDarkMode ? 'text-gray-300' : 'text-gray-700'
               }`}>
                 Preview
               </h4>
-              <div className="flex items-center space-x-3">
-                <div 
-                  className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs font-bold"
-                  style={{ backgroundColor: primaryColor }}
-                >
-                  B
+              <div className={`p-4 rounded-lg border ${
+                isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+              }`}>
+                <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                  <div className="flex items-center space-x-3">
+                    <div 
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-sm"
+                      style={{ backgroundColor: primaryColor }}
+                    >
+                      P
+                    </div>
+                    <div 
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-sm"
+                      style={{ backgroundColor: secondaryColor }}
+                    >
+                      S
+                    </div>
+                  </div>
+                  <div className={`text-sm font-medium ${
+                    isDarkMode ? 'text-gray-200' : 'text-gray-700'
+                  }`}>
+                    Your brand colors
+                  </div>
                 </div>
-                <div 
-                  className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs font-bold"
-                  style={{ backgroundColor: secondaryColor }}
-                >
-                  S
-                </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">
-                  Your brand colors
+                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  Primary: {primaryColor} • Secondary: {secondaryColor}
                 </div>
               </div>
             </div>

@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
       .select(`
         *,
         clients (
+          id,
           name,
           email,
           company,
@@ -42,10 +43,18 @@ export async function GET(request: NextRequest) {
           console.error('Error fetching invoice items:', itemsError)
         }
 
+        console.log('API: Invoice data from DB:', {
+          id: invoice.id,
+          issue_date: invoice.issue_date,
+          due_date: invoice.due_date,
+          created_at: invoice.created_at
+        });
+
         return {
           ...invoice,
           // Map database fields to frontend interface
           invoiceNumber: invoice.invoice_number,
+          issueDate: invoice.issue_date,
           dueDate: invoice.due_date,
           createdAt: invoice.created_at,
           updatedAt: invoice.updated_at,
@@ -56,6 +65,7 @@ export async function GET(request: NextRequest) {
           clientEmail: invoice.clients?.email || '',
           clientCompany: invoice.clients?.company || '',
           clientAddress: invoice.clients?.address || '',
+          discount: invoice.discount || 0,
           items: (itemsData || []).map(item => ({
             id: item.id,
             description: item.description,

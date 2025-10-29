@@ -22,7 +22,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch clients' }, { status: 500 })
     }
 
-    return NextResponse.json({ clients: data || [] })
+    const response = NextResponse.json({ clients: data || [] });
+    
+    // Add caching headers for better performance
+    response.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60');
+    
+    return response;
 
   } catch (error) {
     console.error('Error fetching clients:', error)

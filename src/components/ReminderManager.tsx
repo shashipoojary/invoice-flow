@@ -220,13 +220,13 @@ export default function ReminderManager({ isOpen, onClose, userId }: ReminderMan
           <div className="flex items-center space-x-2">
             <button
               onClick={fetchDebugInfo}
-              className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer"
             >
               Debug
             </button>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
             >
               <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
             </button>
@@ -266,7 +266,7 @@ export default function ReminderManager({ isOpen, onClose, userId }: ReminderMan
                 <button
                   onClick={triggerAutoReminders}
                   disabled={sendingReminders.includes('auto')}
-                  className="mt-3 flex items-center space-x-2 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm mx-auto"
+                  className="mt-3 flex items-center space-x-2 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm mx-auto cursor-pointer"
                 >
                   {sendingReminders.includes('auto') ? (
                     <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
@@ -318,7 +318,7 @@ export default function ReminderManager({ isOpen, onClose, userId }: ReminderMan
                     <button
                       onClick={triggerAutoReminders}
                       disabled={sendingReminders.includes('auto')}
-                      className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                     >
                       {sendingReminders.includes('auto') ? (
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -330,7 +330,7 @@ export default function ReminderManager({ isOpen, onClose, userId }: ReminderMan
                     <button
                       onClick={sendAllReminders}
                       disabled={sendingReminders.length > 0}
-                      className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                     >
                       <Send className="h-4 w-4" />
                       <span>Send All Manual</span>
@@ -386,7 +386,7 @@ export default function ReminderManager({ isOpen, onClose, userId }: ReminderMan
                         <button
                           onClick={() => sendReminder(invoice.invoiceId, invoice.reminderType)}
                           disabled={sendingReminders.includes(invoice.invoiceId)}
-                          className="flex items-center space-x-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="flex items-center space-x-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                         >
                           {sendingReminders.includes(invoice.invoiceId) ? (
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>

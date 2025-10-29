@@ -16,6 +16,41 @@
   animation: fade-in 0.6s ease-out;
 }
 
+/* Clean sidebar interactions - no scaling or blur effects */
+.sidebar-clean {
+  transition: background-color 0.2s ease-out, color 0.2s ease-out;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.sidebar-clean:active {
+  opacity: 0.9;
+}
+
+.sidebar-clean:disabled {
+  opacity: 0.5;
+  cursor: wait;
+  pointer-events: none;
+}
+
+/* Ultra-fast transitions for navigation */
+.transition-none {
+  transition: none !important;
+}
+
+/* Removed old sidebar-button styles to prevent eye strain */
+
+/* Loading state optimization */
+.loading-spinner {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* Enhanced shadow utilities */
 .shadow-3xl {
   box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25);

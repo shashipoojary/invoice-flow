@@ -412,9 +412,10 @@ export default function TestEmailTemplate() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Business Name</label>
                 <input
                   type="text"
+                  data-testid="business-name-input"
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                 />
               </div>
 
@@ -422,9 +423,10 @@ export default function TestEmailTemplate() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Business Email</label>
                 <input
                   type="email"
+                  data-testid="business-email-input"
                   value={businessEmail}
                   onChange={(e) => setBusinessEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                 />
               </div>
 
@@ -434,7 +436,7 @@ export default function TestEmailTemplate() {
                   type="text"
                   value={businessPhone}
                   onChange={(e) => setBusinessPhone(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                 />
               </div>
 
@@ -444,7 +446,7 @@ export default function TestEmailTemplate() {
                   type="text"
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                 />
               </div>
 
@@ -454,7 +456,7 @@ export default function TestEmailTemplate() {
                   type="text"
                   value={invoiceNumber}
                   onChange={(e) => setInvoiceNumber(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                 />
               </div>
 
@@ -464,7 +466,7 @@ export default function TestEmailTemplate() {
                   type="text"
                   value={total}
                   onChange={(e) => setTotal(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                 />
               </div>
 
@@ -474,7 +476,7 @@ export default function TestEmailTemplate() {
                   type="text"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                 />
               </div>
 
@@ -484,7 +486,7 @@ export default function TestEmailTemplate() {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                 />
               </div>
 
@@ -497,7 +499,7 @@ export default function TestEmailTemplate() {
                       type="email"
                       value={paypalEmail}
                       onChange={(e) => setPaypalEmail(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     />
                   </div>
                   <div>
@@ -506,7 +508,7 @@ export default function TestEmailTemplate() {
                       type="text"
                       value={cashappId}
                       onChange={(e) => setCashappId(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     />
                   </div>
                   <div>
@@ -515,7 +517,7 @@ export default function TestEmailTemplate() {
                       type="text"
                       value={venmoId}
                       onChange={(e) => setVenmoId(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     />
                   </div>
                   <div>
@@ -524,7 +526,7 @@ export default function TestEmailTemplate() {
                       type="text"
                       value={googlePayUpi}
                       onChange={(e) => setGooglePayUpi(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     />
                   </div>
                   <div>
@@ -533,7 +535,7 @@ export default function TestEmailTemplate() {
                       type="text"
                       value={applePayId}
                       onChange={(e) => setApplePayId(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     />
                   </div>
                   <div>
@@ -542,7 +544,7 @@ export default function TestEmailTemplate() {
                       type="text"
                       value={bankAccount}
                       onChange={(e) => setBankAccount(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     />
                   </div>
                   <div>
@@ -551,7 +553,7 @@ export default function TestEmailTemplate() {
                       type="text"
                       value={bankIfscSwift}
                       onChange={(e) => setBankIfscSwift(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     />
                   </div>
                   <div>
@@ -560,7 +562,7 @@ export default function TestEmailTemplate() {
                       type="text"
                       value={bankIban}
                       onChange={(e) => setBankIban(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     />
                   </div>
                   <div>
@@ -569,7 +571,7 @@ export default function TestEmailTemplate() {
                       type="text"
                       value={stripeAccount}
                       onChange={(e) => setStripeAccount(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     />
                   </div>
                   <div>
@@ -578,7 +580,7 @@ export default function TestEmailTemplate() {
                       value={paymentNotes}
                       onChange={(e) => setPaymentNotes(e.target.value)}
                       rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     />
                   </div>
                 </div>

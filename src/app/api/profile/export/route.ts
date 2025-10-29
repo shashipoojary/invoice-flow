@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 export async function GET(request: NextRequest) {
   try {
@@ -95,6 +96,11 @@ export async function GET(request: NextRequest) {
           exportData = JSON.stringify(businessReport, null, 2);
           contentType = 'application/json';
           fileExtension = 'json';
+          break;
+        case 'pdf':
+          exportData = await generatePDFReport(businessReport);
+          contentType = 'application/pdf';
+          fileExtension = 'pdf';
           break;
         case 'csv':
         default:
@@ -193,4 +199,242 @@ function generateCSVReport(report: any) {
   }
   
   return csv;
+}
+
+// Helper function to generate PDF report
+async function generatePDFReport(report: any) {
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([595.28, 841.89]); // A4 size
+  const { width, height } = page.getSize();
+  
+  // Load fonts
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  
+  let yPosition = height - 60;
+  const margin = 60;
+  const lineHeight = 18;
+  const sectionSpacing = 25;
+  
+  // Helper function to add text with proper width calculation
+  const addText = (text: string, x: number, y: number, fontSize: number = 12, isBold: boolean = false, maxWidth?: number) => {
+    const textFont = isBold ? boldFont : font;
+    let displayText = text;
+    
+    if (maxWidth) {
+      const textWidth = textFont.widthOfTextAtSize(text, fontSize);
+      if (textWidth > maxWidth) {
+        // Truncate text if too long
+        const ratio = maxWidth / textWidth;
+        const maxChars = Math.floor(text.length * ratio * 0.9);
+        displayText = text.substring(0, maxChars) + '...';
+      }
+    }
+    
+    page.drawText(displayText, {
+      x,
+      y,
+      size: fontSize,
+      font: textFont,
+      color: rgb(0, 0, 0),
+    });
+  };
+  
+  // Helper function to add centered text
+  const addCenteredText = (text: string, y: number, fontSize: number = 12, isBold: boolean = false) => {
+    const textFont = isBold ? boldFont : font;
+    const textWidth = textFont.widthOfTextAtSize(text, fontSize);
+    const x = (width - textWidth) / 2;
+    addText(text, x, y, fontSize, isBold);
+  };
+  
+  // Helper function to add line
+  const addLine = (y: number, thickness: number = 1, color: any = rgb(0.7, 0.7, 0.7)) => {
+    page.drawLine({
+      start: { x: margin, y },
+      end: { x: width - margin, y },
+      thickness,
+      color,
+    });
+  };
+  
+  // Helper function to add table row
+  const addTableRow = (y: number, columns: string[], columnWidths: number[], isHeader: boolean = false) => {
+    let x = margin;
+    columns.forEach((text, index) => {
+      addText(text, x, y, 11, isHeader, columnWidths[index]);
+      x += columnWidths[index];
+    });
+  };
+  
+  // Helper function to add section header
+  const addSectionHeader = (title: string, y: number) => {
+    addText(title, margin, y, 16, true);
+    addLine(y - 5, 2, rgb(0.2, 0.2, 0.2));
+  };
+  
+  // Title and Header
+  addCenteredText('BUSINESS FINANCIAL REPORT', yPosition, 28, true);
+  yPosition -= 50;
+  
+  // Report info box
+  const infoBoxHeight = 80;
+  page.drawRectangle({
+    x: margin,
+    y: yPosition - infoBoxHeight,
+    width: width - 2 * margin,
+    height: infoBoxHeight,
+    borderColor: rgb(0.8, 0.8, 0.8),
+    borderWidth: 1,
+  });
+  
+  const infoY = yPosition - 25;
+  addText(`Business: ${report.reportInfo.businessName}`, margin + 15, infoY, 14, true);
+  addText(`Generated: ${new Date(report.reportInfo.generatedAt).toLocaleDateString()}`, margin + 15, infoY - 20, 12);
+  addText(`Period: ${report.reportInfo.period}`, margin + 15, infoY - 40, 12);
+  
+  yPosition -= infoBoxHeight + sectionSpacing;
+  
+  // Summary section
+  addSectionHeader('SUMMARY', yPosition);
+  yPosition -= 30;
+  
+  // Summary in a grid layout
+  const summaryData = [
+    [`Total Invoices: ${report.summary.totalInvoices}`, `Total Clients: ${report.summary.totalClients}`],
+    [`Total Revenue: $${report.summary.totalRevenue.toFixed(2)}`, `Paid Invoices: ${report.summary.paidInvoices}`],
+    [`Pending Invoices: ${report.summary.pendingInvoices}`, `Overdue Invoices: ${report.summary.overdueInvoices}`]
+  ];
+  
+  summaryData.forEach(row => {
+    addText(row[0], margin, yPosition, 12, true);
+    addText(row[1], width / 2, yPosition, 12, true);
+    yPosition -= lineHeight;
+  });
+  
+  yPosition -= sectionSpacing;
+  
+  // Invoices section
+  if (report.invoices.length > 0) {
+    addSectionHeader('INVOICES', yPosition);
+    yPosition -= 30;
+    
+    // Table with proper column widths
+    const columnWidths = [120, 150, 80, 80, 100];
+    const tableHeaders = ['Invoice #', 'Client', 'Amount', 'Status', 'Due Date'];
+    
+    // Table header with background
+    page.drawRectangle({
+      x: margin,
+      y: yPosition - 20,
+      width: width - 2 * margin,
+      height: 20,
+      color: rgb(0.95, 0.95, 0.95),
+    });
+    
+    addTableRow(yPosition - 5, tableHeaders, columnWidths, true);
+    yPosition -= 30;
+    
+    // Invoice rows
+    const invoicesToShow = report.invoices.slice(0, 15);
+    invoicesToShow.forEach((invoice: any, index: number) => {
+      if (yPosition < 150) return; // Stop if we're near the bottom
+      
+      // Alternate row background
+      if (index % 2 === 0) {
+        page.drawRectangle({
+          x: margin,
+          y: yPosition - 15,
+          width: width - 2 * margin,
+          height: 15,
+          color: rgb(0.98, 0.98, 0.98),
+        });
+      }
+      
+      const clientName = invoice.client_name || 'N/A';
+      const status = invoice.status || 'N/A';
+      const dueDate = invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A';
+      
+      addTableRow(yPosition - 3, [
+        invoice.invoice_number || 'N/A',
+        clientName,
+        `$${(invoice.total || 0).toFixed(2)}`,
+        status,
+        dueDate
+      ], columnWidths);
+      
+      yPosition -= 20;
+    });
+    
+    if (report.invoices.length > 15) {
+      yPosition -= 10;
+      addText(`... and ${report.invoices.length - 15} more invoices`, margin, yPosition, 10);
+    }
+    
+    yPosition -= sectionSpacing;
+  }
+  
+  // Clients section
+  if (report.clients.length > 0) {
+    addSectionHeader('CLIENTS', yPosition);
+    yPosition -= 30;
+    
+    // Table with proper column widths
+    const columnWidths = [120, 200, 150];
+    const tableHeaders = ['Name', 'Email', 'Company'];
+    
+    // Table header with background
+    page.drawRectangle({
+      x: margin,
+      y: yPosition - 20,
+      width: width - 2 * margin,
+      height: 20,
+      color: rgb(0.95, 0.95, 0.95),
+    });
+    
+    addTableRow(yPosition - 5, tableHeaders, columnWidths, true);
+    yPosition -= 30;
+    
+    // Client rows
+    const clientsToShow = report.clients.slice(0, 12);
+    clientsToShow.forEach((client: any, index: number) => {
+      if (yPosition < 150) return;
+      
+      // Alternate row background
+      if (index % 2 === 0) {
+        page.drawRectangle({
+          x: margin,
+          y: yPosition - 15,
+          width: width - 2 * margin,
+          height: 15,
+          color: rgb(0.98, 0.98, 0.98),
+        });
+      }
+      
+      addTableRow(yPosition - 3, [
+        client.name || 'N/A',
+        client.email || 'N/A',
+        client.company || 'N/A'
+      ], columnWidths);
+      
+      yPosition -= 20;
+    });
+    
+    if (report.clients.length > 12) {
+      yPosition -= 10;
+      addText(`... and ${report.clients.length - 12} more clients`, margin, yPosition, 10);
+    }
+  }
+  
+  // Footer
+  yPosition = 60;
+  addLine(yPosition, 1, rgb(0.3, 0.3, 0.3));
+  yPosition -= 20;
+  
+  const footerText = `Report generated on ${new Date().toLocaleDateString()}`;
+  const footerTextWidth = font.widthOfTextAtSize(footerText, 10);
+  addText(footerText, margin, yPosition, 10);
+  addText('Invoice Flow Pro', width - margin - font.widthOfTextAtSize('Invoice Flow Pro', 10), yPosition, 10);
+  
+  return await pdfDoc.save();
 }
