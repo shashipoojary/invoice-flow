@@ -281,7 +281,7 @@ export async function PUT(request: NextRequest) {
             reminderSettings, 
             due_date,
             payment_terms,
-            status,
+            invoice.status,
             new Date().toISOString()
           );
         }
@@ -347,6 +347,11 @@ export async function PUT(request: NextRequest) {
       theme: completeInvoice.theme ? JSON.parse(completeInvoice.theme) : undefined,
     };
 
+    // Log edited event (non-blocking)
+    try {
+      await supabaseAdmin.from('invoice_events').insert({ invoice_id: invoiceId, type: 'edited' })
+    } catch {}
+
     return NextResponse.json({ 
       success: true, 
       message: 'Invoice updated successfully',
@@ -357,4 +362,6 @@ export async function PUT(request: NextRequest) {
     console.error('Error updating invoice:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
+
+  // (moved logging before return)
 }

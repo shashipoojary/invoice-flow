@@ -107,7 +107,7 @@ export default function QuickInvoiceModal({
 }: QuickInvoiceModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const { showSuccess: localShowSuccess, showError: localShowError, showWarning: localShowWarning } = useToast()
-  const { addInvoice, addClient, updateInvoice } = useData()
+  const { invoices, addInvoice, addClient, updateInvoice, refreshInvoices } = useData()
   const { settings, isLoadingSettings } = useSettings()
   
   // Use passed toast functions if available, otherwise use local ones
@@ -216,6 +216,7 @@ export default function QuickInvoiceModal({
   const [loading, setLoading] = useState(false)
   const [creatingLoading, setCreatingLoading] = useState(false)
   const [sendingLoading, setSendingLoading] = useState(false)
+  const [shouldSend, setShouldSend] = useState(false)
   const [pdfLoading, setPdfLoading] = useState(false)
   const [discount, setDiscount] = useState('')
   
@@ -554,7 +555,7 @@ export default function QuickInvoiceModal({
       
       const response = await fetch(endpoint, {
         method,
-        headers,
+        headers: { ...headers, 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
 
@@ -671,45 +672,70 @@ export default function QuickInvoiceModal({
       
       const response = await fetch(endpoint, {
         method,
-        headers,
+        headers: { ...headers, 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
 
       const result = await response.json()
 
       if (response.ok && (result.invoice || result.success)) {
-        // Only send invoice if creating new one, not when editing
-        if (!isEditing && result.invoice) {
+        // If user clicked Create & Send, send regardless of create vs update
+        if (result.invoice && (shouldSend || !isEditing)) {
+          // Resolve client email/name safely
+          const selectedClient = selectedClientId ? clients.find(c => c.id === selectedClientId) : undefined;
+          const finalClientEmail = (selectedClient?.email || newClient.email || '').trim();
+          const finalClientName = (selectedClient?.name || newClient.name || '').trim();
+
+          if (!finalClientEmail) {
+            showWarning('Client email is required to send the invoice');
+            // Still add invoice to list but do not attempt send
+            try { addInvoice && addInvoice(result.invoice) } catch {}
+            onSuccess();
+            onClose();
+            return;
+          }
+
           // Send the invoice to the client
           const sendResponse = await fetch('/api/invoices/send', {
             method: 'POST',
-            headers,
+            headers: { ...headers, 'Content-Type': 'application/json' },
             body: JSON.stringify({
               invoiceId: result.invoice.id,
-            clientEmail: selectedClientId ? 
-              (clients.find(c => c.id === selectedClientId)?.email || newClient.email) : 
-              newClient.email,
-            clientName: selectedClientId ? 
-              (clients.find(c => c.id === selectedClientId)?.name || newClient.name) : 
-              newClient.name
+              clientEmail: finalClientEmail,
+              clientName: finalClientName
           })
         })
 
           if (sendResponse.ok) {
+            // Prefer server response's invoice if provided
+            let payload: any = null;
+            try { payload = await sendResponse.json(); if (payload?.invoice) { try { updateInvoice && updateInvoice(payload.invoice) } catch {} } } catch {}
+            // Prefer updating from existing cached invoice shape
+            const existing = invoices.find(inv => inv.id === result.invoice.id)
+            if (existing) {
+              try { updateInvoice && updateInvoice({ ...existing, status: 'sent' as const }) } catch {}
+            } else {
+              try { updateInvoice && updateInvoice({ ...result.invoice, status: 'sent' as const }) } catch {}
+            }
+            try { await refreshInvoices?.() } catch {}
             showSuccess('Invoice created and sent successfully!')
           } else {
-            showWarning('Invoice created but failed to send. You can send it later from the invoice list.')
+            let errorMsg = 'Invoice created but failed to send. You can send it later from the invoice list.'
+            try { const err = await sendResponse.json(); if (err?.error) errorMsg = err.error } catch {}
+            showWarning(errorMsg)
           }
         } else {
-          // Show success message for editing
+          // Show success message for non-send actions
           showSuccess(isEditing ? 'Invoice updated successfully!' : 'Invoice created successfully!')
         }
         
         // Update global state immediately
         if (result.invoice) {
+          const alreadySent = shouldSend; // when Create & Send path is used
           if (isEditing) {
-            // Update existing invoice
-            try { updateInvoice && updateInvoice(result.invoice) } catch {}
+            // Update existing invoice; preserve 'sent' status if we just sent
+            const updated = alreadySent ? { ...result.invoice, status: 'sent' as const } : result.invoice;
+            try { updateInvoice && updateInvoice(updated) } catch {}
           } else {
             // Add new invoice
             try { addInvoice && addInvoice(result.invoice) } catch {}
@@ -723,8 +749,11 @@ export default function QuickInvoiceModal({
         throw new Error(result.error || (isEditing ? 'Failed to update invoice' : 'Failed to create invoice'))
       }
 
+      // Ensure the list reflects the latest status before closing
+      try { await refreshInvoices?.() } catch {}
       onSuccess()
       onClose()
+      setShouldSend(false)
 
     } catch (error) {
       console.error('Error creating invoice:', error)
@@ -2291,6 +2320,7 @@ export default function QuickInvoiceModal({
                 <button
                   type="submit"
                   data-testid="quick-invoice-create-and-send"
+                  onClick={() => setShouldSend(true)}
                   disabled={creatingLoading || sendingLoading}
                   className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
                     isDarkMode 

@@ -16,6 +16,7 @@ import FastInvoiceModal from '@/components/FastInvoiceModal';
 import QuickInvoiceModal from '@/components/QuickInvoiceModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import ClientModal from '@/components/ClientModal';
+import UnifiedInvoiceCard from '@/components/UnifiedInvoiceCard';
 
 // Types
 import { Client, Invoice } from '@/types';
@@ -24,7 +25,7 @@ function InvoicesContent(): React.JSX.Element {
   const { user, loading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
   const { settings } = useSettings();
-  const { invoices, clients, isLoadingInvoices, updateInvoice, deleteInvoice } = useData();
+  const { invoices, clients, isLoadingInvoices, updateInvoice, deleteInvoice, refreshInvoices } = useData();
   const searchParams = useSearchParams();
   
   // Local state for UI
@@ -466,8 +467,12 @@ function InvoicesContent(): React.JSX.Element {
       });
 
       if (response.ok) {
-        // Update global state
-        updateInvoice({ ...invoice, status: 'pending' as const });
+        // Prefer server response's invoice if provided
+        try { const payload = await response.json(); if (payload?.invoice) { updateInvoice(payload.invoice) } } catch {}
+        // Fallback optimistic update
+        updateInvoice({ ...invoice, status: 'sent' as const });
+        // And refresh list to keep filters/pagination in sync
+        try { await refreshInvoices(); } catch {}
         showSuccess('Invoice Sent', `Invoice ${invoice.invoiceNumber} has been sent successfully.`);
       } else {
         showError('Send Failed', 'Failed to send invoice. Please try again.');
@@ -618,17 +623,24 @@ function InvoicesContent(): React.JSX.Element {
               </div>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-right min-h-[56px] flex flex-col items-end">
                 <div className={`font-semibold text-base ${
                   invoice.status === 'paid' ? ('text-emerald-600') :
                   dueDateStatus.status === 'overdue' ? ('text-red-600') :
-                  dueDateStatus.status === 'draft-past-due' ? ('text-gray-500') :
+                  /* mirror Recent Invoices color rules */
                   invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-500') :
                   invoice.status === 'draft' ? ('text-gray-600') :
                   ('text-red-600')
               }`}>
                 ${dueCharges.totalPayable.toLocaleString()}
                   </div>
+                  {dueCharges.hasLateFees ? (
+                    <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                      Base ${invoice.total.toLocaleString()} • Late fee ${dueCharges.lateFeeAmount.toLocaleString()}
+                    </div>
+                  ) : (
+                    <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
+                  )}
                 <div className="text-xs" style={{color: '#6b7280'}}>
                   {new Date(invoice.createdAt).toLocaleDateString()}
               </div>
@@ -652,12 +664,7 @@ function InvoicesContent(): React.JSX.Element {
                     <span>{dueDateStatus.days}d overdue</span>
                   </span>
                 )}
-                {dueDateStatus.status === 'draft-past-due' && (
-                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-gray-500'}`}>
-                    <Clock className="h-3 w-3" />
-                    <span>{dueDateStatus.days}d past due</span>
-                  </span>
-                )}
+                {/* match Recent Invoices: no separate draft-past-due chip */}
           </div>
           
               <div className="flex items-center space-x-1">
@@ -712,26 +719,7 @@ function InvoicesContent(): React.JSX.Element {
                     )}
                   </button>
                 )}
-                {invoice.status === 'draft' && (
-                  <button 
-                    data-testid={`invoice-${invoice.id}-edit`}
-                    onClick={() => handleEditInvoice(invoice)}
-                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
-                    title="Edit"
-                  >
-                    <Edit className="h-4 w-4 text-gray-600" />
-                  </button>
-                )}
-                {invoice.status === 'draft' && (
-                  <button 
-                    data-testid={`invoice-${invoice.id}-delete`}
-                    onClick={() => handleDeleteInvoice(invoice)}
-                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
-                    title="Delete"
-                  >
-                    <Trash2 className="h-4 w-4 text-gray-600" />
-                  </button>
-                )}
+          {/* Match Recent Invoices: no inline Edit/Delete in desktop row */}
               </div>
               </div>
             </div>
@@ -758,13 +746,20 @@ function InvoicesContent(): React.JSX.Element {
                 <div className={`font-semibold text-base ${
                   invoice.status === 'paid' ? ('text-emerald-600') :
                   dueDateStatus.status === 'overdue' ? ('text-red-600') :
-                  dueDateStatus.status === 'draft-past-due' ? ('text-gray-500') :
+                  /* mirror Recent Invoices color rules */
                   invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-500') :
                   invoice.status === 'draft' ? ('text-gray-600') :
                   ('text-red-600')
             }`}>
               ${dueCharges.totalPayable.toLocaleString()}
                 </div>
+              {dueCharges.hasLateFees ? (
+                <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                  Base ${invoice.total.toLocaleString()} • Late fee ${dueCharges.lateFeeAmount.toLocaleString()}
+                </div>
+              ) : (
+                <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
+              )}
                 <div className="text-xs" style={{color: '#6b7280'}}>
                   {new Date(invoice.createdAt).toLocaleDateString()}
             </div>
@@ -788,12 +783,7 @@ function InvoicesContent(): React.JSX.Element {
                     <span>{dueDateStatus.days}d overdue</span>
                   </span>
                 )}
-                {dueDateStatus.status === 'draft-past-due' && (
-                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-gray-500'}`}>
-                    <Clock className="h-3 w-3" />
-                    <span>{dueDateStatus.days}d past due</span>
-                  </span>
-              )}
+                {/* no draft-past-due badge to match Recent Invoices */}
             </div>
         
               <div className="flex items-center space-x-1">
@@ -1134,23 +1124,19 @@ function InvoicesContent(): React.JSX.Element {
                         return new Date(b.created_at || b.createdAt || 0).getTime() - new Date(a.created_at || a.createdAt || 0).getTime();
                       })
                       .map((invoice) => (
-                    <InvoiceCard
+                    <UnifiedInvoiceCard
                       key={invoice.id}
                       invoice={invoice}
-                      handleViewInvoice={handleViewInvoice}
-                      handleDownloadPDF={handleDownloadPDF}
-                      handleSendInvoice={handleSendInvoice}
-                      handleEditInvoice={handleEditInvoice}
-                      handleMarkAsPaid={handleMarkAsPaid}
-                      handleDeleteInvoice={handleDeleteInvoice}
                       getStatusIcon={getStatusIcon}
-                      getStatusColor={getStatusColor}
                       getDueDateStatus={getDueDateStatus}
-                      formatPaymentTerms={formatPaymentTerms}
-                      formatLateFees={formatLateFees}
-                      formatReminders={formatReminders}
                       calculateDueCharges={calculateDueCharges}
                       loadingActions={loadingActions}
+                      onView={handleViewInvoice}
+                      onPdf={handleDownloadPDF}
+                      onSend={handleSendInvoice}
+                      onMarkPaid={handleMarkAsPaid}
+                      onEdit={handleEditInvoice}
+                      onDelete={handleDeleteInvoice}
                     />
                   ))}
                 </div>

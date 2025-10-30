@@ -13,6 +13,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useData } from '@/contexts/DataContext';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
+import UnifiedInvoiceCard from '@/components/UnifiedInvoiceCard';
 import FastInvoiceModal from '@/components/FastInvoiceModal';
 import QuickInvoiceModal from '@/components/QuickInvoiceModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
@@ -24,7 +25,7 @@ export default function DashboardOverview() {
   const { user, loading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError, showWarning } = useToast();
   const { settings } = useSettings();
-  const { invoices, clients, isLoadingInvoices, isLoadingClients, updateInvoice, deleteInvoice } = useData();
+  const { invoices, clients, isLoadingInvoices, isLoadingClients, updateInvoice, deleteInvoice, refreshInvoices } = useData();
   const router = useRouter();
   
   // Local state for UI
@@ -225,8 +226,8 @@ export default function DashboardOverview() {
 
   // Helper function to calculate due charges and total payable
   const calculateDueCharges = useCallback((invoice: Invoice) => {
-    // Only calculate late fees for sent invoices that are actually overdue
-    if (invoice.status !== 'pending') {
+    // Only calculate late fees for pending/sent invoices that are overdue
+    if (invoice.status !== 'pending' && invoice.status !== 'sent') {
       return {
         hasLateFees: false,
         lateFeeAmount: 0,
@@ -371,8 +372,11 @@ export default function DashboardOverview() {
       });
 
       if (response.ok) {
-        // Update global state
-        updateInvoice({ ...invoice, status: 'pending' as const });
+        // Prefer server response's invoice if provided
+        try { const payload = await response.json(); if (payload?.invoice) { updateInvoice(payload.invoice) } } catch {}
+        // Fallback optimistic update
+        updateInvoice({ ...invoice, status: 'sent' as const });
+        try { await refreshInvoices(); } catch {}
         showSuccess('Invoice Sent', `Invoice ${invoice.invoiceNumber} has been sent successfully.`);
       } else {
         showError('Send Failed', 'Failed to send invoice. Please try again.');
@@ -516,7 +520,8 @@ export default function DashboardOverview() {
                   </div>
                 </div>
               </div>
-              <div className="text-right">
+            <div className="text-right min-h-[56px] flex flex-col items-end">
+              {(() => { const lf = invoice.lateFees as any; (invoice as any)._lateFeeShow = (dueCharges.hasLateFees || (lf && lf.enabled && dueDateStatus.status === 'overdue')); (invoice as any)._lateFeeAmount = dueCharges.hasLateFees ? dueCharges.lateFeeAmount : (lf ? (lf.type === 'fixed' ? lf.amount : (invoice.total * lf.amount)/100) : 0); (invoice as any)._displayTotal = (invoice as any)._lateFeeShow ? (invoice.total + (invoice as any)._lateFeeAmount) : dueCharges.totalPayable; return null; })()}
                 <div className={`font-semibold text-base ${
                   invoice.status === 'paid' ? 'text-emerald-600' :
                   dueDateStatus.status === 'overdue' ? 'text-red-600' :
@@ -524,8 +529,15 @@ export default function DashboardOverview() {
                   invoice.status === 'draft' ? 'text-gray-600' :
                   'text-red-600'
                 }`}>
-                  ${dueCharges.totalPayable.toLocaleString()}
+                  ${(((invoice as any)._displayTotal) || dueCharges.totalPayable).toLocaleString()}
                 </div>
+                {(invoice as any)._lateFeeShow ? (
+                  <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                    Base ${invoice.total.toLocaleString()} • Late fee {((invoice as any)._lateFeeAmount as number).toLocaleString()}
+                  </div>
+                ) : (
+                  <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
+                )}
                 <div className="text-xs" style={{color: '#6b7280'}}>
                   {new Date(invoice.createdAt).toLocaleDateString()}
                 </div>
@@ -533,7 +545,7 @@ export default function DashboardOverview() {
             </div>
             
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 min-h-[24px]">
                 <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
                   invoice.status === 'paid' ? 'text-emerald-600' :
                   invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-500' :
@@ -554,7 +566,7 @@ export default function DashboardOverview() {
                 )}
               </div>
               
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-1 min-h-[24px]">
                 <button 
                   onClick={() => handleViewInvoice(invoice)}
                   className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
@@ -607,40 +619,52 @@ export default function DashboardOverview() {
           </div>
         </div>
 
-        {/* Desktop Layout - Compact */}
+        {/* Desktop Layout - Mirror Invoices page structure */}
         <div className="hidden sm:block p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
-                  <FileText className="h-4 w-4 text-gray-700" />
+          <div className="space-y-3">
+            {/* Row 1: Info (left) + Amount/Date (right) */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
+                    <FileText className="h-4 w-4 text-gray-700" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-sm" style={{color: '#1f2937'}}>
+                      {invoice.invoiceNumber}
+                    </div>
+                    <div className="text-xs" style={{color: '#6b7280'}}>
+                      {invoice.client?.name || 'Unknown Client'}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-medium text-sm" style={{color: '#1f2937'}}>
-                  {invoice.invoiceNumber}
-                </div>
-                  <div className="text-xs" style={{color: '#6b7280'}}>
-                    {invoice.client?.name || 'Unknown Client'}
               </div>
-                </div>
-              </div>
-              <div className="text-center">
+              <div className="text-right min-h-[56px] flex flex-col items-end">
+                {(() => { const lf = invoice.lateFees as any; (invoice as any)._lateFeeShow2 = (dueCharges.hasLateFees || (lf && lf.enabled && dueDateStatus.status === 'overdue')); (invoice as any)._lateFeeAmount2 = dueCharges.hasLateFees ? dueCharges.lateFeeAmount : (lf ? (lf.type === 'fixed' ? lf.amount : (invoice.total * lf.amount)/100) : 0); (invoice as any)._displayTotal2 = (invoice as any)._lateFeeShow2 ? (invoice.total + (invoice as any)._lateFeeAmount2) : dueCharges.totalPayable; return null; })()}
                 <div className={`font-semibold text-base ${
                   invoice.status === 'paid' ? 'text-emerald-600' :
                   dueDateStatus.status === 'overdue' ? 'text-red-600' :
                   invoice.status === 'pending' || invoice.status === 'sent' ? 'text-orange-500' :
                   invoice.status === 'draft' ? 'text-gray-600' :
                   'text-red-600'
-              }`}>
-                ${dueCharges.totalPayable.toLocaleString()}
+                }`}>
+                  ${(((invoice as any)._displayTotal2) || dueCharges.totalPayable).toLocaleString()}
+                </div>
+                {(invoice as any)._lateFeeShow2 ? (
+                  <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                    Base ${invoice.total.toLocaleString()} • Late fee {((invoice as any)._lateFeeAmount2 as number).toLocaleString()}
                   </div>
+                ) : (
+                  <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
+                )}
                 <div className="text-xs" style={{color: '#6b7280'}}>
                   {new Date(invoice.createdAt).toLocaleDateString()}
+                </div>
               </div>
             </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
+
+            {/* Row 2: Status chips (left) + Actions (right) - mirror invoices page */}
+            <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
                   invoice.status === 'paid' ? 'text-emerald-600' :
@@ -648,27 +672,23 @@ export default function DashboardOverview() {
                   invoice.status === 'draft' ? 'text-gray-600' :
                   'text-red-600'
                 }`}>
-                {getStatusIcon(invoice.status)}
+                  {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status}</span>
-              </span>
-                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
-                  {(invoice.type || 'detailed') === 'fast' ? 'Fast' : 'Detailed'}
-                  </span>
+                </span>
                 {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
                   <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600">
                     <AlertTriangle className="h-3 w-3" />
                     <span>{dueDateStatus.days}d overdue</span>
                   </span>
                 )}
-                </div>
-              
+              </div>
               <div className="flex items-center space-x-1">
                 <button 
                   onClick={() => handleViewInvoice(invoice)}
                   className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
                   title="View"
                 >
-                  <Eye className="h-4 w-4 text-gray-700" />
+                  <Eye className="h-4 w-4 text-gray-600" />
                 </button>
                 <button 
                   onClick={() => handleDownloadPDF(invoice)}
@@ -679,7 +699,7 @@ export default function DashboardOverview() {
                   {loadingActions[`pdf-${invoice.id}`] ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                   ) : (
-                    <Download className="h-4 w-4 text-gray-700" />
+                    <Download className="h-4 w-4 text-gray-600" />
                   )}
                 </button>
                 {invoice.status === 'draft' && (
@@ -692,7 +712,7 @@ export default function DashboardOverview() {
                     {loadingActions[`send-${invoice.id}`] ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                     ) : (
-                      <Send className="h-4 w-4 text-gray-700" />
+                      <Send className="h-4 w-4 text-gray-600" />
                     )}
                   </button>
                 )}
@@ -706,7 +726,7 @@ export default function DashboardOverview() {
                     {loadingActions[`paid-${invoice.id}`] ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                     ) : (
-                      <CheckCircle className="h-4 w-4 text-gray-700" />
+                      <CheckCircle className="h-4 w-4 text-gray-600" />
                     )}
                   </button>
                 )}
@@ -776,6 +796,13 @@ export default function DashboardOverview() {
               }`}>
                 ${dueCharges.totalPayable.toLocaleString()}
                   </div>
+                {dueCharges.hasLateFees ? (
+                  <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                    Base ${invoice.total.toLocaleString()} • Late fee ${dueCharges.lateFeeAmount.toLocaleString()}
+                  </div>
+                ) : (
+                  <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
+                )}
               </div>
             <div className="text-xs" style={{color: '#374151'}}>
               {new Date(invoice.createdAt).toLocaleDateString()}
@@ -841,6 +868,13 @@ export default function DashboardOverview() {
             }`}>
               ${dueCharges.totalPayable.toLocaleString()}
                 </div>
+              {dueCharges.hasLateFees ? (
+                <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                  Base ${invoice.total.toLocaleString()} • Late fee ${dueCharges.lateFeeAmount.toLocaleString()}
+                </div>
+              ) : (
+                <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
+              )}
                 <div className="text-xs" style={{color: '#6b7280'}}>
                   {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'No due date'}
             </div>
@@ -1096,6 +1130,12 @@ export default function DashboardOverview() {
     router.push('/dashboard/invoices?status=overdue');
   }, [router]);
 
+  // Consistent money formatter for stats
+  const formatMoney = useCallback((value: number | undefined | null) => {
+    const n = Number(value || 0);
+    return `$${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  }, []);
+
   const handleClientsClick = useCallback(() => {
     router.push('/dashboard/clients');
   }, [router]);
@@ -1185,17 +1225,17 @@ export default function DashboardOverview() {
                   onClick={handlePaidInvoicesClick}
                   className="group relative overflow-hidden rounded-lg p-2 sm:p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-emerald-500 backdrop-blur-sm"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-start justify-between">
                     <div className="space-y-1 flex-1">
                       <p className="text-xs font-medium text-left" style={{color: '#374151'}}>Total Revenue</p>
-                      <div className="font-heading text-lg sm:text-3xl font-bold text-emerald-600 text-left">
+                      <div className="font-heading text-lg sm:text-3xl font-bold text-emerald-600 text-left whitespace-nowrap">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-24 rounded"></div>
                         ) : (
-                          `$${totalRevenue.toLocaleString()}`
+                          formatMoney(totalRevenue)
                         )}
                       </div>
-                      <div className="flex items-center space-x-1 justify-start">
+                      <div className="flex items-center space-x-1 justify-start min-h-[28px] leading-tight">
                         <CheckCircle className="h-4 w-4 text-emerald-500" />
                         <span className="text-xs font-medium text-emerald-600">Paid invoices</span>
                       </div>
@@ -1214,23 +1254,25 @@ export default function DashboardOverview() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-1 flex-1">
                       <p className="text-xs font-medium text-left" style={{color: '#374151'}}>Total Payable</p>
-                      <div className="font-heading text-lg sm:text-3xl font-bold text-orange-500 text-left">
+                      <div className="font-heading text-lg sm:text-3xl font-bold text-orange-500 text-left whitespace-nowrap">
                         {isLoadingStats ? (
                           <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-24 rounded"></div>
                         ) : (
-                          `$${totalPayableAmount.toLocaleString()}`
+                          formatMoney(totalPayableAmount)
                         )}
                       </div>
-                      <div className="flex items-center space-x-1 justify-start">
-                        <Clock className="h-4 w-4 text-orange-500" />
-                        <span className="text-xs font-medium text-orange-500">
-                          {invoices.filter(inv => inv.status === 'pending' || inv.status === 'sent').length} pending
-                        </span>
+                      <div className="flex flex-col items-start gap-1 justify-start min-h-[32px] leading-tight">
                         {totalLateFees > 0 && (
-                          <span className="text-xs text-red-500 ml-2">
+                          <span className="text-xs text-red-500 break-words">
                             (+${totalLateFees.toFixed(2)} late fees)
                           </span>
                         )}
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-orange-500" />
+                          <span className="text-xs font-medium text-orange-500">
+                            {invoices.filter(inv => inv.status === 'pending' || inv.status === 'sent').length} pending
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <div className="p-1 sm:p-2 rounded-xl bg-orange-50">
@@ -1254,7 +1296,7 @@ export default function DashboardOverview() {
                           overdueCount
                         )}
                       </div>
-                      <div className="flex items-center space-x-1 justify-start">
+                      <div className="flex items-center space-x-1 justify-start min-h-[28px] leading-tight">
                         <AlertCircle className="h-4 w-4 text-red-500" />
                         <span className="text-xs font-medium text-red-600">Need attention</span>
                       </div>
@@ -1280,7 +1322,7 @@ export default function DashboardOverview() {
                           totalClients
                         )}
                       </div>
-                      <div className="flex items-center space-x-1 justify-start">
+                      <div className="flex items-center space-x-1 justify-start min-h-[28px] leading-tight">
                         <Users className="h-4 w-4 text-indigo-500" />
                         <span className="text-xs font-medium text-indigo-600">Active clients</span>
                       </div>
@@ -1401,274 +1443,22 @@ export default function DashboardOverview() {
                 </div>
               ) : recentInvoices.length > 0 ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {recentInvoices.map((invoice) => {
-                    const dueDateStatus = getDueDateStatus(invoice.dueDate, invoice.status, invoice.paymentTerms, (invoice as any).updatedAt);
-                    const dueCharges = calculateDueCharges(invoice);
-                    
-                    return (
-                      <div key={invoice.id} className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
-                        {/* Mobile Layout */}
-                        <div className="block sm:hidden p-4">
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-3">
-                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100`}>
-                                  <FileText className="h-4 w-4 text-gray-600" />
-                </div>
-                                <div>
-                                  <div className="font-medium text-sm" style={{color: '#1f2937'}}>
-                                    {invoice.invoiceNumber}
-                                  </div>
-                                  <div className="text-xs" style={{color: '#6b7280'}}>
-                                    {invoice.client?.name || 'Unknown Client'}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className={`font-semibold text-base ${
-                                  invoice.status === 'paid' ? ('text-emerald-600') :
-                                  dueDateStatus.status === 'overdue' ? ('text-red-600') :
-                                  dueDateStatus.status === 'draft-past-due' ? ('text-gray-500') :
-                                  invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-500') :
-                                  invoice.status === 'draft' ? ('text-gray-600') :
-                                  ('text-red-600')
-                                }`}>
-                                  ${dueCharges.totalPayable.toLocaleString()}
-                                </div>
-                                <div className="text-xs" style={{color: '#6b7280'}}>
-                                  {new Date(invoice.createdAt).toLocaleDateString()}
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-2">
-                                <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
-                                  invoice.status === 'paid' ? ('text-emerald-600') :
-                                  invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-500') :
-                                  invoice.status === 'draft' ? ('text-gray-600') :
-                                  ('text-red-600')
-                                }`}>
-                                  {getStatusIcon(invoice.status)}
-                                  <span className="capitalize">{invoice.status}</span>
-                                </span>
-                                {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
-                                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-red-600'}`}>
-                                    <AlertTriangle className="h-3 w-3" />
-                                    <span>{dueDateStatus.days}d overdue</span>
-                                  </span>
-                                )}
-                                {dueDateStatus.status === 'draft-past-due' && (
-                                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-gray-500'}`}>
-                                    <Clock className="h-3 w-3" />
-                                    <span>{dueDateStatus.days}d past due</span>
-                                  </span>
-                                )}
-                              </div>
-                              
-                              <div className="flex items-center space-x-1">
-                                <button 
-                                  onClick={() => handleViewInvoice(invoice)}
-                                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
-                                  title="View"
-                                >
-                                  <Eye className="h-4 w-4 text-gray-600" />
-                                </button>
-                                <button 
-                                  onClick={() => handleDownloadPDF(invoice)}
-                                  disabled={loadingActions[`pdf-${invoice.id}`]}
-                                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                  title="PDF"
-                                >
-                                  {loadingActions[`pdf-${invoice.id}`] ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                                  ) : (
-                                    <Download className="h-4 w-4 text-gray-600" />
-                                  )}
-                                </button>
-                                {invoice.status === 'draft' && (
-                                  <button 
-                                    onClick={() => handleSendInvoice(invoice)}
-                                    disabled={loadingActions[`send-${invoice.id}`]}
-                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    title="Send"
-                                  >
-                                    {loadingActions[`send-${invoice.id}`] ? (
-                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                                    ) : (
-                                      <Send className="h-4 w-4 text-gray-600" />
-                                    )}
-                                  </button>
-                                )}
-                                {(invoice.status === 'pending' || invoice.status === 'sent') && (
-                                  <button 
-                                    onClick={() => handleMarkAsPaid(invoice)}
-                                    disabled={loadingActions[`paid-${invoice.id}`]}
-                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    title="Mark Paid"
-                                  >
-                                    {loadingActions[`paid-${invoice.id}`] ? (
-                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                                    ) : (
-                                      <CheckCircle className="h-4 w-4 text-gray-600" />
-                                    )}
-                                  </button>
-                                )}
-                                {invoice.status === 'draft' && (
-                                  <button 
-                                    onClick={() => handleEditInvoice(invoice)}
-                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
-                                    title="Edit"
-                                  >
-                                    <Edit className="h-4 w-4 text-gray-600" />
-                                  </button>
-                                )}
-                                {invoice.status === 'draft' && (
-                                  <button 
-                                    onClick={() => handleDeleteInvoice(invoice)}
-                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
-                                    title="Delete"
-                                  >
-                                    <Trash2 className="h-4 w-4 text-gray-600" />
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                  </div>
-                  
-                        {/* Desktop Layout - Same as Mobile */}
-                        <div className="hidden sm:block p-4">
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-3">
-                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100`}>
-                                  <FileText className="h-4 w-4 text-gray-600" />
-                                </div>
-                                <div>
-                                  <div className="font-medium text-sm" style={{color: '#1f2937'}}>
-                                    {invoice.invoiceNumber}
-                                  </div>
-                                  <div className="text-xs" style={{color: '#6b7280'}}>
-                                    {invoice.client?.name || 'Unknown Client'}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className={`font-semibold text-base ${
-                                  invoice.status === 'paid' ? ('text-emerald-600') :
-                                  dueDateStatus.status === 'overdue' ? ('text-red-600') :
-                                  dueDateStatus.status === 'draft-past-due' ? ('text-gray-500') :
-                                  invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-500') :
-                                  invoice.status === 'draft' ? ('text-gray-600') :
-                                  ('text-red-600')
-                                }`}>
-                                  ${dueCharges.totalPayable.toLocaleString()}
-                                </div>
-                                <div className="text-xs" style={{color: '#6b7280'}}>
-                                  {new Date(invoice.createdAt).toLocaleDateString()}
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-2">
-                                <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
-                                  invoice.status === 'paid' ? ('text-emerald-600') :
-                                  invoice.status === 'pending' || invoice.status === 'sent' ? ('text-orange-500') :
-                                  invoice.status === 'draft' ? ('text-gray-600') :
-                                  ('text-red-600')
-                                }`}>
-                                  {getStatusIcon(invoice.status)}
-                                  <span className="capitalize">{invoice.status}</span>
-                                </span>
-                                {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
-                                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-red-600'}`}>
-                                    <AlertTriangle className="h-3 w-3" />
-                                    <span>{dueDateStatus.days}d overdue</span>
-                                  </span>
-                                )}
-                                {dueDateStatus.status === 'draft-past-due' && (
-                                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-gray-500'}`}>
-                                    <Clock className="h-3 w-3" />
-                                    <span>{dueDateStatus.days}d past due</span>
-                                  </span>
-                                )}
-                              </div>
-                              
-                              <div className="flex items-center space-x-1">
-                                <button 
-                                  onClick={() => handleViewInvoice(invoice)}
-                                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
-                                  title="View"
-                                >
-                                  <Eye className="h-4 w-4 text-gray-600" />
-                                </button>
-                                <button 
-                                  onClick={() => handleDownloadPDF(invoice)}
-                                  disabled={loadingActions[`pdf-${invoice.id}`]}
-                                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                  title="PDF"
-                                >
-                                  {loadingActions[`pdf-${invoice.id}`] ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                                  ) : (
-                                    <Download className="h-4 w-4 text-gray-600" />
-                                  )}
-                                </button>
-                                {invoice.status === 'draft' && (
-                                  <button 
-                                    onClick={() => handleSendInvoice(invoice)}
-                                    disabled={loadingActions[`send-${invoice.id}`]}
-                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    title="Send"
-                                  >
-                                    {loadingActions[`send-${invoice.id}`] ? (
-                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                                    ) : (
-                                      <Send className="h-4 w-4 text-gray-600" />
-                                    )}
-                                  </button>
-                                )}
-                                {(invoice.status === 'pending' || invoice.status === 'sent') && (
-                                  <button 
-                                    onClick={() => handleMarkAsPaid(invoice)}
-                                    disabled={loadingActions[`paid-${invoice.id}`]}
-                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    title="Mark Paid"
-                                  >
-                                    {loadingActions[`paid-${invoice.id}`] ? (
-                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                                    ) : (
-                                      <CheckCircle className="h-4 w-4 text-gray-600" />
-                                    )}
-                                  </button>
-                                )}
-                                {invoice.status === 'draft' && (
-                                  <button 
-                                    onClick={() => handleEditInvoice(invoice)}
-                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
-                                    title="Edit"
-                                  >
-                                    <Edit className="h-4 w-4 text-gray-600" />
-                                  </button>
-                                )}
-                                {invoice.status === 'draft' && (
-                                  <button 
-                                    onClick={() => handleDeleteInvoice(invoice)}
-                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
-                                    title="Delete"
-                                  >
-                                    <Trash2 className="h-4 w-4 text-gray-600" />
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {recentInvoices.map((invoice) => (
+                    <UnifiedInvoiceCard
+                      key={invoice.id}
+                      invoice={invoice}
+                      getStatusIcon={getStatusIcon}
+                      getDueDateStatus={getDueDateStatus}
+                      calculateDueCharges={calculateDueCharges}
+                      loadingActions={loadingActions}
+                      onView={handleViewInvoice}
+                      onPdf={handleDownloadPDF}
+                      onSend={handleSendInvoice}
+                      onMarkPaid={handleMarkAsPaid}
+                      onEdit={handleEditInvoice}
+                      onDelete={handleDeleteInvoice}
+                    />
+                  ))}
                 </div>
               ) : (
                 <div className="rounded-xl p-8 text-center bg-white border border-gray-200">

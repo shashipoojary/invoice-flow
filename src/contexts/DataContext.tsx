@@ -148,7 +148,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   }, [user, hasLoaded, loadInvoices, loadClients]);
 
   const refreshInvoices = useCallback(async () => {
-    await loadInvoices();
+    await loadInvoices(true);
     setLastUpdated(new Date());
   }, [loadInvoices]);
 
@@ -169,11 +169,29 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   }, []);
 
   const updateInvoice = useCallback((updatedInvoice: Invoice) => {
-    setInvoices(prev => 
-      prev.map(invoice => 
-        invoice.id === updatedInvoice.id ? { ...updatedInvoice } : invoice
-      )
-    );
+    setInvoices(prev => {
+      const statusRank: Record<string, number> = { paid: 3, sent: 2, pending: 2, overdue: 2, draft: 1 };
+      const next = prev.map(existing => {
+        if (existing.id !== updatedInvoice.id) return existing;
+
+        const incomingStatus = (updatedInvoice as any).status || (existing as any).status;
+        const currentStatus = (existing as any).status;
+        const chosenStatus = (statusRank[incomingStatus] || 0) >= (statusRank[currentStatus] || 0)
+          ? incomingStatus
+          : currentStatus;
+
+        const merged = { ...existing, ...updatedInvoice } as any;
+        if (chosenStatus) merged.status = chosenStatus;
+        return merged as Invoice;
+      });
+      // Move the updated invoice to the front so it appears as the first card
+      const id = updatedInvoice.id;
+      const updated = next.find(i => i.id === id);
+      if (updated) {
+        return [updated, ...next.filter(i => i.id !== id)];
+      }
+      return next;
+    });
   }, []);
 
   const deleteInvoice = useCallback((invoiceId: string) => {

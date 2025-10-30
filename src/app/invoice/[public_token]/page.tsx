@@ -87,10 +87,34 @@ export default function PublicInvoicePage() {
     loadInvoice()
   }, [params.public_token])
 
+  // Log public view when invoice is loaded
+  useEffect(() => {
+    const logView = async () => {
+      try {
+        if (!invoice?.id) return
+        await fetch('/api/invoices/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ invoiceId: (invoice as any).id, type: 'viewed_by_customer' })
+        })
+      } catch {}
+    }
+    logView()
+  }, [invoice?.id])
+
 
   const handleDownloadPDF = () => {
     // This will be implemented with react-pdf
     alert('PDF download will be implemented')
+    try {
+      if (invoice?.id) {
+        fetch('/api/invoices/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ invoiceId: (invoice as any).id, type: 'downloaded_by_customer' })
+        })
+      }
+    } catch {}
   }
 
   if (loading) {

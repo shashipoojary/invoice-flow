@@ -532,6 +532,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // log created event
+    try { await supabase.from('invoice_events').insert({ invoice_id: completeInvoice.id, type: 'created' }); } catch {}
     return NextResponse.json({ 
       success: true, 
       invoice: mappedInvoice,

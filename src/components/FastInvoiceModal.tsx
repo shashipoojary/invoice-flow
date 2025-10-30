@@ -34,7 +34,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   const [loading, setLoading] = useState(false)
   const [sendLoading, setSendLoading] = useState(false)
   const { showSuccess: localShowSuccess, showError: localShowError, showWarning: localShowWarning } = useToast()
-  const { addInvoice, addClient, updateInvoice, clients: globalClients } = useData()
+  const { invoices, addInvoice, addClient, updateInvoice, refreshInvoices, clients: globalClients } = useData()
   
   // Use passed toast functions if available, otherwise use local ones
   const showSuccess = propShowSuccess || localShowSuccess
@@ -120,7 +120,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         const headers = await getAuthHeaders()
         const clientResponse = await fetch('/api/clients', {
           method: 'POST',
-          headers,
+          headers: { ...headers, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name: clientName,
             email: clientEmail
@@ -161,7 +161,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
       
       const invoiceResponse = await fetch(endpoint, {
         method,
-        headers,
+        headers: { ...headers, 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
 
@@ -209,29 +209,49 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
       if (invoice) {
         // Then send it
         const headers = await getAuthHeaders()
+        // Resolve client email/name safely
+        const selected = selectedClientId ? clients.find(c => c.id === selectedClientId) : undefined
+        const finalClientEmail = (selected?.email || clientEmail || '').trim()
+        const finalClientName = (selected?.name || clientName || '').trim()
+
+        if (!finalClientEmail) {
+          showWarning('Client email is required to send the invoice')
+          try { addInvoice && addInvoice(invoice) } catch {}
+          return
+        }
+
         const sendResponse = await fetch('/api/invoices/send', {
           method: 'POST',
-          headers,
+          headers: { ...headers, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             invoiceId: invoice.id,
-            clientEmail: selectedClientId ? 
-              (clients.find(c => c.id === selectedClientId)?.email || clientEmail) : 
-              clientEmail,
-            clientName: selectedClientId ? 
-              (clients.find(c => c.id === selectedClientId)?.name || clientName) : 
-              clientName
+            clientEmail: finalClientEmail,
+            clientName: finalClientName
           })
         })
 
         if (sendResponse.ok) {
+          // Prefer server-provided updated invoice if present
+          try { const payload = await sendResponse.json(); if (payload?.invoice) { try { updateInvoice && updateInvoice(payload.invoice) } catch {} } } catch {}
+          const existing = invoices.find(inv => inv.id === invoice.id)
+          if (existing) {
+            try { updateInvoice && updateInvoice({ ...existing, status: 'sent' as const }) } catch {}
+          } else {
+            try { updateInvoice && updateInvoice({ ...invoice, status: 'sent' as const }) } catch {}
+          }
+          try { await refreshInvoices?.() } catch {}
           showSuccess('Invoice created and sent successfully!')
         } else {
-          showWarning('Invoice created but failed to send. You can send it later from the invoice list.')
+          let errorMsg = 'Invoice created but failed to send. You can send it later from the invoice list.'
+          try { const err = await sendResponse.json(); if (err?.error) errorMsg = err.error } catch {}
+          showWarning(errorMsg)
         }
         
         // update global invoices cache
         if (isEditing) {
-          try { updateInvoice && updateInvoice(invoice) } catch {}
+          // Preserve 'sent' status when we just sent the invoice
+          const updated = sendLoading ? { ...invoice, status: 'sent' as const } : invoice
+          try { updateInvoice && updateInvoice(updated) } catch {}
         } else {
           try { addInvoice && addInvoice(invoice) } catch {}
         }

@@ -28,6 +28,7 @@ interface SettingsContextType {
   error: string | null;
   refreshSettings: () => Promise<void>;
   updateSettings: (newSettings: Partial<BusinessSettings>) => void;
+  clearSettings: () => void;
 }
 
 const defaultSettings: BusinessSettings = {
@@ -70,17 +71,17 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   const [error, setError] = useState<string | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
 
-  const loadSettings = useCallback(async () => {
-    if (!user || hasLoaded || isLoadingSettings) return;
+  const loadSettings = useCallback(async (force = false) => {
+    if (!user || (!force && (hasLoaded || isLoadingSettings))) return;
 
     setIsLoadingSettings(true);
     setError(null);
     
     try {
       const headers = await getAuthHeaders();
-      const response = await fetch('/api/settings', {
+      const response = await fetch(`/api/settings?noCache=1&_=${Date.now()}` , {
         headers,
-        cache: 'force-cache' // Use cache for better performance
+        cache: 'no-store'
       });
       
       if (response.ok) {
@@ -102,11 +103,16 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
 
   const refreshSettings = useCallback(async () => {
     setHasLoaded(false);
-    await loadSettings();
+    await loadSettings(true);
   }, [loadSettings]);
 
   const updateSettings = useCallback((newSettings: Partial<BusinessSettings>) => {
     setSettings(prev => ({ ...prev, ...newSettings }));
+  }, []);
+
+  const clearSettings = useCallback(() => {
+    setSettings(defaultSettings);
+    setHasLoaded(false);
   }, []);
 
   // Load settings when user is available
@@ -121,7 +127,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     isLoadingSettings,
     error,
     refreshSettings,
-    updateSettings
+    updateSettings,
+    clearSettings
   };
 
   return (

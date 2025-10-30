@@ -199,6 +199,17 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
+    // Ensure invoice status is set to 'sent' immediately for drafts
+    if (invoice.status === 'draft') {
+      await supabaseAdmin
+        .from('invoices')
+        .update({ status: 'sent', updated_at: new Date().toISOString() })
+        .eq('id', invoiceId)
+        .eq('user_id', user.id);
+      // Reflect in local invoice object for response mapping
+      invoice.status = 'sent';
+    }
+
     // Send email with Resend
     const { data, error } = await resend.emails.send({
       from: `${businessSettings.businessName} <onboarding@resend.dev>`, // Using Resend's onboarding domain for free plan
@@ -220,19 +231,30 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Update invoice status to 'sent' if it was 'draft'
-    if (invoice.status === 'draft') {
-      await supabaseAdmin
+    // Fetch the latest invoice after sending to return up-to-date status
+    const { data: latest, error: latestError } = await supabaseAdmin
       .from('invoices')
-        .update({ status: 'sent' })
-        .eq('id', invoiceId)
-        .eq('user_id', user.id);
-    }
+      .select('*')
+      .eq('id', invoiceId)
+      .eq('user_id', user.id)
+      .single();
+
+    // Log sent event
+    try { await supabaseAdmin.from('invoice_events').insert({ invoice_id: invoiceId, type: 'sent' }); } catch {}
+
+    const latestMapped = latest ? {
+      ...latest,
+      invoiceNumber: latest.invoice_number,
+      dueDate: latest.due_date,
+      createdAt: latest.created_at,
+      updatedAt: latest.updated_at,
+    } : null;
 
     return NextResponse.json({ 
       success: true, 
       message: 'Invoice sent successfully',
-      emailId: data?.id 
+      emailId: data?.id,
+      invoice: latestMapped || mappedInvoice,
     });
 
   } catch (error) {
