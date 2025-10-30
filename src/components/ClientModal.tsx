@@ -173,7 +173,7 @@ export default function ClientModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
-      <div className={`rounded-xl shadow-2xl max-w-lg w-full ${
+      <div className={`rounded-xl shadow-2xl max-w-lg w-full overflow-hidden ${
         isDarkMode 
           ? 'bg-gray-900' 
           : 'bg-white'

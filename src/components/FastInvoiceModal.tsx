@@ -278,7 +278,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className={`rounded-xl shadow-2xl max-w-md w-full ${
+      <div className={`rounded-xl shadow-2xl max-w-md w-full overflow-hidden ${
         isDarkMode 
           ? 'bg-gray-900' 
           : 'bg-white'
