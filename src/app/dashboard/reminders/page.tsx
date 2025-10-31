@@ -174,26 +174,28 @@ export default function ReminderHistoryPage() {
         reminder.invoice.clients.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         reminder.invoice.clients.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
 
-      // For scheduled reminders, only show tomorrow's scheduled reminders (1 day ahead)
+      if (!matchesSearch) return false;
+
+      // For scheduled reminders, show only those scheduled 1+ days ahead (tomorrow and beyond)
       if (reminder.reminder_status === 'scheduled') {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
         
+        // Get the scheduled date (sent_at contains the scheduled datetime)
         const reminderDate = new Date(reminder.sent_at);
         reminderDate.setHours(0, 0, 0, 0);
         
-        // Only show if scheduled for tomorrow (exactly 1 day ahead)
-        const isTomorrow = reminderDate.getTime() === tomorrow.getTime();
+        // Calculate days difference (positive = future, negative = past)
+        const daysDiff = Math.round((reminderDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         
-        return matchesSearch && isTomorrow;
+        // Show only if scheduled 1 day or more ahead (tomorrow and beyond)
+        return daysDiff >= 1;
       }
 
-      // For sent/failed/delivered/bounced, show all
-      return matchesSearch;
+      // For sent/failed/delivered/bounced, show ALL (all the time)
+      return true;
     }).sort((a, b) => {
-      // Sort by status priority: sent/failed first, then scheduled
+      // Sort by status priority: sent/failed/delivered/bounced first, then scheduled
       const statusPriority = { 'sent': 1, 'delivered': 1, 'failed': 1, 'bounced': 1, 'scheduled': 2 };
       const aPriority = statusPriority[a.reminder_status] || 3;
       const bPriority = statusPriority[b.reminder_status] || 3;
@@ -516,7 +518,7 @@ export default function ReminderHistoryPage() {
                       No reminders found
                     </h3>
                     <p className="mt-1 text-sm text-gray-500">
-                      {searchTerm ? 'Try adjusting your search terms.' : 'No reminders found. Sent/failed reminders and tomorrow\'s scheduled reminders (1 day ahead) will appear here.'}
+                      {searchTerm ? 'Try adjusting your search terms.' : 'No reminders found. Sent/failed/delivered/bounced reminders (all time) and scheduled reminders (1+ days ahead) will appear here.'}
                     </p>
                   </div>
                 </div>

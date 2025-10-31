@@ -102,15 +102,42 @@ export async function POST(request: NextRequest) {
     for (const reminder of scheduledReminders) {
       const invoice = reminder.invoices;
       
+      // Skip if invoice doesn't exist or is null
+      if (!invoice) {
+        console.log(`Skipping reminder ${reminder.id} - invoice not found`);
+        continue;
+      }
+      
+      // Skip if invoice is paid (always skip paid invoices)
+      if (invoice.status === 'paid') {
+        console.log(`Skipping reminder for invoice ${invoice.invoice_number} - invoice is already paid`);
+        // Update reminder status to indicate it was skipped
+        await supabase
+          .from('invoice_reminders')
+          .update({
+            reminder_status: 'failed',
+            failure_reason: 'Invoice already paid'
+          })
+          .eq('id', reminder.id);
+        continue;
+      }
+      
       // Skip if invoice is not in 'sent' or 'pending' status (both can receive reminders)
       if (invoice.status !== 'sent' && invoice.status !== 'pending') {
         console.log(`Skipping reminder for invoice ${invoice.invoice_number} - status is ${invoice.status}`);
         continue;
       }
       
-      // Skip if invoice is paid
-      if (invoice.status === 'paid') {
-        console.log(`Skipping reminder for invoice ${invoice.invoice_number} - invoice is already paid`);
+      // Skip if client email is missing
+      if (!invoice.clients || !invoice.clients.email) {
+        console.log(`Skipping reminder for invoice ${invoice.invoice_number} - client email missing`);
+        await supabase
+          .from('invoice_reminders')
+          .update({
+            reminder_status: 'failed',
+            failure_reason: 'Client email missing'
+          })
+          .eq('id', reminder.id);
         continue;
       }
 
@@ -118,15 +145,19 @@ export async function POST(request: NextRequest) {
         // Send the reminder email
         const emailResult = await sendReminderEmail(invoice, reminder.reminder_type, reminder.overdue_days);
         
-        // Update reminder status to sent
-        await supabase
+        // Update reminder status to sent with actual sent timestamp
+        const { error: updateError } = await supabase
           .from('invoice_reminders')
           .update({
             reminder_status: 'sent',
             email_id: emailResult.id || null,
-            sent_at: new Date().toISOString()
+            sent_at: new Date().toISOString() // Update to actual sent time
           })
           .eq('id', reminder.id);
+        
+        if (updateError) {
+          console.error(`Failed to update reminder ${reminder.id} status:`, updateError);
+        }
 
         sentReminders.push({
           invoiceNumber: invoice.invoice_number,

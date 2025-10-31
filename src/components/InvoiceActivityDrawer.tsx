@@ -35,25 +35,48 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
           .eq('invoice_id', invoice.id)
           .order('created_at', { ascending: false });
         
+        // Track viewed_by_customer events separately to show only the latest one
+        let latestViewedEvent: any = null;
+        
         if (events) {
           for (const ev of events) {
             // Filter out "paid" events if invoice is not currently paid
             if (ev.type === 'paid' && invoice.status !== 'paid') {
               continue; // Skip this event entirely
             }
+            
+            // For privacy: only track the latest "viewed_by_customer" event, don't add it yet
+            if (ev.type === 'viewed_by_customer') {
+              if (!latestViewedEvent || new Date(ev.created_at) > new Date(latestViewedEvent.created_at)) {
+                latestViewedEvent = ev;
+              }
+              continue; // Skip adding this event now, we'll add it later as the latest one
+            }
+            
             eventTypes.add(ev.type); // Only add to set if we're including this event
             const mapping: Record<string, ActivityItem> = {
               created: { id: `created-${ev.id}`, type: 'system', title: 'Invoice created.', at: ev.created_at, icon: 'created' },
               edited: { id: `edited-${ev.id}`, type: 'system', title: 'Invoice edited.', at: ev.created_at, icon: 'scheduled' },
               sent: { id: `sent-${ev.id}`, type: 'email', title: 'Invoice sent.', at: ev.created_at, icon: 'sent' },
               paid: { id: `paid-${ev.id}`, type: 'status', title: 'Invoice paid in full.', at: ev.created_at, icon: 'paid' },
-              viewed_by_customer: { id: `view-${ev.id}`, type: 'client', title: 'Invoice viewed by customer.', at: ev.created_at, icon: 'opened' },
               downloaded_by_customer: { id: `dl-${ev.id}`, type: 'client', title: 'Invoice downloaded by customer.', at: ev.created_at, icon: 'downloaded' },
               downloaded_pdf: { id: `dl-owner-${ev.id}`, type: 'owner', title: 'PDF downloaded.', at: ev.created_at, icon: 'downloaded' },
             } as any;
             const mapped = mapping[ev.type];
             if (mapped) items.push(mapped);
           }
+        }
+        
+        // Add only the latest "viewed_by_customer" event (for privacy)
+        if (latestViewedEvent) {
+          items.push({ 
+            id: `view-${latestViewedEvent.id}`, 
+            type: 'client', 
+            title: 'Invoice viewed by customer.', 
+            at: latestViewedEvent.created_at, 
+            icon: 'opened' 
+          });
+          eventTypes.add('viewed_by_customer');
         }
         
         // Only add derived "created" if no created event exists in database
@@ -73,17 +96,32 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
           items.push({ id: 'sent-fallback', type: 'status', title: 'Invoice sent.', at, icon: 'sent' });
         }
         // Reminders (delivery/open etc.) - Skip scheduled reminders for draft invoices
+        // Also filter out reminders scheduled before invoice creation
         const { data, error } = await supabase
           .from('invoice_reminders')
           .select('*')
           .eq('invoice_id', invoice.id)
           .order('sent_at', { ascending: false });
         if (!error && data) {
+          const invoiceCreatedAt = (invoice as any).createdAt || (invoice as any).created_at;
+          const invoiceCreatedDate = invoiceCreatedAt ? new Date(invoiceCreatedAt) : null;
+          
           for (const r of data) {
             // Skip scheduled reminders for draft invoices
             if (r.reminder_status === 'scheduled' && invoice.status === 'draft') {
               continue;
             }
+            
+            // Filter out reminders scheduled before invoice creation
+            const reminderDate = r.sent_at || r.scheduled_for || r.created_at;
+            if (reminderDate && invoiceCreatedDate && r.reminder_status === 'scheduled') {
+              const reminderDateObj = new Date(reminderDate);
+              // If reminder is scheduled before invoice creation, skip it
+              if (reminderDateObj < invoiceCreatedDate) {
+                continue;
+              }
+            }
+            
             const at = r.sent_at || r.created_at;
             if (r.reminder_status === 'delivered') {
               items.push({ id: `delivered-${r.id}` , type: 'email', title: 'Invoice email delivered successfully.', at, icon: 'delivered' });

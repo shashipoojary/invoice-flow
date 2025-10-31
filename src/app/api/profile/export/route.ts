@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     console.log('Export API: Fetching user data...');
     const [profileResult, invoicesResult, clientsResult, paymentsResult, settingsResult] = await Promise.all([
       supabase.from('users').select('*').eq('id', user.id).single(),
-      supabase.from('invoices').select('*').eq('user_id', user.id),
+      supabase.from('invoices').select('*, clients(name)').eq('user_id', user.id),
       supabase.from('clients').select('*').eq('user_id', user.id),
       supabase.from('payments').select('*').eq('user_id', user.id),
       supabase.from('user_settings').select('*').eq('user_id', user.id)
@@ -62,6 +62,36 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Map client names to invoices and calculate proper statuses
+    const invoices = (invoicesResult.data || []).map((invoice: any) => {
+      // Get client name from joined data or from clients array
+      const clientName = invoice.clients?.name || 
+        (clientsResult.data || []).find((c: any) => c.id === invoice.client_id)?.name || 
+        null;
+      
+      return {
+        ...invoice,
+        client_name: clientName
+      };
+    });
+
+    // Calculate pending and overdue invoices properly
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const pendingInvoices = invoices.filter((inv: any) => {
+      return inv.status !== 'paid' && inv.status !== 'draft';
+    }).length;
+    
+    const overdueInvoices = invoices.filter((inv: any) => {
+      if (inv.status === 'paid' || inv.status === 'draft') return false;
+      if (!inv.due_date) return false;
+      
+      const dueDate = new Date(inv.due_date);
+      dueDate.setHours(0, 0, 0, 0);
+      return dueDate < today;
+    }).length;
+
     // Create business report data
     const businessReport = {
       reportInfo: {
@@ -70,18 +100,18 @@ export async function GET(request: NextRequest) {
         period: 'All Time'
       },
       profile: profileResult.data || {},
-      invoices: invoicesResult.data || [],
+      invoices: invoices,
       clients: clientsResult.data || [],
       payments: paymentsResult.data || [],
       invoiceItems: itemsResult.data || [],
       settings: settingsResult.data || {},
       summary: {
-        totalInvoices: invoicesResult.data?.length || 0,
+        totalInvoices: invoices.length || 0,
         totalClients: clientsResult.data?.length || 0,
-        totalRevenue: invoicesResult.data?.reduce((sum, invoice) => sum + (invoice.total || 0), 0) || 0,
-        paidInvoices: invoicesResult.data?.filter(inv => inv.status === 'paid').length || 0,
-        pendingInvoices: invoicesResult.data?.filter(inv => inv.status === 'pending').length || 0,
-        overdueInvoices: invoicesResult.data?.filter(inv => inv.status === 'overdue').length || 0
+        totalRevenue: invoices.reduce((sum: number, invoice: any) => sum + (invoice.total || 0), 0) || 0,
+        paidInvoices: invoices.filter((inv: any) => inv.status === 'paid').length || 0,
+        pendingInvoices: pendingInvoices,
+        overdueInvoices: overdueInvoices
       }
     };
 
@@ -211,39 +241,48 @@ function generateCSVReport(report: any) {
 // Helper function to generate PDF report
 async function generatePDFReport(report: any) {
   const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([595.28, 841.89]); // A4 size
-  const { width, height } = page.getSize();
+  const pages: any[] = [];
+  let currentPage = pdfDoc.addPage([595.28, 841.89]); // A4 size
+  pages.push(currentPage);
+  
+  const { width, height } = currentPage.getSize();
   
   // Load fonts
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   
-  let yPosition = height - 60;
-  const margin = 60;
-  const lineHeight = 18;
-  const sectionSpacing = 25;
+  const margin = 50;
+  const topMargin = 80;
+  const bottomMargin = 60;
+  let yPosition = height - topMargin;
+  const lineHeight = 16;
+  const sectionSpacing = 30;
+  const minYPosition = bottomMargin + 40;
   
-  // Helper function to add text with proper width calculation
-  const addText = (text: string, x: number, y: number, fontSize: number = 12, isBold: boolean = false, maxWidth?: number) => {
+  // Helper function to add text with word wrapping
+  const addText = (text: string, x: number, y: number, fontSize: number = 12, isBold: boolean = false, maxWidth?: number, color?: any) => {
     const textFont = isBold ? boldFont : font;
-    let displayText = text;
+    const textColor = color || rgb(0, 0, 0);
+    let displayText = text || '';
     
-    if (maxWidth) {
-      const textWidth = textFont.widthOfTextAtSize(text, fontSize);
+    if (maxWidth && maxWidth > 0) {
+      const textWidth = textFont.widthOfTextAtSize(displayText, fontSize);
       if (textWidth > maxWidth) {
-        // Truncate text if too long
-        const ratio = maxWidth / textWidth;
-        const maxChars = Math.floor(text.length * ratio * 0.9);
-        displayText = text.substring(0, maxChars) + '...';
+        // Try to fit text by reducing size or truncating
+        let truncated = displayText;
+        while (textFont.widthOfTextAtSize(truncated, fontSize) > maxWidth && truncated.length > 0) {
+          truncated = truncated.substring(0, truncated.length - 1);
+        }
+        displayText = truncated.length < displayText.length ? truncated + '...' : truncated;
       }
     }
     
-    page.drawText(displayText, {
+    currentPage.drawText(displayText, {
       x,
       y,
       size: fontSize,
       font: textFont,
-      color: rgb(0, 0, 0),
+      color: textColor,
     });
   };
   
@@ -257,7 +296,7 @@ async function generatePDFReport(report: any) {
   
   // Helper function to add line
   const addLine = (y: number, thickness: number = 1, color: any = rgb(0.7, 0.7, 0.7)) => {
-    page.drawLine({
+    currentPage.drawLine({
       start: { x: margin, y },
       end: { x: width - margin, y },
       thickness,
@@ -265,183 +304,315 @@ async function generatePDFReport(report: any) {
     });
   };
   
-  // Helper function to add table row
-  const addTableRow = (y: number, columns: string[], columnWidths: number[], isHeader: boolean = false) => {
-    let x = margin;
-    columns.forEach((text, index) => {
-      addText(text, x, y, 11, isHeader, columnWidths[index]);
-      x += columnWidths[index];
-    });
+  // Helper function to check if new page is needed
+  const checkNewPage = (requiredSpace: number) => {
+    if (yPosition - requiredSpace < minYPosition) {
+      currentPage = pdfDoc.addPage([595.28, 841.89]);
+      pages.push(currentPage);
+      yPosition = height - topMargin;
+      return true;
+    }
+    return false;
   };
   
   // Helper function to add section header
-  const addSectionHeader = (title: string, y: number) => {
-    addText(title, margin, y, 16, true);
-    addLine(y - 5, 2, rgb(0.2, 0.2, 0.2));
+  const addSectionHeader = (title: string) => {
+    checkNewPage(40);
+    addText(title, margin, yPosition, 18, true);
+    addLine(yPosition - 8, 2, rgb(0.2, 0.2, 0.2));
+    yPosition -= 35;
+  };
+  
+  // Helper function to add table row with proper alignment
+  const addTableRow = (columns: { text: string; width: number; align?: 'left' | 'center' | 'right' }[], isHeader: boolean = false) => {
+    checkNewPage(25);
+    
+    let x = margin;
+    const rowHeight = 20;
+    const padding = 8;
+    
+    // Draw row background
+    if (isHeader) {
+      currentPage.drawRectangle({
+        x: margin,
+        y: yPosition - rowHeight,
+        width: width - 2 * margin,
+        height: rowHeight,
+        color: rgb(0.15, 0.15, 0.15),
+      });
+    } else {
+      // Alternate row background for readability
+      const rowIndex = Math.floor((height - yPosition) / rowHeight);
+      if (rowIndex % 2 === 0) {
+        currentPage.drawRectangle({
+          x: margin,
+          y: yPosition - rowHeight,
+          width: width - 2 * margin,
+          height: rowHeight,
+          color: rgb(0.97, 0.97, 0.97),
+        });
+      }
+    }
+    
+    // Draw column separators
+    let currentX = margin;
+    for (let i = 0; i < columns.length - 1; i++) {
+      currentX += columns[i].width;
+      currentPage.drawLine({
+        start: { x: currentX, y: yPosition },
+        end: { x: currentX, y: yPosition - rowHeight },
+        thickness: 0.5,
+        color: rgb(0.85, 0.85, 0.85),
+      });
+    }
+    
+    // Draw text in each column
+    columns.forEach((col, index) => {
+      const textX = (() => {
+        const textWidth = (isHeader ? boldFont : font).widthOfTextAtSize(col.text, 10);
+        switch (col.align) {
+          case 'right':
+            return x + col.width - padding - textWidth;
+          case 'center':
+            return x + (col.width - textWidth) / 2;
+          default: // left
+            return x + padding;
+        }
+      })();
+      
+      addText(col.text, textX, yPosition - 14, 10, isHeader, col.width - padding * 2, isHeader ? rgb(1, 1, 1) : undefined);
+      x += col.width;
+    });
+    
+    // Draw bottom border
+    currentPage.drawLine({
+      start: { x: margin, y: yPosition - rowHeight },
+      end: { x: width - margin, y: yPosition - rowHeight },
+      thickness: 0.5,
+      color: rgb(0.85, 0.85, 0.85),
+    });
+    
+    yPosition -= rowHeight + 2;
   };
   
   // Title and Header
-  addCenteredText('BUSINESS FINANCIAL REPORT', yPosition, 28, true);
-  yPosition -= 50;
+  addCenteredText('BUSINESS FINANCIAL REPORT', yPosition, 24, true);
+  yPosition -= 45;
   
-  // Report info box
-  const infoBoxHeight = 80;
-  page.drawRectangle({
+  // Report info section with clean design
+  checkNewPage(100);
+  const infoBoxPadding = 15;
+  const infoBoxHeight = 90;
+  
+  // Draw info box with subtle background
+  currentPage.drawRectangle({
     x: margin,
     y: yPosition - infoBoxHeight,
     width: width - 2 * margin,
     height: infoBoxHeight,
-    borderColor: rgb(0.8, 0.8, 0.8),
-    borderWidth: 1,
+    color: rgb(0.98, 0.98, 0.98),
+    borderColor: rgb(0.2, 0.2, 0.2),
+    borderWidth: 1.5,
   });
   
-  const infoY = yPosition - 25;
-  addText(`Business: ${report.reportInfo.businessName}`, margin + 15, infoY, 14, true);
-  addText(`Generated: ${new Date(report.reportInfo.generatedAt).toLocaleDateString()}`, margin + 15, infoY - 20, 12);
-  addText(`Period: ${report.reportInfo.period}`, margin + 15, infoY - 40, 12);
+  const infoStartY = yPosition - 25;
+  addText('Business Name:', margin + infoBoxPadding, infoStartY, 11, true);
+  addText(report.reportInfo?.businessName || 'Your Business', margin + 150, infoStartY, 11, false);
+  
+  addText('Generated Date:', margin + infoBoxPadding, infoStartY - 22, 11, true);
+  addText(new Date(report.reportInfo?.generatedAt || Date.now()).toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  }), margin + 150, infoStartY - 22, 11, false);
+  
+  addText('Report Period:', margin + infoBoxPadding, infoStartY - 44, 11, true);
+  addText(report.reportInfo?.period || 'All Time', margin + 150, infoStartY - 44, 11, false);
   
   yPosition -= infoBoxHeight + sectionSpacing;
   
-  // Summary section
-  addSectionHeader('SUMMARY', yPosition);
-  yPosition -= 30;
+  // Summary section with cards
+  addSectionHeader('EXECUTIVE SUMMARY');
   
-  // Summary in a grid layout
-  const summaryData = [
-    [`Total Invoices: ${report.summary.totalInvoices}`, `Total Clients: ${report.summary.totalClients}`],
-    [`Total Revenue: $${report.summary.totalRevenue.toFixed(2)}`, `Paid Invoices: ${report.summary.paidInvoices}`],
-    [`Pending Invoices: ${report.summary.pendingInvoices}`, `Overdue Invoices: ${report.summary.overdueInvoices}`]
+  const summaryCardWidth = (width - 2 * margin - 20) / 2;
+  const summaryCardHeight = 60;
+  const summaryCards = [
+    { label: 'Total Invoices', value: report.summary?.totalInvoices || 0, color: rgb(0.1, 0.4, 0.7) },
+    { label: 'Total Clients', value: report.summary?.totalClients || 0, color: rgb(0.1, 0.5, 0.3) },
+    { label: 'Total Revenue', value: `$${(report.summary?.totalRevenue || 0).toFixed(2)}`, color: rgb(0.7, 0.3, 0.1) },
+    { label: 'Paid Invoices', value: report.summary?.paidInvoices || 0, color: rgb(0.2, 0.6, 0.2) },
   ];
   
-  summaryData.forEach(row => {
-    addText(row[0], margin, yPosition, 12, true);
-    addText(row[1], width / 2, yPosition, 12, true);
+  summaryCards.forEach((card, index) => {
+    checkNewPage(summaryCardHeight + 10);
+    
+    const col = index % 2;
+    const row = Math.floor(index / 2);
+    const cardX = margin + (col * (summaryCardWidth + 20));
+    const cardY = yPosition - (row * (summaryCardHeight + 15));
+    
+    // Draw card background
+    currentPage.drawRectangle({
+      x: cardX,
+      y: cardY - summaryCardHeight,
+      width: summaryCardWidth,
+      height: summaryCardHeight,
+      color: rgb(0.97, 0.97, 0.97),
+      borderColor: card.color,
+      borderWidth: 1.5,
+    });
+    
+    // Draw colored accent bar
+    currentPage.drawRectangle({
+      x: cardX,
+      y: cardY - summaryCardHeight,
+      width: summaryCardWidth,
+      height: 4,
+      color: card.color,
+    });
+    
+    // Add card text
+    addText(card.label, cardX + 10, cardY - 25, 10, false, summaryCardWidth - 20);
+    addText(String(card.value), cardX + 10, cardY - 45, 16, true, summaryCardWidth - 20);
+  });
+  
+  yPosition -= (Math.ceil(summaryCards.length / 2) * (summaryCardHeight + 15)) + sectionSpacing;
+  
+  // Additional summary stats
+  checkNewPage(40);
+  const additionalStats = [
+    `Pending Invoices: ${report.summary?.pendingInvoices || 0}`,
+    `Overdue Invoices: ${report.summary?.overdueInvoices || 0}`,
+  ];
+  
+  additionalStats.forEach(stat => {
+    addText(stat, margin, yPosition, 11, false);
     yPosition -= lineHeight;
   });
   
   yPosition -= sectionSpacing;
   
   // Invoices section
-  if (report.invoices.length > 0) {
-    addSectionHeader('INVOICES', yPosition);
-    yPosition -= 30;
+  if (report.invoices && report.invoices.length > 0) {
+    addSectionHeader('INVOICE DETAILS');
     
-    // Table with proper column widths
-    const columnWidths = [120, 150, 80, 80, 100];
-    const tableHeaders = ['Invoice #', 'Client', 'Amount', 'Status', 'Due Date'];
+    const invoicesToShow = report.invoices.slice(0, 20); // Limit for clean display
+    const invoiceColumns = [
+      { text: 'Invoice #', width: 100, align: 'left' as const },
+      { text: 'Client', width: 160, align: 'left' as const },
+      { text: 'Amount', width: 90, align: 'right' as const },
+      { text: 'Status', width: 80, align: 'center' as const },
+      { text: 'Due Date', width: 100, align: 'left' as const },
+    ];
     
-    // Table header with background
-    page.drawRectangle({
-      x: margin,
-      y: yPosition - 20,
-      width: width - 2 * margin,
-      height: 20,
-      color: rgb(0.95, 0.95, 0.95),
+    addTableRow(invoiceColumns, true);
+    
+    invoicesToShow.forEach((invoice: any) => {
+      const clientName = (invoice.client_name || invoice.client?.name || 'N/A').substring(0, 25);
+      const status = (invoice.status || 'N/A').toUpperCase();
+      const dueDate = invoice.due_date ? new Date(invoice.due_date).toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+      }) : 'N/A';
+      const amount = `$${(invoice.total || 0).toFixed(2)}`;
+      
+      addTableRow([
+        { text: invoice.invoice_number || 'N/A', width: 100, align: 'left' },
+        { text: clientName, width: 160, align: 'left' },
+        { text: amount, width: 90, align: 'right' },
+        { text: status, width: 80, align: 'center' },
+        { text: dueDate, width: 100, align: 'left' },
+      ], false);
     });
     
-    addTableRow(yPosition - 5, tableHeaders, columnWidths, true);
-    yPosition -= 30;
-    
-    // Invoice rows
-    const invoicesToShow = report.invoices.slice(0, 15);
-    invoicesToShow.forEach((invoice: any, index: number) => {
-      if (yPosition < 150) return; // Stop if we're near the bottom
-      
-      // Alternate row background
-      if (index % 2 === 0) {
-        page.drawRectangle({
-          x: margin,
-          y: yPosition - 15,
-          width: width - 2 * margin,
-          height: 15,
-          color: rgb(0.98, 0.98, 0.98),
-        });
-      }
-      
-      const clientName = invoice.client_name || 'N/A';
-      const status = invoice.status || 'N/A';
-      const dueDate = invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A';
-      
-      addTableRow(yPosition - 3, [
-        invoice.invoice_number || 'N/A',
-        clientName,
-        `$${(invoice.total || 0).toFixed(2)}`,
-        status,
-        dueDate
-      ], columnWidths);
-      
-      yPosition -= 20;
-    });
-    
-    if (report.invoices.length > 15) {
+    if (report.invoices.length > invoicesToShow.length) {
+      checkNewPage(25);
       yPosition -= 10;
-      addText(`... and ${report.invoices.length - 15} more invoices`, margin, yPosition, 10);
+      addText(`Note: Showing ${invoicesToShow.length} of ${report.invoices.length} invoices`, margin, yPosition, 9, false);
+      yPosition -= lineHeight;
     }
     
     yPosition -= sectionSpacing;
   }
   
   // Clients section
-  if (report.clients.length > 0) {
-    addSectionHeader('CLIENTS', yPosition);
-    yPosition -= 30;
+  if (report.clients && report.clients.length > 0) {
+    addSectionHeader('CLIENT INFORMATION');
     
-    // Table with proper column widths
-    const columnWidths = [120, 200, 150];
-    const tableHeaders = ['Name', 'Email', 'Company'];
+    const clientsToShow = report.clients.slice(0, 15);
+    const clientColumns = [
+      { text: 'Name', width: 150, align: 'left' as const },
+      { text: 'Email', width: 200, align: 'left' as const },
+      { text: 'Company', width: 145, align: 'left' as const },
+    ];
     
-    // Table header with background
-    page.drawRectangle({
-      x: margin,
-      y: yPosition - 20,
-      width: width - 2 * margin,
-      height: 20,
-      color: rgb(0.95, 0.95, 0.95),
+    addTableRow(clientColumns, true);
+    
+    clientsToShow.forEach((client: any) => {
+      const name = (client.name || 'N/A').substring(0, 30);
+      const email = (client.email || 'N/A').substring(0, 35);
+      const company = (client.company || 'N/A').substring(0, 30);
+      
+      addTableRow([
+        { text: name, width: 150, align: 'left' },
+        { text: email, width: 200, align: 'left' },
+        { text: company, width: 145, align: 'left' },
+      ], false);
     });
     
-    addTableRow(yPosition - 5, tableHeaders, columnWidths, true);
-    yPosition -= 30;
-    
-    // Client rows
-    const clientsToShow = report.clients.slice(0, 12);
-    clientsToShow.forEach((client: any, index: number) => {
-      if (yPosition < 150) return;
-      
-      // Alternate row background
-      if (index % 2 === 0) {
-        page.drawRectangle({
-          x: margin,
-          y: yPosition - 15,
-          width: width - 2 * margin,
-          height: 15,
-          color: rgb(0.98, 0.98, 0.98),
-        });
-      }
-      
-      addTableRow(yPosition - 3, [
-        client.name || 'N/A',
-        client.email || 'N/A',
-        client.company || 'N/A'
-      ], columnWidths);
-      
-      yPosition -= 20;
-    });
-    
-    if (report.clients.length > 12) {
+    if (report.clients.length > clientsToShow.length) {
+      checkNewPage(25);
       yPosition -= 10;
-      addText(`... and ${report.clients.length - 12} more clients`, margin, yPosition, 10);
+      addText(`Note: Showing ${clientsToShow.length} of ${report.clients.length} clients`, margin, yPosition, 9, false);
+      yPosition -= lineHeight;
     }
   }
   
-  // Footer
-  yPosition = 60;
-  addLine(yPosition, 1, rgb(0.3, 0.3, 0.3));
-  yPosition -= 20;
-  
-  const footerText = `Report generated on ${new Date().toLocaleDateString()}`;
-  const footerTextWidth = font.widthOfTextAtSize(footerText, 10);
-  addText(footerText, margin, yPosition, 10);
-  addText('Invoice Flow Pro', width - margin - font.widthOfTextAtSize('Invoice Flow Pro', 10), yPosition, 10);
+  // Footer on each page
+  pages.forEach((page, pageIndex) => {
+    page.drawLine({
+      start: { x: margin, y: bottomMargin + 30 },
+      end: { x: width - margin, y: bottomMargin + 30 },
+      thickness: 1,
+      color: rgb(0.3, 0.3, 0.3),
+    });
+    
+    const footerText = `Report generated on ${new Date().toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    })}`;
+    const appName = 'Invoice Flow Pro';
+    const pageNumberText = `Page ${pageIndex + 1} of ${pages.length}`;
+    
+    // Draw footer text directly on the page
+    page.drawText(footerText, {
+      x: margin,
+      y: bottomMargin + 15,
+      size: 9,
+      font: font,
+      color: rgb(0.4, 0.4, 0.4),
+    });
+    
+    const appNameWidth = font.widthOfTextAtSize(appName, 9);
+    page.drawText(appName, {
+      x: width - margin - appNameWidth,
+      y: bottomMargin + 15,
+      size: 9,
+      font: font,
+      color: rgb(0.4, 0.4, 0.4),
+    });
+    
+    const pageNumberWidth = font.widthOfTextAtSize(pageNumberText, 9);
+    page.drawText(pageNumberText, {
+      x: (width - pageNumberWidth) / 2,
+      y: bottomMargin + 15,
+      size: 9,
+      font: font,
+      color: rgb(0.4, 0.4, 0.4),
+    });
+  });
   
   return await pdfDoc.save();
 }
