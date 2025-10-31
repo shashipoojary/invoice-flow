@@ -539,12 +539,12 @@ export default function ReminderHistoryPage() {
             onClick={closeReminderModal}
           />
           
-          {/* Sliding Panel */}
-          <div className="absolute right-0 top-0 h-full w-1/2 sm:w-full sm:max-w-md bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
+          {/* Sliding Panel - 75% width on mobile, fixed width on desktop */}
+          <div className="absolute right-0 top-0 h-full w-3/4 sm:w-full sm:max-w-md bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
             <div className="flex flex-col h-full">
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Reminder Details</h3>
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Reminder Details</h3>
                 <button
                   onClick={closeReminderModal}
                   className="p-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
@@ -554,27 +554,27 @@ export default function ReminderHistoryPage() {
               </div>
               
               {/* Content */}
-              <div className="flex-1 overflow-y-auto p-6">
-                <div className="space-y-6">
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+                <div className="space-y-4 sm:space-y-6">
                   {/* Invoice Info */}
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Invoice Information</h4>
-                    <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Invoice Number:</span>
-                        <span className="text-sm font-medium text-gray-900">{selectedReminder.invoice.invoice_number}</span>
+                    <h4 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Invoice Information</h4>
+                    <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                        <span className="text-xs sm:text-sm text-gray-600">Invoice Number:</span>
+                        <span className="text-xs sm:text-sm font-medium text-gray-900 break-words">{selectedReminder.invoice.invoice_number}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Amount:</span>
-                        <span className="text-sm font-medium text-green-600">${selectedReminder.invoice.total.toLocaleString()}</span>
+                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                        <span className="text-xs sm:text-sm text-gray-600">Amount:</span>
+                        <span className="text-xs sm:text-sm font-medium text-green-600 break-words">${selectedReminder.invoice.total.toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Due Date:</span>
-                        <span className="text-sm font-medium text-gray-900">{new Date(selectedReminder.invoice.due_date).toLocaleDateString()}</span>
+                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                        <span className="text-xs sm:text-sm text-gray-600">Due Date:</span>
+                        <span className="text-xs sm:text-sm font-medium text-gray-900 break-words">{new Date(selectedReminder.invoice.due_date).toLocaleDateString()}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Status:</span>
-                        <span className={`text-sm font-medium capitalize ${
+                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                        <span className="text-xs sm:text-sm text-gray-600">Status:</span>
+                        <span className={`text-xs sm:text-sm font-medium capitalize break-words ${
                           selectedReminder.invoice.status === 'paid' ? 'text-green-600' :
                           selectedReminder.invoice.status === 'sent' ? 'text-blue-600' :
                           selectedReminder.invoice.status === 'overdue' ? 'text-red-600' :
@@ -588,20 +588,20 @@ export default function ReminderHistoryPage() {
 
                   {/* Client Info */}
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Client Information</h4>
-                    <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Name:</span>
-                        <span className="text-sm font-medium text-gray-900">{selectedReminder.invoice.clients.name}</span>
+                    <h4 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Client Information</h4>
+                    <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                        <span className="text-xs sm:text-sm text-gray-600">Name:</span>
+                        <span className="text-xs sm:text-sm font-medium text-gray-900 break-words">{selectedReminder.invoice.clients.name}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Email:</span>
-                        <span className="text-sm font-medium text-gray-900">{selectedReminder.invoice.clients.email}</span>
+                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                        <span className="text-xs sm:text-sm text-gray-600">Email:</span>
+                        <span className="text-xs sm:text-sm font-medium text-gray-900 break-words break-all">{selectedReminder.invoice.clients.email}</span>
                       </div>
                       {selectedReminder.invoice.clients.company && (
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Company:</span>
-                          <span className="text-sm font-medium text-gray-900">{selectedReminder.invoice.clients.company}</span>
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                          <span className="text-xs sm:text-sm text-gray-600">Company:</span>
+                          <span className="text-xs sm:text-sm font-medium text-gray-900 break-words">{selectedReminder.invoice.clients.company}</span>
                         </div>
                       )}
                     </div>
@@ -609,11 +609,11 @@ export default function ReminderHistoryPage() {
 
                   {/* Reminder Info */}
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2">Reminder Information</h4>
-                    <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Type:</span>
-                        <span className={`text-sm font-medium capitalize ${
+                    <h4 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Reminder Information</h4>
+                    <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                        <span className="text-xs sm:text-sm text-gray-600">Type:</span>
+                        <span className={`text-xs sm:text-sm font-medium capitalize break-words ${
                           selectedReminder.reminder_type === 'friendly' ? 'text-blue-600' :
                           selectedReminder.reminder_type === 'polite' ? 'text-emerald-600' :
                           selectedReminder.reminder_type === 'firm' ? 'text-yellow-600' :
@@ -622,28 +622,28 @@ export default function ReminderHistoryPage() {
                           {selectedReminder.reminder_type}
                         </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Status:</span>
-                        <span className={`text-sm font-medium capitalize ${getReminderStatusColor(selectedReminder.reminder_status)}`}>
+                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                        <span className="text-xs sm:text-sm text-gray-600">Status:</span>
+                        <span className={`text-xs sm:text-sm font-medium capitalize break-words ${getReminderStatusColor(selectedReminder.reminder_status)}`}>
                           {selectedReminder.reminder_status}
                         </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Scheduled/Sent:</span>
-                        <span className="text-sm font-medium text-gray-900">
+                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                        <span className="text-xs sm:text-sm text-gray-600">Scheduled/Sent:</span>
+                        <span className="text-xs sm:text-sm font-medium text-gray-900 break-words">
                           {new Date(selectedReminder.sent_at).toLocaleString()}
                         </span>
                       </div>
                       {selectedReminder.overdue_days !== 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Overdue Days:</span>
-                          <span className="text-sm font-medium text-gray-900">{selectedReminder.overdue_days}</span>
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                          <span className="text-xs sm:text-sm text-gray-600">Overdue Days:</span>
+                          <span className="text-xs sm:text-sm font-medium text-gray-900 break-words">{selectedReminder.overdue_days}</span>
                         </div>
                       )}
                       {selectedReminder.failure_reason && (
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Failure Reason:</span>
-                          <span className="text-sm font-medium text-red-600">{selectedReminder.failure_reason}</span>
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                          <span className="text-xs sm:text-sm text-gray-600">Failure Reason:</span>
+                          <span className="text-xs sm:text-sm font-medium text-red-600 break-words">{selectedReminder.failure_reason}</span>
                         </div>
                       )}
                     </div>
@@ -652,11 +652,11 @@ export default function ReminderHistoryPage() {
               </div>
               
               {/* Footer */}
-              <div className="p-6 border-t border-gray-200">
-                <div className="flex space-x-3">
+              <div className="p-4 sm:p-6 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:space-x-0">
                   <button
                     onClick={closeReminderModal}
-                    className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
+                    className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
                   >
                     Close
                   </button>
@@ -666,7 +666,7 @@ export default function ReminderHistoryPage() {
                         sendManualReminder(selectedReminder.invoice_id, selectedReminder.reminder_type);
                         closeReminderModal();
                       }}
-                      className="flex-1 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
+                      className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
                     >
                       Send Again
                     </button>
