@@ -49,14 +49,21 @@ export async function POST(request: NextRequest) {
     console.log('Cron job running in:', process.env.NODE_ENV);
     
     // Verify cron job authorization
+    // Vercel cron jobs automatically include the x-vercel-cron header
+    const cronTrigger = request.headers.get('x-vercel-cron');
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
     
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    // Allow if called by Vercel cron (x-vercel-cron header present)
+    // OR if authorization header matches CRON_SECRET (for manual testing)
+    // If CRON_SECRET is not set, allow all (development mode)
+    if (!cronTrigger && cronSecret && authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get all scheduled reminders that are due to be sent
+    // Query reminders where sent_at is less than or equal to now
+    const now = new Date().toISOString();
     const { data: scheduledReminders, error: remindersError } = await supabase
       .from('invoice_reminders')
       .select(`
@@ -73,7 +80,7 @@ export async function POST(request: NextRequest) {
         )
       `)
       .eq('reminder_status', 'scheduled')
-      .lte('sent_at', new Date().toISOString());
+      .lte('sent_at', now);
 
     if (remindersError) {
       console.error('Error fetching scheduled reminders:', remindersError);
@@ -95,9 +102,15 @@ export async function POST(request: NextRequest) {
     for (const reminder of scheduledReminders) {
       const invoice = reminder.invoices;
       
-      // Skip if invoice is not in 'sent' status
-      if (invoice.status !== 'sent') {
+      // Skip if invoice is not in 'sent' or 'pending' status (both can receive reminders)
+      if (invoice.status !== 'sent' && invoice.status !== 'pending') {
         console.log(`Skipping reminder for invoice ${invoice.invoice_number} - status is ${invoice.status}`);
+        continue;
+      }
+      
+      // Skip if invoice is paid
+      if (invoice.status === 'paid') {
+        console.log(`Skipping reminder for invoice ${invoice.invoice_number} - invoice is already paid`);
         continue;
       }
 

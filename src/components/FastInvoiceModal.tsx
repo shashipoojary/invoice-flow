@@ -50,41 +50,39 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   const [dueDate, setDueDate] = useState('')
   const [notes, setNotes] = useState('')
 
-  // Set default due date when modal opens
+  // Pre-fill form when editing an invoice OR reset when creating new
   useEffect(() => {
-    if (isOpen && !dueDate) {
-      const defaultDueDate = new Date()
-      defaultDueDate.setDate(defaultDueDate.getDate() + 30)
-      setDueDate(defaultDueDate.toISOString().split('T')[0])
-    }
-  }, [isOpen, dueDate])
-
-  // Pre-fill form when editing an invoice
-  useEffect(() => {
-    if (isOpen && editingInvoice) {
-      setSelectedClientId(editingInvoice.clientId || editingInvoice.client_id || '')
-      setClientName(editingInvoice.clientName || '')
-      setClientEmail(editingInvoice.clientEmail || '')
-      setDescription(editingInvoice.items?.[0]?.description || '')
-      setAmount(editingInvoice.items?.[0]?.rate?.toString() || editingInvoice.items?.[0]?.amount?.toString() || '')
-      setDueDate(editingInvoice.dueDate || '')
-      setNotes(editingInvoice.notes || '')
-      
-  // If the client doesn't exist in the clients list, add it
-  const clientId = editingInvoice.clientId || editingInvoice.client_id;
-  if (clientId && editingInvoice.client && !globalClients.find(c => c.id === clientId)) {
-        try { 
-          addClient && addClient(editingInvoice.client);
-          console.log('FastInvoiceModal: Added client to global state:', editingInvoice.client);
-        } catch (e) {
-          console.error('FastInvoiceModal: Error adding client:', e);
+    if (isOpen) {
+      if (editingInvoice) {
+        // Pre-fill form when editing an invoice
+        setSelectedClientId(editingInvoice.clientId || editingInvoice.client_id || '')
+        setClientName(editingInvoice.clientName || '')
+        setClientEmail(editingInvoice.clientEmail || '')
+        setDescription(editingInvoice.items?.[0]?.description || '')
+        setAmount(editingInvoice.items?.[0]?.rate?.toString() || editingInvoice.items?.[0]?.amount?.toString() || '')
+        setDueDate(editingInvoice.dueDate || '')
+        setNotes(editingInvoice.notes || '')
+        
+        // If the client doesn't exist in the clients list, add it
+        const clientId = editingInvoice.clientId || editingInvoice.client_id;
+        if (clientId && editingInvoice.client && !globalClients.find(c => c.id === clientId)) {
+          try { 
+            addClient && addClient(editingInvoice.client);
+            console.log('FastInvoiceModal: Added client to global state:', editingInvoice.client);
+          } catch (e) {
+            console.error('FastInvoiceModal: Error adding client:', e);
+          }
         }
+      } else {
+        // Reset form when creating new invoice
+        resetForm()
+        // Set default due date after reset
+        const defaultDueDate = new Date()
+        defaultDueDate.setDate(defaultDueDate.getDate() + 30)
+        setDueDate(defaultDueDate.toISOString().split('T')[0])
       }
-    } else if (isOpen && !editingInvoice) {
-      // Reset form when creating new invoice
-      resetForm()
     }
-  }, [isOpen, editingInvoice, addClient])
+  }, [isOpen, editingInvoice, addClient, globalClients])
 
   const resetForm = () => {
     setStep(1)

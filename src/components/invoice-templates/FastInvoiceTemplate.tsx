@@ -7,168 +7,214 @@ interface Template1Props {
   businessSettings: BusinessSettings
 }
 
-// Clean, minimal styles for Fast Invoice
+// Clean, modern styles for Fast Invoice
 const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: '#FFFFFF',
-    padding: 40,
-    fontSize: 11,
-    lineHeight: 1.4,
-    color: '#333333',
+    padding: 50,
+    fontSize: 9,
+    lineHeight: 1.5,
+    color: '#1F2937',
     fontFamily: 'Helvetica',
   },
-  // Simple header
+  // Modern header with refined styling
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 30,
-    paddingBottom: 20,
-    borderBottomWidth: 2,
+    alignItems: 'flex-start',
+    marginBottom: 35,
+    paddingBottom: 25,
+    borderBottomWidth: 3,
     borderBottomColor: '#0D9488',
   },
   invoiceTitle: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#0D9488',
+    letterSpacing: 1,
   },
   companyName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#333333',
+    color: '#111827',
     textAlign: 'right',
+    marginBottom: 6,
   },
-  // Simple business info
+  // Refined business info
   businessInfo: {
-    marginBottom: 20,
+    marginBottom: 25,
     alignItems: 'flex-end',
   },
   businessText: {
-    fontSize: 10,
-    color: '#666666',
-    marginBottom: 2,
+    fontSize: 9,
+    color: '#6B7280',
+    marginBottom: 4,
+    lineHeight: 1.6,
   },
-  // Clean bill to section
+  // Clean bill to section with better spacing
   billToSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 30,
+    marginBottom: 35,
   },
   billTo: {
     flex: 1,
+    maxWidth: '45%',
   },
   billToTitle: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 8,
+    color: '#111827',
+    marginBottom: 10,
+    letterSpacing: 0.5,
   },
   clientInfo: {
-    fontSize: 11,
-    color: '#333333',
-    lineHeight: 1.5,
+    fontSize: 10,
+    color: '#374151',
+    lineHeight: 1.8,
   },
   invoiceInfo: {
     alignItems: 'flex-end',
-    maxWidth: 200,
+    maxWidth: 220,
   },
   invoiceRow: {
     flexDirection: 'row',
-    marginBottom: 4,
-    justifyContent: 'space-between',
+    marginBottom: 6,
+    justifyContent: 'flex-end',
     width: '100%',
   },
   invoiceLabel: {
-    fontSize: 11,
+    fontSize: 9,
     fontWeight: 'bold',
-    color: '#333333',
-    width: 70,
-  },
-  invoiceValue: {
-    fontSize: 11,
-    color: '#333333',
+    color: '#111827',
     width: 80,
     textAlign: 'right',
+    marginRight: 12,
   },
-  // Simple table
+  invoiceValue: {
+    fontSize: 10,
+    color: '#374151',
+    width: 100,
+    textAlign: 'right',
+  },
+  // Modern table design
   table: {
-    marginBottom: 30,
+    marginBottom: 35,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 4,
   },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#0D9488',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
   },
   tableHeaderText: {
-    fontSize: 11,
+    fontSize: 9,
     fontWeight: 'bold',
     color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
   tableRow: {
     flexDirection: 'row',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
   },
   tableCell: {
-    fontSize: 11,
-    color: '#333333',
+    fontSize: 9,
+    color: '#374151',
+    lineHeight: 1.6,
   },
-  // Simple total section
+  // Refined total section
   totalSection: {
-    alignItems: 'flex-end',
-    marginBottom: 30,
+    marginBottom: 35,
+    paddingTop: 20,
+    borderTopWidth: 2,
+    borderTopColor: '#E5E7EB',
   },
   totalRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-    minWidth: 200,
+    justifyContent: 'flex-end',
+    marginBottom: 8,
+    width: '100%',
+    paddingHorizontal: 16,
   },
   totalLabel: {
-    fontSize: 11,
-    color: '#666666',
+    fontSize: 9,
+    color: '#6B7280',
+    marginRight: 8,
   },
   totalValue: {
-    fontSize: 11,
-    color: '#333333',
+    fontSize: 9,
+    color: '#374151',
     fontWeight: 'bold',
+    textAlign: 'right',
+    flex: 1.5,
+    maxWidth: '18.75%',
   },
-  finalTotal: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#0D9488',
-    marginTop: 8,
+  finalTotalContainer: {
+    width: '100%',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    alignItems: 'flex-end',
   },
-  // Simple notes
-  notes: {
-    marginBottom: 20,
-  },
-  notesTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#333333',
+  separatorLine: {
+    width: '40%',
+    height: 2,
+    backgroundColor: '#E5E7EB',
     marginBottom: 8,
   },
-  notesText: {
-    fontSize: 11,
-    color: '#666666',
-    lineHeight: 1.5,
+  finalTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    width: '100%',
   },
-  // Simple footer
+  finalTotal: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#0D9488',
+    textAlign: 'right',
+    flex: 1.5,
+    maxWidth: '18.75%',
+  },
+  // Clean notes section
+  notes: {
+    marginBottom: 25,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  notesTitle: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 10,
+    letterSpacing: 0.5,
+  },
+  notesText: {
+    fontSize: 9,
+    color: '#6B7280',
+    lineHeight: 1.8,
+  },
+  // Refined footer
   footer: {
     position: 'absolute',
-    bottom: 20,
-    left: 40,
-    right: 40,
+    bottom: 30,
+    left: 50,
+    right: 50,
     alignItems: 'center',
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
   },
   footerText: {
     fontSize: 9,
-    color: '#999999',
+    color: '#9CA3AF',
     textAlign: 'center',
   },
 })
@@ -218,13 +264,17 @@ export default function Template1({ invoice, businessSettings }: Template1Props)
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Clean Header */}
+        {/* Modern Header */}
         <View style={styles.header}>
-          <Text style={styles.invoiceTitle}>INVOICE</Text>
-          <Text style={styles.companyName}>{businessSettings.businessName}</Text>
+          <View>
+            <Text style={styles.invoiceTitle}>INVOICE</Text>
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={styles.companyName}>{businessSettings.businessName}</Text>
+          </View>
         </View>
 
-        {/* Simple Business Info */}
+        {/* Refined Business Info */}
         <View style={styles.businessInfo}>
           {businessSettings.address && (
             <Text style={styles.businessText}>{businessSettings.address}</Text>
@@ -265,31 +315,35 @@ export default function Template1({ invoice, businessSettings }: Template1Props)
           </View>
         </View>
 
-        {/* Simple Table */}
+        {/* Modern Table - ITEM column removed */}
         <View style={styles.table}>
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderText, { flex: 1 }]}>ITEM</Text>
-            <Text style={[styles.tableHeaderText, { flex: 3 }]}>DESCRIPTION</Text>
+            <Text style={[styles.tableHeaderText, { flex: 4 }]}>DESCRIPTION</Text>
             <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'center' }]}>QTY</Text>
-            <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'right' }]}>PRICE</Text>
-            <Text style={[styles.tableHeaderText, { flex: 1, textAlign: 'right' }]}>AMOUNT</Text>
+            <Text style={[styles.tableHeaderText, { flex: 1.5, textAlign: 'right' }]}>PRICE</Text>
+            <Text style={[styles.tableHeaderText, { flex: 1.5, textAlign: 'right' }]}>AMOUNT</Text>
           </View>
           {invoice.items.map((item, index) => (
             <View key={index} style={styles.tableRow}>
-              <Text style={[styles.tableCell, { flex: 1 }]}>{index + 1}</Text>
-              <Text style={[styles.tableCell, { flex: 3 }]}>{item.description}</Text>
+              <Text style={[styles.tableCell, { flex: 4 }]}>{item.description}</Text>
               <Text style={[styles.tableCell, { flex: 1, textAlign: 'center' }]}>1</Text>
-              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>{formatCurrency(parseFloat(item.amount?.toString() || '0') || 0)}</Text>
-              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>{formatCurrency(parseFloat(item.amount?.toString() || '0') || 0)}</Text>
+              <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'right' }]}>{formatCurrency(parseFloat(item.amount?.toString() || '0') || 0)}</Text>
+              <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'right' }]}>{formatCurrency(parseFloat(item.amount?.toString() || '0') || 0)}</Text>
             </View>
           ))}
         </View>
 
-        {/* Simple Total */}
+        {/* Refined Total Section */}
         <View style={styles.totalSection}>
-          <View style={styles.totalRow}>
+          <View style={[styles.totalRow, { marginBottom: 0 }]}>
             <Text style={styles.totalLabel}>Subtotal:</Text>
             <Text style={styles.totalValue}>{formatCurrency(calculateSubtotal())}</Text>
+          </View>
+          <View style={styles.finalTotalContainer}>
+            <View style={styles.separatorLine} />
+            <View style={styles.finalTotalRow}>
+              <Text style={styles.finalTotal}>{formatCurrency(calculateTotal())}</Text>
+            </View>
           </View>
           {invoice.discount && invoice.discount > 0 && (
             <View style={styles.totalRow}>
@@ -303,10 +357,9 @@ export default function Template1({ invoice, businessSettings }: Template1Props)
               <Text style={styles.totalValue}>{formatCurrency(calculateTax())}</Text>
             </View>
           )}
-          <Text style={styles.finalTotal}>{formatCurrency(calculateTotal())}</Text>
         </View>
 
-        {/* Simple Notes */}
+        {/* Clean Notes Section */}
         <View style={styles.notes}>
           <Text style={styles.notesTitle}>NOTES:</Text>
           <Text style={styles.notesText}>

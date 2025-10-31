@@ -1731,16 +1731,17 @@ async function generateModernTemplatePDF(
     color: rgb(1, 1, 1),
   });
 
+  // AMOUNT header - aligned to match totals section
   page.drawText('AMOUNT', {
-    x: 460,
+    x: 480, // Aligned with totals amounts
     y: tableY - 20,
     size: 9,
     font: boldFont,
     color: rgb(1, 1, 1),
   });
 
-  // Services table rows with modern styling
-  let currentY = tableY - 50;
+  // Services table rows with modern styling - minimal gap after header
+  let currentY = tableY - 32; // Minimal gap (only 2px gap now)
   let total = 0;
 
   invoice.items.forEach((item, index) => {
@@ -1790,15 +1791,16 @@ async function generateModernTemplatePDF(
       color: rgb(0, 0, 0),
     });
 
+    // AMOUNT values aligned with totals section
     page.drawText(formatCurrency(amount), {
-      x: 460,
+      x: 480, // Aligned with totals amounts
       y: currentY - 18,
       size: 9,
       font: font,
       color: rgb(0, 0, 0),
     });
 
-    currentY -= 30;
+    currentY -= 25; // Reduced from 30 to 25 for tighter row spacing
   });
 
   // Enhanced totals section with all advanced features - fixed positioning
@@ -1968,7 +1970,7 @@ async function generateModernTemplatePDF(
   return await pdfDoc.save();
 }
 
-// Template 5 - Simple Clean Design (Two-column layout with clean typography)
+// Template 5 - Creative Design (Combining Modern structure with Minimal clean lines)
 async function generateSimpleCleanTemplatePDF(
   pdfDoc: PDFDocument,
   page: PDFPage,
@@ -1983,61 +1985,73 @@ async function generateSimpleCleanTemplatePDF(
 ): Promise<Uint8Array> {
   const { width, height } = page.getSize();
 
-  // Parse accent color (softer pink for better readability)
-  const accentRgb = hexToRgb('#F8BBD9');
-
-  // Creative gradient-like header with softer colors for better readability
+  // Creative header background - unique geometric design
+  // Base colored background
   page.drawRectangle({
     x: 0,
     y: height - 120,
     width: width,
     height: 120,
-    color: rgb(primaryRgb.r * 0.8, primaryRgb.g * 0.8, primaryRgb.b * 0.8),
+    color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
   });
 
-  // Artistic diagonal accent shapes with softer colors
+  // Diagonal accent shape (top right)
+  page.drawRectangle({
+    x: width - 200,
+    y: height - 120,
+    width: 200,
+    height: 120,
+    color: rgb(primaryRgb.r * 0.85, primaryRgb.g * 0.85, primaryRgb.b * 0.85),
+  });
+
+  // Diagonal line overlay for geometric effect
+  page.drawLine({
+    start: { x: width - 200, y: height - 120 },
+    end: { x: width, y: height },
+    thickness: 3,
+    color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
+  });
+
+  // Top accent stripe with geometric extension
+  page.drawRectangle({
+    x: 0,
+    y: height - 120,
+    width: width,
+    height: 6,
+    color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
+  });
+
+  // Creative corner accent (bottom left)
   page.drawRectangle({
     x: 0,
     y: height - 40,
-    width: 200,
-    height: 40,
-    color: rgb(secondaryRgb.r * 0.7, secondaryRgb.g * 0.7, secondaryRgb.b * 0.7),
-  });
-
-  page.drawRectangle({
-    x: width - 150,
-    y: height - 80,
     width: 150,
-    height: 80,
-    color: rgb(accentRgb.r * 0.6, accentRgb.g * 0.6, accentRgb.b * 0.6),
+    height: 40,
+    color: rgb(secondaryRgb.r * 0.8, secondaryRgb.g * 0.8, secondaryRgb.b * 0.8),
   });
 
-  // Creative corner accents removed for cleaner design
+  // Geometric divider line
+  page.drawLine({
+    start: { x: 0, y: height - 40 },
+    end: { x: 150, y: height },
+    thickness: 2,
+    color: rgb(primaryRgb.r * 0.9, primaryRgb.g * 0.9, primaryRgb.b * 0.9),
+  });
 
-  // Properly aligned business name with creative styling
-  page.drawText(businessSettings.businessName || 'Creative Studio', {
-    x: 50,
-    y: height - 50,
-    size: 18,
+  // Business name - clean styling
+  page.drawText(businessSettings.businessName || 'Your Business', {
+    x: 60,
+    y: height - 60,
+    size: 16,
     font: boldFont,
-    color: rgb(1, 1, 1), // White text on colorful background
-  });
-
-  // Creative tagline - properly aligned
-  page.drawText('Bringing Ideas to Life', {
-    x: 50,
-    y: height - 70,
-    size: 10,
-    font: font,
     color: rgb(1, 1, 1),
   });
 
-  // Contact info with proper alignment
-  if (businessSettings.businessEmail) {
-    page.drawText(businessSettings.businessEmail, {
-      x: 50,
-      y: height - 90,
-      size: 9,
+  if (businessSettings.address) {
+    page.drawText(businessSettings.address, {
+      x: 60,
+      y: height - 75,
+      size: 8,
       font: font,
       color: rgb(1, 1, 1),
     });
@@ -2045,123 +2059,178 @@ async function generateSimpleCleanTemplatePDF(
 
   if (businessSettings.businessPhone) {
     page.drawText(businessSettings.businessPhone, {
-      x: 50,
-      y: height - 105,
-      size: 9,
+      x: 60,
+      y: height - 90,
+      size: 8,
       font: font,
       color: rgb(1, 1, 1),
     });
   }
 
-  // Properly aligned invoice title - fixed positioning
+  if (businessSettings.businessEmail) {
+    page.drawText(businessSettings.businessEmail, {
+      x: 60,
+      y: height - 105,
+      size: 8,
+      font: font,
+      color: rgb(1, 1, 1),
+    });
+  }
+
+  // Invoice title - prominent but clean
   page.drawText('INVOICE', {
-    x: 450,
-    y: height - 50,
-    size: 24,
-    font: boldFont,
-    color: rgb(1, 1, 1), // White text on colorful background
-  });
-
-  // Invoice details with proper alignment - aligned with business name
-  page.drawText(`#${invoice.invoiceNumber}`, {
-    x: 450,
-    y: height - 75,
-    size: 12,
+    x: 400,
+    y: height - 60,
+    size: 28,
     font: boldFont,
     color: rgb(1, 1, 1),
   });
 
-  page.drawText(`Date: ${formatDate(invoice.createdAt)}`, {
-    x: 450,
-    y: height - 90,
-    size: 9,
-    font: font,
-    color: rgb(1, 1, 1),
-  });
-
-  page.drawText(`Due: ${formatDate(invoice.dueDate)}`, {
-    x: 450,
-    y: height - 105,
-    size: 9,
-    font: font,
-    color: rgb(1, 1, 1),
-  });
-
-  // Creative bill to section with artistic background - aligned with description column
-  // Bill to section - Dynamic positioning to prevent overlaps
-  const billToY = height - 180; // Moved up to create more space
-  let creativeCurrentY = billToY - 15;
+  // Invoice details card - matching Subtotal section design
+  const invoiceDetailsY = height - 160;
   
-  // Calculate dynamic height based on content
-  let contentHeight = 20; // Base height for header
-  if (invoice.client.name) contentHeight += 18;
-  if (invoice.client.email) contentHeight += 18;
-  if (invoice.client.phone) contentHeight += 18;
-  if (invoice.client.company) contentHeight += 18;
-  if (invoice.client.address) contentHeight += 18; // Address includes postal code
-  // Add extra padding for proper spacing
-  contentHeight += 15; // Extra padding for proper spacing
-  contentHeight = Math.max(contentHeight, 100); // Increased minimum height
+  // Calculate proper height: top padding + 3 label-value pairs (36px each) + bottom padding
+  // Each pair: label (18px) + value (18px) = 36px
+  // Total: 20px top + (3 * 36px) + 15px bottom = 143px
+  const detailsHeight = 143;
   
+  // Clean card with subtle border (matching Subtotal)
   page.drawRectangle({
-    x: 50,
-    y: billToY - contentHeight,
-    width: 250,
-    height: contentHeight,
-    color: rgb(0.95, 0.95, 0.95),
+    x: 400,
+    y: invoiceDetailsY - detailsHeight,
+    width: 150,
+    height: detailsHeight,
+    color: rgb(0.98, 0.98, 0.98),
+    borderColor: rgb(0.88, 0.88, 0.88),
+    borderWidth: 1,
   });
 
-  page.drawRectangle({
-    x: 50,
-    y: billToY - 20,
-    width: 250,
-    height: 20,
+  // Subtle top accent line (matching Subtotal)
+  page.drawLine({
+    start: { x: 400, y: invoiceDetailsY - detailsHeight },
+    end: { x: 550, y: invoiceDetailsY - detailsHeight },
+    thickness: 1,
     color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7),
   });
 
+  // Start content from top of card with proper padding
+  let detailsY = invoiceDetailsY - 20; // 20px from top
+
+  // Invoice Number - clean typography (matching Subtotal style)
+  page.drawText('Invoice #', {
+    x: 410,
+    y: detailsY,
+    size: 9,
+    font: font,
+    color: rgb(0.4, 0.4, 0.4),
+  });
+
+  page.drawText(invoice.invoiceNumber, {
+    x: 410,
+    y: detailsY - 18,
+    size: 9,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
+
+  detailsY -= 36; // Move down for next pair
+
+  // Date - clean typography (matching Subtotal style)
+  page.drawText('Date:', {
+    x: 410,
+    y: detailsY,
+    size: 9,
+    font: font,
+    color: rgb(0.4, 0.4, 0.4),
+  });
+
+  page.drawText(formatDate(invoice.createdAt), {
+    x: 410,
+    y: detailsY - 18,
+    size: 9,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
+
+  detailsY -= 36; // Move down for next pair
+
+  // Due Date - clean typography (matching Subtotal style)
+  // This should be at detailsY - 36, which gives us 15px padding at bottom
+  page.drawText('Due:', {
+    x: 410,
+    y: detailsY,
+    size: 9,
+    font: font,
+    color: rgb(0.4, 0.4, 0.4),
+  });
+
+  page.drawText(formatDate(invoice.dueDate), {
+    x: 410,
+    y: detailsY - 18,
+    size: 9,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
+
+  // Creative Bill To: Modern card structure + Minimal clean lines
+  const billToY = height - 230;
+  let creativeCurrentY = billToY - 20;
+  
+  // Calculate dynamic height
+  let contentHeight = 20;
+  if (invoice.client.name) contentHeight += 15;
+  if (invoice.client.email) contentHeight += 15;
+  if (invoice.client.phone) contentHeight += 15;
+  if (invoice.client.company) contentHeight += 15;
+  if (invoice.client.address) contentHeight += 15;
+  contentHeight = Math.max(contentHeight, 110);
+  
+  // Clean section - no borders, no background, just text
   page.drawText('BILL TO', {
     x: 60,
     y: creativeCurrentY,
     size: 10,
     font: boldFont,
-    color: rgb(1, 1, 1),
+    color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b), // Minimal style - no colored bar, just colored text
   });
 
+  creativeCurrentY -= 25;
+
   if (invoice.client.name) {
-    creativeCurrentY -= 18;
+    creativeCurrentY -= 15;
     page.drawText(invoice.client.name, {
       x: 60,
       y: creativeCurrentY,
-      size: 10,
+      size: 9,
       font: font,
-      color: rgb(0.2, 0.2, 0.2),
+      color: rgb(0.4, 0.4, 0.4),
     });
   }
 
   if (invoice.client.email) {
-    creativeCurrentY -= 18;
+    creativeCurrentY -= 15;
     page.drawText(invoice.client.email, {
       x: 60,
       y: creativeCurrentY,
-      size: 8,
+      size: 9,
       font: font,
       color: rgb(0.4, 0.4, 0.4),
     });
   }
 
   if (invoice.client.phone) {
-    creativeCurrentY -= 18;
+    creativeCurrentY -= 15;
     page.drawText(invoice.client.phone, {
       x: 60,
       y: creativeCurrentY,
-      size: 8,
+      size: 9,
       font: font,
       color: rgb(0.4, 0.4, 0.4),
     });
   }
 
   if (invoice.client.company) {
-    creativeCurrentY -= 18;
+    creativeCurrentY -= 15;
     page.drawText(invoice.client.company, {
       x: 60,
       y: creativeCurrentY,
@@ -2172,275 +2241,279 @@ async function generateSimpleCleanTemplatePDF(
   }
 
   if (invoice.client.address) {
-    creativeCurrentY -= 18;
-    // Remove newlines and replace with spaces to keep address on one line
+    creativeCurrentY -= 15;
     const addressText = invoice.client.address.replace(/\n/g, ', ').replace(/\r/g, '');
     page.drawText(addressText, {
       x: 60,
       y: creativeCurrentY,
-      size: 8,
+      size: 9,
       font: font,
       color: rgb(0.4, 0.4, 0.4),
     });
   }
 
-  // Creative services table with artistic header
-  const tableY = height - 350; // Moved further down to create proper spacing
-  const tableWidth = width - 100;
-  const rowHeight = 25;
-
-  // Artistic table header with softer gradient effect
+  // Creative table: Modern colored header + Minimal clean rows
+  const tableY = height - 390;
+  
+  // Modern table header structure
   page.drawRectangle({
     x: 50,
     y: tableY - 30,
-    width: tableWidth,
+    width: 500,
     height: 30,
-    color: rgb(primaryRgb.r * 0.8, primaryRgb.g * 0.8, primaryRgb.b * 0.8),
+    color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
   });
 
-  page.drawRectangle({
-    x: 50,
-    y: tableY - 25,
-    width: tableWidth,
-    height: 5,
-    color: rgb(secondaryRgb.r * 0.6, secondaryRgb.g * 0.6, secondaryRgb.b * 0.6),
-  });
-
-  // Creative corner accents for table header with softer colors
+  // Accent stripe (from Modern)
   page.drawRectangle({
     x: 50,
     y: tableY - 30,
-    width: 10,
-    height: 10,
-    color: rgb(accentRgb.r * 0.5, accentRgb.g * 0.5, accentRgb.b * 0.5),
-  });
-
-  page.drawRectangle({
-    x: 50 + tableWidth - 10,
-    y: tableY - 30,
-    width: 10,
-    height: 10,
-    color: rgb(accentRgb.r * 0.5, accentRgb.g * 0.5, accentRgb.b * 0.5),
+    width: 500,
+    height: 4,
+    color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
   });
 
   page.drawText('DESCRIPTION', {
     x: 60,
     y: tableY - 20,
-    size: 10,
+    size: 9,
+    font: boldFont,
+    color: rgb(1, 1, 1),
+  });
+
+  page.drawText('QTY', {
+    x: 320,
+    y: tableY - 20,
+    size: 9,
     font: boldFont,
     color: rgb(1, 1, 1),
   });
 
   page.drawText('RATE', {
-    x: 350,
+    x: 380,
     y: tableY - 20,
-    size: 10,
+    size: 9,
     font: boldFont,
     color: rgb(1, 1, 1),
   });
 
+  // AMOUNT header - aligned to match totals section
   page.drawText('AMOUNT', {
-    x: 450,
+    x: 480, // Aligned with totals amounts
     y: tableY - 20,
-    size: 10,
+    size: 9,
     font: boldFont,
     color: rgb(1, 1, 1),
   });
 
-  // Creative table rows with alternating colors
-  let currentY = tableY - 50;
+  // Minimal clean rows (from Minimal template)
+  let currentY = tableY - 32;
   invoice.items.forEach((item, index) => {
-    // Alternating row colors
+    const amount = parseFloat(item.amount?.toString() || '0');
+
+    // Subtle alternating background (drawn first so it's behind everything)
     if (index % 2 === 0) {
       page.drawRectangle({
         x: 50,
-        y: currentY - 5,
-        width: tableWidth,
+        y: currentY - 25,
+        width: 500,
         height: 25,
-        color: rgb(0.98, 0.98, 0.98),
+        color: rgb(0.99, 0.99, 0.99),
       });
     }
 
-    // Creative separators
+    // Row separator line - positioned at bottom of row (after content)
+    // Draw separator at the bottom edge of the previous row
     if (index > 0) {
       page.drawLine({
-        start: { x: 60, y: currentY + 10 },
-        end: { x: 50 + tableWidth - 10, y: currentY + 10 },
+        start: { x: 50, y: currentY },
+        end: { x: 550, y: currentY },
         thickness: 0.5,
-        color: rgb(0.7, 0.7, 0.7),
+        color: rgb(0.92, 0.92, 0.92),
       });
     }
 
+    // Text content positioned in the middle of the row
     page.drawText(item.description, {
       x: 60,
-      y: currentY,
+      y: currentY - 14,
       size: 9,
       font: font,
-      color: rgb(0.2, 0.2, 0.2),
+      color: rgb(0, 0, 0),
     });
 
-    page.drawText(`$${item.rate?.toFixed(2) || '0.00'}`, {
-      x: 350,
-      y: currentY,
+    page.drawText('1', {
+      x: 320,
+      y: currentY - 14,
       size: 9,
       font: font,
-      color: rgb(0.2, 0.2, 0.2),
+      color: rgb(0.3, 0.3, 0.3),
     });
 
-    page.drawText(`$${parseFloat(item.amount?.toString() || '0').toFixed(2)}`, {
-      x: 450,
-      y: currentY,
+    page.drawText(formatCurrency(parseFloat(item.rate?.toString() || '0')), {
+      x: 380,
+      y: currentY - 14,
       size: 9,
       font: font,
-      color: rgb(0.2, 0.2, 0.2),
+      color: rgb(0.3, 0.3, 0.3),
     });
 
-    currentY -= rowHeight;
+    // AMOUNT values aligned with totals section
+    page.drawText(formatCurrency(amount), {
+      x: 480, // Aligned with totals amounts
+      y: currentY - 14,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
+
+    currentY -= 25;
   });
 
-  // Enhanced totals section with all advanced features
-  const totalsY = currentY - 20;
-  let totalY = totalsY;
+  // Clean totals section - minimal design
+  const totalsY = currentY - 30;
   
-  // Calculate totals (late fees are separate and only added after due date)
+  // Calculate totals
   const subtotal = invoice.items.reduce((sum, item) => sum + parseFloat(item.amount?.toString() || '0'), 0);
   const discountAmount = parseFloat(invoice.discount?.toString() || '0');
   const taxAmount = parseFloat(invoice.taxAmount?.toString() || '0');
-  const lateFeeAmount = parseFloat(invoice.lateFees?.amount?.toString() || '0');
   
-  // Determine how many lines we need for totals (late fees not included in base total)
+  // Clean card with subtle border
   let totalLines = 1; // Subtotal
   if (discountAmount > 0) totalLines++;
   if (taxAmount > 0) totalLines++;
-  // Late fees are not included in the base invoice total
   totalLines++; // Total line
   
-  const totalsHeight = Math.max(80, totalLines * 15 + 20);
+  const totalsHeight = Math.max(80, totalLines * 18 + 25);
   
-  // Clean total line
+  page.drawRectangle({
+    x: 350,
+    y: totalsY - totalsHeight,
+    width: 200,
+    height: totalsHeight,
+    color: rgb(0.98, 0.98, 0.98),
+    borderColor: rgb(0.88, 0.88, 0.88),
+    borderWidth: 1,
+  });
+
+  // Subtle top accent line
   page.drawLine({
-    start: { x: 400, y: totalY },
-    end: { x: 550, y: totalY },
+    start: { x: 350, y: totalsY - totalsHeight },
+    end: { x: 550, y: totalsY - totalsHeight },
     thickness: 1,
-    color: rgb(0, 0, 0),
+    color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7),
   });
 
-  // Subtotal
-  page.drawText('Subtotal:', {
-    x: 420,
-    y: totalY - 15,
-    size: 10,
+  let lineY = totalsY - 22;
+
+  // Subtotal - clean typography
+  page.drawText('Subtotal', {
+    x: 360,
+    y: lineY,
+    size: 9,
     font: font,
-    color: rgb(0, 0, 0),
+    color: rgb(0.4, 0.4, 0.4),
   });
 
-  page.drawText(`$${subtotal.toFixed(2)}`, {
+  page.drawText(formatCurrency(subtotal), {
     x: 480,
-    y: totalY - 15,
-    size: 10,
+    y: lineY,
+    size: 9,
     font: font,
     color: rgb(0, 0, 0),
   });
 
-  totalY -= 15;
+  lineY -= 18;
 
   // Discount (if applicable)
   if (discountAmount > 0) {
-    page.drawText('Discount:', {
-      x: 420,
-      y: totalY - 15,
-      size: 10,
+    page.drawText('Discount', {
+      x: 360,
+      y: lineY,
+      size: 9,
       font: font,
-      color: rgb(0, 0, 0),
+      color: rgb(0.4, 0.4, 0.4),
     });
 
     page.drawText(`-${formatCurrency(discountAmount)}`, {
       x: 480,
-      y: totalY - 15,
-      size: 10,
+      y: lineY,
+      size: 9,
       font: font,
-      color: rgb(0, 0, 0),
+      color: rgb(0.5, 0.5, 0.5),
     });
 
-    totalY -= 15;
+    lineY -= 18;
   }
 
   // Tax (if applicable)
   if (taxAmount > 0) {
-    page.drawText('Tax:', {
-      x: 420,
-      y: totalY - 15,
-      size: 10,
+    page.drawText('Tax', {
+      x: 360,
+      y: lineY,
+      size: 9,
       font: font,
-      color: rgb(0, 0, 0),
+      color: rgb(0.4, 0.4, 0.4),
     });
 
     page.drawText(formatCurrency(taxAmount), {
       x: 480,
-      y: totalY - 15,
-      size: 10,
+      y: lineY,
+      size: 9,
       font: font,
       color: rgb(0, 0, 0),
     });
 
-    totalY -= 15;
+    lineY -= 18;
   }
 
-  // Total with clean emphasis (late fees are separate and only added after due date)
+  // Total - clean separator and emphasis
   const invoiceTotal = subtotal - discountAmount + taxAmount;
-  const finalTotal = invoiceTotal; // Late fees are not included in the base total
+  const finalTotal = invoiceTotal;
   
-  page.drawText('Total:', {
-    x: 420,
-    y: totalY - 20,
-    size: 12,
+  // Clean separator line before total
+  page.drawLine({
+    start: { x: 360, y: lineY + 4 },
+    end: { x: 540, y: lineY + 4 },
+    thickness: 0.5,
+    color: rgb(0.85, 0.85, 0.85),
+  });
+  
+  lineY -= 4;
+  
+  page.drawText('Total', {
+    x: 360,
+    y: lineY - 8,
+    size: 10,
     font: boldFont,
     color: rgb(0, 0, 0),
   });
 
-  page.drawText(`$${finalTotal.toFixed(2)}`, {
+  page.drawText(formatCurrency(finalTotal), {
     x: 480,
-    y: totalY - 20,
-    size: 12,
+    y: lineY - 8,
+    size: 10,
     font: boldFont,
     color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
   });
 
-  // Creative footer with artistic elements - properly aligned sections
+  // Clean footer - simple design without backgrounds
   const footerY = 120;
-  const boxWidth = 200;
-  const boxHeight = 35; // Fixed height for both sections
-  const boxY = footerY - boxHeight; // Fixed Y position for both sections
 
-  // Payment Terms section - fixed position
+  // Payment Terms section - clean and simple
   if (invoice.paymentTerms?.enabled && invoice.paymentTerms?.terms) {
-    page.drawRectangle({
+    // Simple title only
+    page.drawText('Payment Terms', {
       x: 50,
-      y: boxY,
-      width: boxWidth,
-      height: boxHeight,
-      color: rgb(0.95, 0.95, 0.95),
-    });
-
-    page.drawRectangle({
-      x: 50,
-      y: footerY - 12,
-      width: boxWidth,
-      height: 12,
-      color: rgb(secondaryRgb.r * 0.7, secondaryRgb.g * 0.7, secondaryRgb.b * 0.7),
-    });
-
-    page.drawText('PAYMENT TERMS', {
-      x: 55,
-      y: footerY - 10,
-      size: 7,
+      y: footerY,
+      size: 9,
       font: boldFont,
-      color: rgb(1, 1, 1),
+      color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
     });
 
-    // Smart text wrapping for payment terms
+    // Simple content below title
     const termsText = invoice.paymentTerms.terms;
-    const maxCharsPerLine = 25; // Approximate characters per line
+    const maxCharsPerLine = 30;
     const words = termsText.split(' ');
     let currentLine = '';
     const lines = [];
@@ -2455,47 +2528,40 @@ async function generateSimpleCleanTemplatePDF(
     });
     if (currentLine) lines.push(currentLine);
 
-    // Display up to 2 lines
     lines.slice(0, 2).forEach((line, index) => {
       page.drawText(line, {
-        x: 55,
-        y: footerY - 20 - (index * 8),
-        size: 6,
+        x: 50,
+        y: footerY - 15 - (index * 12),
+        size: 8,
         font: font,
-        color: rgb(0.2, 0.2, 0.2),
+        color: rgb(0.4, 0.4, 0.4),
       });
+    });
+
+    // Design line below Payment Terms
+    const termsLineY = footerY - 15 - (Math.min(lines.length, 2) * 12) - 8;
+    page.drawLine({
+      start: { x: 50, y: termsLineY },
+      end: { x: 250, y: termsLineY },
+      thickness: 1,
+      color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
     });
   }
 
-  // Notes section - same fixed position and height
+  // Notes section - clean and simple
   if (invoice.notes) {
-    page.drawRectangle({
+    // Simple title only
+    page.drawText('Notes', {
       x: 270,
-      y: boxY, // Same Y position as Payment Terms
-      width: boxWidth,
-      height: boxHeight, // Same height as Payment Terms
-      color: rgb(0.95, 0.95, 0.95),
-    });
-
-    page.drawRectangle({
-      x: 270,
-      y: footerY - 12, // Same header position as Payment Terms
-      width: boxWidth,
-      height: 12,
-      color: rgb(accentRgb.r * 0.6, accentRgb.g * 0.6, accentRgb.b * 0.6),
-    });
-
-    page.drawText('NOTES', {
-      x: 275,
-      y: footerY - 10, // Same header text position as Payment Terms
-      size: 7,
+      y: footerY,
+      size: 9,
       font: boldFont,
-      color: rgb(1, 1, 1),
+      color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
     });
 
-    // Smart text wrapping for notes
+    // Simple content below title
     const notesText = invoice.notes;
-    const maxCharsPerLine = 25; // Approximate characters per line
+    const maxCharsPerLine = 30;
     const words = notesText.split(' ');
     let currentLine = '';
     const lines = [];
@@ -2510,44 +2576,30 @@ async function generateSimpleCleanTemplatePDF(
     });
     if (currentLine) lines.push(currentLine);
 
-    // Display up to 2 lines
     lines.slice(0, 2).forEach((line, index) => {
       page.drawText(line, {
-        x: 275,
-        y: footerY - 20 - (index * 8), // Same text position as Payment Terms
-        size: 6,
+        x: 270,
+        y: footerY - 15 - (index * 12),
+        size: 8,
         font: font,
-        color: rgb(0.2, 0.2, 0.2),
+        color: rgb(0.4, 0.4, 0.4),
       });
     });
+
+    // Design line below Notes
+    const notesLineY = footerY - 15 - (Math.min(lines.length, 2) * 12) - 8;
+    page.drawLine({
+      start: { x: 270, y: notesLineY },
+      end: { x: 470, y: notesLineY },
+      thickness: 1,
+      color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
+    });
   }
-
-  // Creative footer line with softer artistic elements
-  page.drawLine({
-    start: { x: 0, y: 50 },
-    end: { x: width, y: 50 },
-    thickness: 3,
-    color: rgb(primaryRgb.r * 0.6, primaryRgb.g * 0.6, primaryRgb.b * 0.6),
-  });
-
-  page.drawLine({
-    start: { x: 0, y: 45 },
-    end: { x: width, y: 45 },
-    thickness: 1,
-    color: rgb(secondaryRgb.r * 0.5, secondaryRgb.g * 0.5, secondaryRgb.b * 0.5),
-  });
-
-  page.drawLine({
-    start: { x: 0, y: 40 },
-    end: { x: width, y: 40 },
-    thickness: 1,
-    color: rgb(accentRgb.r * 0.4, accentRgb.g * 0.4, accentRgb.b * 0.4),
-  });
 
   return await pdfDoc.save();
 }
 
-// Template 6 - Minimal Design (Fresh minimal approach with card-based layout)
+// Template 6 - Minimal Design (True minimal approach with clean lines and whitespace)
 async function generateMinimalTemplatePDF(
   pdfDoc: PDFDocument,
   page: PDFPage,
@@ -2562,277 +2614,259 @@ async function generateMinimalTemplatePDF(
 ): Promise<Uint8Array> {
   const { width, height } = page.getSize();
 
-  // Business information positioned at the very top (no logo)
+  // Ultra-minimal header: Simple business name with primary color
   page.drawText(businessSettings.businessName || 'Your Business', {
     x: 50,
-    y: height - 60,
-    size: 18,
-    font: boldFont,
-    color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
+    y: height - 50,
+    size: 16,
+    font: font, // Regular weight, not bold
+    color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b), // Primary color
   });
 
   if (businessSettings.address) {
     page.drawText(businessSettings.address, {
       x: 50,
-      y: height - 80,
-      size: 10,
+      y: height - 68,
+      size: 9,
       font: font,
-      color: rgb(0.3, 0.3, 0.3),
+      color: rgb(0.5, 0.5, 0.5),
     });
   }
 
   if (businessSettings.businessPhone) {
     page.drawText(businessSettings.businessPhone, {
       x: 50,
-      y: height - 95,
-      size: 10,
+      y: height - 80,
+      size: 9,
       font: font,
-      color: rgb(0.3, 0.3, 0.3),
+      color: rgb(0.5, 0.5, 0.5),
     });
   }
 
   if (businessSettings.businessEmail) {
     page.drawText(businessSettings.businessEmail, {
       x: 50,
-      y: height - 110,
-      size: 10,
+      y: height - 92,
+      size: 9,
       font: font,
-      color: rgb(0.3, 0.3, 0.3),
+      color: rgb(0.5, 0.5, 0.5),
     });
   }
 
-  // Invoice title positioned on the right side (same height as business details)
+  // Minimal invoice title - smaller, with primary color accent
   page.drawText('INVOICE', {
     x: 450,
-    y: height - 60,
-    size: 24,
-    font: boldFont,
+    y: height - 50,
+    size: 20,
+    font: font, // Regular weight for minimal feel
     color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
   });
 
-  // Invoice details positioned on top right (below INVOICE title)
-  const invoiceDetailsY = height - 90;
+  // Clean invoice details - no "Invoice Details" label, just the info
+  const invoiceDetailsY = height - 75;
   
-  page.drawText('Invoice Details', {
-    x: 450,
-    y: invoiceDetailsY,
-    size: 12,
-    font: boldFont,
-    color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
-  });
-
   page.drawText(`#${invoice.invoiceNumber}`, {
     x: 450,
-    y: invoiceDetailsY - 20,
-    size: 11,
+    y: invoiceDetailsY,
+    size: 10,
     font: boldFont,
     color: rgb(0, 0, 0),
   });
 
   page.drawText(`Issue: ${formatDate(invoice.createdAt)}`, {
     x: 450,
-    y: invoiceDetailsY - 35,
-    size: 9,
+    y: invoiceDetailsY - 18,
+    size: 8,
     font: font,
-    color: rgb(0.3, 0.3, 0.3),
+    color: rgb(0.5, 0.5, 0.5),
   });
 
   page.drawText(`Due: ${formatDate(invoice.dueDate)}`, {
     x: 450,
-    y: invoiceDetailsY - 50,
-    size: 9,
+    y: invoiceDetailsY - 32,
+    size: 8,
     font: font,
-    color: rgb(0.3, 0.3, 0.3),
+    color: rgb(0.5, 0.5, 0.5),
   });
 
-  // Enhanced Bill to section with light borders - Dynamic positioning
-  const billToY = height - 210;
-  let minimalCurrentY = billToY - 30;
+  // Minimal Bill To section - no boxes, just clean text with subtle colored line
+  const billToY = height - 180;
   
-  // Calculate dynamic height based on content
-  let contentHeight = 30; // Base height for title
-  if (invoice.client.name) contentHeight += 15;
-  if (invoice.client.email) contentHeight += 15;
-  if (invoice.client.phone) contentHeight += 15;
-  if (invoice.client.company) contentHeight += 15;
-  if (invoice.client.address) contentHeight += 15; // Address includes postal code
-  contentHeight = Math.max(contentHeight, 120); // Increased minimum height for more bottom space
-  
-  page.drawRectangle({
-    x: 50,
-    y: billToY - contentHeight,
-    width: 280, // Reduced width back to original size
-    height: contentHeight,
-    borderColor: rgb(0.8, 0.8, 0.8),
-    borderWidth: 1,
-    color: rgb(0.98, 0.98, 0.98),
+  // Subtle colored line separator using primary color
+  page.drawLine({
+    start: { x: 50, y: billToY },
+    end: { x: 330, y: billToY },
+    thickness: 1,
+    color: rgb(primaryRgb.r * 0.6, primaryRgb.g * 0.6, primaryRgb.b * 0.6), // Lighter version of primary
   });
+  
+  let minimalCurrentY = billToY - 25;
   
   page.drawText('Bill To', {
-    x: 60,
+    x: 50,
     y: minimalCurrentY,
-    size: 11,
-    font: boldFont,
-    color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
+    size: 10,
+    font: font, // Regular weight for minimal look
+    color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b), // Primary color for label
   });
 
+  minimalCurrentY -= 20;
+
   if (invoice.client.name) {
-    minimalCurrentY -= 15;
+    minimalCurrentY -= 14;
     page.drawText(invoice.client.name, {
-      x: 60,
+      x: 50,
       y: minimalCurrentY,
-      size: 9,
+      size: 10,
       font: font,
-      color: rgb(0.3, 0.3, 0.3),
+      color: rgb(0, 0, 0),
     });
   }
 
   if (invoice.client.email) {
-    minimalCurrentY -= 15;
+    minimalCurrentY -= 14;
     page.drawText(invoice.client.email, {
-      x: 60,
+      x: 50,
       y: minimalCurrentY,
       size: 9,
       font: font,
-      color: rgb(0.3, 0.3, 0.3),
+      color: rgb(0.4, 0.4, 0.4),
     });
   }
 
   if (invoice.client.phone) {
-    minimalCurrentY -= 15;
+    minimalCurrentY -= 14;
     page.drawText(invoice.client.phone, {
-      x: 60,
+      x: 50,
       y: minimalCurrentY,
       size: 9,
       font: font,
-      color: rgb(0.3, 0.3, 0.3),
+      color: rgb(0.4, 0.4, 0.4),
     });
   }
 
   if (invoice.client.company) {
-    minimalCurrentY -= 15;
+    minimalCurrentY -= 14;
     page.drawText(invoice.client.company, {
-      x: 60,
+      x: 50,
       y: minimalCurrentY,
       size: 9,
       font: font,
-      color: rgb(0.3, 0.3, 0.3),
+      color: rgb(0.4, 0.4, 0.4),
     });
   }
 
   if (invoice.client.address) {
-    minimalCurrentY -= 15;
-    // Remove newlines and replace with spaces to keep address on one line
+    minimalCurrentY -= 14;
     const addressText = invoice.client.address.replace(/\n/g, ', ').replace(/\r/g, '');
     page.drawText(addressText, {
-      x: 60,
+      x: 50,
       y: minimalCurrentY,
       size: 9,
       font: font,
-      color: rgb(0.3, 0.3, 0.3),
+      color: rgb(0.4, 0.4, 0.4),
     });
   }
 
-  // Services table with customizable color design (adjusted for footer space)
-  const tableY = height - 350;
+  // Minimal table - no colored header, just clean text and lines
+  const tableY = height - 320;
   
-  // Table header with primary color background
-  page.drawRectangle({
-    x: 50,
-    y: tableY - 30,
-    width: 500,
-    height: 30,
-    color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
-  });
-
-  // Header text with white color for visibility on colored background
+  // Minimal header - just text with primary color accents
   page.drawText('Description', {
-    x: 60,
-    y: tableY - 20,
+    x: 50,
+    y: tableY - 15,
     size: 9,
-    font: boldFont,
-    color: rgb(1, 1, 1), // White text for visibility
+    font: font, // Regular weight for minimal
+    color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7), // Lighter primary
   });
 
   page.drawText('Qty', {
     x: 350,
-    y: tableY - 20,
+    y: tableY - 15,
     size: 9,
-    font: boldFont,
-    color: rgb(1, 1, 1), // White text for visibility
+    font: font,
+    color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7),
   });
 
   page.drawText('Rate', {
     x: 400,
-    y: tableY - 20,
+    y: tableY - 15,
     size: 9,
-    font: boldFont,
-    color: rgb(1, 1, 1), // White text for visibility
+    font: font,
+    color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7),
   });
 
   page.drawText('Amount', {
     x: 480,
-    y: tableY - 20,
+    y: tableY - 15,
     size: 9,
-    font: boldFont,
-    color: rgb(1, 1, 1), // White text for visibility
+    font: font,
+    color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7),
   });
 
-  // Services table rows with minimal separators
-  let currentY = tableY - 50;
+  // Subtle colored header line
+  page.drawLine({
+    start: { x: 50, y: tableY - 5 },
+    end: { x: 550, y: tableY - 5 },
+    thickness: 0.5,
+    color: rgb(primaryRgb.r * 0.5, primaryRgb.g * 0.5, primaryRgb.b * 0.5), // Even lighter for line
+  });
+
+  // Clean table rows with subtle separators
+  let currentY = tableY - 35;
   let subtotal = 0;
 
   invoice.items.forEach((item, index) => {
     const amount = parseFloat(item.amount?.toString() || '0');
     subtotal += amount;
 
-    // Minimal row separator
+    // Very subtle row separator - lighter color
     if (index > 0) {
       page.drawLine({
-        start: { x: 50, y: currentY + 10 },
-        end: { x: 550, y: currentY + 10 },
-        thickness: 0.5,
-        color: rgb(0.9, 0.9, 0.9),
+        start: { x: 50, y: currentY + 12 },
+        end: { x: 550, y: currentY + 12 },
+        thickness: 0.3,
+        color: rgb(0.92, 0.92, 0.92),
       });
     }
 
     page.drawText(item.description, {
-      x: 60,
-      y: currentY - 5,
-      size: 8,
+      x: 50,
+      y: currentY,
+      size: 9,
       font: font,
       color: rgb(0, 0, 0),
     });
 
     page.drawText('1', {
       x: 350,
-      y: currentY - 5,
-      size: 8,
+      y: currentY,
+      size: 9,
       font: font,
-      color: rgb(0, 0, 0),
+      color: rgb(0.3, 0.3, 0.3),
     });
 
     page.drawText(formatCurrency(parseFloat(item.rate?.toString() || '0')), {
       x: 400,
-      y: currentY - 5,
-      size: 8,
+      y: currentY,
+      size: 9,
       font: font,
-      color: rgb(0, 0, 0),
+      color: rgb(0.3, 0.3, 0.3),
     });
 
     page.drawText(formatCurrency(amount), {
       x: 480,
-      y: currentY - 5,
-      size: 8,
+      y: currentY,
+      size: 9,
       font: font,
       color: rgb(0, 0, 0),
     });
 
-    currentY -= 25;
+    currentY -= 22;
   });
 
-  // Enhanced totals section with all advanced features
-  const totalsY = currentY - 20;
+  // Minimal totals section - no boxes, just clean lines and text
+  const totalsY = currentY - 30;
   let totalY = totalsY;
   
   // Calculate totals (late fees are separate and only added after due date)
@@ -2840,155 +2874,153 @@ async function generateMinimalTemplatePDF(
   const taxAmount = parseFloat(invoice.taxAmount?.toString() || '0');
   const lateFeeAmount = parseFloat(invoice.lateFees?.amount?.toString() || '0');
   
-  // Determine how many lines we need for totals (late fees not included in base total)
-  let totalLines = 1; // Subtotal
-  if (discountAmount > 0) totalLines++;
-  if (taxAmount > 0) totalLines++;
-  // Late fees are not included in the base invoice total
-  totalLines++; // Total line
-  
-  const totalsHeight = Math.max(80, totalLines * 15 + 20);
-  
-  page.drawRectangle({
-    x: 400,
-    y: totalsY - totalsHeight,
-    width: 150,
-    height: totalsHeight,
-    borderColor: rgb(0.8, 0.8, 0.8),
-    borderWidth: 1,
-    color: rgb(0.98, 0.98, 0.98),
+  // Subtle colored separator line above totals
+  page.drawLine({
+    start: { x: 400, y: totalsY + 15 },
+    end: { x: 550, y: totalsY + 15 },
+    thickness: 0.5,
+    color: rgb(primaryRgb.r * 0.5, primaryRgb.g * 0.5, primaryRgb.b * 0.5),
   });
 
   // Subtotal
   page.drawText('Subtotal:', {
-    x: 410,
-    y: totalY - 20,
-    size: 8,
+    x: 400,
+    y: totalY,
+    size: 9,
     font: font,
-    color: rgb(0, 0, 0),
+    color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7),
   });
 
   page.drawText(formatCurrency(subtotal), {
     x: 480,
-    y: totalY - 20,
-    size: 8,
+    y: totalY,
+    size: 9,
     font: font,
     color: rgb(0, 0, 0),
   });
 
-  totalY -= 15;
+  totalY -= 18;
 
   // Discount (if applicable)
   if (discountAmount > 0) {
     page.drawText('Discount:', {
-      x: 410,
-      y: totalY - 20,
-      size: 8,
+      x: 400,
+      y: totalY,
+      size: 9,
       font: font,
-      color: rgb(0, 0, 0),
+      color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7),
     });
 
     page.drawText(`-${formatCurrency(discountAmount)}`, {
       x: 480,
-      y: totalY - 20,
-      size: 8,
+      y: totalY,
+      size: 9,
       font: font,
-      color: rgb(0.6, 0.6, 0.6),
+      color: rgb(0.5, 0.5, 0.5),
     });
 
-    totalY -= 15;
+    totalY -= 18;
   }
 
   // Tax (if applicable)
   if (taxAmount > 0) {
     page.drawText('Tax:', {
-      x: 410,
-      y: totalY - 20,
-      size: 8,
+      x: 400,
+      y: totalY,
+      size: 9,
       font: font,
-      color: rgb(0, 0, 0),
+      color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7),
     });
 
     page.drawText(formatCurrency(taxAmount), {
       x: 480,
-      y: totalY - 20,
-      size: 8,
+      y: totalY,
+      size: 9,
       font: font,
       color: rgb(0, 0, 0),
     });
 
-    totalY -= 15;
+    totalY -= 18;
   }
 
   // Late Fees (only show if invoice is actually overdue - not in total calculation)
-  // Note: Late fees should only be added after the due date, not in the base invoice total
   const invoiceTotal = subtotal - discountAmount + taxAmount;
   const finalTotal = invoiceTotal; // Late fees are not included in the base total
   
+  // Subtle colored line before total
+  page.drawLine({
+    start: { x: 400, y: totalY + 8 },
+    end: { x: 550, y: totalY + 8 },
+    thickness: 0.5,
+    color: rgb(primaryRgb.r * 0.5, primaryRgb.g * 0.5, primaryRgb.b * 0.5),
+  });
+  
+  totalY -= 5;
+  
   page.drawText('Total:', {
-    x: 410,
-    y: totalY - 20,
-    size: 10,
-    font: boldFont,
-    color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
+    x: 400,
+    y: totalY,
+    size: 11,
+    font: font, // Regular weight for minimal
+    color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b), // Primary color for emphasis
   });
 
   page.drawText(formatCurrency(finalTotal), {
     x: 480,
-    y: totalY - 20,
-    size: 10,
-    font: boldFont,
-    color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
+    y: totalY,
+    size: 11,
+    font: font,
+    color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b), // Primary color for total amount
   });
 
-  // Enhanced footer with payment terms and notes - positioned higher to avoid cutoff
-  const footerY = 120;
+  // Minimal footer - just a subtle colored line and clean text
+  const footerY = 130;
   
-  page.drawRectangle({
-    x: 50,
-    y: footerY - 5,
-    width: 30,
-    height: 2,
-    color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
+  // Very subtle colored separator line
+  page.drawLine({
+    start: { x: 50, y: footerY },
+    end: { x: 200, y: footerY },
+    thickness: 0.5,
+    color: rgb(primaryRgb.r * 0.5, primaryRgb.g * 0.5, primaryRgb.b * 0.5),
   });
   
   // Payment terms (if enabled)
   if (invoice.paymentTerms?.enabled && invoice.paymentTerms?.terms) {
     page.drawText('Payment Terms:', {
       x: 50,
-      y: footerY - 25,
+      y: footerY - 22,
       size: 8,
-      font: boldFont,
-      color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
+      font: font,
+      color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7),
     });
     
     page.drawText(invoice.paymentTerms.terms, {
       x: 50,
-      y: footerY - 40,
-      size: 7,
+      y: footerY - 35,
+      size: 8,
       font: font,
-      color: rgb(0.4, 0.4, 0.4),
+      color: rgb(0.3, 0.3, 0.3),
     });
   }
   
-  // Notes (if provided) - no hardcoded text, only from invoice modal
+  // Notes (if provided)
   if (invoice.notes) {
-    const notesY = invoice.paymentTerms?.enabled ? footerY - 60 : footerY - 25;
+    const notesY = invoice.paymentTerms?.enabled ? footerY - 55 : footerY - 22;
     
     page.drawText('Notes:', {
       x: 50,
       y: notesY,
       size: 8,
-      font: boldFont,
-      color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
+      font: font,
+      color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7),
     });
     
     page.drawText(invoice.notes, {
       x: 50,
       y: notesY - 15,
-      size: 7,
+      size: 8,
       font: font,
-      color: rgb(0.4, 0.4, 0.4),
+      color: rgb(0.3, 0.3, 0.3),
     });
   }
 

@@ -26,6 +26,7 @@ interface DataContextType {
   // Global loading state
   isLoading: boolean;
   lastUpdated: Date | null;
+  hasInitiallyLoaded: boolean; // True after first successful load
   clearData: () => void;
 }
 
@@ -59,6 +60,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   // Global state
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
   const [lastFetched, setLastFetched] = useState<{ invoices: number; clients: number }>({ invoices: 0, clients: 0 });
 
   const loadInvoices = useCallback(async (force = false) => {
@@ -84,12 +86,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         const data = await response.json();
         setInvoices(Array.isArray(data.invoices) ? data.invoices : []);
         setLastFetched(prev => ({ ...prev, invoices: now }));
+        setHasInitiallyLoaded(true); // Mark as loaded after first successful fetch
       } else {
         throw new Error('Failed to fetch invoices');
       }
     } catch (error) {
       console.error('Error fetching invoices:', error);
       setInvoicesError('Failed to load invoices');
+      setHasInitiallyLoaded(true); // Mark as loaded even on error to prevent empty state flash
     } finally {
       setIsLoadingInvoices(false);
     }
@@ -253,6 +257,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     deleteClient,
     isLoading,
     lastUpdated,
+    hasInitiallyLoaded,
     clearData
   };
 

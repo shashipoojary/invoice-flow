@@ -25,7 +25,7 @@ function InvoicesContent(): React.JSX.Element {
   const { user, loading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
   const { settings } = useSettings();
-  const { invoices, clients, isLoadingInvoices, updateInvoice, deleteInvoice, refreshInvoices } = useData();
+  const { invoices, clients, isLoadingInvoices, hasInitiallyLoaded, updateInvoice, deleteInvoice, refreshInvoices } = useData();
   const searchParams = useSearchParams();
   
   // Local state for UI
@@ -1090,7 +1090,7 @@ function InvoicesContent(): React.JSX.Element {
               )}
                 
               {/* Invoice List */}
-              {isLoadingInvoices ? (
+              {(isLoadingInvoices || !hasInitiallyLoaded) ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="rounded-lg p-6 bg-white/70 border border-gray-200 backdrop-blur-sm">

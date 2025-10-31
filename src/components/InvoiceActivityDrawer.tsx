@@ -24,20 +24,55 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
       try {
         setLoading(true);
         const items: ActivityItem[] = [];
-        // Created
-        if ((invoice as any).createdAt || (invoice as any).created_at) {
-          const createdAt = (invoice as any).createdAt || (invoice as any).created_at;
-          items.push({ id: 'created', type: 'system', title: 'Invoice created.', at: createdAt, icon: 'created' });
+        
+        // First, collect all database events to check for duplicates
+        const eventTypes = new Set<string>();
+        
+        // Invoice events from database
+        const { data: events } = await supabase
+          .from('invoice_events')
+          .select('*')
+          .eq('invoice_id', invoice.id)
+          .order('created_at', { ascending: false });
+        
+        if (events) {
+          for (const ev of events) {
+            // Filter out "paid" events if invoice is not currently paid
+            if (ev.type === 'paid' && invoice.status !== 'paid') {
+              continue; // Skip this event entirely
+            }
+            eventTypes.add(ev.type); // Only add to set if we're including this event
+            const mapping: Record<string, ActivityItem> = {
+              created: { id: `created-${ev.id}`, type: 'system', title: 'Invoice created.', at: ev.created_at, icon: 'created' },
+              edited: { id: `edited-${ev.id}`, type: 'system', title: 'Invoice edited.', at: ev.created_at, icon: 'scheduled' },
+              sent: { id: `sent-${ev.id}`, type: 'email', title: 'Invoice sent.', at: ev.created_at, icon: 'sent' },
+              paid: { id: `paid-${ev.id}`, type: 'status', title: 'Invoice paid in full.', at: ev.created_at, icon: 'paid' },
+              viewed_by_customer: { id: `view-${ev.id}`, type: 'client', title: 'Invoice viewed by customer.', at: ev.created_at, icon: 'opened' },
+              downloaded_by_customer: { id: `dl-${ev.id}`, type: 'client', title: 'Invoice downloaded by customer.', at: ev.created_at, icon: 'downloaded' },
+              downloaded_pdf: { id: `dl-owner-${ev.id}`, type: 'owner', title: 'PDF downloaded.', at: ev.created_at, icon: 'downloaded' },
+            } as any;
+            const mapped = mapping[ev.type];
+            if (mapped) items.push(mapped);
+          }
         }
-        // Status derived
-        if (invoice.status === 'paid') {
-          const at = (invoice as any).updatedAt || (invoice as any).updated_at || new Date().toISOString();
-          items.push({ id: 'paid', type: 'status', title: 'Invoice paid in full.', at, icon: 'paid' });
-        } else if (invoice.status === 'sent' || invoice.status === 'pending') {
-          const at = (invoice as any).updatedAt || (invoice as any).updated_at || new Date().toISOString();
-          items.push({ id: 'sent', type: 'status', title: 'Invoice sent.', at, icon: 'sent' });
+        
+        // Only add derived "created" if no created event exists in database
+        if (!eventTypes.has('created')) {
+          if ((invoice as any).createdAt || (invoice as any).created_at) {
+            const createdAt = (invoice as any).createdAt || (invoice as any).created_at;
+            items.push({ id: 'created-fallback', type: 'system', title: 'Invoice created.', at: createdAt, icon: 'created' });
+          }
         }
-        // Reminders (delivery/open etc.)
+        
+        // Only add derived status if no corresponding event exists in database
+        if (invoice.status === 'paid' && !eventTypes.has('paid')) {
+          const at = (invoice as any).updatedAt || (invoice as any).updated_at || new Date().toISOString();
+          items.push({ id: 'paid-fallback', type: 'status', title: 'Invoice paid in full.', at, icon: 'paid' });
+        } else if ((invoice.status === 'sent' || invoice.status === 'pending') && !eventTypes.has('sent')) {
+          const at = (invoice as any).updatedAt || (invoice as any).updated_at || new Date().toISOString();
+          items.push({ id: 'sent-fallback', type: 'status', title: 'Invoice sent.', at, icon: 'sent' });
+        }
+        // Reminders (delivery/open etc.) - Skip scheduled reminders for draft invoices
         const { data, error } = await supabase
           .from('invoice_reminders')
           .select('*')
@@ -45,6 +80,10 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
           .order('sent_at', { ascending: false });
         if (!error && data) {
           for (const r of data) {
+            // Skip scheduled reminders for draft invoices
+            if (r.reminder_status === 'scheduled' && invoice.status === 'draft') {
+              continue;
+            }
             const at = r.sent_at || r.created_at;
             if (r.reminder_status === 'delivered') {
               items.push({ id: `delivered-${r.id}` , type: 'email', title: 'Invoice email delivered successfully.', at, icon: 'delivered' });
@@ -57,36 +96,23 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
             }
           }
         }
-        // Payments
+        // Payments - only show if invoice is actually paid, otherwise just record as payment (not paid status)
         const { data: payments } = await supabase
           .from('payments')
           .select('*')
           .eq('invoice_id', invoice.id)
           .order('created_at', { ascending: false });
-        if (payments) {
-          for (const p of payments) {
-            items.push({ id: `payment-${p.id}`, type: 'payment', title: 'Payment recorded.', at: p.created_at, icon: 'paid' });
-          }
-        }
-        // Invoice events
-        const { data: events } = await supabase
-          .from('invoice_events')
-          .select('*')
-          .eq('invoice_id', invoice.id)
-          .order('created_at', { ascending: false });
-        if (events) {
-          for (const ev of events) {
-            const mapping: Record<string, ActivityItem> = {
-              created: { id: `created-${ev.id}`, type: 'system', title: 'Invoice created.', at: ev.created_at, icon: 'created' },
-              edited: { id: `edited-${ev.id}`, type: 'system', title: 'Invoice edited.', at: ev.created_at, icon: 'scheduled' },
-              sent: { id: `sent-${ev.id}`, type: 'email', title: 'Invoice sent.', at: ev.created_at, icon: 'sent' },
-              paid: { id: `paid-${ev.id}`, type: 'status', title: 'Invoice paid in full.', at: ev.created_at, icon: 'paid' },
-              viewed_by_customer: { id: `view-${ev.id}`, type: 'client', title: 'Invoice viewed by customer.', at: ev.created_at, icon: 'opened' },
-              downloaded_by_customer: { id: `dl-${ev.id}`, type: 'client', title: 'Invoice downloaded by customer.', at: ev.created_at, icon: 'downloaded' },
-              downloaded_pdf: { id: `dl-owner-${ev.id}`, type: 'owner', title: 'PDF downloaded.', at: ev.created_at, icon: 'downloaded' },
-            } as any;
-            const mapped = mapping[ev.type];
-            if (mapped) items.push(mapped);
+        if (payments && payments.length > 0) {
+          // Only show payments with "paid" icon if invoice status is actually paid
+          if (invoice.status === 'paid') {
+            for (const p of payments) {
+              items.push({ id: `payment-${p.id}`, type: 'payment', title: 'Payment recorded.', at: p.created_at, icon: 'paid' });
+            }
+          } else {
+            // For pending invoices, show payments but with neutral icon
+            for (const p of payments) {
+              items.push({ id: `payment-${p.id}`, type: 'payment', title: 'Payment received.', at: p.created_at, icon: 'scheduled' });
+            }
           }
         }
 
@@ -117,7 +143,21 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
           }
         } catch {}
 
-        setActivities(items.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()));
+        // Final deduplication: remove items with same title and timestamp within 1 second
+        const deduped = items.reduce((acc, item) => {
+          const existing = acc.find(
+            (existingItem) =>
+              existingItem.title === item.title &&
+              Math.abs(new Date(existingItem.at).getTime() - new Date(item.at).getTime()) < 1000
+          );
+          if (!existing) {
+            acc.push(item);
+          }
+          return acc;
+        }, [] as ActivityItem[]);
+
+        // Sort chronologically (oldest to newest) for proper timeline order
+        setActivities(deduped.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime()));
       } catch (e) {
         setActivities([]);
       } finally {

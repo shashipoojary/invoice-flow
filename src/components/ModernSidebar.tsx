@@ -30,7 +30,13 @@ const ModernSidebar = ({
   onToggleDarkMode, 
   onCreateInvoice 
 }: ModernSidebarProps) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // Initialize collapsed state from localStorage immediately to prevent flash
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    if (window.innerWidth < 1024) return true; // Auto-collapse on mobile
+    const savedCollapsed = localStorage.getItem('sidebarCollapsed');
+    return savedCollapsed !== null ? JSON.parse(savedCollapsed) : false;
+  });
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
@@ -55,25 +61,15 @@ const ModernSidebar = ({
         // Restore saved collapse state on desktop
         const savedCollapsed = localStorage.getItem('sidebarCollapsed');
         if (savedCollapsed !== null) {
-          setIsCollapsed(JSON.parse(savedCollapsed));
+          const shouldCollapse = JSON.parse(savedCollapsed);
+          setIsCollapsed(shouldCollapse);
         }
       }
     };
     
-    // Set initial state
-    if (window.innerWidth < 1024) {
-      setIsCollapsed(true);
-    } else {
-      // Load saved collapse state on desktop
-      const savedCollapsed = localStorage.getItem('sidebarCollapsed');
-      if (savedCollapsed !== null) {
-        setIsCollapsed(JSON.parse(savedCollapsed));
-      }
-    }
-    
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, []); // Empty deps - only run on mount for resize listener
 
   // Memoized navigation items for better performance
   const navigationItems = useMemo(() => [

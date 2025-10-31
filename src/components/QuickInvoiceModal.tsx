@@ -319,74 +319,127 @@ export default function QuickInvoiceModal({
     }
   }, [paymentTerms.enabled, paymentTerms.defaultOption, issueDate])
 
-  // Pre-fill form when editing an invoice
+  // Pre-fill form when editing an invoice OR reset when creating new
   useEffect(() => {
-    if (isOpen && editingInvoice) {
-      setInvoiceNumber(editingInvoice.invoiceNumber || '')
-      // Handle issue date with proper formatting
-      const issueDateValue = editingInvoice.issueDate || editingInvoice.issue_date || '';
-      
-      // Format date for HTML date input (YYYY-MM-DD)
-      let formattedIssueDate = issueDateValue;
-      if (issueDateValue && issueDateValue.includes('-')) {
-        // If it's already in YYYY-MM-DD format, use as is
-        formattedIssueDate = issueDateValue;
-      } else if (issueDateValue) {
-        // Try to parse and format the date
-        try {
-          const date = new Date(issueDateValue);
-          if (!isNaN(date.getTime())) {
-            formattedIssueDate = date.toISOString().split('T')[0];
-          }
-        } catch (e) {
-          console.error('Error formatting issue date:', e);
-        }
-      }
-      
-      setIssueDate(formattedIssueDate)
-      setDueDate(editingInvoice.dueDate || '')
-      setNotes(editingInvoice.notes || 'Thank you for your business!')
-      setDiscount(editingInvoice.discount?.toString() || '')
-      
-      // Set client information immediately (don't wait for clients to load)
-      const clientId = editingInvoice.clientId || editingInvoice.client_id;
-      if (clientId) {
-        setSelectedClientId(clientId)
+    if (isOpen) {
+      if (editingInvoice) {
+        // Pre-fill form when editing an invoice
+        setInvoiceNumber(editingInvoice.invoiceNumber || '')
+        // Handle issue date with proper formatting
+        const issueDateValue = editingInvoice.issueDate || editingInvoice.issue_date || '';
         
-        // If the client doesn't exist in the clients list, add it immediately
-        if (editingInvoice.client && !clients.find(c => c.id === clientId)) {
-          try { 
-            addClient && addClient(editingInvoice.client);
-          } catch (e) { 
-            console.error('QuickInvoiceModal: Error adding client:', e) 
+        // Format date for HTML date input (YYYY-MM-DD)
+        let formattedIssueDate = issueDateValue;
+        if (issueDateValue && issueDateValue.includes('-')) {
+          // If it's already in YYYY-MM-DD format, use as is
+          formattedIssueDate = issueDateValue;
+        } else if (issueDateValue) {
+          // Try to parse and format the date
+          try {
+            const date = new Date(issueDateValue);
+            if (!isNaN(date.getTime())) {
+              formattedIssueDate = date.toISOString().split('T')[0];
+            }
+          } catch (e) {
+            console.error('Error formatting issue date:', e);
           }
         }
-      }
-      // Set new client data for manual entry if needed
-      if (editingInvoice.clientName) {
-        setNewClient(prev => ({ ...prev, name: editingInvoice.clientName || '' }))
-      }
-      if (editingInvoice.clientEmail) {
-        setNewClient(prev => ({ ...prev, email: editingInvoice.clientEmail || '' }))
-      }
-      
-      // Set invoice items (always do this regardless of clients)
-      if (editingInvoice.items && editingInvoice.items.length > 0) {
-        setItems(editingInvoice.items.map(item => ({
-          id: item.id || Date.now().toString(),
-          description: item.description || '',
-          amount: item.amount?.toString() || item.rate?.toString() || ''
-        })))
+        
+        setIssueDate(formattedIssueDate)
+        setDueDate(editingInvoice.dueDate || '')
+        setNotes(editingInvoice.notes || 'Thank you for your business!')
+        setDiscount(editingInvoice.discount?.toString() || '')
+        
+        // Set client information immediately (don't wait for clients to load)
+        const clientId = editingInvoice.clientId || editingInvoice.client_id;
+        if (clientId) {
+          setSelectedClientId(clientId)
+          
+          // If the client doesn't exist in the clients list, add it immediately
+          if (editingInvoice.client && !clients.find(c => c.id === clientId)) {
+            try { 
+              addClient && addClient(editingInvoice.client);
+            } catch (e) { 
+              console.error('QuickInvoiceModal: Error adding client:', e) 
+            }
+          }
+        }
+        // Set new client data for manual entry if needed
+        if (editingInvoice.clientName) {
+          setNewClient(prev => ({ ...prev, name: editingInvoice.clientName || '' }))
+        }
+        if (editingInvoice.clientEmail) {
+          setNewClient(prev => ({ ...prev, email: editingInvoice.clientEmail || '' }))
+        }
+        
+        // Set invoice items (always do this regardless of clients)
+        if (editingInvoice.items && editingInvoice.items.length > 0) {
+          setItems(editingInvoice.items.map(item => ({
+            id: item.id || Date.now().toString(),
+            description: item.description || '',
+            amount: item.amount?.toString() || item.rate?.toString() || ''
+          })))
+        } else {
+          // If no items, set a default empty item
+          setItems([{
+            id: Date.now().toString(),
+            description: '',
+            amount: ''
+          }])
+        }
       } else {
-        // If no items, set a default empty item
+        // Reset form when creating new invoice
+        setCurrentStep(1)
+        setSelectedClientId('')
+        setInvoiceNumber('')
+        setIssueDate('')
+        setDueDate('')
+        setNewClient({
+          name: '',
+          email: '',
+          company: '',
+          address: ''
+        })
+        setDiscount('')
+        setNotes('Thank you for your business!')
         setItems([{
           id: Date.now().toString(),
           description: '',
           amount: ''
         }])
+        // Reset theme to default
+        setTheme({
+          template: 1,
+          primaryColor: '#5C2D91',
+          secondaryColor: '#8B5CF6',
+          accentColor: '#8b5cf6'
+        })
+        // Reset reminders to default
+        setReminders({
+          enabled: false,
+          useSystemDefaults: true,
+          rules: [
+            { id: '1', type: 'before', days: 7, enabled: true },
+            { id: '2', type: 'before', days: 3, enabled: true }
+          ]
+        })
+        // Reset late fees to default
+        setLateFees({
+          enabled: false,
+          type: 'fixed',
+          amount: 25,
+          gracePeriod: 7
+        })
+        // Reset payment terms to default
+        setPaymentTerms({
+          enabled: false,
+          options: ['Due on Receipt', 'Net 15', 'Net 30', '2/10 Net 30'],
+          defaultOption: 'Due on Receipt'
+        })
+        // Dates and invoice number will be set by the other useEffect
       }
     }
-  }, [isOpen, editingInvoice])
+  }, [isOpen, editingInvoice, addClient, clients])
 
   // Pre-fill client-dependent fields when clients are loaded
   useEffect(() => {

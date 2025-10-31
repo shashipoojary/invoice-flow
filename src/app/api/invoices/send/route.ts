@@ -1,11 +1,115 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/auth-middleware';
 import { generateTemplatePDFBlob } from '@/lib/template-pdf-generator';
 import { getEmailTemplate } from '@/lib/email-templates';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+// Function to create scheduled reminders
+async function createScheduledReminders(invoiceId: string, reminderSettings: any, dueDate: string, paymentTerms?: any, invoiceStatus?: string, updatedAt?: string) {
+  try {
+    // For "Due on Receipt" invoices, use updated_at (when sent) as base date, otherwise use due_date
+    let baseDate = new Date(dueDate);
+    if (paymentTerms?.enabled && paymentTerms.terms === 'Due on Receipt' && invoiceStatus !== 'draft' && updatedAt) {
+      baseDate = new Date(updatedAt);
+    }
+    
+    // First, delete any existing scheduled reminders for this invoice to avoid duplicates
+    await supabaseAdmin
+      .from('invoice_reminders')
+      .delete()
+      .eq('invoice_id', invoiceId)
+      .eq('reminder_status', 'scheduled');
+    
+    const scheduledReminders = [];
+
+    // Prioritize custom rules over system defaults if custom rules exist
+    if (reminderSettings.customRules && reminderSettings.customRules.length > 0) {
+      // Use custom reminder rules
+      const enabledRules = reminderSettings.customRules.filter((rule: any) => rule.enabled);
+      
+      // Create reminders with their scheduled dates first
+      const remindersWithDates = enabledRules.map((rule: any) => {
+        const scheduledDate = new Date(baseDate);
+        
+        // Fix scheduling logic: for "before" reminders, subtract days; for "after", add days
+        if (rule.type === 'before') {
+          scheduledDate.setDate(scheduledDate.getDate() - rule.days);
+        } else {
+          scheduledDate.setDate(scheduledDate.getDate() + rule.days);
+        }
+        
+        return {
+          rule,
+          scheduledDate,
+          overdue_days: rule.type === 'before' ? -rule.days : rule.days
+        };
+      });
+      
+      // Sort by scheduled date (earliest first) to get correct chronological order
+      remindersWithDates.sort((a: any, b: any) => a.scheduledDate.getTime() - b.scheduledDate.getTime());
+      
+      // Determine reminder types based on chronological sequence
+      const reminderTypes = ['friendly', 'polite', 'firm', 'urgent'];
+      
+      for (let i = 0; i < remindersWithDates.length; i++) {
+        const { rule, scheduledDate, overdue_days } = remindersWithDates[i];
+        
+        // Assign reminder type based on chronological sequence (friendly -> polite -> firm -> urgent)
+        const reminderType = reminderTypes[Math.min(i, reminderTypes.length - 1)];
+        
+        scheduledReminders.push({
+          invoice_id: invoiceId,
+          reminder_type: reminderType,
+          overdue_days,
+          sent_at: scheduledDate.toISOString(),
+          reminder_status: 'scheduled',
+          email_id: null
+        });
+      }
+    } else if (reminderSettings.useSystemDefaults) {
+      // Use system default reminder schedule
+      const defaultSchedule = [
+        { type: 'friendly', days: 1 }, // 1 day after due (when overdue)
+        { type: 'polite', days: 3 },   // 3 days after due
+        { type: 'firm', days: 7 }      // 7 days after due
+      ];
+
+      for (const reminder of defaultSchedule) {
+        const scheduledDate = new Date(baseDate);
+        scheduledDate.setDate(scheduledDate.getDate() + reminder.days);
+        
+        scheduledReminders.push({
+          invoice_id: invoiceId,
+          reminder_type: reminder.type,
+          overdue_days: reminder.days,
+          sent_at: scheduledDate.toISOString(),
+          reminder_status: 'scheduled',
+          email_id: null
+        });
+      }
+    }
+
+    // Insert scheduled reminders
+    if (scheduledReminders.length > 0) {
+      const { error } = await supabaseAdmin
+        .from('invoice_reminders')
+        .insert(scheduledReminders);
+
+      if (error) {
+        console.error('Error creating scheduled reminders:', error);
+        throw error;
+      }
+
+      console.log(`Created ${scheduledReminders.length} scheduled reminders for invoice ${invoiceId}`);
+    }
+  } catch (error) {
+    console.error('Error in createScheduledReminders:', error);
+    throw error;
+  }
+}
 
 if (!process.env.RESEND_API_KEY) {
   console.warn('RESEND_API_KEY not found in environment variables');
@@ -241,6 +345,34 @@ export async function POST(request: NextRequest) {
 
     // Log sent event
     try { await supabaseAdmin.from('invoice_events').insert({ invoice_id: invoiceId, type: 'sent' }); } catch {}
+
+    // Create scheduled reminders if enabled (check latest invoice status after update)
+    const finalInvoice = latest || invoice;
+    if (reminders && reminders.enabled && (finalInvoice.status === 'sent' || finalInvoice.status === 'pending')) {
+      try {
+        // Check if reminders already exist for this invoice (avoid duplicates)
+        const { data: existingReminders } = await supabaseAdmin
+          .from('invoice_reminders')
+          .select('id')
+          .eq('invoice_id', invoiceId)
+          .limit(1);
+        
+        // Only create reminders if none exist
+        if (!existingReminders || existingReminders.length === 0) {
+          await createScheduledReminders(
+            invoiceId,
+            reminders,
+            finalInvoice.due_date,
+            paymentTerms,
+            'sent',
+            finalInvoice.updated_at || new Date().toISOString()
+          );
+        }
+      } catch (reminderError) {
+        console.error('Error creating scheduled reminders:', reminderError);
+        // Don't fail the send operation if reminder creation fails
+      }
+    }
 
     const latestMapped = latest ? {
       ...latest,

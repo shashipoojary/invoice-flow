@@ -100,7 +100,7 @@ export function generateMinimalEmailTemplate(
             flex: 1;
           }
           .business-name {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: 600;
             color: #202124;
             margin-bottom: 6px;
@@ -347,53 +347,216 @@ export function generateMinimalEmailTemplate(
             color: #5f6368;
             text-decoration: none;
           }
-          @media (max-width: 600px) {
+          @media only screen and (max-width: 600px) {
+            body {
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+            .email-container {
+              max-width: 100% !important;
+              width: 100% !important;
+              margin: 0 !important;
+              border: none !important;
+            }
+            table {
+              width: 100% !important;
+              max-width: 100% !important;
+            }
             .header {
-              padding: 20px;
+              padding: 20px 16px !important;
             }
             .header-content {
-              flex-direction: column;
-              gap: 16px;
+              display: block !important;
+              flex-direction: column !important;
+              width: 100% !important;
+              gap: 20px !important;
             }
             .business-info {
-              text-align: center;
+              text-align: left !important;
+              width: 100% !important;
+              margin-bottom: 0 !important;
+              display: block !important;
+            }
+            .business-name {
+              font-size: 20px !important;
             }
             .invoice-info {
-              text-align: center;
-              margin-left: 0;
+              text-align: left !important;
+              margin-left: 0 !important;
+              width: 100% !important;
+              display: block !important;
+            }
+            .invoice-title {
+              font-size: 15px !important;
+            }
+            .invoice-number {
+              font-size: 13px !important;
+            }
+            .amount {
+              font-size: 24px !important;
             }
             .content {
-              padding: 20px;
+              padding: 20px 16px !important;
             }
-            .footer {
-              padding: 20px;
+            .invoice-details {
+              padding: 16px !important;
+              margin-bottom: 20px !important;
+              width: 100% !important;
+              box-sizing: border-box !important;
             }
-            .payment-methods h3 {
-              font-size: 16px;
+            .detail-row {
+              display: block !important;
+              flex-direction: column !important;
+              padding: 12px 0 !important;
+              width: 100% !important;
             }
-            .payment-item {
-              padding: 16px;
-              margin-bottom: 16px;
+            .detail-label {
+              font-size: 13px !important;
+              margin-bottom: 6px !important;
+              display: block !important;
+              width: 100% !important;
             }
-            .payment-method {
-              font-size: 14px;
+            .detail-value {
+              font-size: 13px !important;
+              display: block !important;
+              width: 100% !important;
+              word-break: break-word !important;
             }
-            .payment-info {
-              font-size: 13px;
+            .message-section {
+              margin: 20px 0 !important;
+              padding: 16px !important;
             }
-            .payment-notice {
-              padding: 20px;
+            .message-section p {
+              font-size: 14px !important;
+              line-height: 1.5 !important;
             }
-            .payment-notice p {
-              font-size: 13px;
+            .cta-section {
+              margin: 24px 0 !important;
             }
             .cta-button {
-              display: block;
-              width: 100%;
-              text-align: center;
-              padding: 14px 28px;
-              font-size: 16px;
-              margin: 24px 0;
+              display: block !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              text-align: center !important;
+              padding: 14px 20px !important;
+              font-size: 16px !important;
+              margin: 16px 0 !important;
+              box-sizing: border-box !important;
+            }
+            .payment-methods {
+              margin: 24px 0 !important;
+              width: 100% !important;
+              padding: 0 !important;
+            }
+            .payment-methods::before,
+            .payment-methods::after {
+              display: none !important;
+            }
+            .payment-methods h3 {
+              font-size: 16px !important;
+              margin-bottom: 16px !important;
+            }
+            .payment-notice {
+              padding: 16px !important;
+              margin-bottom: 16px !important;
+              width: 100% !important;
+              box-sizing: border-box !important;
+            }
+            .payment-notice p {
+              font-size: 13px !important;
+              line-height: 1.5 !important;
+            }
+            .payment-list {
+              width: 100% !important;
+              margin-bottom: 20px !important;
+              box-sizing: border-box !important;
+            }
+            .payment-method-item {
+              margin-bottom: 16px !important;
+              padding-bottom: 16px !important;
+              width: 100% !important;
+              display: block !important;
+            }
+            .payment-item {
+              padding: 12px !important;
+              margin-bottom: 12px !important;
+              width: 100% !important;
+              box-sizing: border-box !important;
+            }
+            .payment-method-name {
+              font-size: 13px !important;
+              margin-bottom: 6px !important;
+            }
+            .payment-method-details {
+              font-size: 13px !important;
+              line-height: 1.5 !important;
+              word-break: break-word !important;
+            }
+            .payment-method {
+              font-size: 14px !important;
+            }
+            .payment-info {
+              font-size: 13px !important;
+              word-break: break-word !important;
+            }
+            .payment-security {
+              padding: 16px !important;
+              width: 100% !important;
+              box-sizing: border-box !important;
+            }
+            .payment-security p {
+              font-size: 13px !important;
+              line-height: 1.5 !important;
+              word-break: break-word !important;
+            }
+            .footer {
+              padding: 20px 16px !important;
+            }
+            .footer p {
+              font-size: 13px !important;
+              line-height: 1.5 !important;
+            }
+            .business-contact {
+              font-size: 13px !important;
+              word-break: break-word !important;
+            }
+            .invoiceflow-branding {
+              margin-top: 20px !important;
+              padding-top: 16px !important;
+            }
+            .invoiceflow-disclaimer {
+              font-size: 11px !important;
+              line-height: 1.4 !important;
+            }
+            .invoiceflow-link {
+              font-size: 11px !important;
+            }
+          }
+          @media only screen and (max-width: 480px) {
+            .header {
+              padding: 16px 12px !important;
+            }
+            .content {
+              padding: 16px 12px !important;
+            }
+            .footer {
+              padding: 16px 12px !important;
+            }
+            .invoice-details {
+              padding: 12px !important;
+            }
+            .message-section {
+              padding: 12px !important;
+            }
+            .cta-button {
+              padding: 12px 16px !important;
+              font-size: 15px !important;
+            }
+            .business-name {
+              font-size: 18px !important;
+            }
+            .amount {
+              font-size: 22px !important;
             }
           }
         </style>
@@ -585,7 +748,7 @@ export function generateModernEmailTemplate(
           .header-content {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             max-width: 520px;
             margin: 0 auto;
           }
@@ -595,8 +758,19 @@ export function generateModernEmailTemplate(
             color: #000000;
             letter-spacing: -0.02em;
           }
-          .invoice-details {
+          .business-info {
+            flex: 1;
+          }
+          .invoice-info {
             text-align: right;
+            flex: 0 0 auto;
+            margin-left: 24px;
+          }
+          .invoice-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #666666;
+            margin-bottom: 4px;
           }
           .invoice-number {
             font-size: 16px;
@@ -762,27 +936,77 @@ export function generateModernEmailTemplate(
             color: #666666;
             text-decoration: none;
           }
-          @media (max-width: 600px) {
+          @media only screen and (max-width: 600px) {
             .header {
-              padding: 32px 20px;
+              padding: 32px 20px !important;
             }
             .header-content {
-              flex-direction: column;
-              gap: 20px;
-              text-align: center;
+              display: flex !important;
+              flex-direction: row !important;
+              align-items: flex-start !important;
+              gap: 20px !important;
+              justify-content: space-between !important;
+              max-width: 100% !important;
+              width: 100% !important;
             }
-            .invoice-details {
-              text-align: center;
+            .business-info {
+              text-align: left !important;
+              width: 100% !important;
+              margin-bottom: 0 !important;
+              display: block !important;
+              flex: 1 !important;
+            }
+            .business-name {
+              font-size: 22px !important;
+            }
+            .invoice-info {
+              text-align: right !important;
+              margin-left: 0 !important;
+              width: 100% !important;
+              display: block !important;
+              flex: 0 0 auto !important;
+              margin-top: 20px !important;
+            }
+            .invoice-title {
+              font-size: 15px !important;
+            }
+            .invoice-number {
+              font-size: 14px !important;
+            }
+            .amount {
+              font-size: 26px !important;
             }
             .content {
-              padding: 32px 24px;
+              padding: 32px 24px !important;
             }
             .details-grid {
-              grid-template-columns: 1fr;
-              gap: 24px;
+              display: block !important;
+              grid-template-columns: none !important;
+              gap: 0 !important;
+              margin-bottom: 32px !important;
+            }
+            .detail-section {
+              display: block !important;
+              margin-bottom: 40px !important;
+              width: 100% !important;
+            }
+            .detail-section:first-child {
+              margin-bottom: 40px !important;
+            }
+            .detail-section:last-child {
+              margin-bottom: 0 !important;
+            }
+            .detail-section p {
+              margin-bottom: 0 !important;
+              padding-bottom: 0 !important;
+            }
+            .detail-section h3 {
+              margin-top: 0 !important;
+              margin-bottom: 16px !important;
+              padding-top: 0 !important;
             }
             .footer {
-              padding: 24px 20px;
+              padding: 24px 20px !important;
             }
           }
         </style>
@@ -791,8 +1015,11 @@ export function generateModernEmailTemplate(
         <div class="email-container">
           <div class="header">
             <div class="header-content">
-              <div class="business-name">${businessSettings.businessName}</div>
-              <div class="invoice-details">
+              <div class="business-info">
+                <div class="business-name">${businessSettings.businessName}</div>
+              </div>
+              <div class="invoice-info">
+                <div class="invoice-title">Invoice</div>
                 <div class="invoice-number">#${invoice.invoice_number}</div>
                 <div class="amount">${formatCurrency(invoice.total)}</div>
               </div>
@@ -1028,19 +1255,29 @@ export function generateCreativeEmailTemplate(
           .header-content {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             max-width: 500px;
             margin: 0 auto;
+          }
+          .business-info {
+            flex: 1;
           }
           .business-name {
             font-size: 28px;
             font-weight: 700;
             letter-spacing: -0.5px;
-            flex: 1;
           }
-          .invoice-details {
+          .invoice-info {
             text-align: right;
-            flex: 1;
+            flex: 0 0 auto;
+            margin-left: 24px;
+          }
+          .invoice-title {
+            font-size: 16px;
+            font-weight: 500;
+            opacity: 0.9;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
           }
           .invoice-number {
             font-size: 16px;
@@ -1324,44 +1561,61 @@ export function generateCreativeEmailTemplate(
             text-decoration: none;
             font-weight: 600;
           }
-          @media (max-width: 600px) {
+          @media only screen and (max-width: 600px) {
             .email-container {
-              margin: 0;
-              border-radius: 0;
+              margin: 0 !important;
+              border-radius: 0 !important;
             }
             .email-container::before {
-              width: 60px;
-              height: 60px;
-              top: -30px;
-              right: -30px;
+              width: 60px !important;
+              height: 60px !important;
+              top: -30px !important;
+              right: -30px !important;
             }
             .email-container::after {
-              width: 40px;
-              height: 40px;
-              bottom: -20px;
-              left: -20px;
+              width: 40px !important;
+              height: 40px !important;
+              bottom: -20px !important;
+              left: -20px !important;
             }
             .header {
-              padding: 32px 16px;
+              padding: 32px 16px !important;
             }
             .header-content {
-              flex-direction: column;
-              text-align: center;
-              gap: 20px;
+              display: flex !important;
+              flex-direction: row !important;
+              align-items: flex-start !important;
+              gap: 20px !important;
+              justify-content: space-between !important;
+              max-width: 100% !important;
+              width: 100% !important;
+            }
+            .business-info {
+              text-align: left !important;
+              width: 100% !important;
+              margin-bottom: 0 !important;
+              display: block !important;
+              flex: 1 !important;
             }
             .business-name {
-              font-size: 24px;
-              flex: none;
+              font-size: 22px !important;
             }
-            .invoice-details {
-              text-align: center;
-              flex: none;
+            .invoice-info {
+              text-align: right !important;
+              margin-left: 0 !important;
+              width: 100% !important;
+              display: block !important;
+              flex: 0 0 auto !important;
+              margin-top: 20px !important;
+            }
+            .invoice-title {
+              font-size: 15px !important;
             }
             .invoice-number {
-              font-size: 14px;
+              font-size: 14px !important;
             }
             .amount {
-              font-size: 32px;
+              font-size: 26px !important;
             }
             .content {
               padding: 24px 16px;
@@ -1443,8 +1697,11 @@ export function generateCreativeEmailTemplate(
         <div class="email-container">
           <div class="header">
             <div class="header-content">
-              <div class="business-name">${businessSettings.businessName}</div>
-              <div class="invoice-details">
+              <div class="business-info">
+                <div class="business-name">${businessSettings.businessName}</div>
+              </div>
+              <div class="invoice-info">
+                <div class="invoice-title">Invoice</div>
                 <div class="invoice-number">#${invoice.invoice_number}</div>
                 <div class="amount">${formatCurrency(invoice.total)}</div>
               </div>
@@ -1631,7 +1888,7 @@ export function generateOriginalFastInvoiceEmailTemplate(
             max-width: 50%;
           }
           .business-name {
-            font-size: 18px;
+            font-size: 22px;
             font-weight: 500;
             color: #202124;
             margin-bottom: 4px;
@@ -1875,118 +2132,204 @@ export function generateOriginalFastInvoiceEmailTemplate(
             color: #5f6368;
             text-decoration: none;
           }
-          @media (max-width: 600px) {
+          @media only screen and (max-width: 600px) {
+            body {
+              margin: 0 !important;
+              padding: 0 !important;
+            }
             .email-container {
-              max-width: 100%;
-              margin: 0;
+              max-width: 100% !important;
+              width: 100% !important;
+              margin: 0 !important;
+            }
+            table {
+              width: 100% !important;
+              max-width: 100% !important;
             }
             .header {
-              padding: 20px 16px;
+              padding: 20px 16px !important;
             }
             .header-content {
-              flex-direction: column;
-              gap: 20px;
+              display: block !important;
+              flex-direction: column !important;
+              width: 100% !important;
             }
             .business-info {
-              max-width: 100%;
-              order: 2;
+              max-width: 100% !important;
+              width: 100% !important;
+              margin-bottom: 20px !important;
+              display: block !important;
             }
             .invoice-info {
-              max-width: 100%;
-              text-align: left;
-              margin-left: 0;
-              order: 1;
+              max-width: 100% !important;
+              width: 100% !important;
+              text-align: left !important;
+              margin-left: 0 !important;
+              display: block !important;
             }
             .business-name {
-              font-size: 16px;
+              font-size: 18px !important;
             }
             .business-details {
-              font-size: 12px;
+              font-size: 12px !important;
             }
             .invoice-title {
-              font-size: 18px;
+              font-size: 18px !important;
             }
             .invoice-number {
-              font-size: 12px;
+              font-size: 12px !important;
             }
             .amount {
-              font-size: 20px;
+              font-size: 20px !important;
             }
             .content {
-              padding: 20px 16px;
+              padding: 20px 16px !important;
+            }
+            .details-section {
+              margin-bottom: 24px !important;
             }
             .detail-row {
-              flex-direction: column;
-              gap: 4px;
-              padding: 16px 0;
+              display: block !important;
+              flex-direction: column !important;
+              padding: 12px 0 !important;
+              width: 100% !important;
             }
             .detail-label {
-              font-size: 13px;
-              margin-bottom: 4px;
+              font-size: 13px !important;
+              margin-bottom: 4px !important;
+              display: block !important;
+              width: 100% !important;
             }
             .detail-value {
-              font-size: 13px;
+              font-size: 13px !important;
+              display: block !important;
+              width: 100% !important;
+              word-break: break-word !important;
             }
             .message-section {
-              margin: 24px 0;
-              padding: 20px 0;
+              margin: 24px 0 !important;
+              padding: 16px 0 !important;
             }
             .message-section p {
-              font-size: 13px;
+              font-size: 13px !important;
+              line-height: 1.5 !important;
             }
             .cta-section {
-              margin: 24px 0;
+              margin: 24px 0 !important;
             }
             .cta-button {
-              display: block;
-              width: 100%;
-              text-align: center;
-              padding: 14px 28px;
-              font-size: 16px;
-              margin: 24px 0;
+              display: block !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              text-align: center !important;
+              padding: 14px 20px !important;
+              font-size: 16px !important;
+              margin: 16px 0 !important;
+              box-sizing: border-box !important;
             }
             .payment-methods {
-              margin: 24px 0;
+              margin: 24px 0 !important;
+              width: 100% !important;
+              padding: 0 !important;
+            }
+            .payment-methods::before,
+            .payment-methods::after {
+              display: none !important;
             }
             .payment-methods h3 {
-              font-size: 16px;
+              font-size: 16px !important;
+              margin-bottom: 16px !important;
             }
             .payment-notice {
-              padding: 12px;
-              margin-bottom: 16px;
+              padding: 16px !important;
+              margin-bottom: 16px !important;
+              width: 100% !important;
+              box-sizing: border-box !important;
             }
             .payment-notice p {
-              font-size: 13px;
+              font-size: 13px !important;
+              line-height: 1.5 !important;
+            }
+            .payment-list {
+              width: 100% !important;
+              margin-bottom: 20px !important;
+              box-sizing: border-box !important;
+            }
+            .payment-method-item {
+              margin-bottom: 16px !important;
+              padding-bottom: 16px !important;
+              width: 100% !important;
+              display: block !important;
+            }
+            .payment-method-name {
+              font-size: 13px !important;
+              margin-bottom: 6px !important;
+            }
+            .payment-method-details {
+              font-size: 13px !important;
+              line-height: 1.5 !important;
+              word-break: break-word !important;
             }
             .payment-method {
-              font-size: 14px;
+              font-size: 14px !important;
             }
             .payment-info {
-              font-size: 13px;
+              font-size: 13px !important;
+              word-break: break-word !important;
             }
             .payment-security {
-              padding: 12px;
+              padding: 16px !important;
+              width: 100% !important;
+              box-sizing: border-box !important;
             }
             .payment-security p {
-              font-size: 13px;
+              font-size: 13px !important;
+              line-height: 1.5 !important;
+              word-break: break-word !important;
             }
             .footer {
-              padding: 20px 16px;
+              padding: 20px 16px !important;
             }
             .footer p {
-              font-size: 13px;
+              font-size: 13px !important;
+              line-height: 1.5 !important;
+            }
+            .business-info {
+              margin-top: 16px !important;
+              padding-top: 16px !important;
             }
             .business-name {
-              font-size: 14px;
+              font-size: 16px !important;
             }
             .business-contact {
-              font-size: 13px;
+              font-size: 13px !important;
+              word-break: break-word !important;
+            }
+            .invoiceflow-branding {
+              margin-top: 20px !important;
+              padding-top: 16px !important;
             }
             .invoiceflow-disclaimer {
-              font-size: 10px;
+              font-size: 10px !important;
+              line-height: 1.4 !important;
             }
             .invoiceflow-link {
-              font-size: 10px;
+              font-size: 10px !important;
+            }
+          }
+          @media only screen and (max-width: 480px) {
+            .header {
+              padding: 16px 12px !important;
+            }
+            .content {
+              padding: 16px 12px !important;
+            }
+            .footer {
+              padding: 16px 12px !important;
+            }
+            .cta-button {
+              padding: 12px 16px !important;
+              font-size: 15px !important;
             }
           }
         </style>

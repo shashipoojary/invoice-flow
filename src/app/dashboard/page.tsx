@@ -25,7 +25,7 @@ export default function DashboardOverview() {
   const { user, loading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError, showWarning } = useToast();
   const { settings } = useSettings();
-  const { invoices, clients, isLoadingInvoices, isLoadingClients, updateInvoice, deleteInvoice, refreshInvoices } = useData();
+  const { invoices, clients, isLoadingInvoices, isLoadingClients, hasInitiallyLoaded, updateInvoice, deleteInvoice, refreshInvoices } = useData();
   const router = useRouter();
   
   // Local state for UI
@@ -1178,7 +1178,7 @@ export default function DashboardOverview() {
               </p>
               
               {/* Welcome message for new users */}
-              {user && dataLoaded && invoices.length === 0 && clients.length === 0 && (
+              {user && hasInitiallyLoaded && !isLoadingInvoices && !isLoadingClients && invoices.length === 0 && clients.length === 0 && (
                 <div className="rounded-lg p-6 mb-8 bg-white/70 border border-gray-200 backdrop-blur-sm">
                   <div className="flex items-center space-x-4 mb-4">
                     <div className="p-3 rounded-xl bg-indigo-50">
@@ -1240,7 +1240,7 @@ export default function DashboardOverview() {
                         <span className="text-xs font-medium text-emerald-600">Paid invoices</span>
                       </div>
                     </div>
-                    <div className="p-1 sm:p-2 rounded-xl bg-emerald-50">
+                    <div className="flex items-center justify-center p-1 sm:p-2 rounded-xl bg-emerald-50 min-w-[32px] min-h-[32px] sm:min-w-[40px] sm:min-h-[40px]">
                       <Receipt className="h-4 w-4 sm:h-6 sm:w-6 text-emerald-600" />
                     </div>
                   </div>
@@ -1251,7 +1251,7 @@ export default function DashboardOverview() {
                   onClick={handlePendingInvoicesClick}
                   className="group relative overflow-hidden rounded-lg p-2 sm:p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-amber-500 backdrop-blur-sm"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-start justify-between">
                     <div className="space-y-1 flex-1">
                       <p className="text-xs font-medium text-left" style={{color: '#374151'}}>Total Payable</p>
                       <div className="font-heading text-lg sm:text-3xl font-bold text-orange-500 text-left whitespace-nowrap">
@@ -1275,7 +1275,7 @@ export default function DashboardOverview() {
                         </div>
                       </div>
                     </div>
-                    <div className="p-1 sm:p-2 rounded-xl bg-orange-50">
+                    <div className="flex items-center justify-center p-1 sm:p-2 rounded-xl bg-orange-50 min-w-[32px] min-h-[32px] sm:min-w-[40px] sm:min-h-[40px]">
                       <Timer className="h-4 w-4 sm:h-6 sm:w-6 text-orange-500" />
                     </div>
                   </div>
@@ -1286,7 +1286,7 @@ export default function DashboardOverview() {
                   onClick={handleOverdueInvoicesClick}
                   className="group relative overflow-hidden rounded-lg p-2 sm:p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-red-500 backdrop-blur-sm"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-start justify-between">
                     <div className="space-y-1 flex-1">
                       <p className="text-xs font-medium text-left" style={{color: '#374151'}}>Overdue</p>
                       <div className="font-heading text-lg sm:text-3xl font-bold text-red-600 text-left">
@@ -1301,7 +1301,7 @@ export default function DashboardOverview() {
                         <span className="text-xs font-medium text-red-600">Need attention</span>
                       </div>
                     </div>
-                    <div className="p-1 sm:p-2 rounded-xl bg-red-50">
+                    <div className="flex items-center justify-center p-1 sm:p-2 rounded-xl bg-red-50 min-w-[32px] min-h-[32px] sm:min-w-[40px] sm:min-h-[40px]">
                       <AlertTriangle className="h-4 w-4 sm:h-6 sm:w-6 text-red-600" />
                     </div>
                   </div>
@@ -1312,7 +1312,7 @@ export default function DashboardOverview() {
                   onClick={handleClientsClick}
                   className="group relative overflow-hidden rounded-lg p-2 sm:p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-indigo-500 backdrop-blur-sm"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-start justify-between">
                     <div className="space-y-1 flex-1">
                       <p className="text-xs font-medium text-left" style={{color: '#374151'}}>Total Clients</p>
                       <div className="font-heading text-lg sm:text-3xl font-bold text-indigo-600 text-left">
@@ -1327,7 +1327,7 @@ export default function DashboardOverview() {
                         <span className="text-xs font-medium text-indigo-600">Active clients</span>
                       </div>
                     </div>
-                    <div className="p-1 sm:p-2 rounded-xl bg-indigo-50">
+                    <div className="flex items-center justify-center p-1 sm:p-2 rounded-xl bg-indigo-50 min-w-[32px] min-h-[32px] sm:min-w-[40px] sm:min-h-[40px]">
                       <Users className="h-4 w-4 sm:h-6 sm:w-6 text-indigo-600" />
                     </div>
                   </div>
@@ -1422,7 +1422,7 @@ export default function DashboardOverview() {
                 </button>
               </div>
               
-              {isLoadingInvoices ? (
+              {(isLoadingInvoices || !hasInitiallyLoaded) ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="rounded-xl p-4 bg-white border border-gray-200">
@@ -1441,26 +1441,7 @@ export default function DashboardOverview() {
                     </div>
                   ))}
                 </div>
-              ) : recentInvoices.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {recentInvoices.map((invoice) => (
-                    <UnifiedInvoiceCard
-                      key={invoice.id}
-                      invoice={invoice}
-                      getStatusIcon={getStatusIcon}
-                      getDueDateStatus={getDueDateStatus}
-                      calculateDueCharges={calculateDueCharges}
-                      loadingActions={loadingActions}
-                      onView={handleViewInvoice}
-                      onPdf={handleDownloadPDF}
-                      onSend={handleSendInvoice}
-                      onMarkPaid={handleMarkAsPaid}
-                      onEdit={handleEditInvoice}
-                      onDelete={handleDeleteInvoice}
-                    />
-                  ))}
-                </div>
-              ) : (
+              ) : hasInitiallyLoaded && !isLoadingInvoices && invoices.length === 0 ? (
                 <div className="rounded-xl p-8 text-center bg-white border border-gray-200">
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 bg-gray-100">
                     <FileText className="h-8 w-8 text-gray-500" />
@@ -1481,7 +1462,26 @@ export default function DashboardOverview() {
                     <span>Create Invoice</span>
                   </button>
                 </div>
-              )}
+              ) : recentInvoices.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {recentInvoices.map((invoice) => (
+                    <UnifiedInvoiceCard
+                      key={invoice.id}
+                      invoice={invoice}
+                      getStatusIcon={getStatusIcon}
+                      getDueDateStatus={getDueDateStatus}
+                      calculateDueCharges={calculateDueCharges}
+                      loadingActions={loadingActions}
+                      onView={handleViewInvoice}
+                      onPdf={handleDownloadPDF}
+                      onSend={handleSendInvoice}
+                      onMarkPaid={handleMarkAsPaid}
+                      onEdit={handleEditInvoice}
+                      onDelete={handleDeleteInvoice}
+                    />
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
         </main>

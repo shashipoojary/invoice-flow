@@ -16,12 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase } from '@/lib/supabase';
 
 interface ReminderHistory {
   id: string;
@@ -70,11 +65,30 @@ export default function ReminderHistoryPage() {
 
 
       // Fetch reminder history from database
+      // First get all reminders for user's invoices
+      const { data: userInvoices, error: invoicesError } = await supabase
+        .from('invoices')
+        .select('id')
+        .eq('user_id', user.id);
+      
+      if (invoicesError) {
+        console.error('Error fetching user invoices:', invoicesError);
+        setReminders([]);
+        return;
+      }
+      
+      if (!userInvoices || userInvoices.length === 0) {
+        setReminders([]);
+        return;
+      }
+      
+      const invoiceIds = userInvoices.map(inv => inv.id);
+      
       const { data: reminderData, error: reminderError } = await supabase
         .from('invoice_reminders')
         .select(`
           *,
-          invoices!inner (
+          invoices (
             invoice_number,
             total,
             due_date,
@@ -87,7 +101,7 @@ export default function ReminderHistoryPage() {
             )
           )
         `)
-        .eq('invoices.user_id', user.id)
+        .in('invoice_id', invoiceIds)
         .order('sent_at', { ascending: false });
 
       if (reminderError) {
@@ -96,12 +110,16 @@ export default function ReminderHistoryPage() {
           return;
         }
         console.error('Error fetching reminders:', reminderError);
+        setReminders([]);
         return;
       }
 
-      if (reminderData) {
+      if (reminderData && reminderData.length > 0) {
+        // Filter out reminders with null invoices (in case of orphaned reminders)
+        const validReminders = reminderData.filter(reminder => reminder.invoices && reminder.invoices.invoice_number);
         
-        const formattedReminders: ReminderHistory[] = reminderData.map(reminder => ({
+        
+        const formattedReminders: ReminderHistory[] = validReminders.map(reminder => ({
           id: reminder.id,
           invoice_id: reminder.invoice_id,
           reminder_type: reminder.reminder_type,
@@ -122,6 +140,7 @@ export default function ReminderHistoryPage() {
         
         setReminders(formattedReminders);
       } else {
+        setReminders([]);
       }
 
     } catch (error) {
@@ -155,16 +174,20 @@ export default function ReminderHistoryPage() {
         reminder.invoice.clients.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         reminder.invoice.clients.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
 
-      // For scheduled reminders, only show next day's reminders
+      // For scheduled reminders, only show tomorrow's scheduled reminders (1 day ahead)
       if (reminder.reminder_status === 'scheduled') {
         const today = new Date();
+        today.setHours(0, 0, 0, 0);
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
         
         const reminderDate = new Date(reminder.sent_at);
-        const isNextDay = reminderDate.toDateString() === tomorrow.toDateString();
+        reminderDate.setHours(0, 0, 0, 0);
         
-        return matchesSearch && isNextDay;
+        // Only show if scheduled for tomorrow (exactly 1 day ahead)
+        const isTomorrow = reminderDate.getTime() === tomorrow.getTime();
+        
+        return matchesSearch && isTomorrow;
       }
 
       // For sent/failed/delivered/bounced, show all
@@ -493,7 +516,7 @@ export default function ReminderHistoryPage() {
                       No reminders found
                     </h3>
                     <p className="mt-1 text-sm text-gray-500">
-                      {searchTerm ? 'Try adjusting your search terms.' : 'No reminders found. Sent/failed reminders and next day scheduled reminders will appear here.'}
+                      {searchTerm ? 'Try adjusting your search terms.' : 'No reminders found. Sent/failed reminders and tomorrow\'s scheduled reminders (1 day ahead) will appear here.'}
                     </p>
                   </div>
                 </div>
