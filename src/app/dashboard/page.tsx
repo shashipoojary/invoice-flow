@@ -871,23 +871,23 @@ export default function DashboardOverview() {
               {dueCharges.hasLateFees ? (
                 <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
                   Base ${invoice.total.toLocaleString()} • Late fee ${dueCharges.lateFeeAmount.toLocaleString()}
-                </div>
+            </div>
               ) : (
                 <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
               )}
                 <div className="text-xs" style={{color: '#6b7280'}}>
                   {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'No due date'}
-            </div>
-              </div>
-              
-              <div className="flex items-center space-x-2">
+          </div>
+        </div>
+        
+                <div className="flex items-center space-x-2">
               <span 
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border`}
                   style={getStatusStyle(invoice.status)}
               >
                 {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status}</span>
-              </span>
+                  </span>
                 <span className={`px-2 py-0.5 text-xs font-medium rounded-full border`}
                   style={((invoice.type || 'detailed') === 'fast' 
                     ? { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' }
@@ -901,9 +901,9 @@ export default function DashboardOverview() {
                     <AlertTriangle className="h-3 w-3" />
                     <span>{dueDateStatus.days}d overdue</span>
                   </span>
-                )}
-                </div>
+              )}
             </div>
+          </div>
           </div>
         </div>
         
@@ -1219,64 +1219,68 @@ export default function DashboardOverview() {
               )}
               
               {/* Stats Grid */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {/* Total Revenue */}
                 <button 
                   onClick={handlePaidInvoicesClick}
-                  className="group relative overflow-hidden rounded-lg p-2 sm:p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-emerald-500 backdrop-blur-sm"
+                  className="group relative overflow-hidden rounded-lg p-3 sm:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-emerald-500 backdrop-blur-sm h-full"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1 flex-1">
-                      <p className="text-xs font-medium text-left" style={{color: '#374151'}}>Total Revenue</p>
-                      <div className="font-heading text-lg sm:text-3xl font-bold text-emerald-600 text-left whitespace-nowrap">
+                  <div className="flex items-start justify-between h-full">
+                    <div className="flex-1 min-w-0 pr-2 flex flex-col justify-between h-full">
+                    <div className="space-y-2">
+                        <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Revenue</p>
+                        <div className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-emerald-600 text-left break-words">
                         {isLoadingStats ? (
-                          <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-24 rounded"></div>
+                            <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-6 sm:h-8 w-20 sm:w-24 rounded"></div>
                         ) : (
-                          formatMoney(totalRevenue)
+                            <span className="break-words">{formatMoney(totalRevenue)}</span>
                         )}
                       </div>
-                      <div className="flex items-center space-x-1 justify-start min-h-[28px] leading-tight">
-                        <CheckCircle className="h-4 w-4 text-emerald-500" />
-                        <span className="text-xs font-medium text-emerald-600">Paid invoices</span>
                       </div>
+                      <div className="flex items-center space-x-1.5 justify-start leading-tight mt-auto pt-2 min-h-[32px]">
+                        <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-500 flex-shrink-0" />
+                        <span className="text-xs font-medium text-emerald-600 truncate">Paid invoices</span>
                     </div>
-                    <div className="flex items-center justify-center p-1 sm:p-2 rounded-xl bg-emerald-50 min-w-[32px] min-h-[32px] sm:min-w-[40px] sm:min-h-[40px]">
-                      <Receipt className="h-4 w-4 sm:h-6 sm:w-6 text-emerald-600" />
                     </div>
+                    <div className="flex items-center justify-center p-1.5 sm:p-2 rounded-xl bg-emerald-50 flex-shrink-0 min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px]">
+                      <Receipt className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-emerald-600" />
                   </div>
+                </div>
                 </button>
 
                 {/* Outstanding Amount */}
                 <button 
                   onClick={handlePendingInvoicesClick}
-                  className="group relative overflow-hidden rounded-lg p-2 sm:p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-amber-500 backdrop-blur-sm"
+                  className="group relative overflow-hidden rounded-lg p-3 sm:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-amber-500 backdrop-blur-sm h-full"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1 flex-1">
-                      <p className="text-xs font-medium text-left" style={{color: '#374151'}}>Total Payable</p>
-                      <div className="font-heading text-lg sm:text-3xl font-bold text-orange-500 text-left whitespace-nowrap">
-                        {isLoadingStats ? (
-                          <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-24 rounded"></div>
-                        ) : (
-                          formatMoney(totalPayableAmount)
-                        )}
-                      </div>
-                      <div className="flex flex-col items-start gap-1 justify-start min-h-[32px] leading-tight">
-                        {totalLateFees > 0 && (
-                          <span className="text-xs text-red-500 break-words">
-                            (+${totalLateFees.toFixed(2)} late fees)
-                          </span>
-                        )}
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-orange-500" />
-                          <span className="text-xs font-medium text-orange-500">
-                            {invoices.filter(inv => inv.status === 'pending' || inv.status === 'sent').length} pending
-                          </span>
+                  <div className="flex items-start justify-between h-full">
+                    <div className="flex-1 min-w-0 pr-2 flex flex-col justify-between h-full">
+                      <div className="space-y-1.5">
+                        <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Payable</p>
+                        <div>
+                          <div className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-orange-500 text-left break-words" style={{ display: 'block' }}>
+                            {isLoadingStats ? (
+                              <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-6 sm:h-8 w-20 sm:w-24 rounded"></div>
+                            ) : (
+                              <div>{formatMoney(totalPayableAmount)}</div>
+                            )}
+                          </div>
+                          {totalLateFees > 0 && (
+                            <div className="text-[10px] sm:text-xs font-medium text-amber-600 text-left mt-0.5" style={{ display: 'block' }}>
+                              (+${totalLateFees.toFixed(2)} late fees)
+                            </div>
+                          )}
                         </div>
                       </div>
+                      <div className="flex items-center space-x-1.5 justify-start leading-tight mt-auto pt-2 min-h-[32px]">
+                        <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-orange-500 flex-shrink-0" />
+                        <span className="text-xs font-medium text-orange-500 truncate">
+                          {invoices.filter(inv => inv.status === 'pending' || inv.status === 'sent').length} pending
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-center p-1 sm:p-2 rounded-xl bg-orange-50 min-w-[32px] min-h-[32px] sm:min-w-[40px] sm:min-h-[40px]">
-                      <Timer className="h-4 w-4 sm:h-6 sm:w-6 text-orange-500" />
+                    <div className="flex items-center justify-center p-1.5 sm:p-2 rounded-xl bg-orange-50 flex-shrink-0 min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px]">
+                      <Timer className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-orange-500" />
                     </div>
                   </div>
                 </button>
@@ -1284,25 +1288,27 @@ export default function DashboardOverview() {
                 {/* Overdue Invoices */}
                 <button 
                   onClick={handleOverdueInvoicesClick}
-                  className="group relative overflow-hidden rounded-lg p-2 sm:p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-red-500 backdrop-blur-sm"
+                  className="group relative overflow-hidden rounded-lg p-3 sm:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-red-500 backdrop-blur-sm h-full"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1 flex-1">
-                      <p className="text-xs font-medium text-left" style={{color: '#374151'}}>Overdue</p>
-                      <div className="font-heading text-lg sm:text-3xl font-bold text-red-600 text-left">
-                        {isLoadingStats ? (
-                          <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-8 rounded"></div>
-                        ) : (
-                          overdueCount
-                        )}
+                  <div className="flex items-start justify-between h-full">
+                    <div className="flex-1 min-w-0 pr-2 flex flex-col justify-between h-full">
+                      <div className="space-y-2">
+                        <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Overdue</p>
+                        <div className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-red-600 text-left">
+                          {isLoadingStats ? (
+                            <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-6 sm:h-8 w-8 sm:w-10 rounded"></div>
+                          ) : (
+                            overdueCount
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-1 justify-start min-h-[28px] leading-tight">
-                        <AlertCircle className="h-4 w-4 text-red-500" />
-                        <span className="text-xs font-medium text-red-600">Need attention</span>
+                      <div className="flex items-center space-x-1.5 justify-start leading-tight mt-auto pt-2 min-h-[32px]">
+                        <AlertCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-500 flex-shrink-0" />
+                        <span className="text-xs font-medium text-red-600 truncate">Need attention</span>
                       </div>
                     </div>
-                    <div className="flex items-center justify-center p-1 sm:p-2 rounded-xl bg-red-50 min-w-[32px] min-h-[32px] sm:min-w-[40px] sm:min-h-[40px]">
-                      <AlertTriangle className="h-4 w-4 sm:h-6 sm:w-6 text-red-600" />
+                    <div className="flex items-center justify-center p-1.5 sm:p-2 rounded-xl bg-red-50 flex-shrink-0 min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px]">
+                      <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-red-600" />
                     </div>
                   </div>
                 </button>
@@ -1310,25 +1316,27 @@ export default function DashboardOverview() {
                 {/* Total Clients */}
                 <button 
                   onClick={handleClientsClick}
-                  className="group relative overflow-hidden rounded-lg p-2 sm:p-3 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-indigo-500 backdrop-blur-sm"
+                  className="group relative overflow-hidden rounded-lg p-3 sm:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-indigo-500 backdrop-blur-sm h-full"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1 flex-1">
-                      <p className="text-xs font-medium text-left" style={{color: '#374151'}}>Total Clients</p>
-                      <div className="font-heading text-lg sm:text-3xl font-bold text-indigo-600 text-left">
-                        {isLoadingStats ? (
-                          <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-8 w-8 rounded"></div>
-                        ) : (
-                          totalClients
-                        )}
+                  <div className="flex items-start justify-between h-full">
+                    <div className="flex-1 min-w-0 pr-2 flex flex-col justify-between h-full">
+                      <div className="space-y-2">
+                        <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Clients</p>
+                        <div className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-600 text-left">
+                          {isLoadingStats ? (
+                            <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-6 sm:h-8 w-8 sm:w-10 rounded"></div>
+                          ) : (
+                            totalClients
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-1 justify-start min-h-[28px] leading-tight">
-                        <Users className="h-4 w-4 text-indigo-500" />
-                        <span className="text-xs font-medium text-indigo-600">Active clients</span>
+                      <div className="flex items-center space-x-1.5 justify-start leading-tight mt-auto pt-2 min-h-[32px]">
+                        <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-indigo-500 flex-shrink-0" />
+                        <span className="text-xs font-medium text-indigo-600 truncate">Active clients</span>
                       </div>
                     </div>
-                    <div className="flex items-center justify-center p-1 sm:p-2 rounded-xl bg-indigo-50 min-w-[32px] min-h-[32px] sm:min-w-[40px] sm:min-h-[40px]">
-                      <Users className="h-4 w-4 sm:h-6 sm:w-6 text-indigo-600" />
+                    <div className="flex items-center justify-center p-1.5 sm:p-2 rounded-xl bg-indigo-50 flex-shrink-0 min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px]">
+                      <Users className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-indigo-600" />
                     </div>
                   </div>
                 </button>
@@ -1485,8 +1493,8 @@ export default function DashboardOverview() {
             </div>
           </div>
         </main>
-      </div>
-      
+                  </div>
+                  
       <ToastContainer
         toasts={toasts}
         onRemove={removeToast}
@@ -1499,15 +1507,15 @@ export default function DashboardOverview() {
             <div className="text-center mb-6">
               <h3 className="font-heading text-xl font-semibold mb-2" style={{color: '#1f2937'}}>
                 Choose Invoice Type
-              </h3>
+                  </h3>
               <p className="text-gray-600 text-sm">
                 Select the type of invoice you want to create
-              </p>
+                  </p>
             </div>
-            
+                  
             <div className="space-y-3">
               {/* Fast Invoice Option */}
-              <button
+                  <button
                 onClick={handleSelectFastInvoice}
                 className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
               >
@@ -1525,7 +1533,7 @@ export default function DashboardOverview() {
                     </svg>
                   </div>
                 </div>
-              </button>
+                  </button>
 
               {/* Detailed Invoice Option */}
               <button
@@ -1535,20 +1543,20 @@ export default function DashboardOverview() {
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
                     <FileText className="w-5 h-5 text-indigo-600" />
-                  </div>
+                </div>
                   <div className="text-left flex-1">
                     <h4 className="font-medium text-gray-900">Detailed Invoice</h4>
                     <p className="text-sm text-gray-500">Complete invoice with all details and customization</p>
-                  </div>
+            </div>
                   <div className="text-indigo-600 group-hover:text-indigo-700">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
-                  </div>
+          </div>
                 </div>
               </button>
-            </div>
-
+      </div>
+      
             {/* Cancel Button */}
             <div className="mt-6 pt-4 border-t border-gray-200">
               <button
