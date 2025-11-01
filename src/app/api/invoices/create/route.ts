@@ -27,17 +27,26 @@ async function createScheduledReminders(invoiceId: string, reminderSettings: any
       const remindersWithDates = enabledRules.map((rule: any) => {
         const scheduledDate = new Date(baseDate);
         
+        // Validate rule days is a valid number
+        const days = typeof rule.days === 'number' && !isNaN(rule.days) ? rule.days : 0;
+        
         // Fix scheduling logic: for "before" reminders, subtract days; for "after", add days
         if (rule.type === 'before') {
-          scheduledDate.setDate(scheduledDate.getDate() - rule.days);
+          scheduledDate.setDate(scheduledDate.getDate() - days);
         } else {
-          scheduledDate.setDate(scheduledDate.getDate() + rule.days);
+          scheduledDate.setDate(scheduledDate.getDate() + days);
+        }
+        
+        // Validate the scheduled date is valid
+        if (isNaN(scheduledDate.getTime())) {
+          console.error(`Invalid scheduled date calculated for rule:`, rule);
+          throw new Error(`Invalid scheduled date for reminder rule with ${days} days`);
         }
         
         return {
           rule,
           scheduledDate,
-          overdue_days: rule.type === 'before' ? -rule.days : rule.days
+          overdue_days: rule.type === 'before' ? -days : days
         };
       });
       
@@ -75,6 +84,12 @@ async function createScheduledReminders(invoiceId: string, reminderSettings: any
       for (const reminder of defaultSchedule) {
         const scheduledDate = new Date(baseDate);
         scheduledDate.setDate(scheduledDate.getDate() + reminder.days);
+        
+        // Validate the scheduled date is valid
+        if (isNaN(scheduledDate.getTime())) {
+          console.error(`Invalid scheduled date calculated for default reminder:`, reminder);
+          continue; // Skip invalid reminders instead of failing
+        }
         
         scheduledReminders.push({
           invoice_id: invoiceId,

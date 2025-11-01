@@ -34,17 +34,26 @@ async function createScheduledReminders(invoiceId: string, reminderSettings: any
       const remindersWithDates = enabledRules.map((rule: any) => {
         const scheduledDate = new Date(baseDate);
         
+        // Validate rule days is a valid number
+        const days = typeof rule.days === 'number' && !isNaN(rule.days) ? rule.days : 0;
+        
         // Fix scheduling logic: for "before" reminders, subtract days; for "after", add days
         if (rule.type === 'before') {
-          scheduledDate.setDate(scheduledDate.getDate() - rule.days);
+          scheduledDate.setDate(scheduledDate.getDate() - days);
         } else {
-          scheduledDate.setDate(scheduledDate.getDate() + rule.days);
+          scheduledDate.setDate(scheduledDate.getDate() + days);
+        }
+        
+        // Validate the scheduled date is valid
+        if (isNaN(scheduledDate.getTime())) {
+          console.error(`Invalid scheduled date calculated for rule:`, rule);
+          throw new Error(`Invalid scheduled date for reminder rule with ${days} days`);
         }
         
         return {
           rule,
           scheduledDate,
-          overdue_days: rule.type === 'before' ? -rule.days : rule.days
+          overdue_days: rule.type === 'before' ? -days : days
         };
       });
       
@@ -80,6 +89,12 @@ async function createScheduledReminders(invoiceId: string, reminderSettings: any
       for (const reminder of defaultSchedule) {
         const scheduledDate = new Date(baseDate);
         scheduledDate.setDate(scheduledDate.getDate() + reminder.days);
+        
+        // Validate the scheduled date is valid
+        if (isNaN(scheduledDate.getTime())) {
+          console.error(`Invalid scheduled date calculated for default reminder:`, reminder);
+          continue; // Skip invalid reminders instead of failing
+        }
         
         scheduledReminders.push({
           invoice_id: invoiceId,
@@ -350,24 +365,18 @@ export async function POST(request: NextRequest) {
     const finalInvoice = latest || invoice;
     if (reminders && reminders.enabled && (finalInvoice.status === 'sent' || finalInvoice.status === 'pending')) {
       try {
-        // Check if reminders already exist for this invoice (avoid duplicates)
-        const { data: existingReminders } = await supabaseAdmin
-          .from('invoice_reminders')
-          .select('id')
-          .eq('invoice_id', invoiceId)
-          .limit(1);
-        
-        // Only create reminders if none exist
-        if (!existingReminders || existingReminders.length === 0) {
-          await createScheduledReminders(
-            invoiceId,
-            reminders,
-            finalInvoice.due_date,
-            paymentTerms,
-            'sent',
-            finalInvoice.updated_at || new Date().toISOString()
-          );
-        }
+        // Always recreate scheduled reminders when invoice is sent
+        // The createScheduledReminders function handles deleting old scheduled reminders
+        // This ensures reminders are rescheduled if invoice is sent again
+        await createScheduledReminders(
+          invoiceId,
+          reminders,
+          finalInvoice.due_date,
+          paymentTerms,
+          'sent',
+          finalInvoice.updated_at || new Date().toISOString()
+        );
+        console.log(`✅ Created scheduled reminders for invoice ${invoiceId}`);
       } catch (reminderError) {
         console.error('Error creating scheduled reminders:', reminderError);
         // Don't fail the send operation if reminder creation fails

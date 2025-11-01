@@ -78,31 +78,45 @@ export default function ReminderHistoryPage() {
       }
       
       if (!userInvoices || userInvoices.length === 0) {
+        console.log('No invoices found for user');
         setReminders([]);
         return;
       }
       
       const invoiceIds = userInvoices.map(inv => inv.id);
+      console.log(`Fetching reminders for ${invoiceIds.length} invoices`);
       
-      const { data: reminderData, error: reminderError } = await supabase
-        .from('invoice_reminders')
-        .select(`
-          *,
-          invoices (
-            invoice_number,
-            total,
-            due_date,
-            status,
-            user_id,
-            clients (
-              name,
-              email,
-              company
+      // Handle large arrays by chunking if needed (Supabase .in() has limits)
+      // For now, we'll query all at once but add error handling
+      let reminderData: any[] = [];
+      let reminderError: any = null;
+      
+      // If invoiceIds is very large, we might need to chunk it
+      // For most use cases, this should be fine
+      if (invoiceIds.length > 0) {
+        const { data, error } = await supabase
+          .from('invoice_reminders')
+          .select(`
+            *,
+            invoices (
+              invoice_number,
+              total,
+              due_date,
+              status,
+              user_id,
+              clients (
+                name,
+                email,
+                company
+              )
             )
-          )
-        `)
-        .in('invoice_id', invoiceIds)
-        .order('sent_at', { ascending: false });
+          `)
+          .in('invoice_id', invoiceIds)
+          .order('sent_at', { ascending: false });
+        
+        reminderData = data || [];
+        reminderError = error;
+      }
 
       if (reminderError) {
         if (reminderError.code === 'PGRST205' || reminderError.message?.includes('Could not find the table')) {
@@ -115,31 +129,54 @@ export default function ReminderHistoryPage() {
       }
 
       if (reminderData && reminderData.length > 0) {
+        console.log(`Found ${reminderData.length} reminder(s) in database`);
+        
         // Filter out reminders with null invoices (in case of orphaned reminders)
         const validReminders = reminderData.filter(reminder => reminder.invoices && reminder.invoices.invoice_number);
+        console.log(`After filtering, ${validReminders.length} valid reminder(s)`);
         
         
-        const formattedReminders: ReminderHistory[] = validReminders.map(reminder => ({
-          id: reminder.id,
-          invoice_id: reminder.invoice_id,
-          reminder_type: reminder.reminder_type,
-          overdue_days: reminder.overdue_days,
-          sent_at: reminder.sent_at,
-          email_id: reminder.email_id,
-          reminder_status: reminder.reminder_status || 'sent',
-          failure_reason: reminder.failure_reason,
-          created_at: reminder.created_at,
-          invoice: {
-            invoice_number: reminder.invoices.invoice_number,
-            total: reminder.invoices.total,
-            due_date: reminder.invoices.due_date,
-            status: reminder.invoices.status,
-            clients: reminder.invoices.clients
+        const formattedReminders: ReminderHistory[] = validReminders.map(reminder => {
+          // Handle old reminders that might not have reminder_status set
+          // Default to 'sent' for backward compatibility
+          let reminderStatus: 'sent' | 'failed' | 'scheduled' | 'delivered' | 'bounced' = reminder.reminder_status || 'sent';
+          
+          // If status is null/undefined, check if it has an email_id to determine if it was sent
+          if (!reminder.reminder_status) {
+            reminderStatus = reminder.email_id ? 'sent' : 'scheduled';
           }
-        }));
+          
+          // Safety check for clients data
+          const clientsData = reminder.invoices.clients || {};
+          
+          return {
+            id: reminder.id,
+            invoice_id: reminder.invoice_id,
+            reminder_type: reminder.reminder_type || 'friendly',
+            overdue_days: reminder.overdue_days || 0,
+            sent_at: reminder.sent_at || reminder.created_at || new Date().toISOString(),
+            email_id: reminder.email_id || null,
+            reminder_status: reminderStatus,
+            failure_reason: reminder.failure_reason || null,
+            created_at: reminder.created_at || new Date().toISOString(),
+            invoice: {
+              invoice_number: reminder.invoices.invoice_number,
+              total: reminder.invoices.total || 0,
+              due_date: reminder.invoices.due_date,
+              status: reminder.invoices.status || 'sent',
+              clients: {
+                name: clientsData.name || 'N/A',
+                email: clientsData.email || 'N/A',
+                company: clientsData.company || null
+              }
+            }
+          };
+        });
         
+        console.log(`Formatted ${formattedReminders.length} reminder(s) for display`);
         setReminders(formattedReminders);
       } else {
+        console.log('No reminder data found');
         setReminders([]);
       }
 
@@ -168,35 +205,36 @@ export default function ReminderHistoryPage() {
 
   // Optimized filtering and sorting with useMemo and debounced search
   const filteredReminders = useMemo(() => {
+    if (!reminders || reminders.length === 0) {
+      return [];
+    }
+    
     return reminders.filter(reminder => {
+      // Safety check for invoice data
+      if (!reminder.invoice || !reminder.invoice.invoice_number) {
+        return false;
+      }
+      
       const matchesSearch = 
         reminder.invoice.invoice_number.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        reminder.invoice.clients.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        reminder.invoice.clients.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+        (reminder.invoice.clients?.name || '').toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        (reminder.invoice.clients?.email || '').toLowerCase().includes(debouncedSearchTerm.toLowerCase());
 
       if (!matchesSearch) return false;
 
-      // For scheduled reminders, show only those scheduled 1+ days ahead (tomorrow and beyond)
-      if (reminder.reminder_status === 'scheduled') {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        // Get the scheduled date (sent_at contains the scheduled datetime)
-        const reminderDate = new Date(reminder.sent_at);
-        reminderDate.setHours(0, 0, 0, 0);
-        
-        // Calculate days difference (positive = future, negative = past)
-        const daysDiff = Math.round((reminderDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        
-        // Show only if scheduled 1 day or more ahead (tomorrow and beyond)
-        return daysDiff >= 1;
-      }
-
-      // For sent/failed/delivered/bounced, show ALL (all the time)
+      // Show ALL reminders regardless of status
+      // - Scheduled reminders (past, present, future) - so users can see what's pending
+      // - Sent/failed/delivered/bounced reminders (all time) - complete history
       return true;
     }).sort((a, b) => {
       // Sort by status priority: sent/failed/delivered/bounced first, then scheduled
-      const statusPriority = { 'sent': 1, 'delivered': 1, 'failed': 1, 'bounced': 1, 'scheduled': 2 };
+      const statusPriority: Record<string, number> = { 
+        'sent': 1, 
+        'delivered': 1, 
+        'failed': 1, 
+        'bounced': 1, 
+        'scheduled': 2 
+      };
       const aPriority = statusPriority[a.reminder_status] || 3;
       const bPriority = statusPriority[b.reminder_status] || 3;
       
@@ -209,6 +247,7 @@ export default function ReminderHistoryPage() {
         return new Date(a.sent_at).getTime() - new Date(b.sent_at).getTime();
       }
       
+      // For sent/failed/delivered/bounced, show newest first
       return new Date(b.sent_at || b.created_at || 0).getTime() - new Date(a.sent_at || a.created_at || 0).getTime();
     });
   }, [reminders, debouncedSearchTerm]);
@@ -518,7 +557,7 @@ export default function ReminderHistoryPage() {
                       No reminders found
                     </h3>
                     <p className="mt-1 text-sm text-gray-500">
-                      {searchTerm ? 'Try adjusting your search terms.' : 'No reminders found. Sent/failed/delivered/bounced reminders (all time) and scheduled reminders (1+ days ahead) will appear here.'}
+                      {searchTerm ? 'Try adjusting your search terms.' : 'No reminders found. Sent/failed/delivered/bounced reminders (all time) and all scheduled reminders will appear here.'}
                     </p>
                   </div>
                 </div>
