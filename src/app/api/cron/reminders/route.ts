@@ -62,6 +62,9 @@ export async function POST(request: NextRequest) {
     let remindersSent = 0;
     let errors = 0;
 
+    // Helper function to delay execution (respects Resend rate limit: 2 requests per second)
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
     for (const reminder of scheduledReminders) {
       try {
         const invoice = reminder.invoices;
@@ -97,17 +100,32 @@ export async function POST(request: NextRequest) {
 
           remindersSent++;
           console.log(`✅ Reminder sent for ${invoice.invoice_number}`);
+          
+          // Rate limiting: Wait 600ms between email sends to respect Resend's free plan limit of 2 requests/second
+          // Free plan: max 2 requests/second = minimum 500ms between requests
+          // Using 600ms to be safe and avoid hitting the limit
+          // Note: This can be reduced if upgrading to a paid Resend plan with higher limits
+          await delay(600);
         } else {
-          // Mark as failed
+          // Mark as failed with helpful error message
+          const failureReason = emailResult.failureReason || (emailResult.error as any)?.message || 'Email sending failed';
+          
           await supabaseAdmin
             .from('invoice_reminders')
             .update({
               reminder_status: 'failed',
-              failure_reason: (emailResult.error as any)?.message || 'Email sending failed'
+              failure_reason: failureReason,
+              updated_at: new Date().toISOString()
             })
             .eq('id', reminder.id);
 
-          console.error(`❌ Failed to send reminder for ${invoice.invoice_number}:`, emailResult.error);
+          console.error(`❌ Failed to send reminder for ${invoice.invoice_number}:`, {
+            error: emailResult.error,
+            failureReason,
+            isDomainError: emailResult.isDomainError,
+            isRateLimitError: emailResult.isRateLimitError,
+            isSendingToOwnEmail: emailResult.isSendingToOwnEmail
+          });
           errors++;
         }
 
@@ -143,21 +161,83 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function sendReminderEmail(invoice: any, reminderType: string, reason: string) {
+async function sendReminderEmail(invoice: any, reminderType: string, _reason: string) {
   try {
-    // Get user business settings
-    const { data: businessSettings } = await supabaseAdmin
-      .from('business_settings')
-      .select('*')
+    // Validate client email
+    const clientEmail = invoice.clients?.email;
+    if (!clientEmail || typeof clientEmail !== 'string') {
+      throw new Error('Client email is required and must be valid');
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const cleanEmail = clientEmail.trim().toLowerCase();
+    if (!emailRegex.test(cleanEmail)) {
+      throw new Error('Invalid email format');
+    }
+
+    // Get user email to verify if sending to own email (for free plan check)
+    let userEmail = '';
+    try {
+      const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(invoice.user_id);
+      userEmail = authUser?.user?.email?.toLowerCase() || '';
+    } catch (error) {
+      console.error('Error fetching user email:', error);
+      // Try alternative: get from user_settings business_email
+      const { data: settingsData } = await supabaseAdmin
+        .from('user_settings')
+        .select('business_email')
+        .eq('user_id', invoice.user_id)
+        .single();
+      userEmail = settingsData?.business_email?.toLowerCase() || '';
+    }
+    
+    const recipientEmail = cleanEmail;
+    const isSendingToOwnEmail = userEmail && recipientEmail === userEmail;
+    
+    console.log('Auto reminder email check:', {
+      userEmail,
+      recipientEmail,
+      isSendingToOwnEmail,
+      invoiceNumber: invoice.invoice_number
+    });
+
+    // Get ALL user business settings from user_settings table (properly isolated per user)
+    const { data: userSettings, error: settingsError } = await supabaseAdmin
+      .from('user_settings')
+      .select('business_name, business_email, business_phone, business_address, email_from_address, payment_notes, paypal_email, cashapp_id, venmo_id, google_pay_upi, apple_pay_id, bank_account, bank_ifsc_swift, bank_iban, stripe_account')
       .eq('user_id', invoice.user_id)
       .single();
 
+    if (settingsError) {
+      console.error('Error fetching user settings:', settingsError);
+    }
+
+    // Use userSettings as businessSettings (all business details are in user_settings table)
+    const businessSettings: {
+      business_name?: string;
+      business_email?: string;
+      business_phone?: string;
+      business_address?: string;
+      email_from_address?: string;
+      payment_notes?: string;
+      paypal_email?: string;
+      cashapp_id?: string;
+      venmo_id?: string;
+      google_pay_upi?: string;
+      apple_pay_id?: string;
+      bank_account?: string;
+      bank_ifsc_swift?: string;
+      bank_iban?: string;
+      stripe_account?: string;
+    } = userSettings || {};
+
     // Create reminder message based on type
     const reminderMessages = {
-      friendly: 'This is a friendly reminder that your invoice is now due. Please make payment at your earliest convenience.',
-      polite: 'This is a polite reminder that your invoice is overdue. Please arrange payment as soon as possible.',
-      firm: 'This is a firm reminder that your invoice is significantly overdue. Please make payment immediately to avoid further action.',
-      urgent: 'This is an urgent final notice. Your invoice is severely overdue and requires immediate payment.'
+      friendly: 'This is a friendly reminder that your invoice payment is now due. We appreciate your prompt attention to this matter and look forward to receiving your payment at your earliest convenience.',
+      polite: 'This is a polite reminder that your invoice payment is currently overdue. We kindly request that you arrange payment as soon as possible to avoid any inconvenience.',
+      firm: 'This is a firm reminder that your invoice payment is significantly overdue. We require immediate payment to resolve this outstanding balance and avoid any further collection actions.',
+      urgent: 'This is an urgent final notice regarding your severely overdue invoice payment. Immediate payment is required to prevent further escalation, which may include account suspension or referral to a collection agency.'
     };
 
     const reminderMessage = reminderMessages[reminderType as keyof typeof reminderMessages] || reminderMessages.friendly;
@@ -190,7 +270,7 @@ async function sendReminderEmail(invoice: any, reminderType: string, reason: str
                     Invoice #${invoice.invoice_number}
                   </h2>
                   <p style="margin: 8px 0 0 0; color: #64748b; font-size: 14px;">
-                    ${businessSettings?.business_name || 'Business Name'}
+                    ${(businessSettings?.business_name || '').trim() || 'Business Name'}
                   </p>
                 </div>
                 <div style="text-align: right;">
@@ -274,16 +354,58 @@ async function sendReminderEmail(invoice: any, reminderType: string, reason: str
       </html>
     `;
 
-    // Send email using Resend
+    // Determine the from address using businessSettings we already fetched above
+    // Use configured email_from_address if available, otherwise use default
+    const fromAddress = businessSettings?.email_from_address && businessSettings.email_from_address.trim()
+      ? `${businessSettings.business_name || 'FlowInvoicer'} <${businessSettings.email_from_address.trim()}>`
+      : 'FlowInvoicer <onboarding@resend.dev>';
+
+    // Send email using Resend (use plain email address for free plan compatibility)
     const emailResult = await resend.emails.send({
-      from: 'FlowInvoicer <onboarding@resend.dev>',
-      to: invoice.clients?.email || '',
+      from: fromAddress,
+      to: recipientEmail,
       subject: `Payment Reminder - Invoice #${invoice.invoice_number}`,
       html: emailHtml,
     });
 
     if (emailResult.error) {
-      return { success: false, error: emailResult.error };
+      const errorMessage = emailResult.error.message || '';
+      
+      // Check for free plan limitations
+      const isDomainError = errorMessage.includes('domain is not verified') || 
+                           errorMessage.includes('verify your domain') ||
+                           errorMessage.includes('only send testing emails to your own email');
+      const isRateLimitError = errorMessage.includes('Too many requests') || 
+                              errorMessage.includes('rate limit') ||
+                              errorMessage.includes('2 requests per second');
+      
+      // Provide helpful error messages for free plan issues
+      let failureReason = errorMessage;
+      if (isDomainError && !isSendingToOwnEmail) {
+        failureReason = 'Free plan restriction: Can only send to your own email. Verify domain at resend.com/domains to send to clients.';
+      } else if (isDomainError && isSendingToOwnEmail) {
+        failureReason = `Email sending failed: ${errorMessage}. If sending to own email, check Resend API key configuration.`;
+      } else if (isRateLimitError) {
+        failureReason = 'Rate limit exceeded (Free plan: 2 requests/second). Please wait and try again.';
+      }
+      
+      console.error('Email sending failed:', {
+        errorMessage,
+        recipientEmail,
+        userEmail,
+        isSendingToOwnEmail,
+        fromAddress,
+        failureReason
+      });
+      
+      return { 
+        success: false, 
+        error: emailResult.error,
+        failureReason,
+        isDomainError,
+        isRateLimitError,
+        isSendingToOwnEmail
+      };
     }
 
     return { success: true, emailId: emailResult.data?.id };

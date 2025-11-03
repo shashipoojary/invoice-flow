@@ -16,12 +16,53 @@ async function createScheduledReminders(invoiceId: string, reminderSettings: any
       baseDate = new Date(updatedAt);
     }
     
-    // First, delete any existing scheduled reminders for this invoice to avoid duplicates
-    await supabaseAdmin
+    // First, aggressively delete any existing scheduled reminders and duplicate failed reminders for this invoice
+    // This prevents duplicates when invoice is sent multiple times or updated
+    const { data: existingReminders } = await supabaseAdmin
       .from('invoice_reminders')
-      .delete()
-      .eq('invoice_id', invoiceId)
-      .eq('reminder_status', 'scheduled');
+      .select('id, reminder_type, reminder_status, created_at')
+      .eq('invoice_id', invoiceId);
+    
+    if (existingReminders && existingReminders.length > 0) {
+      // Delete ALL scheduled reminders (they will be recreated below)
+      await supabaseAdmin
+        .from('invoice_reminders')
+        .delete()
+        .eq('invoice_id', invoiceId)
+        .eq('reminder_status', 'scheduled');
+      
+      // Clean up duplicate failed reminders (keep only most recent per type)
+      const failedByType = new Map<string, any[]>();
+      for (const reminder of existingReminders) {
+        if (reminder.reminder_status === 'failed') {
+          const key = reminder.reminder_type || 'friendly';
+          if (!failedByType.has(key)) {
+            failedByType.set(key, []);
+          }
+          failedByType.get(key)!.push(reminder);
+        }
+      }
+      
+      // Delete duplicate failed reminders (keep most recent)
+      for (const [type, reminders] of failedByType.entries()) {
+        if (reminders.length > 1) {
+          // Sort by created_at descending
+          reminders.sort((a, b) => {
+            const dateA = new Date(a.created_at || 0).getTime();
+            const dateB = new Date(b.created_at || 0).getTime();
+            return dateB - dateA;
+          });
+          // Keep first (most recent), delete rest
+          const duplicateIds = reminders.slice(1).map(r => r.id);
+          if (duplicateIds.length > 0) {
+            await supabaseAdmin
+              .from('invoice_reminders')
+              .delete()
+              .in('id', duplicateIds);
+          }
+        }
+      }
+    }
     
     const scheduledReminders = [];
 
@@ -329,9 +370,15 @@ export async function POST(request: NextRequest) {
       invoice.status = 'sent';
     }
 
+    // Determine the from address
+    // Use configured email_from_address if available, otherwise use default
+    const fromAddress = settingsData?.email_from_address && settingsData.email_from_address.trim()
+      ? `${businessSettings.businessName || 'FlowInvoicer'} <${settingsData.email_from_address.trim()}>`
+      : `${businessSettings.businessName || 'FlowInvoicer'} <onboarding@resend.dev>`;
+
     // Send email with Resend
     const { data, error } = await resend.emails.send({
-      from: `${businessSettings.businessName} <onboarding@resend.dev>`, // Using Resend's onboarding domain for free plan
+      from: fromAddress,
       to: [clientEmail],
       subject: `Invoice #${invoice.invoice_number} - $${invoice.total.toFixed(2)}`,
       html: emailHtml,
@@ -354,7 +401,7 @@ export async function POST(request: NextRequest) {
     const { data: latest, error: latestError } = await supabaseAdmin
       .from('invoices')
       .select('*')
-      .eq('id', invoiceId)
+        .eq('id', invoiceId)
       .eq('user_id', user.id)
       .single();
 

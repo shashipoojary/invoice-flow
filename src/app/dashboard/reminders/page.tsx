@@ -33,6 +33,7 @@ interface ReminderHistory {
     total: number;
     due_date: string;
     status: string;
+    late_fees?: string | any; // JSON string or parsed object
     clients: {
       name: string;
       email: string;
@@ -50,6 +51,7 @@ export default function ReminderHistoryPage() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedReminder, setSelectedReminder] = useState<ReminderHistory | null>(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
+  const [sendingReminders, setSendingReminders] = useState<Set<string>>(new Set());
 
 
 
@@ -103,6 +105,7 @@ export default function ReminderHistoryPage() {
               total,
               due_date,
               status,
+              late_fees,
               user_id,
               clients (
                 name,
@@ -164,6 +167,7 @@ export default function ReminderHistoryPage() {
               total: reminder.invoices.total || 0,
               due_date: reminder.invoices.due_date,
               status: reminder.invoices.status || 'sent',
+              late_fees: reminder.invoices.late_fees || null,
               clients: {
                 name: clientsData.name || 'N/A',
                 email: clientsData.email || 'N/A',
@@ -173,8 +177,32 @@ export default function ReminderHistoryPage() {
           };
         });
         
-        console.log(`Formatted ${formattedReminders.length} reminder(s) for display`);
-        setReminders(formattedReminders);
+        // Deduplicate reminders: keep only the most recent one per invoice+type+status
+        // Group by invoice_id + reminder_type + reminder_status
+        const reminderMap = new Map<string, ReminderHistory>();
+        for (const reminder of formattedReminders) {
+          const key = `${reminder.invoice_id}-${reminder.reminder_type}-${reminder.reminder_status}`;
+          const existing = reminderMap.get(key);
+          
+          if (!existing) {
+            // First occurrence - add it
+            reminderMap.set(key, reminder);
+          } else {
+            // Compare dates to keep the most recent one
+            const existingDate = new Date(existing.created_at || existing.sent_at || 0);
+            const currentDate = new Date(reminder.created_at || reminder.sent_at || 0);
+            
+            if (currentDate > existingDate) {
+              // Current reminder is newer - replace
+              reminderMap.set(key, reminder);
+            }
+            // Otherwise keep the existing one
+          }
+        }
+        
+        const deduplicatedReminders = Array.from(reminderMap.values());
+        console.log(`Formatted ${formattedReminders.length} reminder(s), deduplicated to ${deduplicatedReminders.length}`);
+        setReminders(deduplicatedReminders);
       } else {
         console.log('No reminder data found');
         setReminders([]);
@@ -283,7 +311,16 @@ export default function ReminderHistoryPage() {
   };
 
   const sendManualReminder = async (invoiceId: string, reminderType: string) => {
+    const reminderKey = `${invoiceId}-${reminderType}`;
+    
+    // Prevent multiple simultaneous sends
+    if (sendingReminders.has(reminderKey)) {
+      return;
+    }
+
     try {
+      setSendingReminders(prev => new Set(prev).add(reminderKey));
+      
       const response = await fetch('/api/reminders/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -294,15 +331,24 @@ export default function ReminderHistoryPage() {
         })
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        alert('Reminder sent successfully!');
-        fetchReminderHistory(); // Refresh data
+        showSuccess('Reminder sent successfully!', 'The payment reminder has been sent to the client.');
+        await fetchReminderHistory(); // Refresh data
       } else {
-        alert('Failed to send reminder');
+        const errorMessage = data.details || data.error || 'Failed to send reminder';
+        showError('Failed to send reminder', errorMessage);
       }
     } catch (error) {
       console.error('Error sending reminder:', error);
-      alert('Error sending reminder');
+      showError('Error sending reminder', 'An unexpected error occurred. Please try again.');
+    } finally {
+      setSendingReminders(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(reminderKey);
+        return newSet;
+      });
     }
   };
 
@@ -454,10 +500,15 @@ export default function ReminderHistoryPage() {
                         {reminder.reminder_status === 'failed' && (
                           <button
                             onClick={() => sendManualReminder(reminder.invoice_id, reminder.reminder_type)}
-                            className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
+                            disabled={sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`)}
+                            className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Send again"
                           >
-                            <Send className="h-4 w-4 text-gray-600" />
+                            {sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                            ) : (
+                              <Send className="h-4 w-4 text-gray-600" />
+                            )}
                           </button>
                         )}
                         <button
@@ -529,15 +580,20 @@ export default function ReminderHistoryPage() {
                       {reminder.reminder_status === 'failed' && (
                         <button
                           onClick={() => sendManualReminder(reminder.invoice_id, reminder.reminder_type)}
-                          className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
+                          disabled={sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`)}
+                          className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Send again"
                         >
-                          <Send className="h-4 w-4 text-gray-600" />
+                          {sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                          ) : (
+                            <Send className="h-4 w-4 text-gray-600" />
+                          )}
                         </button>
                       )}
                       <button
                         onClick={() => handleViewReminder(reminder)}
-                        className="p-1.5 rounded-md transition-colors hover:bg-gray-100"
+                        className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
                         title="View reminder details"
                       >
                         <Eye className="h-4 w-4 text-gray-600" />
@@ -603,10 +659,72 @@ export default function ReminderHistoryPage() {
                         <span className="text-xs sm:text-sm text-gray-600">Invoice Number:</span>
                         <span className="text-xs sm:text-sm font-medium text-gray-900 break-words">{selectedReminder.invoice.invoice_number}</span>
                       </div>
-                      <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
-                        <span className="text-xs sm:text-sm text-gray-600">Amount:</span>
-                        <span className="text-xs sm:text-sm font-medium text-green-600 break-words">${selectedReminder.invoice.total.toLocaleString()}</span>
-                      </div>
+                      {(() => {
+                        // Calculate total with late fees (same logic as email and invoice page)
+                        const baseAmount = selectedReminder.invoice.total || 0;
+                        let lateFeesAmount = 0;
+                        let totalPayable = baseAmount;
+                        
+                        // Parse late fees settings
+                        let lateFeesSettings = null;
+                        if (selectedReminder.invoice.late_fees) {
+                          try {
+                            lateFeesSettings = typeof selectedReminder.invoice.late_fees === 'string' 
+                              ? JSON.parse(selectedReminder.invoice.late_fees) 
+                              : selectedReminder.invoice.late_fees;
+                          } catch (e) {
+                            console.log('Failed to parse late_fees JSON:', e);
+                            lateFeesSettings = null;
+                          }
+                        }
+                        
+                        // Calculate late fees if invoice is overdue and late fees are enabled
+                        const currentDate = new Date();
+                        const dueDate = new Date(selectedReminder.invoice.due_date);
+                        const todayStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+                        const dueDateStart = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+                        const isOverdue = dueDateStart < todayStart && selectedReminder.invoice.status !== 'paid';
+                        
+                        if (isOverdue && selectedReminder.invoice.status !== 'paid' && lateFeesSettings && lateFeesSettings.enabled) {
+                          const daysOverdue = Math.round((todayStart.getTime() - dueDateStart.getTime()) / (1000 * 60 * 60 * 24));
+                          const gracePeriod = lateFeesSettings.gracePeriod || 0;
+                          const chargeableDays = Math.max(0, daysOverdue - gracePeriod);
+                          
+                          if (chargeableDays > 0) {
+                            if (lateFeesSettings.type === 'percentage') {
+                              lateFeesAmount = baseAmount * ((lateFeesSettings.amount || 0) / 100);
+                            } else if (lateFeesSettings.type === 'fixed') {
+                              lateFeesAmount = lateFeesSettings.amount || 0;
+                            }
+                            totalPayable = baseAmount + lateFeesAmount;
+                          }
+                        }
+                        
+                        return (
+                          <>
+                            <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                              <span className="text-xs sm:text-sm text-gray-600">Base Amount:</span>
+                              <span className="text-xs sm:text-sm font-medium text-gray-900 break-words">
+                                ${baseAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                            {lateFeesAmount > 0 && (
+                              <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                                <span className="text-xs sm:text-sm text-gray-600">Late Fees ({selectedReminder.overdue_days} days):</span>
+                                <span className="text-xs sm:text-sm font-medium text-red-600 break-words">
+                                  ${lateFeesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 pt-1 border-t border-gray-200">
+                              <span className="text-xs sm:text-sm font-semibold text-gray-700">Total Amount Due:</span>
+                              <span className="text-xs sm:text-sm font-bold text-green-600 break-words">
+                                ${totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          </>
+                        );
+                      })()}
                       <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
                         <span className="text-xs sm:text-sm text-gray-600">Due Date:</span>
                         <span className="text-xs sm:text-sm font-medium text-gray-900 break-words">{new Date(selectedReminder.invoice.due_date).toLocaleDateString()}</span>
@@ -701,13 +819,21 @@ export default function ReminderHistoryPage() {
                   </button>
                   {selectedReminder.reminder_status === 'failed' && (
                     <button
-                      onClick={() => {
-                        sendManualReminder(selectedReminder.invoice_id, selectedReminder.reminder_type);
+                      onClick={async () => {
+                        await sendManualReminder(selectedReminder.invoice_id, selectedReminder.reminder_type);
                         closeReminderModal();
                       }}
-                      className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
+                      disabled={sendingReminders.has(`${selectedReminder.invoice_id}-${selectedReminder.reminder_type}`)}
+                      className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                     >
-                      Send Again
+                      {sendingReminders.has(`${selectedReminder.invoice_id}-${selectedReminder.reminder_type}`) ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                          <span>Sending...</span>
+                        </>
+                      ) : (
+                        <span>Send Again</span>
+                      )}
                     </button>
                   )}
                 </div>

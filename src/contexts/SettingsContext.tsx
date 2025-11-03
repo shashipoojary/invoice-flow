@@ -20,6 +20,7 @@ interface BusinessSettings {
   bankIban: string;
   stripeAccount: string;
   paymentNotes: string;
+  emailFromAddress?: string;
 }
 
 interface SettingsContextType {
@@ -47,7 +48,8 @@ const defaultSettings: BusinessSettings = {
   bankIfscSwift: '',
   bankIban: '',
   stripeAccount: '',
-  paymentNotes: ''
+  paymentNotes: '',
+  emailFromAddress: ''
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);

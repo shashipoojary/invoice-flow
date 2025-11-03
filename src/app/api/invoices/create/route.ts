@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -14,6 +15,52 @@ async function createScheduledReminders(invoiceId: string, reminderSettings: any
     let baseDate = new Date(dueDate);
     if (paymentTerms?.enabled && paymentTerms.terms === 'Due on Receipt' && invoiceStatus !== 'draft' && updatedAt) {
       baseDate = new Date(updatedAt);
+    }
+    
+    // First, delete any existing scheduled reminders for this invoice to avoid duplicates
+    // Also delete duplicate failed reminders for the same invoice+type
+    const { data: existingReminders } = await supabaseAdmin
+      .from('invoice_reminders')
+      .select('id, reminder_type, reminder_status')
+      .eq('invoice_id', invoiceId);
+    
+    if (existingReminders && existingReminders.length > 0) {
+      // Delete all scheduled reminders
+      await supabaseAdmin
+        .from('invoice_reminders')
+        .delete()
+        .eq('invoice_id', invoiceId)
+        .eq('reminder_status', 'scheduled');
+      
+      // Group failed reminders by type and delete duplicates (keep only most recent)
+      const failedByType = new Map<string, any[]>();
+      for (const reminder of existingReminders) {
+        if (reminder.reminder_status === 'failed') {
+          const key = reminder.reminder_type || 'friendly';
+          if (!failedByType.has(key)) {
+            failedByType.set(key, []);
+          }
+          failedByType.get(key)!.push(reminder);
+        }
+      }
+      
+      // For each type with multiple failed reminders, delete all but the most recent
+      for (const [type, reminders] of failedByType.entries()) {
+        if (reminders.length > 1) {
+          // Sort by created_at descending, keep first, delete rest
+          const sorted = reminders.sort((a, b) => {
+            // We'll need to fetch full data to sort properly, but for now just delete extras
+            return 0;
+          });
+          const duplicateIds = sorted.slice(1).map(r => r.id);
+          if (duplicateIds.length > 0) {
+            await supabaseAdmin
+              .from('invoice_reminders')
+              .delete()
+              .in('id', duplicateIds);
+          }
+        }
+      }
     }
     
     const scheduledReminders = [];

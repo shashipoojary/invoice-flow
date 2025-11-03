@@ -11,6 +11,13 @@ async function createScheduledReminders(invoiceId: string, reminderSettings: any
       baseDate = new Date(updatedAt);
     }
     
+    // First, delete any existing scheduled reminders for this invoice to avoid duplicates
+    await supabaseAdmin
+      .from('invoice_reminders')
+      .delete()
+      .eq('invoice_id', invoiceId)
+      .eq('reminder_status', 'scheduled');
+    
     const scheduledReminders = [];
 
     // Prioritize custom rules over system defaults if custom rules exist
@@ -282,7 +289,7 @@ export async function PUT(request: NextRequest) {
     // Update scheduled reminders if reminder settings changed
     if (reminderSettings) {
       try {
-        // Delete existing scheduled reminders for this invoice
+        // Delete existing scheduled reminders for this invoice (createScheduledReminders will also delete, but we do it here for clarity)
         await supabaseAdmin
           .from('invoice_reminders')
           .delete()
@@ -290,6 +297,7 @@ export async function PUT(request: NextRequest) {
           .eq('reminder_status', 'scheduled');
 
         // Create new scheduled reminders if enabled
+        // Note: createScheduledReminders also deletes existing scheduled reminders, but this ensures cleanup happens even if function has issues
         if (reminderSettings.enabled) {
           await createScheduledReminders(
             invoiceId, 

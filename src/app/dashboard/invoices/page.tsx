@@ -663,7 +663,7 @@ function InvoicesContent(): React.JSX.Element {
                     <AlertTriangle className="h-3 w-3" />
                     <span>{dueDateStatus.days}d overdue</span>
                   </span>
-                )}
+              )}
                 {/* match Recent Invoices: no separate draft-past-due chip */}
           </div>
           
@@ -756,7 +756,7 @@ function InvoicesContent(): React.JSX.Element {
               {dueCharges.hasLateFees ? (
                 <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
                   Base ${invoice.total.toLocaleString()} • Late fee ${dueCharges.lateFeeAmount.toLocaleString()}
-                </div>
+            </div>
               ) : (
                 <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
               )}
@@ -784,7 +784,7 @@ function InvoicesContent(): React.JSX.Element {
                   </span>
                 )}
                 {/* no draft-past-due badge to match Recent Invoices */}
-            </div>
+                </div>
         
               <div className="flex items-center space-x-1">
           <button 

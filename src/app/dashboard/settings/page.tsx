@@ -409,6 +409,28 @@ export default function SettingsPage() {
 
                   <div>
                     <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
+                      Email From Address
+                      <span className="text-xs text-gray-500 ml-1">(Verified Resend domain)</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={settings.emailFromAddress || ''}
+                      onChange={(e) => updateSettings({ ...settings, emailFromAddress: e.target.value })}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
+                      placeholder="noreply@yourdomain.com"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      <strong>Free Plan Note:</strong> Using default (onboarding@resend.dev) only allows sending to your own email address.{' '}
+                      To send to clients, verify your domain at{' '}
+                      <a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">
+                        resend.com/domains
+                      </a>{' '}
+                      and enter your verified email here (e.g., noreply@yourdomain.com). Free plan also has a rate limit of 2 requests/second.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
                       Phone Number
                     </label>
                     <input
