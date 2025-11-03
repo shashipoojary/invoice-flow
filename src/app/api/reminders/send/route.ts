@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
 
     // Send email using Resend
     const emailResult = await resend.emails.send({
-      from: 'FlowInvoicer <noreply@flowinvoicer.com>',
+      from: 'FlowInvoicer <onboarding@resend.dev>',
       to: invoice.clients?.[0]?.email || '',
       subject: `Payment Reminder - Invoice #${invoice.invoice_number}`,
       html: emailHtml,

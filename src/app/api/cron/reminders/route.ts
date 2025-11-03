@@ -276,7 +276,7 @@ async function sendReminderEmail(invoice: any, reminderType: string, reason: str
 
     // Send email using Resend
     const emailResult = await resend.emails.send({
-      from: 'FlowInvoicer <noreply@flowinvoicer.com>',
+      from: 'FlowInvoicer <onboarding@resend.dev>',
       to: invoice.clients?.email || '',
       subject: `Payment Reminder - Invoice #${invoice.invoice_number}`,
       html: emailHtml,
