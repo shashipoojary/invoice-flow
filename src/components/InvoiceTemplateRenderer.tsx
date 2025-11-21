@@ -293,31 +293,30 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
             </div>
           </div>
 
-          {/* Services Table - Fast Invoice style (DESCRIPTION, QTY, PRICE, AMOUNT) */}
+          {/* Services Table */}
           <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Services</h3>
             <div className="overflow-x-auto">
-              <div className="overflow-hidden rounded-lg border border-gray-200 min-w-full">
-                {/* Desktop: 4 columns (DESCRIPTION spans 2), Mobile: 3 columns (hide QTY) */}
-                <div className="px-3 sm:px-4 py-2 sm:py-3 text-white font-bold text-xs sm:text-sm" style={{ backgroundColor: primaryColor }}>
-                  <div className="grid grid-cols-[2fr_0fr_1fr_1fr] sm:grid-cols-[2fr_1fr_1fr_1fr] gap-2 sm:gap-4">
-                    <div>DESCRIPTION</div>
-                    <div className="text-center hidden sm:block">QTY</div>
-                    <div className="text-right">PRICE</div>
-                    <div className="text-right">AMOUNT</div>
-                  </div>
-                </div>
-                {invoice.items.map((item, index) => (
-                  <div key={index} className={`px-3 sm:px-4 py-2 sm:py-3 border-b border-gray-200 last:border-b-0 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
-                    <div className="grid grid-cols-[2fr_0fr_1fr_1fr] sm:grid-cols-[2fr_1fr_1fr_1fr] gap-2 sm:gap-4 text-xs sm:text-sm">
-                      <div className="text-gray-700 break-words">{item.description}</div>
-                      <div className="text-center text-gray-700 hidden sm:block">1</div>
-                      <div className="text-right text-gray-700 whitespace-nowrap">${parseFloat(item.rate?.toString() || '0').toFixed(2)}</div>
-                      <div className="text-right text-gray-700 whitespace-nowrap font-semibold">${parseFloat(item.amount?.toString() || '0').toFixed(2)}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <table className="w-full min-w-[300px]">
+                <thead>
+                  <tr style={{ backgroundColor: primaryColor }} className="text-white">
+                    <th className="text-left py-3 sm:py-4 px-3 sm:px-4 font-semibold text-sm sm:text-base">Service</th>
+                    <th className="text-right py-3 sm:py-4 px-3 sm:px-4 font-semibold text-sm sm:text-base">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoice.items.map((item, index) => (
+                    <tr key={item.id} className={`border-b border-gray-100 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 text-gray-900 text-sm sm:text-base">
+                        {item.description}
+                      </td>
+                      <td className="py-3 sm:py-4 px-3 sm:px-4 text-right text-gray-900 font-semibold text-sm sm:text-base">
+                        ${item.rate.toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 

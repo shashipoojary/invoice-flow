@@ -15,6 +15,7 @@ import ModernSidebar from '@/components/ModernSidebar';
 import FastInvoiceModal from '@/components/FastInvoiceModal';
 import QuickInvoiceModal from '@/components/QuickInvoiceModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
+import SendInvoiceModal from '@/components/SendInvoiceModal';
 import ClientModal from '@/components/ClientModal';
 import UnifiedInvoiceCard from '@/components/UnifiedInvoiceCard';
 
@@ -60,6 +61,17 @@ function InvoicesContent(): React.JSX.Element {
     message: '',
     type: 'danger' as 'danger' | 'warning' | 'info' | 'success',
     onConfirm: () => {},
+    isLoading: false
+  });
+
+  // Send invoice modal state
+  const [sendInvoiceModal, setSendInvoiceModal] = useState<{
+    isOpen: boolean;
+    invoice: Invoice | null;
+    isLoading: boolean;
+  }>({
+    isOpen: false,
+    invoice: null,
     isLoading: false
   });
   
@@ -222,7 +234,7 @@ function InvoicesContent(): React.JSX.Element {
     } else {
       return { status: 'upcoming', days: diffDays, color: 'text-gray-600 dark:text-gray-400' };
     }
-  }, []);
+  }, [parseDateOnly]);
 
   // Helper function to format payment terms
   const formatPaymentTerms = useCallback((paymentTerms?: { enabled: boolean; terms: string }) => {
@@ -444,14 +456,27 @@ function InvoicesContent(): React.JSX.Element {
     }
   }, [settings, showSuccess, showError]);
 
-  const handleSendInvoice = useCallback(async (invoice: Invoice) => {
+  const handleSendInvoice = useCallback((invoice: Invoice) => {
+    // Only show modal for draft invoices
+    if (invoice.status === 'draft') {
+      setSendInvoiceModal({
+        isOpen: true,
+        invoice,
+        isLoading: false
+      });
+    } else {
+      // For non-draft invoices, send directly (shouldn't happen, but just in case)
+      performSendInvoice(invoice);
+    }
+  }, []);
+
+  const performSendInvoice = useCallback(async (invoice: Invoice) => {
     const actionKey = `send-${invoice.id}`;
     setLoadingActions(prev => ({ ...prev, [actionKey]: true }));
+    setSendInvoiceModal(prev => ({ ...prev, isLoading: true }));
     
     try {
       const headers = await getAuthHeaders();
-      
-      // Debug: Log the invoice data being sent
       
       const response = await fetch(`/api/invoices/send`, {
         method: 'POST',
@@ -474,16 +499,19 @@ function InvoicesContent(): React.JSX.Element {
         // And refresh list to keep filters/pagination in sync
         try { await refreshInvoices(); } catch {}
         showSuccess('Invoice Sent', `Invoice ${invoice.invoiceNumber} has been sent successfully.`);
+        setSendInvoiceModal({ isOpen: false, invoice: null, isLoading: false });
       } else {
         showError('Send Failed', 'Failed to send invoice. Please try again.');
+        setSendInvoiceModal(prev => ({ ...prev, isLoading: false }));
       }
     } catch (error) {
       console.error('Error sending invoice:', error);
       showError('Send Failed', 'Failed to send invoice. Please try again.');
+      setSendInvoiceModal(prev => ({ ...prev, isLoading: false }));
     } finally {
       setLoadingActions(prev => ({ ...prev, [actionKey]: false }));
     }
-  }, [getAuthHeaders, showSuccess, showError]);
+  }, [getAuthHeaders, showSuccess, showError, updateInvoice, refreshInvoices]);
 
   const handleEditInvoice = useCallback((invoice: Invoice) => {
     setSelectedInvoice(invoice);
@@ -1625,6 +1653,24 @@ function InvoicesContent(): React.JSX.Element {
         isLoading={confirmationModal.isLoading}
         confirmText={confirmationModal.type === 'success' ? 'Mark as Paid' : 'Delete Invoice'}
         cancelText="Cancel"
+      />
+
+      <SendInvoiceModal
+        isOpen={sendInvoiceModal.isOpen}
+        onClose={() => setSendInvoiceModal({ isOpen: false, invoice: null, isLoading: false })}
+        onEdit={() => {
+          if (sendInvoiceModal.invoice) {
+            handleEditInvoice(sendInvoiceModal.invoice);
+            setSendInvoiceModal({ isOpen: false, invoice: null, isLoading: false });
+          }
+        }}
+        onSend={() => {
+          if (sendInvoiceModal.invoice) {
+            performSendInvoice(sendInvoiceModal.invoice);
+          }
+        }}
+        invoiceNumber={sendInvoiceModal.invoice?.invoiceNumber || ''}
+        isLoading={sendInvoiceModal.isLoading}
       />
 
       {/* Toast Container */}

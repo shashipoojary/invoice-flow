@@ -326,12 +326,11 @@ async function sendReminderEmail(invoice: any, reminderType: string, overdueDays
   const dueDate = invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A';
   
   // Get ALL user business settings from user_settings table (properly isolated per user)
-  let fromAddress = 'FlowInvoicer <onboarding@resend.dev>';
   let businessSettings: any = {};
   try {
     const { data: userSettings, error: settingsError } = await supabaseAdmin
       .from('user_settings')
-      .select('business_name, business_email, business_phone, business_address, email_from_address, payment_notes, paypal_email, cashapp_id, venmo_id, google_pay_upi, apple_pay_id, bank_account, bank_ifsc_swift, bank_iban, stripe_account')
+      .select('business_name, business_email, business_phone, business_address, payment_notes, paypal_email, cashapp_id, venmo_id, google_pay_upi, apple_pay_id, bank_account, bank_ifsc_swift, bank_iban, stripe_account')
       .eq('user_id', invoice.user_id)
       .single();
     
@@ -339,14 +338,14 @@ async function sendReminderEmail(invoice: any, reminderType: string, overdueDays
       console.error('Error fetching user settings:', settingsError);
     } else if (userSettings) {
       businessSettings = userSettings;
-      if (userSettings.email_from_address && userSettings.email_from_address.trim()) {
-        fromAddress = `${userSettings.business_name || 'FlowInvoicer'} <${userSettings.email_from_address.trim()}>`;
-      }
     }
   } catch (error) {
     console.error('Error fetching user email settings:', error);
     // Fall back to default
   }
+  
+  // Use Resend free plan default email address
+  const fromAddress = `${businessSettings.business_name || 'FlowInvoicer'} <onboarding@resend.dev>`;
   
   // Escape HTML to prevent XSS (basic protection)
   const escapeHtml = (text: string) => {

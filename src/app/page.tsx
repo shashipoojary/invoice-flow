@@ -42,11 +42,10 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen transition-colors duration-200 bg-white">
-
       {/* Hero Section */}
-      <section className="pt-8 sm:pt-12 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8 relative bg-gradient-to-b from-white to-gray-50" ref={heroRef}>
+      <section className="pt-8 sm:pt-12 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8 relative bg-white" ref={heroRef}>
         <div className="max-w-7xl mx-auto">
-      <div className="text-center">
+          <div className="text-center">
             <div>
               <h1 ref={headingRef} className="font-heading text-3xl sm:text-5xl lg:text-7xl font-bold mb-6 sm:mb-8 leading-tight text-gray-900">
                 The Fastest Way to
@@ -57,7 +56,7 @@ export default function LandingPage() {
               </p>
               
               {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-12 sm:mb-16">
                 <button
                   onClick={handleGetStarted}
                   className="group flex items-center justify-center space-x-2 px-6 py-3 sm:px-8 sm:py-4 rounded-lg text-base sm:text-base font-semibold transition-all duration-200 hover:scale-105 w-full sm:w-auto bg-black text-white hover:bg-gray-800 shadow-lg cursor-pointer"
@@ -75,13 +74,9 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Dashboard Screenshot Section */}
-      <section className="pt-1 pb-4 sm:pt-2 sm:pb-6 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="w-full flex justify-center">
+          
+          {/* Dashboard Screenshot - Integrated into Hero */}
+          <div className="w-full flex justify-center mt-8 sm:mt-12">
             <div className="relative max-w-5xl w-full">
               {/* Indigo glow effect - positioned relative to image */}
               <div className="absolute inset-0 rounded-2xl opacity-40 blur-3xl" style={{
@@ -187,11 +182,76 @@ export default function LandingPage() {
 
 
 
-      {/* Simple Clean Features Section */}
+      {/* Template Showcase Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-4 text-gray-900">
+              Professional Invoice Templates
+            </h2>
+            <p className="text-base text-gray-600 max-w-2xl mx-auto">
+              Choose from beautifully designed templates. Customize colors, fonts, and layout to match your brand.
+            </p>
+          </div>
+          
+          {/* Template Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+            {/* Template 1 - Minimal */}
+            <div className="group relative flex items-center justify-center">
+              <div className="aspect-[4/5] bg-white relative overflow-visible flex items-center justify-center w-full">
+                <div className="relative border border-black inline-block">
+                  <Image
+                    src="/template-minimal.png"
+                    alt="Minimal Invoice Template"
+                    width={800}
+                    height={1000}
+                    className="block"
+                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Template 2 - Modern */}
+            <div className="group relative flex items-center justify-center">
+              <div className="aspect-[4/5] bg-white relative overflow-visible flex items-center justify-center w-full">
+                <div className="relative border border-black inline-block">
+                  <Image
+                    src="/template-modern.png"
+                    alt="Modern Invoice Template"
+                    width={800}
+                    height={1000}
+                    className="block"
+                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Template 3 - Creative */}
+            <div className="group relative flex items-center justify-center">
+              <div className="aspect-[4/5] bg-white relative overflow-visible flex items-center justify-center w-full">
+                <div className="relative border border-black inline-block">
+                  <Image
+                    src="/template-creative.png"
+                    alt="Creative Invoice Template"
+                    width={800}
+                    height={1000}
+                    className="block"
+                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-7xl mx-auto">
           {/* Section Header */}
-          <div className="text-center mb-20">
+          <div className="text-center mb-16">
             <h2 className="font-heading text-4xl sm:text-5xl font-bold mb-6 text-gray-900">
               Everything you need to get paid
             </h2>
@@ -200,19 +260,17 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Features Grid - Simple 3x2 Layout */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Feature 1 */}
-            <div className="p-8 rounded-lg border transition-all duration-300 hover:border-opacity-60 bg-white border-gray-200 hover:border-gray-400">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-6" style={{
+          {/* Features Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            {/* Feature 1 - Professional Templates */}
+            <div className="p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-all duration-200">
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{
                 backgroundColor: '#f8f9fa',
                 border: '1px solid #e5e7eb'
               }}>
-                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+                <FileText className="w-6 h-6 text-gray-600" />
               </div>
-              <h3 className="font-heading text-xl font-bold mb-4 text-gray-900">
+              <h3 className="font-heading text-xl font-bold mb-3 text-gray-900">
                 Professional Templates
               </h3>
               <p className="text-sm leading-relaxed text-gray-600">
@@ -220,17 +278,15 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* Feature 2 */}
-            <div className="p-8 rounded-lg border transition-all duration-300 hover:border-opacity-60 bg-white border-gray-200 hover:border-gray-400">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-6" style={{
+            {/* Feature 2 - Client Management */}
+            <div className="p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-all duration-200">
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{
                 backgroundColor: '#f8f9fa',
                 border: '1px solid #e5e7eb'
               }}>
-                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
+                <Users className="w-6 h-6 text-gray-600" />
               </div>
-              <h3 className="font-heading text-xl font-bold mb-4 text-gray-900">
+              <h3 className="font-heading text-xl font-bold mb-3 text-gray-900">
                 Client Management
               </h3>
               <p className="text-sm leading-relaxed text-gray-600">
@@ -238,17 +294,15 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* Feature 3 */}
-            <div className="p-8 rounded-lg border transition-all duration-300 hover:border-opacity-60 bg-white border-gray-200 hover:border-gray-400">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-6" style={{
+            {/* Feature 3 - Payment Tracking */}
+            <div className="p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-all duration-200">
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{
                 backgroundColor: '#f8f9fa',
                 border: '1px solid #e5e7eb'
               }}>
-                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
+                <BarChart3 className="w-6 h-6 text-gray-600" />
               </div>
-              <h3 className="font-heading text-xl font-bold mb-4 text-gray-900">
+              <h3 className="font-heading text-xl font-bold mb-3 text-gray-900">
                 Payment Tracking
               </h3>
               <p className="text-sm leading-relaxed text-gray-600">
@@ -256,17 +310,15 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* Feature 4 */}
-            <div className="p-8 rounded-lg border transition-all duration-300 hover:border-opacity-60 bg-white border-gray-200 hover:border-gray-400">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-6" style={{
+            {/* Feature 4 - Automated Reminders */}
+            <div className="p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-all duration-200">
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{
                 backgroundColor: '#f8f9fa',
                 border: '1px solid #e5e7eb'
               }}>
-                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <Bell className="w-6 h-6 text-gray-600" />
               </div>
-              <h3 className="font-heading text-xl font-bold mb-4 text-gray-900">
+              <h3 className="font-heading text-xl font-bold mb-3 text-gray-900">
                 Automated Reminders
               </h3>
               <p className="text-sm leading-relaxed text-gray-600">
@@ -274,39 +326,83 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* Feature 5 */}
-            <div className="p-8 rounded-lg border transition-all duration-300 hover:border-opacity-60 bg-white border-gray-200 hover:border-gray-400">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-6" style={{
+            {/* Feature 5 - Late Fees */}
+            <div className="p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-all duration-200">
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{
                 backgroundColor: '#f8f9fa',
                 border: '1px solid #e5e7eb'
               }}>
-                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+                <Zap className="w-6 h-6 text-gray-600" />
               </div>
-              <h3 className="font-heading text-xl font-bold mb-4 text-gray-900">
+              <h3 className="font-heading text-xl font-bold mb-3 text-gray-900">
+                Late Fee Management
+              </h3>
+              <p className="text-sm leading-relaxed text-gray-600">
+                Automatically calculate and apply late fees. Set fixed amounts or percentages with grace periods.
+              </p>
+            </div>
+
+            {/* Feature 6 - Multiple Payment Methods */}
+            <div className="p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-all duration-200">
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{
+                backgroundColor: '#f8f9fa',
+                border: '1px solid #e5e7eb'
+              }}>
+                <CheckCircle className="w-6 h-6 text-gray-600" />
+              </div>
+              <h3 className="font-heading text-xl font-bold mb-3 text-gray-900">
+                Multiple Payment Methods
+              </h3>
+              <p className="text-sm leading-relaxed text-gray-600">
+                Support PayPal, Stripe, Cash App, Venmo, Google Pay, Apple Pay, and bank transfers.
+              </p>
+            </div>
+
+            {/* Feature 7 - PDF Generation */}
+            <div className="p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-all duration-200">
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{
+                backgroundColor: '#f8f9fa',
+                border: '1px solid #e5e7eb'
+              }}>
+                <FileText className="w-6 h-6 text-gray-600" />
+              </div>
+              <h3 className="font-heading text-xl font-bold mb-3 text-gray-900">
+                PDF Generation
+              </h3>
+              <p className="text-sm leading-relaxed text-gray-600">
+                Generate professional PDF invoices instantly. Download and share with clients or print for your records.
+              </p>
+            </div>
+
+            {/* Feature 8 - Analytics Dashboard */}
+            <div className="p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-all duration-200">
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{
+                backgroundColor: '#f8f9fa',
+                border: '1px solid #e5e7eb'
+              }}>
+                <BarChart3 className="w-6 h-6 text-gray-600" />
+              </div>
+              <h3 className="font-heading text-xl font-bold mb-3 text-gray-900">
+                Analytics Dashboard
+              </h3>
+              <p className="text-sm leading-relaxed text-gray-600">
+                Track revenue, pending payments, overdue invoices, and late fees. Get insights into your business performance.
+              </p>
+            </div>
+
+            {/* Feature 9 - Secure & Reliable */}
+            <div className="p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-all duration-200">
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{
+                backgroundColor: '#f8f9fa',
+                border: '1px solid #e5e7eb'
+              }}>
+                <Shield className="w-6 h-6 text-gray-600" />
+              </div>
+              <h3 className="font-heading text-xl font-bold mb-3 text-gray-900">
                 Secure & Reliable
               </h3>
               <p className="text-sm leading-relaxed text-gray-600">
                 Enterprise-grade security with encrypted data storage and transmission. Your data is never shared with third parties.
-              </p>
-            </div>
-
-            {/* Feature 6 */}
-            <div className="p-8 rounded-lg border transition-all duration-300 hover:border-opacity-60 bg-white border-gray-200 hover:border-gray-400">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-6" style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e5e7eb'
-              }}>
-                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                </svg>
-              </div>
-              <h3 className="font-heading text-xl font-bold mb-4 text-gray-900">
-                Easy Customization
-              </h3>
-              <p className="text-sm leading-relaxed text-gray-600">
-                Customize your invoices with your branding, colors, and company information. Make every invoice uniquely yours.
               </p>
             </div>
           </div>

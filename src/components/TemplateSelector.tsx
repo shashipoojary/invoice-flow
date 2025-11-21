@@ -191,7 +191,7 @@ export default function TemplateSelector({
                     type="button"
                     data-testid={`color-preset-${preset.name.toLowerCase()}`}
                     onClick={() => handleColorPreset(preset.primary, preset.secondary)}
-                    className={`p-2 sm:p-2.5 rounded-lg border text-xs font-medium transition-colors min-h-[60px] flex flex-col items-center justify-center ${
+                    className={`p-2 sm:p-2.5 rounded-lg border text-xs font-medium transition-colors min-h-[60px] flex flex-col items-center justify-center cursor-pointer ${
                       isDarkMode
                         ? 'border-gray-600 bg-gray-700 text-gray-300 hover:bg-gray-600'
                         : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'

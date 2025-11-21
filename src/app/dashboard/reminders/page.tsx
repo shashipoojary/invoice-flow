@@ -250,9 +250,28 @@ export default function ReminderHistoryPage() {
 
       if (!matchesSearch) return false;
 
-      // Show ALL reminders regardless of status
-      // - Scheduled reminders (past, present, future) - so users can see what's pending
-      // - Sent/failed/delivered/bounced reminders (all time) - complete history
+      // Filter scheduled reminders: only show those scheduled within 1 day ahead
+      if (reminder.reminder_status === 'scheduled') {
+        const now = new Date();
+        const scheduledDate = new Date(reminder.sent_at || reminder.created_at || now);
+        
+        // Calculate the difference in milliseconds
+        const diffMs = scheduledDate.getTime() - now.getTime();
+        const diffDays = diffMs / (1000 * 60 * 60 * 24); // Convert to days
+        
+        // Only show if scheduled date is:
+        // - In the future (diffDays > 0)
+        // - Within 1 day ahead (diffDays <= 1)
+        // - Not in the past (diffDays >= 0)
+        if (diffDays < 0 || diffDays > 1) {
+          return false; // Skip this scheduled reminder
+        }
+        
+        // Show scheduled reminders within 1 day ahead
+        return true;
+      }
+      
+      // Show ALL sent/failed/delivered/bounced reminders (complete history)
       return true;
     }).sort((a, b) => {
       // Sort by status priority: sent/failed/delivered/bounced first, then scheduled
@@ -613,7 +632,7 @@ export default function ReminderHistoryPage() {
                       No reminders found
                     </h3>
                     <p className="mt-1 text-sm text-gray-500">
-                      {searchTerm ? 'Try adjusting your search terms.' : 'No reminders found. Sent/failed/delivered/bounced reminders (all time) and all scheduled reminders will appear here.'}
+                      {searchTerm ? 'Try adjusting your search terms.' : 'No reminders found. Sent/failed/delivered/bounced reminders (all time) and scheduled reminders within 1 day ahead will appear here.'}
                     </p>
                   </div>
                 </div>

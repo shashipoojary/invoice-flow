@@ -12,6 +12,8 @@ interface InvoiceData {
     name: string;
     email: string;
     company?: string;
+    phone?: string;
+    address?: string;
   };
   invoice_items: Array<{
     description: string;
@@ -42,7 +44,8 @@ interface BusinessSettings {
   paymentNotes?: string;
 }
 
-// Minimal Email Template (Template 6 - Clean with subtle differences)
+
+// Minimal Email Template (Template 6 - Ultra-minimal clean design matching PDF)
 export function generateMinimalEmailTemplate(
   invoice: InvoiceData,
   businessSettings: BusinessSettings,
@@ -63,6 +66,21 @@ export function generateMinimalEmailTemplate(
     });
   };
 
+  // Extract primary color from theme (default to dark gray for minimal)
+  const primaryColor = invoice.theme?.primary_color || '#1F2937';
+  
+  // Convert hex to RGB for subtle line color
+  const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 31, g: 41, b: 55 };
+  };
+  const rgb = hexToRgb(primaryColor);
+  const subtleLineColor = `rgb(${Math.round(rgb.r * 0.6)}, ${Math.round(rgb.g * 0.6)}, ${Math.round(rgb.b * 0.6)})`;
+
   return `
     <!DOCTYPE html>
     <html>
@@ -71,13 +89,62 @@ export function generateMinimalEmailTemplate(
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Invoice ${invoice.invoice_number}</title>
         <style>
+          * {
+            box-sizing: border-box;
+          }
           body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.5;
-            color: #202124;
+            line-height: 1.6;
+            color: #000000;
             background-color: #f5f5f5;
             margin: 0;
-            padding: 0;
+            padding: 20px 0;
+          }
+          /* Dark mode support - ensure readability */
+          @media (prefers-color-scheme: dark) {
+            .email-container {
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
+            }
+            .header {
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
+            }
+            .content {
+              background: #ffffff !important;
+            }
+            .footer {
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
+            }
+            /* Force light colors for readability in dark mode email clients */
+            .business-name,
+            .invoice-title,
+            .bill-to-label,
+            .detail-label,
+            .payment-methods h3,
+            .payment-method-name {
+              color: ${primaryColor} !important;
+            }
+            .invoice-number,
+            .amount,
+            .bill-to-content {
+              color: #000000 !important;
+            }
+            .business-details,
+            .invoice-date-label,
+            .invoice-due-label,
+            .bill-to-detail,
+            .message-section p,
+            .payment-notice p,
+            .payment-method-details,
+            .payment-security p,
+            .footer p,
+            .business-contact,
+            .invoiceflow-disclaimer,
+            .invoiceflow-link {
+              color: #333333 !important;
+            }
           }
           .email-container {
             max-width: 600px;
@@ -86,238 +153,248 @@ export function generateMinimalEmailTemplate(
             border: 1px solid #e0e0e0;
           }
           .header {
-            padding: 24px;
+            padding: 40px 40px 32px 40px;
             background: #ffffff;
-            border-bottom: 2px solid #e0e0e0;
+            border-bottom: 1px solid #e0e0e0;
           }
           .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: table;
             width: 100%;
+            table-layout: fixed;
           }
           .business-info {
-            flex: 1;
+            display: table-cell;
+            vertical-align: top;
+            width: 50%;
           }
           .business-name {
-            font-size: 24px;
-            font-weight: 600;
-            color: #202124;
-            margin-bottom: 6px;
+            font-size: 20px;
+            font-weight: 400;
+            color: ${primaryColor} !important;
+            margin: 0;
+            padding: 0;
+            letter-spacing: 0;
           }
           .business-details {
             font-size: 14px;
-            color: #5f6368;
-            line-height: 1.4;
+            color: #808080 !important;
+            line-height: 1.5;
+            margin: 4px 0;
           }
           .invoice-info {
+            display: table-cell;
+            vertical-align: top;
             text-align: right;
-            flex: 0 0 auto;
-            margin-left: 24px;
+            width: 50%;
+            padding-left: 24px;
           }
           .invoice-title {
-            font-size: 16px;
-            font-weight: 500;
-            color: #5f6368;
-            margin-bottom: 4px;
+            font-size: 20px;
+            font-weight: 400;
+            color: ${primaryColor} !important;
+            margin: 0 0 12px 0;
+            padding: 0;
+            letter-spacing: 0;
           }
           .invoice-number {
             font-size: 14px;
-            color: #202124;
-            margin-bottom: 8px;
-            font-weight: 500;
+            color: #000000 !important;
+            margin: 0 0 12px 0;
+            font-weight: 700;
+          }
+          .invoice-date-label {
+            font-size: 12px;
+            color: #808080 !important;
+            margin: 0 0 4px 0;
+          }
+          .invoice-due-label {
+            font-size: 12px;
+            color: #808080 !important;
+            margin: 8px 0 0 0;
           }
           .amount {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: 700;
-            color: #137333;
+            color: #000000 !important;
+            letter-spacing: -0.5px;
+            margin: 16px 0 0 0;
           }
           .content {
-            padding: 24px;
+            padding: 32px 40px 40px 40px;
+            background: #ffffff;
           }
-          .invoice-details {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 6px;
-            margin-bottom: 24px;
+          .bill-to-section {
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #e0e0e0;
+          }
+          .bill-to-line {
+            height: 1px;
+            background: ${subtleLineColor};
+            margin-bottom: 20px;
+            width: 280px;
+          }
+          .bill-to-label {
+            font-size: 14px !important;
+            font-weight: 400 !important;
+            color: ${primaryColor} !important;
+            margin: 0 0 16px 0 !important;
+          }
+          .bill-to-content {
+            font-size: 14px !important;
+            color: #000000 !important;
+            line-height: 1.6 !important;
+            margin: 4px 0 !important;
+          }
+          .bill-to-detail {
+            font-size: 14px !important;
+            color: #666666 !important;
+            line-height: 1.6 !important;
+            margin: 4px 0 !important;
+          }
+          .invoice-details-section {
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #e0e0e0;
           }
           .detail-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #e8eaed;
-          }
-          .detail-row:last-child {
-            border-bottom: none;
+            display: table;
+            width: 100%;
+            margin-bottom: 12px;
           }
           .detail-label {
             font-size: 14px;
-            color: #5f6368;
-            font-weight: 500;
+            color: ${primaryColor} !important;
+            font-weight: 400;
+            display: table-cell;
+            padding-right: 16px;
+            vertical-align: top;
           }
           .detail-value {
             font-size: 14px;
-            color: #202124;
+            color: #000000 !important;
             font-weight: 400;
+            display: table-cell;
+            vertical-align: top;
           }
           .message-section {
-            margin: 24px 0;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 6px;
+            margin: 32px 0;
+            padding: 16px 0;
+            border-bottom: 1px solid #e0e0e0;
           }
           .message-section p {
-            margin-bottom: 12px;
-            font-size: 15px;
-            color: #202124;
-            line-height: 1.6;
+            margin: 0 0 12px 0 !important;
+            font-size: 14px !important;
+            color: #000000 !important;
+            line-height: 1.6 !important;
           }
           .message-section p:last-child {
-            margin-bottom: 0;
+            margin-bottom: 0 !important;
           }
           .cta-section {
-            text-align: center;
+            text-align: left;
             margin: 32px 0;
           }
           .cta-button {
             display: inline-block;
-            background: #1a73e8;
-            color: white;
-            padding: 14px 28px;
+            background: ${primaryColor};
+            color: #ffffff !important;
+            padding: 10px 20px;
             text-decoration: none;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 16px;
-            margin: 24px 0;
+            border-radius: 0;
+            font-weight: 400;
+            font-size: 14px;
+            margin: 0;
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-          }
-          .cta-button:hover {
-            background: #1557b0;
-            transform: translateY(-1px);
+            letter-spacing: 0.5px;
+            border: none;
           }
           .payment-methods {
             margin: 32px 0;
             width: 100%;
             box-sizing: border-box;
-            position: relative;
-            z-index: 1;
-          }
-          .payment-methods::before {
-            content: '';
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            width: 50px;
-            height: 50px;
-            background: #8B5CF608;
-            border-radius: 12px;
-            transform: rotate(-15deg);
-            z-index: 0;
-          }
-          .payment-methods::after {
-            content: '';
-            position: absolute;
-            bottom: -15px;
-            right: -15px;
-            width: 35px;
-            height: 35px;
-            background: #3B82F615;
-            border-radius: 50%;
-            z-index: 0;
           }
           .payment-methods h3 {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 400;
+            color: ${primaryColor} !important;
+            margin-bottom: 16px;
             text-align: left;
             text-transform: uppercase;
             letter-spacing: 0.5px;
           }
           .payment-notice {
-            background: #f8fafc;
-            padding: 20px;
-            border-radius: 6px;
-            margin-bottom: 24px;
+            background: transparent;
+            padding: 0;
+            border: none;
+            margin-bottom: 16px;
             width: 100%;
             box-sizing: border-box;
           }
           .payment-notice p {
             margin: 0;
             font-size: 14px;
-            color: #1e40af;
-            line-height: 1.5;
-            font-weight: 500;
+            color: #000000 !important;
+            line-height: 1.6;
+            font-weight: 400;
           }
           .payment-list {
-            margin-bottom: 28px;
+            margin-bottom: 20px;
             width: 100%;
             box-sizing: border-box;
           }
+          .payment-methods {
+            border-top: 1px solid #e0e0e0;
+            padding-top: 24px;
+            margin-top: 32px;
+          }
           .payment-method-item {
             margin-bottom: 12px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e0e0e0;
           }
           .payment-method-item:last-child {
             border-bottom: none;
             margin-bottom: 0;
           }
-          .payment-item {
-            margin-bottom: 12px;
-            padding: 12px;
-            background: #ffffff;
-            border-radius: 4px;
-          }
           .payment-method-name {
-            font-size: 14px;
-            font-weight: 700;
-            color: #1a73e8;
+            font-size: 12px;
+            font-weight: 400;
+            color: ${primaryColor} !important;
             margin-bottom: 4px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
           }
           .payment-method-details {
             font-size: 14px;
-            color: #5f6368;
-            line-height: 1.4;
-          }
-          .payment-method {
-            font-size: 15px;
-            font-weight: 600;
-            color: #1a73e8;
-            margin-bottom: 4px;
-          }
-          .payment-info {
-            font-size: 14px;
-            color: #5f6368;
-            line-height: 1.4;
+            color: #000000 !important;
+            line-height: 1.6;
           }
           .payment-security {
-            background: #e8f5e8;
-            padding: 16px;
-            border-radius: 6px;
-            border: 1px solid #c8e6c9;
-            text-align: center;
+            background: transparent;
+            padding: 0;
+            border: none;
+            text-align: left;
+            margin-top: 16px;
           }
           .payment-security p {
             margin: 0;
             font-size: 14px;
-            color: #2e7d32;
-            line-height: 1.4;
-            font-weight: 500;
+            color: #000000 !important;
+            line-height: 1.6;
+            font-weight: 400;
           }
           .footer {
-            padding: 24px;
-            border-top: 2px solid #e0e0e0;
-            text-align: center;
-            background: #f8f9fa;
+            padding: 32px 40px;
+            border-top: 1px solid #e0e0e0;
+            text-align: left;
+            background: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
           }
           .footer p {
             margin-bottom: 8px;
             font-size: 14px;
-            color: #5f6368;
+            color: #808080 !important;
           }
           .footer p:last-child {
             margin-bottom: 0;
@@ -326,25 +403,25 @@ export function generateMinimalEmailTemplate(
             margin-top: 16px;
             padding-top: 16px;
             border-top: 1px solid #e0e0e0;
-            color: #5f6368;
+            color: #808080 !important;
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 400;
           }
           .invoiceflow-branding {
-            margin-top: 20px;
+            margin-top: 16px;
             padding-top: 16px;
             border-top: 1px solid #e0e0e0;
-            text-align: center;
+            text-align: left;
           }
           .invoiceflow-disclaimer {
-            font-size: 12px;
-            color: #9aa0a6;
-            line-height: 1.3;
-            margin-bottom: 8px;
+            font-size: 8px;
+            color: #808080 !important;
+            line-height: 1.4;
+            margin-bottom: 4px;
           }
           .invoiceflow-link {
-            font-size: 12px;
-            color: #5f6368;
+            font-size: 8px;
+            color: #808080 !important;
             text-decoration: none;
           }
           @media only screen and (max-width: 600px) {
@@ -356,207 +433,145 @@ export function generateMinimalEmailTemplate(
               max-width: 100% !important;
               width: 100% !important;
               margin: 0 !important;
-              border: none !important;
-            }
-            table {
-              width: 100% !important;
-              max-width: 100% !important;
             }
             .header {
-              padding: 20px 16px !important;
+              padding: 32px 20px !important;
             }
             .header-content {
-              display: block !important;
-              flex-direction: column !important;
+              display: table !important;
               width: 100% !important;
-              gap: 20px !important;
+              table-layout: fixed !important;
             }
             .business-info {
-              text-align: left !important;
-              width: 100% !important;
-              margin-bottom: 0 !important;
-              display: block !important;
-            }
-            .business-name {
-              font-size: 20px !important;
-            }
-            .invoice-info {
-              text-align: left !important;
-              margin-left: 0 !important;
-              width: 100% !important;
-              display: block !important;
-            }
-            .invoice-title {
-              font-size: 15px !important;
-            }
-            .invoice-number {
-              font-size: 13px !important;
-            }
-            .amount {
-              font-size: 24px !important;
-            }
-            .content {
-              padding: 20px 16px !important;
-            }
-            .invoice-details {
-              padding: 16px !important;
-              margin-bottom: 20px !important;
-              width: 100% !important;
-              box-sizing: border-box !important;
-            }
-            .detail-row {
-              display: block !important;
-              flex-direction: column !important;
-              padding: 12px 0 !important;
-              width: 100% !important;
-            }
-            .detail-label {
-              font-size: 13px !important;
-              margin-bottom: 6px !important;
-              display: block !important;
-              width: 100% !important;
-            }
-            .detail-value {
-              font-size: 13px !important;
-              display: block !important;
-              width: 100% !important;
-              word-break: break-word !important;
-            }
-            .message-section {
-              margin: 20px 0 !important;
-              padding: 16px !important;
-            }
-            .message-section p {
-              font-size: 14px !important;
-              line-height: 1.5 !important;
-            }
-            .cta-section {
-              margin: 24px 0 !important;
-            }
-            .cta-button {
-              display: block !important;
-              width: 100% !important;
-              max-width: 100% !important;
-              text-align: center !important;
-              padding: 14px 20px !important;
-              font-size: 16px !important;
-              margin: 16px 0 !important;
-              box-sizing: border-box !important;
-            }
-            .payment-methods {
-              margin: 24px 0 !important;
-              width: 100% !important;
-              padding: 0 !important;
-            }
-            .payment-methods::before,
-            .payment-methods::after {
-              display: none !important;
-            }
-            .payment-methods h3 {
-              font-size: 16px !important;
-              margin-bottom: 16px !important;
-            }
-            .payment-notice {
-              padding: 16px !important;
-              margin-bottom: 16px !important;
-              width: 100% !important;
-              box-sizing: border-box !important;
-            }
-            .payment-notice p {
-              font-size: 13px !important;
-              line-height: 1.5 !important;
-            }
-            .payment-list {
-              width: 100% !important;
-              margin-bottom: 20px !important;
-              box-sizing: border-box !important;
-            }
-            .payment-method-item {
-              margin-bottom: 16px !important;
-              padding-bottom: 16px !important;
-              width: 100% !important;
-              display: block !important;
-            }
-            .payment-item {
-              padding: 12px !important;
-              margin-bottom: 12px !important;
-              width: 100% !important;
-              box-sizing: border-box !important;
-            }
-            .payment-method-name {
-              font-size: 13px !important;
-              margin-bottom: 6px !important;
-            }
-            .payment-method-details {
-              font-size: 13px !important;
-              line-height: 1.5 !important;
-              word-break: break-word !important;
-            }
-            .payment-method {
-              font-size: 14px !important;
-            }
-            .payment-info {
-              font-size: 13px !important;
-              word-break: break-word !important;
-            }
-            .payment-security {
-              padding: 16px !important;
-              width: 100% !important;
-              box-sizing: border-box !important;
-            }
-            .payment-security p {
-              font-size: 13px !important;
-              line-height: 1.5 !important;
-              word-break: break-word !important;
-            }
-            .footer {
-              padding: 20px 16px !important;
-            }
-            .footer p {
-              font-size: 13px !important;
-              line-height: 1.5 !important;
-            }
-            .business-contact {
-              font-size: 13px !important;
-              word-break: break-word !important;
-            }
-            .invoiceflow-branding {
-              margin-top: 20px !important;
-              padding-top: 16px !important;
-            }
-            .invoiceflow-disclaimer {
-              font-size: 11px !important;
-              line-height: 1.4 !important;
-            }
-            .invoiceflow-link {
-              font-size: 11px !important;
-            }
-          }
-          @media only screen and (max-width: 480px) {
-            .header {
-              padding: 16px 12px !important;
-            }
-            .content {
-              padding: 16px 12px !important;
-            }
-            .footer {
-              padding: 16px 12px !important;
-            }
-            .invoice-details {
-              padding: 12px !important;
-            }
-            .message-section {
-              padding: 12px !important;
-            }
-            .cta-button {
-              padding: 12px 16px !important;
-              font-size: 15px !important;
+              display: table-cell !important;
+              vertical-align: top !important;
+              width: 50% !important;
             }
             .business-name {
               font-size: 18px !important;
             }
+            .invoice-info {
+              display: table-cell !important;
+              vertical-align: top !important;
+              text-align: right !important;
+              width: 50% !important;
+              padding-left: 12px !important;
+            }
+            .invoice-title {
+              font-size: 18px !important;
+            }
+            .invoice-number {
+              font-size: 9px !important;
+            }
+            .invoice-date-label,
+            .invoice-due-label {
+              font-size: 7px !important;
+            }
             .amount {
-              font-size: 22px !important;
+              font-size: 28px !important;
+            }
+            .content {
+              padding: 0 20px 32px 20px !important;
+            }
+            .bill-to-line {
+              width: 240px !important;
+            }
+            .business-details {
+              font-size: 14px !important;
+            }
+            .invoice-number {
+              font-size: 14px !important;
+            }
+            .invoice-date-label {
+              font-size: 12px !important;
+            }
+            .invoice-due-label {
+              font-size: 12px !important;
+            }
+            .bill-to-label {
+              font-size: 14px !important;
+            }
+            .bill-to-content {
+              font-size: 14px !important;
+            }
+            .bill-to-detail {
+              font-size: 14px !important;
+            }
+            .message-section {
+              margin: 24px 0 !important;
+            }
+            .message-section p {
+              font-size: 14px !important;
+            }
+            .cta-button {
+              padding: 8px 16px !important;
+              font-size: 14px !important;
+            }
+            .payment-methods {
+              margin: 24px 0 !important;
+            }
+            .payment-methods h3 {
+              font-size: 14px !important;
+            }
+            .payment-notice p {
+              font-size: 14px !important;
+              color: #000000 !important;
+              line-height: 1.6 !important;
+            }
+            .payment-method-name {
+              font-size: 12px !important;
+            }
+            .payment-method-details {
+              font-size: 14px !important;
+              color: #000000 !important;
+              line-height: 1.6 !important;
+            }
+            .payment-security p {
+              font-size: 14px !important;
+              color: #000000 !important;
+              line-height: 1.6 !important;
+            }
+            .footer {
+              padding: 24px 20px !important;
+            }
+            .footer p {
+              font-size: 14px !important;
+            }
+            .business-contact {
+              font-size: 14px !important;
+            }
+            .invoiceflow-disclaimer {
+              font-size: 7px !important;
+            }
+            .invoiceflow-link {
+              font-size: 7px !important;
+            }
+          }
+          @media only screen and (max-width: 480px) {
+            .header {
+              padding: 24px 16px !important;
+            }
+            .content {
+              padding: 0 16px 24px 16px !important;
+            }
+            .footer {
+              padding: 20px 16px !important;
+            }
+            .business-name {
+              font-size: 18px !important;
+            }
+            .invoice-title {
+              font-size: 16px !important;
+            }
+            .amount {
+              font-size: 24px !important;
+            }
+            .bill-to-line {
+              width: 200px !important;
+            }
+            .cta-button {
+              padding: 8px 14px !important;
+              font-size: 14px !important;
             }
           }
         </style>
@@ -566,39 +581,35 @@ export function generateMinimalEmailTemplate(
           <div class="header">
             <div class="header-content">
               <div class="business-info">
-                <div class="business-name">${businessSettings.businessName}</div>
+                <div class="business-name" style="color: ${primaryColor} !important; font-size: 20px; font-weight: 400; letter-spacing: 0; margin: 0; padding: 0;">${businessSettings.businessName}</div>
               </div>
               <div class="invoice-info">
-                <div class="invoice-title">Invoice</div>
-                <div class="invoice-number">#${invoice.invoice_number}</div>
-                <div class="amount">${formatCurrency(invoice.total)}</div>
+                <div class="invoice-title" style="color: ${primaryColor} !important; font-size: 20px; font-weight: 400; letter-spacing: 0; margin: 0 0 12px 0; padding: 0;">INVOICE</div>
+                <div class="invoice-number" style="color: #000000 !important; font-size: 10px; font-weight: 700; margin: 0 0 8px 0;">#${invoice.invoice_number}</div>
+                <div class="invoice-date-label" style="color: #808080 !important; font-size: 8px; margin: 0 0 4px 0;">Issue: ${formatDate(invoice.issue_date)}</div>
+                <div class="invoice-due-label" style="color: #808080 !important; font-size: 8px; margin: 8px 0 0 0;">Due: ${formatDate(invoice.due_date)}</div>
+                <div class="amount" style="color: #000000 !important; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin: 16px 0 0 0;">${formatCurrency(invoice.total)}</div>
               </div>
             </div>
           </div>
 
           <div class="content">
-            <div class="invoice-details">
-              <div class="detail-row">
-                <div class="detail-label">Bill to:</div>
-                <div class="detail-value">${invoice.clients.name}${invoice.clients.company ? `, ${invoice.clients.company}` : ''}</div>
-              </div>
-              <div class="detail-row">
-                <div class="detail-label">Issue date:</div>
-                <div class="detail-value">${formatDate(invoice.issue_date)}</div>
-              </div>
-              <div class="detail-row">
-                <div class="detail-label">Due date:</div>
-                <div class="detail-value">${formatDate(invoice.due_date)}</div>
-              </div>
+            <div class="bill-to-section">
+              <div class="bill-to-line" style="height: 1px; background: ${subtleLineColor}; margin-bottom: 20px; width: 280px;"></div>
+              <div class="bill-to-label" style="color: ${primaryColor} !important; font-size: 14px !important; font-weight: 400 !important; margin: 0 0 16px 0 !important;">Bill To</div>
+              <div class="bill-to-content" style="color: #000000 !important; font-size: 14px !important; line-height: 1.6 !important; margin: 4px 0 !important;">${invoice.clients.name}</div>
+              ${invoice.clients.company ? `<div class="bill-to-detail" style="color: #666666 !important; font-size: 14px !important; line-height: 1.6 !important; margin: 4px 0 !important;">${invoice.clients.company}</div>` : ''}
+              ${invoice.clients.email ? `<div class="bill-to-detail" style="color: #666666 !important; font-size: 14px !important; line-height: 1.6 !important; margin: 4px 0 !important;">${invoice.clients.email}</div>` : ''}
+              ${invoice.clients.phone ? `<div class="bill-to-detail" style="color: #666666 !important; font-size: 14px !important; line-height: 1.6 !important; margin: 4px 0 !important;">${invoice.clients.phone}</div>` : ''}
             </div>
 
             <div class="message-section">
-              <p>Please find attached your invoice for the services provided.</p>
-              ${invoice.notes ? `<p>${invoice.notes}</p>` : ''}
+              <p style="margin: 0 0 12px 0 !important; font-size: 14px !important; color: #000000 !important; line-height: 1.6 !important;">Please find attached your invoice for the services provided.</p>
+              ${invoice.notes ? `<p style="margin: 0 !important; font-size: 14px !important; color: #000000 !important; line-height: 1.6 !important;">${invoice.notes}</p>` : ''}
             </div>
 
             <div class="cta-section">
-              <a href="${publicUrl}" class="cta-button">
+              <a href="${publicUrl}" class="cta-button" style="background: ${primaryColor} !important; color: #ffffff !important; padding: 10px 20px; text-decoration: none; border-radius: 0; font-weight: 400; font-size: 10px; letter-spacing: 0.5px;">
                 View Invoice Online
               </a>
             </div>
@@ -644,9 +655,9 @@ export function generateMinimalEmailTemplate(
                   <div class="payment-method-item">
                     <div class="payment-method-name">BANK TRANSFER</div>
                     <div class="payment-method-details">
-                      Bank: ${businessSettings.bankAccount}<br>
-                      ${businessSettings.bankIfscSwift ? `IFSC/SWIFT: ${businessSettings.bankIfscSwift}<br>` : ''}
-                      ${businessSettings.bankIban ? `IBAN: ${businessSettings.bankIban}` : ''}
+                      Bank: ${businessSettings.bankAccount}
+                      ${businessSettings.bankIfscSwift ? `<br>IFSC/SWIFT: ${businessSettings.bankIfscSwift}` : ''}
+                      ${businessSettings.bankIban ? `<br>IBAN: ${businessSettings.bankIban}` : ''}
                     </div>
                   </div>
                 ` : ''}
@@ -739,47 +750,54 @@ export function generateModernEmailTemplate(
             max-width: 600px;
             margin: 0 auto;
             background: #ffffff;
+            border: 1px solid #e0e0e0;
           }
           .header {
             background: #f8f9fa;
             padding: 48px 40px;
-            border-bottom: 2px solid #e5e5e5;
+            border-bottom: 1px solid #e0e0e0;
           }
           .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+            display: table;
+            width: 100%;
             max-width: 520px;
             margin: 0 auto;
+            table-layout: fixed;
           }
           .business-name {
-            font-size: 28px;
+            font-size: 22px;
             font-weight: 700;
-            color: #000000;
+            color: #000000 !important;
             letter-spacing: -0.02em;
+            margin: 0;
+            padding: 0;
           }
           .business-info {
-            flex: 1;
+            display: table-cell;
+            vertical-align: top;
+            width: 50%;
           }
           .invoice-info {
+            display: table-cell;
+            vertical-align: top;
             text-align: right;
-            flex: 0 0 auto;
-            margin-left: 24px;
+            width: 50%;
+            padding-left: 24px;
           }
           .invoice-title {
-            font-size: 16px;
+            font-size: 12px;
             font-weight: 500;
-            color: #666666;
+            color: #333333 !important;
             margin-bottom: 4px;
           }
           .invoice-number {
-            font-size: 16px;
-            color: #666666;
+            font-size: 12px;
+            color: #333333 !important;
             margin-bottom: 8px;
             font-weight: 500;
           }
           .amount {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 800;
             color: #000000;
             letter-spacing: -0.03em;
@@ -795,15 +813,15 @@ export function generateModernEmailTemplate(
             margin-bottom: 48px;
           }
           .detail-section h3 {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 600;
-            color: #666666;
+            color: #333333 !important;
             text-transform: uppercase;
             letter-spacing: 0.1em;
             margin: 0 0 16px 0;
           }
           .detail-section p {
-            font-size: 15px;
+            font-size: 14px;
             color: #000000;
             line-height: 1.6;
             margin: 0;
@@ -817,7 +835,7 @@ export function generateModernEmailTemplate(
           }
           .message-section p {
             margin: 0 0 16px 0;
-            font-size: 15px;
+            font-size: 14px;
             color: #000000;
             line-height: 1.6;
             font-weight: 500;
@@ -831,25 +849,26 @@ export function generateModernEmailTemplate(
           }
           .cta-button {
             display: inline-block;
-            background: #000000;
-            color: #ffffff;
+            background: #000000 !important;
+            color: #ffffff !important;
             padding: 16px 32px;
             text-decoration: none;
             font-weight: 600;
-            font-size: 15px;
+            font-size: 14px;
             border-radius: 6px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             letter-spacing: -0.01em;
           }
           .cta-button:hover {
-            background: #262626;
+            background: #262626 !important;
+            color: #ffffff !important;
             transform: translateY(-1px);
           }
           .payment-methods {
             margin: 40px 0;
           }
           .payment-methods h3 {
-            font-size: 16px;
+            font-size: 10px;
             font-weight: 600;
             color: #000000;
             margin-bottom: 16px;
@@ -885,8 +904,8 @@ export function generateModernEmailTemplate(
             letter-spacing: 0.05em;
           }
           .payment-method-details {
-            font-size: 13px;
-            color: #666666;
+            font-size: 14px;
+            color: #333333 !important;
             line-height: 1.4;
           }
           .payment-security {
@@ -896,8 +915,8 @@ export function generateModernEmailTemplate(
           }
           .payment-security p {
             margin: 0;
-            font-size: 13px;
-            color: #666666;
+            font-size: 14px;
+            color: #333333 !important;
             line-height: 1.4;
           }
           .footer {
@@ -917,8 +936,8 @@ export function generateModernEmailTemplate(
             margin-top: 16px;
             padding-top: 16px;
             border-top: 1px solid #e5e5e5;
-            color: #666666;
-            font-size: 13px;
+            color: #333333 !important;
+            font-size: 9px;
           }
           .invoiceflow-branding {
             margin-top: 20px;
@@ -926,15 +945,61 @@ export function generateModernEmailTemplate(
             border-top: 1px solid #e5e5e5;
           }
           .invoiceflow-disclaimer {
-            font-size: 11px;
+            font-size: 8px;
             color: #999999;
             line-height: 1.3;
             margin-bottom: 4px;
           }
           .invoiceflow-link {
-            font-size: 11px;
-            color: #666666;
+            font-size: 8px;
+            color: #333333 !important;
             text-decoration: none;
+          }
+          /* Dark mode support - ensure readability on dark backgrounds */
+          @media (prefers-color-scheme: dark) {
+            .email-container {
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
+            }
+            .header {
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
+            }
+            .content {
+              background: #ffffff !important;
+            }
+            .message-section {
+              background: #ffffff !important;
+            }
+            .footer {
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
+            }
+            /* Ensure text is readable on dark backgrounds */
+            .business-name,
+            .invoice-title,
+            .invoice-number,
+            .amount,
+            .detail-section h3,
+            .detail-section p,
+            .message-section p,
+            .payment-methods h3,
+            .payment-method-name,
+            .payment-notice p,
+            .payment-method-details,
+            .payment-security p,
+            .footer p {
+              color: #000000 !important;
+            }
+            .invoice-title,
+            .invoice-number,
+            .detail-section h3 {
+              color: #333333 !important;
+            }
+            .business-contact,
+            .invoiceflow-link {
+              color: #333333 !important;
+            }
           }
           @media only screen and (max-width: 600px) {
             .header {
@@ -957,7 +1022,7 @@ export function generateModernEmailTemplate(
               flex: 1 !important;
             }
             .business-name {
-              font-size: 22px !important;
+              font-size: 14px !important;
             }
             .invoice-info {
               text-align: right !important;
@@ -968,13 +1033,13 @@ export function generateModernEmailTemplate(
               margin-top: 20px !important;
             }
             .invoice-title {
-              font-size: 15px !important;
+              font-size: 9px !important;
             }
             .invoice-number {
-              font-size: 14px !important;
+              font-size: 9px !important;
             }
             .amount {
-              font-size: 26px !important;
+              font-size: 24px !important;
             }
             .content {
               padding: 32px 24px !important;
@@ -1016,12 +1081,12 @@ export function generateModernEmailTemplate(
           <div class="header">
             <div class="header-content">
               <div class="business-info">
-                <div class="business-name">${businessSettings.businessName}</div>
+                <div class="business-name" style="color: #000000 !important; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 0; padding: 0;">${businessSettings.businessName}</div>
               </div>
               <div class="invoice-info">
-                <div class="invoice-title">Invoice</div>
-                <div class="invoice-number">#${invoice.invoice_number}</div>
-                <div class="amount">${formatCurrency(invoice.total)}</div>
+                <div class="invoice-title" style="color: #333333 !important; font-size: 12px; font-weight: 500; margin-bottom: 4px;">Invoice</div>
+                <div class="invoice-number" style="color: #333333 !important; font-size: 12px; margin-bottom: 8px; font-weight: 500;">#${invoice.invoice_number}</div>
+                <div class="amount" style="color: #000000 !important; font-size: 28px; font-weight: 800; letter-spacing: -0.03em;">${formatCurrency(invoice.total)}</div>
               </div>
             </div>
           </div>
@@ -1098,9 +1163,9 @@ export function generateModernEmailTemplate(
                   <div class="payment-method-item">
                     <div class="payment-method-name">BANK TRANSFER</div>
                     <div class="payment-method-details">
-                      Bank: ${businessSettings.bankAccount}<br>
-                      ${businessSettings.bankIfscSwift ? `IFSC/SWIFT: ${businessSettings.bankIfscSwift}<br>` : ''}
-                      ${businessSettings.bankIban ? `IBAN: ${businessSettings.bankIban}` : ''}
+                      Bank: ${businessSettings.bankAccount}
+                      ${businessSettings.bankIfscSwift ? `<br>IFSC/SWIFT: ${businessSettings.bankIfscSwift}` : ''}
+                      ${businessSettings.bankIban ? `<br>IBAN: ${businessSettings.bankIban}` : ''}
                     </div>
                   </div>
                 ` : ''}
@@ -1149,7 +1214,7 @@ export function generateModernEmailTemplate(
   `;
 }
 
-// Creative Email Template (Template 5 - Professional Creative Design)
+// Creative Email Template (Template 5 - Clean Minimal Design)
 export function generateCreativeEmailTemplate(
   invoice: InvoiceData,
   businessSettings: BusinessSettings,
@@ -1170,10 +1235,8 @@ export function generateCreativeEmailTemplate(
     });
   };
 
-  // Extract colors from theme
+  // Extract colors from theme (use for accents only)
   const primaryColor = invoice.theme?.primary_color || '#8B5CF6';
-  const secondaryColor = invoice.theme?.secondary_color || '#F59E0B';
-  const accentColor = invoice.theme?.accent_color || '#EC4899';
 
   return `
     <!DOCTYPE html>
@@ -1188,9 +1251,9 @@ export function generateCreativeEmailTemplate(
           }
           body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #1e293b;
-            background-color: #f8fafc;
+            line-height: 1.5;
+            color: #000000;
+            background-color: #ffffff;
             margin: 0;
             padding: 0;
           }
@@ -1198,388 +1261,261 @@ export function generateCreativeEmailTemplate(
             max-width: 600px;
             margin: 0 auto;
             background: #ffffff;
-            border-radius: 6px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            box-sizing: border-box;
-            position: relative;
-          }
-          .email-container::before {
-            content: '';
-            position: absolute;
-            top: -50px;
-            right: -50px;
-            width: 100px;
-            height: 100px;
-            background: ${primaryColor}15;
-            border-radius: 50%;
-            z-index: 0;
-          }
-          .email-container::after {
-            content: '';
-            position: absolute;
-            bottom: -30px;
-            left: -30px;
-            width: 60px;
-            height: 60px;
-            background: ${secondaryColor}20;
-            border-radius: 12px;
-            transform: rotate(45deg);
-            z-index: 0;
+            border: 1px solid #e0e0e0;
           }
           .header {
-            background: ${primaryColor};
-            padding: 40px 24px;
-            color: white;
-            position: relative;
-            overflow: hidden;
-          }
-          .header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: ${secondaryColor};
-          }
-          .header::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: ${accentColor};
+            background: #f8f9fa;
+            padding: 48px 40px;
+            border-bottom: 1px solid #e0e0e0;
           }
           .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            max-width: 500px;
+            display: table;
+            width: 100%;
+            max-width: 520px;
             margin: 0 auto;
-          }
-          .business-info {
-            flex: 1;
+            table-layout: fixed;
           }
           .business-name {
-            font-size: 28px;
+            font-size: 22px;
             font-weight: 700;
-            letter-spacing: -0.5px;
+            color: ${primaryColor} !important;
+            letter-spacing: -0.02em;
+            margin: 0;
+            padding: 0;
+          }
+          .business-info {
+            display: table-cell;
+            vertical-align: top;
+            width: 50%;
           }
           .invoice-info {
+            display: table-cell;
+            vertical-align: top;
             text-align: right;
-            flex: 0 0 auto;
-            margin-left: 24px;
+            width: 50%;
+            padding-left: 24px;
           }
           .invoice-title {
-            font-size: 16px;
+            font-size: 12px;
             font-weight: 500;
-            opacity: 0.9;
+            color: #333333 !important;
             margin-bottom: 4px;
-            letter-spacing: 0.5px;
           }
           .invoice-number {
-            font-size: 16px;
-            font-weight: 500;
-            opacity: 0.9;
+            font-size: 12px;
+            color: #333333 !important;
             margin-bottom: 8px;
-            letter-spacing: 0.5px;
+            font-weight: 500;
           }
           .amount {
-            font-size: 36px;
+            font-size: 28px;
             font-weight: 800;
-            letter-spacing: -1px;
-            line-height: 1;
+            color: #000000;
+            letter-spacing: -0.03em;
           }
           .content {
-            padding: 32px 24px;
-            position: relative;
-            z-index: 1;
+            padding: 48px 40px;
+            background: #ffffff;
           }
-          .content::before {
-            content: '';
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 40px;
-            height: 40px;
-            background: ${accentColor}10;
-            border-radius: 6px;
-            transform: rotate(15deg);
-            z-index: 0;
-          }
-          .content::after {
-            content: '';
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            width: 30px;
-            height: 30px;
-            background: ${primaryColor}12;
-            border-radius: 50%;
-            z-index: 0;
-          }
-          .info-grid {
+          .details-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            margin-bottom: 32px;
+            gap: 48px;
+            margin-bottom: 48px;
           }
-          .info-section {
-            background: #f8fafc;
-            padding: 20px;
-            border-radius: 6px;
-          }
-          .section-title {
+          .detail-section h3 {
             font-size: 14px;
             font-weight: 600;
-            color: ${primaryColor};
-            margin-bottom: 12px;
+            color: ${primaryColor} !important;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.1em;
+            margin: 0 0 16px 0;
           }
-          .detail-item {
-            margin-bottom: 8px;
+          .detail-section p {
             font-size: 14px;
-            line-height: 1.5;
+            color: #000000;
+            line-height: 1.6;
+            margin: 0;
+            font-weight: 500;
           }
-          .detail-item strong {
-            color: #374151;
-            font-weight: 600;
-          }
-          .services-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 24px 0;
-            background: #ffffff;
+          .message-section {
+            background: #f8f9fa;
+            padding: 32px;
+            margin-bottom: 48px;
             border-radius: 6px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
           }
-          .services-table th {
-            background: ${primaryColor};
-            color: white;
-            padding: 16px 20px;
-            text-align: left;
-            font-weight: 600;
+          .message-section p {
+            margin: 0 0 16px 0;
             font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            color: #000000;
+            line-height: 1.6;
+            font-weight: 500;
           }
-          .services-table td {
-            padding: 16px 20px;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 14px;
+          .message-section p:last-child {
+            margin-bottom: 0;
           }
-          .services-table tr:last-child td {
-            border-bottom: none;
-          }
-          .services-table tr:nth-child(even) {
-            background: #f8fafc;
-          }
-          .totals-section {
-            background: #f8fafc;
-            padding: 20px;
-            border-radius: 6px;
-            margin: 24px 0;
-          }
-          .total-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            font-size: 14px;
-          }
-          .total-row.final {
-            border-top: 2px solid ${primaryColor};
-            padding-top: 12px;
-            margin-top: 12px;
-            font-size: 16px;
-            font-weight: 700;
-            color: ${primaryColor};
+          .cta-section {
+            text-align: center;
+            margin: 48px 0;
           }
           .cta-button {
             display: inline-block;
-            background: ${primaryColor};
-            color: white;
+            background: ${primaryColor} !important;
+            color: #ffffff !important;
+            padding: 16px 32px;
             text-decoration: none;
-            padding: 14px 28px;
-            border-radius: 6px;
             font-weight: 600;
-            font-size: 16px;
-            text-align: center;
-            margin: 24px 0;
+            font-size: 14px;
+            border-radius: 6px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            letter-spacing: -0.01em;
           }
           .cta-button:hover {
-            background: ${secondaryColor};
-            transform: translateY(-1px);
-          }
-          .payment-section {
-            background: #f8fafc;
-            padding: 20px;
-            border-radius: 6px;
-            margin: 24px 0;
+            opacity: 0.9;
+            color: #ffffff !important;
           }
           .payment-methods {
-            margin: 32px 0;
-            width: 100%;
-            box-sizing: border-box;
-            position: relative;
-            z-index: 1;
-          }
-          .payment-methods::before {
-            content: '';
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            width: 50px;
-            height: 50px;
-            background: ${secondaryColor}08;
-            border-radius: 12px;
-            transform: rotate(-15deg);
-            z-index: 0;
-          }
-          .payment-methods::after {
-            content: '';
-            position: absolute;
-            bottom: -15px;
-            right: -15px;
-            width: 35px;
-            height: 35px;
-            background: ${accentColor}15;
-            border-radius: 50%;
-            z-index: 0;
+            margin: 40px 0;
           }
           .payment-methods h3 {
-            font-size: 18px;
+            font-size: 10px;
             font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 20px;
-            text-align: left;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            color: ${primaryColor} !important;
+            margin-bottom: 16px;
+            text-align: center;
           }
           .payment-notice {
-            background: #f8fafc;
-            padding: 20px;
-            border-radius: 6px;
+            background: #f8f8f8;
+            padding: 16px;
             margin-bottom: 24px;
-            width: 100%;
-            box-sizing: border-box;
           }
           .payment-notice p {
             margin: 0;
             font-size: 14px;
-            color: #1e40af;
+            color: #000000;
             line-height: 1.5;
-            font-weight: 500;
           }
           .payment-list {
-            margin-bottom: 28px;
-            width: 100%;
-            box-sizing: border-box;
+            margin-bottom: 24px;
           }
           .payment-method-item {
-            margin-bottom: 12px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #e5e7eb;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e5e5;
           }
           .payment-method-item:last-child {
             border-bottom: none;
-            margin-bottom: 0;
           }
           .payment-method-name {
-            font-size: 14px;
-            font-weight: 700;
-            color: ${primaryColor};
+            font-size: 12px;
+            font-weight: 600;
+            color: ${primaryColor} !important;
             margin-bottom: 4px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.05em;
           }
           .payment-method-details {
             font-size: 14px;
-            color: #6b7280;
-            line-height: 1.5;
-            font-weight: 400;
+            color: #333333 !important;
+            line-height: 1.4;
           }
           .payment-security {
-            background: #fef3c7;
+            background: #f8f8f8;
             padding: 16px;
-            border-radius: 6px;
-            border: 1px solid #f59e0b;
             text-align: center;
-            width: 100%;
-            margin-top: 24px;
-            box-sizing: border-box;
           }
           .payment-security p {
             margin: 0;
-            font-size: 13px;
-            color: #92400e;
+            font-size: 14px;
+            color: #333333 !important;
             line-height: 1.4;
-            font-weight: 500;
           }
           .footer {
-            background: #1e293b;
-            padding: 40px 24px;
+            background: #f8f8f8;
+            padding: 32px;
             text-align: center;
+            border-top: 1px solid #e0e0e0;
+            border-bottom: 1px solid #e0e0e0;
           }
           .footer p {
-            margin-bottom: 12px;
-            font-size: 15px;
-            color: #64748b;
-            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #000000;
           }
           .footer p:last-child {
             margin-bottom: 0;
           }
           .business-contact {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 2px solid ${primaryColor}40;
-            color: #64748b;
-            font-size: 14px;
-            font-weight: 600;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e5e5;
+            color: #333333 !important;
+            font-size: 9px;
           }
           .invoiceflow-branding {
-            margin-top: 24px;
-            padding-top: 20px;
-            border-top: 2px solid ${primaryColor}40;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e5e5;
           }
           .invoiceflow-disclaimer {
-            font-size: 12px;
-            color: #94a3b8;
-            line-height: 1.4;
-            margin-bottom: 8px;
-            font-weight: 500;
+            font-size: 8px;
+            color: #999999;
+            line-height: 1.3;
+            margin-bottom: 4px;
           }
           .invoiceflow-link {
-            font-size: 12px;
-            color: #64748b;
+            font-size: 8px;
+            color: #333333 !important;
             text-decoration: none;
-            font-weight: 600;
           }
-          @media only screen and (max-width: 600px) {
+          /* Dark mode support - ensure readability on dark backgrounds */
+          @media (prefers-color-scheme: dark) {
             .email-container {
-              margin: 0 !important;
-              border-radius: 0 !important;
-            }
-            .email-container::before {
-              width: 60px !important;
-              height: 60px !important;
-              top: -30px !important;
-              right: -30px !important;
-            }
-            .email-container::after {
-              width: 40px !important;
-              height: 40px !important;
-              bottom: -20px !important;
-              left: -20px !important;
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
             }
             .header {
-              padding: 32px 16px !important;
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
+            }
+            .content {
+              background: #ffffff !important;
+            }
+            .message-section {
+              background: #ffffff !important;
+            }
+            .footer {
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
+            }
+            /* Ensure text is readable on dark backgrounds */
+            .business-name,
+            .invoice-title,
+            .invoice-number,
+            .amount,
+            .detail-section h3,
+            .detail-section p,
+            .message-section p,
+            .payment-methods h3,
+            .payment-method-name,
+            .payment-notice p,
+            .payment-method-details,
+            .payment-security p,
+            .footer p {
+              color: #000000 !important;
+            }
+            .invoice-title,
+            .invoice-number,
+            .detail-section h3 {
+              color: #333333 !important;
+            }
+            .business-contact,
+            .invoiceflow-link {
+              color: #333333 !important;
+            }
+          }
+          @media only screen and (max-width: 600px) {
+            .header {
+              padding: 32px 20px !important;
             }
             .header-content {
               display: flex !important;
@@ -1598,7 +1534,7 @@ export function generateCreativeEmailTemplate(
               flex: 1 !important;
             }
             .business-name {
-              font-size: 22px !important;
+              font-size: 14px !important;
             }
             .invoice-info {
               text-align: right !important;
@@ -1609,86 +1545,45 @@ export function generateCreativeEmailTemplate(
               margin-top: 20px !important;
             }
             .invoice-title {
-              font-size: 15px !important;
+              font-size: 9px !important;
             }
             .invoice-number {
-              font-size: 14px !important;
+              font-size: 9px !important;
             }
             .amount {
-              font-size: 26px !important;
+              font-size: 24px !important;
             }
             .content {
-              padding: 24px 16px;
+              padding: 32px 24px !important;
             }
-            .content::before {
-              width: 25px;
-              height: 25px;
-              top: 15px;
-              right: 15px;
+            .details-grid {
+              display: block !important;
+              grid-template-columns: none !important;
+              gap: 0 !important;
+              margin-bottom: 32px !important;
             }
-            .content::after {
-              width: 20px;
-              height: 20px;
-              bottom: 15px;
-              left: 15px;
+            .detail-section {
+              display: block !important;
+              margin-bottom: 40px !important;
+              width: 100% !important;
             }
-            .info-grid {
-              grid-template-columns: 1fr;
-              gap: 16px;
+            .detail-section:first-child {
+              margin-bottom: 40px !important;
             }
-            .info-section {
-              padding: 16px;
+            .detail-section:last-child {
+              margin-bottom: 0 !important;
             }
-            .services-table th,
-            .services-table td {
-              padding: 12px 16px;
+            .detail-section p {
+              margin-bottom: 0 !important;
+              padding-bottom: 0 !important;
             }
-            .payment-methods {
-              margin: 24px 0;
-            }
-            .payment-methods::before {
-              width: 30px;
-              height: 30px;
-              top: -5px;
-              left: -5px;
-            }
-            .payment-methods::after {
-              width: 25px;
-              height: 25px;
-              bottom: -10px;
-              right: -10px;
-            }
-            .payment-methods h3 {
-              font-size: 16px;
-            }
-            .payment-notice {
-              padding: 16px;
-              margin-bottom: 20px;
-            }
-            .payment-notice p {
-              font-size: 14px;
-              line-height: 1.5;
-            }
-            .payment-method-item {
-              margin-bottom: 16px;
-              padding-bottom: 16px;
-            }
-            .payment-method-name {
-              font-size: 13px;
-            }
-            .payment-method-details {
-              font-size: 13px;
-            }
-            .payment-security {
-              padding: 16px;
-              margin-top: 20px;
-            }
-            .payment-security p {
-              font-size: 13px;
-              line-height: 1.5;
+            .detail-section h3 {
+              margin-top: 0 !important;
+              margin-bottom: 16px !important;
+              padding-top: 0 !important;
             }
             .footer {
-              padding: 24px 16px;
+              padding: 24px 20px !important;
             }
           }
         </style>
@@ -1698,102 +1593,103 @@ export function generateCreativeEmailTemplate(
           <div class="header">
             <div class="header-content">
               <div class="business-info">
-                <div class="business-name">${businessSettings.businessName}</div>
+                <div class="business-name" style="color: #000000 !important; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 0; padding: 0;">${businessSettings.businessName}</div>
               </div>
               <div class="invoice-info">
-                <div class="invoice-title">Invoice</div>
-                <div class="invoice-number">#${invoice.invoice_number}</div>
-                <div class="amount">${formatCurrency(invoice.total)}</div>
+                <div class="invoice-title" style="color: #333333 !important; font-size: 12px; font-weight: 500; margin-bottom: 4px;">Invoice</div>
+                <div class="invoice-number" style="color: #333333 !important; font-size: 12px; margin-bottom: 8px; font-weight: 500;">#${invoice.invoice_number}</div>
+                <div class="amount" style="color: #000000 !important; font-size: 28px; font-weight: 800; letter-spacing: -0.03em;">${formatCurrency(invoice.total)}</div>
               </div>
             </div>
           </div>
 
           <div class="content">
-            <div class="creative-section">
-              <h3>Bill To</h3>
-              <p>
-                <strong>${invoice.clients.name}</strong><br>
-                ${invoice.clients.company ? `${invoice.clients.company}<br>` : ''}
-                ${invoice.clients.email}
-              </p>
-            </div>
-
-            <div class="creative-section">
-              <h3>Invoice Details</h3>
-              <p>
-                <strong>Issue Date:</strong> ${formatDate(invoice.issue_date)}<br>
-                <strong>Due Date:</strong> ${formatDate(invoice.due_date)}<br>
-                <strong>Status:</strong> Outstanding
-              </p>
+            <div class="details-grid">
+              <div class="detail-section">
+                <h3>Bill To</h3>
+                <p>
+                  ${invoice.clients.name}<br>
+                  ${invoice.clients.company ? `${invoice.clients.company}<br>` : ''}
+                  ${invoice.clients.email}
+                </p>
+              </div>
+              <div class="detail-section">
+                <h3>Invoice Details</h3>
+                <p>
+                  Issue Date: ${formatDate(invoice.issue_date)}<br>
+                  Due Date: ${formatDate(invoice.due_date)}<br>
+                  Status: Outstanding
+                </p>
+              </div>
             </div>
 
             <div class="message-section">
-              <p>Thank you for choosing our creative services! We're excited to bring your vision to life.</p>
-              ${invoice.notes ? `<p><strong>Project Notes:</strong> ${invoice.notes}</p>` : ''}
+              <p>Thank you for your business. Please find your invoice details below.</p>
+              ${invoice.notes ? `<p><strong>Notes:</strong> ${invoice.notes}</p>` : ''}
             </div>
 
             <div class="cta-section">
-              <a href="${publicUrl}" class="cta-button">
-                View Creative Invoice
+              <a href="${publicUrl}" class="cta-button" style="background: ${primaryColor} !important; color: #ffffff !important; padding: 16px 32px; text-decoration: none; font-weight: 600; font-size: 14px; border-radius: 6px; display: inline-block;">
+                View Full Invoice
               </a>
             </div>
 
             ${(businessSettings.paypalEmail || businessSettings.cashappId || businessSettings.venmoId || businessSettings.googlePayUpi || businessSettings.applePayId || businessSettings.bankAccount || businessSettings.stripeAccount || businessSettings.paymentNotes) ? `
             <div class="payment-methods">
-              <h3>Payment Methods</h3>
+              <h3 style="color: ${primaryColor} !important;">Payment Methods</h3>
               <div class="payment-notice">
                 <p>Please use one of the following payment methods to settle this invoice. All payments are processed securely.</p>
               </div>
               <div class="payment-list">
                 ${businessSettings.paypalEmail ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">PAYPAL</div>
+                    <div class="payment-method-name" style="color: ${primaryColor} !important;">PAYPAL</div>
                     <div class="payment-method-details">Send payment to: ${businessSettings.paypalEmail}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.cashappId ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">CASH APP</div>
+                    <div class="payment-method-name" style="color: ${primaryColor} !important;">CASH APP</div>
                     <div class="payment-method-details">Send to: ${businessSettings.cashappId.startsWith('$') ? businessSettings.cashappId : '$' + businessSettings.cashappId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.venmoId ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">VENMO</div>
+                    <div class="payment-method-name" style="color: ${primaryColor} !important;">VENMO</div>
                     <div class="payment-method-details">Send to: ${businessSettings.venmoId.startsWith('@') ? businessSettings.venmoId : '@' + businessSettings.venmoId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.googlePayUpi ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">GOOGLE PAY</div>
+                    <div class="payment-method-name" style="color: ${primaryColor} !important;">GOOGLE PAY</div>
                     <div class="payment-method-details">UPI ID: ${businessSettings.googlePayUpi}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.applePayId ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">APPLE PAY</div>
+                    <div class="payment-method-name" style="color: ${primaryColor} !important;">APPLE PAY</div>
                     <div class="payment-method-details">Send to: ${businessSettings.applePayId}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.bankAccount ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">BANK TRANSFER</div>
+                    <div class="payment-method-name" style="color: ${primaryColor} !important;">BANK TRANSFER</div>
                     <div class="payment-method-details">
-                      Bank: ${businessSettings.bankAccount}<br>
-                      ${businessSettings.bankIfscSwift ? `IFSC/SWIFT: ${businessSettings.bankIfscSwift}<br>` : ''}
-                      ${businessSettings.bankIban ? `IBAN: ${businessSettings.bankIban}` : ''}
+                      Bank: ${businessSettings.bankAccount}
+                      ${businessSettings.bankIfscSwift ? `<br>IFSC/SWIFT: ${businessSettings.bankIfscSwift}` : ''}
+                      ${businessSettings.bankIban ? `<br>IBAN: ${businessSettings.bankIban}` : ''}
                     </div>
                   </div>
                 ` : ''}
                 ${businessSettings.stripeAccount ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">CREDIT/DEBIT CARD</div>
+                    <div class="payment-method-name" style="color: ${primaryColor} !important;">CREDIT/DEBIT CARD</div>
                     <div class="payment-method-details">Processed securely via Stripe</div>
                   </div>
                 ` : ''}
                 ${businessSettings.paymentNotes ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name">OTHER</div>
+                    <div class="payment-method-name" style="color: ${primaryColor} !important;">OTHER</div>
                     <div class="payment-method-details">${businessSettings.paymentNotes}</div>
                   </div>
                 ` : ''}
@@ -1895,7 +1791,7 @@ export function generateOriginalFastInvoiceEmailTemplate(
           }
           .business-details {
             font-size: 13px;
-            color: #5f6368;
+            color: #333333 !important;
             line-height: 1.4;
           }
           .invoice-info {
@@ -1912,7 +1808,7 @@ export function generateOriginalFastInvoiceEmailTemplate(
           }
           .invoice-number {
             font-size: 13px;
-            color: #5f6368;
+            color: #333333 !important;
             margin-bottom: 8px;
           }
           .amount {
@@ -1937,7 +1833,7 @@ export function generateOriginalFastInvoiceEmailTemplate(
           }
           .detail-label {
             font-size: 14px;
-            color: #5f6368;
+            color: #333333 !important;
             font-weight: 400;
           }
           .detail-value {
@@ -2061,7 +1957,7 @@ export function generateOriginalFastInvoiceEmailTemplate(
           }
           .payment-method-details {
             font-size: 14px;
-            color: #5f6368;
+            color: #333333 !important;
             line-height: 1.4;
           }
           .payment-method {
@@ -2072,7 +1968,7 @@ export function generateOriginalFastInvoiceEmailTemplate(
           }
           .payment-info {
             font-size: 14px;
-            color: #5f6368;
+            color: #333333 !important;
             line-height: 1.4;
           }
           .payment-security {
@@ -2084,7 +1980,7 @@ export function generateOriginalFastInvoiceEmailTemplate(
           .payment-security p {
             margin: 0;
             font-size: 14px;
-            color: #5f6368;
+            color: #333333 !important;
             line-height: 1.4;
           }
           .footer {
@@ -2095,7 +1991,7 @@ export function generateOriginalFastInvoiceEmailTemplate(
           .footer p {
             margin-bottom: 8px;
             font-size: 14px;
-            color: #5f6368;
+            color: #333333 !important;
           }
           .footer p:last-child {
             margin-bottom: 0;
@@ -2112,7 +2008,7 @@ export function generateOriginalFastInvoiceEmailTemplate(
             margin-bottom: 4px;
           }
           .business-contact {
-            color: #5f6368;
+            color: #333333 !important;
             font-size: 14px;
           }
           .invoiceflow-branding {
@@ -2123,14 +2019,62 @@ export function generateOriginalFastInvoiceEmailTemplate(
           }
           .invoiceflow-disclaimer {
             font-size: 11px;
-            color: #9aa0a6;
+            color: #333333 !important;
             line-height: 1.3;
             margin-bottom: 8px;
           }
           .invoiceflow-link {
             font-size: 11px;
-            color: #5f6368;
+            color: #333333 !important;
             text-decoration: none;
+          }
+          /* Dark mode support - ensure readability on dark backgrounds */
+          @media (prefers-color-scheme: dark) {
+            .email-container {
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
+            }
+            .header {
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
+            }
+            .content {
+              background: #ffffff !important;
+            }
+            .message-section {
+              background: #ffffff !important;
+            }
+            .footer {
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
+            }
+            /* Ensure text is readable on dark backgrounds */
+            .business-name,
+            .invoice-title,
+            .invoice-number,
+            .amount,
+            .detail-label,
+            .detail-value,
+            .message-section p,
+            .payment-methods h3,
+            .payment-method-name,
+            .payment-notice p,
+            .payment-method-details,
+            .payment-security p,
+            .footer p {
+              color: #000000 !important;
+            }
+            .invoice-title,
+            .invoice-number,
+            .detail-label,
+            .payment-method-details {
+              color: #333333 !important;
+            }
+            .business-contact,
+            .invoiceflow-link,
+            .invoiceflow-disclaimer {
+              color: #333333 !important;
+            }
           }
           @media only screen and (max-width: 600px) {
             body {
@@ -2168,10 +2112,7 @@ export function generateOriginalFastInvoiceEmailTemplate(
               display: block !important;
             }
             .business-name {
-              font-size: 18px !important;
-            }
-            .business-details {
-              font-size: 12px !important;
+              font-size: 20px !important;
             }
             .invoice-title {
               font-size: 18px !important;
@@ -2266,7 +2207,7 @@ export function generateOriginalFastInvoiceEmailTemplate(
               margin-bottom: 6px !important;
             }
             .payment-method-details {
-              font-size: 13px !important;
+              font-size: 12px !important;
               line-height: 1.5 !important;
               word-break: break-word !important;
             }
@@ -2339,12 +2280,12 @@ export function generateOriginalFastInvoiceEmailTemplate(
           <div class="header">
             <div class="header-content">
               <div class="business-info">
-                <div class="business-name">${businessSettings.businessName}</div>
+                <div class="business-name" style="color: #000000 !important; font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin: 0; padding: 0;">${businessSettings.businessName}</div>
               </div>
               <div class="invoice-info">
-                <div class="invoice-title">Invoice</div>
-                <div class="invoice-number">#${invoice.invoice_number}</div>
-                <div class="amount">${formatCurrency(invoice.total)}</div>
+                <div class="invoice-title" style="color: #333333 !important; font-size: 16px; font-weight: 500; margin-bottom: 4px;">Invoice</div>
+                <div class="invoice-number" style="color: #333333 !important; font-size: 16px; margin-bottom: 8px; font-weight: 500;">#${invoice.invoice_number}</div>
+                <div class="amount" style="color: #000000 !important; font-size: 32px; font-weight: 800; letter-spacing: -0.03em;">${formatCurrency(invoice.total)}</div>
               </div>
             </div>
           </div>
@@ -2366,8 +2307,8 @@ export function generateOriginalFastInvoiceEmailTemplate(
             </div>
 
             <div class="message-section">
-              <p>Please find attached your invoice for the services provided.</p>
-              ${invoice.notes ? `<p>${invoice.notes}</p>` : ''}
+              <p style="margin: 0 0 12px 0 !important; font-size: 14px !important; color: #000000 !important; line-height: 1.6 !important;">Please find attached your invoice for the services provided.</p>
+              ${invoice.notes ? `<p style="margin: 0 !important; font-size: 14px !important; color: #000000 !important; line-height: 1.6 !important;">${invoice.notes}</p>` : ''}
             </div>
 
             <div class="cta-section">
@@ -2417,9 +2358,9 @@ export function generateOriginalFastInvoiceEmailTemplate(
                   <div class="payment-method-item">
                     <div class="payment-method-name">BANK TRANSFER</div>
                     <div class="payment-method-details">
-                      Bank: ${businessSettings.bankAccount}<br>
-                      ${businessSettings.bankIfscSwift ? `IFSC/SWIFT: ${businessSettings.bankIfscSwift}<br>` : ''}
-                      ${businessSettings.bankIban ? `IBAN: ${businessSettings.bankIban}` : ''}
+                      Bank: ${businessSettings.bankAccount}
+                      ${businessSettings.bankIfscSwift ? `<br>IFSC/SWIFT: ${businessSettings.bankIfscSwift}` : ''}
+                      ${businessSettings.bankIban ? `<br>IBAN: ${businessSettings.bankIban}` : ''}
                     </div>
                   </div>
                 ` : ''}

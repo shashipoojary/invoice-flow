@@ -219,7 +219,6 @@ async function sendReminderEmail(invoice: any, reminderType: string, _reason: st
       business_email?: string;
       business_phone?: string;
       business_address?: string;
-      email_from_address?: string;
       payment_notes?: string;
       paypal_email?: string;
       cashapp_id?: string;
@@ -269,15 +268,15 @@ async function sendReminderEmail(invoice: any, reminderType: string, _reason: st
                   <h2 style="margin: 0; color: #1e293b; font-size: 20px; font-weight: 600;">
                     Invoice #${invoice.invoice_number}
                   </h2>
-                  <p style="margin: 8px 0 0 0; color: #64748b; font-size: 14px;">
+                  <p style="margin: 8px 0 0 0; color: #333333 !important; font-size: 14px;">
                     ${(businessSettings?.business_name || '').trim() || 'Business Name'}
                   </p>
                 </div>
                 <div style="text-align: right;">
-                  <div style="color: #dc2626; font-size: 18px; font-weight: 600;">
+                  <div style="color: #dc2626 !important; font-size: 18px; font-weight: 600;">
                     $${invoice.total.toLocaleString()}
                   </div>
-                  <p style="margin: 4px 0 0 0; color: #64748b; font-size: 14px;">
+                  <p style="margin: 4px 0 0 0; color: #333333 !important; font-size: 14px;">
                     Due: ${new Date(invoice.due_date).toLocaleDateString()}
                   </p>
                 </div>
@@ -300,19 +299,19 @@ async function sendReminderEmail(invoice: any, reminderType: string, _reason: st
               <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 24px 0;">
                 <h3 style="margin: 0 0 12px 0; color: #1e293b; font-size: 16px; font-weight: 600;">Invoice Details</h3>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                  <span style="color: #64748b;">Invoice Number:</span>
-                  <span style="color: #1e293b; font-weight: 500;">#${invoice.invoice_number}</span>
+                  <span style="color: #333333 !important;">Invoice Number:</span>
+                  <span style="color: #1e293b !important; font-weight: 500;">#${invoice.invoice_number}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                  <span style="color: #64748b;">Amount Due:</span>
-                  <span style="color: #1e293b; font-weight: 500;">$${invoice.total.toLocaleString()}</span>
+                  <span style="color: #333333 !important;">Amount Due:</span>
+                  <span style="color: #1e293b !important; font-weight: 500;">$${invoice.total.toLocaleString()}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                  <span style="color: #64748b;">Due Date:</span>
-                  <span style="color: #1e293b; font-weight: 500;">${new Date(invoice.due_date).toLocaleDateString()}</span>
+                  <span style="color: #333333 !important;">Due Date:</span>
+                  <span style="color: #1e293b !important; font-weight: 500;">${new Date(invoice.due_date).toLocaleDateString()}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="color: #64748b;">Days Overdue:</span>
+                  <span style="color: #333333 !important;">Days Overdue:</span>
                   <span style="color: #dc2626; font-weight: 500;">${Math.max(0, Math.floor((new Date().getTime() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24)))}</span>
                 </div>
               </div>
@@ -338,15 +337,15 @@ async function sendReminderEmail(invoice: any, reminderType: string, _reason: st
                 </a>
               </div>
 
-              <p style="margin: 24px 0 0 0; color: #64748b; font-size: 14px; line-height: 1.5;">
+              <p style="margin: 24px 0 0 0; color: #333333 !important; font-size: 14px; line-height: 1.5;">
                 If you have already made payment, please disregard this reminder. Thank you for your business.
               </p>
             </div>
 
             <!-- Footer -->
             <div style="background-color: #f8fafc; padding: 24px; text-align: center; border-top: 1px solid #e2e8f0;">
-              <p style="margin: 0; color: #64748b; font-size: 14px;">
-                Powered by <a href="https://flowinvoicer.com" style="color: #3b82f6; text-decoration: none;">FlowInvoicer</a>
+              <p style="margin: 0; color: #333333 !important; font-size: 14px;">
+                Powered by <a href="https://flowinvoicer.com" style="color: #3b82f6 !important; text-decoration: none;">FlowInvoicer</a>
               </p>
             </div>
           </div>
@@ -355,10 +354,8 @@ async function sendReminderEmail(invoice: any, reminderType: string, _reason: st
     `;
 
     // Determine the from address using businessSettings we already fetched above
-    // Use configured email_from_address if available, otherwise use default
-    const fromAddress = businessSettings?.email_from_address && businessSettings.email_from_address.trim()
-      ? `${businessSettings.business_name || 'FlowInvoicer'} <${businessSettings.email_from_address.trim()}>`
-      : 'FlowInvoicer <onboarding@resend.dev>';
+    // Use Resend free plan default email address
+    const fromAddress = `${businessSettings.business_name || 'FlowInvoicer'} <onboarding@resend.dev>`;
 
     // Send email using Resend (use plain email address for free plan compatibility)
     const emailResult = await resend.emails.send({

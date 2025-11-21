@@ -17,6 +17,7 @@ import UnifiedInvoiceCard from '@/components/UnifiedInvoiceCard';
 import FastInvoiceModal from '@/components/FastInvoiceModal';
 import QuickInvoiceModal from '@/components/QuickInvoiceModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
+import SendInvoiceModal from '@/components/SendInvoiceModal';
 import ClientModal from '@/components/ClientModal';
 import { Client, Invoice } from '@/types';
 
@@ -50,6 +51,17 @@ export default function DashboardOverview() {
     message: '',
     type: 'danger' as 'danger' | 'warning' | 'info' | 'success',
     onConfirm: () => {},
+    isLoading: false
+  });
+
+  // Send invoice modal state
+  const [sendInvoiceModal, setSendInvoiceModal] = useState<{
+    isOpen: boolean;
+    invoice: Invoice | null;
+    isLoading: boolean;
+  }>({
+    isOpen: false,
+    invoice: null,
     isLoading: false
   });
   
@@ -200,7 +212,7 @@ export default function DashboardOverview() {
     } else {
       return { status: 'upcoming', days: diffDays, color: 'text-gray-600 dark:text-gray-400' };
     }
-  }, []);
+  }, [parseDateOnly]);
 
   // Helper function to format payment terms
   const formatPaymentTerms = useCallback((paymentTerms?: { enabled: boolean; terms: string }) => {
@@ -349,14 +361,27 @@ export default function DashboardOverview() {
     }
   }, [settings, showSuccess, showError]);
 
-  const handleSendInvoice = useCallback(async (invoice: Invoice) => {
+  const handleSendInvoice = useCallback((invoice: Invoice) => {
+    // Only show modal for draft invoices
+    if (invoice.status === 'draft') {
+      setSendInvoiceModal({
+        isOpen: true,
+        invoice,
+        isLoading: false
+      });
+    } else {
+      // For non-draft invoices, send directly (shouldn't happen, but just in case)
+      performSendInvoice(invoice);
+    }
+  }, []);
+
+  const performSendInvoice = useCallback(async (invoice: Invoice) => {
     const actionKey = `send-${invoice.id}`;
     setLoadingActions(prev => ({ ...prev, [actionKey]: true }));
+    setSendInvoiceModal(prev => ({ ...prev, isLoading: true }));
     
     try {
       const headers = await getAuthHeaders();
-      
-      // Debug: Log the invoice data being sent
       
       const response = await fetch(`/api/invoices/send`, {
         method: 'POST',
@@ -378,16 +403,19 @@ export default function DashboardOverview() {
         updateInvoice({ ...invoice, status: 'sent' as const });
         try { await refreshInvoices(); } catch {}
         showSuccess('Invoice Sent', `Invoice ${invoice.invoiceNumber} has been sent successfully.`);
+        setSendInvoiceModal({ isOpen: false, invoice: null, isLoading: false });
       } else {
         showError('Send Failed', 'Failed to send invoice. Please try again.');
+        setSendInvoiceModal(prev => ({ ...prev, isLoading: false }));
       }
     } catch (error) {
       console.error('Error sending invoice:', error);
       showError('Send Failed', 'Failed to send invoice. Please try again.');
+      setSendInvoiceModal(prev => ({ ...prev, isLoading: false }));
     } finally {
       setLoadingActions(prev => ({ ...prev, [actionKey]: false }));
     }
-  }, [getAuthHeaders, showSuccess, showError]);
+  }, [getAuthHeaders, showSuccess, showError, updateInvoice, refreshInvoices]);
 
   const handleEditInvoice = useCallback((invoice: Invoice) => {
     setSelectedInvoice(invoice);
@@ -1231,7 +1259,7 @@ export default function DashboardOverview() {
                         <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Revenue</p>
                         <div className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-emerald-600 text-left break-words">
                         {isLoadingStats ? (
-                            <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-6 sm:h-8 w-20 sm:w-24 rounded"></div>
+                            <div className="animate-pulse bg-gray-300 h-6 sm:h-8 w-20 sm:w-24 rounded"></div>
                         ) : (
                             <span className="break-words">{formatMoney(totalRevenue)}</span>
                         )}
@@ -1260,7 +1288,7 @@ export default function DashboardOverview() {
                         <div>
                           <div className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-orange-500 text-left break-words" style={{ display: 'block' }}>
                             {isLoadingStats ? (
-                              <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-6 sm:h-8 w-20 sm:w-24 rounded"></div>
+                              <div className="animate-pulse bg-gray-300 h-6 sm:h-8 w-20 sm:w-24 rounded"></div>
                             ) : (
                               <div>{formatMoney(totalPayableAmount)}</div>
                             )}
@@ -1296,7 +1324,7 @@ export default function DashboardOverview() {
                         <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Overdue</p>
                         <div className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-red-600 text-left">
                           {isLoadingStats ? (
-                            <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-6 sm:h-8 w-8 sm:w-10 rounded"></div>
+                            <div className="animate-pulse bg-gray-300 h-6 sm:h-8 w-8 sm:w-10 rounded"></div>
                           ) : (
                             overdueCount
                           )}
@@ -1324,7 +1352,7 @@ export default function DashboardOverview() {
                         <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Clients</p>
                         <div className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-600 text-left">
                           {isLoadingStats ? (
-                            <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-6 sm:h-8 w-8 sm:w-10 rounded"></div>
+                            <div className="animate-pulse bg-gray-300 h-6 sm:h-8 w-8 sm:w-10 rounded"></div>
                           ) : (
                             totalClients
                           )}
@@ -1437,13 +1465,13 @@ export default function DashboardOverview() {
                       <div className="animate-pulse">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-4">
-                            <div className="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
+                            <div className="w-10 h-10 bg-gray-300 rounded-lg"></div>
                             <div className="space-y-2">
-                              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32"></div>
-                              <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-24"></div>
+                              <div className="h-4 bg-gray-300 rounded w-32"></div>
+                              <div className="h-3 bg-gray-300 rounded w-24"></div>
                             </div>
                           </div>
-                          <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-20"></div>
+                          <div className="h-6 bg-gray-300 rounded w-20"></div>
                         </div>
                       </div>
                     </div>
@@ -1903,6 +1931,24 @@ export default function DashboardOverview() {
          isLoading={confirmationModal.isLoading}
          confirmText={confirmationModal.type === 'success' ? 'Mark as Paid' : 'Delete Invoice'}
          cancelText="Cancel"
+       />
+
+       <SendInvoiceModal
+         isOpen={sendInvoiceModal.isOpen}
+         onClose={() => setSendInvoiceModal({ isOpen: false, invoice: null, isLoading: false })}
+         onEdit={() => {
+           if (sendInvoiceModal.invoice) {
+             handleEditInvoice(sendInvoiceModal.invoice);
+             setSendInvoiceModal({ isOpen: false, invoice: null, isLoading: false });
+           }
+         }}
+         onSend={() => {
+           if (sendInvoiceModal.invoice) {
+             performSendInvoice(sendInvoiceModal.invoice);
+           }
+         }}
+         invoiceNumber={sendInvoiceModal.invoice?.invoiceNumber || ''}
+         isLoading={sendInvoiceModal.isLoading}
        />
 
        {/* Toast Container */}

@@ -336,14 +336,14 @@ export default function ClientsPage() {
                     <div key={i} className="rounded-lg p-6 bg-white/70 border border-gray-200 backdrop-blur-sm">
                       <div className="animate-pulse">
                         <div className="flex items-center space-x-3 mb-4">
-                          <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                          <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
                           <div>
-                            <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-2"></div>
-                            <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-32"></div>
+                            <div className="h-4 bg-gray-300 rounded w-24 mb-2"></div>
+                            <div className="h-3 bg-gray-300 rounded w-32"></div>
                           </div>
                         </div>
-                        <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-full mb-2"></div>
-                        <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-2/3"></div>
+                        <div className="h-3 bg-gray-300 rounded w-full mb-2"></div>
+                        <div className="h-3 bg-gray-300 rounded w-2/3"></div>
                       </div>
                     </div>
                   ))}

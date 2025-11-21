@@ -278,22 +278,8 @@ export default function QuickInvoiceModal({
         fetchClients()
       }
       // fetchBusinessSettings() - Removed, using SettingsContext instead
-      
-      // Only set default dates for NEW invoices (not when editing)
-      if (!editingInvoice) {
-        const today = new Date()
-        const defaultDueDate = new Date()
-        defaultDueDate.setDate(defaultDueDate.getDate() + 30)
-        
-        setIssueDate(today.toISOString().split('T')[0])
-        setDueDate(defaultDueDate.toISOString().split('T')[0])
-        
-        // Generate invoice number
-        const invoiceNum = `INV-${Date.now().toString().slice(-6)}`
-        setInvoiceNumber(invoiceNum)
-      }
     }
-  }, [isOpen, fetchClients, propClients, editingInvoice])
+  }, [isOpen, fetchClients, propClients])
 
   // Auto-calculate due date when payment terms are enabled or issue date changes
   useEffect(() => {
@@ -389,11 +375,22 @@ export default function QuickInvoiceModal({
         }
       } else {
         // Reset form when creating new invoice
+        // Get current date dynamically
+        const today = new Date()
+        const defaultDueDate = new Date()
+        defaultDueDate.setDate(defaultDueDate.getDate() + 30)
+        
         setCurrentStep(1)
         setSelectedClientId('')
-        setInvoiceNumber('')
-        setIssueDate('')
-        setDueDate('')
+        
+        // Generate invoice number dynamically
+        const invoiceNum = `INV-${Date.now().toString().slice(-6)}`
+        setInvoiceNumber(invoiceNum)
+        
+        // Set current date dynamically for issue date (not empty string)
+        setIssueDate(today.toISOString().split('T')[0])
+        setDueDate(defaultDueDate.toISOString().split('T')[0])
+        
         setNewClient({
           name: '',
           email: '',
@@ -436,7 +433,6 @@ export default function QuickInvoiceModal({
           options: ['Due on Receipt', 'Net 15', 'Net 30', '2/10 Net 30'],
           defaultOption: 'Due on Receipt'
         })
-        // Dates and invoice number will be set by the other useEffect
       }
     }
   }, [isOpen, editingInvoice, addClient, clients])
@@ -537,11 +533,13 @@ export default function QuickInvoiceModal({
       // Validate required fields
       if (!selectedClientId && !newClient.name) {
         showWarning('Please select a client or enter client details')
+        setCreatingLoading(false)
         return
       }
 
       if (items.some(item => !item.description || !item.amount || parseFloat(item.amount.toString()) <= 0)) {
         showWarning('Please fill in all item details with valid amounts')
+        setCreatingLoading(false)
         return
       }
 
@@ -561,6 +559,8 @@ export default function QuickInvoiceModal({
         notes: notes,
         billing_choice: 'per_invoice',
         type: 'detailed',
+        invoice_number: invoiceNumber || undefined,
+        issue_date: issueDate || undefined,
         status: isEditing ? editingInvoice?.status : 'sent', // Keep existing status when editing
         // Enhanced features
         payment_terms: paymentTerms.enabled ? {
@@ -653,11 +653,13 @@ export default function QuickInvoiceModal({
       // Validate required fields
       if (!selectedClientId && !newClient.name) {
         showWarning('Please select a client or enter client details')
+        setSendingLoading(false)
         return
       }
 
       if (items.some(item => !item.description || !item.amount || parseFloat(item.amount.toString()) <= 0)) {
         showWarning('Please fill in all item details with valid amounts')
+        setSendingLoading(false)
         return
       }
 
@@ -743,6 +745,7 @@ export default function QuickInvoiceModal({
             showWarning('Client email is required to send the invoice');
             // Still add invoice to list but do not attempt send
             try { addInvoice && addInvoice(result.invoice) } catch {}
+            setSendingLoading(false)
             onSuccess();
             onClose();
             return;
@@ -858,11 +861,13 @@ export default function QuickInvoiceModal({
       // Validate required fields for PDF generation
       if (!selectedClientId && !newClient.name) {
         showWarning('Please select a client or enter client details')
+        setPdfLoading(false)
         return
       }
 
       if (items.some(item => !item.description || !item.amount || parseFloat(item.amount.toString()) <= 0)) {
         showWarning('Please fill in all item details with valid amounts')
+        setPdfLoading(false)
         return
       }
 
@@ -1784,7 +1789,7 @@ export default function QuickInvoiceModal({
                         Reminder Setup
                       </span>
                       <div className="flex items-center space-x-2">
-                        <span className={`text-xs ${
+                        <span className={`text-xs cursor-pointer ${
                           reminders.useSystemDefaults 
                             ? (isDarkMode ? 'text-gray-400' : 'text-gray-500')
                             : (isDarkMode ? 'text-white' : 'text-gray-900')

@@ -370,11 +370,8 @@ export async function POST(request: NextRequest) {
       invoice.status = 'sent';
     }
 
-    // Determine the from address
-    // Use configured email_from_address if available, otherwise use default
-    const fromAddress = settingsData?.email_from_address && settingsData.email_from_address.trim()
-      ? `${businessSettings.businessName || 'FlowInvoicer'} <${settingsData.email_from_address.trim()}>`
-      : `${businessSettings.businessName || 'FlowInvoicer'} <onboarding@resend.dev>`;
+    // Use Resend free plan default email address
+    const fromAddress = `${businessSettings.businessName || 'FlowInvoicer'} <onboarding@resend.dev>`;
 
     // Send email with Resend
     const { data, error } = await resend.emails.send({
@@ -405,8 +402,22 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id)
       .single();
 
-    // Log sent event
-    try { await supabaseAdmin.from('invoice_events').insert({ invoice_id: invoiceId, type: 'sent' }); } catch {}
+    // Log sent event - check for recent duplicate to prevent multiple entries
+    try {
+      const fiveSecondsAgo = new Date(Date.now() - 5000).toISOString();
+      const { data: recentEvents } = await supabaseAdmin
+        .from('invoice_events')
+        .select('id')
+        .eq('invoice_id', invoiceId)
+        .eq('type', 'sent')
+        .gte('created_at', fiveSecondsAgo)
+        .limit(1);
+      
+      // Only insert if no recent 'sent' event exists (within last 5 seconds)
+      if (!recentEvents || recentEvents.length === 0) {
+        await supabaseAdmin.from('invoice_events').insert({ invoice_id: invoiceId, type: 'sent' });
+      }
+    } catch {}
 
     // Create scheduled reminders if enabled (check latest invoice status after update)
     const finalInvoice = latest || invoice;

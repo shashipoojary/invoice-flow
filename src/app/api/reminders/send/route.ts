@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     // Get ALL user business settings from user_settings table (properly isolated per user)
     const { data: userSettings, error: settingsError } = await supabaseAdmin
       .from('user_settings')
-      .select('business_name, business_email, business_phone, business_address, email_from_address, payment_notes, paypal_email, cashapp_id, venmo_id, google_pay_upi, apple_pay_id, bank_account, bank_ifsc_swift, bank_iban, stripe_account')
+      .select('business_name, business_email, business_phone, business_address, payment_notes, paypal_email, cashapp_id, venmo_id, google_pay_upi, apple_pay_id, bank_account, bank_ifsc_swift, bank_iban, stripe_account')
       .eq('user_id', invoice.user_id)
       .single();
 
@@ -126,11 +126,8 @@ export async function POST(request: NextRequest) {
       console.error('Error fetching user settings:', settingsError);
     }
 
-    // Determine the from address
-    // Use configured email_from_address if available, otherwise use default
-    const fromAddress = userSettings?.email_from_address && userSettings.email_from_address.trim()
-      ? `${userSettings.business_name || 'FlowInvoicer'} <${userSettings.email_from_address.trim()}>`
-      : 'FlowInvoicer <onboarding@resend.dev>';
+    // Use Resend free plan default email address
+    const fromAddress = `${userSettings?.business_name || 'FlowInvoicer'} <onboarding@resend.dev>`;
 
     // Use userSettings as businessSettings (all business details are in user_settings table)
     const businessSettings: {
@@ -138,7 +135,6 @@ export async function POST(request: NextRequest) {
       business_email?: string;
       business_phone?: string;
       business_address?: string;
-      email_from_address?: string;
       payment_notes?: string;
       paypal_email?: string;
       cashapp_id?: string;
@@ -241,35 +237,41 @@ export async function POST(request: NextRequest) {
               border-bottom: 2px solid #e5e5e5;
             }
             .header-content {
-              display: flex;
-              justify-content: space-between;
-              align-items: flex-start;
+              display: table;
+              width: 100%;
               max-width: 520px;
               margin: 0 auto;
+              table-layout: fixed;
             }
             .business-info {
-              flex: 1;
+              display: table-cell;
+              vertical-align: top;
+              width: 50%;
             }
             .business-name {
               font-size: 28px;
               font-weight: 700;
-              color: #000000;
+              color: #000000 !important;
               letter-spacing: -0.02em;
+              margin: 0;
+              padding: 0;
             }
             .invoice-info {
+              display: table-cell;
+              vertical-align: top;
               text-align: right;
-              flex: 0 0 auto;
-              margin-left: 24px;
+              width: 50%;
+              padding-left: 24px;
             }
             .invoice-title {
               font-size: 16px;
               font-weight: 500;
-              color: #666666;
+              color: #333333 !important;
               margin-bottom: 4px;
             }
             .invoice-number {
               font-size: 16px;
-              color: #666666;
+              color: #333333 !important;
               margin-bottom: 8px;
               font-weight: 500;
             }
@@ -323,7 +325,7 @@ export async function POST(request: NextRequest) {
             .detail-section h3 {
               font-size: 13px;
               font-weight: 600;
-              color: #666666;
+              color: #333333 !important;
               text-transform: uppercase;
               letter-spacing: 0.1em;
               margin: 0 0 16px 0;
@@ -361,7 +363,7 @@ export async function POST(request: NextRequest) {
             }
             .detail-label {
               font-size: 15px;
-              color: #666666;
+              color: #333333 !important;
               font-weight: 400;
               text-align: left;
               padding-right: 20px;
@@ -415,7 +417,7 @@ export async function POST(request: NextRequest) {
             .footer p {
               margin: 0;
               font-size: 14px;
-              color: #666666;
+              color: #333333 !important;
               line-height: 1.5;
             }
             @media only screen and (max-width: 600px) {
@@ -433,31 +435,36 @@ export async function POST(request: NextRequest) {
                 width: 100% !important;
               }
               .header-content {
-                display: flex !important;
-                flex-direction: row !important;
-                align-items: flex-start !important;
-                gap: 12px !important;
-                justify-content: space-between !important;
-                max-width: 100% !important;
+                display: table !important;
                 width: 100% !important;
+                max-width: 100% !important;
+                table-layout: fixed !important;
               }
               .business-info {
+                display: table-cell !important;
+                vertical-align: top !important;
+                width: 50% !important;
                 text-align: left !important;
-                width: 100% !important;
-                margin-bottom: 0 !important;
-                display: block !important;
-                flex: 1 !important;
               }
               .business-name {
                 font-size: 22px !important;
+                color: #000000 !important;
               }
               .invoice-info {
+                display: table-cell !important;
+                vertical-align: top !important;
                 text-align: right !important;
-                margin-left: 0 !important;
-                width: 100% !important;
-                display: block !important;
-                flex: 0 0 auto !important;
-                margin-top: 20px !important;
+                width: 50% !important;
+                padding-left: 12px !important;
+              }
+              .invoice-title {
+                color: #333333 !important;
+              }
+              .invoice-number {
+                color: #333333 !important;
+              }
+              .amount {
+                color: #dc2626 !important;
               }
               .invoice-title {
                 font-size: 15px !important;
@@ -604,13 +611,13 @@ export async function POST(request: NextRequest) {
             <div class="header">
               <div class="header-content">
                 <div class="business-info">
-                  <div class="business-name">${(businessSettings?.business_name || '').trim() || 'Business Name'}</div>
+                  <div class="business-name" style="color: #000000 !important; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin: 0; padding: 0;">${(businessSettings?.business_name || '').trim() || 'Business Name'}</div>
                 </div>
                 <div class="invoice-info">
-                  <div class="invoice-title">Payment Reminder</div>
-                  <div class="invoice-number">#${invoice.invoice_number}</div>
-                  <div class="amount">$${totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                </div>
+                  <div class="invoice-title" style="color: #333333 !important; font-size: 16px; font-weight: 500; margin-bottom: 4px;">Payment Reminder</div>
+                  <div class="invoice-number" style="color: #333333 !important; font-size: 16px; margin-bottom: 8px; font-weight: 500;">#${invoice.invoice_number}</div>
+                  <div class="amount" style="color: #dc2626 !important; font-size: 32px; font-weight: 800; letter-spacing: -0.03em;">$${totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                  </div>
                 </div>
               </div>
 
@@ -665,7 +672,7 @@ export async function POST(request: NextRequest) {
                 </a>
               </div>
 
-              <p style="margin: 32px 0 0 0; color: #666666; font-size: 14px; line-height: 1.5;">
+              <p style="margin: 32px 0 0 0; color: #333333 !important; font-size: 14px; line-height: 1.5;">
                 If you have already made payment, please disregard this reminder. Thank you for your business.
               </p>
             </div>
@@ -786,7 +793,7 @@ export async function POST(request: NextRequest) {
         // Only show domain error if NOT sending to own email
         return NextResponse.json({ 
           error: 'Free Plan Limitation', 
-          details: 'Resend free plan (onboarding@resend.dev) only allows sending to your own email address. To send emails to clients, you need to verify a domain at https://resend.com/domains and configure it in Settings > Email From Address.',
+          details: 'Email sending is handled by FlowInvoicer. Please contact support if you encounter any issues.',
           requiresDomainVerification: true,
           isFreePlan: true
         }, { status: 422 });
@@ -910,14 +917,14 @@ export async function POST(request: NextRequest) {
     // If no existing reminder was found or updated, create a new sent reminder record
     if (!reminderUpdated) {
       const { error: insertError, data: insertData } = await supabaseAdmin
-        .from('invoice_reminders')
-        .insert({
-          invoice_id: invoice.id,
-          reminder_type: reminderType,
+      .from('invoice_reminders')
+      .insert({
+        invoice_id: invoice.id,
+        reminder_type: reminderType,
           reminder_status: 'sent',
           email_id: emailData?.id || null,
           sent_at: new Date().toISOString(),
-          overdue_days: daysOverdue,
+        overdue_days: daysOverdue,
           failure_reason: null
         })
         .select('id')
@@ -938,7 +945,7 @@ export async function POST(request: NextRequest) {
         .from('invoice_reminders')
         .select('id, reminder_status')
         .eq('id', reminderId)
-        .single();
+      .single();
 
       if (verifyError || !verifyData || verifyData.reminder_status !== 'sent') {
         console.error('⚠️ WARNING: Reminder status verification failed:', {

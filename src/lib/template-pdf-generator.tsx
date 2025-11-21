@@ -9,10 +9,15 @@ export async function generateTemplatePDFBlob(
   invoice: Invoice, 
   businessSettings?: BusinessSettings,
   template: number = 1,
-  primaryColor: string = '#5C2D91',
-  secondaryColor: string = '#8B5CF6'
+  primaryColor?: string,
+  secondaryColor?: string
 ): Promise<Blob> {
   try {
+    // Extract colors from invoice theme if not provided
+    const invoiceTheme = invoice.theme as { template?: number; primary_color?: string; secondary_color?: string } | undefined;
+    const finalPrimaryColor = primaryColor || invoiceTheme?.primary_color || '#5C2D91';
+    const finalSecondaryColor = secondaryColor || invoiceTheme?.secondary_color || '#8B5CF6';
+    
     // Create a sanitized invoice object to prevent serialization issues
     const sanitizedInvoice: Invoice = {
       ...invoice,
@@ -83,8 +88,8 @@ export async function generateTemplatePDFBlob(
         sanitizedInvoice,
         sanitizedBusinessSettings,
         template,
-        primaryColor,
-        secondaryColor
+        finalPrimaryColor,
+        finalSecondaryColor
       );
       
       // Convert Uint8Array to Blob

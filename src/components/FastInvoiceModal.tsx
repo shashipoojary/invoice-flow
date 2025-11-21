@@ -335,9 +335,9 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                     isDarkMode ? 'text-indigo-400' : 'text-indigo-600'
                   }`}>Client</span>
                 </div>
-                <div className="w-8 h-0.5 bg-gray-300 dark:bg-gray-600"></div>
+                <div className="w-8 h-0.5 bg-gray-300"></div>
                 <div className="flex items-center">
-                  <div className="w-7 h-7 rounded-full bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400 flex items-center justify-center text-xs font-medium">2</div>
+                  <div className="w-7 h-7 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-xs font-medium">2</div>
                   <span className={`ml-2 text-xs font-medium ${
                     isDarkMode ? 'text-gray-400' : 'text-gray-500'
                   }`}>Details</span>

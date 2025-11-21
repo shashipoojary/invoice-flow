@@ -356,14 +356,14 @@ export default function SettingsPage() {
                 <div className={`rounded-lg p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
                   <div className="animate-pulse">
                     <div className="flex items-center space-x-3 mb-6">
-                      <div className="w-9 h-9 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
-                      <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-48"></div>
+                      <div className="w-9 h-9 bg-gray-300 rounded-lg"></div>
+                      <div className="h-6 bg-gray-300 rounded w-48"></div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {[1, 2, 3, 4].map((i) => (
                         <div key={i}>
-                          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-24 mb-2"></div>
-                          <div className="h-10 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+                          <div className="h-4 bg-gray-300 rounded w-24 mb-2"></div>
+                          <div className="h-10 bg-gray-300 rounded w-full"></div>
                         </div>
                       ))}
                     </div>
@@ -407,27 +407,6 @@ export default function SettingsPage() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
-                      Email From Address
-                      <span className="text-xs text-gray-500 ml-1">(Verified Resend domain)</span>
-                    </label>
-                    <input
-                      type="email"
-                      value={settings.emailFromAddress || ''}
-                      onChange={(e) => updateSettings({ ...settings, emailFromAddress: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
-                      placeholder="noreply@yourdomain.com"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      <strong>Free Plan Note:</strong> Using default (onboarding@resend.dev) only allows sending to your own email address.{' '}
-                      To send to clients, verify your domain at{' '}
-                      <a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">
-                        resend.com/domains
-                      </a>{' '}
-                      and enter your verified email here (e.g., noreply@yourdomain.com). Free plan also has a rate limit of 2 requests/second.
-                    </p>
-                  </div>
 
                   <div>
                     <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
@@ -568,14 +547,14 @@ export default function SettingsPage() {
                 <div className={`rounded-lg p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
                   <div className="animate-pulse">
                     <div className="flex items-center space-x-3 mb-6">
-                      <div className="w-9 h-9 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
-                      <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-40"></div>
+                      <div className="w-9 h-9 bg-gray-300 rounded-lg"></div>
+                      <div className="h-6 bg-gray-300 rounded w-40"></div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
                         <div key={i}>
-                          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-2"></div>
-                          <div className="h-10 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+                          <div className="h-4 bg-gray-300 rounded w-32 mb-2"></div>
+                          <div className="h-10 bg-gray-300 rounded w-full"></div>
                         </div>
                       ))}
                     </div>

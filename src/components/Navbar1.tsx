@@ -16,12 +16,50 @@ const Navbar1 = () => {
     setIsOpen(false)
     if (path === 'home') {
       router.push('/')
+      // Small delay to ensure page is loaded before scrolling
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }, 100)
+    } else if (path === 'about') {
+      router.push('/about')
+    } else if (path === 'contact') {
+      router.push('/contact')
+    } else if (path === 'features') {
+      // Scroll to features section on landing page
+      if (window.location.pathname === '/') {
+        setTimeout(() => {
+          const featuresSection = document.getElementById('features')
+          if (featuresSection) {
+            featuresSection.scrollIntoView({ behavior: 'smooth' })
+          }
+        }, 100)
+      } else {
+        router.push('/')
+        setTimeout(() => {
+          const featuresSection = document.getElementById('features')
+          if (featuresSection) {
+            featuresSection.scrollIntoView({ behavior: 'smooth' })
+          }
+        }, 300)
+      }
     } else if (path === 'pricing') {
-      router.push('/#pricing')
-    } else if (path === 'docs') {
-      router.push('/#features')
-    } else if (path === 'projects') {
-      router.push('/#features')
+      // Scroll to pricing section on landing page
+      if (window.location.pathname === '/') {
+        setTimeout(() => {
+          const pricingSection = document.getElementById('pricing')
+          if (pricingSection) {
+            pricingSection.scrollIntoView({ behavior: 'smooth' })
+          }
+        }, 100)
+      } else {
+        router.push('/')
+        setTimeout(() => {
+          const pricingSection = document.getElementById('pricing')
+          if (pricingSection) {
+            pricingSection.scrollIntoView({ behavior: 'smooth' })
+          }
+        }, 300)
+      }
     }
   }
 
@@ -56,7 +94,7 @@ const Navbar1 = () => {
         
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            {["Home", "Pricing", "Docs", "Projects"].map((item) => (
+            {["Home", "Features", "Pricing", "About", "Contact"].map((item) => (
               <motion.div
                 key={item}
                 initial={{ opacity: 0, y: -10 }}
@@ -125,7 +163,7 @@ const Navbar1 = () => {
               <X className="h-6 w-6 text-gray-900" />
             </motion.button>
             <div className="flex flex-col space-y-6">
-              {["Home", "Pricing", "Docs", "Projects"].map((item, i) => (
+              {["Home", "Features", "Pricing", "About", "Contact"].map((item, i) => (
                 <motion.div
                   key={item}
                   initial={{ opacity: 0, x: 20 }}

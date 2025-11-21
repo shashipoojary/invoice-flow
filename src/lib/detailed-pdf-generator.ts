@@ -916,163 +916,10 @@ async function generateTemplate3PDF(
 ): Promise<Uint8Array> {
   const { width, height } = page.getSize();
 
-  // Creative header with artistic gradient effect
-  page.drawRectangle({
-    x: 0,
-    y: height - 120,
-    width: width,
-    height: 120,
-    color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
-  });
-
-  // Creative artistic accent shapes
-  page.drawRectangle({
-    x: 0,
-    y: height - 120,
-    width: width,
-    height: 12,
-    color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
-  });
-
-  // Creative diagonal accent lines
-  page.drawLine({
-    start: { x: 0, y: height - 50 },
-    end: { x: 300, y: height - 50 },
-    thickness: 4,
-    color: rgb(1, 1, 1),
-  });
-
-  page.drawLine({
-    start: { x: 0, y: height - 60 },
-    end: { x: 200, y: height - 60 },
-    thickness: 2,
-    color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
-  });
-
-  // Creative invoice title with artistic styling
-  page.drawText('INVOICE', {
-    x: 50,
-    y: height - 70,
-    size: 30,
-    font: boldFont,
-    color: rgb(1, 1, 1),
-  });
-
-  // Creative logo area with artistic border
-  if (businessSettings.logo) {
-    try {
-      const logoBytes = Uint8Array.from(atob(businessSettings.logo.split(',')[1]), c => c.charCodeAt(0));
-      const logoImage = await pdfDoc.embedPng(logoBytes);
-      const logoDims = logoImage.scale(0.35);
-      
-      // Creative artistic border around logo
-      page.drawRectangle({
-        x: 50,
-        y: height - 110,
-        width: 70,
-        height: 70,
-        borderColor: rgb(1, 1, 1),
-        borderWidth: 3,
-      });
-      
-      // Creative corner accents
-      page.drawRectangle({
-        x: 50,
-        y: height - 110,
-        width: 15,
-        height: 15,
-        color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
-      });
-      
-      page.drawRectangle({
-        x: 105,
-        y: height - 40,
-        width: 15,
-        height: 15,
-        color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
-      });
-      
-      page.drawImage(logoImage, {
-        x: 60,
-        y: height - 100,
-        width: logoDims.width,
-        height: logoDims.height,
-      });
-    } catch (error) {
-      // Creative artistic logo fallback
-      page.drawRectangle({
-        x: 50,
-        y: height - 110,
-        width: 70,
-        height: 70,
-        color: rgb(1, 1, 1),
-      });
-      
-      // Creative corner accents
-      page.drawRectangle({
-        x: 50,
-        y: height - 110,
-        width: 15,
-        height: 15,
-        color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
-      });
-      
-      page.drawRectangle({
-        x: 105,
-        y: height - 40,
-        width: 15,
-        height: 15,
-        color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
-      });
-      
-      page.drawText(businessSettings.businessName?.charAt(0) || 'B', {
-        x: 80,
-        y: height - 140,
-        size: 28,
-        font: boldFont,
-        color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
-      });
-    }
-  } else {
-    // Creative artistic text logo
-    page.drawRectangle({
-      x: 50,
-      y: height - 110,
-      width: 70,
-      height: 70,
-      color: rgb(1, 1, 1),
-    });
-    
-    // Creative corner accents
-    page.drawRectangle({
-      x: 50,
-      y: height - 110,
-      width: 15,
-      height: 15,
-      color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
-    });
-    
-    page.drawRectangle({
-      x: 105,
-      y: height - 40,
-      width: 15,
-      height: 15,
-      color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
-    });
-    
-    page.drawText(businessSettings.businessName?.charAt(0) || 'B', {
-      x: 80,
-      y: height - 140,
-      size: 28,
-      font: boldFont,
-      color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
-    });
-  }
-
-  // Business information with creative styling
+  // Business information with creative styling (header removed)
   page.drawText(businessSettings.businessName || 'Your Business', {
-    x: 140,
-    y: height - 100,
+    x: 50,
+    y: height - 60,
     size: 16,
     font: boldFont,
     color: rgb(0, 0, 0),
@@ -1080,8 +927,8 @@ async function generateTemplate3PDF(
 
   if (businessSettings.address) {
     page.drawText(businessSettings.address, {
-      x: 140,
-      y: height - 115,
+      x: 50,
+      y: height - 75,
       size: 9,
       font: font,
       color: rgb(0.3, 0.3, 0.3),
@@ -1090,8 +937,8 @@ async function generateTemplate3PDF(
 
   if (businessSettings.businessPhone) {
     page.drawText(businessSettings.businessPhone, {
-      x: 140,
-      y: height - 130,
+      x: 50,
+      y: height - 90,
       size: 9,
       font: font,
       color: rgb(0.3, 0.3, 0.3),
@@ -1100,8 +947,8 @@ async function generateTemplate3PDF(
 
   if (businessSettings.businessEmail) {
     page.drawText(businessSettings.businessEmail, {
-      x: 140,
-      y: height - 145,
+      x: 50,
+      y: height - 105,
       size: 9,
       font: font,
       color: rgb(0.3, 0.3, 0.3),
@@ -1109,7 +956,7 @@ async function generateTemplate3PDF(
   }
 
   // Creative invoice details section with artistic elements
-  const invoiceDetailsY = height - 190;
+  const invoiceDetailsY = height - 130;
   
   // Creative artistic background
   page.drawRectangle({
@@ -1164,7 +1011,7 @@ async function generateTemplate3PDF(
   });
 
   // Creative bill to section with artistic elements
-  const billToY = height - 300;
+  const billToY = height - 240;
   
   // Creative artistic background
   page.drawRectangle({
@@ -1223,7 +1070,7 @@ async function generateTemplate3PDF(
   }
 
   // Creative services table with artistic header
-  const tableY = height - 410;
+  const tableY = height - 350;
   
   // Creative artistic table header
   page.drawRectangle({
@@ -1985,8 +1832,7 @@ async function generateSimpleCleanTemplatePDF(
 ): Promise<Uint8Array> {
   const { width, height } = page.getSize();
 
-  // Creative header background - unique geometric design
-  // Base colored background
+  // Creative clean minimal header - similar to Modern
   page.drawRectangle({
     x: 0,
     y: height - 120,
@@ -1995,24 +1841,7 @@ async function generateSimpleCleanTemplatePDF(
     color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
   });
 
-  // Diagonal accent shape (top right)
-  page.drawRectangle({
-    x: width - 200,
-    y: height - 120,
-    width: 200,
-    height: 120,
-    color: rgb(primaryRgb.r * 0.85, primaryRgb.g * 0.85, primaryRgb.b * 0.85),
-  });
-
-  // Diagonal line overlay for geometric effect
-  page.drawLine({
-    start: { x: width - 200, y: height - 120 },
-    end: { x: width, y: height },
-    thickness: 3,
-    color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
-  });
-
-  // Top accent stripe with geometric extension
+  // Clean accent stripe at top
   page.drawRectangle({
     x: 0,
     y: height - 120,
@@ -2021,26 +1850,18 @@ async function generateSimpleCleanTemplatePDF(
     color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
   });
 
-  // Creative corner accent (bottom left)
-  page.drawRectangle({
-    x: 0,
-    y: height - 40,
-    width: 150,
-    height: 40,
-    color: rgb(secondaryRgb.r * 0.8, secondaryRgb.g * 0.8, secondaryRgb.b * 0.8),
+  // Creative invoice title on the right side
+  page.drawText('INVOICE', {
+    x: 400,
+    y: height - 60,
+    size: 28,
+    font: boldFont,
+    color: rgb(1, 1, 1),
   });
 
-  // Geometric divider line
-  page.drawLine({
-    start: { x: 0, y: height - 40 },
-    end: { x: 150, y: height },
-    thickness: 2,
-    color: rgb(primaryRgb.r * 0.9, primaryRgb.g * 0.9, primaryRgb.b * 0.9),
-  });
-
-  // Business name - clean styling
+  // Business information on colored background (white text)
   page.drawText(businessSettings.businessName || 'Your Business', {
-    x: 60,
+    x: 50,
     y: height - 60,
     size: 16,
     font: boldFont,
@@ -2049,7 +1870,7 @@ async function generateSimpleCleanTemplatePDF(
 
   if (businessSettings.address) {
     page.drawText(businessSettings.address, {
-      x: 60,
+      x: 50,
       y: height - 75,
       size: 8,
       font: font,
@@ -2059,7 +1880,7 @@ async function generateSimpleCleanTemplatePDF(
 
   if (businessSettings.businessPhone) {
     page.drawText(businessSettings.businessPhone, {
-      x: 60,
+      x: 50,
       y: height - 90,
       size: 8,
       font: font,
@@ -2069,22 +1890,13 @@ async function generateSimpleCleanTemplatePDF(
 
   if (businessSettings.businessEmail) {
     page.drawText(businessSettings.businessEmail, {
-      x: 60,
+      x: 50,
       y: height - 105,
       size: 8,
       font: font,
       color: rgb(1, 1, 1),
     });
   }
-
-  // Invoice title - prominent but clean
-  page.drawText('INVOICE', {
-    x: 400,
-    y: height - 60,
-    size: 28,
-    font: boldFont,
-    color: rgb(1, 1, 1),
-  });
 
   // Invoice details card - matching Subtotal section design
   const invoiceDetailsY = height - 160;

@@ -52,7 +52,6 @@ export async function GET(request: NextRequest) {
       bankIban: settings.bank_iban || '',
       stripeAccount: settings.stripe_account || '',
       paymentNotes: settings.payment_notes || '',
-      emailFromAddress: settings.email_from_address || '',
     } : {
       businessName: '',
       businessEmail: '',
@@ -70,7 +69,6 @@ export async function GET(request: NextRequest) {
       bankIban: '',
       stripeAccount: '',
       paymentNotes: '',
-      emailFromAddress: '',
     };
     
     const response = NextResponse.json({ settings: formattedSettings });
@@ -126,7 +124,6 @@ export async function POST(request: NextRequest) {
       bank_iban: settingsData.bankIban || '',
       stripe_account: settingsData.stripeAccount || '',
       payment_notes: settingsData.paymentNotes || '',
-      email_from_address: settingsData.emailFromAddress || null,
       updated_at: new Date().toISOString(),
     };
 

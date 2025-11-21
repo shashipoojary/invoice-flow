@@ -199,6 +199,8 @@ export default function ProfilePage() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDeleteProgressModal, setShowDeleteProgressModal] = useState(false);
+  const [deleteAccountConfirmation, setDeleteAccountConfirmation] = useState('');
+  const [deleteProgressConfirmation, setDeleteProgressConfirmation] = useState('');
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showFormatModal, setShowFormatModal] = useState(false);
@@ -355,6 +357,9 @@ export default function ProfilePage() {
 
   // Delete progress (keep account, delete all data)
   const handleDeleteProgress = async () => {
+    if (deleteProgressConfirmation.toLowerCase() !== 'delete') {
+      return;
+    }
     try {
       setIsDeletingProgress(true);
       const headers = await getAuthHeaders();
@@ -386,11 +391,15 @@ export default function ProfilePage() {
     } finally {
       setIsDeletingProgress(false);
       setShowDeleteProgressModal(false);
+      setDeleteProgressConfirmation('');
     }
   };
 
   // Delete account (complete account deletion)
   const handleDeleteAccount = async () => {
+    if (deleteAccountConfirmation.toLowerCase() !== 'delete') {
+      return;
+    }
     try {
       setIsDeleting(true);
       const headers = await getAuthHeaders();
@@ -412,6 +421,7 @@ export default function ProfilePage() {
     } finally {
       setIsDeleting(false);
       setShowDeleteModal(false);
+      setDeleteAccountConfirmation('');
     }
   };
 
@@ -845,21 +855,39 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <p className="text-gray-700 mb-6">
+            <p className="text-gray-700 mb-4">
               This will delete all your invoices, clients, and settings but keep your account. You can start fresh with a clean slate.
             </p>
 
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Type <span className="font-mono font-semibold text-red-600">DELETE</span> to confirm:
+              </label>
+              <input
+                type="text"
+                value={deleteProgressConfirmation}
+                onChange={(e) => setDeleteProgressConfirmation(e.target.value)}
+                placeholder="Type DELETE to confirm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 transition-colors"
+                autoFocus
+              />
+            </div>
+
             <div className="flex items-center justify-end space-x-3">
               <button
-                onClick={() => setShowDeleteProgressModal(false)}
+                onClick={() => {
+                  setShowDeleteProgressModal(false);
+                  setDeleteProgressConfirmation('');
+                }}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+                disabled={isDeletingProgress}
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteProgress}
-                disabled={isDeletingProgress}
-                className="px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+                disabled={isDeletingProgress || deleteProgressConfirmation.toLowerCase() !== 'delete'}
+                className="px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isDeletingProgress ? 'Deleting...' : 'Delete Progress'}
               </button>
@@ -886,21 +914,39 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <p className="text-gray-700 mb-6">
+            <p className="text-gray-700 mb-4">
               Are you sure you want to delete your account? This will permanently remove all your data including invoices, clients, and settings.
             </p>
 
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Type <span className="font-mono font-semibold text-red-600">DELETE</span> to confirm:
+              </label>
+              <input
+                type="text"
+                value={deleteAccountConfirmation}
+                onChange={(e) => setDeleteAccountConfirmation(e.target.value)}
+                placeholder="Type DELETE to confirm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+                autoFocus
+              />
+            </div>
+
             <div className="flex items-center justify-end space-x-3">
               <button
-                onClick={() => setShowDeleteModal(false)}
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteAccountConfirmation('');
+                }}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+                disabled={isDeleting}
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteAccount}
-                disabled={isDeleting}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+                disabled={isDeleting || deleteAccountConfirmation.toLowerCase() !== 'delete'}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isDeleting ? 'Deleting...' : 'Delete Account'}
               </button>

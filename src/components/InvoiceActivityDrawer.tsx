@@ -25,8 +25,10 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
         setLoading(true);
         const items: ActivityItem[] = [];
         
-        // First, collect all database events to check for duplicates
+        // Track event types to prevent duplicates from multiple sources
         const eventTypes = new Set<string>();
+        // Track events by type and timestamp to prevent exact duplicates
+        const eventMap = new Map<string, ActivityItem>();
         
         // Invoice events from database
         const { data: events } = await supabase
@@ -39,21 +41,31 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
         let latestViewedEvent: any = null;
         
         if (events) {
+          // Group events by type and keep only the latest one of each type
+          const eventsByType = new Map<string, any>();
           for (const ev of events) {
             // Filter out "paid" events if invoice is not currently paid
             if (ev.type === 'paid' && invoice.status !== 'paid') {
-              continue; // Skip this event entirely
+              continue;
             }
             
-            // For privacy: only track the latest "viewed_by_customer" event, don't add it yet
+            // For privacy: only track the latest "viewed_by_customer" event
             if (ev.type === 'viewed_by_customer') {
               if (!latestViewedEvent || new Date(ev.created_at) > new Date(latestViewedEvent.created_at)) {
                 latestViewedEvent = ev;
               }
-              continue; // Skip adding this event now, we'll add it later as the latest one
+              continue;
             }
             
-            eventTypes.add(ev.type); // Only add to set if we're including this event
+            // For other events, keep only the latest one of each type
+            if (!eventsByType.has(ev.type) || new Date(ev.created_at) > new Date(eventsByType.get(ev.type).created_at)) {
+              eventsByType.set(ev.type, ev);
+            }
+          }
+          
+          // Process unique events
+          for (const ev of eventsByType.values()) {
+            eventTypes.add(ev.type);
             const mapping: Record<string, ActivityItem> = {
               created: { id: `created-${ev.id}`, type: 'system', title: 'Invoice created.', at: ev.created_at, icon: 'created' },
               edited: { id: `edited-${ev.id}`, type: 'system', title: 'Invoice edited.', at: ev.created_at, icon: 'scheduled' },
@@ -63,37 +75,64 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
               downloaded_pdf: { id: `dl-owner-${ev.id}`, type: 'owner', title: 'PDF downloaded.', at: ev.created_at, icon: 'downloaded' },
             } as any;
             const mapped = mapping[ev.type];
-            if (mapped) items.push(mapped);
+            if (mapped) {
+              // Use event type + timestamp as key to prevent duplicates
+              const eventKey = `${ev.type}-${new Date(ev.created_at).getTime()}`;
+              if (!eventMap.has(eventKey)) {
+                eventMap.set(eventKey, mapped);
+                items.push(mapped);
+              }
+            }
           }
         }
         
         // Add only the latest "viewed_by_customer" event (for privacy)
         if (latestViewedEvent) {
-          items.push({ 
+          const viewItem = { 
             id: `view-${latestViewedEvent.id}`, 
             type: 'client', 
             title: 'Invoice viewed by customer.', 
             at: latestViewedEvent.created_at, 
-            icon: 'opened' 
-          });
-          eventTypes.add('viewed_by_customer');
+            icon: 'opened' as const
+          };
+          const eventKey = `viewed_by_customer-${new Date(latestViewedEvent.created_at).getTime()}`;
+          if (!eventMap.has(eventKey)) {
+            eventMap.set(eventKey, viewItem);
+            items.push(viewItem);
+            eventTypes.add('viewed_by_customer');
+          }
         }
         
         // Only add derived "created" if no created event exists in database
         if (!eventTypes.has('created')) {
           if ((invoice as any).createdAt || (invoice as any).created_at) {
             const createdAt = (invoice as any).createdAt || (invoice as any).created_at;
-            items.push({ id: 'created-fallback', type: 'system', title: 'Invoice created.', at: createdAt, icon: 'created' });
+            const createdItem = { id: 'created-fallback', type: 'system', title: 'Invoice created.', at: createdAt, icon: 'created' as const };
+            const eventKey = `created-fallback-${new Date(createdAt).getTime()}`;
+            if (!eventMap.has(eventKey)) {
+              eventMap.set(eventKey, createdItem);
+              items.push(createdItem);
+            }
           }
         }
         
         // Only add derived status if no corresponding event exists in database
         if (invoice.status === 'paid' && !eventTypes.has('paid')) {
           const at = (invoice as any).updatedAt || (invoice as any).updated_at || new Date().toISOString();
-          items.push({ id: 'paid-fallback', type: 'status', title: 'Invoice paid in full.', at, icon: 'paid' });
+          const paidItem = { id: 'paid-fallback', type: 'status', title: 'Invoice paid in full.', at, icon: 'paid' as const };
+          const eventKey = `paid-fallback-${new Date(at).getTime()}`;
+          if (!eventMap.has(eventKey)) {
+            eventMap.set(eventKey, paidItem);
+            items.push(paidItem);
+          }
         } else if ((invoice.status === 'sent' || invoice.status === 'pending') && !eventTypes.has('sent')) {
           const at = (invoice as any).updatedAt || (invoice as any).updated_at || new Date().toISOString();
-          items.push({ id: 'sent-fallback', type: 'status', title: 'Invoice sent.', at, icon: 'sent' });
+          const sentItem = { id: 'sent-fallback', type: 'status', title: 'Invoice sent.', at, icon: 'sent' as const };
+          const eventKey = `sent-fallback-${new Date(at).getTime()}`;
+          if (!eventMap.has(eventKey)) {
+            eventMap.set(eventKey, sentItem);
+            items.push(sentItem);
+          }
         }
         // Reminders (delivery/open etc.) - Skip scheduled reminders for draft invoices
         // Also filter out reminders scheduled before invoice creation
@@ -105,6 +144,9 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
         if (!error && data) {
           const invoiceCreatedAt = (invoice as any).createdAt || (invoice as any).created_at;
           const invoiceCreatedDate = invoiceCreatedAt ? new Date(invoiceCreatedAt) : null;
+          
+          // Track reminders by status and timestamp to prevent duplicates
+          const reminderMap = new Map<string, ActivityItem>();
           
           for (const r of data) {
             // Skip scheduled reminders for draft invoices
@@ -123,14 +165,25 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
             }
             
             const at = r.sent_at || r.created_at;
+            let reminderItem: ActivityItem | null = null;
+            
             if (r.reminder_status === 'delivered') {
-              items.push({ id: `delivered-${r.id}` , type: 'email', title: 'Invoice email delivered successfully.', at, icon: 'delivered' });
+              reminderItem = { id: `delivered-${r.id}`, type: 'email', title: 'Invoice email delivered successfully.', at, icon: 'delivered' };
             } else if (r.reminder_status === 'bounced') {
-              items.push({ id: `failed-${r.id}`, type: 'email', title: 'Email bounced.', at, icon: 'failed', details: r.failure_reason });
+              reminderItem = { id: `failed-${r.id}`, type: 'email', title: 'Email bounced.', at, icon: 'failed', details: r.failure_reason };
             } else if (r.reminder_status === 'sent') {
-              items.push({ id: `reminder-${r.id}`, type: 'email', title: 'Reminder sent.', at, icon: 'sent' });
+              reminderItem = { id: `reminder-${r.id}`, type: 'email', title: 'Reminder sent.', at, icon: 'sent' };
             } else if (r.reminder_status === 'scheduled') {
-              items.push({ id: `sched-${r.id}`, type: 'email', title: 'Reminder scheduled.', at, icon: 'scheduled' });
+              reminderItem = { id: `sched-${r.id}`, type: 'email', title: 'Reminder scheduled.', at, icon: 'scheduled' };
+            }
+            
+            if (reminderItem) {
+              // Use status + timestamp as key to prevent duplicates
+              const reminderKey = `${r.reminder_status}-${new Date(at).getTime()}`;
+              if (!reminderMap.has(reminderKey)) {
+                reminderMap.set(reminderKey, reminderItem);
+                items.push(reminderItem);
+              }
             }
           }
         }
@@ -141,15 +194,23 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
           .eq('invoice_id', invoice.id)
           .order('created_at', { ascending: false });
         if (payments && payments.length > 0) {
-          // Only show payments with "paid" icon if invoice status is actually paid
-          if (invoice.status === 'paid') {
-            for (const p of payments) {
-              items.push({ id: `payment-${p.id}`, type: 'payment', title: 'Payment recorded.', at: p.created_at, icon: 'paid' });
-            }
-          } else {
-            // For pending invoices, show payments but with neutral icon
-            for (const p of payments) {
-              items.push({ id: `payment-${p.id}`, type: 'payment', title: 'Payment received.', at: p.created_at, icon: 'scheduled' });
+          // Track payments by timestamp to prevent duplicates
+          const paymentMap = new Map<string, ActivityItem>();
+          
+          for (const p of payments) {
+            const paymentKey = `payment-${new Date(p.created_at).getTime()}`;
+            if (!paymentMap.has(paymentKey)) {
+              // Only show payments with "paid" icon if invoice status is actually paid
+              if (invoice.status === 'paid') {
+                const paymentItem = { id: `payment-${p.id}`, type: 'payment', title: 'Payment recorded.', at: p.created_at, icon: 'paid' as const };
+                paymentMap.set(paymentKey, paymentItem);
+                items.push(paymentItem);
+              } else {
+                // For pending invoices, show payments but with neutral icon
+                const paymentItem = { id: `payment-${p.id}`, type: 'payment', title: 'Payment received.', at: p.created_at, icon: 'scheduled' as const };
+                paymentMap.set(paymentKey, paymentItem);
+                items.push(paymentItem);
+              }
             }
           }
         }
@@ -181,14 +242,24 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
           }
         } catch {}
 
-        // Final deduplication: remove items with same title and timestamp within 1 second
+        // Final robust deduplication: remove items with same title and timestamp within 5 seconds
+        // Also check by ID to prevent exact duplicates
+        const seenIds = new Set<string>();
         const deduped = items.reduce((acc, item) => {
+          // Skip if we've already seen this exact ID
+          if (seenIds.has(item.id)) {
+            return acc;
+          }
+          
+          // Check for duplicates by title and timestamp (within 5 seconds)
           const existing = acc.find(
             (existingItem) =>
               existingItem.title === item.title &&
-              Math.abs(new Date(existingItem.at).getTime() - new Date(item.at).getTime()) < 1000
+              Math.abs(new Date(existingItem.at).getTime() - new Date(item.at).getTime()) < 5000
           );
+          
           if (!existing) {
+            seenIds.add(item.id);
             acc.push(item);
           }
           return acc;
