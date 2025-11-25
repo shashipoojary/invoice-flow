@@ -13,7 +13,28 @@ import {
   BarChart3,
   Bell,
   Settings,
-  Users
+  Users,
+  Send,
+  Clock,
+  DollarSign,
+  Server,
+  Eye,
+  AlertTriangle,
+  CreditCard,
+  Building2,
+  Calendar,
+  X,
+  Plus,
+  Receipt,
+  Timer,
+  Download,
+  Palette,
+  Check,
+  Edit,
+  Mail,
+  Search,
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 import Image from 'next/image';
 import Footer from '@/components/Footer';
@@ -43,144 +64,608 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen transition-colors duration-200 bg-white">
       {/* Hero Section */}
-      <section className="pt-8 sm:pt-12 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8 relative bg-white" ref={heroRef}>
+      <section className="pt-12 sm:pt-16 lg:pt-20 pb-12 sm:pb-16 lg:pb-20 px-4 sm:px-6 lg:px-8 relative bg-white" ref={heroRef}>
         <div className="max-w-7xl mx-auto">
-          <div className="text-center">
-            <div>
-              <h1 ref={headingRef} className="font-heading text-3xl sm:text-5xl lg:text-7xl font-bold mb-6 sm:mb-8 leading-tight text-gray-900">
-                The Fastest Way to
-                <span className="text-indigo-600"> Get Paid</span>
+          {/* Hero Content */}
+          <div className="max-w-3xl mx-auto text-center mb-12 sm:mb-16">
+            <h1 ref={headingRef} className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 text-gray-900 tracking-tight">
+              Create invoices in seconds.<br className="hidden sm:block" /> Get paid faster.
               </h1>
-              <p className="text-base sm:text-lg lg:text-xl mb-8 sm:mb-12 max-w-3xl mx-auto leading-relaxed text-gray-600">
-                Create professional invoices in 60 seconds. Send automated reminders. Get paid faster.
+            <p className="text-lg sm:text-xl text-gray-600 mb-8 leading-relaxed">
+              Professional invoicing for freelancers and small businesses. No fees, no hassle.
               </p>
               
               {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-12 sm:mb-16">
+            <div className="flex flex-row gap-2 sm:gap-3 justify-center">
                 <button
                   onClick={handleGetStarted}
-                  className="group flex items-center justify-center space-x-2 px-6 py-3 sm:px-8 sm:py-4 rounded-lg text-base sm:text-base font-semibold transition-all duration-200 hover:scale-105 w-full sm:w-auto bg-black text-white hover:bg-gray-800 shadow-lg cursor-pointer"
+                className="inline-flex items-center justify-center px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium text-white bg-black rounded-lg hover:bg-gray-800 transition-colors"
                 >
-                  <span>Start Creating Invoices</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                Get started free
+                <ArrowRight className="ml-2 w-4 h-4" />
                 </button>
                 <button
                   onClick={handleViewDemo}
-                  className="group flex items-center justify-center space-x-2 px-6 py-3 sm:px-8 sm:py-4 rounded-lg text-base sm:text-base font-semibold transition-all duration-200 hover:scale-105 border-2 w-full sm:w-auto border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 cursor-pointer"
+                className="inline-flex items-center justify-center px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  <Play className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                  <span>View Demo</span>
+                View demo
                 </button>
               </div>
             </div>
-          </div>
           
-          {/* Dashboard Screenshot - Integrated into Hero */}
-          <div className="w-full flex justify-center mt-8 sm:mt-12">
-            <div className="relative max-w-5xl w-full">
-              {/* Indigo glow effect - positioned relative to image */}
-              <div className="absolute inset-0 rounded-2xl opacity-40 blur-3xl" style={{
-                background: 'radial-gradient(ellipse at center, #818cf8, #a78bfa, #22d3ee, #60a5fa)',
+          {/* Dashboard Screenshot */}
+          <div className="relative max-w-6xl mx-auto">
+            {/* Glow effect layers */}
+            <div className="absolute inset-0 rounded-2xl opacity-30 blur-3xl" style={{
+              background: 'radial-gradient(ellipse at center, #10b981, #14b8a6, #06b6d4)',
                 transform: 'scale(1.1)',
-                zIndex: 1
+              zIndex: 0
               }}></div>
-              
-              {/* Secondary indigo glow */}
-              <div className="absolute inset-0 rounded-2xl opacity-30 blur-2xl" style={{
-                background: 'linear-gradient(45deg, #818cf8, #a78bfa, #22d3ee, #60a5fa)',
+            <div className="absolute inset-0 rounded-2xl opacity-20 blur-2xl" style={{
+              background: 'radial-gradient(ellipse at 30% 70%, #10b981, #14b8a6)',
                 transform: 'scale(1.05)',
-                zIndex: 2
+              zIndex: 1
               }}></div>
               
-              {/* Tertiary glow for depth */}
-              <div className="absolute inset-0 rounded-2xl opacity-20 blur-xl" style={{
-                background: 'conic-gradient(from 0deg, #818cf8, #a78bfa, #22d3ee, #60a5fa, #818cf8)',
-                transform: 'scale(1.02)',
-                zIndex: 3
-              }}></div>
-              
-              <div className="relative z-10 rounded-lg overflow-hidden border border-gray-200" style={{
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
-              }}>
-                <Image
-                  src="/dashboard-screenshot.png"
-                  alt="FlowInvoicer Dashboard Screenshot"
-                  width={1200}
-                  height={800}
-                  className="w-full h-auto object-cover"
-                />
-              </div>
+            <div className="relative z-10 rounded-lg overflow-hidden border border-gray-200 shadow-2xl bg-white">
+              <img
+                src="/dashboard-screenshot.png?v=2"
+                alt="FlowInvoicer Dashboard"
+                className="w-full h-auto block"
+                style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+                loading="eager"
+                decoding="async"
+                key="dashboard-screenshot"
+              />
             </div>
           </div>
         </div>
       </section>
 
+      {/* Features Section */}
+      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-7xl mx-auto">
+          {/* Section Header */}
+          <div className="text-center mb-16">
+                <h2 className="font-heading text-4xl sm:text-5xl font-bold mb-6 text-gray-900">
+              Everything you need to get paid
+                </h2>
+            <p className="text-lg max-w-2xl mx-auto text-gray-600">
+              Professional invoicing tools designed for freelancers, designers, and contractors.
+                </p>
+            </div>
 
-      {/* Introduction Section */}
+          {/* Features Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 lg:gap-8">
+            {/* Feature 1 - Professional Templates */}
+            <div className="group p-4 sm:p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-3 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
+                backgroundColor: '#f8f9fa',
+                border: '1px solid #e5e7eb'
+              }}>
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+                </div>
+              <h3 className="font-heading text-base sm:text-xl font-bold mb-2 sm:mb-3 text-gray-900">
+                Professional Templates
+                  </h3>
+              <p className="text-xs sm:text-sm leading-relaxed text-gray-600">
+                Choose from multiple professional invoice templates. Customize colors, fonts, and layout to match your brand.
+                  </p>
+              </div>
+              
+            {/* Feature 2 - Client Management */}
+            <div className="group p-4 sm:p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-3 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
+                backgroundColor: '#f8f9fa',
+                border: '1px solid #e5e7eb'
+              }}>
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+                </div>
+              <h3 className="font-heading text-base sm:text-xl font-bold mb-2 sm:mb-3 text-gray-900">
+                Client Management
+                  </h3>
+              <p className="text-xs sm:text-sm leading-relaxed text-gray-600">
+                Store client information, payment history, and communication logs. Never lose track of important details.
+                  </p>
+              </div>
+              
+            {/* Feature 3 - Payment Tracking */}
+            <div className="group p-4 sm:p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-3 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
+                backgroundColor: '#f8f9fa',
+                border: '1px solid #e5e7eb'
+              }}>
+                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+                </div>
+              <h3 className="font-heading text-base sm:text-xl font-bold mb-2 sm:mb-3 text-gray-900">
+                Payment Tracking
+                  </h3>
+              <p className="text-xs sm:text-sm leading-relaxed text-gray-600">
+                Track when clients view invoices and manually mark payments as received. Get clear visibility into payment status.
+                  </p>
+                </div>
+
+            {/* Feature 4 - Automated Reminders */}
+            <div className="group p-4 sm:p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-3 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
+                backgroundColor: '#f8f9fa',
+                border: '1px solid #e5e7eb'
+              }}>
+                <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+              </div>
+              <h3 className="font-heading text-base sm:text-xl font-bold mb-2 sm:mb-3 text-gray-900">
+                Automated Reminders
+              </h3>
+              <p className="text-xs sm:text-sm leading-relaxed text-gray-600">
+                Set up custom reminder schedules for each invoice. Choose from friendly, polite, firm, or urgent reminder types.
+              </p>
+            </div>
+
+            {/* Feature 5 - Late Fees */}
+            <div className="group p-4 sm:p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-3 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
+                backgroundColor: '#f8f9fa',
+                border: '1px solid #e5e7eb'
+              }}>
+                <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+                </div>
+              <h3 className="font-heading text-base sm:text-xl font-bold mb-2 sm:mb-3 text-gray-900">
+                Late Fee Management
+                  </h3>
+              <p className="text-xs sm:text-sm leading-relaxed text-gray-600">
+                Automatically calculate and apply late fees. Set fixed amounts or percentages with grace periods.
+            </p>
+          </div>
+
+            {/* Feature 6 - Multiple Payment Methods */}
+            <div className="group p-4 sm:p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-3 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
+                backgroundColor: '#f8f9fa',
+                border: '1px solid #e5e7eb'
+              }}>
+                <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+              </div>
+              <h3 className="font-heading text-base sm:text-xl font-bold mb-2 sm:mb-3 text-gray-900">
+                Multiple Payment Methods
+              </h3>
+              <p className="text-xs sm:text-sm leading-relaxed text-gray-600">
+                Support PayPal, Stripe, Cash App, Venmo, Google Pay, Apple Pay, and bank transfers.
+              </p>
+            </div>
+
+            {/* Feature 7 - PDF Generation */}
+            <div className="group p-4 sm:p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-3 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
+                backgroundColor: '#f8f9fa',
+                border: '1px solid #e5e7eb'
+              }}>
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+              </div>
+              <h3 className="font-heading text-base sm:text-xl font-bold mb-2 sm:mb-3 text-gray-900">
+                PDF Generation
+              </h3>
+              <p className="text-xs sm:text-sm leading-relaxed text-gray-600">
+                Generate professional PDF invoices instantly. Download and share with clients or print for your records.
+              </p>
+            </div>
+
+            {/* Feature 8 - Analytics Dashboard */}
+            <div className="group p-4 sm:p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-3 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
+                backgroundColor: '#f8f9fa',
+                border: '1px solid #e5e7eb'
+              }}>
+                <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+              </div>
+              <h3 className="font-heading text-base sm:text-xl font-bold mb-2 sm:mb-3 text-gray-900">
+                Analytics Dashboard
+              </h3>
+              <p className="text-xs sm:text-sm leading-relaxed text-gray-600">
+                Track revenue, pending payments, overdue invoices, and late fees. Get insights into your business performance.
+              </p>
+            </div>
+
+            {/* Feature 9 - Secure & Reliable */}
+            <div className="group p-4 sm:p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-3 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
+                backgroundColor: '#f8f9fa',
+                border: '1px solid #e5e7eb'
+              }}>
+                <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
+              </div>
+              <h3 className="font-heading text-base sm:text-xl font-bold mb-2 sm:mb-3 text-gray-900">
+                Secure & Reliable
+              </h3>
+              <p className="text-xs sm:text-sm leading-relaxed text-gray-600">
+                Enterprise-grade security with encrypted data storage and transmission. Your data is never shared with third parties.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-                <h2 className="font-heading text-4xl sm:text-5xl font-bold mb-6 text-gray-900">
-                  Your invoicing doesn&apos;t stand a chance
-                </h2>
-                <p className="text-lg mb-8 text-gray-600">
-                  Delegate invoice management to FlowInvoicer and let your automated system create, send, and track payments in the background.
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-gray-900">
+              How it works
+            </h2>
+          </div>
+
+          {/* Step 1 - Create Invoice */}
+          <div className="mb-12 sm:mb-16 lg:mb-20">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+              {/* Visual Background */}
+              <div className="order-2 lg:order-1">
+                <div className="relative max-w-xl mx-auto group">
+                  {/* Animated gradient border effect */}
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl opacity-75 blur-sm group-hover:opacity-100 transition-opacity duration-300"></div>
+                  
+                  {/* Inner glow */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 via-teal-50/30 to-transparent rounded-2xl pointer-events-none"></div>
+                  
+                  <div className="relative rounded-2xl overflow-hidden bg-white p-1">
+                    <div className="rounded-xl overflow-hidden">
+                      <img
+                        src="/how-it-works-create-invoice.png"
+                        alt="Create Invoice"
+                        className="w-full h-auto block"
+                        style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="order-1 lg:order-2">
+                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                  Create Invoice
+                </h3>
+                <p className="text-base text-gray-600 leading-relaxed">
+                  Select your client, add line items, and choose a template. Your invoice is ready in seconds.
                 </p>
-                <a href="#" className="text-indigo-600 hover:text-indigo-500 font-semibold">
-                  Discover FlowInvoicer automation →
-                </a>
+              </div>
             </div>
-            <div className="space-y-8">
-              <div className="flex items-start">
-                <div className="flex flex-col items-center mr-6">
-                  <div className="w-3 h-3 rounded-full border-2 border-gray-400 mb-2"></div>
-                  <div className="w-px h-16 bg-gray-300"></div>
-                </div>
-                <div>
-                  <h3 className="font-heading text-lg font-semibold mb-3 text-gray-900">
-                    Handles your invoices.
-                  </h3>
-                  <p className="text-gray-600">
-                    When you create invoices, FlowInvoicer plans, sends, tracks, and follows up—using automated reminders to ensure payment and deliver ready-to-pay invoices.
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start">
-                <div className="flex flex-col items-center mr-6">
-                  <div className="w-3 h-3 rounded-full border-2 border-gray-400 mb-2"></div>
-                  <div className="w-px h-16 bg-gray-300"></div>
-                </div>
-                <div>
-                  <h3 className="font-heading text-lg font-semibold mb-3 text-gray-900">
-                    Works like a professional.
-                  </h3>
-                  <p className="text-gray-600">
-                    FlowInvoicer integrates with your business data to draw on client information and payment history—working like an experienced accountant from day one.
-                  </p>
+          </div>
+
+          {/* Step 2 - Send Automatically */}
+          <div className="mb-12 sm:mb-16 lg:mb-20">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+              {/* Content */}
+              <div>
+                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                  Send Automatically
+                </h3>
+                <p className="text-base text-gray-600 leading-relaxed">
+                  Your invoice is sent via email with a PDF attachment. No manual work required.
+              </p>
+            </div>
+
+              {/* Visual Background */}
+              <div>
+                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl overflow-hidden flex items-center justify-center">
+                  <img
+                    src="/how-it-works-send-automatically.png"
+                    alt="Send Automatically"
+                    className="w-full h-auto rounded-xl sm:rounded-2xl"
+                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+                  />
                 </div>
               </div>
-              
-              <div className="flex items-start">
-                <div className="flex flex-col items-center mr-6">
-                  <div className="w-3 h-3 rounded-full border-2 border-gray-400"></div>
+            </div>
+          </div>
+
+          {/* Step 3 - Track & Remind */}
+          <div className="mb-12 sm:mb-16 lg:mb-20">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+              {/* Visual Background */}
+              <div className="order-2 lg:order-1">
+                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl flex items-center justify-center overflow-hidden">
+                  <img
+                    src="/how-it-works-track-remind.png"
+                    alt="Track & Remind"
+                    className="w-full h-auto rounded-xl sm:rounded-2xl"
+                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+                  />
                 </div>
-                <div>
-                  <h3 className="font-heading text-lg font-semibold mb-3 text-gray-900">
-                    Human and automation in the loop.
-                  </h3>
-                  <p className="text-gray-600">
-                    Customize to guide FlowInvoicer, review invoices before sending, or take over manually in your dashboard.
-                  </p>
+              </div>
+
+              {/* Content */}
+              <div className="order-1 lg:order-2">
+                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                  Track & Remind
+                </h3>
+                <p className="text-base text-gray-600 leading-relaxed">
+                  See when clients view your invoices. Automated reminders are sent based on your schedule.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 4 - Get Paid */}
+          <div className="mb-12 sm:mb-16 lg:mb-20">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+              {/* Content */}
+              <div>
+                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                  Get Paid Faster
+                </h3>
+                <p className="text-base text-gray-600 leading-relaxed mb-6">
+                  Clients pay through their preferred method. Payments go directly to your account — no fees, no hidden charges.
+                </p>
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-amber-900 mb-1">Save on Payment Fees</p>
+                      <p className="text-xs text-amber-800 leading-relaxed">
+                        Other invoicing tools charge per transaction (2-3%) AND additional fees when money is transferred. 
+                        With FlowInvoicer, clients pay you directly — no double fees, no hidden charges.
+                      </p>
+                    </div>
+                  </div>
                 </div>
+              </div>
+
+              {/* Visual Background */}
+              <div>
+                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl flex items-center justify-center overflow-hidden">
+                  <img
+                    src="/how-it-works-get-paid.png"
+                    alt="Get Paid Faster"
+                    className="w-full h-auto rounded-xl sm:rounded-2xl"
+                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 5 - Professional Templates */}
+          <div className="mb-12 sm:mb-16 lg:mb-20">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+              {/* Visual Background */}
+              <div className="order-2 lg:order-1">
+                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl flex items-center justify-center overflow-hidden">
+                  <img
+                    src="/how-it-works-templates.png"
+                    alt="Professional Templates"
+                    className="w-full h-auto rounded-xl sm:rounded-2xl"
+                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+                  />
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="order-1 lg:order-2">
+                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                  Professional Templates
+                </h3>
+                <p className="text-base text-gray-600 leading-relaxed">
+                  Choose from multiple professional invoice templates. Customize colors, fonts, and layout to match your brand.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 6 - Client Management */}
+          <div className="mb-12 sm:mb-16 lg:mb-20">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+              {/* Content */}
+              <div>
+                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                  Client Management
+                </h3>
+                <p className="text-base text-gray-600 leading-relaxed">
+                  Store client information, payment history, and communication logs. Never lose track of important details.
+                </p>
+              </div>
+
+              {/* Visual Background */}
+              <div>
+                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl flex items-center justify-center overflow-hidden">
+                  <img
+                    src="/how-it-works-client-management.png"
+                    alt="Client Management"
+                    className="w-full h-auto rounded-xl sm:rounded-2xl"
+                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 7 - Automated Reminders */}
+          <div className="mb-12 sm:mb-16 lg:mb-20">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+              {/* Visual Background */}
+              <div className="order-2 lg:order-1">
+                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl flex items-center justify-center overflow-hidden">
+                  <img
+                    src="/how-it-works-reminders.png"
+                    alt="Automated Reminders"
+                    className="w-full h-auto rounded-xl sm:rounded-2xl"
+                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+                  />
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="order-1 lg:order-2">
+                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                Automated Reminders
+              </h3>
+                <p className="text-base text-gray-600 leading-relaxed">
+                  Automatically send friendly, polite, and urgent reminders based on your schedule. Never chase payments manually.
+              </p>
+              </div>
+            </div>
+            </div>
+
+          {/* Step 8 - Late Fee Management */}
+          <div className="mb-12 sm:mb-16 lg:mb-20">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+              {/* Content */}
+              <div>
+                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                  Late Fee Management
+                </h3>
+                <p className="text-base text-gray-600 leading-relaxed">
+                  Automatically calculate and apply late fees. Set fixed amounts or percentages with grace periods.
+                </p>
+              </div>
+
+              {/* Visual Background */}
+              <div>
+                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl flex items-center justify-center overflow-hidden">
+                  <img
+                    src="/how-it-works-late-fees.png"
+                    alt="Late Fee Management"
+                    className="w-full h-auto rounded-xl sm:rounded-2xl"
+                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 9 - PDF Generation */}
+          <div className="mb-12 sm:mb-16 lg:mb-20">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+              {/* Visual Background */}
+              <div className="order-2 lg:order-1">
+                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl flex items-center justify-center overflow-hidden">
+                  <img
+                    src="/how-it-works-pdf-generation.png"
+                    alt="PDF Generation"
+                    className="w-full h-auto rounded-xl sm:rounded-2xl"
+                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+                  />
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="order-1 lg:order-2">
+                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                  PDF Generation
+                </h3>
+                <p className="text-base text-gray-600 leading-relaxed">
+                  Every invoice is automatically formatted as a clean, professional PDF ready to share.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 10 - Analytics Dashboard */}
+          <div className="mb-12 sm:mb-16 lg:mb-20">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+              {/* Content */}
+              <div>
+                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                  Analytics Dashboard
+                </h3>
+                <p className="text-base text-gray-600 leading-relaxed">
+                  Track revenue, pending payments, overdue invoices, and late fees. Get insights into your business performance.
+                </p>
+              </div>
+
+              {/* Visual Background */}
+              <div>
+                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl flex items-center justify-center overflow-hidden">
+                  <img
+                    src="/how-it-works-analytics.png"
+                    alt="Analytics Dashboard"
+                    className="w-full h-auto rounded-xl sm:rounded-2xl"
+                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 11 - Secure & Reliable */}
+          <div className="mb-12 sm:mb-16 lg:mb-20">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+              {/* Visual Background */}
+              <div className="order-2 lg:order-1">
+                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl flex items-center justify-center overflow-hidden">
+                  <img
+                    src="/how-it-works-secure.png"
+                    alt="Secure & Reliable"
+                    className="w-full h-auto rounded-xl sm:rounded-2xl"
+                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+                  />
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="order-1 lg:order-2">
+                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                  Secure & Reliable
+                </h3>
+                <p className="text-base text-gray-600 leading-relaxed">
+                  Enterprise-grade security with encrypted data storage and transmission. Your data is never shared with third parties.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Feature Cards - Bottom Section */}
+          <div className="mt-12 sm:mt-16 lg:mt-20 pt-12 sm:pt-16 border-t border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+              {/* Card 1 */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-4" style={{
+                backgroundColor: '#f8f9fa',
+                border: '1px solid #e5e7eb'
+              }}>
+                  <Server className="w-6 h-6 text-gray-600" />
+              </div>
+                <h4 className="font-heading text-lg font-bold mb-2 text-gray-900">
+                Secure & Reliable
+                </h4>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  All client data and payment history stored securely with enterprise-grade encryption.
+              </p>
+            </div>
+
+              {/* Card 2 */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-4" style={{
+                backgroundColor: '#f8f9fa',
+                border: '1px solid #e5e7eb'
+              }}>
+                  <Bell className="w-6 h-6 text-gray-600" />
+              </div>
+                <h4 className="font-heading text-lg font-bold mb-2 text-gray-900">
+                  Automated Reminders
+                </h4>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Smart reminder scheduling with multiple tone options to ensure timely payments without being pushy.
+              </p>
+            </div>
+
+              {/* Card 3 */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-4" style={{
+                  backgroundColor: '#f8f9fa',
+                  border: '1px solid #e5e7eb'
+                }}>
+                  <BarChart3 className="w-6 h-6 text-gray-600" />
+                </div>
+                <h4 className="font-heading text-lg font-bold mb-2 text-gray-900">
+                  Real-time Analytics
+                </h4>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Track revenue, pending payments, overdue invoices, and late fees with detailed insights.
+                </p>
               </div>
             </div>
           </div>
         </div>
       </section>
-
-
 
       {/* Template Showcase Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
@@ -208,7 +693,7 @@ export default function LandingPage() {
                     className="block"
                     style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
                   />
-                </div>
+              </div>
               </div>
             </div>
 
@@ -224,7 +709,7 @@ export default function LandingPage() {
                     className="block"
                     style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
                   />
-                </div>
+              </div>
               </div>
             </div>
 
@@ -240,296 +725,8 @@ export default function LandingPage() {
                     className="block"
                     style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
                   />
-                </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-7xl mx-auto">
-          {/* Section Header */}
-          <div className="text-center mb-16">
-            <h2 className="font-heading text-4xl sm:text-5xl font-bold mb-6 text-gray-900">
-              Everything you need to get paid
-            </h2>
-            <p className="text-lg max-w-2xl mx-auto text-gray-600">
-              Professional invoicing tools designed for freelancers, designers, and contractors.
-            </p>
-          </div>
-
-          {/* Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            {/* Feature 1 - Professional Templates */}
-            <div className="p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-all duration-200">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e5e7eb'
-              }}>
-                <FileText className="w-6 h-6 text-gray-600" />
               </div>
-              <h3 className="font-heading text-xl font-bold mb-3 text-gray-900">
-                Professional Templates
-              </h3>
-              <p className="text-sm leading-relaxed text-gray-600">
-                Choose from multiple professional invoice templates. Customize colors, fonts, and layout to match your brand.
-              </p>
-            </div>
-
-            {/* Feature 2 - Client Management */}
-            <div className="p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-all duration-200">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e5e7eb'
-              }}>
-                <Users className="w-6 h-6 text-gray-600" />
-              </div>
-              <h3 className="font-heading text-xl font-bold mb-3 text-gray-900">
-                Client Management
-              </h3>
-              <p className="text-sm leading-relaxed text-gray-600">
-                Store client information, payment history, and communication logs. Never lose track of important details.
-              </p>
-            </div>
-
-            {/* Feature 3 - Payment Tracking */}
-            <div className="p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-all duration-200">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e5e7eb'
-              }}>
-                <BarChart3 className="w-6 h-6 text-gray-600" />
-              </div>
-              <h3 className="font-heading text-xl font-bold mb-3 text-gray-900">
-                Payment Tracking
-              </h3>
-              <p className="text-sm leading-relaxed text-gray-600">
-                Track when clients view invoices and manually mark payments as received. Get clear visibility into payment status.
-              </p>
-            </div>
-
-            {/* Feature 4 - Automated Reminders */}
-            <div className="p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-all duration-200">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e5e7eb'
-              }}>
-                <Bell className="w-6 h-6 text-gray-600" />
-              </div>
-              <h3 className="font-heading text-xl font-bold mb-3 text-gray-900">
-                Automated Reminders
-              </h3>
-              <p className="text-sm leading-relaxed text-gray-600">
-                Set up custom reminder schedules for each invoice. Choose from friendly, polite, firm, or urgent reminder types.
-              </p>
-            </div>
-
-            {/* Feature 5 - Late Fees */}
-            <div className="p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-all duration-200">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e5e7eb'
-              }}>
-                <Zap className="w-6 h-6 text-gray-600" />
-              </div>
-              <h3 className="font-heading text-xl font-bold mb-3 text-gray-900">
-                Late Fee Management
-              </h3>
-              <p className="text-sm leading-relaxed text-gray-600">
-                Automatically calculate and apply late fees. Set fixed amounts or percentages with grace periods.
-              </p>
-            </div>
-
-            {/* Feature 6 - Multiple Payment Methods */}
-            <div className="p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-all duration-200">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e5e7eb'
-              }}>
-                <CheckCircle className="w-6 h-6 text-gray-600" />
-              </div>
-              <h3 className="font-heading text-xl font-bold mb-3 text-gray-900">
-                Multiple Payment Methods
-              </h3>
-              <p className="text-sm leading-relaxed text-gray-600">
-                Support PayPal, Stripe, Cash App, Venmo, Google Pay, Apple Pay, and bank transfers.
-              </p>
-            </div>
-
-            {/* Feature 7 - PDF Generation */}
-            <div className="p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-all duration-200">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e5e7eb'
-              }}>
-                <FileText className="w-6 h-6 text-gray-600" />
-              </div>
-              <h3 className="font-heading text-xl font-bold mb-3 text-gray-900">
-                PDF Generation
-              </h3>
-              <p className="text-sm leading-relaxed text-gray-600">
-                Generate professional PDF invoices instantly. Download and share with clients or print for your records.
-              </p>
-            </div>
-
-            {/* Feature 8 - Analytics Dashboard */}
-            <div className="p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-all duration-200">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e5e7eb'
-              }}>
-                <BarChart3 className="w-6 h-6 text-gray-600" />
-              </div>
-              <h3 className="font-heading text-xl font-bold mb-3 text-gray-900">
-                Analytics Dashboard
-              </h3>
-              <p className="text-sm leading-relaxed text-gray-600">
-                Track revenue, pending payments, overdue invoices, and late fees. Get insights into your business performance.
-              </p>
-            </div>
-
-            {/* Feature 9 - Secure & Reliable */}
-            <div className="p-6 lg:p-8 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-all duration-200">
-              <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e5e7eb'
-              }}>
-                <Shield className="w-6 h-6 text-gray-600" />
-              </div>
-              <h3 className="font-heading text-xl font-bold mb-3 text-gray-900">
-                Secure & Reliable
-              </h3>
-              <p className="text-sm leading-relaxed text-gray-600">
-                Enterprise-grade security with encrypted data storage and transmission. Your data is never shared with third parties.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-4 text-gray-900">
-              Simple Pricing
-            </h2>
-            <p className="text-xl text-gray-600">
-              Choose the plan that works for your business
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* Free Plan */}
-            <div className="p-8 rounded-lg border transition-all duration-200 hover:scale-[1.02] flex flex-col bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
-              <div className="text-center mb-8">
-                <h3 className="font-heading text-2xl font-semibold mb-2 text-gray-900">Free</h3>
-                <div className="text-4xl font-bold mb-2 text-gray-900">$0</div>
-                <p className="text-sm text-gray-600">Perfect for getting started</p>
-              </div>
-              <ul className="space-y-4 mb-8 flex-grow">
-                <li className="flex items-center space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-sm text-gray-600">Up to 5 invoices per month</span>
-                </li>
-                <li className="flex items-center space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-sm text-gray-600">Basic templates</span>
-                </li>
-                <li className="flex items-center space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-sm text-gray-600">1 client only</span>
-                </li>
-                <li className="flex items-center space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-sm text-gray-600">Email support</span>
-                </li>
-              </ul>
-              <button
-                onClick={handleGetStarted}
-                className="w-full py-3 rounded-lg font-medium transition-colors bg-black text-white hover:bg-gray-800 cursor-pointer"
-              >
-                Get Started Free
-              </button>
-            </div>
-
-            {/* Pay Per Invoice Plan */}
-            <div className="p-8 rounded-lg border transition-all duration-200 hover:scale-[1.02] flex flex-col bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
-              <div className="text-center mb-8">
-                <h3 className="font-heading text-2xl font-semibold mb-2 text-gray-900">Pay Per Invoice</h3>
-                <div className="text-4xl font-bold mb-2 text-gray-900">$2</div>
-                <p className="text-sm text-gray-600">per invoice sent</p>
-              </div>
-              <ul className="space-y-4 mb-8 flex-grow">
-                <li className="flex items-center space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-sm text-gray-600">Pay only when you send</span>
-                </li>
-                <li className="flex items-center space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-sm text-gray-600">All professional templates</span>
-                </li>
-                <li className="flex items-center space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-sm text-gray-600">1 client only</span>
-                </li>
-                <li className="flex items-center space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-sm text-gray-600">Basic automated reminders</span>
-                </li>
-              </ul>
-              <button
-                onClick={handleGetStarted}
-                className="w-full py-3 rounded-lg font-medium transition-colors bg-black text-white hover:bg-gray-800 cursor-pointer"
-              >
-                Start Paying Per Invoice
-              </button>
-            </div>
-
-            {/* Pro Plan */}
-            <div className="p-8 rounded-lg border-2 border-indigo-600 relative transition-all duration-200 hover:scale-[1.02] flex flex-col bg-white backdrop-blur-sm">
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <span className="bg-indigo-600 text-white px-4 py-1 rounded-full text-sm font-semibold">Most Popular</span>
-              </div>
-              <div className="text-center mb-8">
-                <h3 className="font-heading text-2xl font-semibold mb-2 text-gray-900">Pro</h3>
-                <div className="text-4xl font-bold mb-2 text-gray-900">$19</div>
-                <p className="text-sm text-gray-600">per month</p>
-              </div>
-              <ul className="space-y-4 mb-8 flex-grow">
-                <li className="flex items-center space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-sm text-gray-600">Unlimited invoices</span>
-                </li>
-                <li className="flex items-center space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-sm text-gray-600">Unlimited clients</span>
-                </li>
-                <li className="flex items-center space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-sm text-gray-600">All professional templates</span>
-                </li>
-                <li className="flex items-center space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-sm text-gray-600">Advanced automated reminders</span>
-                </li>
-                <li className="flex items-center space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-sm text-gray-600">Priority support</span>
-                </li>
-                <li className="flex items-center space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-sm text-gray-600">Analytics dashboard</span>
-                </li>
-              </ul>
-              <button
-                onClick={handleGetStarted}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-medium transition-colors cursor-pointer"
-              >
-                Start Pro Trial
-              </button>
             </div>
           </div>
         </div>
@@ -786,32 +983,6 @@ export default function LandingPage() {
                 )}
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-6 text-gray-900">
-            Ready to Get Paid Faster?
-          </h2>
-          <p className="text-xl mb-8 text-gray-600">
-            Join thousands of freelancers who are already getting paid faster with FlowInvoicer.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={handleGetStarted}
-              className="px-8 py-4 rounded-lg text-lg font-medium transition-colors bg-black text-white hover:bg-gray-800 cursor-pointer"
-            >
-              Start Creating Invoices
-            </button>
-            <button
-              onClick={handleViewDemo}
-              className="px-8 py-4 rounded-lg text-lg font-medium transition-colors border border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer"
-            >
-              View Demo
-            </button>
       </div>
         </div>
       </section>

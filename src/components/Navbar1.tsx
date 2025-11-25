@@ -3,11 +3,12 @@
 import * as React from "react"
 import { useState } from "react"
 import { motion, AnimatePresence } from "motion/react"
-import { Menu, X } from "lucide-react"
+import { Menu, X, ChevronDown } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 const Navbar1 = () => {
   const [isOpen, setIsOpen] = useState(false)
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const router = useRouter()
 
   const toggleMenu = () => setIsOpen(!isOpen)
@@ -16,7 +17,6 @@ const Navbar1 = () => {
     setIsOpen(false)
     if (path === 'home') {
       router.push('/')
-      // Small delay to ensure page is loaded before scrolling
       setTimeout(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' })
       }, 100)
@@ -24,8 +24,11 @@ const Navbar1 = () => {
       router.push('/about')
     } else if (path === 'contact') {
       router.push('/contact')
+    } else if (path === 'privacy') {
+      router.push('/privacy')
+    } else if (path === 'terms') {
+      router.push('/terms')
     } else if (path === 'features') {
-      // Scroll to features section on landing page
       if (window.location.pathname === '/') {
         setTimeout(() => {
           const featuresSection = document.getElementById('features')
@@ -43,7 +46,6 @@ const Navbar1 = () => {
         }, 300)
       }
     } else if (path === 'pricing') {
-      // Scroll to pricing section on landing page
       if (window.location.pathname === '/') {
         setTimeout(() => {
           const pricingSection = document.getElementById('pricing')
@@ -68,145 +70,254 @@ const Navbar1 = () => {
     router.push('/auth')
   }
 
+  const handleSignIn = () => {
+    setIsOpen(false)
+    router.push('/auth')
+  }
+
   return (
-    <div className="flex justify-center w-full py-6 px-4">
-      <div className="flex items-center justify-between px-6 py-3 bg-white rounded-full shadow-lg w-full max-w-3xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl relative z-10">
-        <div className="flex items-center">
-          <motion.div
-            className="w-8 h-8 mr-6 cursor-pointer"
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            whileHover={{ rotate: 10 }}
-            transition={{ duration: 0.3 }}
+    <nav className="w-full bg-white border-b border-gray-100 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <div 
+            className="flex items-center cursor-pointer"
             onClick={() => router.push('/')}
           >
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="16" cy="16" r="16" fill="url(#paint0_linear)" />
-              <defs>
-                <linearGradient id="paint0_linear" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#FF9966" />
-                  <stop offset="1" stopColor="#FF5E62" />
-                </linearGradient>
-              </defs>
-            </svg>
-          </motion.div>
-        </div>
-        
+            <div className="w-8 h-8 mr-2 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+            </div>
+            <span className="text-lg font-semibold text-gray-900">FlowInvoicer</span>
+          </div>
+
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            {["Home", "Features", "Pricing", "About", "Contact"].map((item) => (
-              <motion.div
-                key={item}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                whileHover={{ scale: 1.05 }}
-              >
-                <a 
-                  href="#" 
-                  className="text-sm text-gray-900 hover:text-gray-600 transition-colors font-medium"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    handleNavigation(item.toLowerCase())
-                  }}
-                >
-                  {item}
-                </a>
-              </motion.div>
-            ))}
-          </nav>
+          <div className="hidden lg:flex items-center space-x-8">
+            <a 
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                handleNavigation('features')
+              }}
+              className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
+            >
+              Features
+            </a>
 
-        {/* Desktop CTA Button */}
-        <motion.div
-          className="hidden md:block"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-          whileHover={{ scale: 1.05 }}
-        >
-          <a
-            href="#"
-            className="inline-flex items-center justify-center px-5 py-2 text-sm text-white bg-black rounded-full hover:bg-gray-800 transition-colors"
-            onClick={(e) => {
-              e.preventDefault()
-              handleGetStarted()
-            }}
+            <a 
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                handleNavigation('about')
+              }}
+              className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
+            >
+              About
+            </a>
+            
+            {/* Resources Dropdown */}
+            <div 
+              className="relative"
+              onMouseEnter={() => setOpenDropdown('resources')}
+              onMouseLeave={() => setOpenDropdown(null)}
+            >
+              <button className="flex items-center text-sm text-gray-700 hover:text-gray-900 transition-colors">
+                Resources
+                <ChevronDown className="w-4 h-4 ml-1" />
+              </button>
+              {openDropdown === 'resources' && (
+                <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2">
+                  <a 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleNavigation('privacy')
+                    }}
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    Privacy Policy
+                  </a>
+                  <a 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleNavigation('terms')
+                    }}
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    Terms of Service
+                  </a>
+                </div>
+              )}
+            </div>
+
+            <a 
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                handleNavigation('pricing')
+              }}
+              className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
+            >
+              Pricing
+            </a>
+
+            <a 
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                handleNavigation('contact')
+              }}
+              className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
+            >
+              Support
+            </a>
+
+          </div>
+
+          {/* Desktop CTA Button */}
+          <div className="hidden lg:flex items-center space-x-4">
+            <a 
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                handleSignIn()
+              }}
+              className="px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-lg transition-colors"
+            >
+              Sign up
+            </a>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button 
+            className="lg:hidden flex items-center p-2 text-gray-700 hover:text-gray-900" 
+            onClick={toggleMenu}
           >
-            Get Started
-          </a>
-        </motion.div>
-
-        {/* Mobile Menu Button */}
-        <motion.button className="md:hidden flex items-center cursor-pointer" onClick={toggleMenu} whileTap={{ scale: 0.9 }}>
-          <Menu className="h-6 w-6 text-gray-900" />
-        </motion.button>
+            <Menu className="h-6 w-6" />
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu Overlay */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="fixed inset-0 bg-white z-50 pt-24 px-6 md:hidden"
+            className="fixed inset-0 bg-white z-50 lg:hidden"
             initial={{ opacity: 0, x: "100%" }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
           >
-            <motion.button
-              className="absolute top-6 right-6 p-2"
-              onClick={toggleMenu}
-              whileTap={{ scale: 0.9 }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              <X className="h-6 w-6 text-gray-900" />
-            </motion.button>
-            <div className="flex flex-col space-y-6">
-              {["Home", "Features", "Pricing", "About", "Contact"].map((item, i) => (
-                <motion.div
-                  key={item}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.1 + 0.1 }}
-                  exit={{ opacity: 0, x: 20 }}
+            <div className="flex flex-col h-full">
+              {/* Mobile Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 mr-2 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <span className="text-lg font-semibold text-gray-900">FlowInvoicer</span>
+                </div>
+                <button
+                  onClick={toggleMenu}
+                  className="p-2 text-gray-700 hover:text-gray-900"
                 >
-                  <a 
-                    href="#" 
-                    className="text-base text-gray-900 font-medium" 
-                    onClick={(e) => {
-                      e.preventDefault()
-                      handleNavigation(item.toLowerCase())
-                    }}
-                  >
-                    {item}
-                  </a>
-                </motion.div>
-              ))}
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                exit={{ opacity: 0, y: 20 }}
-                className="pt-6"
-              >
-                <a
+              {/* Mobile Navigation */}
+              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-1">
+                <a 
                   href="#"
-                  className="inline-flex items-center justify-center w-full px-5 py-3 text-base text-white bg-black rounded-full hover:bg-gray-800 transition-colors"
                   onClick={(e) => {
                     e.preventDefault()
-                    handleGetStarted()
+                    handleNavigation('features')
                   }}
+                  className="block py-3 text-base text-gray-900 font-medium"
                 >
-                  Get Started
+                  Features
                 </a>
-              </motion.div>
+                <a 
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    handleNavigation('about')
+                  }}
+                  className="block py-3 text-base text-gray-900 font-medium"
+                >
+                  About
+                </a>
+                <a 
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    handleNavigation('pricing')
+                  }}
+                  className="block py-3 text-base text-gray-900 font-medium"
+                >
+                  Pricing
+                </a>
+                <a 
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    handleNavigation('contact')
+                  }}
+                  className="block py-3 text-base text-gray-900 font-medium"
+                >
+                  Support
+                </a>
+                <div className="pt-2 pb-2 border-t border-gray-200 mt-2">
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 py-2">Resources</div>
+                  <a 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleNavigation('privacy')
+                    }}
+                    className="block py-2 px-3 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    Privacy Policy
+                  </a>
+                  <a 
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleNavigation('terms')
+                    }}
+                    className="block py-2 px-3 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    Terms of Service
+                  </a>
+                </div>
+              </div>
+
+              {/* Mobile CTA Button */}
+              <div className="px-6 py-6 border-t border-gray-200">
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    handleSignIn()
+                  }}
+                  className="block w-full px-4 py-3 text-base font-medium text-center text-white bg-black hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  Sign up
+                </a>
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </nav>
   )
 }
 

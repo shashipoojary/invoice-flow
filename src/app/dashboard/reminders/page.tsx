@@ -402,8 +402,6 @@ export default function ReminderHistoryPage() {
     <div className={`min-h-screen transition-colors duration-200 ${'bg-white'}`}>
       <div className="flex h-screen">
         <ModernSidebar 
-          isDarkMode={false} 
-          onToggleDarkMode={() => {}}
           onCreateInvoice={() => {}} // Not needed for reminders page
         />
         

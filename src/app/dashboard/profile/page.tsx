@@ -489,8 +489,6 @@ export default function ProfilePage() {
     <div className="min-h-screen transition-colors duration-200 bg-white">
       <div className="flex h-screen">
         <ModernSidebar 
-          isDarkMode={false}
-          onToggleDarkMode={() => {}}
           onCreateInvoice={handleCreateInvoice}
         />
         
@@ -1288,7 +1286,6 @@ export default function ProfilePage() {
             showSuccess('Invoice created successfully!');
           }}
           getAuthHeaders={getAuthHeaders}
-          isDarkMode={false}
           editingInvoice={selectedInvoice}
           showSuccess={showSuccess}
           showError={showError}
@@ -1310,7 +1307,6 @@ export default function ProfilePage() {
             showSuccess('Invoice created successfully!');
           }}
           getAuthHeaders={getAuthHeaders}
-          isDarkMode={false}
           editingInvoice={selectedInvoice}
           showSuccess={showSuccess}
           showError={showError}

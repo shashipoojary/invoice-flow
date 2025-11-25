@@ -274,4 +274,57 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
+  /* Soft radial gradient with PNG grain texture for hero-style mockups */
+  .grain-bg {
+    position: relative;
+    overflow: hidden;
+    /* Layered gradients to mimic reference: lighter center, darker vignette edges */
+    background-image:
+      radial-gradient(
+        circle at 35% 30%,
+        #61d98f 0%,
+        #3fb872 35%,
+        rgba(19, 90, 60, 0.95) 65%,
+        rgba(6, 38, 25, 1) 100%
+      ),
+      radial-gradient(
+        circle at 90% 110%,
+        rgba(0, 0, 0, 0.55) 0%,
+        transparent 60%
+      );
+    background-size: cover;
+    background-position: center;
+  }
+
+  .grain-bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.18; /* adjust for more/less grain */
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=");
+    background-repeat: repeat;
+  }
+
+/* Simple animated border for How It Works mock cards */
+.border-animate {
+  position: relative;
+  border: 1px solid transparent;
+  background-image:
+    linear-gradient(#ffffff, #ffffff),
+    linear-gradient(120deg, rgba(129, 140, 248, 0.7), rgba(244, 114, 182, 0.7), rgba(45, 212, 191, 0.7));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  animation: border-move 8s linear infinite;
+}
+
+@keyframes border-move {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
 }

@@ -101,21 +101,6 @@ export default function DashboardOverview() {
     }
   }, []);
 
-  const getStatusColor = useCallback((status: string) => {
-    switch (status) {
-      case 'paid':
-        return 'dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30';
-      case 'pending':
-        return 'dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30';
-      case 'overdue':
-        return 'dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/30';
-      case 'draft':
-        return 'dark:bg-gray-500/20 dark:text-gray-300 dark:border-gray-500/30';
-      default:
-        return 'dark:bg-gray-500/20 dark:text-gray-300 dark:border-gray-500/30';
-    }
-  }, []);
-
   const getStatusStyle = useCallback((status: string) => {
     switch (status) {
       case 'paid':
@@ -128,32 +113,6 @@ export default function DashboardOverview() {
         return { backgroundColor: '#f3f4f6', color: '#374151', borderColor: '#e5e7eb' };
       default:
         return { backgroundColor: '#f3f4f6', color: '#374151', borderColor: '#e5e7eb' };
-    }
-  }, []);
-
-  const getStatusStyleDark = useCallback((status: string) => {
-    switch (status) {
-      case 'paid':
-        return { backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#6ee7b7', borderColor: 'rgba(16, 185, 129, 0.3)' };
-      case 'pending':
-        return { backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#93c5fd', borderColor: 'rgba(59, 130, 246, 0.3)' };
-      case 'overdue':
-        return { backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#fca5a5', borderColor: 'rgba(239, 68, 68, 0.3)' };
-      case 'draft':
-        return { backgroundColor: 'rgba(107, 114, 128, 0.2)', color: '#d1d5db', borderColor: 'rgba(107, 114, 128, 0.3)' };
-      default:
-        return { backgroundColor: 'rgba(107, 114, 128, 0.2)', color: '#d1d5db', borderColor: 'rgba(107, 114, 128, 0.3)' };
-    }
-  }, []);
-
-  const getTypeStyleDark = useCallback((type: string) => {
-    switch (type) {
-      case 'fast':
-        return { backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#93c5fd', borderColor: 'rgba(59, 130, 246, 0.3)' };
-      case 'detailed':
-        return { backgroundColor: 'rgba(99, 102, 241, 0.2)', color: '#a5b4fc', borderColor: 'rgba(99, 102, 241, 0.3)' };
-      default:
-        return { backgroundColor: 'rgba(99, 102, 241, 0.2)', color: '#a5b4fc', borderColor: 'rgba(99, 102, 241, 0.3)' };
     }
   }, []);
 
@@ -191,26 +150,26 @@ export default function DashboardOverview() {
     // Draft invoices should never be marked as overdue, even if past due date
     if (invoiceStatus === 'draft') {
       if (diffDays < 0) {
-        return { status: 'draft-past-due', days: Math.abs(diffDays), color: 'text-gray-500 dark:text-gray-400' };
+        return { status: 'draft-past-due', days: Math.abs(diffDays), color: 'text-gray-500' };
       } else if (diffDays === 0) {
-        return { status: 'draft-due-today', days: 0, color: 'text-gray-500 dark:text-gray-400' };
+        return { status: 'draft-due-today', days: 0, color: 'text-gray-500' };
       } else if (diffDays <= 3) {
-        return { status: 'draft-due-soon', days: diffDays, color: 'text-gray-500 dark:text-gray-400' };
+        return { status: 'draft-due-soon', days: diffDays, color: 'text-gray-500' };
       } else {
-        return { status: 'draft-upcoming', days: diffDays, color: 'text-gray-500 dark:text-gray-400' };
+        return { status: 'draft-upcoming', days: diffDays, color: 'text-gray-500' };
       }
     }
     
     // Only sent/pending invoices can be overdue
     // Invoice is overdue only if due date has passed (not on the due date itself)
     if (diffDays < 0) {
-      return { status: 'overdue', days: Math.abs(diffDays), color: 'text-red-600 dark:text-red-400' };
+      return { status: 'overdue', days: Math.abs(diffDays), color: 'text-red-600' };
     } else if (diffDays === 0) {
-      return { status: 'due-today', days: 0, color: 'text-orange-500 dark:text-orange-400' };
+      return { status: 'due-today', days: 0, color: 'text-orange-500' };
     } else if (diffDays <= 3) {
-      return { status: 'due-soon', days: diffDays, color: 'text-yellow-600 dark:text-yellow-400' };
+      return { status: 'due-soon', days: diffDays, color: 'text-yellow-600' };
     } else {
-      return { status: 'upcoming', days: diffDays, color: 'text-gray-600 dark:text-gray-400' };
+      return { status: 'upcoming', days: diffDays, color: 'text-gray-600' };
     }
   }, [parseDateOnly]);
 
@@ -1189,8 +1148,6 @@ export default function DashboardOverview() {
     <div className="min-h-screen transition-colors duration-200 bg-white">
       <div className="flex h-screen">
         <ModernSidebar 
-          isDarkMode={false}
-          onToggleDarkMode={() => {}}
           onCreateInvoice={handleCreateInvoice}
         />
         
@@ -1210,13 +1167,13 @@ export default function DashboardOverview() {
                 <div className="rounded-lg p-6 mb-8 bg-white/70 border border-gray-200 backdrop-blur-sm">
                   <div className="flex items-center space-x-4 mb-4">
                     <div className="p-3 rounded-xl bg-indigo-50">
-                      <Sparkles className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                      <Sparkles className="h-6 w-6 text-indigo-600" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold" style={{color: '#1f2937'}}>
                         Ready to get started?
                       </h3>
-                      <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                      <p className="text-sm font-medium text-indigo-600">
                         Let&apos;s create your first invoice
                       </p>
                     </div>
@@ -1237,7 +1194,7 @@ export default function DashboardOverview() {
                     </button>
                     <button
                       onClick={() => setShowCreateClient(true)}
-                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium cursor-pointer"
+                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium cursor-pointer"
                     >
                       <UserPlus className="h-4 w-4" />
                       <span>Add Client</span>

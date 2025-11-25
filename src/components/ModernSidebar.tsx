@@ -20,14 +20,10 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 
 interface ModernSidebarProps {
-  isDarkMode: boolean;
-  onToggleDarkMode: () => void;
   onCreateInvoice: () => void;
 }
 
 const ModernSidebar = ({ 
-  isDarkMode, 
-  onToggleDarkMode, 
   onCreateInvoice 
 }: ModernSidebarProps) => {
   // Initialize collapsed state from localStorage immediately to prevent flash
@@ -186,7 +182,6 @@ const ModernSidebar = ({
         // Still proceed with logout even if there's an error
       }
       // Clear any local state
-      localStorage.removeItem('theme');
       localStorage.removeItem('sidebarCollapsed');
       // Force page reload to ensure clean state
       window.location.href = '/auth';
@@ -209,14 +204,10 @@ const ModernSidebar = ({
   };
 
   const sidebarContent = (
-    <div className={`h-full flex flex-col transition-all duration-300 ease-in-out ${
-      isDarkMode ? 'bg-black border-gray-800' : 'bg-white border-gray-200'
-    } ${isCollapsed ? 'w-16' : 'w-80'}`}>
+    <div className={`h-full flex flex-col transition-all duration-300 ease-in-out bg-white border-gray-200 ${isCollapsed ? 'w-16' : 'w-80'}`}>
       
       {/* Header */}
-      <div className={`flex items-center transition-all duration-300 ease-in-out ${isCollapsed ? 'justify-center p-4' : 'justify-between p-6'} border-b ${
-        isDarkMode ? 'border-gray-800' : 'border-gray-200'
-      }`}>
+      <div className={`flex items-center transition-all duration-300 ease-in-out ${isCollapsed ? 'justify-center p-4' : 'justify-between p-6'} border-b border-gray-200`}>
         {!isCollapsed ? (
           <div className="flex items-center justify-center w-full">
         <Image
@@ -230,7 +221,7 @@ const ModernSidebar = ({
         ) : (
           <button
             onClick={handleToggleCollapse}
-            className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors bg-transparent border-none outline-none overflow-hidden cursor-pointer"
+            className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-gray-100 transition-colors bg-transparent border-none outline-none overflow-hidden cursor-pointer"
             style={{ backgroundColor: 'transparent' }}
           >
         <Image
@@ -252,11 +243,7 @@ const ModernSidebar = ({
         {!isCollapsed && (
           <button
             onClick={handleToggleCollapse}
-            className={`hidden lg:flex items-center justify-center w-8 h-8 rounded-lg transition-colors cursor-pointer ${
-              isDarkMode 
-                ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-300' 
-                : 'hover:bg-gray-100 text-gray-500 hover:text-gray-700'
-            }`}
+            className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg transition-colors cursor-pointer hover:bg-gray-100 text-gray-500 hover:text-gray-700"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -274,11 +261,7 @@ const ModernSidebar = ({
                 setIsMobileOpen(false);
               }
             }}
-            className={`w-full flex items-center justify-center space-x-2 px-6 py-3 rounded-lg transition-colors text-sm font-medium cursor-pointer ${
-              isDarkMode 
-                ? 'bg-white text-black hover:bg-gray-200' 
-                : 'bg-black text-white hover:bg-gray-800'
-            }`}
+            className="w-full flex items-center justify-center space-x-2 px-6 py-3 rounded-lg transition-colors text-sm font-medium cursor-pointer bg-black text-white hover:bg-gray-800"
           >
             <Plus className="w-4 h-4" />
             <span>Create Invoice</span>
@@ -296,11 +279,7 @@ const ModernSidebar = ({
                 setIsMobileOpen(false);
               }
             }}
-            className={`w-full flex items-center justify-center p-3 rounded-lg transition-colors cursor-pointer ${
-              isDarkMode 
-                ? 'bg-white text-black hover:bg-gray-200' 
-                : 'bg-black text-white hover:bg-gray-800'
-            }`}
+            className="w-full flex items-center justify-center p-3 rounded-lg transition-colors cursor-pointer bg-black text-white hover:bg-gray-800"
             title="Create Invoice"
           >
             <Plus className="w-5 h-5" />
@@ -330,11 +309,7 @@ const ModernSidebar = ({
                 disabled={isNavigating || isPending}
                 className={`w-full flex items-center ${isCollapsed ? 'justify-center p-3' : 'space-x-3 px-3 py-3'} rounded-lg group disabled:opacity-50 disabled:cursor-wait transition-colors duration-200 cursor-pointer ${
                   isActive
-                    ? isDarkMode
-                      ? 'bg-gray-800 text-white'
-                      : 'bg-gray-100 text-black'
-                    : isDarkMode
-                    ? 'text-gray-200 hover:text-white hover:bg-gray-800'
+                    ? 'bg-gray-100 text-black'
                     : 'text-gray-800 hover:text-black hover:bg-gray-50'
                 }`}
                 title={isCollapsed ? item.label : undefined}
@@ -352,8 +327,8 @@ const ModernSidebar = ({
                     <div className="font-medium text-sm">{item.label}</div>
                     <div className={`text-xs ${
                       isActive 
-                        ? isDarkMode ? 'text-gray-200' : 'text-gray-700'
-                        : isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                        ? 'text-gray-700'
+                        : 'text-gray-600'
                     }`}>
                       {item.description}
                     </div>
@@ -366,9 +341,7 @@ const ModernSidebar = ({
       </nav>
 
       {/* User Profile & Actions */}
-      <div className={`transition-all duration-300 ease-in-out ${isCollapsed ? 'p-3' : 'p-6'} border-t ${
-        isDarkMode ? 'border-gray-800' : 'border-gray-200'
-      }`}>
+      <div className={`transition-all duration-300 ease-in-out ${isCollapsed ? 'p-3' : 'p-6'} border-t border-gray-200`}>
         {!isCollapsed ? (
           <div className="space-y-4">
             {/* Profile Button */}
@@ -381,63 +354,27 @@ const ModernSidebar = ({
               data-route="/dashboard/profile"
               onClick={() => handleNavigation('/dashboard/profile')}
               disabled={isPending}
-              className={`w-full flex items-center space-x-3 p-3 rounded-lg border transition-colors duration-200 cursor-pointer ${
-                isDarkMode 
-                  ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' 
-                  : 'bg-white border-gray-200 hover:bg-gray-50'
-              }`}
+              className="w-full flex items-center space-x-3 p-3 rounded-lg border transition-colors duration-200 cursor-pointer bg-white border-gray-200 hover:bg-gray-50"
             >
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                isDarkMode 
-                  ? 'bg-white' 
-                  : 'bg-indigo-600'
-              }`}>
-                <User className={`w-5 h-5 ${
-                  isDarkMode 
-                    ? 'text-indigo-600' 
-                    : 'text-white'
-                }`} />
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-indigo-600">
+                <User className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <div className={`font-medium text-sm truncate ${
-                  isDarkMode 
-                    ? 'text-white' 
-                    : 'text-gray-900'
-                }`}>
+                <div className="font-medium text-sm truncate text-gray-900">
                   {user?.name || 'User'}
                 </div>
-                <div className={`text-xs truncate ${
-                  isDarkMode 
-                    ? 'text-gray-300' 
-                    : 'text-gray-600'
-                }`}>
+                <div className="text-xs truncate text-gray-600">
                   View Profile
                 </div>
               </div>
             </button>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={onToggleDarkMode}
-                className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-lg text-sm font-medium border transition-colors duration-200 cursor-pointer ${
-                  isDarkMode 
-                    ? 'bg-gray-800 text-gray-200 border-gray-700 hover:bg-gray-700' 
-                    : 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                <Settings className="w-4 h-4" />
-                <span>Theme</span>
-              </button>
-              
+            <div className="grid grid-cols-1 gap-2">
               <button
                 onClick={handleSignOut}
                 disabled={isLoggingOut}
-                className={`flex items-center justify-center space-x-2 px-6 py-3 rounded-lg text-sm font-medium border disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer ${
-                  isDarkMode 
-                    ? 'text-red-400 bg-red-900/20 border-red-800 hover:bg-red-900/30' 
-                    : 'text-red-600 bg-white border-red-200 hover:bg-red-50'
-                }`}
+                className="flex items-center justify-center space-x-2 px-6 py-3 rounded-lg text-sm font-medium border disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer text-red-600 bg-white border-red-200 hover:bg-red-50"
               >
                 {isLoggingOut ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -451,24 +388,8 @@ const ModernSidebar = ({
         ) : (
           <div className="space-y-3 transition-all duration-300 ease-in-out">
             <button
-              onClick={onToggleDarkMode}
-              className={`w-full flex items-center justify-center p-3 rounded-lg border transition-colors duration-200 cursor-pointer ${
-                isDarkMode 
-                  ? 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700' 
-                  : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-              }`}
-              title="Toggle Theme"
-            >
-              <Settings className="w-5 h-5" />
-            </button>
-            
-            <button
               onClick={handleSignOut}
-              className={`w-full flex items-center justify-center p-3 rounded-lg border transition-colors duration-200 cursor-pointer ${
-                isDarkMode 
-                  ? 'text-red-400 bg-red-900/20 border-red-800 hover:bg-red-900/30' 
-                  : 'text-red-600 bg-white border-red-200 hover:bg-red-50'
-              }`}
+              className="w-full flex items-center justify-center p-3 rounded-lg border transition-colors duration-200 cursor-pointer text-red-600 bg-white border-red-200 hover:bg-red-50"
               title="Logout"
             >
               <LogOut className="w-5 h-5" />
@@ -492,17 +413,9 @@ const ModernSidebar = ({
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        className={`lg:hidden fixed top-4 left-4 z-50 p-3 rounded-xl shadow-lg border transition-all duration-150 ease-out hover:scale-105 active:scale-95 cursor-pointer ${
-          isDarkMode 
-            ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' 
-            : 'bg-white border-gray-200 hover:bg-gray-50'
-        }`}
+        className="lg:hidden fixed top-4 left-4 z-50 p-3 rounded-xl shadow-lg border transition-all duration-150 ease-out hover:scale-105 active:scale-95 cursor-pointer bg-white border-gray-200 hover:bg-gray-50"
       >
-        <Menu className={`w-5 h-5 ${
-          isDarkMode 
-            ? 'text-gray-300' 
-            : 'text-gray-700'
-        }`} />
+        <Menu className="w-5 h-5 text-gray-700" />
       </button>
 
       {/* Sidebar */}
@@ -516,17 +429,9 @@ const ModernSidebar = ({
       {isMobileOpen && (
         <button
           onClick={() => setIsMobileOpen(false)}
-          className={`lg:hidden fixed top-4 right-4 z-50 p-3 rounded-xl shadow-lg border transition-colors cursor-pointer ${
-            isDarkMode 
-              ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' 
-              : 'bg-white border-gray-200 hover:bg-gray-50'
-          }`}
+          className="lg:hidden fixed top-4 right-4 z-50 p-3 rounded-xl shadow-lg border transition-colors cursor-pointer bg-white border-gray-200 hover:bg-gray-50"
         >
-          <X className={`w-5 h-5 ${
-            isDarkMode 
-              ? 'text-gray-300' 
-              : 'text-gray-700'
-          }`} />
+          <X className="w-5 h-5 text-gray-700" />
         </button>
       )}
     </>

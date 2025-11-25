@@ -322,8 +322,6 @@ export default function SettingsPage() {
     <div className="min-h-screen transition-colors duration-200 bg-white">
       <div className="flex h-screen">
         <ModernSidebar 
-          isDarkMode={false}
-          onToggleDarkMode={() => {}}
           onCreateInvoice={handleCreateInvoice}
         />
         
@@ -373,7 +371,7 @@ export default function SettingsPage() {
                 <div className={`rounded-lg p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
                 <div className="flex items-center space-x-3 mb-6">
                   <div className={`p-2 rounded-lg bg-blue-100`}>
-                    <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <Building2 className="h-5 w-5 text-blue-600" />
                   </div>
                   <h3 className="text-lg font-semibold" style={{color: '#1f2937'}}>
                     Business Information
@@ -564,7 +562,7 @@ export default function SettingsPage() {
               <div className={`rounded-lg p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
                 <div className="flex items-center space-x-3 mb-6">
                   <div className={`p-2 rounded-lg bg-green-100`}>
-                    <CreditCard className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    <CreditCard className="h-5 w-5 text-green-600" />
                   </div>
                   <h3 className="text-lg font-semibold" style={{color: '#1f2937'}}>
                     Payment Methods
@@ -721,7 +719,6 @@ export default function SettingsPage() {
           isOpen={showCreateInvoice}
           onClose={() => setShowCreateInvoice(false)}
           getAuthHeaders={getAuthHeaders}
-          isDarkMode={false}
           clients={clients}
           onSuccess={() => {
             setShowCreateInvoice(false);

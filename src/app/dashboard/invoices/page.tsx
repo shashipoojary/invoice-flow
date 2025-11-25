@@ -112,21 +112,6 @@ function InvoicesContent(): React.JSX.Element {
     }
   }, []);
 
-  const getStatusColor = useCallback((status: string) => {
-    switch (status) {
-      case 'paid':
-        return 'dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30';
-      case 'sent':
-        return 'dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30';
-      case 'overdue':
-        return 'dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/30';
-      case 'draft':
-        return 'dark:bg-gray-500/20 dark:text-gray-300 dark:border-gray-500/30';
-      default:
-        return 'dark:bg-gray-500/20 dark:text-gray-300 dark:border-gray-500/30';
-    }
-  }, []);
-
   const getStatusStyle = useCallback((status: string) => {
     switch (status) {
       case 'paid':
@@ -139,32 +124,6 @@ function InvoicesContent(): React.JSX.Element {
         return { backgroundColor: '#f3f4f6', color: '#374151', borderColor: '#e5e7eb' };
       default:
         return { backgroundColor: '#f3f4f6', color: '#374151', borderColor: '#e5e7eb' };
-    }
-  }, []);
-
-  const getStatusStyleDark = useCallback((status: string) => {
-    switch (status) {
-      case 'paid':
-        return { backgroundColor: 'rgba(16, 185, 129, 0.2)', color: '#6ee7b7', borderColor: 'rgba(16, 185, 129, 0.3)' };
-      case 'sent':
-        return { backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#93c5fd', borderColor: 'rgba(59, 130, 246, 0.3)' };
-      case 'overdue':
-        return { backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#fca5a5', borderColor: 'rgba(239, 68, 68, 0.3)' };
-      case 'draft':
-        return { backgroundColor: 'rgba(107, 114, 128, 0.2)', color: '#d1d5db', borderColor: 'rgba(107, 114, 128, 0.3)' };
-      default:
-        return { backgroundColor: 'rgba(107, 114, 128, 0.2)', color: '#d1d5db', borderColor: 'rgba(107, 114, 128, 0.3)' };
-    }
-  }, []);
-
-  const getTypeStyleDark = useCallback((type: string) => {
-    switch (type) {
-      case 'fast':
-        return { backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#93c5fd', borderColor: 'rgba(59, 130, 246, 0.3)' };
-      case 'detailed':
-        return { backgroundColor: 'rgba(99, 102, 241, 0.2)', color: '#a5b4fc', borderColor: 'rgba(99, 102, 241, 0.3)' };
-      default:
-        return { backgroundColor: 'rgba(99, 102, 241, 0.2)', color: '#a5b4fc', borderColor: 'rgba(99, 102, 241, 0.3)' };
     }
   }, []);
 
@@ -214,25 +173,25 @@ function InvoicesContent(): React.JSX.Element {
     // Draft invoices should never be marked as overdue, even if past due date
     if (invoiceStatus === 'draft') {
       if (diffDays < 0) {
-        return { status: 'draft-past-due', days: Math.abs(diffDays), color: 'text-gray-500 dark:text-gray-400' };
+        return { status: 'draft-past-due', days: Math.abs(diffDays), color: 'text-gray-500' };
       } else if (diffDays === 0) {
-        return { status: 'draft-due-today', days: 0, color: 'text-gray-500 dark:text-gray-400' };
+        return { status: 'draft-due-today', days: 0, color: 'text-gray-500' };
       } else if (diffDays <= 3) {
-        return { status: 'draft-due-soon', days: diffDays, color: 'text-gray-500 dark:text-gray-400' };
+        return { status: 'draft-due-soon', days: diffDays, color: 'text-gray-500' };
       } else {
-        return { status: 'draft-upcoming', days: diffDays, color: 'text-gray-500 dark:text-gray-400' };
+        return { status: 'draft-upcoming', days: diffDays, color: 'text-gray-500' };
       }
     }
     
     // Only sent/pending invoices can be overdue
     if (diffDays < 0) {
-      return { status: 'overdue', days: Math.abs(diffDays), color: 'text-red-600 dark:text-red-400' };
+      return { status: 'overdue', days: Math.abs(diffDays), color: 'text-red-600' };
     } else if (diffDays === 0) {
-      return { status: 'due-today', days: 0, color: 'text-orange-500 dark:text-orange-400' };
+      return { status: 'due-today', days: 0, color: 'text-orange-500' };
     } else if (diffDays <= 3) {
-      return { status: 'due-soon', days: diffDays, color: 'text-yellow-600 dark:text-yellow-400' };
+      return { status: 'due-soon', days: diffDays, color: 'text-yellow-600' };
     } else {
-      return { status: 'upcoming', days: diffDays, color: 'text-gray-600 dark:text-gray-400' };
+      return { status: 'upcoming', days: diffDays, color: 'text-gray-600' };
     }
   }, [parseDateOnly]);
 
@@ -936,8 +895,6 @@ function InvoicesContent(): React.JSX.Element {
     <div className="min-h-screen transition-colors duration-200 bg-white">
       <div className="flex h-screen">
         <ModernSidebar 
-          isDarkMode={false}
-          onToggleDarkMode={() => {}}
           onCreateInvoice={handleCreateInvoice}
         />
         
@@ -1270,7 +1227,7 @@ function InvoicesContent(): React.JSX.Element {
                         setSelectedInvoice(null);
                         setShowCreateInvoice(true);
                       }}
-                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
+                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
                     >
                       <FilePlus className="h-4 w-4" />
                       <span>Detailed Invoice</span>
@@ -1685,7 +1642,7 @@ function InvoicesContent(): React.JSX.Element {
 export default function InvoicesPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
       </div>
     }>

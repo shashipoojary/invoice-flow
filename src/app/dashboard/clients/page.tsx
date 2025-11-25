@@ -203,17 +203,17 @@ export default function ClientsPage() {
     <div className={`rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] bg-white/70 border border-gray-200 backdrop-blur-sm ${isDeleting === client.id ? 'opacity-50 pointer-events-none' : ''}`}>
       <div className="flex items-start justify-between mb-4">
         <div className="p-3 rounded-xl bg-indigo-50">
-          <Building2 className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+          <Building2 className="h-6 w-6 text-indigo-600" />
         </div>
         <div className="flex space-x-2">
           <button 
             data-testid={`client-${client.id}-view`}
             onClick={() => handleViewClient(client)}
             disabled={isDeleting === client.id}
-            className={`p-3 sm:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] sm:min-h-auto touch-manipulation ${
+            className={`p-3 sm:p-2 text-gray-400 hover:text-gray-600 transition-colors min-h-[44px] sm:min-h-auto touch-manipulation ${
               isDeleting === client.id
                 ? 'opacity-50 cursor-not-allowed' 
-                : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer'
+                : 'hover:bg-gray-50 cursor-pointer'
             }`}
             aria-label={`View ${client.name}`}
           >
@@ -223,10 +223,10 @@ export default function ClientsPage() {
             data-testid={`client-${client.id}-edit`}
             onClick={() => handleEditClient(client)}
             disabled={isDeleting === client.id}
-            className={`p-3 sm:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-h-[44px] sm:min-h-auto touch-manipulation ${
+            className={`p-3 sm:p-2 text-gray-400 hover:text-gray-600 transition-colors min-h-[44px] sm:min-h-auto touch-manipulation ${
               isDeleting === client.id
                 ? 'opacity-50 cursor-not-allowed' 
-                : 'hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer'
+                : 'hover:bg-gray-50 cursor-pointer'
             }`}
             aria-label={`Edit ${client.name}`}
           >
@@ -236,10 +236,10 @@ export default function ClientsPage() {
             data-testid={`client-${client.id}-delete`}
             onClick={() => handleDeleteClient(client)}
             disabled={isDeleting === client.id}
-            className={`p-3 sm:p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors min-h-[44px] sm:min-h-auto touch-manipulation ${
+            className={`p-3 sm:p-2 text-gray-400 hover:text-red-600 transition-colors min-h-[44px] sm:min-h-auto touch-manipulation ${
               isDeleting === client.id 
                 ? 'opacity-50 cursor-not-allowed' 
-                : 'hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer'
+                : 'hover:bg-red-50 cursor-pointer'
             }`}
             aria-label={`Delete ${client.name}`}
           >
@@ -305,8 +305,6 @@ export default function ClientsPage() {
       <div className="flex h-screen">
         <ModernSidebar 
           onCreateInvoice={handleCreateInvoice}
-          isDarkMode={false}
-          onToggleDarkMode={() => {}}
         />
         
         <main className="flex-1 lg:ml-0 overflow-y-auto scroll-smooth custom-scrollbar">
@@ -364,7 +362,7 @@ export default function ClientsPage() {
               ) : (
                 <div className="rounded-lg p-12 text-center bg-white/70 border border-gray-200 backdrop-blur-sm">
                   <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl mb-6 bg-gray-100">
-                    <Users className="h-10 w-10 text-gray-500 dark:text-gray-400" />
+                    <Users className="h-10 w-10 text-gray-500" />
                   </div>
                   
                   <h3 className="text-xl font-semibold mb-3" style={{color: '#1f2937'}}>
@@ -461,7 +459,7 @@ export default function ClientsPage() {
               <div className="p-3 sm:p-6 border-b border-gray-200">
                 <div className="flex items-center space-x-4">
                   <div className="p-3 rounded-xl bg-indigo-50">
-                    <Users className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+                    <Users className="h-8 w-8 text-indigo-600" />
                   </div>
                   <div>
                     <h3 className="text-lg sm:text-2xl font-bold text-gray-900">
