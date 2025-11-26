@@ -95,19 +95,20 @@ export default function LandingPage() {
           
           {/* Dashboard Screenshot */}
           <div className="relative max-w-6xl mx-auto">
-            {/* Glow effect layers */}
+            {/* Glow effect layers - Purple theme */}
             <div className="absolute inset-0 rounded-2xl opacity-30 blur-3xl" style={{
-              background: 'radial-gradient(ellipse at center, #10b981, #14b8a6, #06b6d4)',
+              background: 'radial-gradient(ellipse at center, #a855f7, #9333ea, #7c3aed)',
                 transform: 'scale(1.1)',
               zIndex: 0
               }}></div>
             <div className="absolute inset-0 rounded-2xl opacity-20 blur-2xl" style={{
-              background: 'radial-gradient(ellipse at 30% 70%, #10b981, #14b8a6)',
+              background: 'radial-gradient(ellipse at 30% 70%, #a855f7, #9333ea)',
                 transform: 'scale(1.05)',
               zIndex: 1
               }}></div>
               
-            <div className="relative z-10 rounded-lg overflow-hidden border border-gray-200 shadow-2xl bg-white">
+            {/* Desktop Image */}
+            <div className="relative z-10 rounded-lg overflow-hidden border border-gray-200 shadow-2xl bg-white hidden md:block">
               <img
                 src="/dashboard-screenshot.png?v=2"
                 alt="FlowInvoicer Dashboard"
@@ -116,6 +117,19 @@ export default function LandingPage() {
                 loading="eager"
                 decoding="async"
                 key="dashboard-screenshot"
+              />
+            </div>
+            
+            {/* Mobile Image */}
+            <div className="relative z-10 rounded-lg overflow-hidden border border-gray-200 shadow-2xl bg-white block md:hidden">
+              <img
+                src="/dashboard-screenshot-mobile.png"
+                alt="FlowInvoicer Dashboard"
+                className="w-full h-auto block"
+                style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
+                loading="eager"
+                decoding="async"
+                key="dashboard-screenshot-mobile"
               />
             </div>
           </div>
@@ -298,22 +312,24 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               {/* Visual Background */}
               <div className="order-2 lg:order-1">
-                <div className="relative max-w-xl mx-auto group">
-                  {/* Animated gradient border effect */}
-                  <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl opacity-75 blur-sm group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative max-w-xl mx-auto">
+                  {/* Background glow effect - one side only with purple theme color */}
+                  <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
+                    zIndex: 0
+                  }}></div>
+                  <div className="absolute bottom-0 right-0 w-1/3 h-1/3 rounded-2xl opacity-40 blur-2xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, transparent)',
+                    zIndex: 0
+                  }}></div>
                   
-                  {/* Inner glow */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 via-teal-50/30 to-transparent rounded-2xl pointer-events-none"></div>
-                  
-                  <div className="relative rounded-2xl overflow-hidden bg-white p-1">
-                    <div className="rounded-xl overflow-hidden">
-                      <img
-                        src="/how-it-works-create-invoice.png"
-                        alt="Create Invoice"
-                        className="w-full h-auto block"
-                        style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
-                      />
-                    </div>
+                  {/* Image container matching hero style */}
+                  <div className="relative z-10 rounded-lg overflow-hidden shadow-2xl">
+                    <img
+                      src="/how-it-works-create-invoice.png"
+                      alt="Create Invoice"
+                      className="w-full h-auto block"
+                    />
                   </div>
                 </div>
               </div>
@@ -345,13 +361,25 @@ export default function LandingPage() {
 
               {/* Visual Background */}
               <div>
-                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl overflow-hidden flex items-center justify-center">
-                  <img
-                    src="/how-it-works-send-automatically.png"
-                    alt="Send Automatically"
-                    className="w-full h-auto rounded-xl sm:rounded-2xl"
-                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
-                  />
+                <div className="relative max-w-xl mx-auto">
+                  {/* Background glow effect - one side only with purple theme color */}
+                  <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
+                    zIndex: 0
+                  }}></div>
+                  <div className="absolute bottom-0 right-0 w-1/3 h-1/3 rounded-2xl opacity-40 blur-2xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, transparent)',
+                    zIndex: 0
+                  }}></div>
+                  
+                  {/* Image container matching hero style */}
+                  <div className="relative z-10 rounded-lg overflow-hidden shadow-2xl">
+                    <img
+                      src="/how-it-works-send-automatically.png"
+                      alt="Send Automatically"
+                      className="w-full h-auto block"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -362,13 +390,25 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               {/* Visual Background */}
               <div className="order-2 lg:order-1">
-                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl flex items-center justify-center overflow-hidden">
-                  <img
-                    src="/how-it-works-track-remind.png"
-                    alt="Track & Remind"
-                    className="w-full h-auto rounded-xl sm:rounded-2xl"
-                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
-                  />
+                <div className="relative max-w-xl mx-auto">
+                  {/* Background glow effect - one side only with purple theme color */}
+                  <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
+                    zIndex: 0
+                  }}></div>
+                  <div className="absolute bottom-0 right-0 w-1/3 h-1/3 rounded-2xl opacity-40 blur-2xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, transparent)',
+                    zIndex: 0
+                  }}></div>
+                  
+                  {/* Image container matching hero style */}
+                  <div className="relative z-10 rounded-lg overflow-hidden shadow-2xl">
+                    <img
+                      src="/how-it-works-track-remind.png"
+                      alt="Track & Remind"
+                      className="w-full h-auto block"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -411,13 +451,25 @@ export default function LandingPage() {
 
               {/* Visual Background */}
               <div>
-                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl flex items-center justify-center overflow-hidden">
-                  <img
-                    src="/how-it-works-get-paid.png"
-                    alt="Get Paid Faster"
-                    className="w-full h-auto rounded-xl sm:rounded-2xl"
-                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
-                  />
+                <div className="relative max-w-xl mx-auto">
+                  {/* Background glow effect - one side only with purple theme color */}
+                  <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
+                    zIndex: 0
+                  }}></div>
+                  <div className="absolute bottom-0 right-0 w-1/3 h-1/3 rounded-2xl opacity-40 blur-2xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, transparent)',
+                    zIndex: 0
+                  }}></div>
+                  
+                  {/* Image container matching hero style */}
+                  <div className="relative z-10 rounded-lg overflow-hidden shadow-2xl">
+                    <img
+                      src="/how-it-works-get-paid.png"
+                      alt="Get Paid Faster"
+                      className="w-full h-auto block"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -428,13 +480,25 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               {/* Visual Background */}
               <div className="order-2 lg:order-1">
-                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl flex items-center justify-center overflow-hidden">
-                  <img
-                    src="/how-it-works-templates.png"
-                    alt="Professional Templates"
-                    className="w-full h-auto rounded-xl sm:rounded-2xl"
-                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
-                  />
+                <div className="relative max-w-xl mx-auto">
+                  {/* Background glow effect - one side only with purple theme color */}
+                  <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
+                    zIndex: 0
+                  }}></div>
+                  <div className="absolute bottom-0 right-0 w-1/3 h-1/3 rounded-2xl opacity-40 blur-2xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, transparent)',
+                    zIndex: 0
+                  }}></div>
+                  
+                  {/* Image container matching hero style */}
+                  <div className="relative z-10 rounded-lg overflow-hidden shadow-2xl">
+                    <img
+                      src="/how-it-works-templates.png"
+                      alt="Professional Templates"
+                      className="w-full h-auto block"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -465,13 +529,25 @@ export default function LandingPage() {
 
               {/* Visual Background */}
               <div>
-                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl flex items-center justify-center overflow-hidden">
-                  <img
-                    src="/how-it-works-client-management.png"
-                    alt="Client Management"
-                    className="w-full h-auto rounded-xl sm:rounded-2xl"
-                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
-                  />
+                <div className="relative max-w-xl mx-auto">
+                  {/* Background glow effect - one side only with purple theme color */}
+                  <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
+                    zIndex: 0
+                  }}></div>
+                  <div className="absolute bottom-0 right-0 w-1/3 h-1/3 rounded-2xl opacity-40 blur-2xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, transparent)',
+                    zIndex: 0
+                  }}></div>
+                  
+                  {/* Image container matching hero style */}
+                  <div className="relative z-10 rounded-lg overflow-hidden shadow-2xl">
+                    <img
+                      src="/how-it-works-client-management.png"
+                      alt="Client Management"
+                      className="w-full h-auto block"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -482,13 +558,25 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               {/* Visual Background */}
               <div className="order-2 lg:order-1">
-                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl flex items-center justify-center overflow-hidden">
-                  <img
-                    src="/how-it-works-reminders.png"
-                    alt="Automated Reminders"
-                    className="w-full h-auto rounded-xl sm:rounded-2xl"
-                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
-                  />
+                <div className="relative max-w-xl mx-auto">
+                  {/* Background glow effect - one side only with purple theme color */}
+                  <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
+                    zIndex: 0
+                  }}></div>
+                  <div className="absolute bottom-0 right-0 w-1/3 h-1/3 rounded-2xl opacity-40 blur-2xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, transparent)',
+                    zIndex: 0
+                  }}></div>
+                  
+                  {/* Image container matching hero style */}
+                  <div className="relative z-10 rounded-lg overflow-hidden shadow-2xl">
+                    <img
+                      src="/how-it-works-reminders.png"
+                      alt="Automated Reminders"
+                      className="w-full h-auto block"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -519,13 +607,25 @@ export default function LandingPage() {
 
               {/* Visual Background */}
               <div>
-                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl flex items-center justify-center overflow-hidden">
-                  <img
-                    src="/how-it-works-late-fees.png"
-                    alt="Late Fee Management"
-                    className="w-full h-auto rounded-xl sm:rounded-2xl"
-                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
-                  />
+                <div className="relative max-w-xl mx-auto">
+                  {/* Background glow effect - one side only with purple theme color */}
+                  <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
+                    zIndex: 0
+                  }}></div>
+                  <div className="absolute bottom-0 right-0 w-1/3 h-1/3 rounded-2xl opacity-40 blur-2xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, transparent)',
+                    zIndex: 0
+                  }}></div>
+                  
+                  {/* Image container matching hero style */}
+                  <div className="relative z-10 rounded-lg overflow-hidden shadow-2xl">
+                    <img
+                      src="/how-it-works-late-fees.png"
+                      alt="Late Fee Management"
+                      className="w-full h-auto block"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -536,13 +636,25 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               {/* Visual Background */}
               <div className="order-2 lg:order-1">
-                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl flex items-center justify-center overflow-hidden">
-                  <img
-                    src="/how-it-works-pdf-generation.png"
-                    alt="PDF Generation"
-                    className="w-full h-auto rounded-xl sm:rounded-2xl"
-                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
-                  />
+                <div className="relative max-w-xl mx-auto">
+                  {/* Background glow effect - one side only with purple theme color */}
+                  <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
+                    zIndex: 0
+                  }}></div>
+                  <div className="absolute bottom-0 right-0 w-1/3 h-1/3 rounded-2xl opacity-40 blur-2xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, transparent)',
+                    zIndex: 0
+                  }}></div>
+                  
+                  {/* Image container matching hero style */}
+                  <div className="relative z-10 rounded-lg overflow-hidden shadow-2xl">
+                    <img
+                      src="/how-it-works-pdf-generation.png"
+                      alt="PDF Generation"
+                      className="w-full h-auto block"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -573,41 +685,26 @@ export default function LandingPage() {
 
               {/* Visual Background */}
               <div>
-                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl flex items-center justify-center overflow-hidden">
-                  <img
-                    src="/how-it-works-analytics.png"
-                    alt="Analytics Dashboard"
-                    className="w-full h-auto rounded-xl sm:rounded-2xl"
-                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
-                  />
+                <div className="relative max-w-xl mx-auto">
+                  {/* Background glow effect - one side only with purple theme color */}
+                  <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
+                    zIndex: 0
+                  }}></div>
+                  <div className="absolute bottom-0 right-0 w-1/3 h-1/3 rounded-2xl opacity-40 blur-2xl" style={{
+                    background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, transparent)',
+                    zIndex: 0
+                  }}></div>
+                  
+                  {/* Image container matching hero style */}
+                  <div className="relative z-10 rounded-lg overflow-hidden shadow-2xl">
+                    <img
+                      src="/how-it-works-analytics.png"
+                      alt="Analytics Dashboard"
+                      className="w-full h-auto block"
+                    />
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Step 11 - Secure & Reliable */}
-          <div className="mb-12 sm:mb-16 lg:mb-20">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-              {/* Visual Background */}
-              <div className="order-2 lg:order-1">
-                <div className="relative grain-bg rounded-2xl p-6 sm:p-8 shadow-xl flex items-center justify-center overflow-hidden">
-                  <img
-                    src="/how-it-works-secure.png"
-                    alt="Secure & Reliable"
-                    className="w-full h-auto rounded-xl sm:rounded-2xl"
-                    style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
-                  />
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="order-1 lg:order-2">
-                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
-                  Secure & Reliable
-                </h3>
-                <p className="text-base text-gray-600 leading-relaxed">
-                  Enterprise-grade security with encrypted data storage and transmission. Your data is never shared with third parties.
-                </p>
               </div>
             </div>
           </div>

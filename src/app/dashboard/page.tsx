@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { 
   FileText, Users, 
   Clock, CheckCircle, AlertCircle, AlertTriangle, UserPlus, FilePlus, Sparkles, Receipt, Timer,
-  Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2, ArrowRight
+  Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2, ArrowRight, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -1211,26 +1211,53 @@ export default function DashboardOverview() {
                   className="group relative overflow-hidden rounded-lg p-3 sm:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-emerald-500 backdrop-blur-sm h-full"
                 >
                   <div className="flex items-start justify-between h-full">
-                    <div className="flex-1 min-w-0 pr-2 flex flex-col justify-between h-full">
-                    <div className="space-y-2">
+                    <div className="flex-1 min-w-0 pr-3 flex flex-col justify-between h-full">
+                      <div className="space-y-1.5">
                         <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Revenue</p>
                         <div className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-emerald-600 text-left break-words">
-                        {isLoadingStats ? (
+                          {isLoadingStats ? (
                             <div className="animate-pulse bg-gray-300 h-6 sm:h-8 w-20 sm:w-24 rounded"></div>
-                        ) : (
+                          ) : (
                             <span className="break-words">{formatMoney(totalRevenue)}</span>
-                        )}
+                          )}
+                        </div>
+                        {/* Percentage Change - Desktop Only */}
+                        <div className="hidden lg:flex items-center space-x-1 justify-start">
+                          <ArrowUp className="h-3 w-3 text-emerald-600 flex-shrink-0" />
+                          <span className="text-xs font-medium text-emerald-600">25% From last week</span>
+                        </div>
+                        <div className="flex items-center space-x-1.5 justify-start leading-tight">
+                          <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-emerald-500 flex-shrink-0" />
+                          <span className="text-[10px] sm:text-xs font-medium text-emerald-600 truncate">Paid invoices</span>
+                        </div>
                       </div>
-                      </div>
-                      <div className="flex items-center space-x-1.5 justify-start leading-tight mt-auto pt-2 min-h-[32px]">
-                        <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-500 flex-shrink-0" />
-                        <span className="text-xs font-medium text-emerald-600 truncate">Paid invoices</span>
                     </div>
+                    {/* Mini Line Chart - Right Side - Desktop Only */}
+                    <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0 relative">
+                      <svg className="w-full h-full" viewBox="0 0 60 30" preserveAspectRatio="none">
+                        <defs>
+                          <linearGradient id="revenueChartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="#10b981" stopOpacity="0.2" />
+                            <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                          </linearGradient>
+                        </defs>
+                        {/* Shaded area */}
+                        <path
+                          d="M 0,25 L 0,25 L 8,22 L 16,20 L 24,18 L 32,15 L 40,12 L 48,10 L 56,8 L 60,8 L 60,25 Z"
+                          fill="url(#revenueChartGradient)"
+                        />
+                        {/* Line */}
+                        <path
+                          d="M 0,25 L 8,22 L 16,20 L 24,18 L 32,15 L 40,12 L 48,10 L 56,8 L 60,8"
+                          fill="none"
+                          stroke="#10b981"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
                     </div>
-                    <div className="flex items-center justify-center p-1.5 sm:p-2 rounded-xl bg-emerald-50 flex-shrink-0 min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px]">
-                      <Receipt className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-emerald-600" />
                   </div>
-                </div>
                 </button>
 
                 {/* Outstanding Amount */}
@@ -1239,7 +1266,7 @@ export default function DashboardOverview() {
                   className="group relative overflow-hidden rounded-lg p-3 sm:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-amber-500 backdrop-blur-sm h-full"
                 >
                   <div className="flex items-start justify-between h-full">
-                    <div className="flex-1 min-w-0 pr-2 flex flex-col justify-between h-full">
+                    <div className="flex-1 min-w-0 pr-3 flex flex-col justify-between h-full">
                       <div className="space-y-1.5">
                         <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Payable</p>
                         <div>
@@ -1256,16 +1283,43 @@ export default function DashboardOverview() {
                             </div>
                           )}
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-1.5 justify-start leading-tight mt-auto pt-2 min-h-[32px]">
-                        <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-orange-500 flex-shrink-0" />
-                        <span className="text-xs font-medium text-orange-500 truncate">
-                          {invoices.filter(inv => inv.status === 'pending' || inv.status === 'sent').length} pending
-                        </span>
+                        {/* Percentage Change - Desktop Only */}
+                        <div className="hidden lg:flex items-center space-x-1 justify-start">
+                          <ArrowUp className="h-3 w-3 text-orange-500 flex-shrink-0" />
+                          <span className="text-xs font-medium text-orange-500">18% From last week</span>
+                        </div>
+                        <div className="flex items-center space-x-1.5 justify-start leading-tight">
+                          <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-orange-500 flex-shrink-0" />
+                          <span className="text-[10px] sm:text-xs font-medium text-orange-500 truncate">
+                            {invoices.filter(inv => inv.status === 'pending' || inv.status === 'sent').length} pending
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center justify-center p-1.5 sm:p-2 rounded-xl bg-orange-50 flex-shrink-0 min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px]">
-                      <Timer className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-orange-500" />
+                    {/* Mini Line Chart - Right Side - Desktop Only */}
+                    <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0 relative">
+                      <svg className="w-full h-full" viewBox="0 0 60 30" preserveAspectRatio="none">
+                        <defs>
+                          <linearGradient id="payableChartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="#f97316" stopOpacity="0.2" />
+                            <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
+                          </linearGradient>
+                        </defs>
+                        {/* Shaded area */}
+                        <path
+                          d="M 0,22 L 0,22 L 8,20 L 16,18 L 24,16 L 32,14 L 40,12 L 48,11 L 56,10 L 60,10 L 60,22 Z"
+                          fill="url(#payableChartGradient)"
+                        />
+                        {/* Line */}
+                        <path
+                          d="M 0,22 L 8,20 L 16,18 L 24,16 L 32,14 L 40,12 L 48,11 L 56,10 L 60,10"
+                          fill="none"
+                          stroke="#f97316"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
                     </div>
                   </div>
                 </button>
@@ -1276,8 +1330,8 @@ export default function DashboardOverview() {
                   className="group relative overflow-hidden rounded-lg p-3 sm:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-red-500 backdrop-blur-sm h-full"
                 >
                   <div className="flex items-start justify-between h-full">
-                    <div className="flex-1 min-w-0 pr-2 flex flex-col justify-between h-full">
-                      <div className="space-y-2">
+                    <div className="flex-1 min-w-0 pr-3 flex flex-col justify-between h-full">
+                      <div className="space-y-1.5">
                         <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Overdue</p>
                         <div className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-red-600 text-left">
                           {isLoadingStats ? (
@@ -1286,14 +1340,41 @@ export default function DashboardOverview() {
                             overdueCount
                           )}
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-1.5 justify-start leading-tight mt-auto pt-2 min-h-[32px]">
-                        <AlertCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-500 flex-shrink-0" />
-                        <span className="text-xs font-medium text-red-600 truncate">Need attention</span>
+                        {/* Percentage Change - Desktop Only */}
+                        <div className="hidden lg:flex items-center space-x-1 justify-start">
+                          <ArrowDown className="h-3 w-3 text-red-600 flex-shrink-0" />
+                          <span className="text-xs font-medium text-red-600">8% From last week</span>
+                        </div>
+                        <div className="flex items-center space-x-1.5 justify-start leading-tight">
+                          <AlertCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-red-500 flex-shrink-0" />
+                          <span className="text-[10px] sm:text-xs font-medium text-red-600 truncate">Need attention</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center justify-center p-1.5 sm:p-2 rounded-xl bg-red-50 flex-shrink-0 min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px]">
-                      <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-red-600" />
+                    {/* Mini Line Chart - Right Side - Desktop Only */}
+                    <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0 relative">
+                      <svg className="w-full h-full" viewBox="0 0 60 30" preserveAspectRatio="none">
+                        <defs>
+                          <linearGradient id="overdueChartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="#dc2626" stopOpacity="0.2" />
+                            <stop offset="100%" stopColor="#dc2626" stopOpacity="0" />
+                          </linearGradient>
+                        </defs>
+                        {/* Shaded area */}
+                        <path
+                          d="M 0,28 L 0,28 L 8,26 L 16,25 L 24,24 L 32,23 L 40,22 L 48,21 L 56,20 L 60,20 L 60,28 Z"
+                          fill="url(#overdueChartGradient)"
+                        />
+                        {/* Line */}
+                        <path
+                          d="M 0,28 L 8,26 L 16,25 L 24,24 L 32,23 L 40,22 L 48,21 L 56,20 L 60,20"
+                          fill="none"
+                          stroke="#dc2626"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
                     </div>
                   </div>
                 </button>
@@ -1304,8 +1385,8 @@ export default function DashboardOverview() {
                   className="group relative overflow-hidden rounded-lg p-3 sm:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-indigo-500 backdrop-blur-sm h-full"
                 >
                   <div className="flex items-start justify-between h-full">
-                    <div className="flex-1 min-w-0 pr-2 flex flex-col justify-between h-full">
-                      <div className="space-y-2">
+                    <div className="flex-1 min-w-0 pr-3 flex flex-col justify-between h-full">
+                      <div className="space-y-1.5">
                         <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Clients</p>
                         <div className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-600 text-left">
                           {isLoadingStats ? (
@@ -1314,14 +1395,41 @@ export default function DashboardOverview() {
                             totalClients
                           )}
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-1.5 justify-start leading-tight mt-auto pt-2 min-h-[32px]">
-                        <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-indigo-500 flex-shrink-0" />
-                        <span className="text-xs font-medium text-indigo-600 truncate">Active clients</span>
+                        {/* Percentage Change - Desktop Only */}
+                        <div className="hidden lg:flex items-center space-x-1 justify-start">
+                          <ArrowUp className="h-3 w-3 text-indigo-600 flex-shrink-0" />
+                          <span className="text-xs font-medium text-indigo-600">12% From last week</span>
+                        </div>
+                        <div className="flex items-center space-x-1.5 justify-start leading-tight">
+                          <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-indigo-500 flex-shrink-0" />
+                          <span className="text-[10px] sm:text-xs font-medium text-indigo-600 truncate">Active clients</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center justify-center p-1.5 sm:p-2 rounded-xl bg-indigo-50 flex-shrink-0 min-w-[36px] min-h-[36px] sm:min-w-[44px] sm:min-h-[44px]">
-                      <Users className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-indigo-600" />
+                    {/* Mini Line Chart - Right Side - Desktop Only */}
+                    <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0 relative">
+                      <svg className="w-full h-full" viewBox="0 0 60 30" preserveAspectRatio="none">
+                        <defs>
+                          <linearGradient id="clientsChartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.2" />
+                            <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+                          </linearGradient>
+                        </defs>
+                        {/* Shaded area */}
+                        <path
+                          d="M 0,20 L 0,20 L 8,18 L 16,15 L 24,12 L 32,10 L 40,8 L 48,6 L 56,5 L 60,5 L 60,20 Z"
+                          fill="url(#clientsChartGradient)"
+                        />
+                        {/* Line */}
+                        <path
+                          d="M 0,20 L 8,18 L 16,15 L 24,12 L 32,10 L 40,8 L 48,6 L 56,5 L 60,5"
+                          fill="none"
+                          stroke="#6366f1"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
                     </div>
                   </div>
                 </button>
