@@ -327,4 +327,99 @@
   }
 }
 
+/* Invoice Step Animations */
+@keyframes invoiceStep1 {
+  0%, 20% { opacity: 1; transform: translateY(0); }
+  22%, 100% { opacity: 0; transform: translateY(-10px); pointer-events: none; }
+}
+
+@keyframes invoiceStep2 {
+  0%, 22% { opacity: 0; transform: translateY(10px); pointer-events: none; }
+  24%, 48% { opacity: 1; transform: translateY(0); }
+  50%, 100% { opacity: 0; transform: translateY(-10px); pointer-events: none; }
+}
+
+@keyframes invoiceStep3 {
+  0%, 50% { opacity: 0; transform: translateY(10px); pointer-events: none; }
+  52%, 74% { opacity: 1; transform: translateY(0); }
+  76%, 100% { opacity: 0; transform: translateY(-10px); pointer-events: none; }
+}
+
+@keyframes invoiceStep4 {
+  0%, 76% { opacity: 0; transform: translateY(10px); pointer-events: none; }
+  78%, 98% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+
+@keyframes typingCursor {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes typeText {
+  0% { width: 0; }
+  100% { width: 100%; }
+}
+
+@keyframes selectHighlight {
+  0%, 50% { background-color: transparent; }
+  51%, 100% { background-color: rgb(139 92 246 / 0.1); border-color: rgb(139 92 246); }
+}
+
+@keyframes buttonPulse {
+  0%, 80% { transform: scale(1); }
+  85% { transform: scale(0.95); }
+  90% { transform: scale(1); background-color: rgb(16 185 129); }
+  100% { transform: scale(1); background-color: rgb(16 185 129); }
+}
+
+@keyframes checkAppear {
+  0%, 90% { opacity: 0; transform: scale(0); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes progressBar {
+  0% { width: 0%; }
+  20% { width: 25%; }
+  48% { width: 50%; }
+  74% { width: 75%; }
+  100% { width: 100%; }
+}
+
+.animate-invoice-step1 {
+  animation: invoiceStep1 12s ease-in-out infinite;
+}
+
+.animate-invoice-step2 {
+  animation: invoiceStep2 12s ease-in-out infinite;
+}
+
+.animate-invoice-step3 {
+  animation: invoiceStep3 12s ease-in-out infinite;
+}
+
+.animate-invoice-step4 {
+  animation: invoiceStep4 12s ease-in-out infinite;
+}
+
+.animate-progress-bar {
+  animation: progressBar 12s ease-in-out infinite;
+}
+
+.animate-button-pulse {
+  animation: buttonPulse 12s ease-in-out infinite;
+}
+
+.animate-check-appear {
+  animation: checkAppear 12s ease-in-out infinite;
+}
+
+.animate-select-highlight {
+  animation: selectHighlight 2s ease-in-out infinite;
+}
+
+.animate-type-text {
+  animation: typeText 1s ease-out forwards;
+}
+
 }
