@@ -87,12 +87,25 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         setInvoices(Array.isArray(data.invoices) ? data.invoices : []);
         setLastFetched(prev => ({ ...prev, invoices: now }));
         setHasInitiallyLoaded(true); // Mark as loaded after first successful fetch
+      } else if (response.status === 401) {
+        // Authentication or connection issue
+        const errorText = await response.text().catch(() => '');
+        if (errorText.includes('ENOTFOUND') || errorText.includes('fetch failed')) {
+          setInvoicesError('Cannot connect to Supabase. Please check your Supabase project status and environment variables.');
+        } else {
+          setInvoicesError('Authentication failed. Please sign in again.');
+        }
+        setHasInitiallyLoaded(true);
       } else {
-        throw new Error('Failed to fetch invoices');
+        throw new Error(`Failed to fetch invoices: ${response.status}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching invoices:', error);
-      setInvoicesError('Failed to load invoices');
+      if (error?.message?.includes('fetch failed') || error?.code === 'ENOTFOUND') {
+        setInvoicesError('Cannot connect to Supabase. Your project may be paused. Check your Supabase dashboard.');
+      } else {
+        setInvoicesError('Failed to load invoices. Please try again.');
+      }
       setHasInitiallyLoaded(true); // Mark as loaded even on error to prevent empty state flash
     } finally {
       setIsLoadingInvoices(false);
@@ -122,12 +135,24 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         const data = await response.json();
         setClients(data.clients || []);
         setLastFetched(prev => ({ ...prev, clients: now }));
+      } else if (response.status === 401) {
+        // Authentication or connection issue
+        const errorText = await response.text().catch(() => '');
+        if (errorText.includes('ENOTFOUND') || errorText.includes('fetch failed')) {
+          setClientsError('Cannot connect to Supabase. Please check your Supabase project status and environment variables.');
+        } else {
+          setClientsError('Authentication failed. Please sign in again.');
+        }
       } else {
-        throw new Error('Failed to fetch clients');
+        throw new Error(`Failed to fetch clients: ${response.status}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching clients:', error);
-      setClientsError('Failed to load clients');
+      if (error?.message?.includes('fetch failed') || error?.code === 'ENOTFOUND') {
+        setClientsError('Cannot connect to Supabase. Your project may be paused. Check your Supabase dashboard.');
+      } else {
+        setClientsError('Failed to load clients. Please try again.');
+      }
     } finally {
       setIsLoadingClients(false);
     }

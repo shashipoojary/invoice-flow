@@ -68,15 +68,15 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           {/* Hero Content */}
           <div className="max-w-3xl mx-auto text-center mb-12 sm:mb-16">
-            <h1 ref={headingRef} className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 text-gray-900 tracking-tight">
-              Create invoices in seconds.<br className="hidden sm:block" /> Get paid faster.
+            <h1 ref={headingRef} className="text-3xl sm:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 text-gray-900 tracking-tight">
+                Create invoices in seconds.<br className="hidden sm:block" /> Get <span className="text-[#a855f7]">paid</span> faster.
               </h1>
             <p className="text-lg sm:text-xl text-gray-600 mb-8 leading-relaxed">
               Professional invoicing for freelancers and small businesses. No fees, no hassle.
               </p>
               
               {/* CTA Buttons */}
-            <div className="flex flex-row gap-2 sm:gap-3 justify-center">
+            <div className="flex flex-row gap-2 sm:gap-3 justify-center mb-8 sm:mb-12">
                 <button
                   onClick={handleGetStarted}
                 className="inline-flex items-center justify-center px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium text-white bg-black rounded-lg hover:bg-gray-800 transition-colors"
@@ -90,6 +90,27 @@ export default function LandingPage() {
                 >
                 View demo
                 </button>
+              </div>
+
+              {/* User Profiles Section - Social Proof */}
+              <div className="flex flex-col items-center justify-center text-center mb-8 sm:mb-12">
+                {/* Minimal Avatar Stack */}
+                <div className="flex items-center justify-center gap-3 mb-3">
+                  <div className="flex -space-x-3">
+                    <div className="w-8 h-8 rounded-full bg-gray-200 border border-gray-300"></div>
+                    <div className="w-8 h-8 rounded-full bg-gray-300 border border-gray-300"></div>
+                    <div className="w-8 h-8 rounded-full bg-gray-400 border border-gray-300"></div>
+                    <div className="w-8 h-8 rounded-full bg-gray-500 border border-gray-300"></div>
+                    <div className="w-8 h-8 rounded-full bg-gray-600 border border-gray-300"></div>
+            </div>
+          </div>
+                
+                {/* Minimal Stats */}
+                <div className="flex items-center justify-center gap-6 text-sm text-gray-500">
+                  <span><span className="font-medium text-gray-900">1,000+</span> users</span>
+                  <span className="text-gray-300">•</span>
+                  <span><span className="font-medium text-gray-900">10K+</span> invoices</span>
+        </div>
               </div>
             </div>
           
@@ -141,7 +162,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           {/* Section Header */}
           <div className="text-center mb-16">
-                <h2 className="font-heading text-4xl sm:text-5xl font-bold mb-6 text-gray-900">
+                <h2 className="font-heading text-3xl sm:text-5xl font-bold mb-6 text-gray-900">
               Everything you need to get paid
                 </h2>
             <p className="text-lg max-w-2xl mx-auto text-gray-600">
@@ -302,7 +323,7 @@ export default function LandingPage() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-gray-900">
+            <h2 className="text-2xl sm:text-4xl font-bold mb-4 text-gray-900">
               How it works
             </h2>
           </div>
@@ -312,7 +333,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               {/* Visual Background */}
               <div className="order-2 lg:order-1">
-                <div className="relative max-w-xl mx-auto">
+                <div className="relative max-w-md mx-auto">
                   {/* Background glow effect - one side only with purple theme color */}
                   <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
                     background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
@@ -336,7 +357,7 @@ export default function LandingPage() {
 
               {/* Content */}
               <div className="order-1 lg:order-2">
-                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                <h3 className="text-xl sm:text-3xl font-bold mb-4 text-gray-900">
                   Create Invoice
                 </h3>
                 <p className="text-base text-gray-600 leading-relaxed">
@@ -351,7 +372,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               {/* Content */}
               <div>
-                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                <h3 className="text-xl sm:text-3xl font-bold mb-4 text-gray-900">
                   Send Automatically
                 </h3>
                 <p className="text-base text-gray-600 leading-relaxed">
@@ -361,7 +382,7 @@ export default function LandingPage() {
 
               {/* Visual Background */}
               <div>
-                <div className="relative max-w-xl mx-auto">
+                <div className="relative max-w-md mx-auto">
                   {/* Background glow effect - one side only with purple theme color */}
                   <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
                     background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
@@ -390,7 +411,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               {/* Visual Background */}
               <div className="order-2 lg:order-1">
-                <div className="relative max-w-xl mx-auto">
+                <div className="relative max-w-md mx-auto">
                   {/* Background glow effect - one side only with purple theme color */}
                   <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
                     background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
@@ -414,7 +435,7 @@ export default function LandingPage() {
 
               {/* Content */}
               <div className="order-1 lg:order-2">
-                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                <h3 className="text-xl sm:text-3xl font-bold mb-4 text-gray-900">
                   Track & Remind
                 </h3>
                 <p className="text-base text-gray-600 leading-relaxed">
@@ -429,7 +450,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               {/* Content */}
               <div>
-                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                <h3 className="text-xl sm:text-3xl font-bold mb-4 text-gray-900">
                   Get Paid Faster
                 </h3>
                 <p className="text-base text-gray-600 leading-relaxed mb-6">
@@ -451,7 +472,7 @@ export default function LandingPage() {
 
               {/* Visual Background */}
               <div>
-                <div className="relative max-w-xl mx-auto">
+                <div className="relative max-w-md mx-auto">
                   {/* Background glow effect - one side only with purple theme color */}
                   <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
                     background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
@@ -480,7 +501,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               {/* Visual Background */}
               <div className="order-2 lg:order-1">
-                <div className="relative max-w-xl mx-auto">
+                <div className="relative max-w-md mx-auto">
                   {/* Background glow effect - one side only with purple theme color */}
                   <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
                     background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
@@ -504,7 +525,7 @@ export default function LandingPage() {
 
               {/* Content */}
               <div className="order-1 lg:order-2">
-                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                <h3 className="text-xl sm:text-3xl font-bold mb-4 text-gray-900">
                   Professional Templates
                 </h3>
                 <p className="text-base text-gray-600 leading-relaxed">
@@ -519,7 +540,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               {/* Content */}
               <div>
-                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                <h3 className="text-xl sm:text-3xl font-bold mb-4 text-gray-900">
                   Client Management
                 </h3>
                 <p className="text-base text-gray-600 leading-relaxed">
@@ -529,7 +550,7 @@ export default function LandingPage() {
 
               {/* Visual Background */}
               <div>
-                <div className="relative max-w-xl mx-auto">
+                <div className="relative max-w-md mx-auto">
                   {/* Background glow effect - one side only with purple theme color */}
                   <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
                     background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
@@ -558,7 +579,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               {/* Visual Background */}
               <div className="order-2 lg:order-1">
-                <div className="relative max-w-xl mx-auto">
+                <div className="relative max-w-md mx-auto">
                   {/* Background glow effect - one side only with purple theme color */}
                   <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
                     background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
@@ -582,7 +603,7 @@ export default function LandingPage() {
 
               {/* Content */}
               <div className="order-1 lg:order-2">
-                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                <h3 className="text-xl sm:text-3xl font-bold mb-4 text-gray-900">
                 Automated Reminders
               </h3>
                 <p className="text-base text-gray-600 leading-relaxed">
@@ -597,7 +618,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               {/* Content */}
               <div>
-                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                <h3 className="text-xl sm:text-3xl font-bold mb-4 text-gray-900">
                   Late Fee Management
                 </h3>
                 <p className="text-base text-gray-600 leading-relaxed">
@@ -607,7 +628,7 @@ export default function LandingPage() {
 
               {/* Visual Background */}
               <div>
-                <div className="relative max-w-xl mx-auto">
+                <div className="relative max-w-md mx-auto">
                   {/* Background glow effect - one side only with purple theme color */}
                   <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
                     background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
@@ -636,7 +657,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               {/* Visual Background */}
               <div className="order-2 lg:order-1">
-                <div className="relative max-w-xl mx-auto">
+                <div className="relative max-w-md mx-auto">
                   {/* Background glow effect - one side only with purple theme color */}
                   <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
                     background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
@@ -660,7 +681,7 @@ export default function LandingPage() {
 
               {/* Content */}
               <div className="order-1 lg:order-2">
-                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                <h3 className="text-xl sm:text-3xl font-bold mb-4 text-gray-900">
                   PDF Generation
                 </h3>
                 <p className="text-base text-gray-600 leading-relaxed">
@@ -675,7 +696,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               {/* Content */}
               <div>
-                <h3 className="text-2xl sm:text-3xl font-bold mb-4 text-gray-900">
+                <h3 className="text-xl sm:text-3xl font-bold mb-4 text-gray-900">
                   Analytics Dashboard
                 </h3>
                 <p className="text-base text-gray-600 leading-relaxed">
@@ -685,7 +706,7 @@ export default function LandingPage() {
 
               {/* Visual Background */}
               <div>
-                <div className="relative max-w-xl mx-auto">
+                <div className="relative max-w-md mx-auto">
                   {/* Background glow effect - one side only with purple theme color */}
                   <div className="absolute bottom-0 right-0 w-1/2 h-1/2 rounded-2xl opacity-50 blur-3xl" style={{
                     background: 'radial-gradient(ellipse at bottom right, #a855f7, #9333ea, #7c3aed, transparent)',
@@ -768,7 +789,7 @@ export default function LandingPage() {
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-4 text-gray-900">
+            <h2 className="font-heading text-2xl sm:text-4xl font-bold mb-4 text-gray-900">
               Professional Invoice Templates
             </h2>
             <p className="text-base text-gray-600 max-w-2xl mx-auto">
@@ -829,11 +850,320 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-4xl font-bold mb-4 text-gray-900">
+              Simple, Transparent Pricing
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Choose the plan that works best for your business. No hidden fees, cancel anytime.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
+            {/* Free Plan */}
+            <div className="rounded-2xl border-2 border-gray-200 bg-white p-6 sm:p-8 hover:border-gray-300 transition-all duration-200">
+              <div className="text-center">
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Free</h3>
+                <div className="mb-6">
+                  <span className="text-4xl sm:text-5xl font-bold text-gray-900">$0</span>
+                  <span className="text-gray-600 text-lg">/forever</span>
+              </div>
+                <p className="text-sm text-gray-600 mb-6">Perfect for getting started</p>
+              <button
+                onClick={handleGetStarted}
+                  className="w-full px-6 py-3 text-sm sm:text-base font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors mb-6"
+              >
+                  Get Started
+              </button>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">Up to 5 invoices per month</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">Basic invoice templates</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">Client management</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">PDF generation</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">Email reminders (limited)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Monthly Subscription Plan - POPULAR */}
+            <div className="rounded-2xl border-2 border-[#a855f7] bg-white p-6 sm:p-8 hover:border-[#9333ea] transition-all duration-200 relative">
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                <span className="bg-[#a855f7] text-white text-xs font-semibold px-3 py-1 rounded-full">POPULAR</span>
+              </div>
+              <div className="text-center mt-2">
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Monthly</h3>
+                <div className="mb-6">
+                  <span className="text-4xl sm:text-5xl font-bold text-gray-900">$9</span>
+                  <span className="text-gray-600 text-lg">/month</span>
+                </div>
+                <p className="text-sm text-gray-600 mb-6">Best for regular users</p>
+              <button
+                onClick={handleGetStarted}
+                  className="w-full px-6 py-3 text-sm sm:text-base font-medium text-white bg-[#a855f7] rounded-lg hover:bg-[#9333ea] transition-colors mb-6"
+              >
+                  Get Started
+              </button>
+            </div>
+              <div className="space-y-4">
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">Unlimited invoices</span>
+              </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">All premium templates</span>
+              </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">Advanced client management</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">Automated email reminders</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">Late fee management</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">Analytics dashboard</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">Priority support</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700 font-semibold">Save up to 50% vs pay-per-invoice</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Pay Per Invoice Plan */}
+            <div className="rounded-2xl border-2 border-gray-200 bg-white p-6 sm:p-8 hover:border-gray-300 transition-all duration-200">
+              <div className="text-center">
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Pay Per Invoice</h3>
+                <div className="mb-6">
+                  <span className="text-4xl sm:text-5xl font-bold text-gray-900">$0.50</span>
+                  <span className="text-gray-600 text-lg">/invoice</span>
+                </div>
+                <p className="text-sm text-gray-600 mb-6">Pay only for what you use</p>
+              <button
+                onClick={handleGetStarted}
+                  className="w-full px-6 py-3 text-sm sm:text-base font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors mb-6"
+              >
+                  Get Started
+              </button>
+            </div>
+              <div className="space-y-4">
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">Pay only for invoices sent ($0.50 each)</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">All premium templates</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">Advanced client management</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">Automated email reminders</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">Late fee management</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">Analytics dashboard</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">Priority support</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <span className="ml-3 text-sm text-gray-700">No monthly commitment</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pricing Note */}
+          <div className="mt-12 text-center">
+            <p className="text-sm text-gray-600">
+              All plans include secure payment processing. No credit card required for free plan.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Reviews Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-4xl font-bold mb-4 text-gray-900">
+              Loved by Creators & Entrepreneurs
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+            {/* Reddit Review */}
+            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-medium text-sm text-gray-900 truncate">u/freelancer_pro</span>
+                  </div>
+                  <span className="text-xs text-gray-500">r/freelance • 2d</span>
+                </div>
+              </div>
+              <p className="text-sm text-gray-700 leading-relaxed mb-3">
+                Switched to FlowInvoicer last month and it&apos;s been a game changer. The automated reminders actually work, and clients are paying faster. The free tier is generous too.
+              </p>
+              <div className="flex items-center gap-3 text-xs text-gray-500">
+                <span>▲ 247</span>
+                <span>•</span>
+                <span>12 comments</span>
+              </div>
+            </div>
+
+            {/* Indie Hackers Review */}
+            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-xs font-bold">IH</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-medium text-sm text-gray-900 truncate">Sarah Chen</span>
+                  </div>
+                  <span className="text-xs text-gray-500">Indie Hackers</span>
+                </div>
+              </div>
+              <p className="text-sm text-gray-700 leading-relaxed mb-3">
+                As a solo designer, invoicing was taking too much time. FlowInvoicer&apos;s templates are beautiful and the pay-per-invoice model is perfect for my variable workload. Highly recommend!
+              </p>
+              <div className="text-xs text-gray-500">
+                Making $5k/mo
+              </div>
+            </div>
+
+            {/* X.com Review */}
+            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4 text-white fill-current" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-medium text-sm text-gray-900 truncate">Alex Martinez</span>
+                    <CheckCircle className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                  </div>
+                  <span className="text-xs text-gray-500">@techconsultant • 5h</span>
+                </div>
+              </div>
+              <p className="text-sm text-gray-700 leading-relaxed mb-3">
+                Finally found an invoicing tool that doesn&apos;t nickel and dime you. The monthly plan is a steal at $9. My clients love the professional templates. 10/10 would recommend.
+              </p>
+              <div className="flex items-center gap-4 text-xs text-gray-500">
+                <span>89</span>
+                <span>12</span>
+                <span>5</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Additional Reviews Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 mt-8 max-w-4xl mx-auto">
+            {/* Reddit Review 2 */}
+            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-medium text-sm text-gray-900 truncate">u/agency_owner</span>
+                  </div>
+                  <span className="text-xs text-gray-500">r/entrepreneur • 1w</span>
+                </div>
+              </div>
+              <p className="text-sm text-gray-700 leading-relaxed mb-3">
+                The analytics dashboard is exactly what I needed. Can see all my revenue at a glance. Late fee automation has saved me hours of manual follow-ups.
+              </p>
+              <div className="flex items-center gap-3 text-xs text-gray-500">
+                <span>▲ 156</span>
+                <span>•</span>
+                <span>8 comments</span>
+              </div>
+            </div>
+
+            {/* X.com Review 2 */}
+            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4 text-white fill-current" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-medium text-sm text-gray-900 truncate">Mike Johnson</span>
+                    <CheckCircle className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                  </div>
+                  <span className="text-xs text-gray-500">@webdev_mike • 1d</span>
+                </div>
+              </div>
+              <p className="text-sm text-gray-700 leading-relaxed mb-3">
+                Best invoicing tool for freelancers. Clean UI, fast, and the reminder system actually works. My payment rate improved by 40% since switching.
+              </p>
+              <div className="flex items-center gap-4 text-xs text-gray-500">
+                <span>124</span>
+                <span>23</span>
+                <span>8</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* FAQ Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-4 text-gray-900">
+            <h2 className="font-heading text-2xl sm:text-4xl font-bold mb-4 text-gray-900">
               Frequently Asked Questions
             </h2>
             <p className="text-lg text-gray-600">
@@ -1080,7 +1410,26 @@ export default function LandingPage() {
                 )}
               </div>
             </div>
-      </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA Section */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-white border-t border-gray-200">
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+            Start invoicing today
+          </h2>
+          <p className="text-base text-gray-600 mb-8">
+            No credit card required
+          </p>
+            <button
+              onClick={handleGetStarted}
+            className="inline-flex items-center justify-center px-8 py-3 text-base font-medium text-white bg-black rounded-lg hover:bg-gray-800 transition-colors"
+          >
+            Get started free
+            <ArrowRight className="ml-2 w-4 h-4" />
+            </button>
         </div>
       </section>
 

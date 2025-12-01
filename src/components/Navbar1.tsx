@@ -119,24 +119,20 @@ const Navbar1 = () => {
             </a>
             
             {/* Resources Dropdown */}
-            <div 
-              className="relative"
-              onMouseEnter={() => setOpenDropdown('resources')}
-              onMouseLeave={() => setOpenDropdown(null)}
-            >
+            <div className="relative group">
               <button className="flex items-center text-sm text-gray-700 hover:text-gray-900 transition-colors">
                 Resources
                 <ChevronDown className="w-4 h-4 ml-1" />
               </button>
-              {openDropdown === 'resources' && (
-                <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2">
+              <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none group-hover:pointer-events-auto">
+                <div className="w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                   <a 
                     href="#"
                     onClick={(e) => {
                       e.preventDefault()
                       handleNavigation('privacy')
                     }}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     Privacy Policy
                   </a>
@@ -146,12 +142,12 @@ const Navbar1 = () => {
                       e.preventDefault()
                       handleNavigation('terms')
                     }}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     Terms of Service
                   </a>
                 </div>
-              )}
+              </div>
             </div>
 
             <a 

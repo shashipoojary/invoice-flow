@@ -461,7 +461,7 @@ export default function ReminderHistoryPage() {
             ))}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {filteredReminders.map((reminder) => (
               <div key={reminder.id} className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
                 {/* Mobile Layout */}
@@ -471,7 +471,7 @@ export default function ReminderHistoryPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
-                          <Mail className="h-4 w-4 text-gray-600" />
+                          <Mail className="h-4 w-4 text-gray-700" />
                         </div>
                         <div>
                           <div className="font-medium text-sm" style={{color: '#1f2937'}}>
@@ -482,10 +482,11 @@ export default function ReminderHistoryPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right min-h-[56px] flex flex-col items-end">
                         <div className="font-semibold text-base text-green-600">
                           ${reminder.invoice.total.toLocaleString()}
                         </div>
+                        <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
                         <div className="text-xs" style={{color: '#6b7280'}}>
                           {new Date(reminder.sent_at).toLocaleDateString()}
                         </div>
@@ -494,8 +495,8 @@ export default function ReminderHistoryPage() {
                     
                     {/* Bottom Row: Reminder Type, Status & Actions */}
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2 flex-wrap">
-                        <span className={`text-xs font-medium ${
+                      <div className="flex items-center space-x-2">
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
                           reminder.reminder_type === 'friendly' ? 'text-blue-600' :
                           reminder.reminder_type === 'polite' ? 'text-emerald-600' :
                           reminder.reminder_type === 'firm' ? 'text-yellow-600' :
@@ -503,12 +504,13 @@ export default function ReminderHistoryPage() {
                         }`}>
                           <span className="capitalize">{reminder.reminder_type}</span>
                         </span>
-                        <span className={`text-xs font-medium ${getReminderStatusColor(reminder.reminder_status)}`}>
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${getReminderStatusColor(reminder.reminder_status)}`}>
                           <span className="capitalize">{reminder.reminder_status}</span>
                         </span>
                         {reminder.failure_reason && (
-                          <span className="text-xs font-medium text-red-600" title={reminder.failure_reason}>
-                            ⚠️ {reminder.failure_reason}
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600" title={reminder.failure_reason}>
+                            <AlertTriangle className="h-3 w-3" />
+                            <span className="truncate max-w-[100px]">{reminder.failure_reason}</span>
                           </span>
                         )}
                       </div>
@@ -518,13 +520,15 @@ export default function ReminderHistoryPage() {
                           <button
                             onClick={() => sendManualReminder(reminder.invoice_id, reminder.reminder_type)}
                             disabled={sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`)}
-                            className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${
+                              sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                            }`}
                             title="Send again"
                           >
                             {sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? (
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                             ) : (
-                              <Send className="h-4 w-4 text-gray-600" />
+                              <Send className="h-4 w-4 text-gray-700" />
                             )}
                           </button>
                         )}
@@ -533,7 +537,7 @@ export default function ReminderHistoryPage() {
                           className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
                           title="View reminder details"
                         >
-                          <Eye className="h-4 w-4 text-gray-600" />
+                          <Eye className="h-4 w-4 text-gray-700" />
                         </button>
                       </div>
                     </div>
@@ -542,79 +546,77 @@ export default function ReminderHistoryPage() {
 
                 {/* Desktop Layout */}
                 <div className="hidden sm:block p-4">
-                  <div className="grid grid-cols-12 gap-4 items-center">
-                    {/* Invoice Info - 3 columns */}
-                    <div className="col-span-3 flex items-center space-x-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
-                        <Mail className="h-4 w-4 text-gray-600" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-sm" style={{color: '#1f2937'}}>
-                          {reminder.invoice.invoice_number}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
+                          <Mail className="h-4 w-4 text-gray-700" />
                         </div>
+                        <div>
+                          <div className="font-medium text-sm" style={{color: '#1f2937'}}>
+                            {reminder.invoice.invoice_number}
+                          </div>
+                          <div className="text-xs" style={{color: '#6b7280'}}>
+                            {reminder.invoice.clients.name}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right min-h-[56px] flex flex-col items-end">
+                        <div className="font-semibold text-base text-green-600">
+                          ${reminder.invoice.total.toLocaleString()}
+                        </div>
+                        <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
                         <div className="text-xs" style={{color: '#6b7280'}}>
-                          {reminder.invoice.clients.name}
+                          {new Date(reminder.sent_at).toLocaleDateString()}
                         </div>
                       </div>
                     </div>
-                    
-                    {/* Amount - 2 columns */}
-                    <div className="col-span-2 text-center">
-                      <div className="font-semibold text-base text-green-600">
-                        ${reminder.invoice.total.toLocaleString()}
-                      </div>
-                      <div className="text-xs" style={{color: '#6b7280'}}>
-                        {new Date(reminder.sent_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                    
-                    {/* Reminder Type - 2 columns */}
-                    <div className="col-span-2 text-center">
-                      <span className={`text-xs font-medium ${
-                        reminder.reminder_type === 'friendly' ? 'text-blue-600' :
-                        reminder.reminder_type === 'polite' ? 'text-emerald-600' :
-                        reminder.reminder_type === 'firm' ? 'text-yellow-600' :
-                        'text-red-600'
-                      }`}>
-                        <span className="capitalize">{reminder.reminder_type}</span>
-                      </span>
-                    </div>
-                    
-                    {/* Status & Reasons - 3 columns */}
-                    <div className="col-span-3 flex items-center space-x-2 flex-wrap">
-                      <span className={`text-xs font-medium ${getReminderStatusColor(reminder.reminder_status)}`}>
-                        <span className="capitalize">{reminder.reminder_status}</span>
-                      </span>
-                      {reminder.failure_reason && (
-                        <span className="text-xs font-medium text-red-600" title={reminder.failure_reason}>
-                          ⚠️ {reminder.failure_reason}
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
+                          reminder.reminder_type === 'friendly' ? 'text-blue-600' :
+                          reminder.reminder_type === 'polite' ? 'text-emerald-600' :
+                          reminder.reminder_type === 'firm' ? 'text-yellow-600' :
+                          'text-red-600'
+                        }`}>
+                          <span className="capitalize">{reminder.reminder_type}</span>
                         </span>
-                      )}
-                    </div>
-                    
-                    {/* Actions - 2 columns */}
-                    <div className="col-span-2 flex items-center justify-end space-x-1">
-                      {reminder.reminder_status === 'failed' && (
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${getReminderStatusColor(reminder.reminder_status)}`}>
+                          <span className="capitalize">{reminder.reminder_status}</span>
+                        </span>
+                        {reminder.failure_reason && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600" title={reminder.failure_reason}>
+                            <AlertTriangle className="h-3 w-3" />
+                            <span>{reminder.failure_reason}</span>
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        {reminder.reminder_status === 'failed' && (
+                          <button
+                            onClick={() => sendManualReminder(reminder.invoice_id, reminder.reminder_type)}
+                            disabled={sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`)}
+                            className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${
+                              sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                            }`}
+                            title="Send again"
+                          >
+                            {sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                            ) : (
+                              <Send className="h-4 w-4 text-gray-700" />
+                            )}
+                          </button>
+                        )}
                         <button
-                          onClick={() => sendManualReminder(reminder.invoice_id, reminder.reminder_type)}
-                          disabled={sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`)}
-                          className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Send again"
+                          onClick={() => handleViewReminder(reminder)}
+                          className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
+                          title="View reminder details"
                         >
-                          {sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                          ) : (
-                            <Send className="h-4 w-4 text-gray-600" />
-                          )}
+                          <Eye className="h-4 w-4 text-gray-700" />
                         </button>
-                      )}
-                      <button
-                        onClick={() => handleViewReminder(reminder)}
-                        className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
-                        title="View reminder details"
-                      >
-                        <Eye className="h-4 w-4 text-gray-600" />
-                      </button>
+                      </div>
                     </div>
                   </div>
                 </div>
