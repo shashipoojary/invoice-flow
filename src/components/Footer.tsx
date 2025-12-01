@@ -13,14 +13,11 @@ export default function Footer({}: FooterProps) {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <div className="mb-4">
-              <div className="w-40 h-10 sm:w-44 sm:h-11 lg:w-52 lg:h-13 relative mb-3" style={{marginLeft: '-2px'}}>
-                <Image
-                  src="/logo-main-black.png"
-                  alt="FlowInvoicer Logo"
-                  width={208}
-                  height={52}
-                  className="w-full h-full object-contain object-left"
-                />
+              <div className="mb-3">
+                <span className="text-2xl font-bold tracking-tight">
+                  <span className="text-gray-900">Flow</span>
+                  <span className="text-violet-600">Invoice</span>
+                </span>
               </div>
               <p className="text-sm leading-relaxed" style={{color: '#6b7280', marginLeft: '0'}}>
                 The fastest way for freelancers to get paid.

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef, useTransition } from 'react';
-import Image from 'next/image';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -210,13 +209,10 @@ const ModernSidebar = ({
       <div className={`flex items-center transition-all duration-300 ease-in-out ${isCollapsed ? 'justify-center p-4' : 'justify-between p-6'} border-b border-gray-200`}>
         {!isCollapsed ? (
           <div className="flex items-center justify-center w-full">
-        <Image
-          src="/logo-main-black.png"
-          alt="FlowInvoicer Logo"
-          width={420}
-          height={140}
-          className="h-40 w-auto max-w-full"
-        />
+            <span className="text-2xl font-bold tracking-tight">
+              <span className="text-gray-900">Flow</span>
+              <span className="text-violet-600">Invoice</span>
+            </span>
           </div>
         ) : (
           <button
@@ -224,18 +220,10 @@ const ModernSidebar = ({
             className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-gray-100 transition-colors bg-transparent border-none outline-none overflow-hidden cursor-pointer"
             style={{ backgroundColor: 'transparent' }}
           >
-        <Image
-          src="/sidebar-logo.png"
-          alt="FlowInvoicer Sidebar Logo - Collapsed"
-          width={400}
-          height={160}
-          className="w-20 h-20 object-contain"
-          style={{
-            backgroundColor: 'transparent',
-            border: 'none',
-            outline: 'none'
-          }}
-        />
+            <span className="text-lg font-bold tracking-tight">
+              <span className="text-gray-900">F</span>
+              <span className="text-violet-600">i</span>
+            </span>
           </button>
         )}
 
