@@ -148,14 +148,51 @@ export async function POST(request: NextRequest) {
     } = userSettings || {};
 
     // Create reminder message based on type
-    const reminderMessages = {
-      friendly: 'This is a friendly reminder that your invoice payment is now due. We appreciate your prompt attention to this matter and look forward to receiving your payment at your earliest convenience.',
-      polite: 'This is a polite reminder that your invoice payment is currently overdue. We kindly request that you arrange payment as soon as possible to avoid any inconvenience.',
-      firm: 'This is a firm reminder that your invoice payment is significantly overdue. We require immediate payment to resolve this outstanding balance and avoid any further collection actions.',
-      urgent: 'This is an urgent final notice regarding your severely overdue invoice payment. Immediate payment is required to prevent further escalation, which may include account suspension or referral to a collection agency.'
+    // Get greeting and message based on reminder type
+    const getGreeting = () => {
+      switch (reminderType) {
+        case 'friendly':
+          return `Hi ${clientName},`;
+        case 'polite':
+          return `Dear ${clientName},`;
+        case 'firm':
+          return `Hello ${clientName},`;
+        case 'urgent':
+          return `${clientName},`;
+        default:
+          return `Dear ${clientName},`;
+      }
     };
 
-    const reminderMessage = reminderMessages[reminderType as keyof typeof reminderMessages] || reminderMessages.friendly;
+    const getMessage = () => {
+      switch (reminderType) {
+        case 'friendly':
+          return `This is a friendly reminder that invoice <strong>#${invoice.invoice_number}</strong> for <strong>$${totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> is now due.`;
+        case 'polite':
+          return `This is a reminder that invoice <strong>#${invoice.invoice_number}</strong> for <strong>$${totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> is ${daysOverdue} day${daysOverdue !== 1 ? 's' : ''} overdue.`;
+        case 'firm':
+          return `Invoice <strong>#${invoice.invoice_number}</strong> for <strong>$${totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> is ${daysOverdue} days overdue. Immediate payment is required.`;
+        case 'urgent':
+          return `URGENT: Invoice <strong>#${invoice.invoice_number}</strong> for <strong>$${totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> is ${daysOverdue} days overdue. Payment required immediately.`;
+        default:
+          return `This is a reminder regarding invoice #${invoice.invoice_number}.`;
+      }
+    };
+
+    const getClosing = () => {
+      switch (reminderType) {
+        case 'friendly':
+          return `Thank you for your prompt attention.`;
+        case 'polite':
+          return `We appreciate your immediate attention to this matter.`;
+        case 'firm':
+          return `We require immediate payment to resolve this matter.`;
+        case 'urgent':
+          return `This matter requires immediate attention.`;
+        default:
+          return `Thank you for your attention.`;
+      }
+    };
 
     // Calculate current total including late fees (same logic as public invoice page)
     const currentDate = new Date();
@@ -201,486 +238,189 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create modern professional reminder email (matching invoice email template style)
+    // Create custom, unique reminder email design
     const emailHtml = `
       <!DOCTYPE html>
-      <html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
           <title>Payment Reminder</title>
-          <style>
-            * {
-              box-sizing: border-box;
-            }
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-              line-height: 1.5;
-              color: #000000;
-              background-color: #f5f5f5;
-              margin: 0;
-              padding: 0;
-            }
-            .email-container {
-              max-width: 600px;
-              margin: 0 auto;
-              background: #ffffff;
-              width: 100%;
-            }
-            table {
-              width: 100%;
-              max-width: 100%;
-            }
-            .header {
-              background: #f8f9fa;
-              padding: 48px 40px;
-              border-bottom: 2px solid #e5e5e5;
-            }
-            .header-content {
-              display: table;
-              width: 100%;
-              max-width: 520px;
-              margin: 0 auto;
-              table-layout: fixed;
-            }
-            .business-info {
-              display: table-cell;
-              vertical-align: top;
-              width: 50%;
-            }
-            .business-name {
-              font-size: 28px;
-              font-weight: 700;
-              color: #000000 !important;
-              letter-spacing: -0.02em;
-              margin: 0;
-              padding: 0;
-            }
-            .invoice-info {
-              display: table-cell;
-              vertical-align: top;
-              text-align: right;
-              width: 50%;
-              padding-left: 24px;
-            }
-            .invoice-title {
-              font-size: 16px;
-              font-weight: 500;
-              color: #333333 !important;
-              margin-bottom: 4px;
-            }
-            .invoice-number {
-              font-size: 16px;
-              color: #333333 !important;
-              margin-bottom: 8px;
-              font-weight: 500;
-            }
-            .amount {
-              font-size: 32px;
-              font-weight: 800;
-              color: #dc2626;
-              letter-spacing: -0.03em;
-            }
-            .content {
-              padding: 48px 40px;
-              background: #ffffff;
-            }
-            .message-section {
-              background: #fff7ed;
-              border-left: 4px solid #f59e0b;
-              padding: 20px 24px;
-              margin-bottom: 32px;
-              border-radius: 4px;
-            }
-            .message-section p {
-              margin: 0;
-              font-size: 15px;
-              color: #92400e;
-              line-height: 1.6;
-              font-weight: 500;
-            }
-            .greeting {
-              margin: 0 0 16px 0;
-              font-size: 15px;
-              color: #000000;
-              line-height: 1.6;
-              font-weight: 400;
-            }
-            .intro-text {
-              margin: 0 0 32px 0;
-              font-size: 15px;
-              color: #000000;
-              line-height: 1.6;
-              font-weight: 400;
-            }
-            .details-grid {
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              gap: 48px;
-              margin-bottom: 48px;
-            }
-            .detail-section {
-              flex: 1;
-            }
-            .detail-section h3 {
-              font-size: 13px;
-              font-weight: 600;
-              color: #333333 !important;
-              text-transform: uppercase;
-              letter-spacing: 0.1em;
-              margin: 0 0 16px 0;
-            }
-            .detail-section p {
-              font-size: 15px;
-              color: #000000;
-              line-height: 1.8;
-              margin: 0;
-              font-weight: 400;
-            }
-            .detail-section p strong {
-              font-weight: 600;
-              color: #000000;
-            }
-            .invoice-details-list {
-              margin: 0;
-              padding: 0;
-              width: 100%;
-              display: table;
-            }
-            .detail-item {
-              display: table-row;
-              margin-bottom: 0;
-              width: 100%;
-            }
-            .detail-item.total-item {
-              margin-top: 16px;
-              padding-top: 16px;
-              border-top: 1px solid #e5e5e5;
-            }
-            .detail-item.total-item .detail-label,
-            .detail-item.total-item .detail-value {
-              padding-top: 16px;
-            }
-            .detail-label {
-              font-size: 15px;
-              color: #333333 !important;
-              font-weight: 400;
-              text-align: left;
-              padding-right: 20px;
-              padding-bottom: 12px;
-              display: table-cell;
-              vertical-align: baseline;
-            }
-            .detail-value {
-              font-size: 15px;
-              color: #000000;
-              font-weight: 500;
-              text-align: right;
-              white-space: nowrap;
-              font-variant-numeric: tabular-nums;
-              display: table-cell;
-              vertical-align: baseline;
-              padding-bottom: 12px;
-              width: 1%;
-            }
-            .detail-value.late-fee-amount {
-              color: #dc2626;
-              font-weight: 600;
-            }
-            .detail-value.total-amount {
-              font-size: 17px;
-              color: #059669;
-              font-weight: 700;
-            }
-            .cta-section {
-              text-align: center;
-              margin: 48px 0;
-            }
-            .cta-button {
-              display: inline-block;
-              background: #000000;
-              color: #ffffff;
-              padding: 16px 32px;
-              text-decoration: none;
-              font-weight: 600;
-              font-size: 15px;
-              border-radius: 6px;
-              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-              letter-spacing: -0.01em;
-            }
-            .footer {
-              background: #f8f9fa;
-              padding: 32px;
-              text-align: center;
-              border-top: 2px solid #e5e5e5;
-            }
-            .footer p {
-              margin: 0;
-              font-size: 14px;
-              color: #333333 !important;
-              line-height: 1.5;
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style type="text/css">
+    body, table, td, p, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+    @media (prefers-color-scheme: dark) {
+      .dark-bg { background-color: #0a0a0a !important; }
+      .dark-text { color: #f5f5f5 !important; }
+      .dark-border { border-color: #2a2a2a !important; }
             }
             @media only screen and (max-width: 600px) {
-              body {
-                padding: 0 !important;
-                margin: 0 !important;
-              }
-              .email-container {
-                width: 100% !important;
-                max-width: 100% !important;
-                margin: 0 !important;
-              }
-              .header {
-                padding: 32px 20px !important;
-                width: 100% !important;
-              }
-              .header-content {
-                display: table !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                table-layout: fixed !important;
-              }
-              .business-info {
-                display: table-cell !important;
-                vertical-align: top !important;
-                width: 50% !important;
-                text-align: left !important;
-              }
-              .business-name {
-                font-size: 22px !important;
-                color: #000000 !important;
-              }
-              .invoice-info {
-                display: table-cell !important;
-                vertical-align: top !important;
-                text-align: right !important;
-                width: 50% !important;
-                padding-left: 12px !important;
-              }
-              .invoice-title {
-                color: #333333 !important;
-              }
-              .invoice-number {
-                color: #333333 !important;
-              }
-              .amount {
-                color: #dc2626 !important;
-              }
-              .invoice-title {
-                font-size: 15px !important;
-              }
-              .invoice-number {
-                font-size: 14px !important;
-              }
-              .amount {
-                font-size: 26px !important;
-              }
-              .content {
-                padding: 32px 20px !important;
-                width: 100% !important;
-              }
-              .message-section {
-                padding: 16px 20px !important;
-                margin-bottom: 24px !important;
-              }
-              .message-section p {
-                font-size: 14px !important;
-              }
-              .greeting {
-                font-size: 14px !important;
-                margin-bottom: 12px !important;
-              }
-              .intro-text {
-                font-size: 14px !important;
-                margin-bottom: 24px !important;
-              }
-              .details-grid {
-                display: block !important;
-                grid-template-columns: none !important;
-                gap: 0 !important;
-                margin-bottom: 32px !important;
-              }
-              .detail-section {
-                display: block !important;
-                margin-bottom: 32px !important;
-                width: 100% !important;
-              }
-              .detail-section:first-child {
-                margin-bottom: 32px !important;
-              }
-              .detail-section:last-child {
-                margin-bottom: 0 !important;
-              }
-              .detail-section h3 {
-                font-size: 12px !important;
-                margin-bottom: 12px !important;
-              }
-              .detail-section p {
-                font-size: 14px !important;
-                line-height: 1.8 !important;
-              }
-              .invoice-details-list {
-                width: 100% !important;
-                display: table !important;
-              }
-              .detail-item {
-                display: table-row !important;
-                margin-bottom: 0 !important;
-                width: 100% !important;
-              }
-              .detail-label {
-                font-size: 14px !important;
-                text-align: left !important;
-                padding-right: 16px !important;
-                padding-bottom: 12px !important;
-                display: table-cell !important;
-                vertical-align: baseline !important;
-              }
-              .detail-value {
-                font-size: 14px !important;
-                text-align: right !important;
-                white-space: nowrap !important;
-                font-variant-numeric: tabular-nums !important;
-                display: table-cell !important;
-                vertical-align: baseline !important;
-                width: 1% !important;
-                padding-bottom: 12px !important;
-              }
-              .detail-value.total-amount {
-                font-size: 16px !important;
-              }
-              .detail-item.total-item {
-                margin-top: 12px !important;
-                padding-top: 0 !important;
-              }
-              .detail-item.total-item .detail-label,
-              .detail-item.total-item .detail-value {
-                padding-top: 16px !important;
-                border-top: 1px solid #e5e5e5 !important;
-              }
-              .cta-section {
-                margin: 32px 0 !important;
-              }
-              .cta-button {
-                display: block !important;
-                width: 100% !important;
-                padding: 14px 24px !important;
-                font-size: 15px !important;
-                text-align: center !important;
-                box-sizing: border-box !important;
-              }
-              .footer {
-                padding: 24px 20px !important;
-                width: 100% !important;
-              }
-              .footer p {
-                font-size: 13px !important;
-              }
-            }
-            @media only screen and (max-width: 480px) {
-              .header {
-                padding: 24px 16px !important;
-              }
-              .header-content {
-                gap: 12px !important;
-              }
-              .business-name {
-                font-size: 18px !important;
-              }
-              .invoice-title {
-                font-size: 14px !important;
-              }
-              .invoice-number {
-                font-size: 13px !important;
-              }
-              .amount {
-                font-size: 22px !important;
-              }
-              .content {
-                padding: 24px 16px !important;
-              }
-              .cta-button {
-                padding: 12px 20px !important;
-                font-size: 14px !important;
-              }
+      .container { width: 100% !important; }
+      .pad { padding: 20px !important; }
+      .amount { font-size: 28px !important; }
             }
           </style>
         </head>
-        <body>
-          <div class="email-container">
-            <div class="header">
-              <div class="header-content">
-                <div class="business-info">
-                  <div class="business-name" style="color: #000000 !important; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin: 0; padding: 0;">${(businessSettings?.business_name || '').trim() || 'Business Name'}</div>
-                </div>
-                <div class="invoice-info">
-                  <div class="invoice-title" style="color: #333333 !important; font-size: 16px; font-weight: 500; margin-bottom: 4px;">Payment Reminder</div>
-                  <div class="invoice-number" style="color: #333333 !important; font-size: 16px; margin-bottom: 8px; font-weight: 500;">#${invoice.invoice_number}</div>
-                  <div class="amount" style="color: #dc2626 !important; font-size: 32px; font-weight: 800; letter-spacing: -0.03em;">$${totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                  </div>
-                </div>
-              </div>
+<body style="margin:0;padding:0;width:100%;background-color:#ffffff;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#ffffff;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table role="presentation" width="560" border="0" cellpadding="0" cellspacing="0" class="container" style="max-width:560px;width:100%;background-color:#ffffff;">
+          
+          <!-- Top accent line -->
+          <tr>
+            <td style="height:3px;background:linear-gradient(90deg, #000000 0%, #333333 100%);"></td>
+          </tr>
+          
+          <!-- Header -->
+          <tr>
+            <td class="pad" style="padding:40px 40px 24px;">
+              <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <p style="margin:0;padding:0;color:#000000;font-size:20px;font-weight:600;letter-spacing:-0.3px;line-height:1.3;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                      ${(businessSettings?.business_name || '').trim() || 'Invoice Reminder'}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-            <div class="content">
-              <div class="message-section">
-                <p>${reminderMessage}</p>
-              </div>
+          <!-- Invoice amount highlight -->
+          <tr>
+            <td class="pad" style="padding:0 40px 32px;">
+              <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:24px;background-color:#fafafa;border:1px solid #e8e8e8;">
+                    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td>
+                          <p style="margin:0 0 8px 0;padding:0;color:#666666;font-size:12px;letter-spacing:0.3px;text-transform:uppercase;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Invoice #${invoice.invoice_number}</p>
+                          <p class="amount" style="margin:0;padding:0;color:#000000;font-size:36px;font-weight:700;letter-spacing:-1px;line-height:1;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">$${totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        </td>
+                        <td align="right" valign="top">
+                          ${daysOverdue > 0 ? `
+                          <p style="margin:0;padding:0;color:#d32f2f;font-size:13px;font-weight:500;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">${daysOverdue} day${daysOverdue !== 1 ? 's' : ''} overdue</p>
+                          ` : `
+                          <p style="margin:0;padding:0;color:#666666;font-size:13px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Due ${new Date(invoice.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                          `}
+                        </td>
+                      </tr>
+                      ${lateFeesAmount > 0 ? `
+                      <tr>
+                        <td colspan="2" style="padding-top:16px;border-top:1px solid #e8e8e8;">
+                          <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+                            <tr>
+                              <td>
+                                <p style="margin:0;padding:0;color:#666666;font-size:13px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Late fee</p>
+                              </td>
+                              <td align="right">
+                                <p style="margin:0;padding:0;color:#d32f2f;font-size:15px;font-weight:600;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">+$${lateFeesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      ` : ''}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-              <p class="greeting">Dear ${clientName},</p>
-
-              <p class="intro-text">We hope this message finds you well. This is an automated reminder regarding your outstanding invoice.</p>
-
-              <div class="details-grid">
-                <div class="detail-section">
-                  <h3>Invoice Information</h3>
-                  <div class="invoice-details-list">
-                    ${lateFeesAmount > 0 ? `
-                    <div class="detail-item">
-                      <span class="detail-label">Invoice Amount:</span>
-                      <span class="detail-value">$${invoice.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                    </div>
-                    <div class="detail-item">
-                      <span class="detail-label">Late Fee (${daysOverdue} days):</span>
-                      <span class="detail-value late-fee-amount">$${lateFeesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                    </div>
-                    <div class="detail-item total-item">
-                      <span class="detail-label">Total Amount Due:</span>
-                      <span class="detail-value total-amount">$${totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                    </div>
-                    ` : `
-                    <div class="detail-item total-item">
-                      <span class="detail-label">Amount Due:</span>
-                      <span class="detail-value total-amount">$${totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </div>
-                    `}
-                </div>
-                </div>
-                <div class="detail-section">
-                  <h3>Payment Due Date</h3>
-                  <p>
-                    ${new Date(invoice.due_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}<br>
-                    ${daysOverdue > 0 ? `<span style="color: #dc2626; font-weight: 600;">${daysOverdue} days overdue</span>` : '<span style="color: #059669;">Current</span>'}
-                  </p>
-                </div>
-              </div>
-
-              <p class="intro-text">Please review your invoice and make payment at your earliest convenience. If you have any questions or need to discuss payment arrangements, please don't hesitate to contact us.</p>
-
-              <div class="cta-section">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://invoice-flow-vert.vercel.app'}/invoice/${encodeURIComponent(invoice.public_token)}" class="cta-button">
-                  View Invoice Online
-                </a>
-              </div>
-
-              <p style="margin: 32px 0 0 0; color: #333333 !important; font-size: 14px; line-height: 1.5;">
-                If you have already made payment, please disregard this reminder. Thank you for your business.
+          <!-- Message -->
+          <tr>
+            <td class="pad" style="padding:0 40px;">
+              <p style="margin:0 0 12px 0;padding:0;color:#000000;font-size:16px;line-height:1.6;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                ${getGreeting()}
               </p>
-            </div>
+              <p style="margin:0 0 32px 0;padding:0;color:#333333;font-size:15px;line-height:1.7;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                ${getMessage()}
+              </p>
+            </td>
+          </tr>
 
-            <div class="footer">
-              <p>This is an automated reminder. Please do not reply to this email.</p>
-            </div>
-          </div>
+          <!-- CTA Button -->
+          <tr>
+            <td class="pad" style="padding:0 40px 32px;">
+              <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <!--[if mso]>
+                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${process.env.NEXT_PUBLIC_APP_URL || 'https://invoice-flow-vert.vercel.app'}/invoice/${encodeURIComponent(invoice.public_token)}" style="height:48px;v-text-anchor:middle;width:240px;" arcsize="0%" stroke="f" fillcolor="#000000">
+                    <w:anchorlock/>
+                    <center style="color:#ffffff;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;font-weight:500;">View Invoice</center>
+                    </v:roundrect>
+                    <![endif]-->
+                    <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://invoice-flow-vert.vercel.app'}/invoice/${encodeURIComponent(invoice.public_token)}" 
+                       style="display:inline-block;width:240px;background-color:#000000;color:#ffffff;text-decoration:none;padding:14px 0;text-align:center;font-size:15px;font-weight:500;letter-spacing:0.2px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;mso-hide:all;">
+                      View Invoice
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Closing -->
+          <tr>
+            <td class="pad" style="padding:0 40px 24px;">
+              <p style="margin:0;padding:0;color:#333333;font-size:15px;line-height:1.6;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                ${getClosing()}
+              </p>
+            </td>
+          </tr>
+
+          ${businessSettings?.payment_notes ? `
+          <!-- Payment Info -->
+          <tr>
+            <td class="pad" style="padding:0 40px 32px;">
+              <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-top:1px solid #e8e8e8;padding-top:24px;">
+                <tr>
+                  <td>
+                    <p style="margin:0 0 8px 0;padding:0;color:#000000;font-size:13px;font-weight:500;letter-spacing:0.2px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Payment Details</p>
+                    <p style="margin:0;padding:0;color:#666666;font-size:14px;line-height:1.6;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                      ${businessSettings.payment_notes}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+
+          <!-- Footer -->
+          <tr>
+            <td class="pad" style="padding:32px 40px;border-top:1px solid #f0f0f0;">
+              <p style="margin:0 0 4px 0;padding:0;color:#999999;font-size:12px;line-height:1.5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                ${businessSettings?.business_email ? businessSettings.business_email : ''}
+              </p>
+              <p style="margin:0;padding:0;color:#999999;font-size:11px;line-height:1.5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                Automated reminder
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
         </body>
       </html>
     `;

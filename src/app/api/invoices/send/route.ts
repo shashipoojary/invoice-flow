@@ -294,7 +294,7 @@ export async function POST(request: NextRequest) {
     // Prepare business settings for PDF
     const businessSettings = {
       businessName: settingsData?.business_name || 'Your Business Name',
-      businessEmail: settingsData?.business_email || 'your-email@example.com',
+      businessEmail: settingsData?.business_email || '',
       businessPhone: settingsData?.business_phone || '',
       address: settingsData?.business_address || '',
       logo: settingsData?.logo || '',

@@ -232,123 +232,223 @@ async function sendReminderEmail(invoice: any, reminderType: string, _reason: st
     } = userSettings || {};
 
     // Create reminder message based on type
-    const reminderMessages = {
-      friendly: 'This is a friendly reminder that your invoice payment is now due. We appreciate your prompt attention to this matter and look forward to receiving your payment at your earliest convenience.',
-      polite: 'This is a polite reminder that your invoice payment is currently overdue. We kindly request that you arrange payment as soon as possible to avoid any inconvenience.',
-      firm: 'This is a firm reminder that your invoice payment is significantly overdue. We require immediate payment to resolve this outstanding balance and avoid any further collection actions.',
-      urgent: 'This is an urgent final notice regarding your severely overdue invoice payment. Immediate payment is required to prevent further escalation, which may include account suspension or referral to a collection agency.'
+    // Get greeting and message based on reminder type
+    const getGreeting = () => {
+      switch (reminderType) {
+        case 'friendly':
+          return `Hi ${invoice.clients?.name || 'there'},`;
+        case 'polite':
+          return `Dear ${invoice.clients?.name || 'Valued Customer'},`;
+        case 'firm':
+          return `Hello ${invoice.clients?.name || 'Valued Customer'},`;
+        case 'urgent':
+          return `${invoice.clients?.name || 'Valued Customer'},`;
+        default:
+          return `Dear ${invoice.clients?.name || 'Valued Customer'},`;
+      }
     };
 
-    const reminderMessage = reminderMessages[reminderType as keyof typeof reminderMessages] || reminderMessages.friendly;
+    const getMessage = () => {
+      const overdueDays = Math.max(0, Math.floor((new Date().getTime() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24)));
+      
+      switch (reminderType) {
+        case 'friendly':
+          return `This is a friendly reminder that invoice <strong>#${invoice.invoice_number}</strong> for <strong>$${invoice.total.toLocaleString()}</strong> is now due.`;
+        case 'polite':
+          return `This is a reminder that invoice <strong>#${invoice.invoice_number}</strong> for <strong>$${invoice.total.toLocaleString()}</strong> is ${overdueDays} day${overdueDays !== 1 ? 's' : ''} overdue.`;
+        case 'firm':
+          return `Invoice <strong>#${invoice.invoice_number}</strong> for <strong>$${invoice.total.toLocaleString()}</strong> is ${overdueDays} days overdue. Immediate payment is required.`;
+        case 'urgent':
+          return `URGENT: Invoice <strong>#${invoice.invoice_number}</strong> for <strong>$${invoice.total.toLocaleString()}</strong> is ${overdueDays} days overdue. Payment required immediately.`;
+        default:
+          return `This is a reminder regarding invoice #${invoice.invoice_number}.`;
+      }
+    };
 
-    // Create professional reminder email
+    const getClosing = () => {
+      switch (reminderType) {
+        case 'friendly':
+          return `Thank you for your prompt attention.`;
+        case 'polite':
+          return `We appreciate your immediate attention to this matter.`;
+        case 'firm':
+          return `We require immediate payment to resolve this matter.`;
+        case 'urgent':
+          return `This matter requires immediate attention.`;
+        default:
+          return `Thank you for your attention.`;
+      }
+    };
+
+    const overdueDays = Math.max(0, Math.floor((new Date().getTime() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24)));
+
+    // Create custom, unique reminder email design
     const emailHtml = `
       <!DOCTYPE html>
-      <html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
           <title>Payment Reminder</title>
-          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style type="text/css">
+    body, table, td, p, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+    @media (prefers-color-scheme: dark) {
+      .dark-bg { background-color: #0a0a0a !important; }
+      .dark-text { color: #f5f5f5 !important; }
+      .dark-border { border-color: #2a2a2a !important; }
+    }
+    @media only screen and (max-width: 600px) {
+      .container { width: 100% !important; }
+      .pad { padding: 20px !important; }
+      .amount { font-size: 28px !important; }
+    }
+  </style>
         </head>
-        <body style="margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: #f8fafc;">
-          <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+<body style="margin:0;padding:0;width:100%;background-color:#ffffff;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#ffffff;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table role="presentation" width="560" border="0" cellpadding="0" cellspacing="0" class="container" style="max-width:560px;width:100%;background-color:#ffffff;">
+          
+          <!-- Top accent line -->
+          <tr>
+            <td style="height:3px;background:linear-gradient(90deg, #000000 0%, #333333 100%);"></td>
+          </tr>
             
             <!-- Header -->
-            <div style="background-color: #0D9488; padding: 24px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600; letter-spacing: 1px;">
-                PAYMENT REMINDER
-              </h1>
-            </div>
+          <tr>
+            <td class="pad" style="padding:40px 40px 24px;">
+              <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <p style="margin:0;padding:0;color:#000000;font-size:20px;font-weight:600;letter-spacing:-0.3px;line-height:1.3;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                      ${businessSettings?.business_name || 'Invoice Reminder'}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-            <!-- Main Content -->
-            <div style="padding: 32px 24px;">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
-                <div style="flex: 0 0 auto; max-width: 50%;">
-                  <h2 style="margin: 0; color: #1e293b; font-size: 20px; font-weight: 600;">
-                    Invoice #${invoice.invoice_number}
-                  </h2>
-                  <p style="margin: 8px 0 0 0; color: #333333 !important; font-size: 14px;">
-                    ${(businessSettings?.business_name || '').trim() || 'Business Name'}
-                  </p>
-                </div>
-                <div style="text-align: right;">
-                  <div style="color: #dc2626 !important; font-size: 18px; font-weight: 600;">
-                    $${invoice.total.toLocaleString()}
-                  </div>
-                  <p style="margin: 4px 0 0 0; color: #333333 !important; font-size: 14px;">
-                    Due: ${new Date(invoice.due_date).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
+          <!-- Invoice amount highlight -->
+          <tr>
+            <td class="pad" style="padding:0 40px 32px;">
+              <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:24px;background-color:#fafafa;border:1px solid #e8e8e8;">
+                    <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td>
+                          <p style="margin:0 0 8px 0;padding:0;color:#666666;font-size:12px;letter-spacing:0.3px;text-transform:uppercase;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Invoice #${invoice.invoice_number}</p>
+                          <p class="amount" style="margin:0;padding:0;color:#000000;font-size:36px;font-weight:700;letter-spacing:-1px;line-height:1;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">$${invoice.total.toLocaleString()}</p>
+                        </td>
+                        <td align="right" valign="top">
+                          ${overdueDays > 0 ? `
+                          <p style="margin:0;padding:0;color:#d32f2f;font-size:13px;font-weight:500;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">${overdueDays} day${overdueDays !== 1 ? 's' : ''} overdue</p>
+                          ` : `
+                          <p style="margin:0;padding:0;color:#666666;font-size:13px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Due ${new Date(invoice.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                          `}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-              <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 24px 0;">
-                <p style="margin: 0; color: #92400e; font-size: 16px; font-weight: 500;">
-                  ${reminderMessage}
-                </p>
-              </div>
-
-              <p style="margin: 24px 0; color: #374151; font-size: 16px; line-height: 1.6;">
-                Dear ${invoice.clients?.name || 'Valued Customer'},
+          <!-- Message -->
+          <tr>
+            <td class="pad" style="padding:0 40px;">
+              <p style="margin:0 0 12px 0;padding:0;color:#000000;font-size:16px;line-height:1.6;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                ${getGreeting()}
               </p>
-
-              <p style="margin: 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
-                We hope this message finds you well. This is an automated reminder regarding your outstanding invoice.
+              <p style="margin:0 0 32px 0;padding:0;color:#333333;font-size:15px;line-height:1.7;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                ${getMessage()}
               </p>
+            </td>
+          </tr>
 
-              <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 24px 0;">
-                <h3 style="margin: 0 0 12px 0; color: #1e293b; font-size: 16px; font-weight: 600;">Invoice Details</h3>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                  <span style="color: #333333 !important;">Invoice Number:</span>
-                  <span style="color: #1e293b !important; font-weight: 500;">#${invoice.invoice_number}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                  <span style="color: #333333 !important;">Amount Due:</span>
-                  <span style="color: #1e293b !important; font-weight: 500;">$${invoice.total.toLocaleString()}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                  <span style="color: #333333 !important;">Due Date:</span>
-                  <span style="color: #1e293b !important; font-weight: 500;">${new Date(invoice.due_date).toLocaleDateString()}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between;">
-                  <span style="color: #333333 !important;">Days Overdue:</span>
-                  <span style="color: #dc2626; font-weight: 500;">${Math.max(0, Math.floor((new Date().getTime() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24)))}</span>
-                </div>
-              </div>
+          <!-- CTA Button -->
+          <tr>
+            <td class="pad" style="padding:0 40px 32px;">
+              <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <!--[if mso]>
+                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${process.env.NEXT_PUBLIC_APP_URL}/invoice/${invoice.public_token}" style="height:48px;v-text-anchor:middle;width:240px;" arcsize="0%" stroke="f" fillcolor="#000000">
+                    <w:anchorlock/>
+                    <center style="color:#ffffff;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;font-weight:500;">View Invoice</center>
+                    </v:roundrect>
+                    <![endif]-->
+                    <a href="${process.env.NEXT_PUBLIC_APP_URL}/invoice/${invoice.public_token}" 
+                       style="display:inline-block;width:240px;background-color:#000000;color:#ffffff;text-decoration:none;padding:14px 0;text-align:center;font-size:15px;font-weight:500;letter-spacing:0.2px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;mso-hide:all;">
+                      View Invoice
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-              <p style="margin: 16px 0; color: #374151; font-size: 16px; line-height: 1.6;">
-                Please review your invoice and make payment at your earliest convenience. If you have any questions or need to discuss payment arrangements, please don't hesitate to contact us.
+          <!-- Closing -->
+          <tr>
+            <td class="pad" style="padding:0 40px 24px;">
+              <p style="margin:0;padding:0;color:#333333;font-size:15px;line-height:1.6;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                ${getClosing()}
               </p>
+            </td>
+          </tr>
 
               ${businessSettings?.payment_notes ? `
-                <div style="background-color: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px; padding: 16px; margin: 24px 0;">
-                  <h4 style="margin: 0 0 8px 0; color: #0c4a6e; font-size: 14px; font-weight: 600;">Payment Information</h4>
-                  <p style="margin: 0; color: #0c4a6e; font-size: 14px; line-height: 1.5;">
+          <!-- Payment Info -->
+          <tr>
+            <td class="pad" style="padding:0 40px 32px;">
+              <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="border-top:1px solid #e8e8e8;padding-top:24px;">
+                <tr>
+                  <td>
+                    <p style="margin:0 0 8px 0;padding:0;color:#000000;font-size:13px;font-weight:500;letter-spacing:0.2px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">Payment Details</p>
+                    <p style="margin:0;padding:0;color:#666666;font-size:14px;line-height:1.6;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
                     ${businessSettings.payment_notes}
                   </p>
-                </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
               ` : ''}
 
-              <!-- View Invoice Button -->
-              <div style="text-align: center; margin: 32px 0;">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL}/invoice/${invoice.public_token}" 
-                   style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 500; font-size: 16px;">
-                  View Invoice Online
-                </a>
-              </div>
-
-              <p style="margin: 24px 0 0 0; color: #333333 !important; font-size: 14px; line-height: 1.5;">
-                If you have already made payment, please disregard this reminder. Thank you for your business.
+          <!-- Footer -->
+          <tr>
+            <td class="pad" style="padding:32px 40px;border-top:1px solid #f0f0f0;">
+              <p style="margin:0 0 4px 0;padding:0;color:#999999;font-size:12px;line-height:1.5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                ${businessSettings?.business_email ? businessSettings.business_email : ''}
               </p>
-            </div>
-
-            <!-- Footer -->
-            <div style="background-color: #f8fafc; padding: 24px; text-align: center; border-top: 1px solid #e2e8f0;">
-              <p style="margin: 0; color: #333333 !important; font-size: 14px;">
-                Powered by <a href="https://flowinvoicer.com" style="color: #3b82f6 !important; text-decoration: none;">FlowInvoicer</a>
+              <p style="margin:0;padding:0;color:#999999;font-size:11px;line-height:1.5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                Automated reminder
               </p>
-            </div>
-          </div>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
         </body>
       </html>
     `;
