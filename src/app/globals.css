@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "./grid-system.css";
 
 /* Custom Animations */
 @keyframes fade-in {
