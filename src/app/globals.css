@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./grid-system.css";
 
 /* Custom Animations */
 @keyframes fade-in {
@@ -14,6 +15,26 @@
 
 .animate-fade-in {
   animation: fade-in 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* Clean sidebar interactions - no scaling or blur effects */
@@ -187,6 +208,7 @@
   html {
     scroll-behavior: smooth;
     scroll-padding-top: 1rem;
+    overflow-x: hidden;
   }
 
   body {
@@ -251,6 +273,16 @@
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 0, 0, 0.4);
+  }
+
+  /* Hide scrollbar for horizontal scroll */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
   }
 
 }
@@ -422,4 +454,38 @@
   animation: typeText 1s ease-out forwards;
 }
 
+}
+
+@layer utilities {
+  /* Cal.com Grid System - Responsive Column Spans */
+  /* These work with Tailwind's responsive prefixes (sm:, lg:) */
+  @media (min-width: 640px) {
+    .sm\:cal-col-span-1 { grid-column: span 1 / span 1; }
+    .sm\:cal-col-span-2 { grid-column: span 2 / span 2; }
+    .sm\:cal-col-span-3 { grid-column: span 3 / span 3; }
+    .sm\:cal-col-span-4 { grid-column: span 4 / span 4; }
+    .sm\:cal-col-span-5 { grid-column: span 5 / span 5; }
+    .sm\:cal-col-span-6 { grid-column: span 6 / span 6; }
+    .sm\:cal-col-span-7 { grid-column: span 7 / span 7; }
+    .sm\:cal-col-span-8 { grid-column: span 8 / span 8; }
+    .sm\:cal-col-span-9 { grid-column: span 9 / span 9; }
+    .sm\:cal-col-span-10 { grid-column: span 10 / span 10; }
+    .sm\:cal-col-span-11 { grid-column: span 11 / span 11; }
+    .sm\:cal-col-span-12 { grid-column: span 12 / span 12; }
+  }
+
+  @media (min-width: 1024px) {
+    .lg\:cal-col-span-1 { grid-column: span 1 / span 1; }
+    .lg\:cal-col-span-2 { grid-column: span 2 / span 2; }
+    .lg\:cal-col-span-3 { grid-column: span 3 / span 3; }
+    .lg\:cal-col-span-4 { grid-column: span 4 / span 4; }
+    .lg\:cal-col-span-5 { grid-column: span 5 / span 5; }
+    .lg\:cal-col-span-6 { grid-column: span 6 / span 6; }
+    .lg\:cal-col-span-7 { grid-column: span 7 / span 7; }
+    .lg\:cal-col-span-8 { grid-column: span 8 / span 8; }
+    .lg\:cal-col-span-9 { grid-column: span 9 / span 9; }
+    .lg\:cal-col-span-10 { grid-column: span 10 / span 10; }
+    .lg\:cal-col-span-11 { grid-column: span 11 / span 11; }
+    .lg\:cal-col-span-12 { grid-column: span 12 / span 12; }
+  }
 }
