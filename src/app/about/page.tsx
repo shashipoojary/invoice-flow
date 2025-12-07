@@ -24,7 +24,7 @@ export default function AboutPage() {
               Back to Home
             </Link>
             
-            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold mb-8" style={{color: '#1f2937'}}>
+            <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-8 text-gray-900 tracking-tight">
               About FlowInvoicer
             </h1>
             
@@ -39,7 +39,7 @@ export default function AboutPage() {
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
               <div>
-                <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-8" style={{color: '#1f2937'}}>
+                <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-8 text-gray-900 tracking-tight">
                   Our Mission
                 </h2>
                 <p className="text-lg leading-relaxed mb-6" style={{color: '#374151'}}>
@@ -58,7 +58,7 @@ export default function AboutPage() {
                   }}>
                     <Target className="w-6 h-6" style={{color: '#6b7280'}} />
                   </div>
-                  <h3 className="font-heading text-lg font-bold mb-2" style={{color: '#1f2937'}}>
+                  <h3 className="font-heading text-lg font-semibold mb-2 text-gray-900">
                     Focus
                   </h3>
                   <p className="text-sm" style={{color: '#6b7280'}}>
@@ -73,7 +73,7 @@ export default function AboutPage() {
                   }}>
                     <Zap className="w-6 h-6" style={{color: '#6b7280'}} />
                   </div>
-                  <h3 className="font-heading text-lg font-bold mb-2" style={{color: '#1f2937'}}>
+                  <h3 className="font-heading text-lg font-semibold mb-2 text-gray-900">
                     Speed
                   </h3>
                   <p className="text-sm" style={{color: '#6b7280'}}>
@@ -88,7 +88,7 @@ export default function AboutPage() {
                   }}>
                     <Shield className="w-6 h-6" style={{color: '#6b7280'}} />
                   </div>
-                  <h3 className="font-heading text-lg font-bold mb-2" style={{color: '#1f2937'}}>
+                  <h3 className="font-heading text-lg font-semibold mb-2 text-gray-900">
                     Security
                   </h3>
                   <p className="text-sm" style={{color: '#6b7280'}}>
@@ -103,7 +103,7 @@ export default function AboutPage() {
                   }}>
                     <Users className="w-6 h-6" style={{color: '#6b7280'}} />
                   </div>
-                  <h3 className="font-heading text-lg font-bold mb-2" style={{color: '#1f2937'}}>
+                  <h3 className="font-heading text-lg font-semibold mb-2 text-gray-900">
                     Community
                   </h3>
                   <p className="text-sm" style={{color: '#6b7280'}}>
@@ -119,7 +119,7 @@ export default function AboutPage() {
         <section className="py-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-6" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-6 text-gray-900 tracking-tight">
                 Our Story
               </h2>
             </div>
@@ -148,7 +148,7 @@ export default function AboutPage() {
         <section className="py-20 px-4 sm:px-6 lg:px-8" style={{backgroundColor: '#f8f9fa'}}>
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-6" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-6 text-gray-900 tracking-tight">
                 Our Values
               </h2>
               <p className="text-lg max-w-2xl mx-auto" style={{color: '#64748b'}}>
@@ -158,7 +158,7 @@ export default function AboutPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="p-8 rounded-lg border bg-white border-gray-200">
-                <h3 className="font-heading text-xl font-bold mb-4" style={{color: '#1f2937'}}>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">
                   Simplicity First
                 </h3>
                 <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
@@ -167,7 +167,7 @@ export default function AboutPage() {
               </div>
 
               <div className="p-8 rounded-lg border bg-white border-gray-200">
-                <h3 className="font-heading text-xl font-bold mb-4" style={{color: '#1f2937'}}>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">
                   Reliability Matters
                 </h3>
                 <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
@@ -176,7 +176,7 @@ export default function AboutPage() {
               </div>
 
               <div className="p-8 rounded-lg border bg-white border-gray-200">
-                <h3 className="font-heading text-xl font-bold mb-4" style={{color: '#1f2937'}}>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">
                   Privacy Protected
                 </h3>
                 <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
@@ -190,7 +190,7 @@ export default function AboutPage() {
         {/* CTA Section */}
         <section className="py-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-6" style={{color: '#1f2937'}}>
+            <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-6 text-gray-900 tracking-tight">
               Ready to get started?
             </h2>
             <p className="text-lg mb-8" style={{color: '#374151'}}>

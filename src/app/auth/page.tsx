@@ -155,7 +155,7 @@ export default function AuthPage() {
 
               {/* Brand Text */}
               <div className="text-center mt-8">
-                     <h2 className="font-heading text-2xl font-bold text-gray-900 mb-2">FlowInvoicer</h2>
+                     <h2 className="font-heading text-2xl font-semibold text-gray-900 mb-2">FlowInvoicer</h2>
                      <p className="text-gray-600">Create • Send • Get Paid</p>
               </div>
       </div>
@@ -180,7 +180,7 @@ export default function AuthPage() {
             {/* Welcome Message */}
             <div className="text-center mb-10">
               <div className="text-sm text-indigo-600 font-medium mb-3">Welcome</div>
-              <h1 className="font-heading text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-900 mb-4 tracking-tight">
                 {isLogin ? 'Welcome back!' : 'Sign in or create an account'}
               </h1>
               <p className="text-base text-gray-600 leading-relaxed">

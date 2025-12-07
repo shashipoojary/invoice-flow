@@ -24,7 +24,7 @@ export default function TermsPage() {
               Back to Home
             </Link>
             
-            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold mb-8" style={{color: '#1f2937'}}>
+            <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-8 text-gray-900 tracking-tight">
               Terms of Service
             </h1>
             
@@ -43,7 +43,7 @@ export default function TermsPage() {
           <div className="max-w-4xl mx-auto">
             <div className="prose prose-lg max-w-none" style={{color: '#374151'}}>
               
-              <h2 className="font-heading text-2xl font-bold mb-6" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 text-gray-900">
                 Acceptance of Terms
               </h2>
               
@@ -51,7 +51,7 @@ export default function TermsPage() {
                 By accessing or using FlowInvoicer, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using this service.
               </p>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 mt-12 text-gray-900">
                 Description of Service
               </h2>
               
@@ -67,7 +67,7 @@ export default function TermsPage() {
                 <li>Template customization</li>
               </ul>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 mt-12 text-gray-900">
                 User Accounts
               </h2>
               
@@ -82,7 +82,7 @@ export default function TermsPage() {
                 <li>Ensuring your account information remains current and accurate</li>
               </ul>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 mt-12 text-gray-900">
                 Acceptable Use
               </h2>
               
@@ -98,7 +98,7 @@ export default function TermsPage() {
                 <li>Violate any applicable laws or regulations</li>
               </ul>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 mt-12 text-gray-900">
                 Payment Terms
               </h2>
               
@@ -114,7 +114,7 @@ export default function TermsPage() {
                 <li>Payment processing is handled by secure third-party providers</li>
               </ul>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 mt-12 text-gray-900">
                 Data and Privacy
               </h2>
               
@@ -122,7 +122,7 @@ export default function TermsPage() {
                 Your privacy is important to us. Please review our Privacy Policy to understand how we collect, use, and protect your information. By using our service, you consent to our data practices as described in our Privacy Policy.
               </p>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 mt-12 text-gray-900">
                 Intellectual Property
               </h2>
               
@@ -130,7 +130,7 @@ export default function TermsPage() {
                 The FlowInvoicer service and its original content, features, and functionality are owned by FlowInvoicer and are protected by international copyright, trademark, and other intellectual property laws.
               </p>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 mt-12 text-gray-900">
                 Service Availability
               </h2>
               
@@ -138,7 +138,7 @@ export default function TermsPage() {
                 We strive to maintain high service availability, but we do not guarantee uninterrupted access. We may temporarily suspend the service for maintenance, updates, or other reasons. We are not liable for any downtime or service interruptions.
               </p>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 mt-12 text-gray-900">
                 Limitation of Liability
               </h2>
               
@@ -146,7 +146,7 @@ export default function TermsPage() {
                 To the maximum extent permitted by law, FlowInvoicer shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses.
               </p>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 mt-12 text-gray-900">
                 Termination
               </h2>
               
@@ -154,7 +154,7 @@ export default function TermsPage() {
                 We may terminate or suspend your account immediately, without prior notice, for any reason, including breach of these terms. Upon termination, your right to use the service will cease immediately.
               </p>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 mt-12 text-gray-900">
                 Changes to Terms
               </h2>
               
@@ -162,7 +162,7 @@ export default function TermsPage() {
                 We reserve the right to modify these terms at any time. We will notify users of any material changes via email or through our service. Your continued use of the service after such modifications constitutes acceptance of the updated terms.
               </p>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 mt-12 text-gray-900">
                 Governing Law
               </h2>
               
@@ -170,7 +170,7 @@ export default function TermsPage() {
                 These terms shall be governed by and construed in accordance with the laws of [Your Jurisdiction], without regard to conflict of law principles.
               </p>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 mt-12 text-gray-900">
                 Contact Information
               </h2>
               

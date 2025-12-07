@@ -57,9 +57,6 @@ export default function LandingPage() {
   const [activeFaqCategory, setActiveFaqCategory] = useState('General');
   const heroRef = useRef<HTMLDivElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
-  const testimonialsScrollRef = useRef<HTMLDivElement | null>(null);
-  const testimonialsScrollRef2 = useRef<HTMLDivElement | null>(null);
-  const [isPaused, setIsPaused] = useState(false);
   const [invoiceStep, setInvoiceStep] = useState(1); // 1: client, 2: services, 3: settings, 4: review, 5: created
   const [emailStep, setEmailStep] = useState(1); // 1: preparing, 2: sending, 3: sent, 4: delivered
   const [activityStep, setActivityStep] = useState(1); // 1: sent, 2: viewed, 3: reminder
@@ -121,104 +118,6 @@ export default function LandingPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-scroll testimonials on mobile only - Smooth version
-  useEffect(() => {
-    const scrollContainer1 = testimonialsScrollRef.current;
-    const scrollContainer2 = testimonialsScrollRef2.current;
-    
-    if (!scrollContainer1 || !scrollContainer2) return;
-
-    let scrollPosition1 = 0;
-    let scrollPosition2 = 0;
-    let animationFrameId: number | null = null;
-    let lastTime = performance.now();
-
-    const smoothScroll = (currentTime: number) => {
-      // Check if mobile (screen width < 640px)
-      const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
-      
-      if (!isMobile) {
-        // Reset positions on desktop
-        scrollPosition1 = 0;
-        scrollPosition2 = 0;
-        scrollContainer1.scrollLeft = 0;
-        scrollContainer2.scrollLeft = 0;
-        if (animationFrameId) {
-          cancelAnimationFrame(animationFrameId);
-          animationFrameId = null;
-        }
-        return;
-      }
-
-      if (isPaused) {
-        animationFrameId = requestAnimationFrame(smoothScroll);
-        return;
-      }
-
-      // Calculate delta time for smooth scrolling
-      const deltaTime = currentTime - lastTime;
-      lastTime = currentTime;
-
-      // Smooth scroll speed (pixels per millisecond)
-      const scrollSpeed = 0.15; // Slower for smoother effect
-      const pixelsToScroll = scrollSpeed * (deltaTime / 16); // Normalize to 60fps
-
-      const maxScroll1 = scrollContainer1.scrollWidth - scrollContainer1.clientWidth;
-      const maxScroll2 = scrollContainer2.scrollWidth - scrollContainer2.clientWidth;
-
-      // First row - smooth scroll
-      if (maxScroll1 > 0) {
-        scrollPosition1 += pixelsToScroll;
-        if (scrollPosition1 >= maxScroll1) {
-          scrollPosition1 = 0; // Reset to start
-        }
-        scrollContainer1.scrollLeft = scrollPosition1;
-      }
-
-      // Second row - smooth scroll
-      if (maxScroll2 > 0) {
-        scrollPosition2 += pixelsToScroll;
-        if (scrollPosition2 >= maxScroll2) {
-          scrollPosition2 = 0; // Reset to start
-        }
-        scrollContainer2.scrollLeft = scrollPosition2;
-      }
-
-      animationFrameId = requestAnimationFrame(smoothScroll);
-    };
-
-    // Start smooth scrolling after DOM is ready
-    const timeoutId = setTimeout(() => {
-      lastTime = performance.now();
-      animationFrameId = requestAnimationFrame(smoothScroll);
-    }, 500);
-
-    // Handle resize
-    const handleResize = () => {
-      scrollPosition1 = 0;
-      scrollPosition2 = 0;
-      scrollContainer1.scrollLeft = 0;
-      scrollContainer2.scrollLeft = 0;
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = null;
-      }
-      setTimeout(() => {
-        lastTime = performance.now();
-        animationFrameId = requestAnimationFrame(smoothScroll);
-      }, 300);
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      clearTimeout(timeoutId);
-      window.removeEventListener('resize', handleResize);
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
-    };
-  }, [isPaused]);
 
 
 
@@ -528,23 +427,19 @@ export default function LandingPage() {
       </section>
 
       {/* Reviews Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white overflow-x-hidden">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-4 text-gray-900 tracking-tight">
-              Loved by Creators & Entrepreneurs
+              Loved by Creators &amp; Entrepreneurs
             </h2>
           </div>
 
-          {/* Mobile: Horizontal Scroll, Desktop: Grid */}
-          <div 
-            ref={testimonialsScrollRef}
-            className="flex sm:grid sm:grid-cols-3 gap-6 lg:gap-8 overflow-x-auto sm:overflow-x-visible pb-4 sm:pb-0 -mx-4 sm:mx-0 px-4 sm:px-0 scrollbar-hide"
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
-          >
+          {/* Mobile: CSS Marquee Animation, Desktop: Static Grid */}
+          {/* Desktop Grid */}
+          <div className="hidden sm:grid sm:grid-cols-3 gap-6 lg:gap-8">
             {/* Reddit Review */}
-            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors flex-shrink-0 w-[85vw] sm:w-auto max-w-sm">
+            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors">
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
                   <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -569,7 +464,7 @@ export default function LandingPage() {
             </div>
 
             {/* Indie Hackers Review */}
-            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors flex-shrink-0 w-[85vw] sm:w-auto max-w-sm">
+            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors">
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
                   <span className="text-white text-xs font-bold">IH</span>
@@ -590,7 +485,7 @@ export default function LandingPage() {
             </div>
 
             {/* X.com Review */}
-            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors flex-shrink-0 w-[85vw] sm:w-auto max-w-sm">
+            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors">
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center flex-shrink-0">
                   <svg className="w-4 h-4 text-white fill-current" viewBox="0 0 24 24">
@@ -616,15 +511,177 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Additional Reviews Row - Mobile: Horizontal Scroll, Desktop: Grid */}
-          <div 
-            ref={testimonialsScrollRef2}
-            className="flex sm:grid sm:grid-cols-2 gap-6 lg:gap-8 mt-8 max-w-4xl mx-auto overflow-x-auto sm:overflow-x-visible pb-4 sm:pb-0 -mx-4 sm:mx-0 px-4 sm:px-0 scrollbar-hide"
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
-          >
+          {/* Mobile Marquee - Infinite Horizontal Scroll */}
+          <div className="sm:hidden overflow-hidden">
+            <div 
+              className="flex gap-4 animate-marquee"
+              style={{
+                animation: 'marquee 25s linear infinite',
+                width: 'max-content'
+              }}
+            >
+              {/* Reddit Review */}
+              <div className="bg-white rounded-xl border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-sm text-gray-900">u/freelancer_pro</span>
+                    <p className="text-xs text-gray-500">r/freelance • 2d</p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed mb-2">
+                  Switched to FlowInvoicer last month and it&apos;s been a game changer. The automated reminders actually work!
+                </p>
+                <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <span>▲ 247</span>
+                  <span>•</span>
+                  <span>12 comments</span>
+                </div>
+              </div>
+
+              {/* Indie Hackers Review */}
+              <div className="bg-white rounded-xl border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-xs font-bold">IH</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-sm text-gray-900">Sarah Chen</span>
+                    <p className="text-xs text-gray-500">Indie Hackers</p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed mb-2">
+                  As a solo designer, invoicing was taking too much time. FlowInvoicer&apos;s templates are beautiful!
+                </p>
+                <div className="text-xs text-gray-500">Making $5k/mo</div>
+              </div>
+
+              {/* X.com Review */}
+              <div className="bg-white rounded-xl border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4 text-white fill-current" viewBox="0 0 24 24">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium text-sm text-gray-900">Alex Martinez</span>
+                      <CheckCircle className="w-3.5 h-3.5 text-blue-500" />
+                    </div>
+                    <p className="text-xs text-gray-500">@techconsultant • 5h</p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed mb-2">
+                  Finally found an invoicing tool that doesn&apos;t nickel and dime you. The monthly plan is a steal at $9!
+                </p>
+                <div className="flex items-center gap-4 text-xs text-gray-500">
+                  <span>89</span>
+                  <span>12</span>
+                  <span>5</span>
+                </div>
+              </div>
+
+              {/* Reddit Review 2 */}
+              <div className="bg-white rounded-xl border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-sm text-gray-900">u/agency_owner</span>
+                    <p className="text-xs text-gray-500">r/entrepreneur • 1w</p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed mb-2">
+                  The analytics dashboard is exactly what I needed. Can see all my revenue at a glance!
+                </p>
+                <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <span>▲ 156</span>
+                  <span>•</span>
+                  <span>8 comments</span>
+                </div>
+              </div>
+
+              {/* X.com Review 2 */}
+              <div className="bg-white rounded-xl border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4 text-white fill-current" viewBox="0 0 24 24">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium text-sm text-gray-900">Mike Johnson</span>
+                      <CheckCircle className="w-3.5 h-3.5 text-blue-500" />
+                    </div>
+                    <p className="text-xs text-gray-500">@webdev_mike • 1d</p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed mb-2">
+                  Best invoicing tool for freelancers. Clean UI, fast, and my payment rate improved by 40%!
+                </p>
+                <div className="flex items-center gap-4 text-xs text-gray-500">
+                  <span>124</span>
+                  <span>23</span>
+                  <span>8</span>
+                </div>
+              </div>
+
+              {/* Duplicate cards for seamless loop */}
+              {/* Reddit Review */}
+              <div className="bg-white rounded-xl border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-sm text-gray-900">u/freelancer_pro</span>
+                    <p className="text-xs text-gray-500">r/freelance • 2d</p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed mb-2">
+                  Switched to FlowInvoicer last month and it&apos;s been a game changer. The automated reminders actually work!
+                </p>
+                <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <span>▲ 247</span>
+                  <span>•</span>
+                  <span>12 comments</span>
+                </div>
+              </div>
+
+              {/* Indie Hackers Review */}
+              <div className="bg-white rounded-xl border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-xs font-bold">IH</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-sm text-gray-900">Sarah Chen</span>
+                    <p className="text-xs text-gray-500">Indie Hackers</p>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed mb-2">
+                  As a solo designer, invoicing was taking too much time. FlowInvoicer&apos;s templates are beautiful!
+                </p>
+                <div className="text-xs text-gray-500">Making $5k/mo</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop Additional Reviews Row */}
+          <div className="hidden sm:grid sm:grid-cols-2 gap-6 lg:gap-8 mt-8 max-w-4xl mx-auto">
             {/* Reddit Review 2 */}
-            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors flex-shrink-0 w-[85vw] sm:w-auto max-w-sm">
+            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors">
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
                   <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -649,7 +706,7 @@ export default function LandingPage() {
             </div>
 
             {/* X.com Review 2 */}
-            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors flex-shrink-0 w-[85vw] sm:w-auto max-w-sm">
+            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors">
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center flex-shrink-0">
                   <svg className="w-4 h-4 text-white fill-current" viewBox="0 0 24 24">
@@ -1681,429 +1738,192 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Additional Features - Modern Visual Card Grid */}
-          <div className="mt-32 pt-16 border-t border-gray-100">
-            <div className="text-center mb-16">
-              <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-900 mb-4 tracking-tight">Everything you need</h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">Powerful features to help you manage invoices, clients, and payments efficiently.</p>
+          {/* Everything You Need - Unique Card Designs */}
+          <div className="mt-16 sm:mt-24 lg:mt-32 pt-12 sm:pt-16 border-t border-gray-100">
+            <div className="text-center mb-12 sm:mb-16 lg:mb-20 px-4">
+              <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-900 mb-3 sm:mb-4 tracking-tight">Everything you need</h2>
+              <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">A complete workflow from creation to payment, all automated.</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-              {/* Feature 1 - Templates - Modern Minimal Card */}
-              <div className="group">
-                {/* Outer Frame */}
-                <div className="rounded-xl border border-gray-200/80 bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
-                  {/* Cropped Screenshot Content */}
-                  <div className="aspect-[4/3] overflow-hidden border border-gray-100 rounded-lg m-2 sm:m-3">
-                    <div className="h-full bg-white">
-                      {/* Top bar */}
-                      <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-gray-100">
-                        <div className="space-y-0.5">
-                          <p className="text-[11px] sm:text-xs font-medium text-gray-500">Template preview</p>
-                          <p className="text-sm sm:text-base font-semibold text-gray-900">Invoice · Minimal</p>
-                        </div>
-                        <span className="inline-flex items-center rounded-full border border-gray-200 px-2 py-1 text-[10px] sm:text-xs text-gray-600">
-                          Brand colors
-                        </span>
+            {/* Features Grid - Unique Card Designs */}
+            <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+                
+                {/* Feature 1 - Professional Templates - Invoice Preview Style */}
+                <div className="rounded-3xl bg-gradient-to-br from-slate-50 via-gray-50 to-violet-50/30 p-6 lg:p-8 min-h-[400px] flex flex-col overflow-hidden">
+                  <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Professional templates</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-4">
+                    Clean invoice layouts ready to send in one click.
+                  </p>
+                  
+                  {/* Invoice Preview Mockup */}
+                  <div className="mt-auto bg-white rounded-xl shadow-lg p-4 border border-gray-100">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wide">Invoice</div>
+                        <div className="text-sm font-bold text-gray-900">#INV-001</div>
                       </div>
-                      {/* Body */}
-                      <div className="px-4 sm:px-5 py-4 sm:py-5 space-y-4">
-                        {/* Amount row */}
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-1">
-                            <p className="text-[11px] sm:text-xs font-medium text-gray-500">Invoice total</p>
-                            <p className="text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">$2,500</p>
-                          </div>
-                          <div className="h-10 sm:h-11 w-px bg-gradient-to-b from-gray-200 via-gray-100 to-gray-200" />
-                          <div className="space-y-1 text-right">
-                            <p className="text-[11px] sm:text-xs text-gray-500">Due date</p>
-                            <p className="text-xs sm:text-sm font-medium text-gray-900">Dec 21, 2025</p>
-                          </div>
-                        </div>
-                        {/* Client + lines */}
-                        <div className="space-y-2 pt-2 border-t border-dashed border-gray-200">
-                          <p className="text-[11px] sm:text-xs font-medium text-gray-500">Bill to</p>
-                          <p className="text-xs sm:text-sm font-medium text-gray-900">Acme Corporation</p>
-                          {/* subtle line items as minimal rows */}
-                          <div className="space-y-1.5 mt-2">
-                            <div className="flex items-center justify-between text-[11px] sm:text-xs text-gray-600">
-                              <span>Web development</span>
-                              <span className="font-medium text-gray-800">$1,500</span>
-                            </div>
-                            <div className="flex items-center justify-between text-[11px] sm:text-xs text-gray-600">
-                              <span>UI &amp; design</span>
-                              <span className="font-medium text-gray-800">$1,000</span>
-                            </div>
-                          </div>
-                        </div>
+                      <div className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-[10px] font-medium">Draft</div>
+                    </div>
+                    <div className="border-t border-gray-100 pt-3 space-y-2">
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-gray-500">Web Design</span>
+                        <span className="font-medium text-gray-900">$1,500</span>
+                      </div>
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-gray-500">Development</span>
+                        <span className="font-medium text-gray-900">$1,000</span>
+                      </div>
+                    </div>
+                    <div className="border-t border-gray-100 mt-3 pt-3 flex justify-between">
+                      <span className="text-xs font-semibold text-gray-900">Total</span>
+                      <span className="text-sm font-bold text-indigo-600">$2,500</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Feature 2 - Automated Reminders - Timeline Style */}
+                <div className="rounded-3xl bg-gradient-to-br from-violet-50 via-purple-50/50 to-indigo-50/30 p-6 lg:p-8 min-h-[400px] flex flex-col overflow-hidden">
+                  <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Automated reminders</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-4">
+                    Friendly, polite, and urgent emails sent automatically.
+                  </p>
+                  
+                  {/* Timeline Mockup */}
+                  <div className="mt-auto bg-white rounded-xl shadow-lg p-4 border border-gray-100">
+                    <div className="relative pl-4 border-l-2 border-violet-200 space-y-4">
+                      <div className="relative">
+                        <div className="absolute -left-[21px] w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white"></div>
+                        <div className="text-[10px] text-gray-500">Day 1</div>
+                        <div className="text-xs font-medium text-gray-900">Friendly reminder</div>
+                      </div>
+                      <div className="relative">
+                        <div className="absolute -left-[21px] w-3 h-3 rounded-full bg-amber-500 ring-2 ring-white"></div>
+                        <div className="text-[10px] text-gray-500">Day 7</div>
+                        <div className="text-xs font-medium text-gray-900">Polite follow-up</div>
+                      </div>
+                      <div className="relative">
+                        <div className="absolute -left-[21px] w-3 h-3 rounded-full bg-red-500 ring-2 ring-white"></div>
+                        <div className="text-[10px] text-gray-500">Day 14</div>
+                        <div className="text-xs font-medium text-gray-900">Urgent notice</div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Text Below */}
-                <div className="mt-4 sm:mt-6">
-              <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-1">Professional templates</h3>
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    Clean invoice layouts that look like real exports, ready to send in one click.
+                {/* Feature 3 - Client Portal - Browser Frame Style */}
+                <div className="rounded-3xl bg-gradient-to-br from-emerald-50 via-teal-50/50 to-cyan-50/30 p-6 lg:p-8 min-h-[400px] flex flex-col overflow-hidden">
+                  <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Online invoice portal</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-4">
+                    Clients view and download invoices anytime.
                   </p>
+                  
+                  {/* Browser Frame Mockup */}
+                  <div className="mt-auto bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                    <div className="px-3 py-2 bg-gray-50 border-b border-gray-100 flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-red-400"></div>
+                      <div className="w-2 h-2 rounded-full bg-amber-400"></div>
+                      <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                      <div className="ml-2 flex-1 bg-white rounded px-2 py-0.5 text-[8px] text-gray-400">portal.flowinvoice.com</div>
+                    </div>
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="text-xs font-semibold text-gray-900">Amount Due</div>
+                        <div className="text-sm font-bold text-emerald-600">$2,550</div>
+                      </div>
+                      <button className="w-full py-2 bg-emerald-600 text-white text-[10px] font-medium rounded-lg">View Invoice</button>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Feature 2 - Client Management - Modern Minimal Card */}
-              <div className="group">
-                {/* Outer Frame */}
-                <div className="rounded-xl border border-gray-200/80 bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
-                  {/* Cropped Screenshot Content */}
-                  <div className="aspect-[4/3] overflow-hidden border border-gray-100 rounded-lg m-2 sm:m-3">
-                    <div className="h-full bg-white">
-                      {/* Top bar */}
-                      <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-gray-100">
-                        <div className="space-y-0.5">
-                          <p className="text-[11px] sm:text-xs font-medium text-gray-500">Client overview</p>
-                          <p className="text-sm sm:text-base font-semibold text-gray-900">3 active clients</p>
+              {/* Second Row */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 mt-6 lg:mt-8">
+                
+                {/* Feature 4 - Client Management - Contact Cards Style */}
+                <div className="rounded-3xl bg-gradient-to-br from-orange-50 via-amber-50/50 to-yellow-50/30 p-6 lg:p-8 min-h-[400px] flex flex-col overflow-hidden">
+                  <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Client management</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-4">
+                    Organize clients and track invoice history.
+                  </p>
+                  
+                  {/* Stacked Cards Mockup */}
+                  <div className="mt-auto relative">
+                    <div className="absolute -top-2 left-2 right-2 h-16 bg-white/60 rounded-xl shadow-sm border border-gray-100"></div>
+                    <div className="relative bg-white rounded-xl shadow-lg p-4 border border-gray-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white text-sm font-bold">AC</div>
+                        <div className="flex-1">
+                          <div className="text-xs font-semibold text-gray-900">Acme Corporation</div>
+                          <div className="text-[10px] text-gray-500">contact@acme.com</div>
                         </div>
-                        <button className="hidden sm:inline-flex items-center rounded-full border border-gray-200 px-2.5 py-1 text-[10px] sm:text-xs text-gray-700 hover:bg-gray-50">
-                          Add client
-                        </button>
                       </div>
-                      {/* Body */}
-                      <div className="px-4 sm:px-5 py-4 sm:py-5 space-y-3 sm:space-y-4">
-                        {/* Search row */}
-                        <div className="flex items-center gap-2 rounded-lg border border-dashed border-gray-200 px-3 py-2 bg-gray-50/60">
-                          <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400" />
-                          <span className="text-[10px] sm:text-xs text-gray-500 truncate">
-                            Type a name or email to find a client…
-                          </span>
-                        </div>
-                        {/* Client list (condensed) */}
-                        <div className="space-y-2.5 sm:space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2.5 sm:gap-3">
-                              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                                <Users className="w-4 h-4 text-indigo-600" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">Acme Corporation</p>
-                                <p className="text-[10px] sm:text-xs text-gray-500 truncate">contact@acme.com</p>
-                              </div>
-                            </div>
-                            <span className="text-[10px] sm:text-xs text-gray-500">5 invoices</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2.5 sm:gap-3">
-                              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                                <Users className="w-4 h-4 text-indigo-600" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">Tech Solutions</p>
-                                <p className="text-[10px] sm:text-xs text-gray-500 truncate">info@techsolutions.com</p>
-                              </div>
-                            </div>
-                            <span className="text-[10px] sm:text-xs text-gray-500">2 invoices</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2.5 sm:gap-3">
-                              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                                <Users className="w-4 h-4 text-indigo-600" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">Design Studio</p>
-                                <p className="text-[10px] sm:text-xs text-gray-500 truncate">hello@designstudio.com</p>
-                              </div>
-                            </div>
-                            <span className="text-[10px] sm:text-xs text-gray-500">3 invoices</span>
-                          </div>
-                        </div>
+                      <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between text-[10px]">
+                        <span className="text-gray-500">Total invoices</span>
+                        <span className="font-semibold text-gray-900">5</span>
+                      </div>
+                      <div className="flex justify-between text-[10px] mt-1">
+                        <span className="text-gray-500">Total revenue</span>
+                        <span className="font-semibold text-emerald-600">$12,500</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Text Below */}
-                <div className="mt-4 sm:mt-6">
-              <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-1">Client management</h3>
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    See all your clients, contact details, and invoice counts in one clean view.
+                {/* Feature 5 - Email Templates - Email Preview Style */}
+                <div className="rounded-3xl bg-gradient-to-br from-rose-50 via-pink-50/50 to-fuchsia-50/30 p-6 lg:p-8 min-h-[400px] flex flex-col overflow-hidden">
+                  <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Professional emails</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-4">
+                    Beautiful invoice emails sent automatically.
                   </p>
-                </div>
-              </div>
-
-              {/* Feature 3 - Automated Reminders - Modern Minimal Card */}
-              <div className="group">
-                {/* Outer Frame */}
-                <div className="rounded-xl border border-gray-200/80 bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
-                  {/* Cropped Screenshot Content */}
-                  <div className="aspect-[4/3] overflow-hidden border border-gray-100 rounded-lg m-2 sm:m-3">
-                    <div className="h-full bg-white">
-                      {/* Top bar */}
-                      <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-gray-100">
-                        <div className="space-y-0.5">
-                          <p className="text-[11px] sm:text-xs font-medium text-gray-500">Reminder status</p>
-                          <p className="text-sm sm:text-base font-semibold text-gray-900">Friendly · Polite · Urgent</p>
+                  
+                  {/* Email Preview Mockup */}
+                  <div className="mt-auto bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                    <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center">
+                          <Mail className="w-3 h-3 text-rose-600" />
                         </div>
-                        <span className="inline-flex items-center rounded-full border border-emerald-100 bg-emerald-50 px-2 py-1 text-[10px] sm:text-xs text-emerald-700">
-                          Auto-scheduled
-                        </span>
-                      </div>
-                      {/* Body */}
-                      <div className="px-4 sm:px-5 py-4 sm:py-5 space-y-3 sm:space-y-4">
-                        {/* Highlighted invoice row */}
-                        <div className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2">
-                          <div>
-                            <p className="text-[11px] sm:text-xs font-medium text-gray-500">Invoice</p>
-                            <p className="text-xs sm:text-sm font-semibold text-gray-900">#INV-001 · $2,550</p>
-                          </div>
-                          <p className="text-[10px] sm:text-xs text-gray-500">Due in 3 days</p>
-                        </div>
-                        {/* Timeline style reminders */}
-                        <div className="space-y-2.5 sm:space-y-3">
-                          <div className="flex items-start gap-2.5 sm:gap-3">
-                            <div className="mt-0.5 h-full">
-                              <div className="w-2 h-2 rounded-full bg-blue-500" />
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-xs sm:text-sm font-medium text-gray-900">Friendly reminder sent</p>
-                              <p className="text-[10px] sm:text-xs text-gray-500">Automatically 3 days before due date</p>
-                            </div>
-                          </div>
-                          <div className="flex items-start gap-2.5 sm:gap-3 opacity-90">
-                            <div className="mt-0.5 h-full">
-                              <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-xs sm:text-sm font-medium text-gray-900">Polite follow-up scheduled</p>
-                              <p className="text-[10px] sm:text-xs text-gray-500">1 day before due · no manual setup</p>
-                            </div>
-                          </div>
-                          <div className="flex items-start gap-2.5 sm:gap-3 opacity-80">
-                            <div className="mt-0.5 h-full">
-                              <div className="w-2 h-2 rounded-full bg-amber-500" />
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-xs sm:text-sm font-medium text-gray-900">Urgent notice ready</p>
-                              <p className="text-[10px] sm:text-xs text-gray-500">Will send if invoice becomes overdue</p>
-                            </div>
-                          </div>
+                        <div>
+                          <div className="text-[10px] font-semibold text-gray-900">Invoice #001 Ready</div>
+                          <div className="text-[8px] text-gray-500">To: client@company.com</div>
                         </div>
                       </div>
+                    </div>
+                    <div className="p-4">
+                      <div className="text-[10px] text-gray-600 mb-3">Hi there! Your invoice is ready...</div>
+                      <button className="w-full py-2 bg-rose-600 text-white text-[10px] font-medium rounded-lg">View Invoice →</button>
                     </div>
                   </div>
                 </div>
 
-                {/* Text Below */}
-                <div className="mt-4 sm:mt-6">
-                  <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-1">Automated reminders</h3>
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    Friendly, polite, and urgent emails are scheduled automatically based on due dates.
+                {/* Feature 6 - Analytics - Dashboard Style */}
+                <div className="rounded-3xl bg-gradient-to-br from-sky-50 via-blue-50/50 to-indigo-50/30 p-6 lg:p-8 min-h-[400px] flex flex-col overflow-hidden">
+                  <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Analytics dashboard</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-4">
+                    Track revenue and payment status in real-time.
                   </p>
-                </div>
-              </div>
-
-              {/* Feature 4 - Professional Email Templates - Modern Minimal Card */}
-              <div className="group">
-                {/* Outer Frame */}
-                <div className="rounded-xl border border-gray-200/80 bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
-                  {/* Cropped Screenshot Content */}
-                  <div className="aspect-[4/3] overflow-hidden border border-gray-100 rounded-lg m-2 sm:m-3">
-                    <div className="h-full bg-white">
-                      {/* Top bar */}
-                      <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-gray-100">
-                        <div className="space-y-0.5">
-                          <p className="text-[11px] sm:text-xs font-medium text-gray-500">Email preview</p>
-                          <p className="text-sm sm:text-base font-semibold text-gray-900">Invoice email · Minimal</p>
-                        </div>
-                        <span className="inline-flex items-center rounded-full border border-indigo-100 bg-indigo-50 px-2 py-1 text-[10px] sm:text-xs text-indigo-700">
-                          Auto-send
-                        </span>
+                  
+                  {/* Dashboard Stats Mockup */}
+                  <div className="mt-auto bg-white rounded-xl shadow-lg p-4 border border-gray-100">
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div className="p-2 bg-emerald-50 rounded-lg">
+                        <div className="text-[10px] text-emerald-600">Revenue</div>
+                        <div className="text-sm font-bold text-emerald-700">$12,500</div>
                       </div>
-                      {/* Body */}
-                      <div className="px-4 sm:px-5 py-4 sm:py-5 space-y-3 sm:space-y-4">
-                        {/* From / to row */}
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between">
-                            <p className="text-[10px] sm:text-xs text-gray-500">From</p>
-                            <p className="text-[10px] sm:text-xs font-medium text-gray-800">Tech Physics &lt;billing@flowinvoice.com&gt;</p>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <p className="text-[10px] sm:text-xs text-gray-500">To</p>
-                            <p className="text-[10px] sm:text-xs font-medium text-gray-800">Acme Corporation</p>
-                          </div>
-                        </div>
-                        {/* Subject line */}
-                        <div className="rounded-md border border-gray-100 bg-gray-50/70 px-3 py-2">
-                          <p className="text-[11px] sm:text-xs font-medium text-gray-900 truncate">
-                            Invoice #INV-001 for $2,550.00 is ready
-                          </p>
-                        </div>
-                        {/* Short body copy */}
-                        <div className="space-y-1.5">
-                          <p className="text-[10px] sm:text-xs text-gray-700">
-                            Hi Acme Corporation,
-                          </p>
-                          <p className="text-[10px] sm:text-xs text-gray-700">
-                            Your invoice <strong>#INV-001</strong> for <strong>$2,550.00</strong> is now ready. You can view the full
-                            breakdown and download a PDF using the button below.
-                          </p>
-                        </div>
-                        {/* CTA + status */}
-                        <div className="pt-1.5 sm:pt-2 border-t border-gray-100 flex items-center justify-between gap-3">
-                          <button className="flex-1 bg-indigo-600 text-white text-[10px] sm:text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded font-medium text-center">
-                            View invoice online
-                          </button>
-                          <div className="hidden sm:flex items-center gap-1.5 text-[10px] text-emerald-600">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            <span>Sent automatically</span>
-                          </div>
-                        </div>
+                      <div className="p-2 bg-amber-50 rounded-lg">
+                        <div className="text-[10px] text-amber-600">Pending</div>
+                        <div className="text-sm font-bold text-amber-700">$3,200</div>
                       </div>
                     </div>
-                  </div>
-                </div>
-
-                {/* Text Below */}
-                <div className="mt-4 sm:mt-6">
-                  <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-1">Professional email templates</h3>
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    Clean invoice emails with the right subject, copy, and CTA, sent for you automatically.
-                  </p>
-                </div>
-              </div>
-
-              {/* Feature 5 - Automated Reminder Templates - Modern Minimal Card */}
-              <div className="group">
-                {/* Outer Frame */}
-                <div className="rounded-xl border border-gray-200/80 bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
-                  {/* Cropped Screenshot Content */}
-                  <div className="aspect-[4/3] overflow-hidden border border-gray-100 rounded-lg m-2 sm:m-3">
-                    <div className="h-full bg-white">
-                      {/* Top bar */}
-                      <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-gray-100">
-                        <div className="space-y-0.5">
-                          <p className="text-[11px] sm:text-xs font-medium text-gray-500">Template selection</p>
-                          <p className="text-sm sm:text-base font-semibold text-gray-900">Polite reminder chosen</p>
-                        </div>
-                        <span className="inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-2 py-1 text-[10px] sm:text-xs text-blue-700">
-                          Auto-selected
-                        </span>
-                      </div>
-                      {/* Body */}
-                      <div className="px-4 sm:px-5 py-4 sm:py-5 space-y-3 sm:space-y-4">
-                        {/* Invoice summary */}
-                        <div className="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2 flex items-center justify-between">
-                          <div>
-                            <p className="text-[10px] sm:text-xs text-gray-500">Invoice</p>
-                            <p className="text-xs sm:text-sm font-semibold text-gray-900">#INV-001 · $2,550.00</p>
-                          </div>
-                          <p className="text-[10px] sm:text-xs text-gray-500 text-right">1 day before due</p>
-                        </div>
-                        {/* Template chips */}
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <span className="rounded-full border border-gray-200 px-2.5 py-1 text-[10px] sm:text-xs text-gray-600">
-                            Friendly
-                          </span>
-                          <span className="rounded-full border border-blue-500 bg-blue-50 px-2.5 py-1 text-[10px] sm:text-xs text-blue-700">
-                            Polite
-                          </span>
-                          <span className="rounded-full border border-gray-200 px-2.5 py-1 text-[10px] sm:text-xs text-gray-600">
-                            Urgent
-                          </span>
-                        </div>
-                        {/* Snippet of email copy */}
-                        <div className="space-y-1.5">
-                          <p className="text-[10px] sm:text-xs text-gray-700 leading-relaxed">
-                            <strong>Dear Acme Corporation,</strong>
-                          </p>
-                          <p className="text-[10px] sm:text-xs text-gray-700 leading-relaxed">
-                            Just a quick reminder about invoice <strong>#INV-001</strong> for <strong>$2,550.00</strong>. You can review the
-                            details and complete payment using the link below.
-                          </p>
-                        </div>
-                        {/* CTA + note */}
-                        <div className="pt-1.5 sm:pt-2 border-t border-gray-100 flex items-center justify-between gap-3">
-                          <button className="flex-1 bg-indigo-600 text-white text-[10px] sm:text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded font-medium text-center">
-                            View &amp; pay invoice
-                          </button>
-                          <p className="hidden sm:block text-[10px] text-gray-500 text-right">
-                            Sent automatically · no manual follow up
-                          </p>
-                        </div>
-                      </div>
+                    <div className="flex items-end gap-1 h-10">
+                      <div className="flex-1 bg-sky-200 rounded-t" style={{ height: '40%' }}></div>
+                      <div className="flex-1 bg-sky-300 rounded-t" style={{ height: '60%' }}></div>
+                      <div className="flex-1 bg-sky-400 rounded-t" style={{ height: '100%' }}></div>
+                      <div className="flex-1 bg-sky-300 rounded-t" style={{ height: '80%' }}></div>
+                      <div className="flex-1 bg-sky-200 rounded-t" style={{ height: '50%' }}></div>
                     </div>
                   </div>
-                </div>
-
-                {/* Text Below */}
-                <div className="mt-4 sm:mt-6">
-                  <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-1">Automated reminder templates</h3>
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    The best matching reminder (friendly, polite, or urgent) is picked and sent for you.
-                  </p>
-                </div>
-              </div>
-
-              {/* Feature 6 - Online Invoice Portal - Modern Minimal Card */}
-              <div className="group">
-                {/* Outer Frame */}
-                <div className="rounded-xl border border-gray-200/80 bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
-                  {/* Cropped Screenshot Content */}
-                  <div className="aspect-[4/3] overflow-hidden border border-gray-100 rounded-lg m-2 sm:m-3">
-                    <div className="h-full overflow-hidden bg-white">
-                      {/* Header banner */}
-                      <div className="bg-teal-600 text-white py-1.5 sm:py-2 px-3 sm:px-4">
-                        <div className="flex items-center justify-between">
-                          <div className="text-xs sm:text-sm font-bold tracking-wide">Invoice portal</div>
-                          <span className="text-[9px] sm:text-xs bg-white/10 px-2 py-0.5 rounded-full">Client view</span>
-                        </div>
-                      </div>
-                      {/* Body */}
-                      <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
-                        {/* Amount + status row */}
-                        <div className="flex items-center justify-between pb-2 sm:pb-3 border-b border-gray-100">
-                          <div>
-                            <p className="text-[10px] sm:text-xs text-gray-500">Amount due</p>
-                            <p className="text-base sm:text-lg font-semibold text-gray-900">$2,550.00</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-[10px] sm:text-xs text-gray-500">Status</p>
-                            <span className="inline-flex items-center rounded-full bg-amber-50 text-amber-700 border border-amber-100 px-2 py-0.5 text-[10px] sm:text-xs">
-                              Pending
-                            </span>
-                          </div>
-                        </div>
-                        {/* Client + due date */}
-                        <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                          <div>
-                            <p className="text-[10px] sm:text-xs font-medium text-gray-500 mb-1 sm:mb-1.5">Client</p>
-                            <p className="text-xs sm:text-sm font-medium text-gray-900">Acme Corporation</p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] sm:text-xs font-medium text-gray-500 mb-1 sm:mb-1.5">Due date</p>
-                            <p className="text-xs sm:text-sm font-medium text-gray-900">Dec 21, 2025</p>
-                          </div>
-                        </div>
-                        {/* Portal actions */}
-                        <div className="space-y-2 pt-2 border-t border-gray-100">
-                          <button className="w-full bg-indigo-600 text-white text-[10px] sm:text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded font-medium flex items-center justify-center gap-1.5 sm:gap-2">
-                            <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
-                            <span>Open invoice portal</span>
-                          </button>
-                          <button className="w-full bg-white text-[10px] sm:text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded font-medium border border-gray-200 text-gray-700 flex items-center justify-center gap-1.5 sm:gap-2">
-                            <Download className="w-3 h-3 sm:w-4 sm:h-4" />
-                            <span>Download PDF</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Text Below */}
-                <div className="mt-4 sm:mt-6">
-                  <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-1">Online invoice portal</h3>
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    Clients get a clean portal to view amounts, status, and download their invoice anytime.
-                  </p>
                 </div>
               </div>
             </div>

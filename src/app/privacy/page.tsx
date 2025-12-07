@@ -24,7 +24,7 @@ export default function PrivacyPage() {
               Back to Home
             </Link>
             
-            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold mb-8" style={{color: '#1f2937'}}>
+            <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-8 text-gray-900 tracking-tight">
               Privacy Policy
             </h1>
             
@@ -43,7 +43,7 @@ export default function PrivacyPage() {
           <div className="max-w-4xl mx-auto">
             <div className="prose prose-lg max-w-none" style={{color: '#374151'}}>
               
-              <h2 className="font-heading text-2xl font-bold mb-6" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 text-gray-900">
                 Information We Collect
               </h2>
               
@@ -51,7 +51,7 @@ export default function PrivacyPage() {
                 We collect information you provide directly to us, such as when you create an account, use our services, or contact us for support.
               </p>
               
-              <h3 className="font-heading text-xl font-bold mb-4" style={{color: '#1f2937'}}>
+              <h3 className="font-heading text-lg font-semibold mb-4 text-gray-900">
                 Account Information
               </h3>
               <ul className="list-disc pl-6 mb-6 space-y-2">
@@ -61,7 +61,7 @@ export default function PrivacyPage() {
                 <li>Profile settings and preferences</li>
               </ul>
               
-              <h3 className="font-heading text-xl font-bold mb-4" style={{color: '#1f2937'}}>
+              <h3 className="font-heading text-lg font-semibold mb-4 text-gray-900">
                 Usage Information
               </h3>
               <ul className="list-disc pl-6 mb-6 space-y-2">
@@ -71,7 +71,7 @@ export default function PrivacyPage() {
                 <li>Device and browser information</li>
               </ul>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 mt-12 text-gray-900">
                 How We Use Your Information
               </h2>
               
@@ -88,7 +88,7 @@ export default function PrivacyPage() {
                 <li>Ensure security and prevent fraud</li>
               </ul>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 mt-12 text-gray-900">
                 Information Sharing
               </h2>
               
@@ -103,7 +103,7 @@ export default function PrivacyPage() {
                 <li>With service providers who assist in our operations (under strict confidentiality agreements)</li>
               </ul>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 mt-12 text-gray-900">
                 Data Security
               </h2>
               
@@ -118,7 +118,7 @@ export default function PrivacyPage() {
                 <li>Secure data centers and infrastructure</li>
               </ul>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 mt-12 text-gray-900">
                 Your Rights
               </h2>
               
@@ -134,7 +134,7 @@ export default function PrivacyPage() {
                 <li>Opt out of marketing communications</li>
               </ul>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 mt-12 text-gray-900">
                 Cookies and Tracking
               </h2>
               
@@ -142,7 +142,7 @@ export default function PrivacyPage() {
                 We use cookies and similar technologies to improve your experience, analyze usage, and provide personalized content. You can control cookie settings through your browser preferences.
               </p>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 mt-12 text-gray-900">
                 Changes to This Policy
               </h2>
               
@@ -150,7 +150,7 @@ export default function PrivacyPage() {
                 We may update this privacy policy from time to time. We will notify you of any material changes by email or through our service. Your continued use of our services after such changes constitutes acceptance of the updated policy.
               </p>
 
-              <h2 className="font-heading text-2xl font-bold mb-6 mt-12" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-6 mt-12 text-gray-900">
                 Contact Us
               </h2>
               

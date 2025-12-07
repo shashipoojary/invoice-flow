@@ -77,7 +77,7 @@ export default function ContactPage() {
               Back to Home
             </Link>
             
-            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold mb-8" style={{color: '#1f2937'}}>
+            <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-8 text-gray-900 tracking-tight">
               Get in Touch
             </h1>
             
@@ -98,7 +98,7 @@ export default function ContactPage() {
               }`}>
                 <Mail className="w-8 h-8" style={{color: '#6b7280'}} />
               </div>
-              <h2 className="font-heading text-2xl sm:text-3xl font-bold mb-4" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-4 text-gray-900 tracking-tight">
                 Email Support
               </h2>
               <p className="text-lg mb-6" style={{color: '#6b7280'}}>
@@ -124,7 +124,7 @@ export default function ContactPage() {
         <section className="py-20 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-6" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-6 text-gray-900 tracking-tight">
                 Send us a Message
               </h2>
               <p className="text-lg max-w-2xl mx-auto" style={{color: '#64748b'}}>
@@ -227,7 +227,7 @@ export default function ContactPage() {
         <section className="py-20 px-4 sm:px-6 lg:px-8" style={{backgroundColor: '#f8f9fa'}}>
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-6" style={{color: '#1f2937'}}>
+              <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-6 text-gray-900 tracking-tight">
                 Frequently Asked Questions
               </h2>
               <p className="text-lg max-w-2xl mx-auto" style={{color: '#64748b'}}>
@@ -241,7 +241,7 @@ export default function ContactPage() {
                   ? 'bg-gray-900/50 border-gray-800' 
                   : 'bg-white border-gray-200'
               }`}>
-                <h3 className="font-heading text-lg font-bold mb-3" style={{color: '#1f2937'}}>
+                <h3 className="font-heading text-lg font-semibold mb-3 text-gray-900">
                   How quickly do you respond to support requests?
                 </h3>
                 <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
@@ -254,7 +254,7 @@ export default function ContactPage() {
                   ? 'bg-gray-900/50 border-gray-800' 
                   : 'bg-white border-gray-200'
               }`}>
-                <h3 className="font-heading text-lg font-bold mb-3" style={{color: '#1f2937'}}>
+                <h3 className="font-heading text-lg font-semibold mb-3 text-gray-900">
                   Do you offer phone support?
                 </h3>
                 <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
@@ -267,7 +267,7 @@ export default function ContactPage() {
                   ? 'bg-gray-900/50 border-gray-800' 
                   : 'bg-white border-gray-200'
               }`}>
-                <h3 className="font-heading text-lg font-bold mb-3" style={{color: '#1f2937'}}>
+                <h3 className="font-heading text-lg font-semibold mb-3 text-gray-900">
                   Can I schedule a demo or consultation?
                 </h3>
                 <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
