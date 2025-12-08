@@ -1,0 +1,124 @@
+/**
+ * Cal.com-Style Grid System
+ * Safe, non-destructive 12-column grid system
+ * Use with: .container, .section, .grid, .col-span-x
+ */
+
+/* Container - Max-width centered wrapper */
+.cal-container {
+  width: 100%;
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem; /* 16px */
+  padding-right: 1rem; /* 16px */
+}
+
+@media (min-width: 640px) {
+  .cal-container {
+    padding-left: 1.5rem; /* 24px */
+    padding-right: 1.5rem; /* 24px */
+  }
+}
+
+@media (min-width: 1024px) {
+  .cal-container {
+    padding-left: 2rem; /* 32px */
+    padding-right: 2rem; /* 32px */
+  }
+}
+
+/* Section - Beautiful Cal.com-style spacing */
+.cal-section {
+  padding-top: 80px;
+  padding-bottom: 80px;
+}
+
+@media (max-width: 640px) {
+  .cal-section {
+    padding-top: 60px;
+    padding-bottom: 60px;
+  }
+}
+
+/* Grid System - 12 columns */
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.5rem; /* 24px default gutter */
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .cal-grid {
+    gap: 1rem; /* 16px on mobile */
+  }
+}
+
+@media (min-width: 1024px) {
+  .cal-grid {
+    gap: 2rem; /* 32px on desktop */
+  }
+}
+
+/* Column Span Utilities - 1 to 12 */
+.cal-col-span-1 { grid-column: span 1 / span 1; }
+.cal-col-span-2 { grid-column: span 2 / span 2; }
+.cal-col-span-3 { grid-column: span 3 / span 3; }
+.cal-col-span-4 { grid-column: span 4 / span 4; }
+.cal-col-span-5 { grid-column: span 5 / span 5; }
+.cal-col-span-6 { grid-column: span 6 / span 6; }
+.cal-col-span-7 { grid-column: span 7 / span 7; }
+.cal-col-span-8 { grid-column: span 8 / span 8; }
+.cal-col-span-9 { grid-column: span 9 / span 9; }
+.cal-col-span-10 { grid-column: span 10 / span 10; }
+.cal-col-span-11 { grid-column: span 11 / span 11; }
+.cal-col-span-12 { grid-column: span 12 / span 12; }
+
+/* Responsive Column Spans */
+/* These work with Tailwind's responsive system */
+/* Usage: className="cal-col-span-12 sm:cal-col-span-6 lg:cal-col-span-4" */
+
+/* For Tailwind v4 - responsive variants are handled automatically */
+/* Base classes are defined above, Tailwind processes sm: and lg: prefixes */
+
+/* Grid Overlay - For debugging (disabled by default) */
+.cal-grid-overlay {
+  position: relative;
+}
+
+.cal-grid-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc((100% - 11 * 24px) / 12),
+    rgba(139, 92, 246, 0.1) calc((100% - 11 * 24px) / 12),
+    rgba(139, 92, 246, 0.1) calc((100% - 11 * 24px) / 12 + 24px)
+  );
+  z-index: 9999;
+  display: none; /* Hidden by default */
+}
+
+/* Enable grid overlay by adding .cal-grid-debug class */
+.cal-grid-debug .cal-grid-overlay::before {
+  display: block;
+}
+
+/* Utility: Full width on mobile, constrained on desktop */
+.cal-full-mobile {
+  width: 100%;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .cal-full-mobile {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+

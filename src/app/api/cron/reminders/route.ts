@@ -69,10 +69,41 @@ export async function POST(request: NextRequest) {
     for (const reminder of scheduledReminders) {
       try {
         const invoice = reminder.invoices;
-        console.log(`📧 Processing scheduled reminder for ${invoice.invoice_number} (${reminder.reminder_type})`);
+        
+        // CRITICAL: Validate invoice exists and has user_id for proper data isolation
+        if (!invoice) {
+          console.log(`⏭️ Skipping reminder ${reminder.id} - invoice not found`);
+          await supabaseAdmin
+            .from('invoice_reminders')
+            .update({
+              reminder_status: 'failed',
+              failure_reason: 'Invoice not found'
+            })
+            .eq('id', reminder.id);
+          errors++;
+          continue;
+        }
+        
+        if (!invoice.user_id) {
+          console.log(`⏭️ Skipping reminder ${reminder.id} - invoice missing user_id (data isolation check)`);
+          await supabaseAdmin
+            .from('invoice_reminders')
+            .update({
+              reminder_status: 'failed',
+              failure_reason: 'Invoice missing user_id'
+            })
+            .eq('id', reminder.id);
+          errors++;
+          continue;
+        }
+        
+        console.log(`📧 Processing scheduled reminder for ${invoice.invoice_number} (${reminder.reminder_type}) - User: ${invoice.user_id}`);
+        
+        // Calculate overdue days for this specific invoice
+        const overdueDays = Math.max(0, Math.floor((new Date().getTime() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24)));
         
         // Send the reminder email
-        const emailResult = await sendReminderEmail(invoice, reminder.reminder_type, `Scheduled ${reminder.reminder_type} reminder`);
+        const emailResult = await sendReminderEmail(invoice, reminder.reminder_type, overdueDays);
         
         if (emailResult.success) {
           // Update the reminder status to sent
@@ -162,7 +193,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function sendReminderEmail(invoice: any, reminderType: string, _reason: string) {
+async function sendReminderEmail(invoice: any, reminderType: string, overdueDays: number) {
   try {
     // Validate client email
     const clientEmail = invoice.clients?.email;
@@ -204,36 +235,51 @@ async function sendReminderEmail(invoice: any, reminderType: string, _reason: st
     });
 
     // Get ALL user business settings from user_settings table (properly isolated per user)
-    const { data: userSettings, error: settingsError } = await supabaseAdmin
+    // This ensures complete data isolation - each user only gets their own settings
+    let businessSettings: any = {};
+    try {
+      const { data: userSettings, error: settingsError } = await supabaseAdmin
       .from('user_settings')
-      .select('business_name, business_email, business_phone, business_address, email_from_address, payment_notes, paypal_email, cashapp_id, venmo_id, google_pay_upi, apple_pay_id, bank_account, bank_ifsc_swift, bank_iban, stripe_account')
-      .eq('user_id', invoice.user_id)
+        .select('business_name, business_email, business_phone, business_address, website, logo, logo_url, email_from_address, payment_notes, paypal_email, cashapp_id, venmo_id, google_pay_upi, apple_pay_id, bank_account, bank_ifsc_swift, bank_iban, stripe_account')
+        .eq('user_id', invoice.user_id) // CRITICAL: Proper data isolation - only fetch settings for this specific user
       .single();
 
     if (settingsError) {
       console.error('Error fetching user settings:', settingsError);
+        // Fall back to defaults if settings not found
+        businessSettings = {
+          business_name: 'FlowInvoicer',
+          business_email: '',
+          business_phone: '',
+          logo: null,
+          email_from_address: null
+        };
+      } else if (userSettings) {
+        businessSettings = userSettings;
+      } else {
+        // No settings found, use defaults
+        businessSettings = {
+          business_name: 'FlowInvoicer',
+          business_email: '',
+          business_phone: '',
+          logo: null,
+          email_from_address: null
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching user settings:', error);
+      // Fall back to defaults on error
+      businessSettings = {
+        business_name: 'FlowInvoicer',
+        business_email: '',
+        business_phone: '',
+        logo: null,
+        email_from_address: null
+      };
     }
 
-    // Use userSettings as businessSettings (all business details are in user_settings table)
-    const businessSettings: {
-      business_name?: string;
-      business_email?: string;
-      business_phone?: string;
-      business_address?: string;
-      payment_notes?: string;
-      paypal_email?: string;
-      cashapp_id?: string;
-      venmo_id?: string;
-      google_pay_upi?: string;
-      apple_pay_id?: string;
-      bank_account?: string;
-      bank_ifsc_swift?: string;
-      bank_iban?: string;
-      stripe_account?: string;
-    } = userSettings || {};
-
-    // Calculate overdue days
-    const overdueDays = Math.max(0, Math.floor((new Date().getTime() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24)));
+    // Overdue days is passed as parameter (calculated in calling function for consistency)
+    // This ensures consistent calculation across all reminder routes
 
     // Transform invoice data to match template structure
     const templateInvoice = {
@@ -242,15 +288,22 @@ async function sendReminderEmail(invoice: any, reminderType: string, _reason: st
       dueDate: invoice.due_date,
       publicToken: invoice.public_token,
       client: {
-        name: invoice.clients?.name || 'Valued Customer'
+        name: invoice.clients?.name || 'Valued Customer',
+        email: invoice.clients?.email || recipientEmail
       }
     };
 
-    // Transform business settings to match template structure
+    // Transform business settings to match template structure with ALL fields
+    // Use logo_url as fallback if logo is null/empty
+    const logoUrl = businessSettings.logo || businessSettings.logo_url || '';
     const templateBusinessSettings = {
       businessName: businessSettings.business_name || 'FlowInvoicer',
       email: businessSettings.business_email || '',
-      phone: businessSettings.business_phone || ''
+      phone: businessSettings.business_phone || '',
+      website: businessSettings.website || '',
+      logo: logoUrl,
+      tagline: '', // Tagline not currently in user_settings, but template supports it
+      paymentNotes: businessSettings.payment_notes || ''
     };
 
     // Get reminder email template
@@ -261,9 +314,11 @@ async function sendReminderEmail(invoice: any, reminderType: string, _reason: st
       overdueDays
     );
 
-    // Determine the from address using businessSettings we already fetched above
-    // Use Resend free plan default email address
-    const fromAddress = `${businessSettings.business_name || 'FlowInvoicer'} <onboarding@resend.dev>`;
+    // Determine the from address: use email_from_address if available, otherwise use default
+    // email_from_address is a verified domain email (e.g., noreply@yourdomain.com)
+    // If not set, use Resend free plan default (only works for test emails to own email)
+    const fromEmail = businessSettings.email_from_address || 'onboarding@resend.dev';
+    const fromAddress = `${businessSettings.business_name || 'FlowInvoicer'} <${fromEmail}>`;
 
     // Send email using Resend with proper template
     const emailResult = await resend.emails.send({

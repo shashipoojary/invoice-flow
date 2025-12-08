@@ -127,15 +127,15 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
-        return 'text-green-700 bg-green-50 border-green-200'
+        return 'text-emerald-700 bg-emerald-100'
       case 'pending':
-        return 'text-blue-700 bg-blue-50 border-blue-200'
+        return 'text-blue-700 bg-blue-100'
       case 'due today':
-        return 'text-orange-700 bg-orange-50 border-orange-200'
+        return 'text-amber-700 bg-amber-100'
       case 'overdue':
-        return 'text-red-700 bg-red-50 border-red-200'
+        return 'text-red-700 bg-red-100'
       default:
-        return 'text-gray-700 bg-gray-50 border-gray-200'
+        return 'text-gray-700 bg-gray-100'
     }
   }
 
@@ -228,15 +228,17 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
                   <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                     ${invoice.isOverdue ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2)}
                   </div>
-                  <div className={`inline-flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border ${getStatusColor(invoice.status)}`}>
-                    {getStatusIcon(invoice.status)}
-                    <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
-                  </div>
-                  {invoice.isOverdue && (
-                    <div className="mt-1 text-xs sm:text-sm text-red-600 font-medium">
-                      {invoice.daysOverdue} days overdue
+                  <div className="mt-2 space-y-1">
+                    <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs sm:text-sm font-semibold ${getStatusColor(invoice.status)}`}>
+                      {getStatusIcon(invoice.status)}
+                      <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                     </div>
-                  )}
+                    {invoice.isOverdue && (
+                      <div className="text-xs sm:text-sm text-red-600 font-medium">
+                        {invoice.daysOverdue} days overdue
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -580,15 +582,15 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
-        return 'text-green-700 bg-green-50 border-green-200'
+        return 'text-emerald-700 bg-emerald-100'
       case 'pending':
-        return 'text-blue-700 bg-blue-50 border-blue-200'
+        return 'text-blue-700 bg-blue-100'
       case 'due today':
-        return 'text-orange-700 bg-orange-50 border-orange-200'
+        return 'text-amber-700 bg-amber-100'
       case 'overdue':
-        return 'text-red-700 bg-red-50 border-red-200'
+        return 'text-red-700 bg-red-100'
       default:
-        return 'text-gray-700 bg-gray-50 border-gray-200'
+        return 'text-gray-700 bg-gray-100'
     }
   }
 
@@ -654,15 +656,17 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                   <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                     ${invoice.isOverdue ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2)}
                   </div>
-                  <div className={`inline-flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border ${getStatusColor(invoice.status)}`}>
-                    {getStatusIcon(invoice.status)}
-                    <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
+                  <div className="mt-2 space-y-1">
+                    <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs sm:text-sm font-semibold ${getStatusColor(invoice.status)}`}>
+                      {getStatusIcon(invoice.status)}
+                      <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
+                    </div>
+                    {invoice.isOverdue && (
+                      <div className="text-xs sm:text-sm text-red-600 font-medium">
+                        {invoice.daysOverdue} days overdue
+                      </div>
+                    )}
                   </div>
-                      {invoice.isOverdue && (
-                        <div className="mt-1 text-xs sm:text-sm text-red-600 font-medium">
-                          {invoice.daysOverdue} days overdue
-                        </div>
-                      )}
                 </div>
               </div>
             </div>
@@ -1041,15 +1045,15 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
-        return 'text-green-700 bg-green-50 border-green-200'
+        return 'text-emerald-700 bg-emerald-100'
       case 'pending':
-        return 'text-blue-700 bg-blue-50 border-blue-200'
+        return 'text-blue-700 bg-blue-100'
       case 'due today':
-        return 'text-orange-700 bg-orange-50 border-orange-200'
+        return 'text-amber-700 bg-amber-100'
       case 'overdue':
-        return 'text-red-700 bg-red-50 border-red-200'
+        return 'text-red-700 bg-red-100'
       default:
-        return 'text-gray-700 bg-gray-50 border-gray-200'
+        return 'text-gray-700 bg-gray-100'
     }
   }
 
@@ -1122,15 +1126,17 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                   <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                     ${invoice.isOverdue ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2)}
                   </div>
-                  <div className={`inline-flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border ${getStatusColor(invoice.status)}`}>
-                    {getStatusIcon(invoice.status)}
-                    <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
+                  <div className="mt-2 space-y-1">
+                    <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs sm:text-sm font-semibold ${getStatusColor(invoice.status)}`}>
+                      {getStatusIcon(invoice.status)}
+                      <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
+                    </div>
+                    {invoice.isOverdue && (
+                      <div className="text-xs sm:text-sm text-red-600 font-medium">
+                        {invoice.daysOverdue} days overdue
+                      </div>
+                    )}
                   </div>
-                      {invoice.isOverdue && (
-                        <div className="mt-1 text-xs sm:text-sm text-red-600 font-medium">
-                          {invoice.daysOverdue} days overdue
-                        </div>
-                      )}
                 </div>
               </div>
             </div>
@@ -1523,15 +1529,15 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
-        return 'text-green-700 bg-green-50 border-green-200'
+        return 'text-emerald-700 bg-emerald-100'
       case 'pending':
-        return 'text-blue-700 bg-blue-50 border-blue-200'
+        return 'text-blue-700 bg-blue-100'
       case 'due today':
-        return 'text-orange-700 bg-orange-50 border-orange-200'
+        return 'text-amber-700 bg-amber-100'
       case 'overdue':
-        return 'text-red-700 bg-red-50 border-red-200'
+        return 'text-red-700 bg-red-100'
       default:
-        return 'text-gray-700 bg-gray-50 border-gray-200'
+        return 'text-gray-700 bg-gray-100'
     }
   }
 
@@ -1590,15 +1596,17 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                   <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                     ${invoice.isOverdue ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2)}
                   </div>
-                  <div className={`inline-flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border ${getStatusColor(invoice.status)}`}>
-                    {getStatusIcon(invoice.status)}
-                    <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
+                  <div className="mt-2 space-y-1">
+                    <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs sm:text-sm font-semibold ${getStatusColor(invoice.status)}`}>
+                      {getStatusIcon(invoice.status)}
+                      <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
+                    </div>
+                    {invoice.isOverdue && (
+                      <div className="text-xs sm:text-sm text-red-600 font-medium">
+                        {invoice.daysOverdue} days overdue
+                      </div>
+                    )}
                   </div>
-                      {invoice.isOverdue && (
-                        <div className="mt-1 text-xs sm:text-sm text-red-600 font-medium">
-                          {invoice.daysOverdue} days overdue
-                        </div>
-                      )}
                 </div>
               </div>
             </div>

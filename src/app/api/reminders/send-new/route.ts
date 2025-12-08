@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
       businessEmail: userData.business_email,
       businessPhone: userData.business_phone,
       address: userData.business_address,
+      website: userData.website,
       logo: userData.logo || userData.logo_url,
       bankAccount: userData.bank_account,
       bankIfscSwift: userData.bank_ifsc_swift,

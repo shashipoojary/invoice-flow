@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { 
   Plus, Users, UserPlus, Edit, Trash2, Mail, Phone, Building2, MapPin, Calendar,
-  Eye, X, Loader2
+  Eye, X, Loader2, Sparkles, FilePlus
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -23,6 +23,10 @@ const ConfirmationModal = dynamic(() => import('@/components/ConfirmationModal')
 });
 
 const QuickInvoiceModal = dynamic(() => import('@/components/QuickInvoiceModal'), {
+  loading: () => <div className="flex items-center justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+});
+
+const FastInvoiceModal = dynamic(() => import('@/components/FastInvoiceModal'), {
   loading: () => <div className="flex items-center justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
 });
 
@@ -125,6 +129,8 @@ export default function ClientsPage() {
   const [showEditClient, setShowEditClient] = useState(false);
   const [showViewClient, setShowViewClient] = useState(false);
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
+  const [showFastInvoice, setShowFastInvoice] = useState(false);
+  const [showInvoiceTypeSelection, setShowInvoiceTypeSelection] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [confirmationModal, setConfirmationModal] = useState({
@@ -140,7 +146,18 @@ export default function ClientsPage() {
 
   // Create invoice handler
   const handleCreateInvoice = useCallback(() => {
-    // Show the detailed invoice modal by default
+    // Show the invoice type selection modal
+    setShowInvoiceTypeSelection(true);
+  }, []);
+
+  // Handle invoice type selection
+  const handleSelectFastInvoice = useCallback(() => {
+    setShowInvoiceTypeSelection(false);
+    setShowFastInvoice(true);
+  }, []);
+
+  const handleSelectDetailedInvoice = useCallback(() => {
+    setShowInvoiceTypeSelection(false);
     setShowCreateInvoice(true);
   }, []);
 
@@ -497,21 +514,94 @@ export default function ClientsPage() {
                     )}
                   </div>
                 </div>
-                
-                {/* Additional Info */}
-                <div>
-                  <h4 className="text-sm sm:text-base font-semibold mb-2 text-gray-900">Additional Information</h4>
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm sm:text-base text-gray-600">
-                      Client since {new Date(selectedClient.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Invoice Type Selection Modal */}
+      {showInvoiceTypeSelection && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full p-6">
+            <div className="text-center mb-6">
+              <h3 className="font-heading text-xl font-semibold mb-2" style={{color: '#1f2937'}}>
+                Choose Invoice Type
+              </h3>
+              <p className="text-gray-600 text-sm">
+                Select the type of invoice you want to create
+              </p>
+            </div>
+                  
+            <div className="space-y-3">
+              {/* Fast Invoice Option */}
+              <button
+                onClick={handleSelectFastInvoice}
+                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                    <Sparkles className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <h4 className="font-medium text-gray-900">Fast Invoice</h4>
+                    <p className="text-sm text-gray-500">Quick invoice with minimal details</p>
+                  </div>
+                  <div className="text-indigo-600 group-hover:text-indigo-700">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </button>
+
+              {/* Detailed Invoice Option */}
+              <button
+                onClick={handleSelectDetailedInvoice}
+                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                    <FilePlus className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <h4 className="font-medium text-gray-900">Detailed Invoice</h4>
+                    <p className="text-sm text-gray-500">Full customization and advanced features</p>
+                  </div>
+                  <div className="text-indigo-600 group-hover:text-indigo-700">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <button
+              onClick={() => setShowInvoiceTypeSelection(false)}
+              className="mt-6 w-full px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors text-sm font-medium"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Fast Invoice Modal */}
+      {showFastInvoice && (
+        <FastInvoiceModal
+          isOpen={showFastInvoice}
+          onClose={() => setShowFastInvoice(false)}
+          user={user!}
+          onSuccess={() => {
+            setShowFastInvoice(false);
+            showSuccess('Invoice created successfully');
+          }}
+          getAuthHeaders={getAuthHeaders}
+          showSuccess={showSuccess}
+          showError={showError}
+          showWarning={showError}
+        />
       )}
 
       {/* Create Invoice Modal */}

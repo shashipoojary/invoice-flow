@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { Download, AlertCircle } from 'lucide-react'
+import { Download, AlertCircle, Receipt, Loader2 } from 'lucide-react'
 import InvoiceTemplateRenderer from '@/components/InvoiceTemplateRenderer'
 
 interface InvoiceItem {
@@ -64,6 +64,7 @@ export default function PublicInvoicePage() {
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [downloadingReceipt, setDownloadingReceipt] = useState(false)
 
   useEffect(() => {
     const loadInvoice = async () => {
@@ -103,18 +104,72 @@ export default function PublicInvoicePage() {
   }, [invoice?.id])
 
 
-  const handleDownloadPDF = () => {
-    // This will be implemented with react-pdf
-    alert('PDF download will be implemented')
+  const handleDownloadReceipt = async () => {
+    if (!invoice || invoice.status !== 'paid' || downloadingReceipt) {
+      return;
+    }
+
+    setDownloadingReceipt(true);
+
     try {
-      if (invoice?.id) {
-        fetch('/api/invoices/events', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ invoiceId: (invoice as any).id, type: 'downloaded_by_customer' })
-        })
+      // Get the public token from params (already decoded by Next.js)
+      const publicToken = params.public_token as string;
+      console.log('Download Receipt - Token from params:', publicToken);
+      
+      // Create URL with properly encoded token
+      const url = new URL('/api/invoices/receipt', window.location.origin);
+      url.searchParams.set('public_token', publicToken);
+      
+      console.log('Download Receipt - Request URL:', url.toString());
+      
+      const response = await fetch(url.toString());
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        
+        // Check if response is actually a PDF
+        if (blob.type !== 'application/pdf') {
+          const text = await blob.text();
+          const errorData = JSON.parse(text);
+          console.error('Receipt API Error:', errorData);
+          alert(`Failed to download receipt: ${errorData.error || errorData.details || 'Unknown error'}`);
+          return;
+        }
+        
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `receipt-${invoice.invoiceNumber}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+        document.body.removeChild(a);
+
+        // Log receipt download event
+        if (invoice?.id) {
+          fetch('/api/invoices/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ invoiceId: (invoice as any).id, type: 'receipt_downloaded_by_customer' })
+          }).catch(() => {});
+        }
+      } else {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText };
+        }
+        console.error('Receipt API Error Response:', errorData);
+        alert(`Failed to download receipt: ${errorData.error || errorData.details || 'Unknown error'}`);
       }
-    } catch {}
+    } catch (error) {
+      console.error('Error downloading receipt:', error);
+      alert(`Failed to download receipt: ${error instanceof Error ? error.message : 'Please try again.'}`);
+    } finally {
+      setDownloadingReceipt(false);
+    }
   }
 
   if (loading) {
@@ -145,16 +200,28 @@ export default function PublicInvoicePage() {
       {/* Use the template renderer to show the correct template design */}
       <InvoiceTemplateRenderer invoice={invoice} />
       
-      {/* Download PDF Button - Fixed at bottom */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <button
-          onClick={handleDownloadPDF}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-lg cursor-pointer"
-        >
-          <Download className="h-4 w-4" />
-          <span>Download PDF</span>
-        </button>
-      </div>
+      {/* Download Receipt Button - Only show when invoice is paid */}
+      {invoice.status === 'paid' && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <button
+            onClick={handleDownloadReceipt}
+            disabled={downloadingReceipt}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {downloadingReceipt ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Downloading...</span>
+              </>
+            ) : (
+              <>
+                <Receipt className="h-4 w-4" />
+                <span>Download Receipt</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

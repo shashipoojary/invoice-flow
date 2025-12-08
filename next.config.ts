@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
   // Force cache busting
   generateEtags: false,
   poweredByHeader: false,
+  
+  // Set workspace root to avoid lockfile detection issues
+  turbopack: {
+    root: process.cwd(),
+  },
 };
 
 export default nextConfig;

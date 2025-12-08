@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
         businessName: businessSettings.business_name || businessSettings.businessName || 'FlowInvoicer',
         email: businessSettings.business_email || businessSettings.email || 'contact@company.com',
         phone: businessSettings.business_phone || businessSettings.phone || '',
+        website: businessSettings.website || '',
         logo: businessSettings.logo || '',
         tagline: businessSettings.tagline || '',
         paymentNotes: businessSettings.payment_notes || ''

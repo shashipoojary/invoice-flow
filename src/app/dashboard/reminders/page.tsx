@@ -10,13 +10,27 @@ import {
   RefreshCw,
   Send,
   Eye,
-  X
+  X,
+  Sparkles,
+  FilePlus
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
+import { useData } from '@/contexts/DataContext';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
 import { supabase } from '@/lib/supabase';
+import dynamic from 'next/dynamic';
+import { Loader2 } from 'lucide-react';
+
+// Lazy load heavy components
+const FastInvoiceModal = dynamic(() => import('@/components/FastInvoiceModal'), {
+  loading: () => <div className="flex items-center justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+});
+
+const QuickInvoiceModal = dynamic(() => import('@/components/QuickInvoiceModal'), {
+  loading: () => <div className="flex items-center justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+});
 
 interface ReminderHistory {
   id: string;
@@ -43,15 +57,22 @@ interface ReminderHistory {
 }
 
 export default function ReminderHistoryPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
+  const { clients } = useData();
   const [reminders, setReminders] = useState<ReminderHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [typeFilter, setTypeFilter] = useState<string>('');
+  const [showFilters, setShowFilters] = useState(false);
   const [selectedReminder, setSelectedReminder] = useState<ReminderHistory | null>(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [sendingReminders, setSendingReminders] = useState<Set<string>>(new Set());
+  const [showCreateInvoice, setShowCreateInvoice] = useState(false);
+  const [showFastInvoice, setShowFastInvoice] = useState(false);
+  const [showInvoiceTypeSelection, setShowInvoiceTypeSelection] = useState(false);
 
 
 
@@ -243,12 +264,23 @@ export default function ReminderHistoryPage() {
         return false;
       }
       
+      // Apply search filter
       const matchesSearch = 
         reminder.invoice.invoice_number.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         (reminder.invoice.clients?.name || '').toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         (reminder.invoice.clients?.email || '').toLowerCase().includes(debouncedSearchTerm.toLowerCase());
 
       if (!matchesSearch) return false;
+
+      // Apply status filter
+      if (statusFilter && reminder.reminder_status !== statusFilter) {
+        return false;
+      }
+
+      // Apply type filter
+      if (typeFilter && reminder.reminder_type !== typeFilter) {
+        return false;
+      }
 
       // Filter scheduled reminders: show those scheduled for today or within 1 day ahead
       if (reminder.reminder_status === 'scheduled') {
@@ -301,7 +333,7 @@ export default function ReminderHistoryPage() {
       // For sent/failed/delivered/bounced, show newest first
       return new Date(b.sent_at || b.created_at || 0).getTime() - new Date(a.sent_at || a.created_at || 0).getTime();
     });
-  }, [reminders, debouncedSearchTerm]);
+  }, [reminders, debouncedSearchTerm, statusFilter, typeFilter]);
 
   const getReminderTypeColor = (type: string) => {
     switch (type) {
@@ -385,6 +417,23 @@ export default function ReminderHistoryPage() {
     setSelectedReminder(null);
   };
 
+  // Create invoice handler
+  const handleCreateInvoice = useCallback(() => {
+    // Show the invoice type selection modal
+    setShowInvoiceTypeSelection(true);
+  }, []);
+
+  // Handle invoice type selection
+  const handleSelectFastInvoice = useCallback(() => {
+    setShowInvoiceTypeSelection(false);
+    setShowFastInvoice(true);
+  }, []);
+
+  const handleSelectDetailedInvoice = useCallback(() => {
+    setShowInvoiceTypeSelection(false);
+    setShowCreateInvoice(true);
+  }, []);
+
 
   if (authLoading) {
     return (
@@ -406,7 +455,7 @@ export default function ReminderHistoryPage() {
     <div className={`min-h-screen transition-colors duration-200 ${'bg-white'}`}>
       <div className="flex h-screen">
         <ModernSidebar 
-          onCreateInvoice={() => {}} // Not needed for reminders page
+          onCreateInvoice={handleCreateInvoice}
         />
         
         <main className="flex-1 lg:ml-0 overflow-y-auto scroll-smooth custom-scrollbar">
@@ -427,18 +476,192 @@ export default function ReminderHistoryPage() {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="mb-6">
-          <div className="relative max-w-md w-full">
-            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${'text-gray-500'}`} />
-            <input
-              type="text"
-              placeholder="Search reminders..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border text-sm border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
-            />
+        {/* Search and Filters */}
+        <div className="mb-6 space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search Bar */}
+            <div className="flex-1 relative max-w-md">
+              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${'text-gray-500'}`} />
+              <input
+                type="text"
+                placeholder="Search reminders..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 rounded-lg border text-sm border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+              />
+            </div>
+
+            {/* Filter Button */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium cursor-pointer"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                Filter
+              </button>
+
+              {/* Clear Filters */}
+              {(searchTerm || statusFilter || typeFilter) && (
+                <button
+                  onClick={() => {
+                    setSearchTerm('');
+                    setStatusFilter('');
+                    setTypeFilter('');
+                  }}
+                  className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:text-gray-800 transition-colors text-sm font-medium cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* Filter Options - Compact */}
+          {showFilters && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+              <div className="space-y-3">
+                {/* Status Filter */}
+                <div>
+                  <label className="text-xs font-medium text-gray-700 mb-1.5 block">Status</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      onClick={() => setStatusFilter('')}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                        !statusFilter 
+                          ? 'bg-gray-900 text-white' 
+                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={() => setStatusFilter('sent')}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                        statusFilter === 'sent' 
+                          ? 'bg-blue-100 text-blue-800 border border-blue-200' 
+                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                    >
+                      Sent
+                    </button>
+                    <button
+                      onClick={() => setStatusFilter('scheduled')}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                        statusFilter === 'scheduled' 
+                          ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' 
+                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                    >
+                      Scheduled
+                    </button>
+                    <button
+                      onClick={() => setStatusFilter('delivered')}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                        statusFilter === 'delivered' 
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                    >
+                      Delivered
+                    </button>
+                    <button
+                      onClick={() => setStatusFilter('failed')}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                        statusFilter === 'failed' 
+                          ? 'bg-red-100 text-red-800 border border-red-200' 
+                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                    >
+                      Failed
+                    </button>
+                    <button
+                      onClick={() => setStatusFilter('bounced')}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                        statusFilter === 'bounced' 
+                          ? 'bg-orange-100 text-orange-800 border border-orange-200' 
+                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                    >
+                      Bounced
+                    </button>
+                  </div>
+                </div>
+
+                {/* Type Filter */}
+                <div>
+                  <label className="text-xs font-medium text-gray-700 mb-1.5 block">Type</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      onClick={() => setTypeFilter('')}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                        !typeFilter 
+                          ? 'bg-gray-900 text-white' 
+                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={() => setTypeFilter('friendly')}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                        typeFilter === 'friendly' 
+                          ? 'bg-blue-100 text-blue-800 border border-blue-200' 
+                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                    >
+                      Friendly
+                    </button>
+                    <button
+                      onClick={() => setTypeFilter('polite')}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                        typeFilter === 'polite' 
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                    >
+                      Polite
+                    </button>
+                    <button
+                      onClick={() => setTypeFilter('firm')}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                        typeFilter === 'firm' 
+                          ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' 
+                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                    >
+                      Firm
+                    </button>
+                    <button
+                      onClick={() => setTypeFilter('urgent')}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                        typeFilter === 'urgent' 
+                          ? 'bg-red-100 text-red-800 border border-red-200' 
+                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                    >
+                      Urgent
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Filter Count */}
+          {(searchTerm || statusFilter || typeFilter) && (
+            <div className="text-xs text-gray-600">
+              Showing {filteredReminders.length} reminder{filteredReminders.length !== 1 ? 's' : ''}
+              {(searchTerm || statusFilter || typeFilter) && (
+                <span className="ml-1">
+                  (filtered from {reminders.length} total)
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {loading ? (
@@ -864,6 +1087,104 @@ export default function ReminderHistoryPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Invoice Type Selection Modal */}
+      {showInvoiceTypeSelection && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full p-6">
+            <div className="text-center mb-6">
+              <h3 className="font-heading text-xl font-semibold mb-2" style={{color: '#1f2937'}}>
+                Choose Invoice Type
+              </h3>
+              <p className="text-gray-600 text-sm">
+                Select the type of invoice you want to create
+              </p>
+            </div>
+                  
+            <div className="space-y-3">
+              {/* Fast Invoice Option */}
+              <button
+                onClick={handleSelectFastInvoice}
+                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                    <Sparkles className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <h4 className="font-medium text-gray-900">Fast Invoice</h4>
+                    <p className="text-sm text-gray-500">Quick invoice with minimal details</p>
+                  </div>
+                  <div className="text-indigo-600 group-hover:text-indigo-700">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </button>
+
+              {/* Detailed Invoice Option */}
+              <button
+                onClick={handleSelectDetailedInvoice}
+                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                    <FilePlus className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <h4 className="font-medium text-gray-900">Detailed Invoice</h4>
+                    <p className="text-sm text-gray-500">Full customization and advanced features</p>
+                  </div>
+                  <div className="text-indigo-600 group-hover:text-indigo-700">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <button
+              onClick={() => setShowInvoiceTypeSelection(false)}
+              className="mt-6 w-full px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors text-sm font-medium"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Fast Invoice Modal */}
+      {showFastInvoice && (
+        <FastInvoiceModal
+          isOpen={showFastInvoice}
+          onClose={() => setShowFastInvoice(false)}
+          user={user!}
+          onSuccess={() => {
+            setShowFastInvoice(false);
+            showSuccess('Invoice created successfully');
+          }}
+          getAuthHeaders={getAuthHeaders}
+          showSuccess={showSuccess}
+          showError={showError}
+          showWarning={showError}
+        />
+      )}
+
+      {/* Create Invoice Modal */}
+      {showCreateInvoice && (
+        <QuickInvoiceModal
+          isOpen={showCreateInvoice}
+          onClose={() => setShowCreateInvoice(false)}
+          getAuthHeaders={getAuthHeaders}
+          clients={clients}
+          onSuccess={() => {
+            setShowCreateInvoice(false);
+            showSuccess('Invoice created successfully');
+          }}
+        />
       )}
 
       <ToastContainer toasts={toasts} onRemove={removeToast} />

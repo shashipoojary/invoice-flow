@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     // Get ALL user business settings from user_settings table (properly isolated per user)
     const { data: userSettings, error: settingsError } = await supabaseAdmin
       .from('user_settings')
-      .select('business_name, business_email, business_phone, business_address, payment_notes, paypal_email, cashapp_id, venmo_id, google_pay_upi, apple_pay_id, bank_account, bank_ifsc_swift, bank_iban, stripe_account')
+      .select('business_name, business_email, business_phone, business_address, website, payment_notes, paypal_email, cashapp_id, venmo_id, google_pay_upi, apple_pay_id, bank_account, bank_ifsc_swift, bank_iban, stripe_account')
       .eq('user_id', invoice.user_id)
       .single();
 

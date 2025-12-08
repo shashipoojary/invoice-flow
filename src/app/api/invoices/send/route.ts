@@ -297,6 +297,7 @@ export async function POST(request: NextRequest) {
       businessEmail: settingsData?.business_email || '',
       businessPhone: settingsData?.business_phone || '',
       address: settingsData?.business_address || '',
+      website: settingsData?.website || '',
       logo: settingsData?.logo || '',
       paypalEmail: settingsData?.paypal_email || '',
       cashappId: settingsData?.cashapp_id || '',
