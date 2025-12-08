@@ -3,12 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { ArrowLeft, Loader2, Building2, Mail, Phone, MapPin, Globe } from 'lucide-react';
+import { ArrowLeft, Loader2, Building2, Mail, Phone, MapPin, Globe, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { optimizeLogo, validateLogoFile } from '@/lib/logo-optimizer';
 
 export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState(1);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string>('');
   const [formData, setFormData] = useState({
     businessName: '',
     businessEmail: '',
@@ -38,7 +42,7 @@ export default function OnboardingPage() {
 
         if (response.ok) {
           const data = await response.json();
-          if (data.settings?.business_name) {
+          if (data.settings?.businessName && data.settings?.businessName.trim() !== '') {
             // Already completed onboarding, redirect to dashboard
             router.push('/dashboard');
             return;
@@ -57,6 +61,76 @@ export default function OnboardingPage() {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file
+    const validation = validateLogoFile(file);
+    if (!validation.valid) {
+      setError(validation.error || 'Please select a valid image file.');
+      return;
+    }
+
+    setIsUploadingLogo(true);
+    setError('');
+
+    try {
+      // Optimize the logo on the frontend
+      const optimizedLogo = await optimizeLogo(file, 200, 200, 0.8);
+      
+      // Show preview
+      setLogoPreview(optimizedLogo.dataUrl);
+      
+      // Convert dataUrl back to File for upload
+      const dataResponse = await fetch(optimizedLogo.dataUrl);
+      const blob = await dataResponse.blob();
+      const optimizedFile = new File([blob], file.name, { type: blob.type });
+      
+      // Create form data for file upload
+      const formDataUpload = new FormData();
+      formDataUpload.append('logo', optimizedFile);
+
+      // Get auth headers
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      const { 'Content-Type': _, ...headersWithoutContentType } = {
+        'Authorization': `Bearer ${session.access_token}`,
+      };
+      
+      // Upload file to server
+      const response = await fetch('/api/upload-logo', {
+        method: 'POST',
+        headers: headersWithoutContentType,
+        body: formDataUpload
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setLogoUrl(data.logoUrl);
+      } else {
+        throw new Error(data.error || 'Failed to upload logo');
+      }
+    } catch (error: any) {
+      console.error('Logo upload error:', error);
+      setError(error.message || 'Failed to upload logo. Please try again.');
+      setLogoPreview(null);
+    } finally {
+      setIsUploadingLogo(false);
+      // Reset the input so the same file can be selected again
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoPreview(null);
+    setLogoUrl('');
   };
 
   const handleNext = () => {
@@ -95,6 +169,7 @@ export default function OnboardingPage() {
           businessPhone: formData.businessPhone,
           address: formData.businessAddress,
           website: formData.website,
+          logo: logoUrl || '',
         }),
       });
 
@@ -239,6 +314,64 @@ export default function OnboardingPage() {
               {/* Step 1: Business Information */}
               {step === 1 && (
                 <>
+                  {/* Logo Upload */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Business Logo
+                    </label>
+                    <div className="flex items-center gap-4">
+                      {logoPreview ? (
+                        <div className="relative">
+                          <img
+                            src={logoPreview}
+                            alt="Logo preview"
+                            className="w-20 h-20 object-contain rounded-lg border-2 border-gray-200 bg-gray-50"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleRemoveLogo}
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
+                          <ImageIcon className="w-8 h-8 text-gray-400" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <label
+                          htmlFor="logo-upload"
+                          className={`flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${isUploadingLogo ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {isUploadingLogo ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin text-gray-500" />
+                              <span className="text-sm text-gray-600">Uploading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4 text-gray-500" />
+                              <span className="text-sm text-gray-600">
+                                {logoPreview ? 'Change Logo' : 'Upload Logo'}
+                              </span>
+                            </>
+                          )}
+                        </label>
+                        <input
+                          type="file"
+                          id="logo-upload"
+                          accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                          onChange={handleLogoUpload}
+                          disabled={isUploadingLogo}
+                          className="hidden"
+                        />
+                        <p className="mt-1 text-xs text-gray-500">PNG, JPG, GIF or WebP (max 5MB)</p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div>
                     <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 mb-2">
                       Business Name <span className="text-red-500">*</span>
@@ -401,6 +534,7 @@ export default function OnboardingPage() {
                           body: JSON.stringify({
                             businessName: formData.businessName || 'My Business',
                             businessEmail: formData.businessEmail || session.user.email || '',
+                            logo: logoUrl || '',
                           }),
                         });
 

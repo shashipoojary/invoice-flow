@@ -42,8 +42,8 @@ export default function DashboardLayout({
 
         if (response.ok) {
           const data = await response.json();
-          // If no business_name is set, redirect to onboarding
-          if (!data.settings?.business_name) {
+          // If no businessName is set, redirect to onboarding (first-time user)
+          if (!data.settings?.businessName || data.settings?.businessName.trim() === '') {
             router.push('/onboarding');
             return;
           }
