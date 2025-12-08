@@ -865,6 +865,8 @@ export default function TestReminderTemplates() {
   const [selectedType, setSelectedType] = useState('friendly')
   const [overdueDays, setOverdueDays] = useState(5)
   const [templateStyle, setTemplateStyle] = useState<'modern' | 'creative'>('modern')
+  const [sendingAll, setSendingAll] = useState(false)
+  const [sendStatus, setSendStatus] = useState<{ [key: string]: 'sending' | 'success' | 'error' }>({})
 
   const getReminderEmailTemplate = useCallback((
     invoice: Invoice,
@@ -983,6 +985,87 @@ export default function TestReminderTemplates() {
     templateStyle
   )
 
+  const handleSendAll = async () => {
+    const testEmail = prompt('Enter your email address to receive test reminders:')
+    if (!testEmail || !testEmail.includes('@')) {
+      alert('Please enter a valid email address')
+      return
+    }
+
+    setSendingAll(true)
+    setSendStatus({})
+
+    // Import the actual reminder template function
+    const { getReminderEmailTemplate: getActualTemplate } = await import('@/lib/reminder-email-templates')
+
+    // Prepare invoice data for the actual template
+    const invoiceData = {
+      invoiceNumber: mockInvoice.invoiceNumber,
+      total: mockInvoice.total,
+      dueDate: mockInvoice.dueDate,
+      publicToken: mockInvoice.publicToken,
+      client: {
+        name: mockInvoice.clientName,
+        email: mockInvoice.clientEmail
+      }
+    }
+
+    const businessData = {
+      businessName: mockBusinessSettings.businessName,
+      email: mockBusinessSettings.email,
+      phone: mockBusinessSettings.phone,
+      logo: mockBusinessSettings.logo || ''
+    }
+
+    // Send all reminder types
+    for (const type of reminderTypes) {
+      try {
+        setSendStatus(prev => ({ ...prev, [type.id]: 'sending' }))
+        
+        const template = getActualTemplate(
+          invoiceData,
+          businessData,
+          type.id as 'friendly' | 'polite' | 'firm' | 'urgent',
+          overdueDays
+        )
+
+        const response = await fetch('/api/reminders/test-send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: testEmail,
+            reminderType: type.id,
+            invoice: {
+              invoice_number: invoiceData.invoiceNumber,
+              total: invoiceData.total,
+              due_date: invoiceData.dueDate,
+              public_token: invoiceData.publicToken,
+              clients: {
+                name: invoiceData.client.name,
+                email: invoiceData.client.email
+              }
+            },
+            businessSettings: businessData
+          }),
+        })
+
+        if (response.ok) {
+          setSendStatus(prev => ({ ...prev, [type.id]: 'success' }))
+        } else {
+          throw new Error('Failed to send')
+        }
+      } catch (error) {
+        console.error(`Error sending ${type.id} reminder:`, error)
+        setSendStatus(prev => ({ ...prev, [type.id]: 'error' }))
+      }
+    }
+
+    setSendingAll(false)
+    alert(`Test emails sent! Check your inbox at ${testEmail}`)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1071,10 +1154,59 @@ export default function TestReminderTemplates() {
                   />
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                   <h3 className="font-medium text-blue-900 mb-2">Email Subject</h3>
                   <p className="text-sm text-blue-800">{currentTemplate.subject}</p>
                 </div>
+
+                <button
+                  onClick={handleSendAll}
+                  disabled={sendingAll}
+                  className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {sendingAll ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Sending all reminders...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="h-4 w-4" />
+                      <span>Send All Test Reminders</span>
+                    </>
+                  )}
+                </button>
+
+                {Object.keys(sendStatus).length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    {reminderTypes.map((type) => {
+                      const status = sendStatus[type.id]
+                      if (!status) return null
+                      return (
+                        <div key={type.id} className="flex items-center gap-2 text-sm">
+                          {status === 'sending' && (
+                            <>
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-indigo-600"></div>
+                              <span className="text-gray-600">Sending {type.name}...</span>
+                            </>
+                          )}
+                          {status === 'success' && (
+                            <>
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                              <span className="text-green-600">{type.name} sent</span>
+                            </>
+                          )}
+                          {status === 'error' && (
+                            <>
+                              <AlertTriangle className="h-4 w-4 text-red-600" />
+                              <span className="text-red-600">{type.name} failed</span>
+                            </>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>
