@@ -1759,7 +1759,7 @@ export default function LandingPage() {
                   </div>
                   
                   {/* Exact Dashboard Invoice Card Screenshot */}
-                  <div className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200">
+                  <div className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
                     <div className="p-4">
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
@@ -1768,13 +1768,14 @@ export default function LandingPage() {
                               <FileText className="h-4 w-4 text-gray-700" />
                             </div>
                             <div>
-                              <div className="font-medium text-sm text-gray-900">INV-001</div>
-                              <div className="text-xs text-gray-500">Acme Corporation</div>
+                              <div className="font-medium text-sm" style={{ color: '#1f2937' }}>INV-001</div>
+                              <div className="text-xs" style={{ color: '#6b7280' }}>Acme Corporation</div>
                             </div>
                           </div>
-                          <div className="text-right">
+                          <div className="text-right min-h-[56px] flex flex-col items-end">
                             <div className="font-semibold text-base text-emerald-600">$2,500</div>
-                            <div className="text-xs text-gray-500">Dec 15, 2024</div>
+                            <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
+                            <div className="text-xs" style={{ color: '#6b7280' }}>Dec 15, 2024</div>
                           </div>
                         </div>
                         <div className="flex items-center justify-between">
@@ -1818,10 +1819,10 @@ export default function LandingPage() {
                         </div>
                       </div>
                       <div className="flex space-x-2">
-                        <button className="p-2 text-gray-400 hover:text-indigo-600 transition-colors">
+                        <button className="p-2 text-gray-400 hover:text-indigo-600 transition-colors cursor-pointer" title="View Details">
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                        <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors cursor-pointer" title="Edit Client">
                           <Edit className="w-4 h-4" />
                         </button>
                       </div>
@@ -1847,31 +1848,31 @@ export default function LandingPage() {
                   </div>
                   
                   {/* Reminder Schedule Screenshot */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-5">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                  <div className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 p-3 bg-gray-50/50 rounded-lg border border-gray-100">
+                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                         <div className="flex-1">
                           <div className="text-sm font-medium text-gray-900">Friendly reminder</div>
                           <div className="text-xs text-gray-500">Sent 1 day after due date</div>
                         </div>
-                        <span className="px-2 py-1 bg-emerald-50 text-emerald-600 text-xs font-medium rounded">Sent</span>
+                        <span className="px-2 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded border border-blue-100">Sent</span>
                       </div>
-                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                      <div className="flex items-center gap-3 p-3 bg-gray-50/50 rounded-lg border border-gray-100">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                         <div className="flex-1">
                           <div className="text-sm font-medium text-gray-900">Polite follow-up</div>
-                          <div className="text-xs text-gray-500">Scheduled for 7 days</div>
+                          <div className="text-xs text-gray-500">Sent 7 days after due date</div>
                         </div>
-                        <span className="px-2 py-1 bg-amber-50 text-amber-600 text-xs font-medium rounded">Pending</span>
+                        <span className="px-2 py-1 bg-emerald-50 text-emerald-600 text-xs font-medium rounded border border-emerald-100">Delivered</span>
                       </div>
-                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                      <div className="flex items-center gap-3 p-3 bg-gray-50/50 rounded-lg border border-gray-100">
+                        <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
                         <div className="flex-1">
                           <div className="text-sm font-medium text-gray-900">Final notice</div>
                           <div className="text-xs text-gray-500">Scheduled for 14 days</div>
                         </div>
-                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded">Scheduled</span>
+                        <span className="px-2 py-1 bg-yellow-50 text-yellow-600 text-xs font-medium rounded border border-yellow-100">Scheduled</span>
                       </div>
                     </div>
                   </div>
@@ -1885,22 +1886,22 @@ export default function LandingPage() {
                   </div>
                   
                   {/* Email Card Screenshot */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-5">
+                  <div className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
                     <div className="space-y-4">
-                      <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+                      <div className="p-4 bg-emerald-50/50 rounded-lg border border-emerald-100">
                         <div className="flex items-start gap-3 mb-3">
-                          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
                             <CheckCircle className="w-5 h-5 text-emerald-600" />
                           </div>
                           <div className="flex-1">
                             <div className="text-sm font-semibold text-gray-900 mb-1">Invoice sent successfully</div>
-                            <div className="text-xs text-gray-500">To: client@acme.com</div>
-                            <div className="text-xs text-gray-500">Dec 8, 2024 at 10:30 AM</div>
+                            <div className="text-xs text-gray-600">To: client@acme.com</div>
+                            <div className="text-xs text-gray-500 mt-0.5">Dec 8, 2024 at 10:30 AM</div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 p-2 bg-white rounded border border-gray-100">
-                          <FileText className="w-4 h-4 text-gray-400" />
-                          <span className="text-xs text-gray-600">invoice-001.pdf</span>
+                        <div className="flex items-center gap-2 p-2.5 bg-white rounded-md border border-gray-200 shadow-sm">
+                          <FileText className="w-4 h-4 text-gray-500" />
+                          <span className="text-xs font-medium text-gray-700">invoice-001.pdf</span>
                           <span className="ml-auto text-xs text-gray-400">142 KB</span>
                         </div>
                       </div>
@@ -1916,37 +1917,37 @@ export default function LandingPage() {
                   </div>
                   
                   {/* Portal Screenshot */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                      <div className="flex items-center justify-between pb-4 border-b border-gray-200">
                         <div>
-                          <div className="text-xs text-gray-500 mb-1">Invoice Number</div>
+                          <div className="text-xs text-gray-500 mb-1.5">Invoice Number</div>
                           <div className="text-sm font-semibold text-gray-900">INV-001</div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xs text-gray-500 mb-1">Amount Due</div>
+                          <div className="text-xs text-gray-500 mb-1.5">Amount Due</div>
                           <div className="text-lg font-bold text-gray-900">$2,500.00</div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between py-2">
                         <div>
-                          <div className="text-xs text-gray-500 mb-1">Status</div>
-                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-orange-500">
+                          <div className="text-xs text-gray-500 mb-1.5">Status</div>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-orange-600 bg-orange-50 rounded-md border border-orange-100">
                             <Send className="h-3 w-3" />
                             Pending
                           </span>
                         </div>
                         <div className="text-right">
-                          <div className="text-xs text-gray-500 mb-1">Due Date</div>
-                          <div className="text-sm font-medium text-gray-700">Dec 15, 2024</div>
+                          <div className="text-xs text-gray-500 mb-1.5">Due Date</div>
+                          <div className="text-sm font-medium text-gray-900">Dec 15, 2024</div>
                         </div>
                       </div>
-                      <div className="pt-4 border-t border-gray-100 flex gap-2">
-                        <button className="flex-1 px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                      <div className="pt-4 border-t border-gray-200 flex gap-3">
+                        <button className="flex-1 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shadow-sm">
                           <Download className="w-4 h-4" />
                           Download PDF
                         </button>
-                        <button className="flex-1 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+                        <button className="flex-1 px-4 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm">
                           View Invoice
                         </button>
                       </div>
@@ -1962,36 +1963,36 @@ export default function LandingPage() {
                   </div>
                   
                   {/* Activity Timeline Screenshot */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-5">
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <div className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3 p-3 bg-gray-50/50 rounded-lg border border-gray-100">
+                        <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
                           <Send className="w-4 h-4 text-blue-600" />
                         </div>
                         <div className="flex-1">
                           <div className="text-sm font-medium text-gray-900">Invoice sent</div>
-                          <div className="text-xs text-gray-500">Sent to client@acme.com</div>
-                          <div className="text-xs text-gray-400 mt-1">2 hours ago</div>
+                          <div className="text-xs text-gray-600">Sent to client@acme.com</div>
+                          <div className="text-xs text-gray-500 mt-1">2 hours ago</div>
                         </div>
                       </div>
-                      <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                      <div className="flex items-start gap-3 p-3 bg-gray-50/50 rounded-lg border border-gray-100">
+                        <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
                           <Eye className="w-4 h-4 text-amber-600" />
                         </div>
                         <div className="flex-1">
                           <div className="text-sm font-medium text-gray-900">Client viewed invoice</div>
-                          <div className="text-xs text-gray-500">Opened on desktop</div>
-                          <div className="text-xs text-gray-400 mt-1">1 hour ago</div>
+                          <div className="text-xs text-gray-600">Opened on desktop</div>
+                          <div className="text-xs text-gray-500 mt-1">1 hour ago</div>
                         </div>
                       </div>
-                      <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                      <div className="flex items-start gap-3 p-3 bg-gray-50/50 rounded-lg border border-gray-100">
+                        <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
                           <CheckCircle className="w-4 h-4 text-emerald-600" />
                         </div>
                         <div className="flex-1">
                           <div className="text-sm font-medium text-gray-900">Payment received</div>
-                          <div className="text-xs text-gray-500">$2,500.00 via bank transfer</div>
-                          <div className="text-xs text-gray-400 mt-1">Just now</div>
+                          <div className="text-xs text-gray-600">$2,500.00 via bank transfer</div>
+                          <div className="text-xs text-gray-500 mt-1">Just now</div>
                         </div>
                       </div>
                     </div>
