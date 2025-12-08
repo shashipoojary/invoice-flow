@@ -1630,8 +1630,12 @@ export default function QuickInvoiceModal({
                 {paymentTerms.enabled && (
                   <div className="space-y-4">
                     {/* Payment Terms Info */}
-                    <div className="flex items-start space-x-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-                      <Zap className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5" />
+                    <div className={`flex items-start space-x-3 p-3 rounded-lg ${
+                      isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'
+                    }`}>
+                      <Zap className={`h-4 w-4 mt-0.5 ${
+                        isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                      }`} />
                       <div>
                         <p className={`text-xs font-medium ${
                           isDarkMode ? 'text-blue-300' : 'text-blue-700'
@@ -1759,9 +1763,15 @@ export default function QuickInvoiceModal({
                   <div className="space-y-4">
                     {/* Smart Reminder Logic Based on Payment Terms */}
                     {paymentTerms.enabled && (
-                      <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                      <div className={`p-3 rounded-lg border ${
+                        isDarkMode 
+                          ? 'bg-amber-900/20 border-amber-800' 
+                          : 'bg-amber-50 border-amber-200'
+                      }`}>
                         <div className="flex items-start space-x-2">
-                          <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5" />
+                          <AlertCircle className={`h-4 w-4 mt-0.5 ${
+                            isDarkMode ? 'text-amber-400' : 'text-amber-600'
+                          }`} />
                           <div>
                             <p className={`text-xs font-medium ${
                               isDarkMode ? 'text-amber-300' : 'text-amber-700'
