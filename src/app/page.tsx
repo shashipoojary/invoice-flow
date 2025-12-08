@@ -793,15 +793,13 @@ export default function LandingPage() {
 
               {/* Right Visual - Animated Invoice Modal - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Hero-style Glow Effect - Subtle */}
-                <div className="absolute inset-0 rounded-2xl opacity-[0.08] blur-3xl" style={{
-                  background: 'radial-gradient(ellipse at center, #a855f7, #9333ea, #7c3aed)',
-                  transform: 'scale(1.1)',
+                {/* Directional Glow Effect - Bottom Center */}
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-32 rounded-2xl opacity-[0.12] blur-3xl" style={{
+                  background: 'radial-gradient(ellipse at center, #a855f7, #9333ea, transparent)',
                   zIndex: 0
                 }}></div>
-                <div className="absolute inset-0 rounded-2xl opacity-[0.05] blur-2xl" style={{
-                  background: 'radial-gradient(ellipse at 30% 70%, #a855f7, #9333ea)',
-                  transform: 'scale(1.05)',
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-24 rounded-2xl opacity-[0.08] blur-2xl" style={{
+                  background: 'radial-gradient(ellipse at center, #a855f7, transparent)',
                   zIndex: 1
                 }}></div>
                 
@@ -1277,15 +1275,13 @@ export default function LandingPage() {
 
               {/* Right Visual - Email Preview Mockup - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Hero-style Glow Effect - Subtle */}
-                <div className="absolute inset-0 rounded-2xl opacity-[0.08] blur-3xl" style={{
-                  background: 'radial-gradient(ellipse at center, #a855f7, #9333ea, #7c3aed)',
-                  transform: 'scale(1.1)',
+                {/* Directional Glow Effect - Bottom Center */}
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-32 rounded-2xl opacity-[0.12] blur-3xl" style={{
+                  background: 'radial-gradient(ellipse at center, #a855f7, #9333ea, transparent)',
                   zIndex: 0
                 }}></div>
-                <div className="absolute inset-0 rounded-2xl opacity-[0.05] blur-2xl" style={{
-                  background: 'radial-gradient(ellipse at 30% 70%, #a855f7, #9333ea)',
-                  transform: 'scale(1.05)',
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-24 rounded-2xl opacity-[0.08] blur-2xl" style={{
+                  background: 'radial-gradient(ellipse at center, #a855f7, transparent)',
                   zIndex: 1
                 }}></div>
                 
@@ -1434,15 +1430,13 @@ export default function LandingPage() {
 
               {/* Right Visual - Activity Tracking Mockup - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Hero-style Glow Effect - Subtle */}
-                <div className="absolute inset-0 rounded-2xl opacity-[0.08] blur-3xl" style={{
-                  background: 'radial-gradient(ellipse at center, #a855f7, #9333ea, #7c3aed)',
-                  transform: 'scale(1.1)',
+                {/* Directional Glow Effect - Bottom Center */}
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-32 rounded-2xl opacity-[0.12] blur-3xl" style={{
+                  background: 'radial-gradient(ellipse at center, #a855f7, #9333ea, transparent)',
                   zIndex: 0
                 }}></div>
-                <div className="absolute inset-0 rounded-2xl opacity-[0.05] blur-2xl" style={{
-                  background: 'radial-gradient(ellipse at 30% 70%, #a855f7, #9333ea)',
-                  transform: 'scale(1.05)',
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-24 rounded-2xl opacity-[0.08] blur-2xl" style={{
+                  background: 'radial-gradient(ellipse at center, #a855f7, transparent)',
                   zIndex: 1
                 }}></div>
                 
@@ -1573,15 +1567,13 @@ export default function LandingPage() {
 
               {/* Right Visual - Payment Mockup - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Hero-style Glow Effect - Subtle */}
-                <div className="absolute inset-0 rounded-2xl opacity-[0.08] blur-3xl" style={{
-                  background: 'radial-gradient(ellipse at center, #a855f7, #9333ea, #7c3aed)',
-                  transform: 'scale(1.1)',
+                {/* Directional Glow Effect - Bottom Center */}
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-32 rounded-2xl opacity-[0.12] blur-3xl" style={{
+                  background: 'radial-gradient(ellipse at center, #a855f7, #9333ea, transparent)',
                   zIndex: 0
                 }}></div>
-                <div className="absolute inset-0 rounded-2xl opacity-[0.05] blur-2xl" style={{
-                  background: 'radial-gradient(ellipse at 30% 70%, #a855f7, #9333ea)',
-                  transform: 'scale(1.05)',
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-24 rounded-2xl opacity-[0.08] blur-2xl" style={{
+                  background: 'radial-gradient(ellipse at center, #a855f7, transparent)',
                   zIndex: 1
                 }}></div>
                 
