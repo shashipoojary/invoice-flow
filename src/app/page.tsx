@@ -795,12 +795,12 @@ export default function LandingPage() {
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
                 {/* Hero-style Glow Effect - Subtle */}
                 <div className="absolute inset-0 rounded-2xl opacity-[0.08] blur-3xl" style={{
-                  background: 'radial-gradient(ellipse at center, #7c3aed, #6366f1, #4f46e5)',
+                  background: 'radial-gradient(ellipse at center, #a855f7, #9333ea, #7c3aed)',
                   transform: 'scale(1.1)',
                   zIndex: 0
                 }}></div>
                 <div className="absolute inset-0 rounded-2xl opacity-[0.05] blur-2xl" style={{
-                  background: 'radial-gradient(ellipse at 30% 70%, #7c3aed, #6366f1)',
+                  background: 'radial-gradient(ellipse at 30% 70%, #a855f7, #9333ea)',
                   transform: 'scale(1.05)',
                   zIndex: 1
                 }}></div>
@@ -1279,12 +1279,12 @@ export default function LandingPage() {
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
                 {/* Hero-style Glow Effect - Subtle */}
                 <div className="absolute inset-0 rounded-2xl opacity-[0.08] blur-3xl" style={{
-                  background: 'radial-gradient(ellipse at center, #10b981, #059669, #047857)',
+                  background: 'radial-gradient(ellipse at center, #a855f7, #9333ea, #7c3aed)',
                   transform: 'scale(1.1)',
                   zIndex: 0
                 }}></div>
                 <div className="absolute inset-0 rounded-2xl opacity-[0.05] blur-2xl" style={{
-                  background: 'radial-gradient(ellipse at 30% 70%, #10b981, #059669)',
+                  background: 'radial-gradient(ellipse at 30% 70%, #a855f7, #9333ea)',
                   transform: 'scale(1.05)',
                   zIndex: 1
                 }}></div>
@@ -1436,12 +1436,12 @@ export default function LandingPage() {
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
                 {/* Hero-style Glow Effect - Subtle */}
                 <div className="absolute inset-0 rounded-2xl opacity-[0.08] blur-3xl" style={{
-                  background: 'radial-gradient(ellipse at center, #f59e0b, #d97706, #b45309)',
+                  background: 'radial-gradient(ellipse at center, #a855f7, #9333ea, #7c3aed)',
                   transform: 'scale(1.1)',
                   zIndex: 0
                 }}></div>
                 <div className="absolute inset-0 rounded-2xl opacity-[0.05] blur-2xl" style={{
-                  background: 'radial-gradient(ellipse at 30% 70%, #f59e0b, #d97706)',
+                  background: 'radial-gradient(ellipse at 30% 70%, #a855f7, #9333ea)',
                   transform: 'scale(1.05)',
                   zIndex: 1
                 }}></div>
@@ -1575,12 +1575,12 @@ export default function LandingPage() {
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
                 {/* Hero-style Glow Effect - Subtle */}
                 <div className="absolute inset-0 rounded-2xl opacity-[0.08] blur-3xl" style={{
-                  background: 'radial-gradient(ellipse at center, #3b82f6, #2563eb, #1d4ed8)',
+                  background: 'radial-gradient(ellipse at center, #a855f7, #9333ea, #7c3aed)',
                   transform: 'scale(1.1)',
                   zIndex: 0
                 }}></div>
                 <div className="absolute inset-0 rounded-2xl opacity-[0.05] blur-2xl" style={{
-                  background: 'radial-gradient(ellipse at 30% 70%, #3b82f6, #2563eb)',
+                  background: 'radial-gradient(ellipse at 30% 70%, #a855f7, #9333ea)',
                   transform: 'scale(1.05)',
                   zIndex: 1
                 }}></div>
