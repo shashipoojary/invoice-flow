@@ -1227,20 +1227,21 @@ export default function DashboardOverview() {
                         </div>
                       </div>
                     </div>
-                    {/* Heartbeat Pulse Line - Right Side - Desktop Only */}
+                    {/* Pulse Line Chart - Right Side - Desktop Only */}
                     {totalRevenue > 0 && (
-                      <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
-                        <svg className="w-16 h-8" viewBox="0 0 64 32">
+                      <div className="hidden lg:flex flex-col items-end gap-0.5 flex-shrink-0">
+                        <span className="text-[10px] font-medium text-emerald-600">+23%</span>
+                        <svg className="w-14 h-6" viewBox="0 0 56 24" fill="none">
                           <path
-                            d="M0,20 Q8,20 12,18 T20,16 Q24,14 28,12 T36,14 Q40,16 44,13 T52,10 Q56,8 60,6 L64,4"
-                            fill="none"
+                            d="M2,18 C8,18 10,16 14,14 C18,12 20,10 24,12 C28,14 30,16 34,14 C38,12 40,8 44,6 C48,4 52,4 54,4"
                             stroke="#10b981"
-                            strokeWidth="2"
+                            strokeWidth="1.5"
                             strokeLinecap="round"
+                            strokeLinejoin="round"
+                            opacity="0.8"
                           />
-                          <circle cx="64" cy="4" r="3" fill="#10b981" />
+                          <circle cx="54" cy="4" r="2.5" fill="#10b981" />
                         </svg>
-                        <span className="text-[10px] font-medium text-emerald-600">25%</span>
                       </div>
                     )}
                   </div>
@@ -1277,20 +1278,21 @@ export default function DashboardOverview() {
                         </div>
                       </div>
                     </div>
-                    {/* Heartbeat Pulse Line - Right Side - Desktop Only */}
+                    {/* Pulse Line Chart - Right Side - Desktop Only */}
                     {totalPayableAmount > 0 && (
-                      <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
-                        <svg className="w-16 h-8" viewBox="0 0 64 32">
+                      <div className="hidden lg:flex flex-col items-end gap-0.5 flex-shrink-0">
+                        <span className="text-[10px] font-medium text-amber-600">+18%</span>
+                        <svg className="w-14 h-6" viewBox="0 0 56 24" fill="none">
                           <path
-                            d="M0,16 Q8,16 12,14 T20,16 Q24,18 28,20 T36,18 Q40,16 44,18 T52,20 L64,24"
-                            fill="none"
+                            d="M2,12 C6,12 8,10 12,8 C16,6 18,10 22,12 C26,14 28,16 32,14 C36,12 38,14 42,16 C46,18 50,20 54,20"
                             stroke="#f97316"
-                            strokeWidth="2"
+                            strokeWidth="1.5"
                             strokeLinecap="round"
+                            strokeLinejoin="round"
+                            opacity="0.8"
                           />
-                          <circle cx="64" cy="24" r="3" fill="#f97316" />
+                          <circle cx="54" cy="20" r="2.5" fill="#f97316" />
                         </svg>
-                        <span className="text-[10px] font-medium text-orange-500">18%</span>
                       </div>
                     )}
                   </div>
@@ -1318,20 +1320,21 @@ export default function DashboardOverview() {
                         </div>
                       </div>
                     </div>
-                    {/* Heartbeat Pulse Line - Right Side - Desktop Only */}
+                    {/* Pulse Line Chart - Right Side - Desktop Only */}
                     {overdueCount > 0 && (
-                      <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
-                        <svg className="w-16 h-8" viewBox="0 0 64 32">
+                      <div className="hidden lg:flex flex-col items-end gap-0.5 flex-shrink-0">
+                        <span className="text-[10px] font-medium text-red-500">-8%</span>
+                        <svg className="w-14 h-6" viewBox="0 0 56 24" fill="none">
                           <path
-                            d="M0,12 Q8,12 12,14 T20,16 Q24,14 28,12 T36,14 Q40,18 44,20 T52,22 L64,26"
-                            fill="none"
+                            d="M2,6 C6,6 8,8 12,10 C16,12 18,10 22,12 C26,14 28,16 32,18 C36,20 40,18 44,20 C48,22 52,20 54,20"
                             stroke="#dc2626"
-                            strokeWidth="2"
+                            strokeWidth="1.5"
                             strokeLinecap="round"
+                            strokeLinejoin="round"
+                            opacity="0.8"
                           />
-                          <circle cx="64" cy="26" r="3" fill="#dc2626" />
+                          <circle cx="54" cy="20" r="2.5" fill="#dc2626" />
                         </svg>
-                        <span className="text-[10px] font-medium text-red-600">8%</span>
                       </div>
                     )}
                   </div>
@@ -1359,20 +1362,21 @@ export default function DashboardOverview() {
                         </div>
                       </div>
                     </div>
-                    {/* Heartbeat Pulse Line - Right Side - Desktop Only */}
+                    {/* Pulse Line Chart - Right Side - Desktop Only */}
                     {totalClients > 0 && (
-                      <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
-                        <svg className="w-16 h-8" viewBox="0 0 64 32">
+                      <div className="hidden lg:flex flex-col items-end gap-0.5 flex-shrink-0">
+                        <span className="text-[10px] font-medium text-indigo-600">+15%</span>
+                        <svg className="w-14 h-6" viewBox="0 0 56 24" fill="none">
                           <path
-                            d="M0,22 Q8,22 12,20 T20,18 Q24,16 28,14 T36,12 Q40,10 44,8 T52,6 L64,4"
-                            fill="none"
+                            d="M2,20 C6,20 8,18 12,16 C16,14 18,12 22,10 C26,8 28,10 32,8 C36,6 40,6 44,4 C48,2 52,4 54,2"
                             stroke="#6366f1"
-                            strokeWidth="2"
+                            strokeWidth="1.5"
                             strokeLinecap="round"
+                            strokeLinejoin="round"
+                            opacity="0.8"
                           />
-                          <circle cx="64" cy="4" r="3" fill="#6366f1" />
+                          <circle cx="54" cy="2" r="2.5" fill="#6366f1" />
                         </svg>
-                        <span className="text-[10px] font-medium text-indigo-600">12%</span>
                       </div>
                     )}
                   </div>
