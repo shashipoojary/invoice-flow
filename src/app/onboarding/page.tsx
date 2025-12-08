@@ -112,14 +112,12 @@ export default function OnboardingPage() {
         throw new Error('Not authenticated');
       }
 
-      const { 'Content-Type': _, ...headersWithoutContentType } = {
-        'Authorization': `Bearer ${session.access_token}`,
-      };
-      
       // Upload file to server
       const response = await fetch('/api/upload-logo', {
         method: 'POST',
-        headers: headersWithoutContentType,
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
         body: formDataUpload
       });
 
