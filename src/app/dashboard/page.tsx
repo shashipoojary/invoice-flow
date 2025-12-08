@@ -1232,31 +1232,37 @@ export default function DashboardOverview() {
                         </div>
                       </div>
                     </div>
-                    {/* Mini Line Chart - Right Side - Desktop Only */}
-                    <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0 relative">
-                      <svg className="w-full h-full" viewBox="0 0 60 30" preserveAspectRatio="none">
-                        <defs>
-                          <linearGradient id="revenueChartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor="#10b981" stopOpacity="0.2" />
-                            <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-                          </linearGradient>
-                        </defs>
-                        {/* Shaded area */}
-                        <path
-                          d="M 0,25 L 0,25 L 8,22 L 16,20 L 24,18 L 32,15 L 40,12 L 48,10 L 56,8 L 60,8 L 60,25 Z"
-                          fill="url(#revenueChartGradient)"
-                        />
-                        {/* Line */}
-                        <path
-                          d="M 0,25 L 8,22 L 16,20 L 24,18 L 32,15 L 40,12 L 48,10 L 56,8 L 60,8"
-                          fill="none"
-                          stroke="#10b981"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
+                    {/* Trading-Style Pulse Effect - Right Side - Desktop Only */}
+                    {totalRevenue > 0 ? (
+                      <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0 relative overflow-hidden rounded">
+                        <svg className="w-full h-full" viewBox="0 0 60 30" preserveAspectRatio="none">
+                          <defs>
+                            <linearGradient id="revenuePulseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="#10b981" stopOpacity="0" />
+                              <stop offset="50%" stopColor="#10b981" stopOpacity="0.6" />
+                              <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                            </linearGradient>
+                          </defs>
+                          {/* Animated pulse waves */}
+                          <rect x="0" y="10" width="60" height="2" fill="url(#revenuePulseGradient)" opacity="0.8">
+                            <animate attributeName="x" values="-60;60" dur="2s" repeatCount="indefinite" />
+                          </rect>
+                          <rect x="0" y="15" width="60" height="1.5" fill="url(#revenuePulseGradient)" opacity="0.6">
+                            <animate attributeName="x" values="-60;60" dur="2.5s" repeatCount="indefinite" />
+                          </rect>
+                          <rect x="0" y="18" width="60" height="1" fill="url(#revenuePulseGradient)" opacity="0.4">
+                            <animate attributeName="x" values="-60;60" dur="3s" repeatCount="indefinite" />
+                          </rect>
+                          {/* Center pulse dot */}
+                          <circle cx="30" cy="15" r="2" fill="#10b981" opacity="0.8">
+                            <animate attributeName="r" values="2;4;2" dur="2s" repeatCount="indefinite" />
+                            <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite" />
+                          </circle>
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0"></div>
+                    )}
                   </div>
                 </button>
 
@@ -1296,31 +1302,37 @@ export default function DashboardOverview() {
                         </div>
                       </div>
                     </div>
-                    {/* Mini Line Chart - Right Side - Desktop Only */}
-                    <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0 relative">
-                      <svg className="w-full h-full" viewBox="0 0 60 30" preserveAspectRatio="none">
-                        <defs>
-                          <linearGradient id="payableChartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor="#f97316" stopOpacity="0.2" />
-                            <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
-                          </linearGradient>
-                        </defs>
-                        {/* Shaded area */}
-                        <path
-                          d="M 0,22 L 0,22 L 8,20 L 16,18 L 24,16 L 32,14 L 40,12 L 48,11 L 56,10 L 60,10 L 60,22 Z"
-                          fill="url(#payableChartGradient)"
-                        />
-                        {/* Line */}
-                        <path
-                          d="M 0,22 L 8,20 L 16,18 L 24,16 L 32,14 L 40,12 L 48,11 L 56,10 L 60,10"
-                          fill="none"
-                          stroke="#f97316"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
+                    {/* Trading-Style Pulse Effect - Right Side - Desktop Only */}
+                    {totalPayableAmount > 0 ? (
+                      <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0 relative overflow-hidden rounded">
+                        <svg className="w-full h-full" viewBox="0 0 60 30" preserveAspectRatio="none">
+                          <defs>
+                            <linearGradient id="payablePulseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="#f97316" stopOpacity="0" />
+                              <stop offset="50%" stopColor="#f97316" stopOpacity="0.6" />
+                              <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
+                            </linearGradient>
+                          </defs>
+                          {/* Animated pulse waves */}
+                          <rect x="0" y="12" width="60" height="2" fill="url(#payablePulseGradient)" opacity="0.8">
+                            <animate attributeName="x" values="-60;60" dur="2s" repeatCount="indefinite" />
+                          </rect>
+                          <rect x="0" y="15" width="60" height="1.5" fill="url(#payablePulseGradient)" opacity="0.6">
+                            <animate attributeName="x" values="-60;60" dur="2.5s" repeatCount="indefinite" />
+                          </rect>
+                          <rect x="0" y="18" width="60" height="1" fill="url(#payablePulseGradient)" opacity="0.4">
+                            <animate attributeName="x" values="-60;60" dur="3s" repeatCount="indefinite" />
+                          </rect>
+                          {/* Center pulse dot */}
+                          <circle cx="30" cy="15" r="2" fill="#f97316" opacity="0.8">
+                            <animate attributeName="r" values="2;4;2" dur="2s" repeatCount="indefinite" />
+                            <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite" />
+                          </circle>
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0"></div>
+                    )}
                   </div>
                 </button>
 
@@ -1351,31 +1363,37 @@ export default function DashboardOverview() {
                         </div>
                       </div>
                     </div>
-                    {/* Mini Line Chart - Right Side - Desktop Only */}
-                    <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0 relative">
-                      <svg className="w-full h-full" viewBox="0 0 60 30" preserveAspectRatio="none">
-                        <defs>
-                          <linearGradient id="overdueChartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor="#dc2626" stopOpacity="0.2" />
-                            <stop offset="100%" stopColor="#dc2626" stopOpacity="0" />
-                          </linearGradient>
-                        </defs>
-                        {/* Shaded area */}
-                        <path
-                          d="M 0,28 L 0,28 L 8,26 L 16,25 L 24,24 L 32,23 L 40,22 L 48,21 L 56,20 L 60,20 L 60,28 Z"
-                          fill="url(#overdueChartGradient)"
-                        />
-                        {/* Line */}
-                        <path
-                          d="M 0,28 L 8,26 L 16,25 L 24,24 L 32,23 L 40,22 L 48,21 L 56,20 L 60,20"
-                          fill="none"
-                          stroke="#dc2626"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
+                    {/* Trading-Style Pulse Effect - Right Side - Desktop Only */}
+                    {overdueCount > 0 ? (
+                      <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0 relative overflow-hidden rounded">
+                        <svg className="w-full h-full" viewBox="0 0 60 30" preserveAspectRatio="none">
+                          <defs>
+                            <linearGradient id="overduePulseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="#dc2626" stopOpacity="0" />
+                              <stop offset="50%" stopColor="#dc2626" stopOpacity="0.6" />
+                              <stop offset="100%" stopColor="#dc2626" stopOpacity="0" />
+                            </linearGradient>
+                          </defs>
+                          {/* Animated pulse waves */}
+                          <rect x="0" y="12" width="60" height="2" fill="url(#overduePulseGradient)" opacity="0.8">
+                            <animate attributeName="x" values="-60;60" dur="1.5s" repeatCount="indefinite" />
+                          </rect>
+                          <rect x="0" y="15" width="60" height="1.5" fill="url(#overduePulseGradient)" opacity="0.6">
+                            <animate attributeName="x" values="-60;60" dur="2s" repeatCount="indefinite" />
+                          </rect>
+                          <rect x="0" y="18" width="60" height="1" fill="url(#overduePulseGradient)" opacity="0.4">
+                            <animate attributeName="x" values="-60;60" dur="2.5s" repeatCount="indefinite" />
+                          </rect>
+                          {/* Center pulse dot */}
+                          <circle cx="30" cy="15" r="2" fill="#dc2626" opacity="0.8">
+                            <animate attributeName="r" values="2;4;2" dur="1.5s" repeatCount="indefinite" />
+                            <animate attributeName="opacity" values="0.8;0.3;0.8" dur="1.5s" repeatCount="indefinite" />
+                          </circle>
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0"></div>
+                    )}
                   </div>
                 </button>
 
@@ -1406,31 +1424,37 @@ export default function DashboardOverview() {
                         </div>
                       </div>
                     </div>
-                    {/* Mini Line Chart - Right Side - Desktop Only */}
-                    <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0 relative">
-                      <svg className="w-full h-full" viewBox="0 0 60 30" preserveAspectRatio="none">
-                        <defs>
-                          <linearGradient id="clientsChartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.2" />
-                            <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
-                          </linearGradient>
-                        </defs>
-                        {/* Shaded area */}
-                        <path
-                          d="M 0,20 L 0,20 L 8,18 L 16,15 L 24,12 L 32,10 L 40,8 L 48,6 L 56,5 L 60,5 L 60,20 Z"
-                          fill="url(#clientsChartGradient)"
-                        />
-                        {/* Line */}
-                        <path
-                          d="M 0,20 L 8,18 L 16,15 L 24,12 L 32,10 L 40,8 L 48,6 L 56,5 L 60,5"
-                          fill="none"
-                          stroke="#6366f1"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
+                    {/* Trading-Style Pulse Effect - Right Side - Desktop Only */}
+                    {totalClients > 0 ? (
+                      <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0 relative overflow-hidden rounded">
+                        <svg className="w-full h-full" viewBox="0 0 60 30" preserveAspectRatio="none">
+                          <defs>
+                            <linearGradient id="clientsPulseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="#6366f1" stopOpacity="0" />
+                              <stop offset="50%" stopColor="#6366f1" stopOpacity="0.6" />
+                              <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+                            </linearGradient>
+                          </defs>
+                          {/* Animated pulse waves */}
+                          <rect x="0" y="10" width="60" height="2" fill="url(#clientsPulseGradient)" opacity="0.8">
+                            <animate attributeName="x" values="-60;60" dur="2s" repeatCount="indefinite" />
+                          </rect>
+                          <rect x="0" y="15" width="60" height="1.5" fill="url(#clientsPulseGradient)" opacity="0.6">
+                            <animate attributeName="x" values="-60;60" dur="2.5s" repeatCount="indefinite" />
+                          </rect>
+                          <rect x="0" y="20" width="60" height="1" fill="url(#clientsPulseGradient)" opacity="0.4">
+                            <animate attributeName="x" values="-60;60" dur="3s" repeatCount="indefinite" />
+                          </rect>
+                          {/* Center pulse dot */}
+                          <circle cx="30" cy="15" r="2" fill="#6366f1" opacity="0.8">
+                            <animate attributeName="r" values="2;4;2" dur="2s" repeatCount="indefinite" />
+                            <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite" />
+                          </circle>
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0"></div>
+                    )}
                   </div>
                 </button>
               </div>
