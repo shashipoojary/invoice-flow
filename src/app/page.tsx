@@ -793,11 +793,19 @@ export default function LandingPage() {
 
               {/* Right Visual - Animated Invoice Modal - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Clean Glow Effect */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-100/60 via-purple-100/40 to-blue-100/50 rounded-2xl blur-2xl"></div>
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-50/50 to-purple-50/30 rounded-2xl"></div>
+                {/* Hero-style Glow Effect - Less Intense */}
+                <div className="absolute inset-0 rounded-2xl opacity-15 blur-3xl" style={{
+                  background: 'radial-gradient(ellipse at center, #7c3aed, #6366f1, #4f46e5)',
+                  transform: 'scale(1.1)',
+                  zIndex: 0
+                }}></div>
+                <div className="absolute inset-0 rounded-2xl opacity-10 blur-2xl" style={{
+                  background: 'radial-gradient(ellipse at 30% 70%, #7c3aed, #6366f1)',
+                  transform: 'scale(1.05)',
+                  zIndex: 1
+                }}></div>
                 
-                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200">
+                <div className="relative z-10 bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200">
                   {/* Modal Header - Refined Design */}
                   <div className="flex items-center justify-between p-3 sm:p-4 lg:p-5 border-b border-gray-100">
                     <div className="flex items-center space-x-3">
@@ -1269,11 +1277,19 @@ export default function LandingPage() {
 
               {/* Right Visual - Email Preview Mockup - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Clean Glow Effect */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-emerald-100/60 via-green-100/40 to-teal-100/50 rounded-2xl blur-2xl"></div>
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-emerald-50/50 to-green-50/30 rounded-2xl"></div>
+                {/* Hero-style Glow Effect - Less Intense */}
+                <div className="absolute inset-0 rounded-2xl opacity-15 blur-3xl" style={{
+                  background: 'radial-gradient(ellipse at center, #10b981, #059669, #047857)',
+                  transform: 'scale(1.1)',
+                  zIndex: 0
+                }}></div>
+                <div className="absolute inset-0 rounded-2xl opacity-10 blur-2xl" style={{
+                  background: 'radial-gradient(ellipse at 30% 70%, #10b981, #059669)',
+                  transform: 'scale(1.05)',
+                  zIndex: 1
+                }}></div>
                 
-                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200 h-[380px] sm:h-[400px] lg:h-[420px]">
+                <div className="relative z-10 bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200 h-[380px] sm:h-[400px] lg:h-[420px]">
                   {/* Email Preview Card - Clean Minimal Design */}
                   <div className="p-4 sm:p-5 h-full overflow-y-auto scrollbar-hide">
                     {/* From Header - Minimal */}
@@ -1418,11 +1434,19 @@ export default function LandingPage() {
 
               {/* Right Visual - Activity Tracking Mockup - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Clean Glow Effect */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-amber-100/60 via-orange-100/40 to-yellow-100/50 rounded-2xl blur-2xl"></div>
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-amber-50/50 to-orange-50/30 rounded-2xl"></div>
+                {/* Hero-style Glow Effect - Less Intense */}
+                <div className="absolute inset-0 rounded-2xl opacity-15 blur-3xl" style={{
+                  background: 'radial-gradient(ellipse at center, #f59e0b, #d97706, #b45309)',
+                  transform: 'scale(1.1)',
+                  zIndex: 0
+                }}></div>
+                <div className="absolute inset-0 rounded-2xl opacity-10 blur-2xl" style={{
+                  background: 'radial-gradient(ellipse at 30% 70%, #f59e0b, #d97706)',
+                  transform: 'scale(1.05)',
+                  zIndex: 1
+                }}></div>
                 
-                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200 h-[380px] sm:h-[400px] lg:h-[420px]">
+                <div className="relative z-10 bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200 h-[380px] sm:h-[400px] lg:h-[420px]">
                   {/* Activity Card - Clean Minimal Design */}
                   <div className="p-4 sm:p-5 h-full overflow-y-auto scrollbar-hide">
                     {/* Header - Minimal */}
@@ -1549,11 +1573,19 @@ export default function LandingPage() {
 
               {/* Right Visual - Payment Mockup - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Clean Glow Effect */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-blue-100/60 via-cyan-100/40 to-sky-100/50 rounded-2xl blur-2xl"></div>
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-blue-50/50 to-cyan-50/30 rounded-2xl"></div>
+                {/* Hero-style Glow Effect - Less Intense */}
+                <div className="absolute inset-0 rounded-2xl opacity-15 blur-3xl" style={{
+                  background: 'radial-gradient(ellipse at center, #3b82f6, #2563eb, #1d4ed8)',
+                  transform: 'scale(1.1)',
+                  zIndex: 0
+                }}></div>
+                <div className="absolute inset-0 rounded-2xl opacity-10 blur-2xl" style={{
+                  background: 'radial-gradient(ellipse at 30% 70%, #3b82f6, #2563eb)',
+                  transform: 'scale(1.05)',
+                  zIndex: 1
+                }}></div>
                 
-                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200 h-[380px] sm:h-[400px] lg:h-[420px]">
+                <div className="relative z-10 bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200 h-[380px] sm:h-[400px] lg:h-[420px]">
                   <div className="h-full overflow-y-auto scrollbar-hide">
                     {/* Step 1: Invoice Sent with Payment Details */}
                     {paymentStep === 1 && (
