@@ -1847,32 +1847,41 @@ export default function LandingPage() {
                     <p className="text-sm text-gray-600">Schedule automatic payment reminders for overdue invoices.</p>
                   </div>
                   
-                  {/* Reminder Schedule Screenshot */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3 p-3 bg-gray-50/50 rounded-lg border border-gray-100">
-                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-900">Friendly reminder</div>
-                          <div className="text-xs text-gray-500">Sent 1 day after due date</div>
+                  {/* Reminder History Card - Exact Dashboard Match */}
+                  <div className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
+                    <div className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
+                              <Mail className="h-4 w-4 text-gray-700" />
+                            </div>
+                            <div>
+                              <div className="font-medium text-sm" style={{ color: '#1f2937' }}>INV-001</div>
+                              <div className="text-xs" style={{ color: '#6b7280' }}>Acme Corporation</div>
+                            </div>
+                          </div>
+                          <div className="text-right min-h-[56px] flex flex-col items-end">
+                            <div className="font-semibold text-base text-green-600">$2,500</div>
+                            <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
+                            <div className="text-xs" style={{ color: '#6b7280' }}>Dec 15, 2024</div>
+                          </div>
                         </div>
-                        <span className="px-2 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded border border-blue-100">Sent</span>
-                      </div>
-                      <div className="flex items-center gap-3 p-3 bg-gray-50/50 rounded-lg border border-gray-100">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-900">Polite follow-up</div>
-                          <div className="text-xs text-gray-500">Sent 7 days after due date</div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
+                              <span className="capitalize">Friendly</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
+                              <span className="capitalize">Sent</span>
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <button className="p-1.5 rounded-md transition-colors hover:bg-gray-100">
+                              <Eye className="h-4 w-4 text-gray-700" />
+                            </button>
+                          </div>
                         </div>
-                        <span className="px-2 py-1 bg-emerald-50 text-emerald-600 text-xs font-medium rounded border border-emerald-100">Delivered</span>
-                      </div>
-                      <div className="flex items-center gap-3 p-3 bg-gray-50/50 rounded-lg border border-gray-100">
-                        <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-900">Final notice</div>
-                          <div className="text-xs text-gray-500">Scheduled for 14 days</div>
-                        </div>
-                        <span className="px-2 py-1 bg-yellow-50 text-yellow-600 text-xs font-medium rounded border border-yellow-100">Scheduled</span>
                       </div>
                     </div>
                   </div>
@@ -1885,26 +1894,22 @@ export default function LandingPage() {
                     <p className="text-sm text-gray-600">Send invoices via email with automatic PDF attachment.</p>
                   </div>
                   
-                  {/* Email Card Screenshot */}
+                  {/* Email Success Message - Simple Design */}
                   <div className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
-                    <div className="space-y-4">
-                      <div className="p-4 bg-emerald-50/50 rounded-lg border border-emerald-100">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                            <CheckCircle className="w-5 h-5 text-emerald-600" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="text-sm font-semibold text-gray-900 mb-1">Invoice sent successfully</div>
-                            <div className="text-xs text-gray-600">To: client@acme.com</div>
-                            <div className="text-xs text-gray-500 mt-0.5">Dec 8, 2024 at 10:30 AM</div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 p-2.5 bg-white rounded-md border border-gray-200 shadow-sm">
-                          <FileText className="w-4 h-4 text-gray-500" />
-                          <span className="text-xs font-medium text-gray-700">invoice-001.pdf</span>
-                          <span className="ml-auto text-xs text-gray-400">142 KB</span>
-                        </div>
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                        <CheckCircle className="w-5 h-5 text-emerald-600" />
                       </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-semibold text-gray-900 mb-1">Invoice sent successfully</div>
+                        <div className="text-xs text-gray-600">To: client@acme.com</div>
+                        <div className="text-xs text-gray-500 mt-0.5">Dec 8, 2024 at 10:30 AM</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 p-2.5 bg-gray-50 rounded">
+                      <FileText className="w-4 h-4 text-gray-500" />
+                      <span className="text-xs font-medium text-gray-700">invoice-001.pdf</span>
+                      <span className="ml-auto text-xs text-gray-400">142 KB</span>
                     </div>
                   </div>
                 </div>
@@ -1962,37 +1967,36 @@ export default function LandingPage() {
                     <p className="text-sm text-gray-600">Track when clients view invoices and payments are received.</p>
                   </div>
                   
-                  {/* Activity Timeline Screenshot */}
+                  {/* Activity Timeline - Exact Dashboard Match (No borders on items) */}
                   <div className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
-                    <div className="space-y-3">
-                      <div className="flex items-start gap-3 p-3 bg-gray-50/50 rounded-lg border border-gray-100">
-                        <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-                          <Send className="w-4 h-4 text-blue-600" />
+                    <div className="space-y-4">
+                      <div className="flex gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                          <Send className="h-4 w-4" />
                         </div>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-900">Invoice sent</div>
-                          <div className="text-xs text-gray-600">Sent to client@acme.com</div>
-                          <div className="text-xs text-gray-500 mt-1">2 hours ago</div>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3 p-3 bg-gray-50/50 rounded-lg border border-gray-100">
-                        <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
-                          <Eye className="w-4 h-4 text-amber-600" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-900">Client viewed invoice</div>
-                          <div className="text-xs text-gray-600">Opened on desktop</div>
-                          <div className="text-xs text-gray-500 mt-1">1 hour ago</div>
+                        <div className="flex-1 pt-1">
+                          <p className="text-sm font-medium text-gray-900">Invoice sent.</p>
+                          <p className="text-xs text-gray-600 mt-0.5">Sent to client@acme.com</p>
+                          <p className="text-xs text-gray-500 mt-1">2h ago</p>
                         </div>
                       </div>
-                      <div className="flex items-start gap-3 p-3 bg-gray-50/50 rounded-lg border border-gray-100">
-                        <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                          <CheckCircle className="w-4 h-4 text-emerald-600" />
+                      <div className="flex gap-3">
+                        <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                          <Eye className="h-4 w-4" />
                         </div>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-900">Payment received</div>
-                          <div className="text-xs text-gray-600">$2,500.00 via bank transfer</div>
-                          <div className="text-xs text-gray-500 mt-1">Just now</div>
+                        <div className="flex-1 pt-1">
+                          <p className="text-sm font-medium text-gray-900">Invoice viewed by customer.</p>
+                          <p className="text-xs text-gray-500 mt-1">1h ago</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                          <CheckCircle className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 pt-1">
+                          <p className="text-sm font-medium text-gray-900">Payment received: $2,500.</p>
+                          <p className="text-xs text-gray-600 mt-0.5">Via bank transfer</p>
+                          <p className="text-xs text-gray-500 mt-1">Just now</p>
                         </div>
                       </div>
                     </div>
