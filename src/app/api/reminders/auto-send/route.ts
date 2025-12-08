@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { Resend } from 'resend';
+import { getReminderEmailTemplate } from '@/lib/reminder-email-templates';
 
 // Initialize Resend only if API key exists
 let resend: Resend | null = null;
@@ -347,34 +348,38 @@ async function sendReminderEmail(invoice: any, reminderType: string, overdueDays
   // Use Resend free plan default email address
   const fromAddress = `${businessSettings.business_name || 'FlowInvoicer'} <onboarding@resend.dev>`;
   
-  // Escape HTML to prevent XSS (basic protection)
-  const escapeHtml = (text: string) => {
-    const map: Record<string, string> = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;'
-    };
-    return text.replace(/[&<>"']/g, (m) => map[m]);
+  // Transform invoice data to match template structure
+  const templateInvoice = {
+    invoiceNumber: invoice.invoice_number,
+    total: invoice.total,
+    dueDate: invoice.due_date,
+    publicToken: invoice.public_token,
+    client: {
+      name: clientName
+    }
   };
 
-  // Send email using Resend (use plain email address for free plan compatibility)
+  // Transform business settings to match template structure
+  const templateBusinessSettings = {
+    businessName: businessSettings.business_name || 'FlowInvoicer',
+    email: businessSettings.business_email || '',
+    phone: businessSettings.business_phone || ''
+  };
+
+  // Get reminder email template
+  const reminderTemplate = getReminderEmailTemplate(
+    templateInvoice,
+    templateBusinessSettings,
+    reminderType as 'friendly' | 'polite' | 'firm' | 'urgent',
+    overdueDays
+  );
+
+  // Send email using Resend with proper template
   const { data, error } = await resend.emails.send({
     from: fromAddress,
     to: recipientEmail,
-    subject: `Payment Reminder - Invoice ${invoiceNumber}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Payment Reminder</h2>
-        <p>Dear ${escapeHtml(clientName)},</p>
-        <p>This is a ${reminderType} reminder that payment is ${overdueDays > 0 ? 'overdue' : 'due'} for Invoice ${escapeHtml(invoiceNumber)}.</p>
-        <p><strong>Amount Due:</strong> $${escapeHtml(invoiceTotal)}</p>
-        <p><strong>Due Date:</strong> ${escapeHtml(dueDate)}</p>
-        <p>Please remit payment at your earliest convenience.</p>
-        <p>Thank you for your business!</p>
-      </div>
-    `
+    subject: reminderTemplate.subject,
+    html: reminderTemplate.html
   });
 
   if (error) {
