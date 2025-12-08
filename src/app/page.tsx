@@ -1738,84 +1738,266 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Everything You Need - Minimal List */}
-          <div className="mt-20 sm:mt-28 lg:mt-36 pt-16 sm:pt-20 border-t border-gray-200">
-            <div className="text-center mb-12 sm:mb-16 px-4">
-              <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-900 mb-3 tracking-tight">Everything you need</h2>
-              <p className="text-base text-gray-500 max-w-md mx-auto">Simple tools to create, send, and track your invoices.</p>
-            </div>
-            
-            {/* Simple Feature List */}
-            <div className="px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
-              <div className="space-y-0 divide-y divide-gray-200">
+          {/* Everything You Need - Figma Style */}
+          <div className="mt-24 sm:mt-32 lg:mt-40 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto">
+              
+              {/* Header */}
+              <div className="text-center mb-16 sm:mb-20">
+                <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-gray-900 mb-4 tracking-tight">Everything you need</h2>
+                <p className="text-lg text-gray-600 max-w-2xl mx-auto">All the tools to create, send, track invoices and get paid faster.</p>
+              </div>
+
+              {/* Features Grid - 2x3 Layout */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
                 
-                {/* Feature 1 */}
-                <div className="py-6 sm:py-8 flex items-start gap-4 sm:gap-6">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gray-900 flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-1">Create invoices in seconds</h3>
-                    <p className="text-sm sm:text-base text-gray-500">Add client, items, and template. Generate professional PDFs instantly.</p>
-                  </div>
-                </div>
-
-                {/* Feature 2 */}
-                <div className="py-6 sm:py-8 flex items-start gap-4 sm:gap-6">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gray-900 flex items-center justify-center flex-shrink-0">
-                    <Send className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-1">Send via email automatically</h3>
-                    <p className="text-sm sm:text-base text-gray-500">Invoices delivered to your client with PDF attached. No manual work.</p>
-                  </div>
-                </div>
-
-                {/* Feature 3 */}
-                <div className="py-6 sm:py-8 flex items-start gap-4 sm:gap-6">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gray-900 flex items-center justify-center flex-shrink-0">
-                    <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-1">Automatic payment reminders</h3>
-                    <p className="text-sm sm:text-base text-gray-500">Schedule friendly, polite, and urgent reminders. Get paid on time.</p>
-                  </div>
-                </div>
-
-                {/* Feature 4 */}
-                <div className="py-6 sm:py-8 flex items-start gap-4 sm:gap-6">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gray-900 flex items-center justify-center flex-shrink-0">
-                    <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-1">Manage all your clients</h3>
-                    <p className="text-sm sm:text-base text-gray-500">Store contact details and invoice history in one organized place.</p>
+                {/* Feature 1 - Invoice Creation */}
+                <div className="group relative bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-gray-300 transition-all duration-300">
+                  <div className="p-8">
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="w-12 h-12 rounded-xl bg-gray-900 flex items-center justify-center">
+                        <FileText className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-400 tracking-wide">01</span>
+                    </div>
+                    <h3 className="font-heading text-xl font-semibold text-gray-900 mb-2">Create Invoices</h3>
+                    <p className="text-gray-600 mb-6 leading-relaxed">Professional invoices with your branding, line items, and custom templates in seconds.</p>
+                    
+                    {/* Visual Mockup */}
+                    <div className="relative mt-6 bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+                          <span className="text-xs font-medium text-gray-900">INVOICE #001</span>
+                          <span className="px-2 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded">Draft</span>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">Web Design</span>
+                            <span className="font-medium text-gray-900">$1,500.00</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">Development</span>
+                            <span className="font-medium text-gray-900">$1,000.00</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between pt-3 border-t border-gray-200">
+                          <span className="text-sm font-semibold text-gray-900">Total</span>
+                          <span className="text-lg font-bold text-gray-900">$2,500.00</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Feature 5 */}
-                <div className="py-6 sm:py-8 flex items-start gap-4 sm:gap-6">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gray-900 flex items-center justify-center flex-shrink-0">
-                    <Eye className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-1">Client invoice portal</h3>
-                    <p className="text-sm sm:text-base text-gray-500">Clients view and download invoices online. Professional experience.</p>
+                {/* Feature 2 - Auto Reminders */}
+                <div className="group relative bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-gray-300 transition-all duration-300">
+                  <div className="p-8">
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="w-12 h-12 rounded-xl bg-gray-900 flex items-center justify-center">
+                        <Bell className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-400 tracking-wide">02</span>
+                    </div>
+                    <h3 className="font-heading text-xl font-semibold text-gray-900 mb-2">Auto Reminders</h3>
+                    <p className="text-gray-600 mb-6 leading-relaxed">Automatic payment reminders sent at the perfect time. Friendly, polite, then urgent.</p>
+                    
+                    {/* Visual Mockup */}
+                    <div className="relative mt-6 bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
+                          <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">Friendly reminder</div>
+                            <div className="text-xs text-gray-500">1 day after due date</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
+                          <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">Polite follow-up</div>
+                            <div className="text-xs text-gray-500">7 days after due date</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
+                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">Final notice</div>
+                            <div className="text-xs text-gray-500">14 days after due date</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Feature 6 */}
-                <div className="py-6 sm:py-8 flex items-start gap-4 sm:gap-6">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-gray-900 flex items-center justify-center flex-shrink-0">
-                    <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                {/* Feature 3 - Client Management */}
+                <div className="group relative bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-gray-300 transition-all duration-300">
+                  <div className="p-8">
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="w-12 h-12 rounded-xl bg-gray-900 flex items-center justify-center">
+                        <Users className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-400 tracking-wide">03</span>
+                    </div>
+                    <h3 className="font-heading text-xl font-semibold text-gray-900 mb-2">Client Management</h3>
+                    <p className="text-gray-600 mb-6 leading-relaxed">Store all your clients with contact details, history, and quick invoice creation.</p>
+                    
+                    {/* Visual Mockup */}
+                    <div className="relative mt-6 bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
+                          <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-semibold">AC</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold text-gray-900">Acme Corporation</div>
+                            <div className="text-xs text-gray-500">contact@acme.com</div>
+                          </div>
+                          <div className="text-xs font-medium text-gray-400">5 invoices</div>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
+                          <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-semibold">TS</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold text-gray-900">Tech Solutions</div>
+                            <div className="text-xs text-gray-500">hello@tech.io</div>
+                          </div>
+                          <div className="text-xs font-medium text-gray-400">3 invoices</div>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-100">
+                          <div className="w-10 h-10 rounded-full bg-violet-600 flex items-center justify-center text-white text-sm font-semibold">DM</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold text-gray-900">Design Masters</div>
+                            <div className="text-xs text-gray-500">team@design.co</div>
+                          </div>
+                          <div className="text-xs font-medium text-gray-400">2 invoices</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-1">Track everything</h3>
-                    <p className="text-sm sm:text-base text-gray-500">See when invoices are viewed, reminders sent, and payments received.</p>
+                </div>
+
+                {/* Feature 4 - Email & Portal */}
+                <div className="group relative bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-gray-300 transition-all duration-300">
+                  <div className="p-8">
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="w-12 h-12 rounded-xl bg-gray-900 flex items-center justify-center">
+                        <Send className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-400 tracking-wide">04</span>
+                    </div>
+                    <h3 className="font-heading text-xl font-semibold text-gray-900 mb-2">Email & Portal</h3>
+                    <p className="text-gray-600 mb-6 leading-relaxed">Send invoices via email with PDF. Clients get an online portal to view and download.</p>
+                    
+                    {/* Visual Mockup */}
+                    <div className="relative mt-6 bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <div className="space-y-4">
+                        <div className="p-3 bg-white rounded-lg border border-gray-100">
+                          <div className="flex items-center gap-2 mb-2">
+                            <CheckCircle className="w-4 h-4 text-emerald-500" />
+                            <span className="text-sm font-medium text-gray-900">Invoice sent successfully</span>
+                          </div>
+                          <div className="text-xs text-gray-500 mb-2">To: client@acme.com</div>
+                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>invoice-001.pdf (142 KB)</span>
+                          </div>
+                        </div>
+                        <div className="p-4 bg-white rounded-lg border border-gray-100">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="text-xs text-gray-500">Amount Due</div>
+                            <div className="text-lg font-bold text-gray-900">$2,500.00</div>
+                          </div>
+                          <button className="w-full py-2 bg-gray-900 text-white text-sm font-medium rounded-lg">
+                            View Online Portal
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Feature 5 - Activity Tracking */}
+                <div className="group relative bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-gray-300 transition-all duration-300">
+                  <div className="p-8">
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="w-12 h-12 rounded-xl bg-gray-900 flex items-center justify-center">
+                        <Eye className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-400 tracking-wide">05</span>
+                    </div>
+                    <h3 className="font-heading text-xl font-semibold text-gray-900 mb-2">Activity Tracking</h3>
+                    <p className="text-gray-600 mb-6 leading-relaxed">See exactly when invoices are viewed, reminders sent, and payments received.</p>
+                    
+                    {/* Visual Mockup */}
+                    <div className="relative mt-6 bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                            <Send className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">Invoice sent</div>
+                            <div className="text-xs text-gray-500">2 hours ago</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                            <Eye className="w-4 h-4 text-amber-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">Client viewed invoice</div>
+                            <div className="text-xs text-gray-500">1 hour ago</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                            <CheckCircle className="w-4 h-4 text-emerald-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">Payment received</div>
+                            <div className="text-xs text-gray-500">Just now</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Feature 6 - Analytics */}
+                <div className="group relative bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-gray-300 transition-all duration-300">
+                  <div className="p-8">
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="w-12 h-12 rounded-xl bg-gray-900 flex items-center justify-center">
+                        <BarChart3 className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-400 tracking-wide">06</span>
+                    </div>
+                    <h3 className="font-heading text-xl font-semibold text-gray-900 mb-2">Revenue Analytics</h3>
+                    <p className="text-gray-600 mb-6 leading-relaxed">Track your revenue, pending payments, and overdue invoices in real-time.</p>
+                    
+                    {/* Visual Mockup */}
+                    <div className="relative mt-6 bg-gray-50 rounded-xl p-4 border border-gray-100">
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div className="p-3 bg-white rounded-lg border border-gray-100">
+                          <div className="text-xs text-gray-500 mb-1">Total Revenue</div>
+                          <div className="text-xl font-bold text-gray-900">$24,500</div>
+                        </div>
+                        <div className="p-3 bg-white rounded-lg border border-gray-100">
+                          <div className="text-xs text-gray-500 mb-1">Pending</div>
+                          <div className="text-xl font-bold text-amber-600">$3,200</div>
+                        </div>
+                      </div>
+                      <div className="flex items-end gap-1.5 h-16 bg-white rounded-lg border border-gray-100 p-3">
+                        <div className="flex-1 bg-gray-900 rounded-sm" style={{ height: '45%' }}></div>
+                        <div className="flex-1 bg-gray-900 rounded-sm" style={{ height: '65%' }}></div>
+                        <div className="flex-1 bg-gray-900 rounded-sm" style={{ height: '100%' }}></div>
+                        <div className="flex-1 bg-gray-900 rounded-sm" style={{ height: '80%' }}></div>
+                        <div className="flex-1 bg-gray-900 rounded-sm" style={{ height: '55%' }}></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
               </div>
+
             </div>
           </div>
         </div>
