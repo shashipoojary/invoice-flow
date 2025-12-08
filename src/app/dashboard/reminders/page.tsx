@@ -250,25 +250,29 @@ export default function ReminderHistoryPage() {
 
       if (!matchesSearch) return false;
 
-      // Filter scheduled reminders: only show those scheduled within 1 day ahead
+      // Filter scheduled reminders: show those scheduled for today or within 1 day ahead
       if (reminder.reminder_status === 'scheduled') {
         const now = new Date();
         const scheduledDate = new Date(reminder.sent_at || reminder.created_at || now);
         
-        // Calculate the difference in milliseconds
-        const diffMs = scheduledDate.getTime() - now.getTime();
-        const diffDays = diffMs / (1000 * 60 * 60 * 24); // Convert to days
+        // Get today's date (start of day) and tomorrow's date (start of day)
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const dayAfterTomorrow = new Date(today);
+        dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
         
-        // Only show if scheduled date is:
-        // - In the future (diffDays > 0)
-        // - Within 1 day ahead (diffDays <= 1)
-        // - Not in the past (diffDays >= 0)
-        if (diffDays < 0 || diffDays > 1) {
-          return false; // Skip this scheduled reminder
+        // Get scheduled date (start of day)
+        const scheduledDay = new Date(scheduledDate.getFullYear(), scheduledDate.getMonth(), scheduledDate.getDate());
+        
+        // Show if scheduled for today or tomorrow (within 1 day ahead)
+        // scheduledDay >= today means today or future
+        // scheduledDay < dayAfterTomorrow means before the day after tomorrow (so today or tomorrow)
+        if (scheduledDay >= today && scheduledDay < dayAfterTomorrow) {
+          return true; // Show scheduled reminders for today or tomorrow
         }
         
-        // Show scheduled reminders within 1 day ahead
-        return true;
+        return false; // Skip reminders scheduled for past or more than 1 day ahead
       }
       
       // Show ALL sent/failed/delivered/bounced reminders (complete history)
@@ -411,7 +415,7 @@ export default function ReminderHistoryPage() {
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
-              History
+              Reminder History
             </h2>
              <button
                onClick={fetchReminderHistory}
