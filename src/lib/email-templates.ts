@@ -324,12 +324,14 @@ export function generateMinimalEmailTemplate(
             letter-spacing: 0.5px;
           }
           .payment-notice {
-            background: transparent;
-            padding: 0;
-            border: none;
-            margin-bottom: 16px;
+            background: #f9fafb;
+            padding: 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 20px;
             width: 100%;
             box-sizing: border-box;
+            text-align: center;
           }
           .payment-notice p {
             margin: 0;
@@ -371,11 +373,12 @@ export function generateMinimalEmailTemplate(
             line-height: 1.6;
           }
           .payment-security {
-            background: transparent;
-            padding: 0;
-            border: none;
-            text-align: left;
-            margin-top: 16px;
+            background: #fef3c7;
+            padding: 16px;
+            border: 1px solid #fbbf24;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 20px;
           }
           .payment-security p {
             margin: 0;
@@ -513,10 +516,22 @@ export function generateMinimalEmailTemplate(
             .payment-methods h3 {
               font-size: 14px !important;
             }
+            .payment-notice {
+              padding: 16px !important;
+              border: 1px solid #e5e7eb !important;
+              border-radius: 8px !important;
+              text-align: center !important;
+            }
             .payment-notice p {
               font-size: 14px !important;
               color: #000000 !important;
               line-height: 1.6 !important;
+            }
+            .payment-security {
+              padding: 16px !important;
+              border: 1px solid #fbbf24 !important;
+              border-radius: 8px !important;
+              text-align: center !important;
             }
             .payment-method-name {
               font-size: 12px !important;

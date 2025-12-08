@@ -346,7 +346,12 @@ async function generateTemplate1DetailedPDF(
       color: rgb(0, 0, 0),
     });
 
-    page.drawText(formatCurrency(parseFloat(item.rate?.toString() || '0')), {
+    // Calculate rate: if rate is 0 or not provided, use amount (since quantity is 1)
+    const itemRate = parseFloat(item.rate?.toString() || '0');
+    const quantity = 1; // Default quantity is 1
+    const rate = itemRate > 0 ? itemRate : (amount / quantity);
+    
+    page.drawText(formatCurrency(rate), {
       x: 350,
       y: currentY,
       size: 9,
@@ -759,7 +764,12 @@ async function generateTemplate2PDF(
       color: rgb(0, 0, 0),
     });
 
-    page.drawText(formatCurrency(parseFloat(item.rate?.toString() || '0')), {
+    // Calculate rate: if rate is 0 or not provided, use amount (since quantity is 1)
+    const itemRate = parseFloat(item.rate?.toString() || '0');
+    const quantity = 1; // Default quantity is 1
+    const rate = itemRate > 0 ? itemRate : (amount / quantity);
+    
+    page.drawText(formatCurrency(rate), {
       x: 350,
       y: currentY,
       size: 9,
@@ -1175,7 +1185,12 @@ async function generateTemplate3PDF(
       color: rgb(0, 0, 0),
     });
 
-    page.drawText(formatCurrency(parseFloat(item.rate?.toString() || '0')), {
+    // Calculate rate: if rate is 0 or not provided, use amount (since quantity is 1)
+    const itemRate = parseFloat(item.rate?.toString() || '0');
+    const quantity = 1; // Default quantity is 1
+    const rate = itemRate > 0 ? itemRate : (amount / quantity);
+    
+    page.drawText(formatCurrency(rate), {
       x: 380,
       y: currentY - 18,
       size: 9,
@@ -1630,7 +1645,12 @@ async function generateModernTemplatePDF(
       color: rgb(0, 0, 0),
     });
 
-    page.drawText(formatCurrency(parseFloat(item.rate?.toString() || '0')), {
+    // Calculate rate: if rate is 0 or not provided, use amount (since quantity is 1)
+    const itemRate = parseFloat(item.rate?.toString() || '0');
+    const quantity = 1; // Default quantity is 1
+    const rate = itemRate > 0 ? itemRate : (amount / quantity);
+    
+    page.drawText(formatCurrency(rate), {
       x: 380,
       y: currentY - 18,
       size: 9,
@@ -2162,7 +2182,12 @@ async function generateSimpleCleanTemplatePDF(
       color: rgb(0.3, 0.3, 0.3),
     });
 
-    page.drawText(formatCurrency(parseFloat(item.rate?.toString() || '0')), {
+    // Calculate rate: if rate is 0 or not provided, use amount (since quantity is 1)
+    const itemRate = parseFloat(item.rate?.toString() || '0');
+    const quantity = 1; // Default quantity is 1
+    const rate = itemRate > 0 ? itemRate : (amount / quantity);
+    
+    page.drawText(formatCurrency(rate), {
       x: 380,
       y: currentY - 14,
       size: 9,
@@ -2658,7 +2683,12 @@ async function generateMinimalTemplatePDF(
       color: rgb(0.3, 0.3, 0.3),
     });
 
-    page.drawText(formatCurrency(parseFloat(item.rate?.toString() || '0')), {
+    // Calculate rate: if rate is 0 or not provided, use amount (since quantity is 1)
+    const itemRate = parseFloat(item.rate?.toString() || '0');
+    const quantity = 1; // Default quantity is 1
+    const rate = itemRate > 0 ? itemRate : (amount / quantity);
+    
+    page.drawText(formatCurrency(rate), {
       x: 400,
       y: currentY,
       size: 9,
