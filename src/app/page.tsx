@@ -738,7 +738,7 @@ export default function LandingPage() {
       <section className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 sm:mb-24">
-            <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-4 text-gray-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold mb-4 text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
               How it works
             </h2>
           </div>
@@ -752,10 +752,10 @@ export default function LandingPage() {
                 <div className="mb-3">
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Step 01</span>
                 </div>
-                <h3 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-gray-900 mb-4 leading-tight tracking-tight">
+                <h3 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-gray-900 mb-4 leading-tight tracking-tight" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
                   Create Invoice
               </h3>
-            <p className="text-lg text-gray-600 leading-relaxed mb-8">
+            <p className="text-lg text-gray-600 leading-relaxed mb-8" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
                   Select your client, add line items, and choose a template. Your invoice is ready in seconds.
                 </p>
                 
@@ -791,15 +791,12 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Right Visual - Animated Invoice Modal - GitHub Copilot Style */}
+              {/* Right Visual - Animated Invoice Modal - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Background Illumination - High Intensity Glow Effect */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-400/100 via-purple-400/90 to-blue-400/100 rounded-3xl blur-3xl scale-125"></div>
-                <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-violet-400/95 via-indigo-400/85 to-transparent rounded-3xl blur-2xl scale-115"></div>
-                <div className="absolute inset-0 -z-10 bg-gradient-to-b from-indigo-300/90 via-purple-300/75 to-blue-300/90 rounded-3xl blur-xl scale-110"></div>
-                <div className="absolute inset-0 -z-10 bg-gradient-to-r from-indigo-200/80 via-purple-200/60 to-blue-200/80 rounded-3xl blur-lg"></div>
+                {/* Clean Subtle Background */}
+                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-50/40 to-purple-50/30 rounded-2xl"></div>
                 
-                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-[0_12px_48px_rgba(99,102,241,0.25),0_0_0_1px_rgba(139,92,246,0.1)] max-w-lg w-full mx-auto overflow-hidden border border-gray-100">
+                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200">
                   {/* Modal Header - Refined Design */}
                   <div className="flex items-center justify-between p-3 sm:p-4 lg:p-5 border-b border-gray-100">
                     <div className="flex items-center space-x-3">
@@ -1230,10 +1227,10 @@ export default function LandingPage() {
                 <div className="mb-3">
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Step 02</span>
                 </div>
-                <h3 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-gray-900 mb-4 leading-tight tracking-tight">
+                <h3 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-gray-900 mb-4 leading-tight tracking-tight" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
                   Send Automatically
                 </h3>
-                <p className="text-lg text-gray-600 leading-relaxed mb-8">
+                <p className="text-lg text-gray-600 leading-relaxed mb-8" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
                   Your invoice is sent via email with a PDF attachment. No manual work required.
                 </p>
                 
@@ -1269,15 +1266,12 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Right Visual - Email Preview Mockup - GitHub Copilot Style */}
+              {/* Right Visual - Email Preview Mockup - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Background Illumination - High Intensity Glow Effect */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-400/100 via-purple-400/90 to-blue-400/100 rounded-3xl blur-3xl scale-125"></div>
-                <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-violet-400/95 via-indigo-400/85 to-transparent rounded-3xl blur-2xl scale-115"></div>
-                <div className="absolute inset-0 -z-10 bg-gradient-to-b from-indigo-300/90 via-purple-300/75 to-blue-300/90 rounded-3xl blur-xl scale-110"></div>
-                <div className="absolute inset-0 -z-10 bg-gradient-to-r from-indigo-200/80 via-purple-200/60 to-blue-200/80 rounded-3xl blur-lg"></div>
+                {/* Clean Subtle Background */}
+                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-emerald-50/40 to-green-50/30 rounded-2xl"></div>
                 
-                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-[0_12px_48px_rgba(99,102,241,0.25),0_0_0_1px_rgba(139,92,246,0.1)] max-w-lg w-full mx-auto overflow-hidden border border-gray-100 h-[380px] sm:h-[400px] lg:h-[420px]">
+                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200 h-[380px] sm:h-[400px] lg:h-[420px]">
                   {/* Email Preview Card - Clean Minimal Design */}
                   <div className="p-4 sm:p-5 h-full overflow-y-auto scrollbar-hide">
                     {/* From Header - Minimal */}
@@ -1381,10 +1375,10 @@ export default function LandingPage() {
                 <div className="mb-3">
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Step 03</span>
                 </div>
-                <h3 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-gray-900 mb-4 leading-tight tracking-tight">
+                <h3 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-gray-900 mb-4 leading-tight tracking-tight" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
                   Track & Remind
                 </h3>
-                <p className="text-lg text-gray-600 leading-relaxed mb-8">
+                <p className="text-lg text-gray-600 leading-relaxed mb-8" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
                   See when clients view your invoices. Automated reminders are sent based on your schedule.
                 </p>
                 
@@ -1420,15 +1414,12 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Right Visual - Activity Tracking Mockup - GitHub Copilot Style */}
+              {/* Right Visual - Activity Tracking Mockup - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Background Illumination - High Intensity Glow Effect */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-400/100 via-purple-400/90 to-blue-400/100 rounded-3xl blur-3xl scale-125"></div>
-                <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-violet-400/95 via-indigo-400/85 to-transparent rounded-3xl blur-2xl scale-115"></div>
-                <div className="absolute inset-0 -z-10 bg-gradient-to-b from-indigo-300/90 via-purple-300/75 to-blue-300/90 rounded-3xl blur-xl scale-110"></div>
-                <div className="absolute inset-0 -z-10 bg-gradient-to-r from-indigo-200/80 via-purple-200/60 to-blue-200/80 rounded-3xl blur-lg"></div>
+                {/* Clean Subtle Background */}
+                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-amber-50/40 to-orange-50/30 rounded-2xl"></div>
                 
-                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-[0_12px_48px_rgba(99,102,241,0.25),0_0_0_1px_rgba(139,92,246,0.1)] max-w-lg w-full mx-auto overflow-hidden border border-gray-100 h-[380px] sm:h-[400px] lg:h-[420px]">
+                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200 h-[380px] sm:h-[400px] lg:h-[420px]">
                   {/* Activity Card - Clean Minimal Design */}
                   <div className="p-4 sm:p-5 h-full overflow-y-auto scrollbar-hide">
                     {/* Header - Minimal */}
@@ -1514,10 +1505,10 @@ export default function LandingPage() {
                 <div className="mb-3">
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Step 04</span>
                 </div>
-                <h3 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-gray-900 mb-4 leading-tight tracking-tight">
+                <h3 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-gray-900 mb-4 leading-tight tracking-tight" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
                   Get Paid Faster
                 </h3>
-                <p className="text-lg text-gray-600 leading-relaxed mb-8">
+                <p className="text-lg text-gray-600 leading-relaxed mb-8" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
                   Clients pay through their preferred method. Payments go directly to your account — no fees, no hidden charges.
                 </p>
                 
@@ -1553,15 +1544,12 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Right Visual - Payment Mockup - GitHub Copilot Style */}
+              {/* Right Visual - Payment Mockup - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Background Illumination - High Intensity Glow Effect */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-400/100 via-purple-400/90 to-blue-400/100 rounded-3xl blur-3xl scale-125"></div>
-                <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-violet-400/95 via-indigo-400/85 to-transparent rounded-3xl blur-2xl scale-115"></div>
-                <div className="absolute inset-0 -z-10 bg-gradient-to-b from-indigo-300/90 via-purple-300/75 to-blue-300/90 rounded-3xl blur-xl scale-110"></div>
-                <div className="absolute inset-0 -z-10 bg-gradient-to-r from-indigo-200/80 via-purple-200/60 to-blue-200/80 rounded-3xl blur-lg"></div>
+                {/* Clean Subtle Background */}
+                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-blue-50/40 to-cyan-50/30 rounded-2xl"></div>
                 
-                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-[0_12px_48px_rgba(99,102,241,0.25),0_0_0_1px_rgba(139,92,246,0.1)] max-w-lg w-full mx-auto overflow-hidden border border-gray-100 h-[380px] sm:h-[400px] lg:h-[420px]">
+                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200 h-[380px] sm:h-[400px] lg:h-[420px]">
                   <div className="h-full overflow-y-auto scrollbar-hide">
                     {/* Step 1: Invoice Sent with Payment Details */}
                     {paymentStep === 1 && (
