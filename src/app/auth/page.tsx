@@ -43,6 +43,28 @@ export default function AuthPage() {
           password: formData.password,
         });
         if (error) throw error;
+        
+        // Check if user has completed onboarding
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          try {
+            const response = await fetch('/api/settings', {
+              headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+              },
+            });
+            if (response.ok) {
+              const data = await response.json();
+              if (!data.settings?.business_name) {
+                router.push('/onboarding');
+                return;
+              }
+            }
+          } catch (error) {
+            console.error('Error checking onboarding:', error);
+          }
+        }
+        
         router.push('/dashboard');
       } else {
         const { error } = await supabase.auth.signUp({
@@ -55,7 +77,8 @@ export default function AuthPage() {
           },
         });
         if (error) throw error;
-        router.push('/dashboard');
+        // New users always go to onboarding
+        router.push('/onboarding');
       }
     } catch (error: any) {
       setError(error.message);
