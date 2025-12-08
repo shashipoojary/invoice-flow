@@ -59,6 +59,8 @@ export async function GET(
         // Map database fields to frontend interface
         invoiceNumber: invoice.invoice_number,
         dueDate: invoice.due_date,
+        issueDate: invoice.issue_date,
+        issue_date: invoice.issue_date,
         createdAt: invoice.created_at,
         updatedAt: invoice.updated_at,
         clientId: invoice.client_id, // Map client_id to clientId

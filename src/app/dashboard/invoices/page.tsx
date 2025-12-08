@@ -1370,7 +1370,9 @@ function InvoicesContent(): React.JSX.Element {
                   <div>
                     <span className={`font-medium ${'text-gray-600'}`}>Date:</span>
                     <p className={'text-gray-600'}>
-                      {selectedInvoice.createdAt ? new Date(selectedInvoice.createdAt).toLocaleDateString() : 'N/A'}
+                      {(selectedInvoice.issueDate || selectedInvoice.issue_date) 
+                        ? new Date(selectedInvoice.issueDate || selectedInvoice.issue_date || '').toLocaleDateString() 
+                        : (selectedInvoice.createdAt ? new Date(selectedInvoice.createdAt).toLocaleDateString() : 'N/A')}
                     </p>
                   </div>
                   <div>
