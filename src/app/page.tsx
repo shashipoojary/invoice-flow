@@ -791,52 +791,67 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Right Visual - Clean Minimal Invoice Modal */}
+              {/* Right Visual - Animated Invoice Modal - GitHub Copilot Style */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Subtle Background Glow */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-100/60 via-purple-100/40 to-blue-100/60 rounded-3xl blur-3xl"></div>
+                {/* Background Illumination - High Intensity Glow Effect */}
+                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-400/100 via-purple-400/90 to-blue-400/100 rounded-3xl blur-3xl scale-125"></div>
+                <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-violet-400/95 via-indigo-400/85 to-transparent rounded-3xl blur-2xl scale-115"></div>
+                <div className="absolute inset-0 -z-10 bg-gradient-to-b from-indigo-300/90 via-purple-300/75 to-blue-300/90 rounded-3xl blur-xl scale-110"></div>
+                <div className="absolute inset-0 -z-10 bg-gradient-to-r from-indigo-200/80 via-purple-200/60 to-blue-200/80 rounded-3xl blur-lg"></div>
                 
-                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200">
-                  {/* Modal Header - Clean Minimal */}
-                  <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-200">
+                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-[0_12px_48px_rgba(99,102,241,0.25),0_0_0_1px_rgba(139,92,246,0.1)] max-w-lg w-full mx-auto overflow-hidden border border-gray-100">
+                  {/* Modal Header - Refined Design */}
+                  <div className="flex items-center justify-between p-3 sm:p-4 lg:p-5 border-b border-gray-100">
                     <div className="flex items-center space-x-3">
-                      <div className="p-2 rounded-lg bg-indigo-100">
-                        <Sparkles className="h-4 w-4 text-indigo-600" />
+                      <div className="p-2.5 rounded-lg bg-indigo-50/50 shadow-sm">
+                        <Sparkles className="h-5 w-5 text-indigo-500" />
                       </div>
                       <div>
-                        <h2 className="text-base font-semibold text-gray-900">
-                          Create Invoice
+                        <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+                          Detailed Invoice
                         </h2>
-                        <p className="text-xs text-gray-500">
-                          Quick and professional
+                        <p className="text-xs sm:text-sm text-gray-500">
+                          Create professional invoices with auto reminders
                         </p>
                       </div>
                     </div>
-                    <button className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100">
+                    <button className="transition-colors p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100">
                       <X className="h-4 w-4" />
                     </button>
                   </div>
 
-                  {/* Step Indicator - Clean Minimal */}
-                  <div className="px-4 sm:px-5 py-3 border-b border-gray-200 bg-gray-50">
-                    <div className="flex items-center justify-center space-x-2">
-                      {[1, 2, 3, 4].map((step) => {
+                  {/* Step Indicator - Refined Design */}
+                  <div className="px-3 sm:px-4 lg:px-5 py-2.5 sm:py-3 border-b border-gray-100 bg-gray-50/50">
+                    <div className="flex items-center justify-center space-x-1 sm:space-x-3">
+                      {[
+                        { step: 1, label: 'Client', icon: User },
+                        { step: 2, label: 'Services', icon: FileText },
+                        { step: 3, label: 'Settings', icon: Settings },
+                        { step: 4, label: 'Review', icon: CheckCircle }
+                      ].map(({ step, label, icon: Icon }) => {
                         const isActive = invoiceStep === step;
                         const isCompleted = invoiceStep > step;
                         return (
-                          <div key={step} className="flex items-center">
-                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-300 ${
-                              isActive
-                                ? 'bg-indigo-600 text-white'
-                                : isCompleted
-                                ? 'bg-indigo-100 text-indigo-600'
+                          <div key={step} className="flex items-center flex-shrink-0">
+                            <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-medium transition-all duration-500 ${
+                              isActive || isCompleted
+                                ? 'bg-indigo-500 text-white'
                                 : 'bg-gray-200 text-gray-500'
                             }`}>
-                              {step}
+                              {isCompleted ? (
+                                <CheckCircle className="h-3 w-3" />
+                              ) : (
+                                <Icon className="h-3 w-3" />
+                              )}
                             </div>
+                            <span className={`ml-1 sm:ml-2 text-xs font-medium hidden xs:inline transition-colors ${
+                              isActive || isCompleted ? 'text-indigo-500' : 'text-gray-500'
+                            }`}>
+                              {label}
+                            </span>
                             {step < 4 && (
-                              <div className={`w-8 h-0.5 mx-2 transition-colors duration-300 ${
-                                isCompleted ? 'bg-indigo-600' : 'bg-gray-200'
+                              <div className={`w-2 sm:w-6 h-0.5 mx-1 sm:mx-3 transition-colors duration-500 ${
+                                isCompleted ? 'bg-indigo-500' : 'bg-gray-200'
                               }`} />
                             )}
                           </div>
@@ -845,253 +860,361 @@ export default function LandingPage() {
                     </div>
                   </div>
 
-                  {/* Form Content - Clean Layout */}
-                  <div className="px-4 sm:px-5 pb-4 sm:pb-5 h-[380px] sm:h-[400px] lg:h-[420px] overflow-hidden relative bg-white">
-                    {/* Step 1: Client Selection */}
+                  {/* Form Content - One Step at a Time - Fixed Height */}
+                  <div className="px-3 sm:px-4 lg:px-5 pb-3 sm:pb-4 lg:pb-5 h-[380px] sm:h-[400px] lg:h-[420px] overflow-hidden relative bg-white">
+                    {/* Fade gradient overlay at bottom */}
+                    <div className="absolute bottom-16 left-0 right-0 h-12 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none z-10"></div>
+                    {/* Step 1: Client Selection - Full Page */}
                     {invoiceStep === 1 && (
-                      <div className="absolute inset-x-0 top-0 bottom-0 px-4 sm:px-5 pt-6 pb-20 flex flex-col">
+                      <div className="absolute inset-x-0 top-0 bottom-0 px-4 sm:px-5 pt-4 pb-20 flex flex-col animate-[fadeIn_0.5s_ease-in]">
                         <div className="flex-1 overflow-y-auto scrollbar-hide">
-                          <div className="mb-6">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-1">Client Details</h3>
-                            <p className="text-sm text-gray-500">Who are you invoicing?</p>
+                          <div className="text-center mb-4">
+                            <h3 className="text-sm font-semibold mb-1.5 text-gray-900">Client & Invoice Details</h3>
+                            <p className="text-xs text-gray-500">Select client and set basic information</p>
                           </div>
 
                           {/* Client Selection */}
-                          <div className="mb-6">
-                            <div className="flex items-center justify-between p-4 rounded-lg bg-gray-50 border border-gray-200">
+                          <div className="p-4 mb-4">
+                            <h4 className="text-sm font-semibold mb-2 flex items-center text-gray-700">
+                              <User className="h-4 w-4 mr-2 text-indigo-500" />
+                              Select Client
+                            </h4>
+
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50/50 border border-gray-100 animate-[slideInLeft_0.5s_ease-in]">
                               <div className="flex items-center space-x-3">
-                                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                                  <User className="h-5 w-5 text-indigo-600" />
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-indigo-50">
+                                  <User className="h-4 w-4 text-indigo-500" />
                                 </div>
                                 <div>
-                                  <p className="text-sm font-semibold text-gray-900">Acme Corporation</p>
+                                  <p className="text-sm font-medium text-gray-900">Acme Corporation</p>
                                   <p className="text-xs text-gray-500">john@acme.com</p>
                                 </div>
                               </div>
-                              <button className="text-xs font-medium px-3 py-1.5 rounded-md bg-white border border-gray-200 text-gray-700 hover:bg-gray-50">
+                              <button className="text-xs font-medium px-3 py-1.5 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
                                 Change
                               </button>
                             </div>
                           </div>
 
                           {/* Invoice Details */}
-                          <div className="space-y-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1.5">Invoice Number</label>
-                              <input
-                                type="text"
-                                value="INV-001234"
-                                readOnly
-                                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
-                              />
+                              <div className="relative">
+                                <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <input
+                                  type="text"
+                                  value="INV-001234"
+                                  readOnly
+                                  className="w-full pl-10 pr-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50/50 text-gray-600"
+                                />
+                                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                  <div className="w-2 h-2 rounded-full bg-green-500" title="Auto-generated"></div>
+                                </div>
+                              </div>
+                              <p className="text-xs mt-1 text-gray-500">Auto-generated</p>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1.5">Issue Date</label>
+                            <div>
+                              <div className="relative">
+                                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                                 <input
                                   type="date"
                                   value="2024-01-15"
-                                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-white text-gray-900"
+                                  className="w-full pl-10 pr-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-900"
                                 />
                               </div>
+                              <p className="text-xs mt-1 text-gray-500">Issue Date</p>
+                            </div>
 
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1.5">Due Date</label>
+                            <div>
+                              <div className="relative">
+                                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                                 <input
                                   type="date"
                                   value="2024-01-29"
-                                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-white text-gray-900"
+                                  className="w-full pl-10 pr-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-900"
                                 />
                               </div>
+                              <p className="text-xs mt-1 text-gray-500">Due Date</p>
                             </div>
                           </div>
                         </div>
 
-                        {/* Next Button */}
-                        <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-5 py-4 border-t border-gray-200 bg-white">
-                          <button className="w-full bg-indigo-600 text-white py-2.5 rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm">
-                            Next Step
+                        {/* Next Button - Fixed at bottom */}
+                        <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-5 pt-3 pb-4 border-t border-gray-100 bg-white">
+                          <button className="w-full sm:w-auto sm:ml-auto bg-indigo-500 text-white py-2.5 px-6 rounded-lg hover:bg-indigo-600 transition-colors font-medium flex items-center justify-center space-x-2 text-sm shadow-sm">
+                            <span>Next</span>
+                            <ArrowRight className="h-3.5 w-3.5" />
                           </button>
                         </div>
                       </div>
                     )}
 
-                    {/* Step 2: Services */}
+                    {/* Step 2: Services - Full Page */}
                     {invoiceStep === 2 && (
-                      <div className="absolute inset-x-0 top-0 bottom-0 px-4 sm:px-5 pt-6 pb-20 flex flex-col">
+                      <div className="absolute inset-x-0 top-0 bottom-0 px-4 sm:px-5 pt-4 pb-20 flex flex-col animate-[fadeIn_0.5s_ease-in]">
                         <div className="flex-1 overflow-y-auto scrollbar-hide">
-                          <div className="mb-6">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-1">Services & Items</h3>
-                            <p className="text-sm text-gray-500">What are you charging for?</p>
+                          <div className="text-center mb-4">
+                            <h3 className="text-sm sm:text-base font-semibold mb-1 text-gray-900">Services & Amount</h3>
+                            <p className="text-xs text-gray-500">Add the services you provided and their amounts</p>
                           </div>
 
                           {/* Services List */}
-                          <div className="space-y-3 mb-6">
+                          <div className="space-y-2 mb-3">
                             {/* Service 1 */}
-                            <div className="p-4 border border-gray-200 rounded-lg bg-white">
-                              <input
-                                type="text"
-                                value="Website Development"
-                                readOnly
-                                className="w-full mb-2 text-sm font-medium text-gray-900 bg-transparent border-0 p-0 focus:outline-none"
-                              />
-                              <div className="text-lg font-semibold text-gray-900">$2,500</div>
+                            <div className="p-3 border border-gray-100 rounded-lg bg-gray-50/30 animate-[slideInLeft_0.5s_ease-in]">
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div className="sm:col-span-2">
+                                  <label className="block text-xs font-medium mb-1 text-gray-600">
+                                    Service Description *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value="Website Development"
+                                    readOnly
+                                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-900"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium mb-1 text-gray-600">
+                                    Amount ($)
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value="2,500"
+                                    readOnly
+                                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-900"
+                                  />
+                                </div>
+                              </div>
                             </div>
 
                             {/* Service 2 */}
-                            <div className="p-4 border border-gray-200 rounded-lg bg-white">
-                              <input
-                                type="text"
-                                value="UI/UX Design"
-                                readOnly
-                                className="w-full mb-2 text-sm font-medium text-gray-900 bg-transparent border-0 p-0 focus:outline-none"
-                              />
-                              <div className="text-lg font-semibold text-gray-900">$1,500</div>
+                            <div className="p-3 border border-gray-100 rounded-lg bg-gray-50/30 animate-[slideInLeft_0.5s_ease-in]">
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div className="sm:col-span-2">
+                                  <label className="block text-xs font-medium mb-1 text-gray-600">
+                                    Service Description *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value="UI/UX Design"
+                                    readOnly
+                                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-900"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium mb-1 text-gray-600">
+                                    Amount ($)
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value="1,500"
+                                    readOnly
+                                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-900"
+                                  />
+                                </div>
+                              </div>
                             </div>
                           </div>
 
                           {/* Total */}
-                          <div className="flex items-center justify-between py-4 border-t-2 border-gray-200">
-                            <span className="text-base font-medium text-gray-700">Total</span>
-                            <span className="text-2xl font-bold text-gray-900">$4,000</span>
+                          <div className="flex items-center justify-between py-3 border-t border-gray-100">
+                            <span className="text-sm text-gray-500">Total</span>
+                            <span className="text-xl font-bold text-gray-900">$4,000</span>
                           </div>
                         </div>
 
-                        {/* Next Button */}
-                        <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-5 py-4 border-t border-gray-200 bg-white">
-                          <button className="w-full bg-indigo-600 text-white py-2.5 rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm">
-                            Next Step
+                        {/* Next Button - Fixed at bottom */}
+                        <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-5 pt-3 pb-4 border-t border-gray-100 bg-white">
+                          <button className="w-full sm:w-auto sm:ml-auto bg-indigo-500 text-white py-2.5 px-6 rounded-lg hover:bg-indigo-600 transition-colors font-medium flex items-center justify-center space-x-2 text-sm shadow-sm">
+                            <span>Next</span>
+                            <ArrowRight className="h-3.5 w-3.5" />
                           </button>
                         </div>
                       </div>
                     )}
 
-                    {/* Step 3: Settings */}
+                    {/* Step 3: Settings/Template - Full Page */}
                     {invoiceStep === 3 && (
-                      <div className="absolute inset-x-0 top-0 bottom-0 px-4 sm:px-5 pt-6 pb-20 flex flex-col">
+                      <div className="absolute inset-x-0 top-0 bottom-0 px-4 sm:px-5 pt-4 pb-20 flex flex-col animate-[fadeIn_0.5s_ease-in]">
                         <div className="flex-1 overflow-y-auto scrollbar-hide">
-                          <div className="mb-6">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-1">Customize</h3>
-                            <p className="text-sm text-gray-500">Choose your style</p>
+                          <div className="text-center mb-3">
+                            <h3 className="text-xs sm:text-sm font-semibold mb-1 text-gray-900">Invoice Settings</h3>
+                            <p className="text-xs text-gray-500">Configure template and colors</p>
                           </div>
 
                           {/* Template Selection */}
-                          <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-700 mb-3">Template</label>
-                            <div className="grid grid-cols-3 gap-3">
+                          <div className="mb-3">
+                            <h4 className="text-xs font-semibold mb-1.5 flex items-center text-gray-700">
+                              <Layout className="h-3.5 w-3.5 mr-1.5 text-indigo-500" />
+                              Select Template
+                            </h4>
+                            <div className="grid grid-cols-3 gap-2">
                               {/* Template 1: Minimal */}
-                              <div className="p-3 border border-gray-200 rounded-lg bg-white cursor-pointer hover:bg-gray-50">
-                                <div className="w-full h-12 rounded bg-gray-100 mb-2 flex items-center justify-center">
-                                  <FileText className="h-4 w-4 text-gray-400" />
+                              <div className="p-1.5 border border-gray-100 rounded-lg bg-white cursor-pointer hover:border-gray-200 transition-colors">
+                                <div className="w-full h-10 rounded border border-gray-100 bg-gray-50/50 mb-1 flex items-center justify-center">
+                                  <FileText className="h-3.5 w-3.5 text-gray-400" />
                                 </div>
-                                <div className="text-xs font-medium text-gray-900">Minimal</div>
+                                <h5 className="text-xs font-semibold text-gray-900 mb-0.5">Minimal</h5>
+                                <p className="text-[10px] text-gray-500 leading-tight">Clean</p>
                               </div>
 
                               {/* Template 2: Modern - Selected */}
-                              <div className="p-3 border-2 border-indigo-600 rounded-lg bg-indigo-50 cursor-pointer relative">
-                                <div className="absolute -top-2 -right-2 w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center">
-                                  <Check className="h-3 w-3 text-white" />
+                              <div className="p-1.5 border-2 border-indigo-500 rounded-lg bg-indigo-50/50 cursor-pointer relative">
+                                <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-indigo-500 rounded-full flex items-center justify-center">
+                                  <Check className="h-2 w-2 text-white" />
                                 </div>
-                                <div className="w-full h-12 rounded bg-white border border-indigo-200 mb-2 flex items-center justify-center">
-                                  <Layout className="h-4 w-4 text-indigo-600" />
+                                <div className="w-full h-10 rounded border border-indigo-100 bg-white mb-1 flex items-center justify-center">
+                                  <Layout className="h-3.5 w-3.5 text-indigo-500" />
                                 </div>
-                                <div className="text-xs font-medium text-gray-900">Modern</div>
+                                <h5 className="text-xs font-semibold text-gray-900 mb-0.5">Modern</h5>
+                                <p className="text-[10px] text-gray-500 leading-tight">Sleek</p>
                               </div>
 
                               {/* Template 3: Creative */}
-                              <div className="p-3 border border-gray-200 rounded-lg bg-white cursor-pointer hover:bg-gray-50">
-                                <div className="w-full h-12 rounded bg-gray-100 mb-2 flex items-center justify-center">
-                                  <PenTool className="h-4 w-4 text-gray-400" />
+                              <div className="p-1.5 border border-gray-100 rounded-lg bg-white cursor-pointer hover:border-gray-200 transition-colors">
+                                <div className="w-full h-10 rounded border border-gray-100 bg-gray-50/50 mb-1 flex items-center justify-center">
+                                  <PenTool className="h-3.5 w-3.5 text-gray-400" />
                                 </div>
-                                <div className="text-xs font-medium text-gray-900">Creative</div>
+                                <h5 className="text-xs font-semibold text-gray-900 mb-0.5">Creative</h5>
+                                <p className="text-[10px] text-gray-500 leading-tight">Bold</p>
                               </div>
                             </div>
                           </div>
 
-                          {/* Color Selection */}
-                          <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-700 mb-3">Brand Color</label>
-                            <div className="flex gap-2">
-                              {['#7C3AED', '#3B82F6', '#10B981', '#F59E0B', '#EF4444'].map((color) => (
-                                <div
-                                  key={color}
-                                  className={`w-10 h-10 rounded-lg cursor-pointer border-2 ${
-                                    color === '#7C3AED' ? 'border-gray-900' : 'border-transparent'
-                                  }`}
-                                  style={{ backgroundColor: color }}
-                                />
-                              ))}
+                          {/* Color Customization */}
+                          <div className="mb-3">
+                            <h4 className="text-xs font-semibold mb-1.5 flex items-center text-gray-700">
+                              <Palette className="h-3.5 w-3.5 mr-1.5 text-indigo-500" />
+                              Customize Colors
+                            </h4>
+                            <div className="space-y-1.5">
+                              {/* Primary & Secondary Colors - Side by Side */}
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="block text-[10px] font-medium text-gray-600 mb-0.5">Primary</label>
+                                  <div className="flex items-center gap-1">
+                                    <div className="w-7 h-7 rounded border border-gray-200 flex-shrink-0" style={{ backgroundColor: '#7C3AED' }}>
+                                    </div>
+                                    <input
+                                      type="text"
+                                      value="#7C3AED"
+                                      readOnly
+                                      className="flex-1 px-1.5 py-1 text-xs border border-gray-200 rounded bg-white text-gray-900"
+                                    />
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-medium text-gray-600 mb-0.5">Secondary</label>
+                                  <div className="flex items-center gap-1">
+                                    <div className="w-7 h-7 rounded border border-gray-200 flex-shrink-0" style={{ backgroundColor: '#A855F7' }}>
+                                    </div>
+                                    <input
+                                      type="text"
+                                      value="#A855F7"
+                                      readOnly
+                                      className="flex-1 px-1.5 py-1 text-xs border border-gray-200 rounded bg-white text-gray-900"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              {/* Color Presets */}
+                              <div>
+                                <label className="block text-[10px] font-medium text-gray-600 mb-1">Presets</label>
+                                <div className="flex flex-wrap gap-1">
+                                  {[
+                                    { name: 'Purple', primary: '#5C2D91', secondary: '#8B5CF6' },
+                                    { name: 'Blue', primary: '#1E40AF', secondary: '#3B82F6' },
+                                    { name: 'Green', primary: '#059669', secondary: '#10B981' },
+                                    { name: 'Indigo', primary: '#4338CA', secondary: '#6366F1' }
+                                  ].map((preset) => (
+                                    <div key={preset.name} className="flex items-center gap-0.5 px-1 py-0.5 border border-gray-100 rounded hover:border-gray-200 cursor-pointer transition-colors bg-white">
+                                      <div className="flex gap-0.5">
+                                        <div className="w-2.5 h-2.5 rounded-full border border-gray-200" style={{ backgroundColor: preset.primary }}></div>
+                                        <div className="w-2.5 h-2.5 rounded-full border border-gray-200" style={{ backgroundColor: preset.secondary }}></div>
+                                      </div>
+                                      <span className="text-[10px] text-gray-600">{preset.name}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
 
-                        {/* Next Button */}
-                        <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-5 py-4 border-t border-gray-200 bg-white">
-                          <button className="w-full bg-indigo-600 text-white py-2.5 rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm">
-                            Review Invoice
+                        {/* Next Button - Fixed at bottom */}
+                        <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-5 pt-3 pb-4 border-t border-gray-100 bg-white">
+                          <button className="w-full sm:w-auto sm:ml-auto bg-indigo-500 text-white py-2.5 px-6 rounded-lg hover:bg-indigo-600 transition-colors font-medium flex items-center justify-center space-x-2 text-sm shadow-sm">
+                            <span>Next</span>
+                            <ArrowRight className="h-3.5 w-3.5" />
                           </button>
                         </div>
                       </div>
                     )}
 
-                    {/* Step 4: Review */}
+                    {/* Step 4: Review/Create - Full Page */}
                     {invoiceStep === 4 && (
-                      <div className="absolute inset-x-0 top-0 bottom-0 px-4 sm:px-5 pt-6 pb-20 flex flex-col">
+                      <div className="absolute inset-x-0 top-0 bottom-0 px-4 sm:px-5 pt-4 pb-20 flex flex-col animate-[fadeIn_0.5s_ease-in]">
                         <div className="flex-1 overflow-y-auto scrollbar-hide">
-                          <div className="mb-6">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-1">Review</h3>
-                            <p className="text-sm text-gray-500">Everything looks good?</p>
+                          <div className="text-center mb-5">
+                            <h3 className="text-sm font-semibold mb-1 text-gray-900">Review & Create</h3>
+                            <p className="text-xs text-gray-500">Review your invoice details before creating</p>
                           </div>
 
                           {/* Summary */}
-                          <div className="space-y-4 mb-4">
-                            <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                              <div className="text-xs font-medium text-gray-500 mb-2">CLIENT</div>
-                              <p className="text-sm font-semibold text-gray-900">Acme Corporation</p>
-                              <p className="text-sm text-gray-600">john@acme.com</p>
+                          <div className="space-y-3 mb-4">
+                            <div className="p-3 border border-gray-100 rounded-lg bg-gray-50/30">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-medium text-gray-700">Client</span>
+                              </div>
+                              <p className="text-sm text-gray-800">Acme Corporation</p>
+                              <p className="text-xs text-gray-500">john@acme.com</p>
                             </div>
 
-                            <div className="p-4 border border-gray-200 rounded-lg bg-white">
-                              <div className="text-xs font-medium text-gray-500 mb-3">ITEMS</div>
-                              <div className="space-y-2 mb-3">
-                                <div className="flex justify-between">
-                                  <span className="text-sm text-gray-700">Website Development</span>
-                                  <span className="text-sm font-medium text-gray-900">$2,500</span>
+                            <div className="p-3 border border-gray-100 rounded-lg bg-gray-50/30">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-medium text-gray-700">Services</span>
+                              </div>
+                              <div className="space-y-1.5">
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-gray-600">Website Development</span>
+                                  <span className="text-gray-900 font-medium">$2,500</span>
                                 </div>
-                                <div className="flex justify-between">
-                                  <span className="text-sm text-gray-700">UI/UX Design</span>
-                                  <span className="text-sm font-medium text-gray-900">$1,500</span>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-gray-600">UI/UX Design</span>
+                                  <span className="text-gray-900 font-medium">$1,500</span>
                                 </div>
                               </div>
-                              <div className="flex justify-between pt-3 border-t-2 border-gray-200">
-                                <span className="text-base font-semibold text-gray-900">Total</span>
-                                <span className="text-xl font-bold text-gray-900">$4,000</span>
+                              <div className="flex justify-between pt-2 mt-2 border-t border-gray-100">
+                                <span className="text-sm font-semibold text-gray-900">Total</span>
+                                <span className="text-lg font-bold text-gray-900">$4,000</span>
                               </div>
                             </div>
                           </div>
                         </div>
 
-                        {/* Create Button */}
-                        <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-5 py-4 border-t border-gray-200 bg-white">
-                          <button className="w-full bg-indigo-600 text-white py-2.5 rounded-lg hover:bg-indigo-700 transition-colors font-medium text-sm">
-                            Create Invoice
+                        {/* Create Button - Fixed at bottom */}
+                        <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-5 pt-3 pb-4 border-t border-gray-100 bg-white">
+                          <button className="w-full sm:w-auto sm:ml-auto bg-indigo-500 text-white py-2.5 px-6 rounded-lg hover:bg-indigo-600 transition-colors font-medium flex items-center justify-center space-x-2 text-sm shadow-sm">
+                            <span>Create Invoice</span>
+                            <ArrowRight className="h-3.5 w-3.5" />
                           </button>
                         </div>
                       </div>
                     )}
 
-                    {/* Step 5: Success */}
+                    {/* Step 5: Success - Full Page */}
                     {invoiceStep === 5 && (
-                      <div className="absolute inset-x-0 top-0 px-4 sm:px-5 pt-12 text-center">
-                        <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-6">
-                          <CheckCircle className="h-10 w-10 text-emerald-600" />
+                      <div className="absolute inset-x-0 top-0 px-4 sm:px-5 pt-6 pb-4 text-center animate-[fadeIn_0.5s_ease-in]">
+                        <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
+                          <CheckCircle className="h-8 w-8 text-green-500" />
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">Invoice Created!</h3>
-                        <p className="text-sm text-gray-600 mb-8">Your invoice is ready to send</p>
-                        <div className="inline-flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-lg bg-white">
-                          <FileText className="h-5 w-5 text-gray-400" />
-                          <span className="text-sm font-medium text-gray-900">INV-001234</span>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Invoice Created!</h3>
+                        <p className="text-sm text-gray-500 mb-6">Your invoice has been created successfully</p>
+                        <div className="p-4 border border-gray-100 rounded-lg bg-gray-50/30 inline-block">
+                          <p className="text-sm font-medium text-gray-900">Invoice #INV-001234</p>
+                          <p className="text-xs text-gray-500 mt-1">Ready to send</p>
                         </div>
                       </div>
                     )}
@@ -1146,12 +1269,15 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Right Visual - Clean Email Preview */}
+              {/* Right Visual - Email Preview Mockup - GitHub Copilot Style */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Subtle Background Glow */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-green-100/50 via-emerald-100/30 to-blue-100/50 rounded-3xl blur-3xl"></div>
+                {/* Background Illumination - High Intensity Glow Effect */}
+                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-400/100 via-purple-400/90 to-blue-400/100 rounded-3xl blur-3xl scale-125"></div>
+                <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-violet-400/95 via-indigo-400/85 to-transparent rounded-3xl blur-2xl scale-115"></div>
+                <div className="absolute inset-0 -z-10 bg-gradient-to-b from-indigo-300/90 via-purple-300/75 to-blue-300/90 rounded-3xl blur-xl scale-110"></div>
+                <div className="absolute inset-0 -z-10 bg-gradient-to-r from-indigo-200/80 via-purple-200/60 to-blue-200/80 rounded-3xl blur-lg"></div>
                 
-                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200 h-[380px] sm:h-[400px] lg:h-[420px]">
+                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-[0_12px_48px_rgba(99,102,241,0.25),0_0_0_1px_rgba(139,92,246,0.1)] max-w-lg w-full mx-auto overflow-hidden border border-gray-100 h-[380px] sm:h-[400px] lg:h-[420px]">
                   {/* Email Preview Card - Clean Minimal Design */}
                   <div className="p-4 sm:p-5 h-full overflow-y-auto scrollbar-hide">
                     {/* From Header - Minimal */}
@@ -1215,16 +1341,35 @@ export default function LandingPage() {
                     </div>
                   </div>
                   
-                  {/* Status Badge */}
-                  <div className={`absolute top-3 right-3 transition-all duration-500 ${
-                    emailStep >= 3 ? 'opacity-100' : 'opacity-0'
+                  {/* Auto-sent Badge - Minimal */}
+                  <div className={`absolute top-2.5 right-2.5 bg-white rounded-md px-2 py-1 shadow-sm border border-gray-100 flex items-center gap-1.5 transition-all duration-500 ${
+                    emailStep >= 3 ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
                   }`}>
-                    <div className={`px-2.5 py-1 rounded-md text-xs font-medium ${
-                      emailStep === 3 ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'
+                    <div className={`w-3 h-3 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                      emailStep === 3 ? 'bg-blue-500' : 'bg-green-500'
                     }`}>
-                      {emailStep === 3 ? 'Sending' : 'Sent'}
+                      {emailStep === 3 ? (
+                        <Send className="h-1.5 w-1.5 text-white" />
+                      ) : (
+                        <CheckCircle className="h-1.5 w-1.5 text-white" />
+                      )}
                     </div>
+                    <span className="text-[10px] font-medium text-gray-700">
+                      {emailStep === 3 ? 'Sending' : 'Auto-sent'}
+                    </span>
                   </div>
+                  
+                  {/* Sending Animation - Minimal */}
+                  {emailStep === 2 && (
+                    <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center animate-[fadeIn_0.3s_ease-in]">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+                          <Send className="h-4 w-4 text-blue-500" />
+                        </div>
+                        <span className="text-xs font-medium text-gray-600">Sending...</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1275,12 +1420,15 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Right Visual - Clean Activity Tracking */}
+              {/* Right Visual - Activity Tracking Mockup - GitHub Copilot Style */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Subtle Background Glow */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-amber-100/50 via-orange-100/30 to-blue-100/50 rounded-3xl blur-3xl"></div>
+                {/* Background Illumination - High Intensity Glow Effect */}
+                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-400/100 via-purple-400/90 to-blue-400/100 rounded-3xl blur-3xl scale-125"></div>
+                <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-violet-400/95 via-indigo-400/85 to-transparent rounded-3xl blur-2xl scale-115"></div>
+                <div className="absolute inset-0 -z-10 bg-gradient-to-b from-indigo-300/90 via-purple-300/75 to-blue-300/90 rounded-3xl blur-xl scale-110"></div>
+                <div className="absolute inset-0 -z-10 bg-gradient-to-r from-indigo-200/80 via-purple-200/60 to-blue-200/80 rounded-3xl blur-lg"></div>
                 
-                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200 h-[380px] sm:h-[400px] lg:h-[420px]">
+                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-[0_12px_48px_rgba(99,102,241,0.25),0_0_0_1px_rgba(139,92,246,0.1)] max-w-lg w-full mx-auto overflow-hidden border border-gray-100 h-[380px] sm:h-[400px] lg:h-[420px]">
                   {/* Activity Card - Clean Minimal Design */}
                   <div className="p-4 sm:p-5 h-full overflow-y-auto scrollbar-hide">
                     {/* Header - Minimal */}
@@ -1350,11 +1498,10 @@ export default function LandingPage() {
                     </div>
                   </div>
                   
-                  {/* Auto-remind Badge */}
-                  <div className="absolute top-3 right-3">
-                    <div className="px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-100 text-emerald-700">
-                      Active
-                    </div>
+                  {/* Auto-remind Badge - Minimal */}
+                  <div className="absolute top-2.5 right-2.5 bg-white rounded-md px-2 py-1 shadow-sm border border-gray-100 flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                    <span className="text-[10px] font-medium text-gray-700">Auto-remind</span>
                   </div>
                 </div>
               </div>
@@ -1406,12 +1553,15 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Right Visual - Clean Payment Flow */}
+              {/* Right Visual - Payment Mockup - GitHub Copilot Style */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Subtle Background Glow */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-emerald-100/50 via-green-100/30 to-blue-100/50 rounded-3xl blur-3xl"></div>
+                {/* Background Illumination - High Intensity Glow Effect */}
+                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-400/100 via-purple-400/90 to-blue-400/100 rounded-3xl blur-3xl scale-125"></div>
+                <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-violet-400/95 via-indigo-400/85 to-transparent rounded-3xl blur-2xl scale-115"></div>
+                <div className="absolute inset-0 -z-10 bg-gradient-to-b from-indigo-300/90 via-purple-300/75 to-blue-300/90 rounded-3xl blur-xl scale-110"></div>
+                <div className="absolute inset-0 -z-10 bg-gradient-to-r from-indigo-200/80 via-purple-200/60 to-blue-200/80 rounded-3xl blur-lg"></div>
                 
-                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200 h-[380px] sm:h-[400px] lg:h-[420px]">
+                <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-[0_12px_48px_rgba(99,102,241,0.25),0_0_0_1px_rgba(139,92,246,0.1)] max-w-lg w-full mx-auto overflow-hidden border border-gray-100 h-[380px] sm:h-[400px] lg:h-[420px]">
                   <div className="h-full overflow-y-auto scrollbar-hide">
                     {/* Step 1: Invoice Sent with Payment Details */}
                     {paymentStep === 1 && (
@@ -1569,18 +1719,19 @@ export default function LandingPage() {
                   </div>
                   
                   {/* Status Badge */}
-                  <div className="absolute top-3 right-3 z-10">
-                    <div className={`px-2.5 py-1 rounded-md text-xs font-medium ${
-                      paymentStep === 1 ? 'bg-blue-100 text-blue-700' :
-                      paymentStep === 2 ? 'bg-amber-100 text-amber-700' :
-                      paymentStep === 3 ? 'bg-blue-100 text-blue-700' :
-                      'bg-emerald-100 text-emerald-700'
-                    }`}>
+                  <div className="absolute top-2.5 right-2.5 bg-white rounded-md px-2 py-1 shadow-sm border border-gray-100 flex items-center gap-1.5 z-10">
+                    <div className={`w-2.5 h-2.5 rounded-full ${
+                      paymentStep === 1 ? 'bg-blue-500' :
+                      paymentStep === 2 ? 'bg-yellow-500' :
+                      paymentStep === 3 ? 'bg-blue-500' :
+                      'bg-emerald-500'
+                    }`}></div>
+                    <span className="text-[10px] font-medium text-gray-700">
                       {paymentStep === 1 && 'Sent'}
-                      {paymentStep === 2 && 'Opened'}
-                      {paymentStep === 3 && 'Viewing'}
+                      {paymentStep === 2 && 'Received'}
+                      {paymentStep === 3 && 'Copying'}
                       {paymentStep === 4 && 'Paid'}
-                    </div>
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1598,12 +1749,12 @@ export default function LandingPage() {
               </div>
 
               {/* Features Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
                 
                 {/* Feature 1 - Invoice Management */}
                 <div>
-                  <div className="mb-5">
-                    <h3 className="font-heading text-xl font-semibold text-gray-900 mb-2">Invoice Management</h3>
+                  <div className="mb-4 sm:mb-5">
+                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Invoice Management</h3>
                     <p className="text-sm text-gray-600">Create and manage professional invoices with status tracking.</p>
                   </div>
                   
@@ -1650,40 +1801,40 @@ export default function LandingPage() {
 
                 {/* Feature 2 - Client Database */}
                 <div>
-                  <div className="mb-5">
-                    <h3 className="font-heading text-xl font-semibold text-gray-900 mb-2">Client Database</h3>
+                  <div className="mb-4 sm:mb-5">
+                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Client Database</h3>
                     <p className="text-sm text-gray-600">Store and organize all your client information.</p>
                   </div>
                   
                   {/* Exact Dashboard Client Card Screenshot */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
+                  <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow duration-200">
                     <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
-                          <Users className="w-6 h-6 text-indigo-600" />
+                      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <Users className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600" />
                         </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">Acme Corporation</h3>
-                          <p className="text-sm text-gray-500">contact@acme.com</p>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">Acme Corporation</h3>
+                          <p className="text-xs sm:text-sm text-gray-500 truncate">contact@acme.com</p>
                         </div>
                       </div>
-                      <div className="flex space-x-2">
-                        <button className="p-2 text-gray-400 hover:text-indigo-600 transition-colors cursor-pointer" title="View Details">
+                      <div className="flex space-x-1 sm:space-x-2 flex-shrink-0 ml-2">
+                        <button className="p-1.5 sm:p-2 text-gray-400 hover:text-indigo-600 transition-colors cursor-pointer" title="View Details">
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors cursor-pointer" title="Edit Client">
+                        <button className="p-1.5 sm:p-2 text-gray-400 hover:text-blue-600 transition-colors cursor-pointer" title="Edit Client">
                           <Edit className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Building2 className="w-4 h-4 mr-2" />
-                        <span>Technology Solutions Inc.</span>
+                      <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                        <Building2 className="w-4 h-4 mr-2 flex-shrink-0" />
+                        <span className="truncate">Technology Solutions Inc.</span>
                       </div>
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Mail className="w-4 h-4 mr-2" />
-                        <span>contact@acme.com</span>
+                      <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                        <Mail className="w-4 h-4 mr-2 flex-shrink-0" />
+                        <span className="truncate">contact@acme.com</span>
                       </div>
                     </div>
                   </div>
@@ -1691,8 +1842,8 @@ export default function LandingPage() {
 
                 {/* Feature 3 - Auto Reminders */}
                 <div>
-                  <div className="mb-5">
-                    <h3 className="font-heading text-xl font-semibold text-gray-900 mb-2">Automated Reminders</h3>
+                  <div className="mb-4 sm:mb-5">
+                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Automated Reminders</h3>
                     <p className="text-sm text-gray-600">Schedule automatic payment reminders for overdue invoices.</p>
                   </div>
                   
@@ -1738,70 +1889,70 @@ export default function LandingPage() {
 
                 {/* Feature 4 - Email Delivery */}
                 <div>
-                  <div className="mb-5">
-                    <h3 className="font-heading text-xl font-semibold text-gray-900 mb-2">Email Delivery</h3>
+                  <div className="mb-4 sm:mb-5">
+                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Email Delivery</h3>
                     <p className="text-sm text-gray-600">Send invoices via email with automatic PDF attachment.</p>
                   </div>
                   
                   {/* Email Success Message - Simple Design */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
-                    <div className="flex items-start gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                        <CheckCircle className="w-5 h-5 text-emerald-600" />
+                  <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 hover:shadow-md transition-shadow duration-200">
+                    <div className="flex items-start gap-2 sm:gap-3 mb-3 sm:mb-4">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
                       </div>
-                      <div className="flex-1">
-                        <div className="text-sm font-semibold text-gray-900 mb-1">Invoice sent successfully</div>
-                        <div className="text-xs text-gray-600">To: client@acme.com</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs sm:text-sm font-semibold text-gray-900 mb-1">Invoice sent successfully</div>
+                        <div className="text-xs text-gray-600 break-words">To: client@acme.com</div>
                         <div className="text-xs text-gray-500 mt-0.5">Dec 8, 2024 at 10:30 AM</div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 p-2.5 bg-gray-50 rounded">
-                      <FileText className="w-4 h-4 text-gray-500" />
-                      <span className="text-xs font-medium text-gray-700">invoice-001.pdf</span>
-                      <span className="ml-auto text-xs text-gray-400">142 KB</span>
+                    <div className="flex items-center gap-2 p-2 sm:p-2.5 bg-gray-50 rounded">
+                      <FileText className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                      <span className="text-xs font-medium text-gray-700 truncate flex-1">invoice-001.pdf</span>
+                      <span className="text-xs text-gray-400 flex-shrink-0">142 KB</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Feature 5 - Client Portal */}
                 <div>
-                  <div className="mb-5">
-                    <h3 className="font-heading text-xl font-semibold text-gray-900 mb-2">Client Portal</h3>
+                  <div className="mb-4 sm:mb-5">
+                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Client Portal</h3>
                     <p className="text-sm text-gray-600">Clients view and download invoices from their portal.</p>
                   </div>
                   
                   {/* Portal Screenshot */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+                  <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow duration-200">
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-gray-200">
                         <div>
-                          <div className="text-xs text-gray-500 mb-1.5">Invoice Number</div>
+                          <div className="text-xs text-gray-500 mb-1 sm:mb-1.5">Invoice Number</div>
                           <div className="text-sm font-semibold text-gray-900">INV-001</div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xs text-gray-500 mb-1.5">Amount Due</div>
-                          <div className="text-lg font-bold text-gray-900">$2,500.00</div>
+                          <div className="text-xs text-gray-500 mb-1 sm:mb-1.5">Amount Due</div>
+                          <div className="text-base sm:text-lg font-bold text-gray-900">$2,500.00</div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between py-2">
+                      <div className="flex items-center justify-between py-1 sm:py-2">
                         <div>
-                          <div className="text-xs text-gray-500 mb-1.5">Status</div>
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-orange-600 bg-orange-50 rounded-md border border-orange-100">
-                            <Send className="h-3 w-3" />
-                            Pending
+                          <div className="text-xs text-gray-500 mb-1 sm:mb-1.5">Status</div>
+                          <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 text-xs font-medium text-orange-600 bg-orange-50 rounded-md border border-orange-100">
+                            <Send className="h-3 w-3 flex-shrink-0" />
+                            <span className="whitespace-nowrap">Pending</span>
                           </span>
                         </div>
                         <div className="text-right">
-                          <div className="text-xs text-gray-500 mb-1.5">Due Date</div>
-                          <div className="text-sm font-medium text-gray-900">Dec 15, 2024</div>
+                          <div className="text-xs text-gray-500 mb-1 sm:mb-1.5">Due Date</div>
+                          <div className="text-xs sm:text-sm font-medium text-gray-900 whitespace-nowrap">Dec 15, 2024</div>
                         </div>
                       </div>
-                      <div className="pt-4 border-t border-gray-200 flex gap-3">
-                        <button className="flex-1 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 shadow-sm">
-                          <Download className="w-4 h-4" />
-                          Download PDF
+                      <div className="pt-3 sm:pt-4 border-t border-gray-200 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                        <button className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 text-gray-700 text-xs sm:text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5 sm:gap-2 shadow-sm">
+                          <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                          <span className="whitespace-nowrap">Download PDF</span>
                         </button>
-                        <button className="flex-1 px-4 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm">
+                        <button className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-900 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm whitespace-nowrap">
                           View Invoice
                         </button>
                       </div>
@@ -1811,39 +1962,39 @@ export default function LandingPage() {
 
                 {/* Feature 6 - Activity Tracking */}
                 <div>
-                  <div className="mb-5">
-                    <h3 className="font-heading text-xl font-semibold text-gray-900 mb-2">Activity Tracking</h3>
+                  <div className="mb-4 sm:mb-5">
+                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Activity Tracking</h3>
                     <p className="text-sm text-gray-600">Track when clients view invoices and payments are received.</p>
                   </div>
                   
                   {/* Activity Timeline - Exact Dashboard Match (No borders on items) */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
-                    <div className="space-y-4">
-                      <div className="flex gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
-                          <Send className="h-4 w-4" />
+                  <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 hover:shadow-md transition-shadow duration-200">
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="flex gap-2 sm:gap-3">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                          <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </div>
-                        <div className="flex-1 pt-1">
-                          <p className="text-sm font-medium text-gray-900">Invoice sent.</p>
-                          <p className="text-xs text-gray-600 mt-0.5">Sent to client@acme.com</p>
+                        <div className="flex-1 pt-1 min-w-0">
+                          <p className="text-xs sm:text-sm font-medium text-gray-900">Invoice sent.</p>
+                          <p className="text-xs text-gray-600 mt-0.5 break-words">Sent to client@acme.com</p>
                           <p className="text-xs text-gray-500 mt-1">2h ago</p>
                         </div>
                       </div>
-                      <div className="flex gap-3">
-                        <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
-                          <Eye className="h-4 w-4" />
+                      <div className="flex gap-2 sm:gap-3">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                          <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </div>
-                        <div className="flex-1 pt-1">
-                          <p className="text-sm font-medium text-gray-900">Invoice viewed by customer.</p>
+                        <div className="flex-1 pt-1 min-w-0">
+                          <p className="text-xs sm:text-sm font-medium text-gray-900">Invoice viewed by customer.</p>
                           <p className="text-xs text-gray-500 mt-1">1h ago</p>
                         </div>
                       </div>
-                      <div className="flex gap-3">
-                        <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                          <CheckCircle className="h-4 w-4" />
+                      <div className="flex gap-2 sm:gap-3">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                          <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </div>
-                        <div className="flex-1 pt-1">
-                          <p className="text-sm font-medium text-gray-900">Payment received: $2,500.</p>
+                        <div className="flex-1 pt-1 min-w-0">
+                          <p className="text-xs sm:text-sm font-medium text-gray-900">Payment received: $2,500.</p>
                           <p className="text-xs text-gray-600 mt-0.5">Via bank transfer</p>
                           <p className="text-xs text-gray-500 mt-1">Just now</p>
                         </div>
