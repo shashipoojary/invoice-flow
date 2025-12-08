@@ -793,8 +793,9 @@ export default function LandingPage() {
 
               {/* Right Visual - Animated Invoice Modal - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Clean Subtle Background */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-50/40 to-purple-50/30 rounded-2xl"></div>
+                {/* Clean Glow Effect */}
+                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-100/60 via-purple-100/40 to-blue-100/50 rounded-2xl blur-2xl"></div>
+                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-50/50 to-purple-50/30 rounded-2xl"></div>
                 
                 <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200">
                   {/* Modal Header - Refined Design */}
@@ -1268,8 +1269,9 @@ export default function LandingPage() {
 
               {/* Right Visual - Email Preview Mockup - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Clean Subtle Background */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-emerald-50/40 to-green-50/30 rounded-2xl"></div>
+                {/* Clean Glow Effect */}
+                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-emerald-100/60 via-green-100/40 to-teal-100/50 rounded-2xl blur-2xl"></div>
+                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-emerald-50/50 to-green-50/30 rounded-2xl"></div>
                 
                 <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200 h-[380px] sm:h-[400px] lg:h-[420px]">
                   {/* Email Preview Card - Clean Minimal Design */}
@@ -1416,8 +1418,9 @@ export default function LandingPage() {
 
               {/* Right Visual - Activity Tracking Mockup - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Clean Subtle Background */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-amber-50/40 to-orange-50/30 rounded-2xl"></div>
+                {/* Clean Glow Effect */}
+                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-amber-100/60 via-orange-100/40 to-yellow-100/50 rounded-2xl blur-2xl"></div>
+                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-amber-50/50 to-orange-50/30 rounded-2xl"></div>
                 
                 <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200 h-[380px] sm:h-[400px] lg:h-[420px]">
                   {/* Activity Card - Clean Minimal Design */}
@@ -1546,8 +1549,9 @@ export default function LandingPage() {
 
               {/* Right Visual - Payment Mockup - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Clean Subtle Background */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-blue-50/40 to-cyan-50/30 rounded-2xl"></div>
+                {/* Clean Glow Effect */}
+                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-blue-100/60 via-cyan-100/40 to-sky-100/50 rounded-2xl blur-2xl"></div>
+                <div className="absolute inset-0 -z-10 bg-gradient-to-br from-blue-50/50 to-cyan-50/30 rounded-2xl"></div>
                 
                 <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-lg max-w-lg w-full mx-auto overflow-hidden border border-gray-200 h-[380px] sm:h-[400px] lg:h-[420px]">
                   <div className="h-full overflow-y-auto scrollbar-hide">
