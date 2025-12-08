@@ -793,13 +793,13 @@ export default function LandingPage() {
 
               {/* Right Visual - Animated Invoice Modal - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Hero-style Glow Effect - Less Intense */}
-                <div className="absolute inset-0 rounded-2xl opacity-15 blur-3xl" style={{
+                {/* Hero-style Glow Effect - Subtle */}
+                <div className="absolute inset-0 rounded-2xl opacity-[0.08] blur-3xl" style={{
                   background: 'radial-gradient(ellipse at center, #7c3aed, #6366f1, #4f46e5)',
                   transform: 'scale(1.1)',
                   zIndex: 0
                 }}></div>
-                <div className="absolute inset-0 rounded-2xl opacity-10 blur-2xl" style={{
+                <div className="absolute inset-0 rounded-2xl opacity-[0.05] blur-2xl" style={{
                   background: 'radial-gradient(ellipse at 30% 70%, #7c3aed, #6366f1)',
                   transform: 'scale(1.05)',
                   zIndex: 1
@@ -1277,13 +1277,13 @@ export default function LandingPage() {
 
               {/* Right Visual - Email Preview Mockup - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Hero-style Glow Effect - Less Intense */}
-                <div className="absolute inset-0 rounded-2xl opacity-15 blur-3xl" style={{
+                {/* Hero-style Glow Effect - Subtle */}
+                <div className="absolute inset-0 rounded-2xl opacity-[0.08] blur-3xl" style={{
                   background: 'radial-gradient(ellipse at center, #10b981, #059669, #047857)',
                   transform: 'scale(1.1)',
                   zIndex: 0
                 }}></div>
-                <div className="absolute inset-0 rounded-2xl opacity-10 blur-2xl" style={{
+                <div className="absolute inset-0 rounded-2xl opacity-[0.05] blur-2xl" style={{
                   background: 'radial-gradient(ellipse at 30% 70%, #10b981, #059669)',
                   transform: 'scale(1.05)',
                   zIndex: 1
@@ -1434,13 +1434,13 @@ export default function LandingPage() {
 
               {/* Right Visual - Activity Tracking Mockup - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Hero-style Glow Effect - Less Intense */}
-                <div className="absolute inset-0 rounded-2xl opacity-15 blur-3xl" style={{
+                {/* Hero-style Glow Effect - Subtle */}
+                <div className="absolute inset-0 rounded-2xl opacity-[0.08] blur-3xl" style={{
                   background: 'radial-gradient(ellipse at center, #f59e0b, #d97706, #b45309)',
                   transform: 'scale(1.1)',
                   zIndex: 0
                 }}></div>
-                <div className="absolute inset-0 rounded-2xl opacity-10 blur-2xl" style={{
+                <div className="absolute inset-0 rounded-2xl opacity-[0.05] blur-2xl" style={{
                   background: 'radial-gradient(ellipse at 30% 70%, #f59e0b, #d97706)',
                   transform: 'scale(1.05)',
                   zIndex: 1
@@ -1573,13 +1573,13 @@ export default function LandingPage() {
 
               {/* Right Visual - Payment Mockup - Clean Design */}
               <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Hero-style Glow Effect - Less Intense */}
-                <div className="absolute inset-0 rounded-2xl opacity-15 blur-3xl" style={{
+                {/* Hero-style Glow Effect - Subtle */}
+                <div className="absolute inset-0 rounded-2xl opacity-[0.08] blur-3xl" style={{
                   background: 'radial-gradient(ellipse at center, #3b82f6, #2563eb, #1d4ed8)',
                   transform: 'scale(1.1)',
                   zIndex: 0
                 }}></div>
-                <div className="absolute inset-0 rounded-2xl opacity-10 blur-2xl" style={{
+                <div className="absolute inset-0 rounded-2xl opacity-[0.05] blur-2xl" style={{
                   background: 'radial-gradient(ellipse at 30% 70%, #3b82f6, #2563eb)',
                   transform: 'scale(1.05)',
                   zIndex: 1
