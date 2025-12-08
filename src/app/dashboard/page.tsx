@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { 
   FileText, Users, 
   Clock, CheckCircle, AlertCircle, AlertTriangle, UserPlus, FilePlus, Sparkles, Receipt, Timer,
-  Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2, ArrowRight, ArrowUp, ArrowDown
+  Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2, ArrowRight
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -1221,47 +1221,27 @@ export default function DashboardOverview() {
                             <span className="break-words">{formatMoney(totalRevenue)}</span>
                           )}
                         </div>
-                        {/* Percentage Change - Desktop Only */}
-                        <div className="hidden lg:flex items-center space-x-1 justify-start">
-                          <ArrowUp className="h-3 w-3 text-emerald-600 flex-shrink-0" />
-                          <span className="text-xs font-medium text-emerald-600">25% From last week</span>
-                        </div>
                         <div className="flex items-center space-x-1.5 justify-start leading-tight">
                           <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-emerald-500 flex-shrink-0" />
                           <span className="text-[10px] sm:text-xs font-medium text-emerald-600 truncate">Paid invoices</span>
                         </div>
                       </div>
                     </div>
-                    {/* Trading-Style Pulse Effect - Right Side - Desktop Only */}
-                    {totalRevenue > 0 ? (
-                      <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0 relative overflow-hidden rounded">
-                        <svg className="w-full h-full" viewBox="0 0 60 30" preserveAspectRatio="none">
-                          <defs>
-                            <linearGradient id="revenuePulseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="#10b981" stopOpacity="0" />
-                              <stop offset="50%" stopColor="#10b981" stopOpacity="0.6" />
-                              <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-                            </linearGradient>
-                          </defs>
-                          {/* Animated pulse waves */}
-                          <rect x="0" y="10" width="60" height="2" fill="url(#revenuePulseGradient)" opacity="0.8">
-                            <animate attributeName="x" values="-60;60" dur="2s" repeatCount="indefinite" />
-                          </rect>
-                          <rect x="0" y="15" width="60" height="1.5" fill="url(#revenuePulseGradient)" opacity="0.6">
-                            <animate attributeName="x" values="-60;60" dur="2.5s" repeatCount="indefinite" />
-                          </rect>
-                          <rect x="0" y="18" width="60" height="1" fill="url(#revenuePulseGradient)" opacity="0.4">
-                            <animate attributeName="x" values="-60;60" dur="3s" repeatCount="indefinite" />
-                          </rect>
-                          {/* Center pulse dot */}
-                          <circle cx="30" cy="15" r="2" fill="#10b981" opacity="0.8">
-                            <animate attributeName="r" values="2;4;2" dur="2s" repeatCount="indefinite" />
-                            <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite" />
-                          </circle>
+                    {/* Heartbeat Pulse Line - Right Side - Desktop Only */}
+                    {totalRevenue > 0 && (
+                      <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                        <svg className="w-16 h-8" viewBox="0 0 64 32">
+                          <path
+                            d="M0,20 Q8,20 12,18 T20,16 Q24,14 28,12 T36,14 Q40,16 44,13 T52,10 Q56,8 60,6 L64,4"
+                            fill="none"
+                            stroke="#10b981"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                          <circle cx="64" cy="4" r="3" fill="#10b981" />
                         </svg>
+                        <span className="text-[10px] font-medium text-emerald-600">25%</span>
                       </div>
-                    ) : (
-                      <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0"></div>
                     )}
                   </div>
                 </button>
@@ -1289,11 +1269,6 @@ export default function DashboardOverview() {
                             </div>
                           )}
                         </div>
-                        {/* Percentage Change - Desktop Only */}
-                        <div className="hidden lg:flex items-center space-x-1 justify-start">
-                          <ArrowUp className="h-3 w-3 text-orange-500 flex-shrink-0" />
-                          <span className="text-xs font-medium text-orange-500">18% From last week</span>
-                        </div>
                         <div className="flex items-center space-x-1.5 justify-start leading-tight">
                           <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-orange-500 flex-shrink-0" />
                           <span className="text-[10px] sm:text-xs font-medium text-orange-500 truncate">
@@ -1302,36 +1277,21 @@ export default function DashboardOverview() {
                         </div>
                       </div>
                     </div>
-                    {/* Trading-Style Pulse Effect - Right Side - Desktop Only */}
-                    {totalPayableAmount > 0 ? (
-                      <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0 relative overflow-hidden rounded">
-                        <svg className="w-full h-full" viewBox="0 0 60 30" preserveAspectRatio="none">
-                          <defs>
-                            <linearGradient id="payablePulseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="#f97316" stopOpacity="0" />
-                              <stop offset="50%" stopColor="#f97316" stopOpacity="0.6" />
-                              <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
-                            </linearGradient>
-                          </defs>
-                          {/* Animated pulse waves */}
-                          <rect x="0" y="12" width="60" height="2" fill="url(#payablePulseGradient)" opacity="0.8">
-                            <animate attributeName="x" values="-60;60" dur="2s" repeatCount="indefinite" />
-                          </rect>
-                          <rect x="0" y="15" width="60" height="1.5" fill="url(#payablePulseGradient)" opacity="0.6">
-                            <animate attributeName="x" values="-60;60" dur="2.5s" repeatCount="indefinite" />
-                          </rect>
-                          <rect x="0" y="18" width="60" height="1" fill="url(#payablePulseGradient)" opacity="0.4">
-                            <animate attributeName="x" values="-60;60" dur="3s" repeatCount="indefinite" />
-                          </rect>
-                          {/* Center pulse dot */}
-                          <circle cx="30" cy="15" r="2" fill="#f97316" opacity="0.8">
-                            <animate attributeName="r" values="2;4;2" dur="2s" repeatCount="indefinite" />
-                            <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite" />
-                          </circle>
+                    {/* Heartbeat Pulse Line - Right Side - Desktop Only */}
+                    {totalPayableAmount > 0 && (
+                      <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                        <svg className="w-16 h-8" viewBox="0 0 64 32">
+                          <path
+                            d="M0,16 Q8,16 12,14 T20,16 Q24,18 28,20 T36,18 Q40,16 44,18 T52,20 L64,24"
+                            fill="none"
+                            stroke="#f97316"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                          <circle cx="64" cy="24" r="3" fill="#f97316" />
                         </svg>
+                        <span className="text-[10px] font-medium text-orange-500">18%</span>
                       </div>
-                    ) : (
-                      <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0"></div>
                     )}
                   </div>
                 </button>
@@ -1352,47 +1312,27 @@ export default function DashboardOverview() {
                             overdueCount
                           )}
                         </div>
-                        {/* Percentage Change - Desktop Only */}
-                        <div className="hidden lg:flex items-center space-x-1 justify-start">
-                          <ArrowDown className="h-3 w-3 text-red-600 flex-shrink-0" />
-                          <span className="text-xs font-medium text-red-600">8% From last week</span>
-                        </div>
                         <div className="flex items-center space-x-1.5 justify-start leading-tight">
                           <AlertCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-red-500 flex-shrink-0" />
                           <span className="text-[10px] sm:text-xs font-medium text-red-600 truncate">Need attention</span>
                         </div>
                       </div>
                     </div>
-                    {/* Trading-Style Pulse Effect - Right Side - Desktop Only */}
-                    {overdueCount > 0 ? (
-                      <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0 relative overflow-hidden rounded">
-                        <svg className="w-full h-full" viewBox="0 0 60 30" preserveAspectRatio="none">
-                          <defs>
-                            <linearGradient id="overduePulseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="#dc2626" stopOpacity="0" />
-                              <stop offset="50%" stopColor="#dc2626" stopOpacity="0.6" />
-                              <stop offset="100%" stopColor="#dc2626" stopOpacity="0" />
-                            </linearGradient>
-                          </defs>
-                          {/* Animated pulse waves */}
-                          <rect x="0" y="12" width="60" height="2" fill="url(#overduePulseGradient)" opacity="0.8">
-                            <animate attributeName="x" values="-60;60" dur="1.5s" repeatCount="indefinite" />
-                          </rect>
-                          <rect x="0" y="15" width="60" height="1.5" fill="url(#overduePulseGradient)" opacity="0.6">
-                            <animate attributeName="x" values="-60;60" dur="2s" repeatCount="indefinite" />
-                          </rect>
-                          <rect x="0" y="18" width="60" height="1" fill="url(#overduePulseGradient)" opacity="0.4">
-                            <animate attributeName="x" values="-60;60" dur="2.5s" repeatCount="indefinite" />
-                          </rect>
-                          {/* Center pulse dot */}
-                          <circle cx="30" cy="15" r="2" fill="#dc2626" opacity="0.8">
-                            <animate attributeName="r" values="2;4;2" dur="1.5s" repeatCount="indefinite" />
-                            <animate attributeName="opacity" values="0.8;0.3;0.8" dur="1.5s" repeatCount="indefinite" />
-                          </circle>
+                    {/* Heartbeat Pulse Line - Right Side - Desktop Only */}
+                    {overdueCount > 0 && (
+                      <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                        <svg className="w-16 h-8" viewBox="0 0 64 32">
+                          <path
+                            d="M0,12 Q8,12 12,14 T20,16 Q24,14 28,12 T36,14 Q40,18 44,20 T52,22 L64,26"
+                            fill="none"
+                            stroke="#dc2626"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                          <circle cx="64" cy="26" r="3" fill="#dc2626" />
                         </svg>
+                        <span className="text-[10px] font-medium text-red-600">8%</span>
                       </div>
-                    ) : (
-                      <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0"></div>
                     )}
                   </div>
                 </button>
@@ -1413,47 +1353,27 @@ export default function DashboardOverview() {
                             totalClients
                           )}
                         </div>
-                        {/* Percentage Change - Desktop Only */}
-                        <div className="hidden lg:flex items-center space-x-1 justify-start">
-                          <ArrowUp className="h-3 w-3 text-indigo-600 flex-shrink-0" />
-                          <span className="text-xs font-medium text-indigo-600">12% From last week</span>
-                        </div>
                         <div className="flex items-center space-x-1.5 justify-start leading-tight">
                           <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-indigo-500 flex-shrink-0" />
                           <span className="text-[10px] sm:text-xs font-medium text-indigo-600 truncate">Active clients</span>
                         </div>
                       </div>
                     </div>
-                    {/* Trading-Style Pulse Effect - Right Side - Desktop Only */}
-                    {totalClients > 0 ? (
-                      <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0 relative overflow-hidden rounded">
-                        <svg className="w-full h-full" viewBox="0 0 60 30" preserveAspectRatio="none">
-                          <defs>
-                            <linearGradient id="clientsPulseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="#6366f1" stopOpacity="0" />
-                              <stop offset="50%" stopColor="#6366f1" stopOpacity="0.6" />
-                              <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
-                            </linearGradient>
-                          </defs>
-                          {/* Animated pulse waves */}
-                          <rect x="0" y="10" width="60" height="2" fill="url(#clientsPulseGradient)" opacity="0.8">
-                            <animate attributeName="x" values="-60;60" dur="2s" repeatCount="indefinite" />
-                          </rect>
-                          <rect x="0" y="15" width="60" height="1.5" fill="url(#clientsPulseGradient)" opacity="0.6">
-                            <animate attributeName="x" values="-60;60" dur="2.5s" repeatCount="indefinite" />
-                          </rect>
-                          <rect x="0" y="20" width="60" height="1" fill="url(#clientsPulseGradient)" opacity="0.4">
-                            <animate attributeName="x" values="-60;60" dur="3s" repeatCount="indefinite" />
-                          </rect>
-                          {/* Center pulse dot */}
-                          <circle cx="30" cy="15" r="2" fill="#6366f1" opacity="0.8">
-                            <animate attributeName="r" values="2;4;2" dur="2s" repeatCount="indefinite" />
-                            <animate attributeName="opacity" values="0.8;0.3;0.8" dur="2s" repeatCount="indefinite" />
-                          </circle>
+                    {/* Heartbeat Pulse Line - Right Side - Desktop Only */}
+                    {totalClients > 0 && (
+                      <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                        <svg className="w-16 h-8" viewBox="0 0 64 32">
+                          <path
+                            d="M0,22 Q8,22 12,20 T20,18 Q24,16 28,14 T36,12 Q40,10 44,8 T52,6 L64,4"
+                            fill="none"
+                            stroke="#6366f1"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                          <circle cx="64" cy="4" r="3" fill="#6366f1" />
                         </svg>
+                        <span className="text-[10px] font-medium text-indigo-600">12%</span>
                       </div>
-                    ) : (
-                      <div className="hidden lg:block w-16 sm:w-20 h-12 sm:h-14 flex-shrink-0"></div>
                     )}
                   </div>
                 </button>
