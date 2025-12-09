@@ -5,11 +5,13 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "motion/react"
 import { Menu, X, ChevronDown } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/useAuth"
 
 const Navbar1 = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const router = useRouter()
+  const { user, loading } = useAuth()
 
   const toggleMenu = () => setIsOpen(!isOpen)
 
@@ -73,6 +75,11 @@ const Navbar1 = () => {
   const handleSignIn = () => {
     setIsOpen(false)
     router.push('/auth')
+  }
+
+  const handleDashboard = () => {
+    setIsOpen(false)
+    router.push('/dashboard')
   }
 
   return (
@@ -172,16 +179,22 @@ const Navbar1 = () => {
 
           {/* Desktop CTA Button */}
           <div className="hidden lg:flex items-center space-x-4">
-            <a 
-              href="#"
-              onClick={(e) => {
-                e.preventDefault()
-                handleSignIn()
-              }}
-              className="px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              Sign up
-            </a>
+            {!loading && (
+              <a 
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault()
+                  if (user) {
+                    handleDashboard()
+                  } else {
+                    handleSignIn()
+                  }
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                {user ? 'Dashboard' : 'Sign up'}
+              </a>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -290,16 +303,22 @@ const Navbar1 = () => {
 
               {/* Mobile CTA Button */}
               <div className="px-6 py-6 border-t border-gray-200">
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    handleSignIn()
-                  }}
-                  className="block w-full px-4 py-3 text-base font-medium text-center text-white bg-black hover:bg-gray-800 rounded-lg transition-colors"
-                >
-                  Sign up
-                </a>
+                {!loading && (
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      if (user) {
+                        handleDashboard()
+                      } else {
+                        handleSignIn()
+                      }
+                    }}
+                    className="block w-full px-4 py-3 text-base font-medium text-center text-white bg-black hover:bg-gray-800 rounded-lg transition-colors"
+                  >
+                    {user ? 'Dashboard' : 'Sign up'}
+                  </a>
+                )}
               </div>
             </div>
           </motion.div>
