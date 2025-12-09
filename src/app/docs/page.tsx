@@ -821,7 +821,7 @@ export default function DocsPage() {
                   setSidebarOpen(false);
                   menuButtonRef.current?.focus();
                 }}
-                className="p-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation"
+                className="p-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation focus:outline-none"
                 aria-label="Close menu"
               >
                 <X className="w-5 h-5 text-gray-600" />
@@ -837,7 +837,7 @@ export default function DocsPage() {
                   placeholder="Search documentation..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400"
                 />
               </div>
             </div>
@@ -852,7 +852,7 @@ export default function DocsPage() {
                   <div key={section.id}>
                     <button
                       onClick={() => setActiveSection(isOpen ? null : section.id)}
-                      className="w-full flex items-center justify-between px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-lg transition-colors touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+                      className="w-full flex items-center justify-between px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-lg transition-colors touch-manipulation focus:outline-none"
                       aria-expanded={isOpen}
                       aria-controls={`section-${section.id}`}
                     >
@@ -873,7 +873,7 @@ export default function DocsPage() {
                           <button
                             key={subsection.id}
                             onClick={() => handleSubsectionClick(subsection.id)}
-                            className={`w-full text-left px-3 py-2.5 text-sm rounded-lg transition-colors touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 ${
+                            className={`w-full text-left px-3 py-2.5 text-sm rounded-lg transition-colors touch-manipulation focus:outline-none ${
                               selectedSubsection === subsection.id
                                 ? 'bg-gray-100 text-gray-900 font-medium'
                                 : 'text-gray-600 hover:bg-gray-50 active:bg-gray-100'
@@ -911,7 +911,7 @@ export default function DocsPage() {
                 <button
                   ref={menuButtonRef}
                   onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 active:bg-gray-700 rounded-lg transition-colors touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 active:bg-gray-700 rounded-lg transition-colors touch-manipulation focus:outline-none"
                   aria-label={sidebarOpen ? 'Close documentation menu' : 'Open documentation menu'}
                   aria-expanded={sidebarOpen}
                   aria-controls="docs-sidebar"

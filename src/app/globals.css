@@ -308,6 +308,20 @@
     display: none;
   }
 
+  /* Remove focus borders on docs page navigation */
+  .docs-page button:focus,
+  .docs-page button:active,
+  .docs-page button:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .docs-page button:focus-visible {
+    outline: 2px solid transparent !important;
+    outline-offset: 2px !important;
+  }
+
 }
 
 @layer components {
