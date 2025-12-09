@@ -733,12 +733,33 @@ export default function DocsPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       <div className="flex">
         {/* Sidebar Navigation */}
-        <aside className={`fixed lg:sticky top-16 h-[calc(100vh-4rem)] w-64 border-r border-gray-200 bg-white overflow-y-auto z-20 transition-transform duration-300 ${
+        <aside className={`fixed lg:sticky top-16 h-[calc(100vh-4rem)] w-72 lg:w-64 border-r border-gray-200 bg-white overflow-y-auto z-50 lg:z-20 transition-transform duration-300 ease-in-out ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}>
           <div className="p-4 lg:p-6">
+            {/* Mobile Close Button */}
+            <div className="lg:hidden flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">Documentation</h2>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                aria-label="Close menu"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
             {/* Search */}
             <div className="mb-6">
               <div className="relative">
@@ -748,7 +769,7 @@ export default function DocsPage() {
                   placeholder="Search documentation..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 />
               </div>
             </div>
@@ -763,13 +784,14 @@ export default function DocsPage() {
                   <div key={section.id}>
                     <button
                       onClick={() => setActiveSection(isOpen ? null : section.id)}
-                      className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                      className="w-full flex items-center justify-between px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors touch-manipulation"
+                      aria-expanded={isOpen}
                     >
                       <div className="flex items-center gap-2">
-                        <Icon className="w-4 h-4" />
-                        <span>{section.title}</span>
+                        <Icon className="w-4 h-4 flex-shrink-0" />
+                        <span className="text-left">{section.title}</span>
                       </div>
-                      <ChevronRight className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                      <ChevronRight className={`w-4 h-4 flex-shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
                     </button>
                     {isOpen && (
                       <div className="ml-7 mt-1 space-y-1">
@@ -780,7 +802,7 @@ export default function DocsPage() {
                               setSelectedSubsection(subsection.id);
                               setSidebarOpen(false);
                             }}
-                            className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
+                            className={`w-full text-left px-3 py-2.5 text-sm rounded-lg transition-colors touch-manipulation ${
                               selectedSubsection === subsection.id
                                 ? 'bg-gray-100 text-gray-900 font-medium'
                                 : 'text-gray-600 hover:bg-gray-50'
@@ -798,41 +820,37 @@ export default function DocsPage() {
           </div>
         </aside>
 
-        {/* Mobile Sidebar Toggle */}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="lg:hidden fixed bottom-6 right-6 z-50 p-4 bg-black text-white rounded-full shadow-lg hover:bg-gray-800 transition-colors"
-        >
-          {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
-
-        {/* Mobile Overlay */}
-        {sidebarOpen && (
-          <div
-            className="lg:hidden fixed inset-0 bg-black/50 z-20"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-
         {/* Main Content */}
-        <main className="flex-1">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 lg:pl-12 py-8">
+        <main className="flex-1 w-full lg:w-auto">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 lg:pl-12 py-6 sm:py-8">
+            {/* Mobile Menu Button - Top of Content */}
+            <div className="lg:hidden mb-4">
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                aria-label="Toggle documentation menu"
+              >
+                {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                <span>Menu</span>
+              </button>
+            </div>
+
             {/* Breadcrumb */}
             <div className="mb-6">
               <Link 
                 href="/" 
-                className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-3"
+                className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-3 touch-manipulation"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Home
               </Link>
-              <h1 className="font-heading text-2xl sm:text-3xl font-semibold text-gray-900 tracking-tight">
+              <h1 className="font-heading text-xl sm:text-2xl lg:text-3xl font-semibold text-gray-900 tracking-tight">
                 {docSections.find(s => s.subsections.some(sub => sub.id === selectedSubsection))?.subsections.find(sub => sub.id === selectedSubsection)?.title || 'Documentation'}
               </h1>
             </div>
 
             {/* Content */}
-            <div className="prose prose-lg max-w-none">
+            <div className="prose prose-sm sm:prose-base lg:prose-lg max-w-none prose-headings:font-heading prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-gray-900 prose-a:underline prose-strong:text-gray-900">
               {currentContent}
             </div>
 
