@@ -39,8 +39,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     return null;
   }
 
-  // Don't show navbar on dashboard pages, public invoice pages, auth pages, or onboarding
-  const shouldShowNavbar = !pathname.startsWith('/dashboard') && !pathname.startsWith('/invoice/') && !pathname.startsWith('/auth') && !pathname.startsWith('/onboarding');
+  // Don't show navbar on dashboard pages, public invoice pages, auth pages, onboarding, or docs page
+  const shouldShowNavbar = !pathname.startsWith('/dashboard') && !pathname.startsWith('/invoice/') && !pathname.startsWith('/auth') && !pathname.startsWith('/onboarding') && pathname !== '/docs';
 
   return (
     <>
