@@ -203,10 +203,10 @@ const ModernSidebar = ({
   };
 
   const sidebarContent = (
-    <div className={`h-full flex flex-col transition-all duration-300 ease-in-out bg-white border-gray-200 ${isCollapsed ? 'w-16' : 'w-80'}`}>
+    <div className="h-full flex flex-col transition-all duration-300 ease-in-out bg-white border-gray-200 w-full">
       
       {/* Header */}
-      <div className={`flex items-center transition-all duration-300 ease-in-out ${isCollapsed ? 'justify-center p-4' : 'justify-between p-6'} border-b border-gray-200`}>
+      <div className={`flex items-center transition-all duration-300 ease-in-out h-16 border-b border-gray-200 ${isCollapsed ? 'justify-center px-4' : 'justify-between px-6'}`}>
         {!isCollapsed ? (
           <div className="flex items-center justify-center w-full">
             <span className="text-2xl font-bold tracking-tight">
@@ -238,9 +238,9 @@ const ModernSidebar = ({
         )}
       </div>
 
-      {/* Quick Actions */}
-      {!isCollapsed && (
-        <div className="px-6 py-4 transition-all duration-300 ease-in-out">
+      {/* Quick Actions - Always rendered to maintain height */}
+      <div className={`transition-all duration-300 ease-in-out h-20 flex items-center ${isCollapsed ? 'px-3' : 'px-6'}`}>
+        {!isCollapsed ? (
           <button
             onClick={() => {
               onCreateInvoice();
@@ -254,11 +254,7 @@ const ModernSidebar = ({
             <Plus className="w-4 h-4" />
             <span>Create Invoice</span>
           </button>
-        </div>
-      )}
-
-      {isCollapsed && (
-        <div className="px-3 py-4 transition-all duration-300 ease-in-out">
+        ) : (
           <button
             onClick={() => {
               onCreateInvoice();
@@ -272,8 +268,8 @@ const ModernSidebar = ({
           >
             <Plus className="w-5 h-5" />
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Navigation */}
       <nav className={`flex-1 transition-all duration-300 ease-in-out ${isCollapsed ? 'px-3 py-4' : 'px-6 py-4'}`}>
@@ -295,7 +291,7 @@ const ModernSidebar = ({
                 data-route={item.route}
                 onClick={() => handleNavigation(item.route)}
                 disabled={isNavigating || isPending}
-                className={`w-full flex items-center ${isCollapsed ? 'justify-center p-3' : 'space-x-3 px-3 py-3'} rounded-lg group disabled:opacity-50 disabled:cursor-wait transition-colors duration-200 cursor-pointer ${
+                className={`w-full flex items-center h-14 ${isCollapsed ? 'justify-center px-3' : 'space-x-3 px-3'} rounded-lg group disabled:opacity-50 disabled:cursor-wait transition-colors duration-200 cursor-pointer ${
                   isActive
                     ? 'bg-gray-100 text-black'
                     : 'text-gray-800 hover:text-black hover:bg-gray-50'
@@ -310,18 +306,16 @@ const ModernSidebar = ({
                   )}
                 </div>
                 
-                {!isCollapsed && (
-                  <div className="flex-1 text-left">
-                    <div className="font-medium text-sm">{item.label}</div>
-                    <div className={`text-xs ${
-                      isActive 
-                        ? 'text-gray-700'
-                        : 'text-gray-600'
-                    }`}>
-                      {item.description}
-                    </div>
+                <div className={`flex-1 text-left transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>
+                  <div className="font-medium text-sm whitespace-nowrap">{item.label}</div>
+                  <div className={`text-xs whitespace-nowrap ${
+                    isActive 
+                      ? 'text-gray-700'
+                      : 'text-gray-600'
+                  }`}>
+                    {item.description}
                   </div>
-                )}
+                </div>
               </button>
             );
           })}
@@ -329,61 +323,51 @@ const ModernSidebar = ({
       </nav>
 
       {/* User Profile & Actions */}
-      <div className={`transition-all duration-300 ease-in-out ${isCollapsed ? 'p-3' : 'p-6'} border-t border-gray-200`}>
-        {!isCollapsed ? (
-          <div className="space-y-4">
-            {/* Profile Button */}
-            <button
-              ref={(el) => {
-                if (el) {
-                  buttonRefs.current.set('/dashboard/profile', el);
-                }
-              }}
-              data-route="/dashboard/profile"
-              onClick={() => handleNavigation('/dashboard/profile')}
-              disabled={isPending}
-              className="w-full flex items-center space-x-3 p-3 rounded-lg border transition-colors duration-200 cursor-pointer bg-white border-gray-200 hover:bg-gray-50"
-            >
-              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-indigo-600">
-                <User className="w-5 h-5 text-white" />
-              </div>
-              <div className="flex-1 min-w-0 text-left">
-                <div className="font-medium text-sm truncate text-gray-900">
-                  {user?.name || 'User'}
-                </div>
-                <div className="text-xs truncate text-gray-600">
-                  View Profile
-                </div>
-              </div>
-            </button>
-
-            {/* Action Buttons */}
-            <div className="grid grid-cols-1 gap-2">
-              <button
-                onClick={handleSignOut}
-                disabled={isLoggingOut}
-                className="flex items-center justify-center space-x-2 px-6 py-3 rounded-lg text-sm font-medium border disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer text-red-600 bg-white border-red-200 hover:bg-red-50"
-              >
-                {isLoggingOut ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <LogOut className="w-4 h-4" />
-                )}
-                <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
-              </button>
+      <div className={`transition-all duration-300 ease-in-out border-t border-gray-200 ${isCollapsed ? 'p-3' : 'p-6'}`}>
+        <div className="space-y-4">
+          {/* Profile Button - Always rendered, text visibility controlled */}
+          <button
+            ref={(el) => {
+              if (el) {
+                buttonRefs.current.set('/dashboard/profile', el);
+              }
+            }}
+            data-route="/dashboard/profile"
+            onClick={() => handleNavigation('/dashboard/profile')}
+            disabled={isPending}
+            className={`w-full flex items-center h-14 rounded-lg border transition-colors duration-200 cursor-pointer bg-white border-gray-200 hover:bg-gray-50 ${isCollapsed ? 'justify-center px-2.5' : 'space-x-3 px-3'}`}
+            title={isCollapsed ? (user?.name || 'View Profile') : undefined}
+          >
+            <div className={`rounded-full flex items-center justify-center bg-indigo-600 flex-shrink-0 ${isCollapsed ? 'w-8 h-8' : 'w-10 h-10'}`}>
+              <User className={`text-white ${isCollapsed ? 'w-4 h-4' : 'w-5 h-5'}`} />
             </div>
-          </div>
-        ) : (
-          <div className="space-y-3 transition-all duration-300 ease-in-out">
-            <button
-              onClick={handleSignOut}
-              className="w-full flex items-center justify-center p-3 rounded-lg border transition-colors duration-200 cursor-pointer text-red-600 bg-white border-red-200 hover:bg-red-50"
-              title="Logout"
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
-          </div>
-        )}
+            <div className={`flex-1 min-w-0 text-left transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>
+              <div className="font-medium text-sm truncate text-gray-900">
+                {user?.name || 'User'}
+              </div>
+              <div className="text-xs truncate text-gray-600">
+                View Profile
+              </div>
+            </div>
+          </button>
+
+          {/* Logout Button - Always rendered, text visibility controlled */}
+          <button
+            onClick={handleSignOut}
+            disabled={isLoggingOut}
+            className={`flex items-center justify-center rounded-lg border disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer text-red-600 bg-white border-red-200 hover:bg-red-50 ${isCollapsed ? 'w-full h-10 px-2.5' : 'w-full space-x-2 px-6 py-3'}`}
+            title={isCollapsed ? 'Logout' : undefined}
+          >
+            {isLoggingOut ? (
+              <Loader2 className={`animate-spin ${isCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} />
+            ) : (
+              <LogOut className={isCollapsed ? 'w-5 h-5' : 'w-4 h-4'} />
+            )}
+            {!isCollapsed && (
+              <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -406,12 +390,27 @@ const ModernSidebar = ({
         <Menu className="w-5 h-5 text-gray-700" />
       </button>
 
-      {/* Sidebar */}
-      <div className={`fixed left-0 top-0 h-full z-50 transition-all duration-300 ease-in-out lg:relative lg:z-auto ${
-        isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-      }`}>
+      {/* Sidebar - Always fixed, overlays content */}
+      <div 
+        className={`fixed left-0 top-0 h-full z-50 transition-all duration-300 ease-in-out ${
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
+        style={{
+          width: isCollapsed ? '64px' : '320px',
+        }}
+      >
         {sidebarContent}
       </div>
+      
+      {/* Spacer for desktop to maintain layout - matches sidebar width exactly */}
+      <div 
+        className="hidden lg:block transition-all duration-300 ease-in-out flex-shrink-0"
+        style={{
+          width: isCollapsed ? '64px' : '320px',
+          minWidth: isCollapsed ? '64px' : '320px',
+          maxWidth: isCollapsed ? '64px' : '320px',
+        }}
+      />
 
       {/* Mobile Close Button */}
       {isMobileOpen && (

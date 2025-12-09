@@ -13,6 +13,7 @@ export default function OnboardingPage() {
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState<string>('');
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [formData, setFormData] = useState({
     // Business Information
     businessName: '',
@@ -39,6 +40,7 @@ export default function OnboardingPage() {
   useEffect(() => {
     // Check if user is authenticated and hasn't completed onboarding
     const checkAuthAndOnboarding = async () => {
+      setCheckingAuth(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         router.push('/auth');
@@ -56,17 +58,31 @@ export default function OnboardingPage() {
         if (response.ok) {
           const data = await response.json();
           if (data.settings?.businessName && data.settings?.businessName.trim() !== '') {
-            // Already completed onboarding, redirect to dashboard
+            // Already completed onboarding, redirect to dashboard immediately
             router.push('/dashboard');
             return;
           }
         }
       } catch (error) {
         console.error('Error checking onboarding status:', error);
+      } finally {
+        setCheckingAuth(false);
       }
     };
     checkAuthAndOnboarding();
   }, [router]);
+
+  // Show loading screen while checking - prevents flash
+  if (checkingAuth) {
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -237,63 +253,63 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-gray-50">
-      <div className="flex flex-col lg:flex-row w-full h-screen">
+    <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6">
+      <div className="flex flex-col lg:flex-row w-full max-w-6xl bg-white rounded-lg shadow-lg overflow-hidden">
         {/* Left Panel - Desktop Only */}
-        <div className="flex-1 relative overflow-hidden lg:block hidden bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50">
+        <div className="flex-1 relative overflow-hidden lg:block hidden bg-gray-50">
           <div className="absolute top-6 left-6 z-10">
             <button
               onClick={() => router.push('/')}
-              className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-white transition-all shadow-md cursor-pointer"
+              className="w-10 h-10 bg-white/80 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-white transition-all shadow-md cursor-pointer"
             >
               <ArrowLeft className="w-5 h-5 text-gray-700" />
             </button>
           </div>
 
-          <div className="flex items-center justify-center h-full p-8 lg:p-12">
-            <div className="w-full max-w-md">
+          <div className="flex items-center justify-center h-full p-8">
+            <div className="w-full max-w-lg">
               {/* Modern Illustration */}
               <div className="relative">
                 {/* Background Elements */}
                 <div className="absolute inset-0">
-                  <div className="w-40 h-40 bg-indigo-100 rounded-full absolute -top-10 -right-10 opacity-60"></div>
-                  <div className="w-32 h-32 bg-purple-100 rounded-full absolute -bottom-6 -left-6 opacity-40"></div>
-                  <div className="w-20 h-20 bg-blue-100 rounded-full absolute top-1/2 -right-4 opacity-50"></div>
+                  <div className="w-32 h-32 bg-indigo-100 rounded-full absolute -top-8 -right-8 opacity-60"></div>
+                  <div className="w-24 h-24 bg-purple-100 rounded-full absolute -bottom-4 -left-4 opacity-40"></div>
+                  <div className="w-16 h-16 bg-blue-100 rounded-full absolute top-1/2 -right-2 opacity-50"></div>
                 </div>
 
                 {/* Main Illustration */}
                 <div className="relative z-10">
                   {/* Business Setup Illustration */}
-                  <div className="bg-white rounded-xl shadow-xl p-8 mb-8 transform rotate-2">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                        <Building2 className="w-5 h-5 text-indigo-600" />
+                  <div className="bg-white rounded-lg shadow-lg p-6 mb-6 transform rotate-2">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                        <Building2 className="w-4 h-4 text-indigo-600" />
                       </div>
-                      <div className="text-sm text-gray-500 font-medium">Step {step} of {totalSteps}</div>
+                      <div className="text-xs text-gray-500">Step {step} of {totalSteps}</div>
                     </div>
-                    <div className="space-y-3">
-                      <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-                      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                      <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                    <div className="space-y-2">
+                      <div className="h-2 bg-gray-200 rounded w-3/4"></div>
+                      <div className="h-2 bg-gray-200 rounded w-1/2"></div>
+                      <div className="h-2 bg-gray-200 rounded w-2/3"></div>
                     </div>
-                    <div className="mt-6 pt-6 border-t border-gray-200">
+                    <div className="mt-4 pt-4 border-t border-gray-200">
                       <div className="flex justify-between items-center">
-                        <span className="text-base text-gray-600 font-medium">Progress</span>
-                        <span className="font-bold text-gray-900 text-lg">{Math.round((step / totalSteps) * 100)}%</span>
+                        <span className="text-sm text-gray-600">Progress</span>
+                        <span className="font-semibold text-gray-900">{Math.round((step / totalSteps) * 100)}%</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Success Preview */}
-                  <div className="bg-emerald-50 rounded-xl p-6 transform -rotate-1 border border-emerald-200">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="bg-emerald-50 rounded-lg p-4 transform -rotate-1">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                       </div>
                       <div>
-                        <div className="font-semibold text-emerald-900 text-base">Almost there!</div>
+                        <div className="font-medium text-emerald-900">Almost there!</div>
                         <div className="text-sm text-emerald-700">Complete your setup</div>
                       </div>
                     </div>
@@ -302,19 +318,18 @@ export default function OnboardingPage() {
               </div>
 
               {/* Brand Text */}
-              <div className="text-center mt-10">
-                <h2 className="font-heading text-3xl font-semibold text-gray-900 mb-3">FlowInvoicer</h2>
-                <p className="text-gray-600 text-lg">Create • Send • Get Paid</p>
+              <div className="text-center mt-8">
+                <h2 className="font-heading text-2xl font-semibold text-gray-900 mb-2">FlowInvoicer</h2>
+                <p className="text-gray-600">Create • Send • Get Paid</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Right Panel - Main Content */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="w-full max-w-4xl mx-auto p-6 sm:p-8 lg:p-12 xl:p-16">
-            {/* Back Button - Mobile Only */}
-            <div className="mb-8 lg:hidden">
+        <div className="flex-1 p-6 lg:p-16 flex flex-col justify-center max-w-lg mx-auto w-full">
+          {/* Back Button - Mobile Only */}
+          <div className="mb-6 lg:hidden">
               <button
                 onClick={() => router.push('/')}
                 className="flex items-center text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
@@ -324,96 +339,96 @@ export default function OnboardingPage() {
               </button>
             </div>
 
-            {/* Welcome Message */}
-            <div className="mb-10 lg:mb-12">
-              <div className="text-sm text-indigo-600 font-medium mb-4">Welcome to FlowInvoicer</div>
-              <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-semibold text-gray-900 mb-4 tracking-tight">
+          {/* Welcome Message */}
+          <div className="text-center mb-10">
+              <div className="text-sm text-indigo-600 font-medium mb-3">Welcome to FlowInvoicer</div>
+              <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-900 mb-4 tracking-tight">
                 {getStepTitle()}
               </h1>
-              <p className="text-lg sm:text-xl text-gray-600 leading-relaxed max-w-2xl">
+              <p className="text-base text-gray-600 leading-relaxed">
                 {getStepDescription()}
               </p>
             </div>
 
-            {/* Progress Indicator */}
-            <div className="mb-10 lg:mb-12">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-base font-medium text-gray-700">Step {step} of {totalSteps}</span>
-                <span className="text-base text-gray-500">{getStepTitle()}</span>
+          {/* Progress Indicator */}
+          <div className="mb-8">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700">Step {step} of {totalSteps}</span>
+                <span className="text-sm text-gray-500">{getStepTitle()}</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-3">
+              <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
-                  className="bg-indigo-600 h-3 rounded-full transition-all duration-300"
+                  className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${(step / totalSteps) * 100}%` }}
                 ></div>
               </div>
             </div>
 
-            {/* Disclaimer Banner */}
-            <div className="mb-8 bg-blue-50 border border-blue-200 rounded-xl p-5 sm:p-6 flex items-start space-x-4">
-              <Info className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" />
+          {/* Disclaimer Banner */}
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start space-x-3">
+              <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="text-base text-blue-900 font-semibold mb-2">Important Information</p>
-                <p className="text-sm text-blue-700 leading-relaxed">
+                <p className="text-sm text-blue-900 font-semibold mb-1">Important Information</p>
+                <p className="text-xs text-blue-700 leading-relaxed">
                   All information you provide here will be saved to your account settings and can be updated anytime from the Settings page. 
                   {step === 3 && ' Payment methods are optional - add as many as you accept. This information will appear on your invoices.'}
                 </p>
               </div>
             </div>
 
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-5 py-4 rounded-xl text-sm mb-8 flex items-start space-x-3">
-                <AlertCircle className="w-6 h-6 flex-shrink-0 mt-0.5" />
-                <span className="text-base">{error}</span>
-              </div>
-            )}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm mb-6 flex items-start space-x-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
 
-            <form onSubmit={step < totalSteps ? (e) => { e.preventDefault(); handleNext(); } : handleSubmit} className="space-y-8">
+          <form onSubmit={step < totalSteps ? (e) => { e.preventDefault(); handleNext(); } : handleSubmit} className="space-y-6">
               {/* Step 1: Business Information */}
               {step === 1 && (
                 <>
                   {/* Logo Upload */}
-                  <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-                    <label className="block text-base font-semibold text-gray-900 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Business Logo
-                      <span className="ml-2 text-sm text-gray-500 font-normal">(Optional - appears on invoices)</span>
+                      <span className="ml-2 text-xs text-gray-500 font-normal">(Optional)</span>
                     </label>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                    <div className="flex items-center gap-4 mb-4">
                       {logoPreview ? (
                         <div className="relative">
                           <img
                             src={logoPreview}
                             alt="Logo preview"
-                            className="w-28 h-28 sm:w-32 sm:h-32 object-contain rounded-xl border-2 border-gray-200 bg-gray-50"
+                            className="w-20 h-20 object-contain rounded-lg border border-gray-200 bg-gray-50"
                           />
                           <button
                             type="button"
                             onClick={handleRemoveLogo}
-                            className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer shadow-md"
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer shadow-md"
                           >
-                            <X className="w-4 h-4" />
+                            <X className="w-3 h-3" />
                           </button>
                         </div>
                       ) : (
-                        <div className="w-28 h-28 sm:w-32 sm:h-32 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center bg-gray-50">
-                          <ImageIcon className="w-12 h-12 text-gray-400" />
+                        <div className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
+                          <ImageIcon className="w-8 h-8 text-gray-400" />
                         </div>
                       )}
-                      <div className="flex-1 w-full sm:w-auto">
+                      <div className="flex-1">
                         <label
                           htmlFor="logo-upload"
-                          className={`flex items-center justify-center gap-3 px-6 py-4 border-2 border-gray-300 rounded-xl cursor-pointer hover:bg-gray-50 hover:border-gray-400 transition-all ${isUploadingLogo ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          className={`flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 hover:border-gray-400 transition-all text-sm ${isUploadingLogo ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                           {isUploadingLogo ? (
                             <>
-                              <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
-                              <span className="text-base text-gray-700 font-medium">Uploading...</span>
+                              <Loader2 className="w-4 h-4 animate-spin text-gray-500" />
+                              <span className="text-sm text-gray-700">Uploading...</span>
                             </>
                           ) : (
                             <>
-                              <Upload className="w-5 h-5 text-gray-500" />
-                              <span className="text-base text-gray-700 font-medium">
-                                {logoPreview ? 'Change Logo' : 'Upload Logo'}
+                              <Upload className="w-4 h-4 text-gray-500" />
+                              <span className="text-sm text-gray-700">
+                                {logoPreview ? 'Change' : 'Upload Logo'}
                               </span>
                             </>
                           )}
@@ -426,18 +441,18 @@ export default function OnboardingPage() {
                           disabled={isUploadingLogo}
                           className="hidden"
                         />
-                        <p className="mt-3 text-sm text-gray-500">PNG, JPG, GIF or WebP (max 5MB)</p>
+                        <p className="mt-2 text-xs text-gray-500">PNG, JPG, GIF or WebP (max 5MB)</p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-                    <label htmlFor="businessName" className="block text-base font-semibold text-gray-900 mb-4">
+                  <div>
+                    <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 mb-2">
                       Business Name <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                        <Building2 className="w-6 h-6 text-gray-400" />
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Building2 className="w-5 h-5 text-gray-400" />
                       </div>
                       <input
                         type="text"
@@ -446,20 +461,20 @@ export default function OnboardingPage() {
                         value={formData.businessName}
                         onChange={handleInputChange}
                         placeholder="Your Business Name"
-                        className="w-full pl-14 pr-5 py-5 text-base sm:text-lg border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
+                        className="w-full pl-12 pr-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
                         required
                       />
                     </div>
-                    <p className="mt-3 text-sm text-gray-500">This will appear on all your invoices</p>
+                    <p className="mt-2 text-xs text-gray-500">This will appear on all your invoices</p>
                   </div>
 
-                  <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-                    <label htmlFor="businessEmail" className="block text-base font-semibold text-gray-900 mb-4">
+                  <div>
+                    <label htmlFor="businessEmail" className="block text-sm font-medium text-gray-700 mb-2">
                       Business Email
                     </label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                        <Mail className="w-6 h-6 text-gray-400" />
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Mail className="w-5 h-5 text-gray-400" />
                       </div>
                       <input
                         type="email"
@@ -468,10 +483,10 @@ export default function OnboardingPage() {
                         value={formData.businessEmail}
                         onChange={handleInputChange}
                         placeholder="business@example.com"
-                        className="w-full pl-14 pr-5 py-5 text-base sm:text-lg border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
+                        className="w-full pl-12 pr-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
                       />
                     </div>
-                    <p className="mt-3 text-sm text-gray-500">We'll use your account email if left empty</p>
+                    <p className="mt-2 text-xs text-gray-500">We'll use your account email if left empty</p>
                   </div>
                 </>
               )}
@@ -479,14 +494,14 @@ export default function OnboardingPage() {
               {/* Step 2: Contact Details */}
               {step === 2 && (
                 <>
-                  <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-                    <label htmlFor="businessPhone" className="block text-base font-semibold text-gray-900 mb-4">
+                  <div>
+                    <label htmlFor="businessPhone" className="block text-sm font-medium text-gray-700 mb-2">
                       Business Phone
-                      <span className="ml-2 text-sm text-gray-500 font-normal">(Optional)</span>
+                      <span className="ml-2 text-xs text-gray-500 font-normal">(Optional)</span>
                     </label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                        <Phone className="w-6 h-6 text-gray-400" />
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Phone className="w-5 h-5 text-gray-400" />
                       </div>
                       <input
                         type="tel"
@@ -495,19 +510,19 @@ export default function OnboardingPage() {
                         value={formData.businessPhone}
                         onChange={handleInputChange}
                         placeholder="+1 (555) 123-4567"
-                        className="w-full pl-14 pr-5 py-5 text-base sm:text-lg border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
+                        className="w-full pl-12 pr-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
                       />
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-                    <label htmlFor="businessAddress" className="block text-base font-semibold text-gray-900 mb-4">
+                  <div>
+                    <label htmlFor="businessAddress" className="block text-sm font-medium text-gray-700 mb-2">
                       Business Address
-                      <span className="ml-2 text-sm text-gray-500 font-normal">(Optional)</span>
+                      <span className="ml-2 text-xs text-gray-500 font-normal">(Optional)</span>
                     </label>
                     <div className="relative">
-                      <div className="absolute top-5 left-5 flex items-start pointer-events-none">
-                        <MapPin className="w-6 h-6 text-gray-400" />
+                      <div className="absolute top-4 left-4 flex items-start pointer-events-none">
+                        <MapPin className="w-5 h-5 text-gray-400" />
                       </div>
                       <textarea
                         id="businessAddress"
@@ -516,19 +531,19 @@ export default function OnboardingPage() {
                         onChange={handleInputChange}
                         placeholder="123 Business St, City, State 12345"
                         rows={4}
-                        className="w-full pl-14 pr-5 py-5 text-base sm:text-lg border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all resize-none"
+                        className="w-full pl-12 pr-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all resize-none"
                       />
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-                    <label htmlFor="website" className="block text-base font-semibold text-gray-900 mb-4">
+                  <div>
+                    <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-2">
                       Website
-                      <span className="ml-2 text-sm text-gray-500 font-normal">(Optional)</span>
+                      <span className="ml-2 text-xs text-gray-500 font-normal">(Optional)</span>
                     </label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                        <Globe className="w-6 h-6 text-gray-400" />
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Globe className="w-5 h-5 text-gray-400" />
                       </div>
                       <input
                         type="url"
@@ -537,7 +552,7 @@ export default function OnboardingPage() {
                         value={formData.website}
                         onChange={handleInputChange}
                         placeholder="https://yourwebsite.com"
-                        className="w-full pl-14 pr-5 py-5 text-base sm:text-lg border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
+                        className="w-full pl-12 pr-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
                       />
                     </div>
                   </div>
@@ -547,12 +562,12 @@ export default function OnboardingPage() {
               {/* Step 3: Payment Methods */}
               {step === 3 && (
                 <>
-                  <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6 sm:p-8 mb-8">
-                    <div className="flex items-start space-x-4">
-                      <AlertCircle className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                    <div className="flex items-start space-x-3">
+                      <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-base text-yellow-900 font-semibold mb-2">Payment Methods</p>
-                        <p className="text-sm text-yellow-700 leading-relaxed">
+                        <p className="text-sm text-yellow-900 font-semibold mb-1">Payment Methods</p>
+                        <p className="text-xs text-yellow-700 leading-relaxed">
                           All payment methods are optional. Add the ones you accept. This information will appear on your invoices to help clients pay you faster. 
                           You can always update these later in Settings.
                         </p>
@@ -560,9 +575,9 @@ export default function OnboardingPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-                    <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-                      <label htmlFor="paypalEmail" className="block text-base font-semibold text-gray-900 mb-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="paypalEmail" className="block text-sm font-medium text-gray-700 mb-2">
                         PayPal Email
                       </label>
                       <div className="relative">
@@ -576,13 +591,13 @@ export default function OnboardingPage() {
                           value={formData.paypalEmail}
                           onChange={handleInputChange}
                           placeholder="paypal@example.com"
-                          className="w-full pl-12 pr-5 py-4 text-base border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
+                          className="w-full pl-12 pr-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
                         />
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-                      <label htmlFor="cashappId" className="block text-base font-semibold text-gray-900 mb-4">
+                    <div>
+                      <label htmlFor="cashappId" className="block text-sm font-medium text-gray-700 mb-2">
                         Cash App ID
                       </label>
                       <input
@@ -592,12 +607,12 @@ export default function OnboardingPage() {
                         value={formData.cashappId}
                         onChange={handleInputChange}
                         placeholder="$yourcashappid"
-                        className="w-full px-5 py-4 text-base border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
+                        className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
                       />
                     </div>
 
-                    <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-                      <label htmlFor="venmoId" className="block text-base font-semibold text-gray-900 mb-4">
+                    <div>
+                      <label htmlFor="venmoId" className="block text-sm font-medium text-gray-700 mb-2">
                         Venmo ID
                       </label>
                       <input
@@ -607,12 +622,12 @@ export default function OnboardingPage() {
                         value={formData.venmoId}
                         onChange={handleInputChange}
                         placeholder="@yourvenmoid"
-                        className="w-full px-5 py-4 text-base border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
+                        className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
                       />
                     </div>
 
-                    <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-                      <label htmlFor="googlePayUpi" className="block text-base font-semibold text-gray-900 mb-4">
+                    <div>
+                      <label htmlFor="googlePayUpi" className="block text-sm font-medium text-gray-700 mb-2">
                         Google Pay UPI
                       </label>
                       <input
@@ -622,12 +637,12 @@ export default function OnboardingPage() {
                         value={formData.googlePayUpi}
                         onChange={handleInputChange}
                         placeholder="yourname@paytm"
-                        className="w-full px-5 py-4 text-base border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
+                        className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
                       />
                     </div>
 
-                    <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-                      <label htmlFor="applePayId" className="block text-base font-semibold text-gray-900 mb-4">
+                    <div>
+                      <label htmlFor="applePayId" className="block text-sm font-medium text-gray-700 mb-2">
                         Apple Pay ID
                       </label>
                       <input
@@ -637,12 +652,12 @@ export default function OnboardingPage() {
                         value={formData.applePayId}
                         onChange={handleInputChange}
                         placeholder="your-apple-pay-id"
-                        className="w-full px-5 py-4 text-base border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
+                        className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
                       />
                     </div>
 
-                    <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-                      <label htmlFor="stripeAccount" className="block text-base font-semibold text-gray-900 mb-4">
+                    <div>
+                      <label htmlFor="stripeAccount" className="block text-sm font-medium text-gray-700 mb-2">
                         Stripe Account
                       </label>
                       <input
@@ -652,12 +667,12 @@ export default function OnboardingPage() {
                         value={formData.stripeAccount}
                         onChange={handleInputChange}
                         placeholder="acct_xxxxxxxxx"
-                        className="w-full px-5 py-4 text-base border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
+                        className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
                       />
                     </div>
 
-                    <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-                      <label htmlFor="bankAccount" className="block text-base font-semibold text-gray-900 mb-4">
+                    <div>
+                      <label htmlFor="bankAccount" className="block text-sm font-medium text-gray-700 mb-2">
                         Bank Account Number
                       </label>
                       <input
@@ -667,12 +682,12 @@ export default function OnboardingPage() {
                         value={formData.bankAccount}
                         onChange={handleInputChange}
                         placeholder="Account Number"
-                        className="w-full px-5 py-4 text-base border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
+                        className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
                       />
                     </div>
 
-                    <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-                      <label htmlFor="bankIfscSwift" className="block text-base font-semibold text-gray-900 mb-4">
+                    <div>
+                      <label htmlFor="bankIfscSwift" className="block text-sm font-medium text-gray-700 mb-2">
                         Bank IFSC/SWIFT
                       </label>
                       <input
@@ -682,12 +697,12 @@ export default function OnboardingPage() {
                         value={formData.bankIfscSwift}
                         onChange={handleInputChange}
                         placeholder="IFSC/SWIFT Code"
-                        className="w-full px-5 py-4 text-base border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
+                        className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
                       />
                     </div>
 
-                    <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-                      <label htmlFor="bankIban" className="block text-base font-semibold text-gray-900 mb-4">
+                    <div className="lg:col-span-2">
+                      <label htmlFor="bankIban" className="block text-sm font-medium text-gray-700 mb-2">
                         Bank IBAN
                       </label>
                       <input
@@ -697,14 +712,14 @@ export default function OnboardingPage() {
                         value={formData.bankIban}
                         onChange={handleInputChange}
                         placeholder="IBAN Number"
-                        className="w-full px-5 py-4 text-base border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
+                        className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
                       />
                     </div>
 
-                    <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-                      <label htmlFor="paymentNotes" className="block text-base font-semibold text-gray-900 mb-4">
+                    <div className="lg:col-span-2">
+                      <label htmlFor="paymentNotes" className="block text-sm font-medium text-gray-700 mb-2">
                         Payment Notes
-                        <span className="ml-2 text-sm text-gray-500 font-normal">(Optional instructions for clients)</span>
+                        <span className="ml-2 text-xs text-gray-500 font-normal">(Optional)</span>
                       </label>
                       <textarea
                         id="paymentNotes"
@@ -713,20 +728,20 @@ export default function OnboardingPage() {
                         onChange={handleInputChange}
                         placeholder="e.g., Please include invoice number in payment notes, Wire transfers take 2-3 business days..."
                         rows={4}
-                        className="w-full px-5 py-4 text-base border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all resize-none"
+                        className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all resize-none"
                       />
                     </div>
                   </div>
                 </>
               )}
 
-              {/* Navigation Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 pt-8">
+            {/* Navigation Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 pt-6">
                 {step > 1 && (
                   <button
                     type="button"
                     onClick={handleBack}
-                    className="flex-1 bg-gray-100 text-gray-700 py-5 px-8 text-base sm:text-lg rounded-xl font-semibold hover:bg-gray-200 transition-colors"
+                    className="flex-1 bg-gray-100 text-gray-700 py-4 px-6 text-base rounded-lg font-medium hover:bg-gray-200 transition-colors"
                   >
                     Back
                   </button>
@@ -734,19 +749,19 @@ export default function OnboardingPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`${step > 1 ? 'flex-1' : 'w-full'} bg-indigo-600 text-white py-5 px-8 text-base sm:text-lg rounded-xl font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg`}
+                  className={`${step > 1 ? 'flex-1' : 'w-full'} bg-indigo-600 text-white py-4 px-6 text-base rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center`}
                 >
                   {loading ? (
-                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
                     step < totalSteps ? 'Continue' : 'Complete Setup'
                   )}
                 </button>
               </div>
 
-              {/* Skip Option - Only on last step */}
-              {step === totalSteps && (
-                <div className="text-center pt-4">
+            {/* Skip Option - Only on last step */}
+            {step === totalSteps && (
+              <div className="text-center pt-4">
                   <button
                     type="button"
                     onClick={async () => {
@@ -804,10 +819,9 @@ export default function OnboardingPage() {
                   >
                     Skip payment methods for now
                   </button>
-                </div>
-              )}
-            </form>
-          </div>
+              </div>
+            )}
+          </form>
         </div>
       </div>
     </div>

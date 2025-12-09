@@ -324,14 +324,14 @@ export function generateMinimalEmailTemplate(
             letter-spacing: 0.5px;
           }
           .payment-notice {
-            background: #f9fafb;
-            padding: 16px;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
+            background: transparent;
+            padding: 12px 0;
+            border-top: 1px solid #e0e0e0;
+            border-bottom: 1px solid #e0e0e0;
             margin-bottom: 20px;
             width: 100%;
             box-sizing: border-box;
-            text-align: center;
+            text-align: left;
           }
           .payment-notice p {
             margin: 0;
@@ -373,11 +373,11 @@ export function generateMinimalEmailTemplate(
             line-height: 1.6;
           }
           .payment-security {
-            background: #fef3c7;
-            padding: 16px;
-            border: 1px solid #fbbf24;
-            border-radius: 8px;
-            text-align: center;
+            background: transparent;
+            padding: 12px 0;
+            border-top: 1px solid #e0e0e0;
+            border-bottom: 1px solid #e0e0e0;
+            text-align: left;
             margin-top: 20px;
           }
           .payment-security p {
@@ -517,10 +517,10 @@ export function generateMinimalEmailTemplate(
               font-size: 14px !important;
             }
             .payment-notice {
-              padding: 16px !important;
-              border: 1px solid #e5e7eb !important;
-              border-radius: 8px !important;
-              text-align: center !important;
+              padding: 12px 0 !important;
+              border-top: 1px solid #e0e0e0 !important;
+              border-bottom: 1px solid #e0e0e0 !important;
+              text-align: left !important;
             }
             .payment-notice p {
               font-size: 14px !important;
@@ -528,10 +528,10 @@ export function generateMinimalEmailTemplate(
               line-height: 1.6 !important;
             }
             .payment-security {
-              padding: 16px !important;
-              border: 1px solid #fbbf24 !important;
-              border-radius: 8px !important;
-              text-align: center !important;
+              padding: 12px 0 !important;
+              border-top: 1px solid #e0e0e0 !important;
+              border-bottom: 1px solid #e0e0e0 !important;
+              text-align: left !important;
             }
             .payment-method-name {
               font-size: 12px !important;
