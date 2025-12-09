@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { ArrowLeft, FileText, Zap, Users, Settings, Mail, CreditCard, Bell, Download, Eye, Plus, CheckCircle, Search, Menu, X, ChevronRight, BookOpen, Code, HelpCircle, Rocket, Shield, BarChart3, Palette } from 'lucide-react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
@@ -20,6 +20,8 @@ export default function DocsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   const docSections: DocSection[] = [
     {
@@ -723,6 +725,42 @@ export default function DocsPage() {
     docSections[0].subsections[0].id
   );
 
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (sidebarOpen) {
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalStyle;
+      };
+    }
+  }, [sidebarOpen]);
+
+  // Close sidebar on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && sidebarOpen) {
+        setSidebarOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [sidebarOpen]);
+
+  // Auto-expand section containing current subsection
+  useEffect(() => {
+    if (selectedSubsection) {
+      for (const section of docSections) {
+        if (section.subsections.some(sub => sub.id === selectedSubsection)) {
+          setActiveSection(section.id);
+          break;
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSubsection]);
+
   const currentContent = useMemo(() => {
     for (const section of docSections) {
       const subsection = section.subsections.find(sub => sub.id === selectedSubsection);
@@ -731,29 +769,59 @@ export default function DocsPage() {
     return null;
   }, [selectedSubsection]);
 
+  const handleSubsectionClick = (subsectionId: string) => {
+    setSelectedSubsection(subsectionId);
+    setSidebarOpen(false);
+    // Focus management for accessibility
+    setTimeout(() => {
+      const mainContent = document.querySelector('main');
+      if (mainContent) {
+        const firstHeading = mainContent.querySelector('h1, h2, h3');
+        if (firstHeading) {
+          (firstHeading as HTMLElement).focus();
+        }
+      }
+    }, 100);
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+          className="lg:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300"
           onClick={() => setSidebarOpen(false)}
-          aria-hidden="true"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              setSidebarOpen(false);
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Close menu"
         />
       )}
 
-      <div className="flex">
+      <div className="flex relative">
         {/* Sidebar Navigation */}
-        <aside className={`fixed lg:sticky top-16 h-[calc(100vh-4rem)] w-72 lg:w-64 border-r border-gray-200 bg-white overflow-y-auto z-50 lg:z-20 transition-transform duration-300 ease-in-out ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}>
+        <aside 
+          ref={sidebarRef}
+          id="docs-sidebar"
+          className={`fixed lg:sticky top-16 h-[calc(100vh-4rem)] w-72 lg:w-64 border-r border-gray-200 bg-white overflow-y-auto z-50 lg:z-20 transition-transform duration-300 ease-in-out will-change-transform shadow-lg lg:shadow-none ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          }`}
+          aria-label="Documentation navigation"
+        >
           <div className="p-4 lg:p-6">
             {/* Mobile Close Button */}
             <div className="lg:hidden flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900">Documentation</h2>
               <button
-                onClick={() => setSidebarOpen(false)}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                onClick={() => {
+                  setSidebarOpen(false);
+                  menuButtonRef.current?.focus();
+                }}
+                className="p-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation"
                 aria-label="Close menu"
               >
                 <X className="w-5 h-5 text-gray-600" />
@@ -784,35 +852,39 @@ export default function DocsPage() {
                   <div key={section.id}>
                     <button
                       onClick={() => setActiveSection(isOpen ? null : section.id)}
-                      className="w-full flex items-center justify-between px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors touch-manipulation"
+                      className="w-full flex items-center justify-between px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 rounded-lg transition-colors touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
                       aria-expanded={isOpen}
+                      aria-controls={`section-${section.id}`}
                     >
                       <div className="flex items-center gap-2">
                         <Icon className="w-4 h-4 flex-shrink-0" />
                         <span className="text-left">{section.title}</span>
                       </div>
-                      <ChevronRight className={`w-4 h-4 flex-shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                      <ChevronRight className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
                     </button>
-                    {isOpen && (
+                    <div
+                      id={`section-${section.id}`}
+                      className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                        isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                      }`}
+                    >
                       <div className="ml-7 mt-1 space-y-1">
                         {section.subsections.map((subsection) => (
                           <button
                             key={subsection.id}
-                            onClick={() => {
-                              setSelectedSubsection(subsection.id);
-                              setSidebarOpen(false);
-                            }}
-                            className={`w-full text-left px-3 py-2.5 text-sm rounded-lg transition-colors touch-manipulation ${
+                            onClick={() => handleSubsectionClick(subsection.id)}
+                            className={`w-full text-left px-3 py-2.5 text-sm rounded-lg transition-colors touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 ${
                               selectedSubsection === subsection.id
                                 ? 'bg-gray-100 text-gray-900 font-medium'
-                                : 'text-gray-600 hover:bg-gray-50'
+                                : 'text-gray-600 hover:bg-gray-50 active:bg-gray-100'
                             }`}
+                            aria-current={selectedSubsection === subsection.id ? 'page' : undefined}
                           >
                             {subsection.title}
                           </button>
                         ))}
                       </div>
-                    )}
+                    </div>
                   </div>
                 );
               })}
@@ -826,12 +898,15 @@ export default function DocsPage() {
             {/* Mobile Menu Button - Top of Content */}
             <div className="lg:hidden mb-4">
               <button
+                ref={menuButtonRef}
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                aria-label="Toggle documentation menu"
+                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+                aria-label={sidebarOpen ? 'Close documentation menu' : 'Open documentation menu'}
+                aria-expanded={sidebarOpen}
+                aria-controls="docs-sidebar"
               >
                 {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                <span>Menu</span>
+                <span>{sidebarOpen ? 'Close' : 'Menu'}</span>
               </button>
             </div>
 
