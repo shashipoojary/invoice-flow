@@ -895,23 +895,49 @@ export default function DocsPage() {
         {/* Main Content */}
         <main className="flex-1 w-full lg:w-auto">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 lg:pl-12 py-6 sm:py-8">
-            {/* Mobile Menu Button - Top of Content */}
-            <div className="lg:hidden mb-4">
-              <button
-                ref={menuButtonRef}
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
-                aria-label={sidebarOpen ? 'Close documentation menu' : 'Open documentation menu'}
-                aria-expanded={sidebarOpen}
-                aria-controls="docs-sidebar"
-              >
-                {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                <span>{sidebarOpen ? 'Close' : 'Menu'}</span>
-              </button>
+            {/* Mobile Header - Simplified Single Row Navigation */}
+            <div className="lg:hidden mb-6">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                {/* Back to Home - Compact */}
+                <Link 
+                  href="/" 
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors touch-manipulation"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">Home</span>
+                </Link>
+                
+                {/* Documentation Menu Button - Clear and Prominent */}
+                <button
+                  ref={menuButtonRef}
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-gray-900 hover:bg-gray-800 active:bg-gray-700 rounded-lg transition-colors touch-manipulation focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+                  aria-label={sidebarOpen ? 'Close documentation menu' : 'Open documentation menu'}
+                  aria-expanded={sidebarOpen}
+                  aria-controls="docs-sidebar"
+                >
+                  {sidebarOpen ? (
+                    <>
+                      <X className="w-4 h-4" />
+                      <span>Close</span>
+                    </>
+                  ) : (
+                    <>
+                      <Menu className="w-4 h-4" />
+                      <span>Contents</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Page Title */}
+              <h1 className="font-heading text-xl sm:text-2xl font-semibold text-gray-900 tracking-tight">
+                {docSections.find(s => s.subsections.some(sub => sub.id === selectedSubsection))?.subsections.find(sub => sub.id === selectedSubsection)?.title || 'Documentation'}
+              </h1>
             </div>
 
-            {/* Breadcrumb */}
-            <div className="mb-6">
+            {/* Desktop Page Title */}
+            <div className="hidden lg:block mb-6">
               <Link 
                 href="/" 
                 className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-3 touch-manipulation"
@@ -919,7 +945,7 @@ export default function DocsPage() {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Home
               </Link>
-              <h1 className="font-heading text-xl sm:text-2xl lg:text-3xl font-semibold text-gray-900 tracking-tight">
+              <h1 className="font-heading text-2xl lg:text-3xl font-semibold text-gray-900 tracking-tight">
                 {docSections.find(s => s.subsections.some(sub => sub.id === selectedSubsection))?.subsections.find(sub => sub.id === selectedSubsection)?.title || 'Documentation'}
               </h1>
             </div>

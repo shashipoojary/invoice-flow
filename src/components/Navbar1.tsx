@@ -197,10 +197,11 @@ const Navbar1 = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Button - Hidden on docs page */}
           <button 
-            className="lg:hidden flex items-center p-2 text-gray-700 hover:text-gray-900" 
+            className="lg:hidden flex items-center p-2 text-gray-700 hover:text-gray-900 docs-page:hidden" 
             onClick={toggleMenu}
+            aria-label="Open site navigation"
           >
             <Menu className="h-6 w-6" />
           </button>

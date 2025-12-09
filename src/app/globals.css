@@ -303,6 +303,11 @@
     display: none;  /* Chrome, Safari and Opera */
   }
 
+  /* Hide navbar menu button on docs page */
+  .docs-page nav button[aria-label="Open site navigation"] {
+    display: none;
+  }
+
 }
 
 @layer components {
