@@ -738,7 +738,7 @@ export default function DocsPage() {
         <aside className={`fixed lg:sticky top-16 h-[calc(100vh-4rem)] w-64 border-r border-gray-200 bg-white overflow-y-auto z-20 transition-transform duration-300 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}>
-          <div className="p-6">
+          <div className="p-4 lg:p-6">
             {/* Search */}
             <div className="mb-6">
               <div className="relative">
@@ -815,8 +815,8 @@ export default function DocsPage() {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 lg:ml-64">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="flex-1">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 lg:pl-12 py-8">
             {/* Breadcrumb */}
             <div className="mb-6">
               <Link 
