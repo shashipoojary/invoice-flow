@@ -12,6 +12,17 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export async function POST(request: NextRequest) {
   try {
     const { invoiceId } = await request.json();
+    
+    // Get base URL for invoice links
+    const getBaseUrl = () => {
+      if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+      if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+      const host = request.headers.get('x-forwarded-host');
+      const proto = request.headers.get('x-forwarded-proto') || 'https';
+      if (host) return `${proto}://${host}`;
+      return '';
+    };
+    const baseUrl = getBaseUrl();
 
     if (!invoiceId) {
       return NextResponse.json({ error: 'Invoice ID is required' }, { status: 400 });
@@ -229,7 +240,7 @@ export async function POST(request: NextRequest) {
 
               <!-- View Invoice Button -->
               <div style="text-align: center; margin: 32px 0;">
-                <a href="https://invoice-flow-vert.vercel.app/invoice/${invoice.public_token}" 
+                <a href="${baseUrl}/invoice/${invoice.public_token}" 
                    style="display: inline-block; background-color: #0D9488; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 500; font-size: 16px;">
                   View Invoice Online
                 </a>

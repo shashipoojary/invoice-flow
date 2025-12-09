@@ -48,8 +48,16 @@ import {
   Minus
 } from 'lucide-react';
 import Image from 'next/image';
-import Footer from '@/components/Footer';
-import { AvatarCircles } from '@/components/AvatarCircles';
+import dynamic from 'next/dynamic';
+
+// Lazy load components that are below the fold
+const Footer = dynamic(() => import('@/components/Footer'), {
+  loading: () => null, // Footer can load silently
+});
+
+const AvatarCircles = dynamic(() => import('@/components/AvatarCircles').then(mod => ({ default: mod.AvatarCircles })), {
+  loading: () => null, // AvatarCircles can load silently
+});
 
 export default function LandingPage() {
   const router = useRouter();
@@ -62,60 +70,48 @@ export default function LandingPage() {
   const [activityStep, setActivityStep] = useState(1); // 1: sent, 2: viewed, 3: reminder
   const [paymentStep, setPaymentStep] = useState(1); // 1: invoice sent, 2: client receives, 3: client copies, 4: client pays externally
 
+  // Optimize: Combine all animations into a single useEffect to reduce re-renders
   useEffect(() => {
     setIsVisible(true);
-  }, []);
-
-  // Animate invoice creation steps - one page at a time like QuickInvoiceModal
-  useEffect(() => {
-    const steps = [1, 2, 3, 4, 5];
-    let currentIndex = 0;
     
-    const interval = setInterval(() => {
-      currentIndex = (currentIndex + 1) % steps.length;
-      setInvoiceStep(steps[currentIndex]);
-    }, 3000); // Change step every 3 seconds (longer to see each page)
+    // Animate invoice creation steps
+    const invoiceSteps = [1, 2, 3, 4, 5];
+    let invoiceIndex = 0;
+    const invoiceInterval = setInterval(() => {
+      invoiceIndex = (invoiceIndex + 1) % invoiceSteps.length;
+      setInvoiceStep(invoiceSteps[invoiceIndex]);
+    }, 3000);
     
-    return () => clearInterval(interval);
-  }, []);
-
-  // Animate email sending steps
-  useEffect(() => {
-    const steps = [1, 2, 3, 4]; // preparing, sending, sent, delivered
-    let currentIndex = 0;
+    // Animate email sending steps
+    const emailSteps = [1, 2, 3, 4];
+    let emailIndex = 0;
+    const emailInterval = setInterval(() => {
+      emailIndex = (emailIndex + 1) % emailSteps.length;
+      setEmailStep(emailSteps[emailIndex]);
+    }, 2500);
     
-    const interval = setInterval(() => {
-      currentIndex = (currentIndex + 1) % steps.length;
-      setEmailStep(steps[currentIndex]);
-    }, 2500); // Change step every 2.5 seconds
+    // Animate activity tracking steps
+    const activitySteps = [1, 2, 3];
+    let activityIndex = 0;
+    const activityInterval = setInterval(() => {
+      activityIndex = (activityIndex + 1) % activitySteps.length;
+      setActivityStep(activitySteps[activityIndex]);
+    }, 3000);
     
-    return () => clearInterval(interval);
-  }, []);
-
-  // Animate activity tracking steps
-  useEffect(() => {
-    const steps = [1, 2, 3]; // sent, viewed, reminder
-    let currentIndex = 0;
+    // Animate payment flow steps
+    const paymentSteps = [1, 2, 3, 4];
+    let paymentIndex = 0;
+    const paymentInterval = setInterval(() => {
+      paymentIndex = (paymentIndex + 1) % paymentSteps.length;
+      setPaymentStep(paymentSteps[paymentIndex]);
+    }, 3000);
     
-    const interval = setInterval(() => {
-      currentIndex = (currentIndex + 1) % steps.length;
-      setActivityStep(steps[currentIndex]);
-    }, 3000); // Change step every 3 seconds
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  // Animate payment steps
-  useEffect(() => {
-    const steps = [1, 2, 3, 4]; // invoice sent, client receives, client copies, client pays externally
-    let currentIndex = 0;
-    
-    const interval = setInterval(() => {
-      currentIndex = (currentIndex + 1) % steps.length;
-      setPaymentStep(steps[currentIndex]);
-    }, 3000); // Change step every 3 seconds
-    
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(invoiceInterval);
+      clearInterval(emailInterval);
+      clearInterval(activityInterval);
+      clearInterval(paymentInterval);
+    };
   }, []);
 
 
@@ -237,27 +233,29 @@ export default function LandingPage() {
               
             {/* Desktop Image */}
             <div className="relative z-10 rounded-lg overflow-hidden border border-gray-200 shadow-2xl bg-white hidden md:block">
-              <img
+              <Image
                 src="/dashboard-screenshot.png?v=2"
                 alt="FlowInvoicer Dashboard"
+                width={1200}
+                height={800}
                 className="w-full h-auto block"
-                style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
-                loading="eager"
-                decoding="async"
-                key="dashboard-screenshot"
+                priority
+                quality={85}
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
               />
             </div>
             
             {/* Mobile Image */}
             <div className="relative z-10 rounded-lg overflow-hidden border border-gray-200 shadow-2xl bg-white block md:hidden">
-              <img
+              <Image
                 src="/dashboard-screenshot-mobile.png"
                 alt="FlowInvoicer Dashboard"
+                width={600}
+                height={800}
                 className="w-full h-auto block"
-                style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
-                loading="eager"
-                decoding="async"
-                key="dashboard-screenshot-mobile"
+                priority
+                quality={85}
+                sizes="100vw"
               />
             </div>
           </div>

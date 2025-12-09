@@ -14,6 +14,15 @@ export default function TestEmailTemplate() {
   const [status, setStatus] = useState('Draft')
   const [notes, setNotes] = useState('Thank you for your business!')
   
+  // Get base URL dynamically
+  const getBaseUrl = () => {
+    if (typeof window !== 'undefined') {
+      return window.location.origin;
+    }
+    return process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
+  };
+  const baseUrl = getBaseUrl();
+  
   // Payment methods
   const [paypalEmail, setPaypalEmail] = useState('payments@techphysic.com')
   const [cashappId, setCashappId] = useState('techphysic')
@@ -301,7 +310,7 @@ export default function TestEmailTemplate() {
             </div>
 
             <div class="cta-section">
-              <a href="https://invoice-flow-vert.vercel.app/invoice/INV-0008" class="cta-button">
+              <a href="${baseUrl}/invoice/INV-0008" class="cta-button">
                 View Invoice Online
               </a>
             </div>
@@ -384,8 +393,8 @@ export default function TestEmailTemplate() {
               <div class="invoiceflow-disclaimer">
                 This invoice was generated using FlowInvoicer
               </div>
-              <a href="https://invoice-flow-vert.vercel.app/" class="invoiceflow-link">
-                invoice-flow-vert.vercel.app
+              <a href="${baseUrl}" class="invoiceflow-link">
+                ${baseUrl.replace(/^https?:\/\//, '')}
               </a>
             </div>
           </div>

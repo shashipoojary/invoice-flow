@@ -7,6 +7,17 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export async function POST(request: NextRequest) {
   try {
     const { invoiceId, reminderType = 'friendly' } = await request.json();
+    
+    // Get base URL for invoice links
+    const getBaseUrl = () => {
+      if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+      if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+      const host = request.headers.get('x-forwarded-host');
+      const proto = request.headers.get('x-forwarded-proto') || 'https';
+      if (host) return `${proto}://${host}`;
+      return '';
+    };
+    const baseUrl = getBaseUrl();
 
     if (!invoiceId) {
       return NextResponse.json({ error: 'Invoice ID is required' }, { status: 400 });
@@ -363,12 +374,12 @@ export async function POST(request: NextRequest) {
                 <tr>
                   <td align="center">
                     <!--[if mso]>
-                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${process.env.NEXT_PUBLIC_APP_URL || 'https://invoice-flow-vert.vercel.app'}/invoice/${encodeURIComponent(invoice.public_token)}" style="height:48px;v-text-anchor:middle;width:240px;" arcsize="0%" stroke="f" fillcolor="#000000">
+                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${baseUrl}/invoice/${encodeURIComponent(invoice.public_token)}" style="height:48px;v-text-anchor:middle;width:240px;" arcsize="0%" stroke="f" fillcolor="#000000">
                     <w:anchorlock/>
                     <center style="color:#ffffff;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;font-weight:500;">View Invoice</center>
                     </v:roundrect>
                     <![endif]-->
-                    <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://invoice-flow-vert.vercel.app'}/invoice/${encodeURIComponent(invoice.public_token)}" 
+                    <a href="${baseUrl}/invoice/${encodeURIComponent(invoice.public_token)}" 
                        style="display:inline-block;width:240px;background-color:#000000;color:#ffffff;text-decoration:none;padding:14px 0;text-align:center;font-size:15px;font-weight:500;letter-spacing:0.2px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;mso-hide:all;">
                       View Invoice
                     </a>

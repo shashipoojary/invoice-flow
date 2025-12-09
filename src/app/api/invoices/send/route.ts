@@ -350,7 +350,16 @@ export async function POST(request: NextRequest) {
     // Generate template-specific email using the new email templates
     // Properly encode the public token to handle special characters like + and =
     const encodedToken = encodeURIComponent(invoice.public_token);
-    const publicUrl = `https://invoice-flow-vert.vercel.app/invoice/${encodedToken}`;
+    // Get base URL - prioritize NEXT_PUBLIC_APP_URL, then VERCEL_URL, fallback to request headers
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+                    (request.headers.get('x-forwarded-host') ? 
+                      `${request.headers.get('x-forwarded-proto') || 'https'}://${request.headers.get('x-forwarded-host')}` : 
+                      ''));
+    if (!baseUrl) {
+      console.error('Base URL not configured. Please set NEXT_PUBLIC_APP_URL environment variable.');
+    }
+    const publicUrl = `${baseUrl}/invoice/${encodedToken}`;
     const emailHtml = getEmailTemplate(template, invoice, businessSettings, publicUrl);
 
     // Check if Resend API key is configured

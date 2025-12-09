@@ -472,7 +472,7 @@ const generateModernReminderTemplate = (
             </div>
 
             <div class="cta-section">
-              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invoice/${invoice.publicToken}" class="cta-button">
+              <a href="${process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '')}/invoice/${invoice.publicToken}" class="cta-button">
                 View & Pay Invoice
               </a>
             </div>
@@ -820,7 +820,7 @@ const generateCreativeReminderTemplate = (
             </div>
 
             <div class="cta-section">
-              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invoice/${invoice.publicToken}" class="cta-button">
+              <a href="${process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '')}/invoice/${invoice.publicToken}" class="cta-button">
                 View & Pay Invoice
               </a>
             </div>

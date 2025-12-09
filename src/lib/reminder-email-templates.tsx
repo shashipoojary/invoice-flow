@@ -5,8 +5,20 @@ export const getReminderEmailTemplate = (
   invoice: any,
   businessSettings: any,
   reminderType: 'friendly' | 'polite' | 'firm' | 'urgent',
-  overdueDays: number
+  overdueDays: number,
+  baseUrl?: string
 ) => {
+  // Get base URL - use provided baseUrl, or fallback to environment variables
+  const getBaseUrl = () => {
+    if (baseUrl) return baseUrl;
+    if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+    // In production, return empty string to prevent broken links
+    if (process.env.NODE_ENV === 'production') return '';
+    // Development fallback only
+    return 'http://localhost:3000';
+  };
+  const appBaseUrl = getBaseUrl();
   const getGreeting = () => {
     switch (reminderType) {
       case 'friendly':
@@ -254,7 +266,7 @@ export const getReminderEmailTemplate = (
           </div>
 
           <div style="text-align: center; margin: 32px 0;">
-            <a href="${process.env.NEXT_PUBLIC_APP_URL}/invoice/${invoice.publicToken}" class="payment-button">
+            <a href="${appBaseUrl}/invoice/${invoice.publicToken}" class="payment-button">
               View & Pay Invoice
             </a>
           </div>

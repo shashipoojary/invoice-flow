@@ -54,7 +54,7 @@ export default function TestEmailTemplates() {
   const generateEmail = useCallback(() => {
     try {
       console.log('Generating email for template:', selectedTemplate);
-      const publicUrl = 'https://invoice-flow-vert.vercel.app/invoice/INV-0013';
+      const publicUrl = `${process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '')}/invoice/INV-0013`;
       const mockInvoice = getMockInvoice();
       console.log('Mock invoice theme:', mockInvoice.theme);
       const html = getEmailTemplate(selectedTemplate, mockInvoice, mockBusinessSettings, publicUrl);

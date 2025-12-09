@@ -4,8 +4,29 @@ export async function POST() {
   try {
     console.log('🚀 Manually triggering auto reminder job...');
     
+    // Get base URL for API call
+    const getBaseUrl = () => {
+      if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+      if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+      // Only use localhost in development
+      if (process.env.NODE_ENV === 'development') {
+        return 'http://localhost:3000';
+      }
+      // In production, return empty string to prevent broken links
+      console.error('NEXT_PUBLIC_APP_URL or VERCEL_URL must be set in production');
+      return '';
+    };
+    const baseUrl = getBaseUrl();
+    
+    if (!baseUrl) {
+      return NextResponse.json(
+        { error: 'Base URL not configured. Please set NEXT_PUBLIC_APP_URL environment variable.' },
+        { status: 500 }
+      );
+    }
+    
     // Call the auto-send endpoint
-    const response = await fetch(`https://invoice-flow-vert.vercel.app/api/reminders/auto-send`, {
+    const response = await fetch(`${baseUrl}/api/reminders/auto-send`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

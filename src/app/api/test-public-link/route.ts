@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getBaseUrlFromRequest } from '@/lib/get-base-url'
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
       }, { status: 404 })
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const baseUrl = getBaseUrlFromRequest(request)
     const publicUrl = `${baseUrl}/invoice/${encodeURIComponent(invoice.public_token)}`
 
     return NextResponse.json({
