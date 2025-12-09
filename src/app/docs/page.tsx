@@ -169,9 +169,9 @@ export default function DocsPage() {
               <div>
                 <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Invoice Templates</h3>
                 <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
-                  Choose from professional templates that match your brand. Each template can be customized with your brand colors.
+                  Choose from professional invoice PDF templates. Each template has a fixed layout, but you can customize the color scheme to match your brand.
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div className="p-4 rounded-lg border bg-white border-gray-200">
                     <h4 className="font-semibold text-gray-900 mb-2">Minimal</h4>
                     <p className="text-sm" style={{color: '#6b7280'}}>Clean and simple design</p>
@@ -184,6 +184,14 @@ export default function DocsPage() {
                     <h4 className="font-semibold text-gray-900 mb-2">Creative</h4>
                     <p className="text-sm" style={{color: '#6b7280'}}>Bold and distinctive</p>
                   </div>
+                </div>
+                <div className="p-4 rounded-lg border bg-yellow-50 border-yellow-200">
+                  <p className="text-sm font-medium text-yellow-900 mb-2">Customization Limits:</p>
+                  <ul className="space-y-1 text-sm ml-4" style={{color: '#92400e'}}>
+                    <li>• Invoice PDF: Color scheme can be customized, layout is fixed</li>
+                    <li>• Invoice email templates: Fixed format, cannot be customized</li>
+                    <li>• Reminder email templates: Fixed format, cannot be customized</li>
+                  </ul>
                 </div>
               </div>
             </div>
@@ -296,16 +304,29 @@ export default function DocsPage() {
                 </div>
               </div>
               <div>
-                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Customization</h3>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Invoice PDF Customization</h3>
                 <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
-                  Customize your invoices with:
+                  For invoice PDFs, you can customize:
                 </p>
-                <ul className="space-y-2 ml-6 text-sm" style={{color: '#6b7280'}}>
-                  <li>• Brand colors (primary and secondary)</li>
+                <ul className="space-y-2 ml-6 text-sm mb-4" style={{color: '#6b7280'}}>
+                  <li>• Color scheme (primary and secondary brand colors)</li>
                   <li>• Business logo</li>
                   <li>• Custom payment terms</li>
                   <li>• Notes and additional information</li>
                 </ul>
+                <div className="p-4 rounded-lg border bg-yellow-50 border-yellow-200 mb-4">
+                  <p className="text-sm font-medium text-yellow-900 mb-2">Important:</p>
+                  <p className="text-sm" style={{color: '#92400e'}}>
+                    The invoice PDF layout and structure remain the same for each template. Only the color scheme can be customized to match your brand.
+                  </p>
+                </div>
+                <div className="p-4 rounded-lg border bg-red-50 border-red-200">
+                  <p className="text-sm font-medium text-red-900 mb-2">No Customization Available:</p>
+                  <ul className="space-y-1 text-sm ml-4" style={{color: '#991b1b'}}>
+                    <li>• Invoice email templates - Fixed format, cannot be customized</li>
+                    <li>• Auto reminder email templates - Fixed format, cannot be customized</li>
+                  </ul>
+                </div>
               </div>
             </div>
           )
@@ -395,7 +416,7 @@ export default function DocsPage() {
                 <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
                   Choose from four reminder types, each with a different tone:
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div className="p-4 rounded-lg border bg-white border-gray-200">
                     <h4 className="font-semibold text-gray-900 mb-2">Friendly</h4>
                     <p className="text-sm" style={{color: '#6b7280'}}>Warm and casual tone. Great for regular clients.</p>
@@ -412,6 +433,22 @@ export default function DocsPage() {
                     <h4 className="font-semibold text-gray-900 mb-2">Urgent</h4>
                     <p className="text-sm" style={{color: '#6b7280'}}>Strong and immediate. For significantly overdue payments.</p>
                   </div>
+                </div>
+                <div className="p-4 rounded-lg border bg-blue-50 border-blue-200 mb-4">
+                  <p className="text-sm font-medium text-blue-900 mb-2">Smart Auto Reminders:</p>
+                  <p className="text-sm" style={{color: '#1e40af'}}>
+                    When using &quot;Smart&quot; reminder type, the system automatically selects the most appropriate reminder template based on your invoice&apos;s payment terms (Due on Receipt, Net 15, Net 30, 2/10 Net 30, etc.). You cannot customize which template is used - the system chooses the best one automatically.
+                  </p>
+                </div>
+                <div className="p-4 rounded-lg border bg-red-50 border-red-200">
+                  <p className="text-sm font-medium text-red-900 mb-2">No Email Template Customization:</p>
+                  <p className="text-sm mb-2" style={{color: '#991b1b'}}>
+                    Reminder email templates are fixed and cannot be customized. The system uses professional, pre-designed templates for all reminder emails.
+                  </p>
+                  <ul className="space-y-1 text-sm ml-4" style={{color: '#991b1b'}}>
+                    <li>• Auto reminder email templates - Fixed format, cannot be customized</li>
+                    <li>• Manual reminder email templates - Fixed format, cannot be customized</li>
+                  </ul>
                 </div>
               </div>
               <div>
@@ -672,16 +709,22 @@ export default function DocsPage() {
                 <h3 className="font-heading text-lg font-semibold mb-3 text-gray-900">
                   Can I customize invoice colors?
                 </h3>
-                <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
-                  Yes, when creating a Detailed Invoice, you can choose primary and secondary colors that match your brand. These colors will be used throughout the invoice template.
+                <p className="text-sm leading-relaxed mb-2" style={{color: '#6b7280'}}>
+                  Yes, when creating a Detailed Invoice, you can customize the color scheme (primary and secondary colors) to match your brand. These colors will be used throughout the invoice PDF template.
+                </p>
+                <p className="text-sm leading-relaxed font-medium text-gray-900">
+                  Important: Only the color scheme can be customized. The invoice PDF layout and structure remain fixed for each template. Email templates (invoice emails and reminder emails) cannot be customized at all.
                 </p>
               </div>
               <div className="p-6 rounded-lg border bg-white border-gray-200">
                 <h3 className="font-heading text-lg font-semibold mb-3 text-gray-900">
                   How do automated reminders work?
                 </h3>
-                <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
+                <p className="text-sm leading-relaxed mb-2" style={{color: '#6b7280'}}>
                   Automated reminders are sent based on your invoice due dates and payment terms. You configure reminder schedules in invoice settings, and the system automatically sends reminders before and after due dates based on your preferences.
+                </p>
+                <p className="text-sm leading-relaxed font-medium text-gray-900">
+                  Note: When using &quot;Smart&quot; reminder type, the system automatically selects the appropriate reminder template based on your payment terms. Reminder email templates are fixed and cannot be customized.
                 </p>
               </div>
               <div className="p-6 rounded-lg border bg-white border-gray-200">

@@ -233,22 +233,73 @@ async function createScheduledReminders(invoiceId: string, reminderSettings: any
   }
 }
 
+// Check subscription limits before creating invoice
+async function checkSubscriptionLimit(userId: string): Promise<{ allowed: boolean; reason?: string }> {
+  try {
+    // Get user subscription plan
+    const { data: profile } = await supabaseAdmin
+      .from('users')
+      .select('subscription_plan')
+      .eq('id', userId)
+      .single();
+
+    const plan = profile?.subscription_plan || 'free';
+
+    // Free plan: Check monthly invoice limit
+    if (plan === 'free') {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+      const { count } = await supabaseAdmin
+        .from('invoices')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .gte('created_at', startOfMonth.toISOString())
+        .lte('created_at', endOfMonth.toISOString());
+
+      if ((count || 0) >= 5) {
+        return {
+          allowed: false,
+          reason: 'Free plan limit reached. You can create up to 5 invoices per month. Please upgrade to create more invoices.'
+        };
+      }
+    }
+
+    // Monthly and Pay Per Invoice plans have no limits
+    return { allowed: true };
+  } catch (error) {
+    console.error('Error checking subscription limit:', error);
+    // Allow creation if check fails (fail open)
+    return { allowed: true };
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const invoiceData = await request.json();
-
-    // Get the authorization header
+    // Get authenticated user first
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const token = authHeader.split(' ')[1];
-
-    // Verify the user
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check subscription limits before proceeding (only for non-PDF generation)
+    const invoiceData = await request.json();
+    if (!invoiceData.generate_pdf_only) {
+      const limitCheck = await checkSubscriptionLimit(user.id);
+      if (!limitCheck.allowed) {
+        return NextResponse.json({ 
+          error: limitCheck.reason || 'Subscription limit reached',
+          limitReached: true
+        }, { status: 403 });
+      }
     }
 
     // Validate required fields

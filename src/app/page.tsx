@@ -233,17 +233,17 @@ export default function LandingPage() {
               
             {/* Desktop Image */}
             <div className="relative z-10 rounded-lg overflow-hidden border border-gray-200 shadow-2xl bg-white hidden md:block">
-              <Image
+                <Image
                 src="/dashboard-screenshot.png?v=2"
                 alt="FlowInvoicer Dashboard"
-                width={1200}
-                height={800}
+                  width={1200}
+                  height={800}
                 className="w-full h-auto block"
                 priority
                 quality={85}
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
-              />
-            </div>
+                />
+              </div>
             
             {/* Mobile Image */}
             <div className="relative z-10 rounded-lg overflow-hidden border border-gray-200 shadow-2xl bg-white block md:hidden">

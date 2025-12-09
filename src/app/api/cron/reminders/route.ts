@@ -238,7 +238,7 @@ async function sendReminderEmail(invoice: any, reminderType: string, overdueDays
     // This ensures complete data isolation - each user only gets their own settings
     let businessSettings: any = {};
     try {
-      const { data: userSettings, error: settingsError } = await supabaseAdmin
+    const { data: userSettings, error: settingsError } = await supabaseAdmin
       .from('user_settings')
         .select('business_name, business_email, business_phone, business_address, website, logo, logo_url, email_from_address, payment_notes, paypal_email, cashapp_id, venmo_id, google_pay_upi, apple_pay_id, bank_account, bank_ifsc_swift, bank_iban, stripe_account')
         .eq('user_id', invoice.user_id) // CRITICAL: Proper data isolation - only fetch settings for this specific user

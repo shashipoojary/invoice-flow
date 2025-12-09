@@ -38,7 +38,7 @@ interface UserProfile {
   createdAt: string;
   lastLogin: string;
   subscription: {
-    plan: 'free' | 'pro' | 'enterprise';
+    plan: 'free' | 'monthly' | 'pay_per_invoice';
     status: 'active' | 'cancelled' | 'expired';
     nextBilling?: string;
   };
@@ -208,6 +208,13 @@ export default function ProfilePage() {
   const [isDeletingProgress, setIsDeletingProgress] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState('pdf');
+  const [subscriptionUsage, setSubscriptionUsage] = useState<{
+    plan: string;
+    limit: number | null;
+    used: number;
+    remaining: number | null;
+    canCreateInvoice: boolean;
+  } | null>(null);
   
   // Invoice modal states
   const [showInvoiceTypeSelection, setShowInvoiceTypeSelection] = useState(false);
@@ -254,6 +261,25 @@ export default function ProfilePage() {
     confirm: false
   });
 
+  // Load subscription usage
+  const loadSubscriptionUsage = useCallback(async () => {
+    if (!user || loading) return;
+    
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/subscription/usage', {
+        headers
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSubscriptionUsage(data);
+      }
+    } catch (error) {
+      console.error('Error loading subscription usage:', error);
+    }
+  }, [user, loading, getAuthHeaders]);
+
   // Load profile data
   const loadProfile = useCallback(async () => {
     if (!user || loading) return;
@@ -275,6 +301,8 @@ export default function ProfilePage() {
           company: data.company || '',
           address: data.address || ''
         });
+        // Load subscription usage after profile loads
+        await loadSubscriptionUsage();
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -283,7 +311,7 @@ export default function ProfilePage() {
       setIsLoading(false);
       setHasLoadedData(true);
     }
-  }, [user, loading, getAuthHeaders, showError]);
+  }, [user, loading, getAuthHeaders, showError, loadSubscriptionUsage]);
 
   // Load data on mount - prevent infinite loop with hasLoadedData flag
   useEffect(() => {
@@ -422,6 +450,35 @@ export default function ProfilePage() {
       setIsDeleting(false);
       setShowDeleteModal(false);
       setDeleteAccountConfirmation('');
+    }
+  };
+
+  // Update subscription
+  const handleUpdateSubscription = async (plan: string) => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/subscription', {
+        method: 'PUT',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ plan })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        showSuccess(`Subscription updated to ${plan === 'monthly' ? 'Monthly' : plan === 'pay_per_invoice' ? 'Pay Per Invoice' : 'Free'} plan`);
+        // Reload profile and usage to get updated info
+        await Promise.all([loadProfile(), loadSubscriptionUsage()]);
+        setShowSubscriptionModal(false);
+      } else {
+        const errorData = await response.json();
+        showError(errorData.error || 'Failed to update subscription');
+      }
+    } catch (error) {
+      console.error('Error updating subscription:', error);
+      showError('Failed to update subscription');
     }
   };
 
@@ -672,15 +729,26 @@ export default function ProfilePage() {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium text-gray-900 capitalize">
-                            {profile?.subscription?.plan || 'Free'} Plan
+                          <p className="font-medium text-gray-900">
+                            {profile?.subscription?.plan === 'monthly' ? 'Monthly Subscription' : 
+                             profile?.subscription?.plan === 'pay_per_invoice' ? 'Pay Per Invoice' : 
+                             'Free Plan'}
                           </p>
                           <p className="text-sm text-gray-500">
                             {profile?.subscription?.status === 'active' ? 'Active' : 'Inactive'}
                           </p>
+                          {profile?.subscription?.nextBilling && (
+                            <p className="text-xs text-gray-400 mt-1">
+                              Next billing: {new Date(profile.subscription.nextBilling).toLocaleDateString()}
+                            </p>
+                          )}
                         </div>
                         <button
-                          onClick={() => setShowSubscriptionModal(true)}
+                          onClick={async () => {
+                            setShowSubscriptionModal(true);
+                            // Load usage data when modal opens
+                            await loadSubscriptionUsage();
+                          }}
                           className="text-indigo-600 hover:text-indigo-700 text-sm font-medium cursor-pointer"
                         >
                           Manage
@@ -955,59 +1023,271 @@ export default function ProfilePage() {
 
       {/* Subscription Modal */}
       {showSubscriptionModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-2xl w-full p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-heading text-lg font-semibold" style={{color: '#1f2937'}}>
-                Subscription Management
-              </h3>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-xl border border-gray-200 max-w-4xl w-full shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">
+              <div className="flex-1 min-w-0 pr-2">
+                <h3 className="font-heading text-base sm:text-lg font-semibold text-gray-900">
+                  Subscription Plans
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                  Choose the plan that works best for your business
+                </p>
+              </div>
               <button
                 onClick={() => setShowSubscriptionModal(false)}
-                className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer flex-shrink-0"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h4 className="font-semibold text-gray-900 mb-2">Free Plan</h4>
-                <p className="text-sm text-gray-500 mb-4">Basic features for getting started</p>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Up to 5 invoices</li>
-                  <li>• Basic templates</li>
-                  <li>• Email support</li>
-                </ul>
-              </div>
+            {/* Scrollable Content */}
+            <div className="overflow-y-auto flex-1">
+              {/* Current Plan */}
+              {profile?.subscription && (
+                <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 border-b border-gray-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs sm:text-sm text-gray-600">Current Plan</p>
+                      <p className="text-sm sm:text-base font-medium text-gray-900 mt-0.5">
+                        {profile.subscription.plan === 'monthly' ? 'Monthly Subscription' : 
+                         profile.subscription.plan === 'pay_per_invoice' ? 'Pay Per Invoice' : 
+                         'Free Plan'}
+                      </p>
+                      {profile.subscription.nextBilling && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Next billing: {new Date(profile.subscription.nextBilling).toLocaleDateString()}
+                        </p>
+                      )}
+                      {/* Usage Info */}
+                      {subscriptionUsage && subscriptionUsage.plan === 'free' && subscriptionUsage.limit && (
+                        <div className="mt-2">
+                          <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                            <span>Invoices this month</span>
+                            <span className="font-medium">{subscriptionUsage.used} / {subscriptionUsage.limit}</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-1.5">
+                            <div 
+                              className={`h-1.5 rounded-full transition-all ${
+                                subscriptionUsage.used >= subscriptionUsage.limit 
+                                  ? 'bg-red-500' 
+                                  : subscriptionUsage.used >= subscriptionUsage.limit * 0.8
+                                  ? 'bg-yellow-500'
+                                  : 'bg-indigo-600'
+                              }`}
+                              style={{ width: `${Math.min(100, (subscriptionUsage.used / subscriptionUsage.limit) * 100)}%` }}
+                            />
+                          </div>
+                          {subscriptionUsage.used >= subscriptionUsage.limit && (
+                            <p className="text-xs text-red-600 mt-1">Limit reached. Upgrade to create more invoices.</p>
+                          )}
+                        </div>
+                      )}
+                      {subscriptionUsage && subscriptionUsage.plan === 'pay_per_invoice' && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {subscriptionUsage.used} invoice{subscriptionUsage.used !== 1 ? 's' : ''} sent (${(subscriptionUsage.used * 0.5).toFixed(2)})
+                        </p>
+                      )}
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium self-start sm:self-auto flex-shrink-0 ${
+                      profile.subscription.status === 'active' 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {profile.subscription.status === 'active' ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                </div>
+              )}
 
-              <div className="border border-indigo-200 rounded-lg p-4 bg-indigo-50">
-                <h4 className="font-semibold text-gray-900 mb-2">Pro Plan</h4>
-                <p className="text-sm text-gray-500 mb-4">Advanced features for professionals</p>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Unlimited invoices</li>
-                  <li>• Custom templates</li>
-                  <li>• Priority support</li>
-                  <li>• Advanced analytics</li>
-                </ul>
+              {/* Plans */}
+              <div className="p-4 sm:p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Free Plan */}
+                <div className={`border rounded-lg p-4 sm:p-5 transition-colors ${
+                  profile?.subscription?.plan === 'free' 
+                    ? 'border-indigo-500 bg-indigo-50' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}>
+                  <div className="mb-4">
+                    <h4 className="font-heading text-sm sm:text-base font-semibold text-gray-900 mb-1">Free</h4>
+                    <div className="flex items-baseline gap-1 mb-2">
+                      <span className="font-heading text-xl sm:text-2xl font-semibold text-gray-900">$0</span>
+                      <span className="text-xs sm:text-sm text-gray-600">/forever</span>
+                    </div>
+                    <p className="text-xs text-gray-500">Perfect for getting started</p>
+                  </div>
+                  <ul className="space-y-1.5 sm:space-y-2 mb-4">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Up to 5 invoices per month</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Basic templates</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Client management</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">PDF generation</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Email reminders (limited)</span>
+                    </li>
+                  </ul>
+                  <button
+                    onClick={() => handleUpdateSubscription('free')}
+                    disabled={profile?.subscription?.plan === 'free'}
+                    className={`w-full px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors ${
+                      profile?.subscription?.plan === 'free'
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer'
+                    }`}
+                  >
+                    {profile?.subscription?.plan === 'free' ? 'Current' : 'Select'}
+                  </button>
+                </div>
+
+                {/* Monthly Plan */}
+                <div className={`border rounded-lg p-4 sm:p-5 transition-colors relative ${
+                  profile?.subscription?.plan === 'monthly' 
+                    ? 'border-indigo-500 bg-indigo-50' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}>
+                  <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-indigo-600 text-white text-xs font-medium px-2 py-0.5 rounded">Popular</span>
+                  </div>
+                  <div className="mb-4 mt-1">
+                    <h4 className="font-heading text-sm sm:text-base font-semibold text-gray-900 mb-1">Monthly</h4>
+                    <div className="flex items-baseline gap-1 mb-2">
+                      <span className="font-heading text-xl sm:text-2xl font-semibold text-gray-900">$9</span>
+                      <span className="text-xs sm:text-sm text-gray-600">/month</span>
+                    </div>
+                    <p className="text-xs text-gray-500">Best for regular users</p>
+                  </div>
+                  <ul className="space-y-1.5 sm:space-y-2 mb-4">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Unlimited invoices</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">All premium templates</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Advanced client management</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Automated reminders</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Late fee management</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Analytics dashboard</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Priority support</span>
+                    </li>
+                  </ul>
+                  <button
+                    onClick={() => handleUpdateSubscription('monthly')}
+                    disabled={profile?.subscription?.plan === 'monthly'}
+                    className={`w-full px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors ${
+                      profile?.subscription?.plan === 'monthly'
+                        ? 'bg-indigo-200 text-indigo-700 cursor-not-allowed'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
+                    }`}
+                  >
+                    {profile?.subscription?.plan === 'monthly' ? 'Current' : 'Upgrade'}
+                  </button>
+                </div>
+
+                {/* Pay Per Invoice Plan */}
+                <div className={`border rounded-lg p-4 sm:p-5 transition-colors lg:col-span-1 ${
+                  profile?.subscription?.plan === 'pay_per_invoice' 
+                    ? 'border-indigo-500 bg-indigo-50' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}>
+                  <div className="mb-4">
+                    <h4 className="font-heading text-sm sm:text-base font-semibold text-gray-900 mb-1">Pay Per Invoice</h4>
+                    <div className="flex items-baseline gap-1 mb-2">
+                      <span className="font-heading text-xl sm:text-2xl font-semibold text-gray-900">$0.50</span>
+                      <span className="text-xs sm:text-sm text-gray-600">/invoice</span>
+                    </div>
+                    <p className="text-xs text-gray-500">Pay only for what you use</p>
+                  </div>
+                  <ul className="space-y-1.5 sm:space-y-2 mb-4">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">$0.50 per invoice sent</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">All premium templates</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Advanced client management</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Automated reminders</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Late fee management</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Analytics dashboard</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Priority support</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">No monthly commitment</span>
+                    </li>
+                  </ul>
+                  <button
+                    onClick={() => handleUpdateSubscription('pay_per_invoice')}
+                    disabled={profile?.subscription?.plan === 'pay_per_invoice'}
+                    className={`w-full px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors ${
+                      profile?.subscription?.plan === 'pay_per_invoice'
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer'
+                    }`}
+                  >
+                    {profile?.subscription?.plan === 'pay_per_invoice' ? 'Current' : 'Select'}
+                  </button>
+                </div>
               </div>
             </div>
+            </div>
 
-            <div className="flex items-center justify-end space-x-3 mt-6">
-              <button
-                onClick={() => setShowSubscriptionModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  showSuccess('Subscription management coming soon!');
-                  setShowSubscriptionModal(false);
-                }}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
-              >
-                Upgrade Plan
-              </button>
+            {/* Footer */}
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+              <p className="text-xs text-gray-500 text-center mb-2">
+                All plans include secure payment processing. No credit card required for free plan.
+              </p>
+              <div className="mt-3 pt-3 border-t border-gray-200">
+                <p className="text-xs text-gray-500 text-center leading-relaxed">
+                  <span className="font-medium text-gray-700">How it works:</span> Your subscription plan determines your invoice limits and features. Free plan users can create up to 5 invoices per month. Monthly and Pay Per Invoice plans have unlimited invoices. Changes take effect immediately.
+                </p>
+              </div>
             </div>
           </div>
         </div>

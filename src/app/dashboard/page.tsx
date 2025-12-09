@@ -1245,35 +1245,20 @@ export default function DashboardOverview() {
                         </div>
                       </div>
                     </div>
-                    {/* Trend Indicator - Right Side - Desktop Only */}
+                    {/* Pulse Line Chart - Right Side - Desktop Only */}
                     {totalRevenue > 0 && (
-                      <div className="hidden lg:flex flex-col items-end gap-1 flex-shrink-0">
-                        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50">
-                          <svg className="w-2.5 h-2.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                          </svg>
-                          <span className="text-[9px] font-semibold text-emerald-700">+23%</span>
-                        </div>
-                        <svg className="w-16 h-7" viewBox="0 0 64 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <defs>
-                            <linearGradient id="revenueGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="#10b981" stopOpacity="0.3" />
-                              <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-                            </linearGradient>
-                          </defs>
+                      <div className="hidden lg:flex flex-col items-end gap-0.5 flex-shrink-0">
+                        <span className="text-[10px] font-medium text-emerald-600">+23%</span>
+                        <svg className="w-14 h-6" viewBox="0 0 56 24" fill="none">
                           <path
-                            d="M2,22 C6,22 8,20 12,18 C16,16 18,14 22,16 C26,18 28,20 32,18 C36,16 38,12 42,10 C46,8 50,8 54,6 C58,4 60,4 62,4"
+                            d="M2,18 C8,18 10,16 14,14 C18,12 20,10 24,12 C28,14 30,16 34,14 C38,12 40,8 44,6 C48,4 52,4 54,4"
                             stroke="#10b981"
-                            strokeWidth="2"
+                            strokeWidth="1.5"
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            fill="none"
+                            opacity="0.8"
                           />
-                          <path
-                            d="M2,22 C6,22 8,20 12,18 C16,16 18,14 22,16 C26,18 28,20 32,18 C36,16 38,12 42,10 C46,8 50,8 54,6 C58,4 60,4 62,4 L62,28 L2,28 Z"
-                            fill="url(#revenueGradient)"
-                          />
-                          <circle cx="62" cy="4" r="2.5" fill="#10b981" className="animate-pulse" />
+                          <circle cx="54" cy="4" r="2.5" fill="#10b981" />
                         </svg>
                       </div>
                     )}
@@ -1311,35 +1296,20 @@ export default function DashboardOverview() {
                         </div>
                       </div>
                     </div>
-                    {/* Trend Indicator - Right Side - Desktop Only */}
+                    {/* Pulse Line Chart - Right Side - Desktop Only */}
                     {totalPayableAmount > 0 && (
-                      <div className="hidden lg:flex flex-col items-end gap-1 flex-shrink-0">
-                        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-50">
-                          <svg className="w-2.5 h-2.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                          </svg>
-                          <span className="text-[9px] font-semibold text-amber-700">+18%</span>
-                        </div>
-                        <svg className="w-16 h-7" viewBox="0 0 64 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <defs>
-                            <linearGradient id="payableGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="#f97316" stopOpacity="0.3" />
-                              <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
-                            </linearGradient>
-                          </defs>
+                      <div className="hidden lg:flex flex-col items-end gap-0.5 flex-shrink-0">
+                        <span className="text-[10px] font-medium text-amber-600">+18%</span>
+                        <svg className="w-14 h-6" viewBox="0 0 56 24" fill="none">
                           <path
-                            d="M2,16 C6,16 8,14 12,12 C16,10 18,12 22,14 C26,16 28,18 32,16 C36,14 38,16 42,18 C46,20 50,22 54,22"
+                            d="M2,12 C6,12 8,10 12,8 C16,6 18,10 22,12 C26,14 28,16 32,14 C36,12 38,14 42,16 C46,18 50,20 54,20"
                             stroke="#f97316"
-                            strokeWidth="2"
+                            strokeWidth="1.5"
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            fill="none"
+                            opacity="0.8"
                           />
-                          <path
-                            d="M2,16 C6,16 8,14 12,12 C16,10 18,12 22,14 C26,16 28,18 32,16 C36,14 38,16 42,18 C46,20 50,22 54,22 L54,28 L2,28 Z"
-                            fill="url(#payableGradient)"
-                          />
-                          <circle cx="54" cy="22" r="2.5" fill="#f97316" className="animate-pulse" />
+                          <circle cx="54" cy="20" r="2.5" fill="#f97316" />
                         </svg>
                       </div>
                     )}
@@ -1368,35 +1338,20 @@ export default function DashboardOverview() {
                         </div>
                       </div>
                     </div>
-                    {/* Trend Indicator - Right Side - Desktop Only */}
+                    {/* Pulse Line Chart - Right Side - Desktop Only */}
                     {overdueCount > 0 && (
-                      <div className="hidden lg:flex flex-col items-end gap-1 flex-shrink-0">
-                        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-red-50">
-                          <svg className="w-2.5 h-2.5 text-red-600 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                          </svg>
-                          <span className="text-[9px] font-semibold text-red-700">-8%</span>
-                        </div>
-                        <svg className="w-16 h-7" viewBox="0 0 64 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <defs>
-                            <linearGradient id="overdueGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="#dc2626" stopOpacity="0.3" />
-                              <stop offset="100%" stopColor="#dc2626" stopOpacity="0" />
-                            </linearGradient>
-                          </defs>
+                      <div className="hidden lg:flex flex-col items-end gap-0.5 flex-shrink-0">
+                        <span className="text-[10px] font-medium text-red-500">-8%</span>
+                        <svg className="w-14 h-6" viewBox="0 0 56 24" fill="none">
                           <path
-                            d="M2,8 C6,8 8,10 12,12 C16,14 18,12 22,14 C26,16 28,18 32,20 C36,22 40,20 44,22 C48,24 52,22 54,22"
+                            d="M2,6 C6,6 8,8 12,10 C16,12 18,10 22,12 C26,14 28,16 32,18 C36,20 40,18 44,20 C48,22 52,20 54,20"
                             stroke="#dc2626"
-                            strokeWidth="2"
+                            strokeWidth="1.5"
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            fill="none"
+                            opacity="0.8"
                           />
-                          <path
-                            d="M2,8 C6,8 8,10 12,12 C16,14 18,12 22,14 C26,16 28,18 32,20 C36,22 40,20 44,22 C48,24 52,22 54,22 L54,28 L2,28 Z"
-                            fill="url(#overdueGradient)"
-                          />
-                          <circle cx="54" cy="22" r="2.5" fill="#dc2626" className="animate-pulse" />
+                          <circle cx="54" cy="20" r="2.5" fill="#dc2626" />
                         </svg>
                       </div>
                     )}
@@ -1425,35 +1380,20 @@ export default function DashboardOverview() {
                         </div>
                       </div>
                     </div>
-                    {/* Trend Indicator - Right Side - Desktop Only */}
+                    {/* Pulse Line Chart - Right Side - Desktop Only */}
                     {totalClients > 0 && (
-                      <div className="hidden lg:flex flex-col items-end gap-1 flex-shrink-0">
-                        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-indigo-50">
-                          <svg className="w-2.5 h-2.5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                          </svg>
-                          <span className="text-[9px] font-semibold text-indigo-700">+15%</span>
-                        </div>
-                        <svg className="w-16 h-7" viewBox="0 0 64 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <defs>
-                            <linearGradient id="clientsGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                              <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3" />
-                              <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
-                            </linearGradient>
-                          </defs>
+                      <div className="hidden lg:flex flex-col items-end gap-0.5 flex-shrink-0">
+                        <span className="text-[10px] font-medium text-indigo-600">+15%</span>
+                        <svg className="w-14 h-6" viewBox="0 0 56 24" fill="none">
                           <path
-                            d="M2,24 C6,24 8,22 12,20 C16,18 18,16 22,14 C26,12 28,14 32,12 C36,10 40,10 44,8 C48,6 52,8 54,6"
+                            d="M2,20 C6,20 8,18 12,16 C16,14 18,12 22,10 C26,8 28,10 32,8 C36,6 40,6 44,4 C48,2 52,4 54,2"
                             stroke="#6366f1"
-                            strokeWidth="2"
+                            strokeWidth="1.5"
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            fill="none"
+                            opacity="0.8"
                           />
-                          <path
-                            d="M2,24 C6,24 8,22 12,20 C16,18 18,16 22,14 C26,12 28,14 32,12 C36,10 40,10 44,8 C48,6 52,8 54,6 L54,28 L2,28 Z"
-                            fill="url(#clientsGradient)"
-                          />
-                          <circle cx="54" cy="6" r="2.5" fill="#6366f1" className="animate-pulse" />
+                          <circle cx="54" cy="2" r="2.5" fill="#6366f1" />
                         </svg>
                       </div>
                     )}
