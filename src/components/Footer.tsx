@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { CheckCircle2, AlertCircle, XCircle, Loader2 } from 'lucide-react';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -19,8 +20,47 @@ interface SystemStatus {
 }
 
 export default function Footer({}: FooterProps) {
+  const router = useRouter();
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const handleNavigation = (path: string) => {
+    if (path === 'features') {
+      if (window.location.pathname === '/') {
+        setTimeout(() => {
+          const featuresSection = document.getElementById('features');
+          if (featuresSection) {
+            featuresSection.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 100);
+      } else {
+        router.push('/');
+        setTimeout(() => {
+          const featuresSection = document.getElementById('features');
+          if (featuresSection) {
+            featuresSection.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 300);
+      }
+    } else if (path === 'pricing') {
+      if (window.location.pathname === '/') {
+        setTimeout(() => {
+          const pricingSection = document.getElementById('pricing');
+          if (pricingSection) {
+            pricingSection.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 100);
+      } else {
+        router.push('/');
+        setTimeout(() => {
+          const pricingSection = document.getElementById('pricing');
+          if (pricingSection) {
+            pricingSection.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 300);
+      }
+    }
+  };
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -99,23 +139,37 @@ export default function Footer({}: FooterProps) {
           <div>
             <h3 className="font-heading text-lg font-semibold mb-4" style={{color: '#1f2937'}}>Product</h3>
             <ul className="space-y-2" style={{color: '#6b7280'}}>
-              <li><a href="#features" className="transition-colors hover:opacity-80">Features</a></li>
-              <li><a href="#pricing" className="transition-colors hover:opacity-80">Pricing</a></li>
+              <li>
+                <button 
+                  onClick={() => handleNavigation('features')}
+                  className="transition-colors hover:opacity-80 text-left cursor-pointer"
+                >
+                  Features
+                </button>
+              </li>
+              <li>
+                <button 
+                  onClick={() => handleNavigation('pricing')}
+                  className="transition-colors hover:opacity-80 text-left cursor-pointer"
+                >
+                  Pricing
+                </button>
+              </li>
               <li><Link href="/docs" className="transition-colors hover:opacity-80">Documentation</Link></li>
             </ul>
           </div>
           <div>
             <h3 className="font-heading text-lg font-semibold mb-4" style={{color: '#1f2937'}}>Support</h3>
             <ul className="space-y-2" style={{color: '#6b7280'}}>
-              <li><a href="/contact" className="transition-colors hover:opacity-80">Contact</a></li>
+              <li><Link href="/contact" className="transition-colors hover:opacity-80">Contact</Link></li>
             </ul>
           </div>
           <div>
             <h3 className="font-heading text-lg font-semibold mb-4" style={{color: '#1f2937'}}>Company</h3>
             <ul className="space-y-2" style={{color: '#6b7280'}}>
-              <li><a href="/about" className="transition-colors hover:opacity-80">About</a></li>
-              <li><a href="/privacy" className="transition-colors hover:opacity-80">Privacy</a></li>
-              <li><a href="/terms" className="transition-colors hover:opacity-80">Terms</a></li>
+              <li><Link href="/about" className="transition-colors hover:opacity-80">About</Link></li>
+              <li><Link href="/privacy" className="transition-colors hover:opacity-80">Privacy</Link></li>
+              <li><Link href="/terms" className="transition-colors hover:opacity-80">Terms</Link></li>
             </ul>
           </div>
         </div>

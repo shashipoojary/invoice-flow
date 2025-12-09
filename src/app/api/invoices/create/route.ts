@@ -10,10 +10,20 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 // Function to create scheduled reminders
 async function createScheduledReminders(invoiceId: string, reminderSettings: any, dueDate: string, paymentTerms?: any, invoiceStatus?: string, updatedAt?: string) {
   try {
+    // Parse payment terms if it's a string
+    let parsedPaymentTerms = paymentTerms;
+    if (typeof paymentTerms === 'string') {
+      try {
+        parsedPaymentTerms = JSON.parse(paymentTerms);
+      } catch (e) {
+        console.error('Failed to parse payment terms:', e);
+        parsedPaymentTerms = null;
+      }
+    }
     
     // For "Due on Receipt" invoices, use updated_at (when sent) as base date, otherwise use due_date
     let baseDate = new Date(dueDate);
-    if (paymentTerms?.enabled && paymentTerms.terms === 'Due on Receipt' && invoiceStatus !== 'draft' && updatedAt) {
+    if (parsedPaymentTerms?.enabled && (parsedPaymentTerms.terms === 'Due on Receipt' || parsedPaymentTerms.defaultOption === 'Due on Receipt') && invoiceStatus !== 'draft' && updatedAt) {
       baseDate = new Date(updatedAt);
     }
     
@@ -120,21 +130,76 @@ async function createScheduledReminders(invoiceId: string, reminderSettings: any
         });
       }
     } else if (reminderSettings.useSystemDefaults) {
-      // Use system default reminder schedule
-      const defaultSchedule = [
-        { type: 'friendly', days: 1 }, // 1 day before due
-        { type: 'polite', days: 0 },   // On due date
-        { type: 'firm', days: -3 },    // 3 days after due
-        { type: 'urgent', days: -7 }   // 7 days after due
-      ];
+      // Smart reminder system - adapts based on payment terms
+      let smartSchedule: Array<{ type: string; days: number }> = [];
+      
+      // Use already parsed payment terms from above
+      const paymentTerm = parsedPaymentTerms?.terms || parsedPaymentTerms?.defaultOption || 'Net 30';
+      
+      if (paymentTerm === 'Due on Receipt') {
+        // Due on Receipt: All reminders after due date
+        smartSchedule = [
+          { type: 'friendly', days: 1 },  // 1 day after
+          { type: 'polite', days: 3 },   // 3 days after
+          { type: 'firm', days: 7 },     // 7 days after
+          { type: 'urgent', days: 14 }   // 14 days after
+        ];
+      } else if (paymentTerm === 'Net 15') {
+        // Net 15: Reminders before and after due date
+        smartSchedule = [
+          { type: 'friendly', days: -7 }, // 7 days before
+          { type: 'polite', days: -3 },   // 3 days before
+          { type: 'firm', days: 1 },     // 1 day after
+          { type: 'urgent', days: 7 }    // 7 days after
+        ];
+      } else if (paymentTerm === 'Net 30') {
+        // Net 30: More time before, reminders before and after
+        smartSchedule = [
+          { type: 'friendly', days: -14 }, // 14 days before
+          { type: 'polite', days: -7 },   // 7 days before
+          { type: 'firm', days: 1 },     // 1 day after
+          { type: 'urgent', days: 7 }    // 7 days after
+        ];
+      } else if (paymentTerm === '2/10 Net 30') {
+        // 2/10 Net 30: Before discount period, after discount, and overdue
+        smartSchedule = [
+          { type: 'friendly', days: -2 }, // 2 days before (remind about discount)
+          { type: 'polite', days: 1 },    // 1 day after discount period
+          { type: 'firm', days: 7 },     // 7 days after due
+          { type: 'urgent', days: 14 }   // 14 days after due
+        ];
+      } else {
+        // Default for other payment terms: Generic smart schedule
+        // Try to extract number of days from custom terms
+        const daysMatch = paymentTerm.match(/(\d+)/);
+        const netDays = daysMatch ? parseInt(daysMatch[1]) : 30;
+        
+        if (netDays <= 15) {
+          // Short terms: More frequent reminders
+          smartSchedule = [
+            { type: 'friendly', days: -7 },
+            { type: 'polite', days: -3 },
+            { type: 'firm', days: 1 },
+            { type: 'urgent', days: 7 }
+          ];
+        } else {
+          // Longer terms: More time before due
+          smartSchedule = [
+            { type: 'friendly', days: -14 },
+            { type: 'polite', days: -7 },
+            { type: 'firm', days: 1 },
+            { type: 'urgent', days: 7 }
+          ];
+        }
+      }
 
-      for (const reminder of defaultSchedule) {
+      for (const reminder of smartSchedule) {
         const scheduledDate = new Date(baseDate);
         scheduledDate.setDate(scheduledDate.getDate() + reminder.days);
         
         // Validate the scheduled date is valid
         if (isNaN(scheduledDate.getTime())) {
-          console.error(`Invalid scheduled date calculated for default reminder:`, reminder);
+          console.error(`Invalid scheduled date calculated for smart reminder:`, reminder);
           continue; // Skip invalid reminders instead of failing
         }
         
