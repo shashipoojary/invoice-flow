@@ -1,427 +1,886 @@
 'use client';
 
-import { ArrowLeft, FileText, Zap, Users, Settings, Mail, CreditCard, Bell, Download, Eye, Plus, CheckCircle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { ArrowLeft, FileText, Zap, Users, Settings, Mail, CreditCard, Bell, Download, Eye, Plus, CheckCircle, Search, Menu, X, ChevronRight, BookOpen, Code, HelpCircle, Rocket, Shield, BarChart3, Palette } from 'lucide-react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 
+interface DocSection {
+  id: string;
+  title: string;
+  icon: any;
+  subsections: Array<{
+    id: string;
+    title: string;
+    content: React.ReactNode;
+  }>;
+}
+
 export default function DocsPage() {
-  return (
-    <div className="min-h-screen transition-colors duration-200 bg-gradient-to-b from-white to-gray-50">
-      {/* Main Content */}
-      <main className="pt-4">
-        {/* Hero Section */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center">
-            <Link 
-              href="/" 
-              className="inline-flex items-center text-sm font-medium mb-8 transition-colors hover:opacity-80"
-              style={{color: '#6b7280'}}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Home
-            </Link>
-            
-            <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-8 text-gray-900 tracking-tight">
-              Documentation
-            </h1>
-            
-            <p className="text-lg sm:text-xl max-w-3xl mx-auto leading-relaxed" style={{color: '#374151'}}>
-              Everything you need to know about using FlowInvoicer to manage your invoicing and get paid faster.
-            </p>
-          </div>
-        </section>
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-        {/* Quick Start Section */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-8 text-gray-900 tracking-tight">
-              Quick Start
-            </h2>
-            
+  const docSections: DocSection[] = [
+    {
+      id: 'getting-started',
+      title: 'Getting Started',
+      icon: Rocket,
+      subsections: [
+        {
+          id: 'quick-start',
+          title: 'Quick Start Guide',
+          content: (
             <div className="space-y-6">
-              <div className="p-6 rounded-lg border bg-white border-gray-200">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-semibold text-gray-700">
-                    1
-                  </div>
-                  <div>
-                    <h3 className="font-heading text-lg font-semibold mb-2 text-gray-900">
-                      Create Your Account
-                    </h3>
-                    <p className="text-base leading-relaxed" style={{color: '#6b7280'}}>
-                      Sign up with your email address. No credit card required to get started.
-                    </p>
-                  </div>
-                </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Create Your Account</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Sign up with your email address. No credit card required to get started. Your account is ready to use immediately.
+                </p>
               </div>
-
-              <div className="p-6 rounded-lg border bg-white border-gray-200">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-semibold text-gray-700">
-                    2
-                  </div>
-                  <div>
-                    <h3 className="font-heading text-lg font-semibold mb-2 text-gray-900">
-                      Complete Onboarding
-                    </h3>
-                    <p className="text-base leading-relaxed" style={{color: '#6b7280'}}>
-                      Add your business information, logo, and payment methods. This information will appear on all your invoices.
-                    </p>
-                  </div>
-                </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Complete Onboarding</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  After signing up, you&apos;ll be guided through a simple onboarding process where you&apos;ll add:
+                </p>
+                <ul className="space-y-2 ml-6 mb-4" style={{color: '#6b7280'}}>
+                  <li className="flex items-start gap-2">
+                    <span className="text-gray-400 mt-1">•</span>
+                    <span>Business name and contact information</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-gray-400 mt-1">•</span>
+                    <span>Business logo (optional)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-gray-400 mt-1">•</span>
+                    <span>Payment methods you accept</span>
+                  </li>
+                </ul>
+                <p className="text-base leading-relaxed" style={{color: '#6b7280'}}>
+                  All information can be updated later in Settings. This information will appear on all your invoices automatically.
+                </p>
               </div>
-
-              <div className="p-6 rounded-lg border bg-white border-gray-200">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-semibold text-gray-700">
-                    3
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Create Your First Invoice</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Click &quot;Create Invoice&quot; in the sidebar. You can choose between:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <h4 className="font-semibold text-gray-900 mb-2">Fast Invoice</h4>
+                    <p className="text-sm" style={{color: '#6b7280'}}>Perfect for quick billing. Create and send in 60 seconds.</p>
                   </div>
-                  <div>
-                    <h3 className="font-heading text-lg font-semibold mb-2 text-gray-900">
-                      Create Your First Invoice
-                    </h3>
-                    <p className="text-base leading-relaxed" style={{color: '#6b7280'}}>
-                      Choose between Fast Invoice (60-second) or Detailed Invoice. Add client details, services, and send.
-                    </p>
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <h4 className="font-semibold text-gray-900 mb-2">Detailed Invoice</h4>
+                    <p className="text-sm" style={{color: '#6b7280'}}>Comprehensive invoicing with multiple items, discounts, and taxes.</p>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-
-        {/* Features Guide */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8" style={{backgroundColor: '#f8f9fa'}}>
-          <div className="max-w-6xl mx-auto">
-            <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-12 text-gray-900 tracking-tight">
-              Features Guide
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-6 rounded-lg border bg-white border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                    <Plus className="w-5 h-5 text-gray-700" />
-                  </div>
-                  <h3 className="font-heading text-lg font-semibold text-gray-900">
-                    Creating Invoices
-                  </h3>
-                </div>
-                <p className="text-sm leading-relaxed mb-4" style={{color: '#6b7280'}}>
-                  Use Fast Invoice for quick 60-second invoicing, or Detailed Invoice for comprehensive billing with multiple items, discounts, and taxes.
-                </p>
-                <ul className="space-y-2 text-sm" style={{color: '#6b7280'}}>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <span>Select client or add new one</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <span>Add services and amounts</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <span>Choose invoice template</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <span>Send directly or save as draft</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="p-6 rounded-lg border bg-white border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                    <Users className="w-5 h-5 text-gray-700" />
-                  </div>
-                  <h3 className="font-heading text-lg font-semibold text-gray-900">
-                    Client Management
-                  </h3>
-                </div>
-                <p className="text-sm leading-relaxed mb-4" style={{color: '#6b7280'}}>
-                  Organize all your clients in one place. Add contact information, company details, and payment preferences.
-                </p>
-                <ul className="space-y-2 text-sm" style={{color: '#6b7280'}}>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <span>Add client details and contact info</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <span>View invoice history per client</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <span>Edit or remove clients anytime</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="p-6 rounded-lg border bg-white border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                    <Bell className="w-5 h-5 text-gray-700" />
-                  </div>
-                  <h3 className="font-heading text-lg font-semibold text-gray-900">
-                    Automated Reminders
-                  </h3>
-                </div>
-                <p className="text-sm leading-relaxed mb-4" style={{color: '#6b7280'}}>
-                  Set up automatic payment reminders to ensure you get paid on time. Choose from friendly, polite, firm, or urgent reminder types.
-                </p>
-                <ul className="space-y-2 text-sm" style={{color: '#6b7280'}}>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <span>Configure reminder schedules</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <span>View reminder history</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <span>Manual reminder sending</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="p-6 rounded-lg border bg-white border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                    <Download className="w-5 h-5 text-gray-700" />
-                  </div>
-                  <h3 className="font-heading text-lg font-semibold text-gray-900">
-                    PDF Generation
-                  </h3>
-                </div>
-                <p className="text-sm leading-relaxed mb-4" style={{color: '#6b7280'}}>
-                  Generate professional PDF invoices instantly. Choose from multiple templates and customize colors to match your brand.
-                </p>
-                <ul className="space-y-2 text-sm" style={{color: '#6b7280'}}>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <span>Multiple professional templates</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <span>Download PDF anytime</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <span>Receipt generation for paid invoices</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="p-6 rounded-lg border bg-white border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                    <Mail className="w-5 h-5 text-gray-700" />
-                  </div>
-                  <h3 className="font-heading text-lg font-semibold text-gray-900">
-                    Email Delivery
-                  </h3>
-                </div>
-                <p className="text-sm leading-relaxed mb-4" style={{color: '#6b7280'}}>
-                  Send invoices directly to clients via email. PDF attachments are automatically included with professional email templates.
-                </p>
-                <ul className="space-y-2 text-sm" style={{color: '#6b7280'}}>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <span>Professional email templates</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <span>PDF attachment included</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <span>Track email delivery status</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="p-6 rounded-lg border bg-white border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                    <Settings className="w-5 h-5 text-gray-700" />
-                  </div>
-                  <h3 className="font-heading text-lg font-semibold text-gray-900">
-                    Settings & Customization
-                  </h3>
-                </div>
-                <p className="text-sm leading-relaxed mb-4" style={{color: '#6b7280'}}>
-                  Customize your business profile, payment methods, logo, and invoice preferences to match your brand.
-                </p>
-                <ul className="space-y-2 text-sm" style={{color: '#6b7280'}}>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <span>Upload business logo</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <span>Configure payment methods</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
-                    <span>Set default invoice settings</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Best Practices */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-8 text-gray-900 tracking-tight">
-              Best Practices
-            </h2>
-
+          )
+        },
+        {
+          id: 'account-setup',
+          title: 'Account Setup',
+          content: (
             <div className="space-y-6">
-              <div className="p-6 rounded-lg border bg-white border-gray-200">
-                <h3 className="font-heading text-lg font-semibold mb-3 text-gray-900">
-                  Payment Terms
-                </h3>
-                <p className="text-sm leading-relaxed mb-3" style={{color: '#6b7280'}}>
-                  Set clear payment terms on your invoices. Common options include &quot;Due on Receipt&quot;, &quot;Net 15&quot;, &quot;Net 30&quot;, or custom terms. Clear terms help set expectations and improve cash flow.
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Business Information</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Your business information appears on every invoice. Make sure it&apos;s accurate and up to date.
                 </p>
-                <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
-                  For &quot;Due on Receipt&quot; invoices, reminders are sent immediately after the due date to encourage quick payment.
-                </p>
+                <div className="p-4 rounded-lg border bg-gray-50 border-gray-200 mb-4">
+                  <p className="text-sm font-medium text-gray-900 mb-2">Required Fields:</p>
+                  <ul className="space-y-1 text-sm" style={{color: '#6b7280'}}>
+                    <li>• Business Name</li>
+                    <li>• Business Email</li>
+                  </ul>
+                </div>
+                <div className="p-4 rounded-lg border bg-gray-50 border-gray-200">
+                  <p className="text-sm font-medium text-gray-900 mb-2">Optional Fields:</p>
+                  <ul className="space-y-1 text-sm" style={{color: '#6b7280'}}>
+                    <li>• Business Phone</li>
+                    <li>• Business Address</li>
+                    <li>• Website</li>
+                    <li>• Logo</li>
+                  </ul>
+                </div>
               </div>
-
-              <div className="p-6 rounded-lg border bg-white border-gray-200">
-                <h3 className="font-heading text-lg font-semibold mb-3 text-gray-900">
-                  Reminder Strategy
-                </h3>
-                <p className="text-sm leading-relaxed mb-3" style={{color: '#6b7280'}}>
-                  Use automated reminders to follow up on unpaid invoices. Start with friendly reminders and escalate to firm or urgent if needed. The system automatically tracks overdue days and adjusts reminder tone accordingly.
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Payment Methods</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Add the payment methods you accept. These will appear on your invoices, making it easy for clients to pay you.
                 </p>
                 <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
-                  Review your reminder history regularly to understand which clients respond best to different reminder types.
-                </p>
-              </div>
-
-              <div className="p-6 rounded-lg border bg-white border-gray-200">
-                <h3 className="font-heading text-lg font-semibold mb-3 text-gray-900">
-                  Invoice Templates
-                </h3>
-                <p className="text-sm leading-relaxed mb-3" style={{color: '#6b7280'}}>
-                  Choose the template that best represents your brand. Minimal templates work well for modern businesses, while detailed templates provide comprehensive breakdowns for complex projects.
-                </p>
-                <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
-                  Customize colors to match your brand identity. Your logo and business information will automatically appear on all invoices.
-                </p>
-              </div>
-
-              <div className="p-6 rounded-lg border bg-white border-gray-200">
-                <h3 className="font-heading text-lg font-semibold mb-3 text-gray-900">
-                  Client Portal
-                </h3>
-                <p className="text-sm leading-relaxed mb-3" style={{color: '#6b7280'}}>
-                  Each invoice includes a unique public link that clients can access to view and download invoices. Share this link directly or let clients access it from the email you send.
-                </p>
-                <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
-                  Once an invoice is marked as paid, clients can download a receipt PDF for their records.
+                  Supported methods include PayPal, Cash App, Venmo, Google Pay, Apple Pay, Stripe, and bank transfers. You can add as many or as few as you need.
                 </p>
               </div>
             </div>
-          </div>
-        </section>
-
-        {/* FAQ Section */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8" style={{backgroundColor: '#f8f9fa'}}>
-          <div className="max-w-4xl mx-auto">
-            <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-12 text-gray-900 tracking-tight">
-              Frequently Asked Questions
-            </h2>
-
+          )
+        }
+      ]
+    },
+    {
+      id: 'invoices',
+      title: 'Invoices',
+      icon: FileText,
+      subsections: [
+        {
+          id: 'creating-invoices',
+          title: 'Creating Invoices',
+          content: (
             <div className="space-y-6">
-              <div className="p-6 rounded-lg border bg-white border-gray-200">
-                <h3 className="font-heading text-lg font-semibold mb-2 text-gray-900">
-                  How do I add payment methods?
-                </h3>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Fast Invoice</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Perfect for simple, quick billing. Ideal when you need to invoice a client immediately.
+                </p>
+                <div className="p-4 rounded-lg border bg-gray-50 border-gray-200 mb-4">
+                  <p className="text-sm font-medium text-gray-900 mb-2">Steps:</p>
+                  <ol className="space-y-2 text-sm ml-4" style={{color: '#6b7280'}}>
+                    <li>1. Select or add client</li>
+                    <li>2. Enter service description and amount</li>
+                    <li>3. Choose due date</li>
+                    <li>4. Send immediately or save as draft</li>
+                  </ol>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Detailed Invoice</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  For comprehensive billing with multiple line items, discounts, taxes, and custom settings.
+                </p>
+                <div className="p-4 rounded-lg border bg-gray-50 border-gray-200 mb-4">
+                  <p className="text-sm font-medium text-gray-900 mb-2">Features:</p>
+                  <ul className="space-y-2 text-sm ml-4" style={{color: '#6b7280'}}>
+                    <li>• Multiple line items with descriptions</li>
+                    <li>• Discounts (percentage or fixed amount)</li>
+                    <li>• Tax calculations</li>
+                    <li>• Payment terms configuration</li>
+                    <li>• Late fees setup</li>
+                    <li>• Automated reminder scheduling</li>
+                    <li>• Custom notes and terms</li>
+                  </ul>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Invoice Templates</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Choose from professional templates that match your brand. Each template can be customized with your brand colors.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <h4 className="font-semibold text-gray-900 mb-2">Minimal</h4>
+                    <p className="text-sm" style={{color: '#6b7280'}}>Clean and simple design</p>
+                  </div>
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <h4 className="font-semibold text-gray-900 mb-2">Modern</h4>
+                    <p className="text-sm" style={{color: '#6b7280'}}>Contemporary professional style</p>
+                  </div>
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <h4 className="font-semibold text-gray-900 mb-2">Creative</h4>
+                    <p className="text-sm" style={{color: '#6b7280'}}>Bold and distinctive</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        },
+        {
+          id: 'managing-invoices',
+          title: 'Managing Invoices',
+          content: (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Invoice Status</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Track your invoices through different statuses:
+                </p>
+                <div className="space-y-3">
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                      <span className="font-semibold text-gray-900">Draft</span>
+                    </div>
+                    <p className="text-sm ml-5" style={{color: '#6b7280'}}>Invoice created but not sent</p>
+                  </div>
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                      <span className="font-semibold text-gray-900">Pending</span>
+                    </div>
+                    <p className="text-sm ml-5" style={{color: '#6b7280'}}>Invoice sent, awaiting payment</p>
+                  </div>
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                      <span className="font-semibold text-gray-900">Paid</span>
+                    </div>
+                    <p className="text-sm ml-5" style={{color: '#6b7280'}}>Payment received</p>
+                  </div>
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                      <span className="font-semibold text-gray-900">Overdue</span>
+                    </div>
+                    <p className="text-sm ml-5" style={{color: '#6b7280'}}>Payment past due date</p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Editing Invoices</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  You can edit invoices at any time. Draft invoices can be modified freely. For sent invoices, you can update details and resend to clients.
+                </p>
                 <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
-                  Go to Settings and add your payment methods including PayPal, Cash App, Venmo, bank details, or other payment options. These will appear on your invoices automatically.
+                  All changes are tracked in the invoice history, so you always know what was modified and when.
                 </p>
               </div>
-
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Marking as Paid</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  When a client pays, mark the invoice as paid. This will:
+                </p>
+                <ul className="space-y-2 ml-6 text-sm" style={{color: '#6b7280'}}>
+                  <li>• Update invoice status to &quot;Paid&quot;</li>
+                  <li>• Stop automated reminders</li>
+                  <li>• Enable receipt download for the client</li>
+                  <li>• Update your revenue statistics</li>
+                </ul>
+              </div>
+            </div>
+          )
+        },
+        {
+          id: 'invoice-templates',
+          title: 'Invoice Templates',
+          content: (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Template Selection</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Choose a template that best represents your brand. Each template offers different layouts and styling options.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="p-6 rounded-lg border bg-white border-gray-200">
+                    <h4 className="font-semibold text-lg text-gray-900 mb-3">Minimal Template</h4>
+                    <p className="text-sm leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                      Clean, simple design perfect for modern businesses. Focuses on clarity and readability.
+                    </p>
+                    <div className="text-xs" style={{color: '#9ca3af'}}>Best for: Professional services, consulting</div>
+                  </div>
+                  <div className="p-6 rounded-lg border bg-white border-gray-200">
+                    <h4 className="font-semibold text-lg text-gray-900 mb-3">Modern Template</h4>
+                    <p className="text-sm leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                      Contemporary design with structured layout. Great for detailed project billing.
+                    </p>
+                    <div className="text-xs" style={{color: '#9ca3af'}}>Best for: Agencies, project-based work</div>
+                  </div>
+                  <div className="p-6 rounded-lg border bg-white border-gray-200">
+                    <h4 className="font-semibold text-lg text-gray-900 mb-3">Creative Template</h4>
+                    <p className="text-sm leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                      Bold and distinctive design. Perfect for creative professionals and designers.
+                    </p>
+                    <div className="text-xs" style={{color: '#9ca3af'}}>Best for: Designers, creatives, artists</div>
+                  </div>
+                  <div className="p-6 rounded-lg border bg-white border-gray-200">
+                    <h4 className="font-semibold text-lg text-gray-900 mb-3">Fast Invoice Template</h4>
+                    <p className="text-sm leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                      Streamlined template optimized for quick invoicing. Fixed professional design.
+                    </p>
+                    <div className="text-xs" style={{color: '#9ca3af'}}>Best for: Quick billing, simple services</div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Customization</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Customize your invoices with:
+                </p>
+                <ul className="space-y-2 ml-6 text-sm" style={{color: '#6b7280'}}>
+                  <li>• Brand colors (primary and secondary)</li>
+                  <li>• Business logo</li>
+                  <li>• Custom payment terms</li>
+                  <li>• Notes and additional information</li>
+                </ul>
+              </div>
+            </div>
+          )
+        }
+      ]
+    },
+    {
+      id: 'clients',
+      title: 'Client Management',
+      icon: Users,
+      subsections: [
+        {
+          id: 'adding-clients',
+          title: 'Adding Clients',
+          content: (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Client Information</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Add clients with their contact information. This makes creating invoices faster and ensures consistency.
+                </p>
+                <div className="p-4 rounded-lg border bg-gray-50 border-gray-200 mb-4">
+                  <p className="text-sm font-medium text-gray-900 mb-2">Required Information:</p>
+                  <ul className="space-y-1 text-sm" style={{color: '#6b7280'}}>
+                    <li>• Client Name</li>
+                    <li>• Email Address</li>
+                  </ul>
+                </div>
+                <div className="p-4 rounded-lg border bg-gray-50 border-gray-200">
+                  <p className="text-sm font-medium text-gray-900 mb-2">Optional Information:</p>
+                  <ul className="space-y-1 text-sm" style={{color: '#6b7280'}}>
+                    <li>• Company Name</li>
+                    <li>• Phone Number</li>
+                    <li>• Address</li>
+                  </ul>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Quick Add During Invoice Creation</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  You can also add clients on-the-fly when creating an invoice. Simply enter a new email address, and you&apos;ll be prompted to add the client details.
+                </p>
+              </div>
+            </div>
+          )
+        },
+        {
+          id: 'managing-clients',
+          title: 'Managing Clients',
+          content: (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Client List</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  View all your clients in one place. See invoice history, total revenue, and payment status for each client.
+                </p>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Editing Clients</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Update client information anytime. Changes will apply to future invoices automatically.
+                </p>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Client Search</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Use the search bar to quickly find clients by name, email, or company name.
+                </p>
+              </div>
+            </div>
+          )
+        }
+      ]
+    },
+    {
+      id: 'reminders',
+      title: 'Automated Reminders',
+      icon: Bell,
+      subsections: [
+        {
+          id: 'reminder-setup',
+          title: 'Setting Up Reminders',
+          content: (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Reminder Types</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Choose from four reminder types, each with a different tone:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <h4 className="font-semibold text-gray-900 mb-2">Friendly</h4>
+                    <p className="text-sm" style={{color: '#6b7280'}}>Warm and casual tone. Great for regular clients.</p>
+                  </div>
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <h4 className="font-semibold text-gray-900 mb-2">Polite</h4>
+                    <p className="text-sm" style={{color: '#6b7280'}}>Professional and courteous. Standard business communication.</p>
+                  </div>
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <h4 className="font-semibold text-gray-900 mb-2">Firm</h4>
+                    <p className="text-sm" style={{color: '#6b7280'}}>Direct and business-like. For overdue invoices.</p>
+                  </div>
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <h4 className="font-semibold text-gray-900 mb-2">Urgent</h4>
+                    <p className="text-sm" style={{color: '#6b7280'}}>Strong and immediate. For significantly overdue payments.</p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Reminder Schedule</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Configure when reminders are sent:
+                </p>
+                <ul className="space-y-2 ml-6 text-sm" style={{color: '#6b7280'}}>
+                  <li>• Before due date (e.g., 3 days before)</li>
+                  <li>• On due date</li>
+                  <li>• After due date (e.g., 7 days overdue)</li>
+                  <li>• Multiple reminders at different intervals</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Default Settings</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  You can set default reminder preferences in invoice settings. These will apply to all new invoices, but you can customize per invoice as needed.
+                </p>
+              </div>
+            </div>
+          )
+        },
+        {
+          id: 'reminder-history',
+          title: 'Reminder History',
+          content: (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Tracking Reminders</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  View all reminders sent to clients in the Reminder History page. You can see:
+                </p>
+                <ul className="space-y-2 ml-6 text-sm" style={{color: '#6b7280'}}>
+                  <li>• When reminders were sent</li>
+                  <li>• Reminder type used</li>
+                  <li>• Delivery status (sent, delivered, failed)</li>
+                  <li>• Associated invoice details</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Manual Reminders</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Send reminders manually at any time. Useful for following up on specific invoices or testing reminder templates.
+                </p>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Filtering & Search</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Use filters to find specific reminders by status, type, or date range. Search by invoice number or client name.
+                </p>
+              </div>
+            </div>
+          )
+        }
+      ]
+    },
+    {
+      id: 'payments',
+      title: 'Payments & Receipts',
+      icon: CreditCard,
+      subsections: [
+        {
+          id: 'payment-methods',
+          title: 'Payment Methods',
+          content: (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Supported Payment Methods</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Add any combination of payment methods you accept:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <h4 className="font-semibold text-gray-900 mb-2">Digital Wallets</h4>
+                    <ul className="text-sm space-y-1" style={{color: '#6b7280'}}>
+                      <li>• PayPal</li>
+                      <li>• Cash App</li>
+                      <li>• Venmo</li>
+                      <li>• Google Pay</li>
+                      <li>• Apple Pay</li>
+                    </ul>
+                  </div>
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <h4 className="font-semibold text-gray-900 mb-2">Bank & Cards</h4>
+                    <ul className="text-sm space-y-1" style={{color: '#6b7280'}}>
+                      <li>• Bank Transfer</li>
+                      <li>• Stripe (Credit/Debit)</li>
+                      <li>• Custom payment notes</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Adding Payment Methods</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Go to Settings → Payment Methods to add your payment information. This will appear on all invoices automatically, making it easy for clients to pay you.
+                </p>
+              </div>
+            </div>
+          )
+        },
+        {
+          id: 'receipts',
+          title: 'Receipts',
+          content: (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Downloading Receipts</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Once an invoice is marked as paid, clients can download a receipt PDF from the public invoice page. Receipts include:
+                </p>
+                <ul className="space-y-2 ml-6 text-sm" style={{color: '#6b7280'}}>
+                  <li>• Payment confirmation</li>
+                  <li>• Invoice details</li>
+                  <li>• Payment date</li>
+                  <li>• Amount paid</li>
+                  <li>• Business information</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Receipt Design</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Receipts use a clean, minimal design that matches your invoice style. Professional and suitable for client records.
+                </p>
+              </div>
+            </div>
+          )
+        }
+      ]
+    },
+    {
+      id: 'settings',
+      title: 'Settings & Customization',
+      icon: Settings,
+      subsections: [
+        {
+          id: 'business-settings',
+          title: 'Business Settings',
+          content: (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Updating Business Information</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Update your business details anytime in Settings. Changes will apply to all new invoices. Existing invoices remain unchanged.
+                </p>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Logo Upload</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Upload your business logo to appear on invoices. Supported formats: PNG, JPG, SVG. Logo is automatically optimized for best quality and file size.
+                </p>
+                <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
+                  Recommended size: 200x200px or larger. Square logos work best.
+                </p>
+              </div>
+            </div>
+          )
+        },
+        {
+          id: 'invoice-settings',
+          title: 'Invoice Defaults',
+          content: (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Default Payment Terms</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Set default payment terms that will be used for new invoices. You can override these per invoice if needed.
+                </p>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Default Reminder Settings</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Configure default reminder schedules and types. These will be applied to new invoices automatically.
+                </p>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Template Preferences</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Choose your preferred invoice template and brand colors. These will be used as defaults when creating new invoices.
+                </p>
+              </div>
+            </div>
+          )
+        }
+      ]
+    },
+    {
+      id: 'troubleshooting',
+      title: 'Troubleshooting',
+      icon: HelpCircle,
+      subsections: [
+        {
+          id: 'common-issues',
+          title: 'Common Issues',
+          content: (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Emails Not Sending</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  If emails aren&apos;t being sent, check:
+                </p>
+                <ul className="space-y-2 ml-6 text-sm" style={{color: '#6b7280'}}>
+                  <li>• Client email address is correct</li>
+                  <li>• Check spam/junk folder</li>
+                  <li>• Verify email service status in footer</li>
+                  <li>• Try sending a test reminder</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">PDF Not Generating</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  If PDF download fails:
+                </p>
+                <ul className="space-y-2 ml-6 text-sm" style={{color: '#6b7280'}}>
+                  <li>• Refresh the page and try again</li>
+                  <li>• Check browser compatibility</li>
+                  <li>• Ensure invoice has valid data</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Reminders Not Working</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  If automated reminders aren&apos;t sending:
+                </p>
+                <ul className="space-y-2 ml-6 text-sm" style={{color: '#6b7280'}}>
+                  <li>• Verify reminder settings are enabled</li>
+                  <li>• Check invoice due dates are set correctly</li>
+                  <li>• Review reminder history for delivery status</li>
+                  <li>• Ensure client email is valid</li>
+                </ul>
+              </div>
+            </div>
+          )
+        },
+        {
+          id: 'faq',
+          title: 'Frequently Asked Questions',
+          content: (
+            <div className="space-y-6">
               <div className="p-6 rounded-lg border bg-white border-gray-200">
-                <h3 className="font-heading text-lg font-semibold mb-2 text-gray-900">
+                <h3 className="font-heading text-lg font-semibold mb-3 text-gray-900">
                   Can I edit invoices after sending?
                 </h3>
                 <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
-                  Yes, you can edit draft invoices anytime. For sent invoices, you can update details and resend. The system maintains a complete history of all changes.
+                  Yes, you can edit invoices at any time. Draft invoices can be modified freely. For sent invoices, you can update details and resend to clients. All changes are tracked in invoice history.
                 </p>
               </div>
-
               <div className="p-6 rounded-lg border bg-white border-gray-200">
-                <h3 className="font-heading text-lg font-semibold mb-2 text-gray-900">
+                <h3 className="font-heading text-lg font-semibold mb-3 text-gray-900">
+                  How do I change my business logo?
+                </h3>
+                <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
+                  Go to Settings → Business Information → Logo Upload. Upload a new logo to replace the existing one. The new logo will appear on all future invoices.
+                </p>
+              </div>
+              <div className="p-6 rounded-lg border bg-white border-gray-200">
+                <h3 className="font-heading text-lg font-semibold mb-3 text-gray-900">
+                  Can I customize invoice colors?
+                </h3>
+                <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
+                  Yes, when creating a Detailed Invoice, you can choose primary and secondary colors that match your brand. These colors will be used throughout the invoice template.
+                </p>
+              </div>
+              <div className="p-6 rounded-lg border bg-white border-gray-200">
+                <h3 className="font-heading text-lg font-semibold mb-3 text-gray-900">
                   How do automated reminders work?
                 </h3>
                 <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
-                  Automated reminders are sent based on your invoice due dates and payment terms. You can configure reminder schedules in invoice settings, and the system will automatically send reminders before and after due dates.
+                  Automated reminders are sent based on your invoice due dates and payment terms. You configure reminder schedules in invoice settings, and the system automatically sends reminders before and after due dates based on your preferences.
                 </p>
               </div>
-
               <div className="p-6 rounded-lg border bg-white border-gray-200">
-                <h3 className="font-heading text-lg font-semibold mb-2 text-gray-900">
+                <h3 className="font-heading text-lg font-semibold mb-3 text-gray-900">
                   Is my data secure?
                 </h3>
                 <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
                   Yes, all data is encrypted and stored securely. We use industry-standard security practices and never share your information with third parties. Your invoices and client data remain private and protected.
                 </p>
               </div>
-
               <div className="p-6 rounded-lg border bg-white border-gray-200">
-                <h3 className="font-heading text-lg font-semibold mb-2 text-gray-900">
-                  Can I export my invoices?
+                <h3 className="font-heading text-lg font-semibold mb-3 text-gray-900">
+                  Can clients pay directly through FlowInvoicer?
                 </h3>
                 <p className="text-sm leading-relaxed" style={{color: '#6b7280'}}>
-                  Yes, you can download any invoice as a PDF. Paid invoices also include a downloadable receipt. All PDFs are generated instantly and include your branding.
+                  Currently, FlowInvoicer displays your payment methods on invoices. Clients pay you directly using those methods. We provide payment information and make it easy for clients to know how to pay you.
                 </p>
               </div>
             </div>
-          </div>
-        </section>
+          )
+        }
+      ]
+    }
+  ];
 
-        {/* CTA Section */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-6 text-gray-900 tracking-tight">
-              Need More Help?
-            </h2>
-            <p className="text-lg mb-8" style={{color: '#374151'}}>
-              Can&apos;t find what you&apos;re looking for? Contact our support team.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/contact"
-                className="px-8 py-4 rounded-lg text-sm font-medium transition-colors bg-black text-white hover:bg-gray-800"
+  // Filter sections based on search
+  const filteredSections = useMemo(() => {
+    if (!searchQuery.trim()) return docSections;
+    
+    const query = searchQuery.toLowerCase();
+    return docSections.map(section => ({
+      ...section,
+      subsections: section.subsections.filter(sub => 
+        sub.title.toLowerCase().includes(query) ||
+        JSON.stringify(sub.content).toLowerCase().includes(query)
+      )
+    })).filter(section => section.subsections.length > 0);
+  }, [searchQuery]);
+
+  const [selectedSubsection, setSelectedSubsection] = useState<string>(
+    docSections[0].subsections[0].id
+  );
+
+  const currentContent = useMemo(() => {
+    for (const section of docSections) {
+      const subsection = section.subsections.find(sub => sub.id === selectedSubsection);
+      if (subsection) return subsection.content;
+    }
+    return null;
+  }, [selectedSubsection]);
+
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="border-b border-gray-200 bg-white sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <Link href="/" className="flex items-center gap-2">
+              <span className="text-xl font-bold">
+                <span className="text-gray-900">Flow</span>
+                <span className="text-violet-600">Invoice</span>
+              </span>
+            </Link>
+            <div className="flex items-center gap-4">
+              <Link 
+                href="/dashboard" 
+                className="text-sm font-medium text-gray-700 hover:text-gray-900"
               >
-                Contact Support
+                Dashboard
               </Link>
-              <Link
-                href="/dashboard"
-                className="px-8 py-4 rounded-lg text-sm font-medium transition-colors border"
-                style={{
-                  color: '#6b7280',
-                  borderColor: '#d1d5db'
-                }}
+              <Link 
+                href="/contact" 
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-black text-white hover:bg-gray-800"
               >
-                Go to Dashboard
+                Contact
               </Link>
             </div>
           </div>
-        </section>
-      </main>
+        </div>
+      </header>
+
+      <div className="flex">
+        {/* Sidebar Navigation */}
+        <aside className={`fixed lg:sticky top-16 h-[calc(100vh-4rem)] w-64 border-r border-gray-200 bg-white overflow-y-auto z-30 transition-transform duration-300 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}>
+          <div className="p-6">
+            {/* Search */}
+            <div className="mb-6">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search documentation..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            {/* Navigation */}
+            <nav className="space-y-1">
+              {filteredSections.map((section) => {
+                const Icon = section.icon;
+                const isOpen = activeSection === section.id;
+                
+                return (
+                  <div key={section.id}>
+                    <button
+                      onClick={() => setActiveSection(isOpen ? null : section.id)}
+                      className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4" />
+                        <span>{section.title}</span>
+                      </div>
+                      <ChevronRight className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                    </button>
+                    {isOpen && (
+                      <div className="ml-7 mt-1 space-y-1">
+                        {section.subsections.map((subsection) => (
+                          <button
+                            key={subsection.id}
+                            onClick={() => {
+                              setSelectedSubsection(subsection.id);
+                              setSidebarOpen(false);
+                            }}
+                            className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors ${
+                              selectedSubsection === subsection.id
+                                ? 'bg-gray-100 text-gray-900 font-medium'
+                                : 'text-gray-600 hover:bg-gray-50'
+                            }`}
+                          >
+                            {subsection.title}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </nav>
+          </div>
+        </aside>
+
+        {/* Mobile Sidebar Toggle */}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="lg:hidden fixed bottom-6 right-6 z-50 p-4 bg-black text-white rounded-full shadow-lg hover:bg-gray-800 transition-colors"
+        >
+          {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+
+        {/* Mobile Overlay */}
+        {sidebarOpen && (
+          <div
+            className="lg:hidden fixed inset-0 bg-black/50 z-20"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Main Content */}
+        <main className="flex-1 lg:ml-64">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            {/* Breadcrumb */}
+            <div className="mb-8">
+              <Link 
+                href="/" 
+                className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Home
+              </Link>
+              <h1 className="font-heading text-3xl sm:text-4xl font-semibold text-gray-900 tracking-tight">
+                {docSections.find(s => s.subsections.some(sub => sub.id === selectedSubsection))?.subsections.find(sub => sub.id === selectedSubsection)?.title || 'Documentation'}
+              </h1>
+            </div>
+
+            {/* Content */}
+            <div className="prose prose-lg max-w-none">
+              {currentContent}
+            </div>
+
+            {/* Navigation Footer */}
+            <div className="mt-12 pt-8 border-t border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Need more help?</p>
+                  <Link href="/contact" className="text-sm font-medium text-gray-900 hover:underline">
+                    Contact Support →
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
 
       {/* Footer */}
       <Footer />
     </div>
   );
 }
-
