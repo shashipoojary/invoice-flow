@@ -291,22 +291,26 @@ const ModernSidebar = ({
                 data-route={item.route}
                 onClick={() => handleNavigation(item.route)}
                 disabled={isNavigating || isPending}
-                className={`w-full flex items-center h-14 ${isCollapsed ? 'justify-center px-3' : 'space-x-3 px-3'} rounded-lg group disabled:opacity-50 disabled:cursor-wait transition-colors duration-200 cursor-pointer ${
+                className={`w-full flex items-center h-14 ${isCollapsed ? 'justify-center px-3' : 'space-x-3 px-3'} rounded-lg group transition-colors duration-200 cursor-pointer relative overflow-hidden ${
                   isActive
                     ? 'bg-gray-100 text-black'
                     : 'text-gray-800 hover:text-black hover:bg-gray-50'
                 }`}
                 title={isCollapsed ? item.label : undefined}
               >
-                <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                {/* Clean minimal loading - just subtle background and spinner */}
+                {(isNavigating || isPending) && (
+                  <div className="absolute inset-0 bg-gray-50/50 rounded-lg"></div>
+                )}
+                <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center relative z-10">
                   {isNavigating ? (
-                    <Loader2 className="w-4 h-4 loading-spinner" />
+                    <Loader2 className="w-4 h-4 animate-spin text-gray-700" />
                   ) : (
                     <Icon className="w-5 h-5" />
                   )}
                 </div>
                 
-                <div className={`flex-1 text-left transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>
+                <div className={`flex-1 text-left transition-all duration-300 relative z-10 ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>
                   <div className="font-medium text-sm whitespace-nowrap">{item.label}</div>
                   <div className={`text-xs whitespace-nowrap ${
                     isActive 

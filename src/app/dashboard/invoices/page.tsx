@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { 
   Plus, FileText, Clock, CheckCircle, AlertCircle, AlertTriangle, FilePlus, Sparkles,
@@ -12,12 +12,30 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { useData } from '@/contexts/DataContext';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
-import FastInvoiceModal from '@/components/FastInvoiceModal';
-import QuickInvoiceModal from '@/components/QuickInvoiceModal';
-import ConfirmationModal from '@/components/ConfirmationModal';
-import SendInvoiceModal from '@/components/SendInvoiceModal';
-import ClientModal from '@/components/ClientModal';
 import UnifiedInvoiceCard from '@/components/UnifiedInvoiceCard';
+import dynamic from 'next/dynamic';
+import { Loader2 } from 'lucide-react';
+
+// Lazy load heavy modal components for better performance
+const FastInvoiceModal = dynamic(() => import('@/components/FastInvoiceModal'), {
+  loading: () => <div className="flex items-center justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+});
+
+const QuickInvoiceModal = dynamic(() => import('@/components/QuickInvoiceModal'), {
+  loading: () => <div className="flex items-center justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+});
+
+const ConfirmationModal = dynamic(() => import('@/components/ConfirmationModal'), {
+  loading: () => null
+});
+
+const SendInvoiceModal = dynamic(() => import('@/components/SendInvoiceModal'), {
+  loading: () => null
+});
+
+const ClientModal = dynamic(() => import('@/components/ClientModal'), {
+  loading: () => null
+});
 
 // Types
 import { Client, Invoice } from '@/types';
