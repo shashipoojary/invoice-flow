@@ -733,37 +733,9 @@ export default function DocsPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="border-b border-gray-200 bg-white sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="text-xl font-bold">
-                <span className="text-gray-900">Flow</span>
-                <span className="text-violet-600">Invoice</span>
-              </span>
-            </Link>
-            <div className="flex items-center gap-4">
-              <Link 
-                href="/dashboard" 
-                className="text-sm font-medium text-gray-700 hover:text-gray-900"
-              >
-                Dashboard
-              </Link>
-              <Link 
-                href="/contact" 
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-black text-white hover:bg-gray-800"
-              >
-                Contact
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <div className="flex">
         {/* Sidebar Navigation */}
-        <aside className={`fixed lg:sticky top-16 h-[calc(100vh-4rem)] w-64 border-r border-gray-200 bg-white overflow-y-auto z-30 transition-transform duration-300 ${
+        <aside className={`fixed lg:sticky top-16 h-[calc(100vh-4rem)] w-64 border-r border-gray-200 bg-white overflow-y-auto z-20 transition-transform duration-300 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}>
           <div className="p-6">
@@ -844,17 +816,17 @@ export default function DocsPage() {
 
         {/* Main Content */}
         <main className="flex-1 lg:ml-64">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {/* Breadcrumb */}
-            <div className="mb-8">
+            <div className="mb-6">
               <Link 
                 href="/" 
-                className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
+                className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-3"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Home
               </Link>
-              <h1 className="font-heading text-3xl sm:text-4xl font-semibold text-gray-900 tracking-tight">
+              <h1 className="font-heading text-2xl sm:text-3xl font-semibold text-gray-900 tracking-tight">
                 {docSections.find(s => s.subsections.some(sub => sub.id === selectedSubsection))?.subsections.find(sub => sub.id === selectedSubsection)?.title || 'Documentation'}
               </h1>
             </div>
@@ -865,7 +837,7 @@ export default function DocsPage() {
             </div>
 
             {/* Navigation Footer */}
-            <div className="mt-12 pt-8 border-t border-gray-200">
+            <div className="mt-8 pt-6 border-t border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Need more help?</p>
