@@ -112,14 +112,16 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
               }
             } else if (ev.type === 'late_fee_applied') {
               const amount = ev.metadata?.amount || 0;
+              // Use metadata appliedDate if available (more accurate), otherwise use created_at
+              const displayDate = ev.metadata?.appliedDate || ev.created_at;
               const lateFeeItem = {
                 id: `latefee-${ev.id}`,
                 type: 'status',
                 title: `Late fee applied: $${amount.toLocaleString()}`,
-                at: ev.created_at,
+                at: displayDate,
                 icon: 'overdue' as const
               };
-              const eventKey = `latefee-${new Date(ev.created_at).getTime()}`;
+              const eventKey = `latefee-${new Date(displayDate).getTime()}`;
               if (!eventMap.has(eventKey)) {
                 eventMap.set(eventKey, lateFeeItem);
                 items.push(lateFeeItem);
@@ -340,11 +342,14 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                 }
               }
 
-              // Late fee status (only show once when grace period passes)
+              // Late fee status - create event exactly when grace period passes
               const lf = (invoice as any).lateFees || (invoice as any).late_fees;
               if (lf && (lf.enabled || lf?.enabled === true)) {
                 const grace = lf.gracePeriod ?? lf.grace_period ?? 0;
-                if (totalOverdueDays > grace) {
+                // Late fee applies on: dueDate + gracePeriod + 1 day (the day after grace period ends)
+                const lateFeeApplicationDay = grace + 1;
+                
+                if (totalOverdueDays >= lateFeeApplicationDay) {
                   // Check if late fee event already exists
                   const { data: lateFeeEvents } = await supabase
                     .from('invoice_events')
@@ -355,34 +360,47 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                   
                   if (!lateFeeEvents || lateFeeEvents.length === 0) {
                     const amount = lf.type === 'percentage' ? (invoice.total * (lf.amount || 0)) / 100 : (lf.amount || 0);
-                    const applied = new Date(dueStart);
-                    applied.setUTCDate(applied.getUTCDate() + (grace > 0 ? grace : 0) + 1);
-                    applied.setUTCHours(23, 59, 59, 999);
                     
-                    // Create late fee event
+                    // Calculate exact date when late fee should be applied
+                    // This is: dueDate + gracePeriod days + 1 day (start of the day after grace period)
+                    const appliedDate = new Date(dueStart);
+                    appliedDate.setUTCDate(appliedDate.getUTCDate() + grace + 1);
+                    appliedDate.setUTCHours(0, 0, 0, 0); // Start of the day when late fee applies
+                    
+                    // Create late fee event with accurate timestamp in metadata
                     try {
                       await supabase.from('invoice_events').insert({
                         invoice_id: invoice.id,
                         type: 'late_fee_applied',
-                        metadata: { amount }
+                        metadata: { 
+                          amount,
+                          appliedDate: appliedDate.toISOString(), // Store exact application date
+                          gracePeriod: grace,
+                          applicationDay: lateFeeApplicationDay
+                        }
                       });
-                    } catch {}
+                    } catch (insertError) {
+                      console.error('Error creating late fee event:', insertError);
+                    }
                     
+                    // Use the calculated application date for display
                     items.push({
                       id: `latefee-${invoice.id}`,
                       type: 'status',
                       title: `Late fee applied: $${amount.toLocaleString()}`,
-                      at: applied.toISOString(),
+                      at: appliedDate.toISOString(),
                       icon: 'overdue'
                     });
                   } else {
-                    // Use existing late fee event
+                    // Use existing late fee event - prefer metadata date if available
                     const lateFeeEvent = lateFeeEvents[0];
+                    const displayDate = lateFeeEvent.metadata?.appliedDate || lateFeeEvent.created_at;
+                    
                     items.push({
                       id: `latefee-${lateFeeEvent.id}`,
                       type: 'status',
                       title: `Late fee applied: $${(lateFeeEvent.metadata?.amount || 0).toLocaleString()}`,
-                      at: lateFeeEvent.created_at,
+                      at: displayDate,
                       icon: 'overdue'
                     });
                   }
