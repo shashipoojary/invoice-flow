@@ -292,7 +292,7 @@ export function generateMinimalEmailTemplate(
             margin-bottom: 0 !important;
           }
           .cta-section {
-            text-align: left;
+            text-align: center;
             margin: 32px 0;
           }
           .cta-button {
@@ -324,11 +324,11 @@ export function generateMinimalEmailTemplate(
             letter-spacing: 0.5px;
           }
           .payment-notice {
-            background: transparent;
-            padding: 12px 0;
-            border-top: 1px solid #e0e0e0;
-            border-bottom: 1px solid #e0e0e0;
-            margin-bottom: 20px;
+            background: #f8f8f8;
+            padding: 16px;
+            margin-bottom: 24px;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
             width: 100%;
             box-sizing: border-box;
             text-align: left;
@@ -373,12 +373,12 @@ export function generateMinimalEmailTemplate(
             line-height: 1.6;
           }
           .payment-security {
-            background: transparent;
-            padding: 12px 0;
-            border-top: 1px solid #e0e0e0;
-            border-bottom: 1px solid #e0e0e0;
+            background: #f8f8f8;
+            padding: 16px;
             text-align: left;
             margin-top: 20px;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
           }
           .payment-security p {
             margin: 0;
@@ -517,9 +517,11 @@ export function generateMinimalEmailTemplate(
               font-size: 14px !important;
             }
             .payment-notice {
-              padding: 12px 0 !important;
-              border-top: 1px solid #e0e0e0 !important;
-              border-bottom: 1px solid #e0e0e0 !important;
+              background: #f8f8f8 !important;
+              padding: 16px !important;
+              margin-bottom: 24px !important;
+              border: 1px solid #e5e5e5 !important;
+              border-radius: 4px !important;
               text-align: left !important;
             }
             .payment-notice p {
@@ -528,10 +530,12 @@ export function generateMinimalEmailTemplate(
               line-height: 1.6 !important;
             }
             .payment-security {
-              padding: 12px 0 !important;
-              border-top: 1px solid #e0e0e0 !important;
-              border-bottom: 1px solid #e0e0e0 !important;
+              background: #f8f8f8 !important;
+              padding: 16px !important;
               text-align: left !important;
+              margin-top: 20px !important;
+              border: 1px solid #e5e5e5 !important;
+              border-radius: 4px !important;
             }
             .payment-method-name {
               font-size: 12px !important;
