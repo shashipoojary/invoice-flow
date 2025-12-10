@@ -746,6 +746,9 @@ export function generateModernEmailTemplate(
     });
   };
 
+  // Extract primary color from theme (default to dark gray for consistency with minimal)
+  const primaryColor = invoice.theme?.primary_color || '#1F2937';
+
   return `
     <!DOCTYPE html>
     <html>
@@ -784,10 +787,10 @@ export function generateModernEmailTemplate(
             table-layout: fixed;
           }
           .business-name {
-            font-size: 22px;
-            font-weight: 700;
-            color: #000000 !important;
-            letter-spacing: -0.02em;
+            font-size: 20px;
+            font-weight: 400;
+            color: ${primaryColor} !important;
+            letter-spacing: 0;
             margin: 0;
             padding: 0;
           }
@@ -804,22 +807,35 @@ export function generateModernEmailTemplate(
             padding-left: 24px;
           }
           .invoice-title {
-            font-size: 12px;
-            font-weight: 500;
-            color: #333333 !important;
-            margin-bottom: 4px;
+            font-size: 20px;
+            font-weight: 400;
+            color: ${primaryColor} !important;
+            letter-spacing: 0;
+            margin: 0 0 12px 0;
+            padding: 0;
           }
           .invoice-number {
-            font-size: 12px;
-            color: #333333 !important;
-            margin-bottom: 8px;
-            font-weight: 500;
+            font-size: 10px;
+            color: #000000 !important;
+            margin: 0 0 8px 0;
+            font-weight: 700;
+          }
+          .invoice-date-label {
+            font-size: 8px;
+            color: #808080 !important;
+            margin: 0 0 4px 0;
+          }
+          .invoice-due-label {
+            font-size: 8px;
+            color: #808080 !important;
+            margin: 8px 0 0 0;
           }
           .amount {
-            font-size: 28px;
-            font-weight: 800;
+            font-size: 32px;
+            font-weight: 700;
             color: #000000;
-            letter-spacing: -0.03em;
+            letter-spacing: -0.5px;
+            margin: 16px 0 0 0;
           }
           .content {
             padding: 48px 40px;
@@ -1100,12 +1116,14 @@ export function generateModernEmailTemplate(
           <div class="header">
             <div class="header-content">
               <div class="business-info">
-                <div class="business-name" style="color: #000000 !important; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 0; padding: 0;">${businessSettings.businessName}</div>
+                <div class="business-name" style="color: ${primaryColor} !important; font-size: 20px; font-weight: 400; letter-spacing: 0; margin: 0; padding: 0;">${businessSettings.businessName}</div>
               </div>
               <div class="invoice-info">
-                <div class="invoice-title" style="color: #333333 !important; font-size: 12px; font-weight: 500; margin-bottom: 4px;">Invoice</div>
-                <div class="invoice-number" style="color: #333333 !important; font-size: 12px; margin-bottom: 8px; font-weight: 500;">#${invoice.invoice_number}</div>
-                <div class="amount" style="color: #000000 !important; font-size: 28px; font-weight: 800; letter-spacing: -0.03em;">${formatCurrency(invoice.total)}</div>
+                <div class="invoice-title" style="color: ${primaryColor} !important; font-size: 20px; font-weight: 400; letter-spacing: 0; margin: 0 0 12px 0; padding: 0;">INVOICE</div>
+                <div class="invoice-number" style="color: #000000 !important; font-size: 10px; font-weight: 700; margin: 0 0 8px 0;">#${invoice.invoice_number}</div>
+                <div class="invoice-date-label" style="color: #808080 !important; font-size: 8px; margin: 0 0 4px 0;">Issue: ${formatDate(invoice.issue_date)}</div>
+                <div class="invoice-due-label" style="color: #808080 !important; font-size: 8px; margin: 8px 0 0 0;">Due: ${formatDate(invoice.due_date)}</div>
+                <div class="amount" style="color: #000000 !important; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin: 16px 0 0 0;">${formatCurrency(invoice.total)}</div>
               </div>
             </div>
           </div>
@@ -1612,12 +1630,14 @@ export function generateCreativeEmailTemplate(
           <div class="header">
             <div class="header-content">
               <div class="business-info">
-                <div class="business-name" style="color: #000000 !important; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 0; padding: 0;">${businessSettings.businessName}</div>
+                <div class="business-name" style="color: ${primaryColor} !important; font-size: 20px; font-weight: 400; letter-spacing: 0; margin: 0; padding: 0;">${businessSettings.businessName}</div>
               </div>
               <div class="invoice-info">
-                <div class="invoice-title" style="color: #333333 !important; font-size: 12px; font-weight: 500; margin-bottom: 4px;">Invoice</div>
-                <div class="invoice-number" style="color: #333333 !important; font-size: 12px; margin-bottom: 8px; font-weight: 500;">#${invoice.invoice_number}</div>
-                <div class="amount" style="color: #000000 !important; font-size: 28px; font-weight: 800; letter-spacing: -0.03em;">${formatCurrency(invoice.total)}</div>
+                <div class="invoice-title" style="color: ${primaryColor} !important; font-size: 20px; font-weight: 400; letter-spacing: 0; margin: 0 0 12px 0; padding: 0;">INVOICE</div>
+                <div class="invoice-number" style="color: #000000 !important; font-size: 10px; font-weight: 700; margin: 0 0 8px 0;">#${invoice.invoice_number}</div>
+                <div class="invoice-date-label" style="color: #808080 !important; font-size: 8px; margin: 0 0 4px 0;">Issue: ${formatDate(invoice.issue_date)}</div>
+                <div class="invoice-due-label" style="color: #808080 !important; font-size: 8px; margin: 8px 0 0 0;">Due: ${formatDate(invoice.due_date)}</div>
+                <div class="amount" style="color: #000000 !important; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin: 16px 0 0 0;">${formatCurrency(invoice.total)}</div>
               </div>
             </div>
           </div>
