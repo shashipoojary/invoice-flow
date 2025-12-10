@@ -131,7 +131,7 @@ export function generateMinimalEmailTemplate(
               color: #000000 !important;
             }
             .amount {
-              color: #F97316 !important;
+              color: #FF6B35 !important;
             }
             .business-details,
             .invoice-date-label,
@@ -217,7 +217,7 @@ export function generateMinimalEmailTemplate(
           .amount {
             font-size: 32px;
             font-weight: 700;
-            color: #F97316 !important;
+            color: #FF6B35 !important;
             letter-spacing: -0.5px;
             margin: 16px 0 0 0;
           }
@@ -609,7 +609,7 @@ export function generateMinimalEmailTemplate(
                 <div class="invoice-number" style="color: #000000 !important; font-size: 10px; font-weight: 700; margin: 0 0 8px 0;">#${invoice.invoice_number}</div>
                 <div class="invoice-date-label" style="color: #808080 !important; font-size: 8px; margin: 0 0 4px 0;">Issue: ${formatDate(invoice.issue_date)}</div>
                 <div class="invoice-due-label" style="color: #808080 !important; font-size: 8px; margin: 8px 0 0 0;">Due: ${formatDate(invoice.due_date)}</div>
-                <div class="amount" style="color: #F97316 !important; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin: 16px 0 0 0;">${formatCurrency(invoice.total)}</div>
+                <div class="amount" style="color: #FF6B35 !important; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin: 16px 0 0 0;">${formatCurrency(invoice.total)}</div>
               </div>
             </div>
           </div>
@@ -835,7 +835,7 @@ export function generateModernEmailTemplate(
           .amount {
             font-size: 32px;
             font-weight: 700;
-            color: #F97316;
+            color: #FF6B35;
             letter-spacing: -0.5px;
             margin: 16px 0 0 0;
           }
@@ -1017,7 +1017,7 @@ export function generateModernEmailTemplate(
             .invoice-title,
             .invoice-number,
             .amount {
-              color: #F97316 !important;
+              color: #FF6B35 !important;
             }
             .detail-section h3,
             .detail-section p,
@@ -1133,7 +1133,7 @@ export function generateModernEmailTemplate(
                 <div class="invoice-number" style="color: #000000 !important; font-size: 10px; font-weight: 700; margin: 0 0 8px 0;">#${invoice.invoice_number}</div>
                 <div class="invoice-date-label" style="color: #808080 !important; font-size: 8px; margin: 0 0 4px 0;">Issue: ${formatDate(invoice.issue_date)}</div>
                 <div class="invoice-due-label" style="color: #808080 !important; font-size: 8px; margin: 8px 0 0 0;">Due: ${formatDate(invoice.due_date)}</div>
-                <div class="amount" style="color: #F97316 !important; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin: 16px 0 0 0;">${formatCurrency(invoice.total)}</div>
+                <div class="amount" style="color: #FF6B35 !important; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin: 16px 0 0 0;">${formatCurrency(invoice.total)}</div>
               </div>
             </div>
           </div>
@@ -1369,7 +1369,7 @@ export function generateCreativeEmailTemplate(
           .amount {
             font-size: 32px;
             font-weight: 700;
-            color: #F97316;
+            color: #FF6B35;
             letter-spacing: -0.5px;
             margin: 16px 0 0 0;
           }
@@ -1552,7 +1552,7 @@ export function generateCreativeEmailTemplate(
             .invoice-title,
             .invoice-number,
             .amount {
-              color: #F97316 !important;
+              color: #FF6B35 !important;
             }
             .detail-section h3,
             .detail-section p,
@@ -1668,7 +1668,7 @@ export function generateCreativeEmailTemplate(
                 <div class="invoice-number" style="color: #000000 !important; font-size: 10px; font-weight: 700; margin: 0 0 8px 0;">#${invoice.invoice_number}</div>
                 <div class="invoice-date-label" style="color: #808080 !important; font-size: 8px; margin: 0 0 4px 0;">Issue: ${formatDate(invoice.issue_date)}</div>
                 <div class="invoice-due-label" style="color: #808080 !important; font-size: 8px; margin: 8px 0 0 0;">Due: ${formatDate(invoice.due_date)}</div>
-                <div class="amount" style="color: #F97316 !important; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin: 16px 0 0 0;">${formatCurrency(invoice.total)}</div>
+                <div class="amount" style="color: #FF6B35 !important; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin: 16px 0 0 0;">${formatCurrency(invoice.total)}</div>
               </div>
             </div>
           </div>
