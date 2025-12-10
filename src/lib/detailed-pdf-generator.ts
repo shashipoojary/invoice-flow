@@ -13,17 +13,68 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
 
 /**
  * Formats a multi-line address into 2-3 longer lines for better PDF display
+ * Filters out email and phone if they exist in dedicated fields
  * @param address - The address string that may contain newlines
+ * @param businessSettings - Business settings to check for dedicated email/phone fields
  * @returns Array of formatted address lines (2-3 lines)
  */
-function formatAddressForPDF(address: string): string[] {
+function formatAddressForPDF(address: string, businessSettings?: BusinessSettings): string[] {
   if (!address) return [];
   
   // Split by newlines and clean up
-  const lines = address
+  let lines = address
     .split(/\r?\n/)
     .map(line => line.trim())
     .filter(line => line.length > 0);
+  
+  if (lines.length === 0) return [];
+  
+  // Filter out email and phone if they exist in dedicated fields (only exact matches)
+  if (businessSettings) {
+    const dedicatedEmail = businessSettings.businessEmail?.toLowerCase().trim();
+    const dedicatedPhone = businessSettings.businessPhone?.trim();
+    
+    // Normalize phone numbers for comparison (remove spaces, dashes, parentheses)
+    const normalizePhone = (phone: string) => {
+      return phone.replace(/[\s\-\+\(\)]/g, '');
+    };
+    
+    lines = lines.filter(line => {
+      const lineTrimmed = line.trim();
+      const lineLower = lineTrimmed.toLowerCase();
+      
+      // Check if line is an email (contains @)
+      if (lineLower.includes('@')) {
+        // Only filter out if dedicated email exists and matches exactly
+        if (dedicatedEmail && lineLower === dedicatedEmail) {
+          return false; // Filter out duplicate email
+        }
+        // Keep email if no dedicated email or if it's different
+        return true;
+      }
+      
+      // Check if line looks like a phone number
+      // Phone pattern: mostly digits with optional spaces, dashes, parentheses, plus sign
+      const phonePattern = /^[\d\s\-\+\(\)]+$/;
+      const nonDigitChars = lineTrimmed.replace(/[\d]/g, '').length;
+      
+      // Consider it a phone if: has digits, mostly phone-related chars, and not too many non-digit chars
+      if (phonePattern.test(lineTrimmed) && /\d/.test(lineTrimmed) && nonDigitChars <= 5) {
+        // Only filter out if dedicated phone exists and matches (normalized)
+        if (dedicatedPhone) {
+          const normalizedLine = normalizePhone(lineTrimmed);
+          const normalizedDedicated = normalizePhone(dedicatedPhone);
+          if (normalizedLine === normalizedDedicated) {
+            return false; // Filter out duplicate phone
+          }
+        }
+        // Keep phone if no dedicated phone or if it's different
+        return true;
+      }
+      
+      return true;
+    });
+  }
   
   if (lines.length === 0) return [];
   
@@ -240,13 +291,13 @@ async function generateTemplate1DetailedPDF(
   page.drawText(businessSettings.businessName || 'Your Business', {
     x: 110,
     y: height - 100,
-    size: 14,
+    size: 18,
     font: boldFont,
     color: rgb(0, 0, 0),
   });
 
   if (businessSettings.address) {
-    const addressLines = formatAddressForPDF(businessSettings.address);
+    const addressLines = formatAddressForPDF(businessSettings.address, businessSettings);
     let addressY = height - 115;
     addressLines.forEach((line, index) => {
       page.drawText(line, {
@@ -663,13 +714,13 @@ async function generateTemplate2PDF(
   page.drawText(businessSettings.businessName || 'Your Business', {
     x: 100,
     y: height - 120,
-    size: 16,
+    size: 20,
     font: boldFont,
     color: rgb(0, 0, 0),
   });
 
   if (businessSettings.address) {
-    const addressLines = formatAddressForPDF(businessSettings.address);
+    const addressLines = formatAddressForPDF(businessSettings.address, businessSettings);
     let addressY = height - 135;
     addressLines.forEach((line, index) => {
       page.drawText(line, {
@@ -1009,13 +1060,13 @@ async function generateTemplate3PDF(
   page.drawText(businessSettings.businessName || 'Your Business', {
     x: 50,
     y: height - 60,
-    size: 16,
+    size: 20,
     font: boldFont,
     color: rgb(0, 0, 0),
   });
 
   if (businessSettings.address) {
-    const addressLines = formatAddressForPDF(businessSettings.address);
+    const addressLines = formatAddressForPDF(businessSettings.address, businessSettings);
     let addressY = height - 75;
     addressLines.forEach((line, index) => {
       page.drawText(line, {
@@ -1463,13 +1514,13 @@ async function generateModernTemplatePDF(
   page.drawText(businessSettings.businessName || 'Your Business', {
     x: 60,
     y: height - 60, // Moved down slightly
-    size: 14,
+    size: 18,
     font: boldFont,
     color: rgb(1, 1, 1), // White text on purple background
   });
 
   if (businessSettings.address) {
-    const addressLines = formatAddressForPDF(businessSettings.address);
+    const addressLines = formatAddressForPDF(businessSettings.address, businessSettings);
     let addressY = height - 75;
     addressLines.forEach((line, index) => {
       page.drawText(line, {
@@ -1972,13 +2023,13 @@ async function generateSimpleCleanTemplatePDF(
   page.drawText(businessSettings.businessName || 'Your Business', {
     x: 50,
     y: height - 60,
-    size: 16,
+    size: 20,
     font: boldFont,
     color: rgb(1, 1, 1),
   });
 
   if (businessSettings.address) {
-    const addressLines = formatAddressForPDF(businessSettings.address);
+    const addressLines = formatAddressForPDF(businessSettings.address, businessSettings);
     let addressY = height - 75;
     addressLines.forEach((line, index) => {
       page.drawText(line, {
@@ -2549,13 +2600,13 @@ async function generateMinimalTemplatePDF(
   page.drawText(businessSettings.businessName || 'Your Business', {
     x: 50,
     y: height - 50,
-    size: 16,
-    font: font, // Regular weight, not bold
+    size: 20,
+    font: boldFont, // Make it bold and bigger
     color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b), // Primary color
   });
 
   if (businessSettings.address) {
-    const addressLines = formatAddressForPDF(businessSettings.address);
+    const addressLines = formatAddressForPDF(businessSettings.address, businessSettings);
     let addressY = height - 68;
     addressLines.forEach((line, index) => {
       page.drawText(line, {
