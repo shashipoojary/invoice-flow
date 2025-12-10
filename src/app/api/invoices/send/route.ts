@@ -77,60 +77,8 @@ async function createScheduledReminders(invoiceId: string, reminderSettings: any
     
     const scheduledReminders = [];
 
-    // Prioritize custom rules over system defaults if custom rules exist
-    if (reminderSettings.customRules && reminderSettings.customRules.length > 0) {
-      // Use custom reminder rules
-      const enabledRules = reminderSettings.customRules.filter((rule: any) => rule.enabled);
-      
-      // Create reminders with their scheduled dates first
-      const remindersWithDates = enabledRules.map((rule: any) => {
-        const scheduledDate = new Date(baseDate);
-        
-        // Validate rule days is a valid number
-        const days = typeof rule.days === 'number' && !isNaN(rule.days) ? rule.days : 0;
-        
-        // Fix scheduling logic: for "before" reminders, subtract days; for "after", add days
-        if (rule.type === 'before') {
-          scheduledDate.setDate(scheduledDate.getDate() - days);
-        } else {
-          scheduledDate.setDate(scheduledDate.getDate() + days);
-        }
-        
-        // Validate the scheduled date is valid
-        if (isNaN(scheduledDate.getTime())) {
-          console.error(`Invalid scheduled date calculated for rule:`, rule);
-          throw new Error(`Invalid scheduled date for reminder rule with ${days} days`);
-        }
-        
-        return {
-          rule,
-          scheduledDate,
-          overdue_days: rule.type === 'before' ? -days : days
-        };
-      });
-      
-      // Sort by scheduled date (earliest first) to get correct chronological order
-      remindersWithDates.sort((a: any, b: any) => a.scheduledDate.getTime() - b.scheduledDate.getTime());
-      
-      // Determine reminder types based on chronological sequence
-      const reminderTypes = ['friendly', 'polite', 'firm', 'urgent'];
-      
-      for (let i = 0; i < remindersWithDates.length; i++) {
-        const { rule, scheduledDate, overdue_days } = remindersWithDates[i];
-        
-        // Assign reminder type based on chronological sequence (friendly -> polite -> firm -> urgent)
-        const reminderType = reminderTypes[Math.min(i, reminderTypes.length - 1)];
-        
-        scheduledReminders.push({
-          invoice_id: invoiceId,
-          reminder_type: reminderType,
-          overdue_days,
-          sent_at: scheduledDate.toISOString(),
-          reminder_status: 'scheduled',
-          email_id: null
-        });
-      }
-    } else if (reminderSettings.useSystemDefaults) {
+    // Check useSystemDefaults flag FIRST - if true, use smart reminders regardless of custom rules
+    if (reminderSettings.useSystemDefaults) {
       // Smart reminder system - adapts based on payment terms
       let smartSchedule: Array<{ type: string; days: number }> = [];
       
@@ -208,6 +156,58 @@ async function createScheduledReminders(invoiceId: string, reminderSettings: any
           invoice_id: invoiceId,
           reminder_type: reminder.type,
           overdue_days: reminder.days,
+          sent_at: scheduledDate.toISOString(),
+          reminder_status: 'scheduled',
+          email_id: null
+        });
+      }
+    } else if (reminderSettings.customRules && reminderSettings.customRules.length > 0) {
+      // Use custom reminder rules (only if useSystemDefaults is false)
+      const enabledRules = reminderSettings.customRules.filter((rule: any) => rule.enabled);
+      
+      // Create reminders with their scheduled dates first
+      const remindersWithDates = enabledRules.map((rule: any) => {
+        const scheduledDate = new Date(baseDate);
+        
+        // Validate rule days is a valid number
+        const days = typeof rule.days === 'number' && !isNaN(rule.days) ? rule.days : 0;
+        
+        // Fix scheduling logic: for "before" reminders, subtract days; for "after", add days
+        if (rule.type === 'before') {
+          scheduledDate.setDate(scheduledDate.getDate() - days);
+        } else {
+          scheduledDate.setDate(scheduledDate.getDate() + days);
+        }
+        
+        // Validate the scheduled date is valid
+        if (isNaN(scheduledDate.getTime())) {
+          console.error(`Invalid scheduled date calculated for rule:`, rule);
+          throw new Error(`Invalid scheduled date for reminder rule with ${days} days`);
+        }
+        
+        return {
+          rule,
+          scheduledDate,
+          overdue_days: rule.type === 'before' ? -days : days
+        };
+      });
+      
+      // Sort by scheduled date (earliest first) to get correct chronological order
+      remindersWithDates.sort((a: any, b: any) => a.scheduledDate.getTime() - b.scheduledDate.getTime());
+      
+      // Determine reminder types based on chronological sequence
+      const reminderTypes = ['friendly', 'polite', 'firm', 'urgent'];
+      
+      for (let i = 0; i < remindersWithDates.length; i++) {
+        const { rule, scheduledDate, overdue_days } = remindersWithDates[i];
+        
+        // Assign reminder type based on chronological sequence (friendly -> polite -> firm -> urgent)
+        const reminderType = reminderTypes[Math.min(i, reminderTypes.length - 1)];
+        
+        scheduledReminders.push({
+          invoice_id: invoiceId,
+          reminder_type: reminderType,
+          overdue_days,
           sent_at: scheduledDate.toISOString(),
           reminder_status: 'scheduled',
           email_id: null
