@@ -39,41 +39,70 @@ function formatAddressForPDF(address: string, businessSettings?: BusinessSetting
       return phone.replace(/[\s\-\+\(\)]/g, '');
     };
     
-    lines = lines.filter(line => {
-      const lineTrimmed = line.trim();
-      const lineLower = lineTrimmed.toLowerCase();
+    // Email regex pattern to find emails in text
+    const emailPattern = /[\w\.-]+@[\w\.-]+\.\w+/gi;
+    
+    // Phone regex pattern to find phone numbers in text
+    const phoneRegexPattern = /[\d\s\-\+\(\)]{7,}/g;
+    
+    lines = lines.map(line => {
+      let processedLine = line.trim();
+      const originalLine = processedLine;
       
-      // Check if line is an email (contains @)
-      if (lineLower.includes('@')) {
-        // Only filter out if dedicated email exists and matches exactly
-        if (dedicatedEmail && lineLower === dedicatedEmail) {
-          return false; // Filter out duplicate email
+      // Check if line is ONLY an email (standalone email line)
+      if (dedicatedEmail) {
+        const lineLower = processedLine.toLowerCase();
+        if (lineLower === dedicatedEmail || lineLower.trim() === dedicatedEmail) {
+          return ''; // Filter out entire line if it's only the duplicate email
         }
-        // Keep email if no dedicated email or if it's different
-        return true;
+        
+        // Check if line contains email (might be combined with other text)
+        const emailsInLine = processedLine.match(emailPattern);
+        if (emailsInLine) {
+          emailsInLine.forEach(email => {
+            if (email.toLowerCase().trim() === dedicatedEmail) {
+              // Remove the email from the line
+              processedLine = processedLine
+                .replace(new RegExp('\\s*' + email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', 'gi'), ' ')
+                .replace(/,\s*,/g, ',') // Remove double commas
+                .replace(/^,\s*|\s*,$/g, '') // Remove leading/trailing commas
+                .replace(/\s+/g, ' ') // Normalize spaces
+                .trim();
+            }
+          });
+        }
       }
       
-      // Check if line looks like a phone number
-      // Phone pattern: mostly digits with optional spaces, dashes, parentheses, plus sign
-      const phonePattern = /^[\d\s\-\+\(\)]+$/;
-      const nonDigitChars = lineTrimmed.replace(/[\d]/g, '').length;
-      
-      // Consider it a phone if: has digits, mostly phone-related chars, and not too many non-digit chars
-      if (phonePattern.test(lineTrimmed) && /\d/.test(lineTrimmed) && nonDigitChars <= 5) {
-        // Only filter out if dedicated phone exists and matches (normalized)
-        if (dedicatedPhone) {
-          const normalizedLine = normalizePhone(lineTrimmed);
-          const normalizedDedicated = normalizePhone(dedicatedPhone);
-          if (normalizedLine === normalizedDedicated) {
-            return false; // Filter out duplicate phone
-          }
+      // Check if line is ONLY a phone (standalone phone line)
+      if (dedicatedPhone && processedLine) {
+        const normalizedDedicated = normalizePhone(dedicatedPhone);
+        const normalizedLine = normalizePhone(processedLine);
+        
+        // If the entire line is just the phone number, filter it out
+        if (normalizedLine === normalizedDedicated) {
+          return ''; // Filter out entire line if it's only the duplicate phone
         }
-        // Keep phone if no dedicated phone or if it's different
-        return true;
+        
+        // Check if line contains phone (might be combined with other text)
+        const phonesInLine = processedLine.match(phoneRegexPattern);
+        if (phonesInLine) {
+          phonesInLine.forEach(phone => {
+            const normalizedPhone = normalizePhone(phone.trim());
+            if (normalizedPhone === normalizedDedicated) {
+              // Remove the phone from the line
+              processedLine = processedLine
+                .replace(new RegExp('\\s*' + phone.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', 'g'), ' ')
+                .replace(/,\s*,/g, ',') // Remove double commas
+                .replace(/^,\s*|\s*,$/g, '') // Remove leading/trailing commas
+                .replace(/\s+/g, ' ') // Normalize spaces
+                .trim();
+            }
+          });
+        }
       }
       
-      return true;
-    });
+      return processedLine;
+    }).filter(line => line.length > 0); // Remove empty lines after filtering
   }
   
   if (lines.length === 0) return [];
