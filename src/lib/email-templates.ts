@@ -1248,21 +1248,9 @@ export function generateModernEmailTemplate(
           </div>
 
           <div class="footer">
-            <p>Thank you for your business!</p>
-            <p>If you have any questions about this invoice, please don't hesitate to contact us.</p>
-            
             <div class="business-contact">
               ${businessSettings.businessName}<br>
               ${businessSettings.businessEmail}${businessSettings.businessPhone ? ` • ${businessSettings.businessPhone}` : ''}
-            </div>
-
-            <div class="invoiceflow-branding">
-              <div class="invoiceflow-disclaimer">
-                This invoice was created and sent using FlowInvoicer
-              </div>
-              <a href="https://invoiceflow.com" class="invoiceflow-link">
-                Powered by FlowInvoicer
-              </a>
             </div>
           </div>
         </div>
@@ -1858,6 +1846,7 @@ export function generateOriginalFastInvoiceEmailTemplate(
             max-width: 600px;
             margin: 0 auto;
             background: #ffffff;
+            border: 1px solid #e0e0e0;
           }
           .header {
             padding: 40px 32px 32px;
