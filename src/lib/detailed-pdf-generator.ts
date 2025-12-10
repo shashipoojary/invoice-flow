@@ -11,6 +11,40 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   } : { r: 0, g: 0, b: 0 };
 }
 
+// Helper function to draw multi-line text and return the final Y position
+function drawMultiLineText(
+  page: PDFPage,
+  text: string,
+  x: number,
+  startY: number,
+  fontSize: number,
+  font: PDFFont,
+  color: { r: number; g: number; b: number },
+  lineHeight: number = 12
+): number {
+  if (!text) return startY;
+  
+  // Split by newlines (handle both \n and \r\n)
+  const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+  
+  let currentY = startY;
+  
+  for (const line of lines) {
+    if (line.trim()) {
+      page.drawText(line.trim(), {
+        x,
+        y: currentY,
+        size: fontSize,
+        font,
+        color: rgb(color.r, color.g, color.b),
+      });
+      currentY -= lineHeight;
+    }
+  }
+  
+  return currentY;
+}
+
 export async function generateDetailedPDF(
   invoice: Invoice,
   businessSettings: BusinessSettings,
@@ -1384,30 +1418,36 @@ async function generateModernTemplatePDF(
     color: rgb(1, 1, 1), // White text on purple background
   });
 
+  // Draw multi-line address and get final Y position
+  let addressY = height - 75;
   if (businessSettings.address) {
-    page.drawText(businessSettings.address, {
-      x: 60,
-      y: height - 75, // Moved down slightly
-      size: 8,
-      font: font,
-      color: rgb(1, 1, 1), // White text on purple background
-    });
+    addressY = drawMultiLineText(
+      page,
+      businessSettings.address,
+      60,
+      addressY,
+      8,
+      font,
+      { r: 1, g: 1, b: 1 }, // White text on purple background
+      10 // Line height
+    );
   }
 
   if (businessSettings.businessPhone) {
     page.drawText(businessSettings.businessPhone, {
       x: 60,
-      y: height - 90, // Moved down slightly
+      y: addressY - 5, // Add spacing after address
       size: 8,
       font: font,
       color: rgb(1, 1, 1), // White text on purple background
     });
+    addressY = addressY - 15;
   }
 
   if (businessSettings.businessEmail) {
     page.drawText(businessSettings.businessEmail, {
       x: 60,
-      y: height - 105, // Moved down slightly
+      y: addressY - 5, // Add spacing after phone
       size: 8,
       font: font,
       color: rgb(1, 1, 1), // White text on purple background
@@ -1888,30 +1928,36 @@ async function generateSimpleCleanTemplatePDF(
     color: rgb(1, 1, 1),
   });
 
+  // Draw multi-line address and get final Y position
+  let addressY = height - 75;
   if (businessSettings.address) {
-    page.drawText(businessSettings.address, {
-      x: 50,
-      y: height - 75,
-      size: 8,
-      font: font,
-      color: rgb(1, 1, 1),
-    });
+    addressY = drawMultiLineText(
+      page,
+      businessSettings.address,
+      50,
+      addressY,
+      8,
+      font,
+      { r: 1, g: 1, b: 1 }, // White text
+      10 // Line height
+    );
   }
 
   if (businessSettings.businessPhone) {
     page.drawText(businessSettings.businessPhone, {
       x: 50,
-      y: height - 90,
+      y: addressY - 5, // Add spacing after address
       size: 8,
       font: font,
       color: rgb(1, 1, 1),
     });
+    addressY = addressY - 15;
   }
 
   if (businessSettings.businessEmail) {
     page.drawText(businessSettings.businessEmail, {
       x: 50,
-      y: height - 105,
+      y: addressY - 5, // Add spacing after phone
       size: 8,
       font: font,
       color: rgb(1, 1, 1),
@@ -2460,30 +2506,36 @@ async function generateMinimalTemplatePDF(
     color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b), // Primary color
   });
 
+  // Draw multi-line address and get final Y position
+  let addressY = height - 68;
   if (businessSettings.address) {
-    page.drawText(businessSettings.address, {
-      x: 50,
-      y: height - 68,
-      size: 9,
-      font: font,
-      color: rgb(0.5, 0.5, 0.5),
-    });
+    addressY = drawMultiLineText(
+      page,
+      businessSettings.address,
+      50,
+      addressY,
+      9,
+      font,
+      { r: 0.5, g: 0.5, b: 0.5 }, // Gray text
+      11 // Line height
+    );
   }
 
   if (businessSettings.businessPhone) {
     page.drawText(businessSettings.businessPhone, {
       x: 50,
-      y: height - 80,
+      y: addressY - 5, // Add spacing after address
       size: 9,
       font: font,
       color: rgb(0.5, 0.5, 0.5),
     });
+    addressY = addressY - 12;
   }
 
   if (businessSettings.businessEmail) {
     page.drawText(businessSettings.businessEmail, {
       x: 50,
-      y: height - 92,
+      y: addressY - 5, // Add spacing after phone
       size: 9,
       font: font,
       color: rgb(0.5, 0.5, 0.5),
