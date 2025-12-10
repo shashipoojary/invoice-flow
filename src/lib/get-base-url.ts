@@ -16,7 +16,12 @@ export function getBaseUrl(request?: Request): string {
 
   // In Vercel production, use VERCEL_URL
   if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
+    const vercelUrl = process.env.VERCEL_URL.trim();
+    // VERCEL_URL might already include protocol, or might not
+    if (vercelUrl.startsWith('http://') || vercelUrl.startsWith('https://')) {
+      return vercelUrl;
+    }
+    return `https://${vercelUrl}`;
   }
 
   // Try to get from request headers (server-side)
@@ -38,20 +43,20 @@ export function getBaseUrl(request?: Request): string {
     }
     
     if (host) {
-      // Don't use localhost in production
+      // Don't use localhost in production - use production URL instead
       if (process.env.NODE_ENV === 'production' && (host.includes('localhost') || host.includes('127.0.0.1'))) {
-        console.error('Request host is localhost in production. NEXT_PUBLIC_APP_URL must be set.');
-        return '';
+        console.error('Request host is localhost in production. Using production fallback URL.');
+        // Production fallback URL
+        return 'https://invoice-flow-vert.vercel.app';
       }
       return `${protocol}://${host}`;
     }
   }
 
-  // Fallback: throw error in production, use localhost only in development
+  // Fallback: use production URL in production, localhost in development
   if (process.env.NODE_ENV === 'production') {
-    console.error('NEXT_PUBLIC_APP_URL environment variable is required in production');
-    // Return empty string to prevent broken links rather than throwing
-    return '';
+    console.warn('No base URL found. Using production fallback URL: https://invoice-flow-vert.vercel.app');
+    return 'https://invoice-flow-vert.vercel.app';
   }
 
   // Development fallback only

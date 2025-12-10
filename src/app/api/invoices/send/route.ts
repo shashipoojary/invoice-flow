@@ -421,6 +421,16 @@ export async function POST(request: NextRequest) {
     // Get base URL using utility function that handles all fallbacks properly
     const baseUrl = getBaseUrlFromRequest(request);
     
+    // Log for debugging
+    console.log('Base URL Debug:', {
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+      VERCEL_URL: process.env.VERCEL_URL,
+      NODE_ENV: process.env.NODE_ENV,
+      resolvedBaseUrl: baseUrl,
+      requestHost: request.headers.get('host'),
+      xForwardedHost: request.headers.get('x-forwarded-host')
+    });
+    
     if (!baseUrl) {
       console.error('Base URL not configured. Please set NEXT_PUBLIC_APP_URL environment variable.');
       return NextResponse.json({ 
@@ -428,7 +438,11 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
     
-    const publicUrl = `${baseUrl}/invoice/${encodedToken}`;
+    // Ensure baseUrl doesn't end with slash
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+    const publicUrl = `${cleanBaseUrl}/invoice/${encodedToken}`;
+    
+    console.log('Generated public URL:', publicUrl);
     const emailHtml = getEmailTemplate(template, invoice, businessSettings, publicUrl);
 
     // Check if Resend API key is configured
