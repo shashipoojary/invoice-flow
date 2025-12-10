@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { 
   FileText, Users, 
   Clock, CheckCircle, AlertCircle, AlertTriangle, UserPlus, FilePlus, Sparkles, Receipt, Timer,
-  Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2, ArrowRight
+  Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2, ArrowRight, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -56,6 +56,7 @@ export default function DashboardOverview() {
   const [showViewInvoice, setShowViewInvoice] = useState(false);
   const [showInvoiceTypeSelection, setShowInvoiceTypeSelection] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [showReminderDates, setShowReminderDates] = useState(false);
   
   // Loading states for action buttons
   const [loadingActions, setLoadingActions] = useState<{
@@ -1746,7 +1747,10 @@ export default function DashboardOverview() {
                  <span className="text-xs text-gray-400 font-normal">(View only)</span>
                </div>
                <button
-                 onClick={() => setShowViewInvoice(false)}
+                 onClick={() => {
+                   setShowViewInvoice(false);
+                   setShowReminderDates(false); // Reset reminder dates visibility when closing modal
+                 }}
                  className="p-1 sm:p-2 rounded-lg transition-colors hover:bg-gray-100 cursor-pointer"
                >
                  <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
@@ -1926,9 +1930,34 @@ export default function DashboardOverview() {
                      )}
                      {selectedInvoice.reminders && (
                        <div className="p-3 rounded-lg bg-gray-50">
-                         <div className="flex items-center space-x-2 mb-2">
-                           <Bell className="h-4 w-4 text-green-500" />
-                           <span className="font-medium text-gray-700">Auto Reminders</span>
+                         <div className="flex items-center justify-between mb-2">
+                           <div className="flex items-center space-x-2">
+                             <Bell className="h-4 w-4 text-green-500" />
+                             <span className="font-medium text-gray-700">Auto Reminders</span>
+                           </div>
+                           {selectedInvoice.reminders.enabled && !selectedInvoice.reminders.useSystemDefaults && (() => {
+                             const reminders = selectedInvoice.reminders as any;
+                             const rules = reminders.rules || reminders.customRules || [];
+                             const enabledRules = rules.filter((rule: any) => rule.enabled);
+                             const dueDate = selectedInvoice.dueDate ? new Date(selectedInvoice.dueDate) : null;
+                             
+                             if (dueDate && enabledRules.length > 0) {
+                               return (
+                                 <button
+                                   onClick={() => setShowReminderDates(!showReminderDates)}
+                                   className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                                 >
+                                   <span>{showReminderDates ? 'Hide' : 'View'} Dates</span>
+                                   {showReminderDates ? (
+                                     <ChevronUp className="h-3 w-3" />
+                                   ) : (
+                                     <ChevronDown className="h-3 w-3" />
+                                   )}
+                                 </button>
+                               );
+                             }
+                             return null;
+                           })()}
                          </div>
                          <div className="text-gray-700 space-y-1">
                            {selectedInvoice.reminders.enabled 
@@ -1946,20 +1975,24 @@ export default function DashboardOverview() {
                                   
                                   return (
                                     <div className="space-y-1.5">
-                                      <p className="text-xs font-medium text-gray-500 mb-1">Scheduled Dates:</p>
-                                      {enabledRules.map((rule: any, idx: number) => {
-                                        const reminderDate = new Date(dueDate);
-                                        if (rule.type === 'before') {
-                                          reminderDate.setDate(reminderDate.getDate() - (rule.days || 0));
-                                        } else {
-                                          reminderDate.setDate(reminderDate.getDate() + (rule.days || 0));
-                                        }
-                                        return (
-                                          <p key={idx} className="text-xs">
-                                            {rule.type === 'before' ? 'Before' : 'After'} {rule.days || 0} day{rule.days !== 1 ? 's' : ''}: <span className="font-medium">{reminderDate.toLocaleDateString()}</span>
-                                          </p>
-                                        );
-                                      })}
+                                      {showReminderDates && (
+                                        <>
+                                          <p className="text-xs font-medium text-gray-500 mb-1">Scheduled Dates:</p>
+                                          {enabledRules.map((rule: any, idx: number) => {
+                                            const reminderDate = new Date(dueDate);
+                                            if (rule.type === 'before') {
+                                              reminderDate.setDate(reminderDate.getDate() - (rule.days || 0));
+                                            } else {
+                                              reminderDate.setDate(reminderDate.getDate() + (rule.days || 0));
+                                            }
+                                            return (
+                                              <p key={idx} className="text-xs">
+                                                {rule.type === 'before' ? 'Before' : 'After'} {rule.days || 0} day{rule.days !== 1 ? 's' : ''}: <span className="font-medium">{reminderDate.toLocaleDateString()}</span>
+                                              </p>
+                                            );
+                                          })}
+                                        </>
+                                      )}
                                     </div>
                                   );
                                 })())
