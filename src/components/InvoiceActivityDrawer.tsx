@@ -57,13 +57,19 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
               continue;
             }
             
+            // For overdue events, keep all of them (not just latest) - we want cumulative history
+            if (ev.type === 'overdue' || ev.type === 'late_fee_applied') {
+              // Don't filter overdue events - we want all of them
+              continue; // Skip here, we'll handle them separately below
+            }
+            
             // For other events, keep only the latest one of each type
             if (!eventsByType.has(ev.type) || new Date(ev.created_at) > new Date(eventsByType.get(ev.type).created_at)) {
               eventsByType.set(ev.type, ev);
             }
           }
           
-          // Process unique events
+          // Process unique events (excluding overdue which we handle separately)
           for (const ev of eventsByType.values()) {
             eventTypes.add(ev.type);
             const mapping: Record<string, ActivityItem> = {
@@ -81,6 +87,42 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
               if (!eventMap.has(eventKey)) {
                 eventMap.set(eventKey, mapped);
                 items.push(mapped);
+              }
+            }
+          }
+          
+          // Process overdue events separately (show all, not just latest)
+          const overdueEvents = events.filter((ev: any) => ev.type === 'overdue' || ev.type === 'late_fee_applied');
+          for (const ev of overdueEvents) {
+            if (ev.type === 'overdue') {
+              const days = ev.metadata?.days || 0;
+              if (days > 0) {
+                const overdueItem = {
+                  id: `overdue-${ev.id}`,
+                  type: 'status',
+                  title: `${days} day${days !== 1 ? 's' : ''} overdue`,
+                  at: ev.created_at,
+                  icon: 'overdue' as const
+                };
+                const eventKey = `overdue-${days}-${new Date(ev.created_at).getTime()}`;
+                if (!eventMap.has(eventKey)) {
+                  eventMap.set(eventKey, overdueItem);
+                  items.push(overdueItem);
+                }
+              }
+            } else if (ev.type === 'late_fee_applied') {
+              const amount = ev.metadata?.amount || 0;
+              const lateFeeItem = {
+                id: `latefee-${ev.id}`,
+                type: 'status',
+                title: `Late fee applied: $${amount.toLocaleString()}`,
+                at: ev.created_at,
+                icon: 'overdue' as const
+              };
+              const eventKey = `latefee-${new Date(ev.created_at).getTime()}`;
+              if (!eventMap.has(eventKey)) {
+                eventMap.set(eventKey, lateFeeItem);
+                items.push(lateFeeItem);
               }
             }
           }
@@ -215,7 +257,7 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
           }
         }
 
-        // Derived overdue and late fee status
+        // Create overdue events for each day (cumulative, not replacing)
         try {
           const due = (invoice as any).dueDate || (invoice as any).due_date;
           if (due && invoice.status !== 'paid') {
@@ -224,23 +266,133 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
             const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
             const dueStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
             const diffDays = Math.round((dueStart.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24));
+            
             if (diffDays < 0) {
-              const overdueDays = Math.abs(diffDays);
-              items.push({ id: `overdue-${invoice.id}`, type: 'status', title: `${overdueDays} day${overdueDays !== 1 ? 's' : ''} overdue`, at: today.toISOString(), icon: 'overdue' });
+              const totalOverdueDays = Math.abs(diffDays);
+              
+              // Get existing overdue events from database
+              const { data: existingOverdueEvents } = await supabase
+                .from('invoice_events')
+                .select('*')
+                .eq('invoice_id', invoice.id)
+                .eq('type', 'overdue')
+                .order('created_at', { ascending: true });
+              
+              const existingDays = new Set<number>();
+              if (existingOverdueEvents) {
+                existingOverdueEvents.forEach((ev: any) => {
+                  const days = ev.metadata?.days || parseInt(ev.metadata?.title?.match(/(\d+)/)?.[1] || '0');
+                  if (days > 0) {
+                    existingDays.add(days);
+                  }
+                });
+              }
+              
+              // Create overdue events for each day that doesn't exist yet
+              const eventsToCreate = [];
+              for (let day = 1; day <= totalOverdueDays; day++) {
+                if (!existingDays.has(day)) {
+                  const overdueDate = new Date(dueStart);
+                  overdueDate.setUTCDate(overdueDate.getUTCDate() + day);
+                  // Set time to end of day (23:59:59) for that day
+                  overdueDate.setUTCHours(23, 59, 59, 999);
+                  
+                  eventsToCreate.push({
+                    invoice_id: invoice.id,
+                    type: 'overdue',
+                    metadata: { days: day }
+                  });
+                  
+                  // Add to items immediately for display
+                  items.push({
+                    id: `overdue-${invoice.id}-${day}`,
+                    type: 'status',
+                    title: `${day} day${day !== 1 ? 's' : ''} overdue`,
+                    at: overdueDate.toISOString(),
+                    icon: 'overdue'
+                  });
+                } else {
+                  // Event exists, add it to items from database
+                  if (existingOverdueEvents) {
+                    const existingEvent = existingOverdueEvents.find((ev: any) => {
+                      const evDays = ev.metadata?.days || parseInt(ev.metadata?.title?.match(/(\d+)/)?.[1] || '0');
+                      return evDays === day;
+                    });
+                    if (existingEvent) {
+                      items.push({
+                        id: `overdue-${existingEvent.id}`,
+                        type: 'status',
+                        title: `${day} day${day !== 1 ? 's' : ''} overdue`,
+                        at: existingEvent.created_at,
+                        icon: 'overdue'
+                      });
+                    }
+                  }
+                }
+              }
+              
+              // Insert new overdue events in bulk
+              if (eventsToCreate.length > 0) {
+                try {
+                  await supabase.from('invoice_events').insert(eventsToCreate);
+                } catch (insertError) {
+                  console.error('Error creating overdue events:', insertError);
+                }
+              }
 
+              // Late fee status (only show once when grace period passes)
               const lf = (invoice as any).lateFees || (invoice as any).late_fees;
               if (lf && (lf.enabled || lf?.enabled === true)) {
                 const grace = lf.gracePeriod ?? lf.grace_period ?? 0;
-                if (overdueDays > grace) {
-                  const amount = lf.type === 'percentage' ? (invoice.total * (lf.amount || 0)) / 100 : (lf.amount || 0);
-                  const applied = new Date(dueStart);
-                  applied.setUTCDate(applied.getUTCDate() + (grace > 0 ? grace : 0) + 1);
-                  items.push({ id: `latefee-${invoice.id}`, type: 'status', title: `Late fee applied: $${amount.toLocaleString()}` , at: applied.toISOString(), icon: 'overdue' });
+                if (totalOverdueDays > grace) {
+                  // Check if late fee event already exists
+                  const { data: lateFeeEvents } = await supabase
+                    .from('invoice_events')
+                    .select('*')
+                    .eq('invoice_id', invoice.id)
+                    .eq('type', 'late_fee_applied')
+                    .limit(1);
+                  
+                  if (!lateFeeEvents || lateFeeEvents.length === 0) {
+                    const amount = lf.type === 'percentage' ? (invoice.total * (lf.amount || 0)) / 100 : (lf.amount || 0);
+                    const applied = new Date(dueStart);
+                    applied.setUTCDate(applied.getUTCDate() + (grace > 0 ? grace : 0) + 1);
+                    applied.setUTCHours(23, 59, 59, 999);
+                    
+                    // Create late fee event
+                    try {
+                      await supabase.from('invoice_events').insert({
+                        invoice_id: invoice.id,
+                        type: 'late_fee_applied',
+                        metadata: { amount }
+                      });
+                    } catch {}
+                    
+                    items.push({
+                      id: `latefee-${invoice.id}`,
+                      type: 'status',
+                      title: `Late fee applied: $${amount.toLocaleString()}`,
+                      at: applied.toISOString(),
+                      icon: 'overdue'
+                    });
+                  } else {
+                    // Use existing late fee event
+                    const lateFeeEvent = lateFeeEvents[0];
+                    items.push({
+                      id: `latefee-${lateFeeEvent.id}`,
+                      type: 'status',
+                      title: `Late fee applied: $${(lateFeeEvent.metadata?.amount || 0).toLocaleString()}`,
+                      at: lateFeeEvent.created_at,
+                      icon: 'overdue'
+                    });
+                  }
                 }
               }
             }
           }
-        } catch {}
+        } catch (error) {
+          console.error('Error processing overdue events:', error);
+        }
 
         // Final robust deduplication: remove items with same title and timestamp within 5 seconds
         // Also check by ID to prevent exact duplicates
