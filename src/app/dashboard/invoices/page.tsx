@@ -1336,9 +1336,12 @@ function InvoicesContent(): React.JSX.Element {
       {/* View Invoice Modal */}
       {showViewInvoice && selectedInvoice && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className="rounded-xl sm:rounded-2xl p-2 sm:p-4 max-w-6xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scroll-smooth custom-scrollbar bg-white border-gray-200">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h2 className="text-base sm:text-xl font-bold" style={{color: '#1f2937'}}>Invoice Details</h2>
+          <div className="rounded-xl sm:rounded-2xl p-2 sm:p-4 max-w-6xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-hidden bg-white border-gray-200 flex flex-col">
+            <div className="flex items-center justify-between mb-3 sm:mb-4 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <h2 className="text-base sm:text-xl font-bold" style={{color: '#1f2937'}}>Invoice Details</h2>
+                <span className="text-xs text-gray-400 font-normal">(View only)</span>
+              </div>
               <button
                 onClick={() => setShowViewInvoice(false)}
                 className="p-1 sm:p-2 rounded-lg transition-colors hover:bg-gray-100 cursor-pointer"
@@ -1346,6 +1349,7 @@ function InvoicesContent(): React.JSX.Element {
                 <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
               </button>
             </div>
+            <div className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar">
             
             {/* Responsive Invoice View */}
             <div className="w-full bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -1511,7 +1515,7 @@ function InvoicesContent(): React.JSX.Element {
                         </div>
                         <p className={'text-gray-600'}>
                           {selectedInvoice.lateFees.enabled 
-                            ? `${selectedInvoice.lateFees.type === 'fixed' ? '$' : ''}${selectedInvoice.lateFees.amount}${selectedInvoice.lateFees.type === 'percentage' ? '%' : ''} after ${selectedInvoice.lateFees.gracePeriod} days`
+                            ? `${selectedInvoice.lateFees.type === 'fixed' ? '$' : ''}${selectedInvoice.lateFees.amount}${selectedInvoice.lateFees.type === 'percentage' ? '%' : ''} after ${selectedInvoice.lateFees.gracePeriod ?? 0} days`
                             : 'Not configured'
                           }
                         </p>
@@ -1523,24 +1527,48 @@ function InvoicesContent(): React.JSX.Element {
                           <Bell className="h-4 w-4 text-green-500" />
                           <span className={`font-medium ${'text-gray-600'}`}>Auto Reminders</span>
                         </div>
-                        <p className={'text-gray-600'}>
+                        <div className={'text-gray-600 space-y-1'}>
                           {selectedInvoice.reminders.enabled 
                             ? (selectedInvoice.reminders.useSystemDefaults 
-                              ? 'Smart System' 
+                              ? <p>Smart System</p>
                               : (() => {
                                   const reminders = selectedInvoice.reminders as any;
                                   const rules = reminders.rules || reminders.customRules || [];
                                   const enabledRules = rules.filter((rule: any) => rule.enabled);
-                                  return `${enabledRules.length} Custom Rule${enabledRules.length !== 1 ? 's' : ''}`;
+                                  const dueDate = selectedInvoice.dueDate ? new Date(selectedInvoice.dueDate) : null;
+                                  
+                                  if (!dueDate || enabledRules.length === 0) {
+                                    return <p>{enabledRules.length} Custom Rule{enabledRules.length !== 1 ? 's' : ''}</p>;
+                                  }
+                                  
+                                  return (
+                                    <div className="space-y-1.5">
+                                      <p className="text-xs font-medium text-gray-500 mb-1">Scheduled Dates:</p>
+                                      {enabledRules.map((rule: any, idx: number) => {
+                                        const reminderDate = new Date(dueDate);
+                                        if (rule.type === 'before') {
+                                          reminderDate.setDate(reminderDate.getDate() - (rule.days || 0));
+                                        } else {
+                                          reminderDate.setDate(reminderDate.getDate() + (rule.days || 0));
+                                        }
+                                        return (
+                                          <p key={idx} className="text-xs">
+                                            {rule.type === 'before' ? 'Before' : 'After'} {rule.days || 0} day{rule.days !== 1 ? 's' : ''}: <span className="font-medium">{reminderDate.toLocaleDateString()}</span>
+                                          </p>
+                                        );
+                                      })}
+                                    </div>
+                                  );
                                 })())
-                            : 'Not configured'
+                            : <p>Not configured</p>
                           }
-                        </p>
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
               )}
+            </div>
             </div>
           </div>
         </div>
