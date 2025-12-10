@@ -21,8 +21,25 @@ export default function DashboardLayout({
       setIsChecking(true);
       
       try {
-        // Get session first
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // First, try to refresh the session if needed
+        let { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        // If no session, try refreshing token
+        if (!session && !sessionError) {
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          if (!refreshError && refreshData.session) {
+            session = refreshData.session;
+            sessionError = null;
+          }
+        }
+
+        // If still no session after refresh attempt, wait a bit for auto-refresh
+        if (!session && !sessionError) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const retryResult = await supabase.auth.getSession();
+          session = retryResult.data.session;
+          sessionError = retryResult.error;
+        }
         
         if (sessionError || !session) {
           router.replace('/auth');

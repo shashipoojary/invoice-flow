@@ -15,6 +15,7 @@ import ConfirmationModal from '@/components/ConfirmationModal';
 import { FreelancerSettings, Client } from '@/types';
 import { optimizeLogo, validateLogoFile } from '@/lib/logo-optimizer';
 import dynamic from 'next/dynamic';
+import { supabase } from '@/lib/supabase';
 
 // Lazy load heavy components
 const QuickInvoiceModal = dynamic(() => import('@/components/QuickInvoiceModal'), {
@@ -333,10 +334,35 @@ export default function SettingsPage() {
     );
   }
 
+  // Handle session expiration - wait for potential refresh from visibility handlers
+  useEffect(() => {
+    const handleSessionCheck = async () => {
+      if (!user && !loading) {
+        // Wait a moment for visibility/focus handlers to refresh session
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Check one more time before redirecting
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          window.location.href = '/auth?message=session_expired';
+        }
+      }
+    };
+
+    if (!user && !loading) {
+      handleSessionCheck();
+    }
+  }, [user, loading]);
+
   if (!user && !loading) {
-    // Redirect to auth page with session expired feedback
-    window.location.href = '/auth?message=session_expired';
-    return null;
+    // Show loading while checking session (layout will handle redirect)
+    return (
+      <div className="min-h-screen transition-colors duration-200 bg-white">
+        <div className="flex items-center justify-center h-screen">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
+        </div>
+      </div>
+    );
   }
 
   return (
