@@ -4,6 +4,7 @@ import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/auth-middleware';
 import { generateTemplatePDFBlob } from '@/lib/template-pdf-generator';
 import { getEmailTemplate } from '@/lib/email-templates';
+import { getBaseUrlFromRequest } from '@/lib/get-base-url';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -417,15 +418,16 @@ export async function POST(request: NextRequest) {
     // Generate template-specific email using the new email templates
     // Properly encode the public token to handle special characters like + and =
     const encodedToken = encodeURIComponent(invoice.public_token);
-    // Get base URL - prioritize NEXT_PUBLIC_APP_URL, then VERCEL_URL, fallback to request headers
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
-                    (request.headers.get('x-forwarded-host') ? 
-                      `${request.headers.get('x-forwarded-proto') || 'https'}://${request.headers.get('x-forwarded-host')}` : 
-                      ''));
+    // Get base URL using utility function that handles all fallbacks properly
+    const baseUrl = getBaseUrlFromRequest(request);
+    
     if (!baseUrl) {
       console.error('Base URL not configured. Please set NEXT_PUBLIC_APP_URL environment variable.');
+      return NextResponse.json({ 
+        error: 'Base URL not configured. Please set NEXT_PUBLIC_APP_URL environment variable.' 
+      }, { status: 500 });
     }
+    
     const publicUrl = `${baseUrl}/invoice/${encodedToken}`;
     const emailHtml = getEmailTemplate(template, invoice, businessSettings, publicUrl);
 
