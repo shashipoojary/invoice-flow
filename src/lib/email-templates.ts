@@ -1143,7 +1143,7 @@ export function generateModernEmailTemplate(
                 <div class="invoice-number" style="color: #000000 !important; font-size: 10px; font-weight: 700; margin: 0 0 8px 0;">#${invoice.invoice_number}</div>
                 <div class="invoice-date-label" style="color: #808080 !important; font-size: 8px; margin: 0 0 4px 0;">Issue: ${formatDate(invoice.issue_date)}</div>
                 <div class="invoice-due-label" style="color: #808080 !important; font-size: 8px; margin: 8px 0 0 0;">Due: ${formatDate(invoice.due_date)}</div>
-                <div class="amount" style="color: #FF6B35 !important; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin: 16px 0 0 0;"><!--[if mso]><font color="#FF6B35"><![endif]-->${formatCurrency(invoice.total)}<!--[if mso]></font><![endif]--></div>
+                <div class="amount" style="color: #FF6B35 !important; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin: 16px 0 0 0;">${formatCurrency(invoice.total)}</div>
               </div>
             </div>
           </div>
@@ -1688,7 +1688,7 @@ export function generateCreativeEmailTemplate(
                 <div class="invoice-number" style="color: #000000 !important; font-size: 10px; font-weight: 700; margin: 0 0 8px 0;">#${invoice.invoice_number}</div>
                 <div class="invoice-date-label" style="color: #808080 !important; font-size: 8px; margin: 0 0 4px 0;">Issue: ${formatDate(invoice.issue_date)}</div>
                 <div class="invoice-due-label" style="color: #808080 !important; font-size: 8px; margin: 8px 0 0 0;">Due: ${formatDate(invoice.due_date)}</div>
-                <div class="amount" style="color: #FF6B35 !important; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin: 16px 0 0 0;"><!--[if mso]><font color="#FF6B35"><![endif]-->${formatCurrency(invoice.total)}<!--[if mso]></font><![endif]--></div>
+                <div class="amount" style="color: #FF6B35 !important; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin: 16px 0 0 0;">${formatCurrency(invoice.total)}</div>
               </div>
             </div>
           </div>
