@@ -11,7 +11,7 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   } : { r: 0, g: 0, b: 0 };
 }
 
-// Helper function to draw multi-line text and return the final Y position
+// Helper function to draw multi-line address text
 function drawMultiLineText(
   page: PDFPage,
   text: string,
@@ -19,29 +19,25 @@ function drawMultiLineText(
   startY: number,
   fontSize: number,
   font: PDFFont,
-  color: { r: number; g: number; b: number },
+  color: ReturnType<typeof rgb>,
   lineHeight: number = 12
 ): number {
-  if (!text) return startY;
-  
   // Split by newlines (handle both \n and \r\n)
-  const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
-  
+  const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
   let currentY = startY;
   
   for (const line of lines) {
-    if (line.trim()) {
-      page.drawText(line.trim(), {
-        x,
-        y: currentY,
-        size: fontSize,
-        font,
-        color: rgb(color.r, color.g, color.b),
-      });
-      currentY -= lineHeight;
-    }
+    page.drawText(line.trim(), {
+      x: x,
+      y: currentY,
+      size: fontSize,
+      font: font,
+      color: color,
+    });
+    currentY -= lineHeight;
   }
   
+  // Return the final Y position after drawing all lines
   return currentY;
 }
 
@@ -211,13 +207,7 @@ async function generateTemplate1DetailedPDF(
   });
 
   if (businessSettings.address) {
-    page.drawText(businessSettings.address, {
-      x: 110,
-      y: height - 115,
-      size: 9,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
+    drawMultiLineText(page, businessSettings.address, 110, height - 115, 9, font, rgb(0, 0, 0), 12);
   }
 
   if (businessSettings.businessPhone) {
@@ -306,13 +296,7 @@ async function generateTemplate1DetailedPDF(
 
   if (invoice.client.address) {
     billToY -= 15;
-    page.drawText(invoice.client.address, {
-      x: 50,
-      y: billToY,
-      size: 9,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
+    billToY = drawMultiLineText(page, invoice.client.address, 50, billToY, 9, font, rgb(0, 0, 0), 12);
   }
 
   // Services table header
@@ -629,13 +613,7 @@ async function generateTemplate2PDF(
   });
 
   if (businessSettings.address) {
-    page.drawText(businessSettings.address, {
-      x: 100,
-      y: height - 135,
-      size: 9,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
+    drawMultiLineText(page, businessSettings.address, 100, height - 135, 9, font, rgb(0, 0, 0), 12);
   }
 
   if (businessSettings.businessPhone) {
@@ -724,13 +702,7 @@ async function generateTemplate2PDF(
 
   if (invoice.client.address) {
     billToY -= 15;
-    page.drawText(invoice.client.address, {
-      x: 50,
-      y: billToY,
-      size: 9,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
+    billToY = drawMultiLineText(page, invoice.client.address, 50, billToY, 9, font, rgb(0, 0, 0), 12);
   }
 
   // Services table header
@@ -970,13 +942,7 @@ async function generateTemplate3PDF(
   });
 
   if (businessSettings.address) {
-    page.drawText(businessSettings.address, {
-      x: 50,
-      y: height - 75,
-      size: 9,
-      font: font,
-      color: rgb(0.3, 0.3, 0.3),
-    });
+    drawMultiLineText(page, businessSettings.address, 50, height - 75, 9, font, rgb(0.3, 0.3, 0.3), 12);
   }
 
   if (businessSettings.businessPhone) {
@@ -1104,13 +1070,7 @@ async function generateTemplate3PDF(
   }
 
   if (invoice.client.address) {
-    page.drawText(invoice.client.address, {
-      x: 60,
-      y: billToY - 65,
-      size: 9,
-      font: font,
-      color: rgb(0.4, 0.4, 0.4),
-    });
+    drawMultiLineText(page, invoice.client.address, 60, billToY - 65, 9, font, rgb(0.4, 0.4, 0.4), 12);
   }
 
   // Creative services table with artistic header
@@ -1418,36 +1378,24 @@ async function generateModernTemplatePDF(
     color: rgb(1, 1, 1), // White text on purple background
   });
 
-  // Draw multi-line address and get final Y position
-  let addressY = height - 75;
   if (businessSettings.address) {
-    addressY = drawMultiLineText(
-      page,
-      businessSettings.address,
-      60,
-      addressY,
-      8,
-      font,
-      { r: 1, g: 1, b: 1 }, // White text on purple background
-      10 // Line height
-    );
+    drawMultiLineText(page, businessSettings.address, 60, height - 75, 8, font, rgb(1, 1, 1), 11);
   }
 
   if (businessSettings.businessPhone) {
     page.drawText(businessSettings.businessPhone, {
       x: 60,
-      y: addressY - 5, // Add spacing after address
+      y: height - 90, // Moved down slightly
       size: 8,
       font: font,
       color: rgb(1, 1, 1), // White text on purple background
     });
-    addressY = addressY - 15;
   }
 
   if (businessSettings.businessEmail) {
     page.drawText(businessSettings.businessEmail, {
       x: 60,
-      y: addressY - 5, // Add spacing after phone
+      y: height - 105, // Moved down slightly
       size: 8,
       font: font,
       color: rgb(1, 1, 1), // White text on purple background
@@ -1509,7 +1457,11 @@ async function generateModernTemplatePDF(
   if (invoice.client.email) contentHeight += 15;
   if (invoice.client.phone) contentHeight += 15;
   if (invoice.client.company) contentHeight += 15;
-  if (invoice.client.address) contentHeight += 15; // Address includes postal code
+  if (invoice.client.address) {
+    // Count lines in address (handle both \n and \r\n)
+    const addressLines = invoice.client.address.split(/\r?\n/).filter(line => line.trim().length > 0);
+    contentHeight += Math.max(15, addressLines.length * 12); // At least 15px, or 12px per line
+  }
   contentHeight = Math.max(contentHeight, 110); // Added more bottom padding to prevent touching
   
   page.drawRectangle({
@@ -1576,15 +1528,7 @@ async function generateModernTemplatePDF(
 
   if (invoice.client.address) {
     modernCurrentY -= 15;
-    // Remove newlines and replace with spaces to keep address on one line
-    const addressText = invoice.client.address.replace(/\n/g, ', ').replace(/\r/g, '');
-    page.drawText(addressText, {
-      x: 60,
-      y: modernCurrentY,
-      size: 9,
-      font: font,
-      color: rgb(0.4, 0.4, 0.4),
-    });
+    modernCurrentY = drawMultiLineText(page, invoice.client.address, 60, modernCurrentY, 9, font, rgb(0.4, 0.4, 0.4), 12);
   }
 
   // Modern services table with geometric header
@@ -1928,36 +1872,24 @@ async function generateSimpleCleanTemplatePDF(
     color: rgb(1, 1, 1),
   });
 
-  // Draw multi-line address and get final Y position
-  let addressY = height - 75;
   if (businessSettings.address) {
-    addressY = drawMultiLineText(
-      page,
-      businessSettings.address,
-      50,
-      addressY,
-      8,
-      font,
-      { r: 1, g: 1, b: 1 }, // White text
-      10 // Line height
-    );
+    drawMultiLineText(page, businessSettings.address, 50, height - 75, 8, font, rgb(1, 1, 1), 11);
   }
 
   if (businessSettings.businessPhone) {
     page.drawText(businessSettings.businessPhone, {
       x: 50,
-      y: addressY - 5, // Add spacing after address
+      y: height - 90,
       size: 8,
       font: font,
       color: rgb(1, 1, 1),
     });
-    addressY = addressY - 15;
   }
 
   if (businessSettings.businessEmail) {
     page.drawText(businessSettings.businessEmail, {
       x: 50,
-      y: addressY - 5, // Add spacing after phone
+      y: height - 105,
       size: 8,
       font: font,
       color: rgb(1, 1, 1),
@@ -2060,7 +1992,11 @@ async function generateSimpleCleanTemplatePDF(
   if (invoice.client.email) contentHeight += 15;
   if (invoice.client.phone) contentHeight += 15;
   if (invoice.client.company) contentHeight += 15;
-  if (invoice.client.address) contentHeight += 15;
+  if (invoice.client.address) {
+    // Count lines in address (handle both \n and \r\n)
+    const addressLines = invoice.client.address.split(/\r?\n/).filter(line => line.trim().length > 0);
+    contentHeight += Math.max(15, addressLines.length * 12); // At least 15px, or 12px per line
+  }
   contentHeight = Math.max(contentHeight, 110);
   
   // Clean section - no borders, no background, just text
@@ -2120,14 +2056,7 @@ async function generateSimpleCleanTemplatePDF(
 
   if (invoice.client.address) {
     creativeCurrentY -= 15;
-    const addressText = invoice.client.address.replace(/\n/g, ', ').replace(/\r/g, '');
-    page.drawText(addressText, {
-      x: 60,
-      y: creativeCurrentY,
-      size: 9,
-      font: font,
-      color: rgb(0.4, 0.4, 0.4),
-    });
+    creativeCurrentY = drawMultiLineText(page, invoice.client.address, 60, creativeCurrentY, 9, font, rgb(0.4, 0.4, 0.4), 12);
   }
 
   // Creative table: Modern colored header + Minimal clean rows
@@ -2506,36 +2435,24 @@ async function generateMinimalTemplatePDF(
     color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b), // Primary color
   });
 
-  // Draw multi-line address and get final Y position
-  let addressY = height - 68;
   if (businessSettings.address) {
-    addressY = drawMultiLineText(
-      page,
-      businessSettings.address,
-      50,
-      addressY,
-      9,
-      font,
-      { r: 0.5, g: 0.5, b: 0.5 }, // Gray text
-      11 // Line height
-    );
+    drawMultiLineText(page, businessSettings.address, 50, height - 68, 9, font, rgb(0.5, 0.5, 0.5), 12);
   }
 
   if (businessSettings.businessPhone) {
     page.drawText(businessSettings.businessPhone, {
       x: 50,
-      y: addressY - 5, // Add spacing after address
+      y: height - 80,
       size: 9,
       font: font,
       color: rgb(0.5, 0.5, 0.5),
     });
-    addressY = addressY - 12;
   }
 
   if (businessSettings.businessEmail) {
     page.drawText(businessSettings.businessEmail, {
       x: 50,
-      y: addressY - 5, // Add spacing after phone
+      y: height - 92,
       size: 9,
       font: font,
       color: rgb(0.5, 0.5, 0.5),
@@ -2647,14 +2564,7 @@ async function generateMinimalTemplatePDF(
 
   if (invoice.client.address) {
     minimalCurrentY -= 14;
-    const addressText = invoice.client.address.replace(/\n/g, ', ').replace(/\r/g, '');
-    page.drawText(addressText, {
-      x: 50,
-      y: minimalCurrentY,
-      size: 9,
-      font: font,
-      color: rgb(0.4, 0.4, 0.4),
-    });
+    minimalCurrentY = drawMultiLineText(page, invoice.client.address, 50, minimalCurrentY, 9, font, rgb(0.4, 0.4, 0.4), 12);
   }
 
   // Minimal table - no colored header, just clean text and lines
