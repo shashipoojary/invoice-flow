@@ -1233,12 +1233,14 @@ export default function DashboardOverview() {
                     <div className="flex-1 min-w-0 pr-3 flex flex-col justify-between h-full">
                       <div className="space-y-1.5">
                         <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Revenue</p>
-                        <div className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-emerald-600 text-left break-words">
-                          {isLoadingStats ? (
-                            <div className="animate-pulse bg-gray-300 h-6 sm:h-8 w-20 sm:w-24 rounded"></div>
-                          ) : (
-                            <span className="break-words">{formatMoney(totalRevenue)}</span>
-                          )}
+                        <div>
+                          <div className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-emerald-600 text-left break-words" style={{ display: 'block' }}>
+                            {isLoadingStats ? (
+                              <div className="animate-pulse bg-gray-300 h-6 sm:h-8 w-20 sm:w-24 rounded"></div>
+                            ) : (
+                              <div>{formatMoney(totalRevenue)}</div>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center space-x-1.5 justify-start leading-tight">
                           <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-emerald-500 flex-shrink-0" />
@@ -1326,12 +1328,14 @@ export default function DashboardOverview() {
                     <div className="flex-1 min-w-0 pr-3 flex flex-col justify-between h-full">
                       <div className="space-y-1.5">
                         <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Overdue</p>
-                        <div className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-red-600 text-left">
-                          {isLoadingStats ? (
-                            <div className="animate-pulse bg-gray-300 h-6 sm:h-8 w-8 sm:w-10 rounded"></div>
-                          ) : (
-                            overdueCount
-                          )}
+                        <div>
+                          <div className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-red-600 text-left" style={{ display: 'block' }}>
+                            {isLoadingStats ? (
+                              <div className="animate-pulse bg-gray-300 h-6 sm:h-8 w-8 sm:w-10 rounded"></div>
+                            ) : (
+                              <div>{overdueCount}</div>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center space-x-1.5 justify-start leading-tight">
                           <AlertCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-red-500 flex-shrink-0" />
@@ -1368,12 +1372,14 @@ export default function DashboardOverview() {
                     <div className="flex-1 min-w-0 pr-3 flex flex-col justify-between h-full">
                       <div className="space-y-1.5">
                         <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Clients</p>
-                        <div className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-600 text-left">
-                          {isLoadingStats ? (
-                            <div className="animate-pulse bg-gray-300 h-6 sm:h-8 w-8 sm:w-10 rounded"></div>
-                          ) : (
-                            totalClients
-                          )}
+                        <div>
+                          <div className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-600 text-left" style={{ display: 'block' }}>
+                            {isLoadingStats ? (
+                              <div className="animate-pulse bg-gray-300 h-6 sm:h-8 w-8 sm:w-10 rounded"></div>
+                            ) : (
+                              <div>{totalClients}</div>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center space-x-1.5 justify-start leading-tight">
                           <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-indigo-500 flex-shrink-0" />
