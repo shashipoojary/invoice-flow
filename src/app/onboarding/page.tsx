@@ -538,6 +538,9 @@ export default function OnboardingPage() {
                         className="w-full pl-12 pr-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all resize-none"
                       />
                     </div>
+                    <p className="mt-1.5 text-xs text-gray-500">
+                      Don't include email or phone number here - we have dedicated fields for those below.
+                    </p>
                   </div>
 
                   <div>

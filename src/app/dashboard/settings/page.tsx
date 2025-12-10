@@ -98,6 +98,9 @@ const BusinessInfoSection = memo(({ settings, updateSettings, isLoadingSettings 
           className="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors resize-none border-gray-300 bg-white text-black"
           placeholder="123 Business St, City, State 12345"
         />
+        <p className="mt-1.5 text-xs text-gray-500">
+          Don't include email or phone number here - we have dedicated fields for those below.
+        </p>
       </div>
     </div>
   );
@@ -461,6 +464,9 @@ export default function SettingsPage() {
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors resize-none border-gray-300 bg-white text-black`}
                       placeholder="123 Business St, City, State 12345"
                     />
+                    <p className="mt-1.5 text-xs text-gray-500">
+                      Don't include email or phone number here - we have dedicated fields for those below.
+                    </p>
                   </div>
 
                   <div className="md:col-span-2">

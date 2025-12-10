@@ -11,34 +11,73 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   } : { r: 0, g: 0, b: 0 };
 }
 
-// Helper function to draw multi-line address text
-function drawMultiLineText(
-  page: PDFPage,
-  text: string,
-  x: number,
-  startY: number,
-  fontSize: number,
-  font: PDFFont,
-  color: ReturnType<typeof rgb>,
-  lineHeight: number = 12
-): number {
-  // Split by newlines (handle both \n and \r\n)
-  const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
-  let currentY = startY;
+/**
+ * Formats a multi-line address into 2-3 longer lines for better PDF display
+ * @param address - The address string that may contain newlines
+ * @returns Array of formatted address lines (2-3 lines)
+ */
+function formatAddressForPDF(address: string): string[] {
+  if (!address) return [];
   
-  for (const line of lines) {
-    page.drawText(line.trim(), {
-      x: x,
-      y: currentY,
-      size: fontSize,
-      font: font,
-      color: color,
-    });
-    currentY -= lineHeight;
+  // Split by newlines and clean up
+  const lines = address
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
+  
+  if (lines.length === 0) return [];
+  
+  // If already 2-3 lines and reasonable length, return as-is
+  if (lines.length <= 3) {
+    // Check if lines are too short - combine them
+    const totalLength = lines.join(' ').length;
+    if (totalLength < 60 && lines.length > 1) {
+      // Combine into 2 lines
+      const midPoint = Math.ceil(lines.length / 2);
+      return [
+        lines.slice(0, midPoint).join(', '),
+        lines.slice(midPoint).join(', ')
+      ];
+    }
+    return lines;
   }
   
-  // Return the final Y position after drawing all lines
-  return currentY;
+  // If more than 3 lines, combine intelligently into 2-3 lines
+  // Strategy: Combine shorter lines together, keep longer lines separate
+  const formattedLines: string[] = [];
+  let currentLine = '';
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    if (currentLine.length === 0) {
+      currentLine = line;
+    } else {
+      const combined = currentLine + ', ' + line;
+      // If combined line is reasonable length (less than ~70 chars), combine
+      if (combined.length < 70 && formattedLines.length < 2) {
+        currentLine = combined;
+      } else {
+        // Save current line and start new one
+        formattedLines.push(currentLine);
+        currentLine = line;
+      }
+    }
+  }
+  
+  // Add the last line
+  if (currentLine.length > 0) {
+    formattedLines.push(currentLine);
+  }
+  
+  // Ensure we have at most 3 lines
+  if (formattedLines.length > 3) {
+    // Combine last two lines if we have more than 3
+    const lastTwo = formattedLines.slice(-2).join(', ');
+    return [...formattedLines.slice(0, -2), lastTwo];
+  }
+  
+  return formattedLines;
 }
 
 export async function generateDetailedPDF(
@@ -207,27 +246,38 @@ async function generateTemplate1DetailedPDF(
   });
 
   if (businessSettings.address) {
-    drawMultiLineText(page, businessSettings.address, 110, height - 115, 9, font, rgb(0, 0, 0), 12);
-  }
-
-  if (businessSettings.businessPhone) {
-    page.drawText(businessSettings.businessPhone, {
-      x: 110,
-      y: height - 130,
-      size: 9,
-      font: font,
-      color: rgb(0, 0, 0),
+    const addressLines = formatAddressForPDF(businessSettings.address);
+    let addressY = height - 115;
+    addressLines.forEach((line, index) => {
+      page.drawText(line, {
+        x: 110,
+        y: addressY - (index * 12), // 12px spacing between lines
+        size: 9,
+        font: font,
+        color: rgb(0, 0, 0),
+      });
     });
-  }
+    // Adjust phone and email position based on number of address lines
+    const phoneYOffset = addressLines.length > 1 ? addressLines.length * 12 : 15;
+    if (businessSettings.businessPhone) {
+      page.drawText(businessSettings.businessPhone, {
+        x: 110,
+        y: height - 115 - phoneYOffset,
+        size: 9,
+        font: font,
+        color: rgb(0, 0, 0),
+      });
+    }
 
-  if (businessSettings.businessEmail) {
-    page.drawText(businessSettings.businessEmail, {
-      x: 110,
-      y: height - 145,
-      size: 9,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
+    if (businessSettings.businessEmail) {
+      page.drawText(businessSettings.businessEmail, {
+        x: 110,
+        y: height - 115 - phoneYOffset - 15,
+        size: 9,
+        font: font,
+        color: rgb(0, 0, 0),
+      });
+    }
   }
 
   // Invoice details
@@ -296,7 +346,13 @@ async function generateTemplate1DetailedPDF(
 
   if (invoice.client.address) {
     billToY -= 15;
-    billToY = drawMultiLineText(page, invoice.client.address, 50, billToY, 9, font, rgb(0, 0, 0), 12);
+    page.drawText(invoice.client.address, {
+      x: 50,
+      y: billToY,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
   }
 
   // Services table header
@@ -613,27 +669,38 @@ async function generateTemplate2PDF(
   });
 
   if (businessSettings.address) {
-    drawMultiLineText(page, businessSettings.address, 100, height - 135, 9, font, rgb(0, 0, 0), 12);
-  }
-
-  if (businessSettings.businessPhone) {
-    page.drawText(businessSettings.businessPhone, {
-      x: 100,
-      y: height - 150,
-      size: 9,
-      font: font,
-      color: rgb(0, 0, 0),
+    const addressLines = formatAddressForPDF(businessSettings.address);
+    let addressY = height - 135;
+    addressLines.forEach((line, index) => {
+      page.drawText(line, {
+        x: 100,
+        y: addressY - (index * 12),
+        size: 9,
+        font: font,
+        color: rgb(0, 0, 0),
+      });
     });
-  }
+    // Adjust phone and email position based on number of address lines
+    const phoneYOffset = addressLines.length > 1 ? addressLines.length * 12 : 15;
+    if (businessSettings.businessPhone) {
+      page.drawText(businessSettings.businessPhone, {
+        x: 100,
+        y: height - 135 - phoneYOffset,
+        size: 9,
+        font: font,
+        color: rgb(0, 0, 0),
+      });
+    }
 
-  if (businessSettings.businessEmail) {
-    page.drawText(businessSettings.businessEmail, {
-      x: 100,
-      y: height - 165,
-      size: 9,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
+    if (businessSettings.businessEmail) {
+      page.drawText(businessSettings.businessEmail, {
+        x: 100,
+        y: height - 135 - phoneYOffset - 15,
+        size: 9,
+        font: font,
+        color: rgb(0, 0, 0),
+      });
+    }
   }
 
   // Invoice details
@@ -702,7 +769,13 @@ async function generateTemplate2PDF(
 
   if (invoice.client.address) {
     billToY -= 15;
-    billToY = drawMultiLineText(page, invoice.client.address, 50, billToY, 9, font, rgb(0, 0, 0), 12);
+    page.drawText(invoice.client.address, {
+      x: 50,
+      y: billToY,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
   }
 
   // Services table header
@@ -942,27 +1015,38 @@ async function generateTemplate3PDF(
   });
 
   if (businessSettings.address) {
-    drawMultiLineText(page, businessSettings.address, 50, height - 75, 9, font, rgb(0.3, 0.3, 0.3), 12);
-  }
-
-  if (businessSettings.businessPhone) {
-    page.drawText(businessSettings.businessPhone, {
-      x: 50,
-      y: height - 90,
-      size: 9,
-      font: font,
-      color: rgb(0.3, 0.3, 0.3),
+    const addressLines = formatAddressForPDF(businessSettings.address);
+    let addressY = height - 75;
+    addressLines.forEach((line, index) => {
+      page.drawText(line, {
+        x: 50,
+        y: addressY - (index * 12),
+        size: 9,
+        font: font,
+        color: rgb(0.3, 0.3, 0.3),
+      });
     });
-  }
+    // Adjust phone and email position based on number of address lines
+    const phoneYOffset = addressLines.length > 1 ? addressLines.length * 12 : 15;
+    if (businessSettings.businessPhone) {
+      page.drawText(businessSettings.businessPhone, {
+        x: 50,
+        y: height - 75 - phoneYOffset,
+        size: 9,
+        font: font,
+        color: rgb(0.3, 0.3, 0.3),
+      });
+    }
 
-  if (businessSettings.businessEmail) {
-    page.drawText(businessSettings.businessEmail, {
-      x: 50,
-      y: height - 105,
-      size: 9,
-      font: font,
-      color: rgb(0.3, 0.3, 0.3),
-    });
+    if (businessSettings.businessEmail) {
+      page.drawText(businessSettings.businessEmail, {
+        x: 50,
+        y: height - 75 - phoneYOffset - 15,
+        size: 9,
+        font: font,
+        color: rgb(0.3, 0.3, 0.3),
+      });
+    }
   }
 
   // Creative invoice details section with artistic elements
@@ -1070,7 +1154,13 @@ async function generateTemplate3PDF(
   }
 
   if (invoice.client.address) {
-    drawMultiLineText(page, invoice.client.address, 60, billToY - 65, 9, font, rgb(0.4, 0.4, 0.4), 12);
+    page.drawText(invoice.client.address, {
+      x: 60,
+      y: billToY - 65,
+      size: 9,
+      font: font,
+      color: rgb(0.4, 0.4, 0.4),
+    });
   }
 
   // Creative services table with artistic header
@@ -1379,27 +1469,38 @@ async function generateModernTemplatePDF(
   });
 
   if (businessSettings.address) {
-    drawMultiLineText(page, businessSettings.address, 60, height - 75, 8, font, rgb(1, 1, 1), 11);
-  }
-
-  if (businessSettings.businessPhone) {
-    page.drawText(businessSettings.businessPhone, {
-      x: 60,
-      y: height - 90, // Moved down slightly
-      size: 8,
-      font: font,
-      color: rgb(1, 1, 1), // White text on purple background
+    const addressLines = formatAddressForPDF(businessSettings.address);
+    let addressY = height - 75;
+    addressLines.forEach((line, index) => {
+      page.drawText(line, {
+        x: 60,
+        y: addressY - (index * 10), // Slightly tighter spacing for modern template
+        size: 8,
+        font: font,
+        color: rgb(1, 1, 1), // White text on purple background
+      });
     });
-  }
+    // Adjust phone and email position based on number of address lines
+    const phoneYOffset = addressLines.length > 1 ? addressLines.length * 10 : 15;
+    if (businessSettings.businessPhone) {
+      page.drawText(businessSettings.businessPhone, {
+        x: 60,
+        y: height - 75 - phoneYOffset,
+        size: 8,
+        font: font,
+        color: rgb(1, 1, 1), // White text on purple background
+      });
+    }
 
-  if (businessSettings.businessEmail) {
-    page.drawText(businessSettings.businessEmail, {
-      x: 60,
-      y: height - 105, // Moved down slightly
-      size: 8,
-      font: font,
-      color: rgb(1, 1, 1), // White text on purple background
-    });
+    if (businessSettings.businessEmail) {
+      page.drawText(businessSettings.businessEmail, {
+        x: 60,
+        y: height - 75 - phoneYOffset - 10,
+        size: 8,
+        font: font,
+        color: rgb(1, 1, 1), // White text on purple background
+      });
+    }
   }
 
   // Modern invoice details card
@@ -1457,11 +1558,7 @@ async function generateModernTemplatePDF(
   if (invoice.client.email) contentHeight += 15;
   if (invoice.client.phone) contentHeight += 15;
   if (invoice.client.company) contentHeight += 15;
-  if (invoice.client.address) {
-    // Count lines in address (handle both \n and \r\n)
-    const addressLines = invoice.client.address.split(/\r?\n/).filter(line => line.trim().length > 0);
-    contentHeight += Math.max(15, addressLines.length * 12); // At least 15px, or 12px per line
-  }
+  if (invoice.client.address) contentHeight += 15; // Address includes postal code
   contentHeight = Math.max(contentHeight, 110); // Added more bottom padding to prevent touching
   
   page.drawRectangle({
@@ -1528,7 +1625,15 @@ async function generateModernTemplatePDF(
 
   if (invoice.client.address) {
     modernCurrentY -= 15;
-    modernCurrentY = drawMultiLineText(page, invoice.client.address, 60, modernCurrentY, 9, font, rgb(0.4, 0.4, 0.4), 12);
+    // Remove newlines and replace with spaces to keep address on one line
+    const addressText = invoice.client.address.replace(/\n/g, ', ').replace(/\r/g, '');
+    page.drawText(addressText, {
+      x: 60,
+      y: modernCurrentY,
+      size: 9,
+      font: font,
+      color: rgb(0.4, 0.4, 0.4),
+    });
   }
 
   // Modern services table with geometric header
@@ -1873,27 +1978,38 @@ async function generateSimpleCleanTemplatePDF(
   });
 
   if (businessSettings.address) {
-    drawMultiLineText(page, businessSettings.address, 50, height - 75, 8, font, rgb(1, 1, 1), 11);
-  }
-
-  if (businessSettings.businessPhone) {
-    page.drawText(businessSettings.businessPhone, {
-      x: 50,
-      y: height - 90,
-      size: 8,
-      font: font,
-      color: rgb(1, 1, 1),
+    const addressLines = formatAddressForPDF(businessSettings.address);
+    let addressY = height - 75;
+    addressLines.forEach((line, index) => {
+      page.drawText(line, {
+        x: 50,
+        y: addressY - (index * 10),
+        size: 8,
+        font: font,
+        color: rgb(1, 1, 1),
+      });
     });
-  }
+    // Adjust phone and email position based on number of address lines
+    const phoneYOffset = addressLines.length > 1 ? addressLines.length * 10 : 15;
+    if (businessSettings.businessPhone) {
+      page.drawText(businessSettings.businessPhone, {
+        x: 50,
+        y: height - 75 - phoneYOffset,
+        size: 8,
+        font: font,
+        color: rgb(1, 1, 1),
+      });
+    }
 
-  if (businessSettings.businessEmail) {
-    page.drawText(businessSettings.businessEmail, {
-      x: 50,
-      y: height - 105,
-      size: 8,
-      font: font,
-      color: rgb(1, 1, 1),
-    });
+    if (businessSettings.businessEmail) {
+      page.drawText(businessSettings.businessEmail, {
+        x: 50,
+        y: height - 75 - phoneYOffset - 10,
+        size: 8,
+        font: font,
+        color: rgb(1, 1, 1),
+      });
+    }
   }
 
   // Invoice details card - matching Subtotal section design
@@ -1992,11 +2108,7 @@ async function generateSimpleCleanTemplatePDF(
   if (invoice.client.email) contentHeight += 15;
   if (invoice.client.phone) contentHeight += 15;
   if (invoice.client.company) contentHeight += 15;
-  if (invoice.client.address) {
-    // Count lines in address (handle both \n and \r\n)
-    const addressLines = invoice.client.address.split(/\r?\n/).filter(line => line.trim().length > 0);
-    contentHeight += Math.max(15, addressLines.length * 12); // At least 15px, or 12px per line
-  }
+  if (invoice.client.address) contentHeight += 15;
   contentHeight = Math.max(contentHeight, 110);
   
   // Clean section - no borders, no background, just text
@@ -2056,7 +2168,14 @@ async function generateSimpleCleanTemplatePDF(
 
   if (invoice.client.address) {
     creativeCurrentY -= 15;
-    creativeCurrentY = drawMultiLineText(page, invoice.client.address, 60, creativeCurrentY, 9, font, rgb(0.4, 0.4, 0.4), 12);
+    const addressText = invoice.client.address.replace(/\n/g, ', ').replace(/\r/g, '');
+    page.drawText(addressText, {
+      x: 60,
+      y: creativeCurrentY,
+      size: 9,
+      font: font,
+      color: rgb(0.4, 0.4, 0.4),
+    });
   }
 
   // Creative table: Modern colored header + Minimal clean rows
@@ -2436,27 +2555,38 @@ async function generateMinimalTemplatePDF(
   });
 
   if (businessSettings.address) {
-    drawMultiLineText(page, businessSettings.address, 50, height - 68, 9, font, rgb(0.5, 0.5, 0.5), 12);
-  }
-
-  if (businessSettings.businessPhone) {
-    page.drawText(businessSettings.businessPhone, {
-      x: 50,
-      y: height - 80,
-      size: 9,
-      font: font,
-      color: rgb(0.5, 0.5, 0.5),
+    const addressLines = formatAddressForPDF(businessSettings.address);
+    let addressY = height - 68;
+    addressLines.forEach((line, index) => {
+      page.drawText(line, {
+        x: 50,
+        y: addressY - (index * 11),
+        size: 9,
+        font: font,
+        color: rgb(0.5, 0.5, 0.5),
+      });
     });
-  }
+    // Adjust phone and email position based on number of address lines
+    const phoneYOffset = addressLines.length > 1 ? addressLines.length * 11 : 12;
+    if (businessSettings.businessPhone) {
+      page.drawText(businessSettings.businessPhone, {
+        x: 50,
+        y: height - 68 - phoneYOffset,
+        size: 9,
+        font: font,
+        color: rgb(0.5, 0.5, 0.5),
+      });
+    }
 
-  if (businessSettings.businessEmail) {
-    page.drawText(businessSettings.businessEmail, {
-      x: 50,
-      y: height - 92,
-      size: 9,
-      font: font,
-      color: rgb(0.5, 0.5, 0.5),
-    });
+    if (businessSettings.businessEmail) {
+      page.drawText(businessSettings.businessEmail, {
+        x: 50,
+        y: height - 68 - phoneYOffset - 12,
+        size: 9,
+        font: font,
+        color: rgb(0.5, 0.5, 0.5),
+      });
+    }
   }
 
   // Minimal invoice title - smaller, with primary color accent
@@ -2564,7 +2694,14 @@ async function generateMinimalTemplatePDF(
 
   if (invoice.client.address) {
     minimalCurrentY -= 14;
-    minimalCurrentY = drawMultiLineText(page, invoice.client.address, 50, minimalCurrentY, 9, font, rgb(0.4, 0.4, 0.4), 12);
+    const addressText = invoice.client.address.replace(/\n/g, ', ').replace(/\r/g, '');
+    page.drawText(addressText, {
+      x: 50,
+      y: minimalCurrentY,
+      size: 9,
+      font: font,
+      color: rgb(0.4, 0.4, 0.4),
+    });
   }
 
   // Minimal table - no colored header, just clean text and lines
