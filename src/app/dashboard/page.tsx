@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { 
   FileText, Users, 
   Clock, CheckCircle, AlertCircle, AlertTriangle, UserPlus, FilePlus, Sparkles, Receipt, Timer,
-  Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2, ArrowRight, ChevronDown, ChevronUp
+  Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2, ArrowRight, ChevronDown, ChevronUp,
+  ArrowUp, ArrowDown
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -1257,21 +1258,11 @@ export default function DashboardOverview() {
                         </div>
                       </div>
                     </div>
-                    {/* Pulse Line Chart - Right Side - Desktop Only */}
+                    {/* Trend Indicator - Right Side - Desktop Only */}
                     {totalRevenue > 0 && (
-                      <div className="hidden lg:flex flex-col items-end gap-0.5 flex-shrink-0">
+                      <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                        <ArrowUp className="w-3 h-3 text-emerald-600" />
                         <span className="text-[10px] font-medium text-emerald-600">+23%</span>
-                        <svg className="w-14 h-6" viewBox="0 0 56 24" fill="none">
-                          <path
-                            d="M2,18 C8,18 10,16 14,14 C18,12 20,10 24,12 C28,14 30,16 34,14 C38,12 40,8 44,6 C48,4 52,4 54,4"
-                            stroke="#10b981"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            opacity="0.8"
-                          />
-                          <circle cx="54" cy="4" r="2.5" fill="#10b981" />
-                        </svg>
                       </div>
                     )}
                   </div>
@@ -1308,21 +1299,11 @@ export default function DashboardOverview() {
                         </div>
                       </div>
                     </div>
-                    {/* Pulse Line Chart - Right Side - Desktop Only */}
+                    {/* Trend Indicator - Right Side - Desktop Only */}
                     {totalPayableAmount > 0 && (
-                      <div className="hidden lg:flex flex-col items-end gap-0.5 flex-shrink-0">
+                      <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                        <ArrowUp className="w-3 h-3 text-amber-600" />
                         <span className="text-[10px] font-medium text-amber-600">+18%</span>
-                        <svg className="w-14 h-6" viewBox="0 0 56 24" fill="none">
-                          <path
-                            d="M2,12 C6,12 8,10 12,8 C16,6 18,10 22,12 C26,14 28,16 32,14 C36,12 38,14 42,16 C46,18 50,20 54,20"
-                            stroke="#f97316"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            opacity="0.8"
-                          />
-                          <circle cx="54" cy="20" r="2.5" fill="#f97316" />
-                        </svg>
                       </div>
                     )}
                   </div>
@@ -1355,21 +1336,11 @@ export default function DashboardOverview() {
                         </div>
                       </div>
                     </div>
-                    {/* Pulse Line Chart - Right Side - Desktop Only */}
+                    {/* Trend Indicator - Right Side - Desktop Only */}
                     {overdueCount > 0 && (
-                      <div className="hidden lg:flex flex-col items-end gap-0.5 flex-shrink-0">
+                      <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                        <ArrowDown className="w-3 h-3 text-red-500" />
                         <span className="text-[10px] font-medium text-red-500">-8%</span>
-                        <svg className="w-14 h-6" viewBox="0 0 56 24" fill="none">
-                          <path
-                            d="M2,6 C6,6 8,8 12,10 C16,12 18,10 22,12 C26,14 28,16 32,18 C36,20 40,18 44,20 C48,22 52,20 54,20"
-                            stroke="#dc2626"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            opacity="0.8"
-                          />
-                          <circle cx="54" cy="20" r="2.5" fill="#dc2626" />
-                        </svg>
                       </div>
                     )}
                   </div>
@@ -1402,21 +1373,11 @@ export default function DashboardOverview() {
                         </div>
                       </div>
                     </div>
-                    {/* Pulse Line Chart - Right Side - Desktop Only */}
+                    {/* Trend Indicator - Right Side - Desktop Only */}
                     {totalClients > 0 && (
-                      <div className="hidden lg:flex flex-col items-end gap-0.5 flex-shrink-0">
+                      <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                        <ArrowUp className="w-3 h-3 text-indigo-600" />
                         <span className="text-[10px] font-medium text-indigo-600">+15%</span>
-                        <svg className="w-14 h-6" viewBox="0 0 56 24" fill="none">
-                          <path
-                            d="M2,20 C6,20 8,18 12,16 C16,14 18,12 22,10 C26,8 28,10 32,8 C36,6 40,6 44,4 C48,2 52,4 54,2"
-                            stroke="#6366f1"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            opacity="0.8"
-                          />
-                          <circle cx="54" cy="2" r="2.5" fill="#6366f1" />
-                        </svg>
                       </div>
                     )}
                   </div>
