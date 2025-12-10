@@ -1041,40 +1041,46 @@ export function generateModernEmailTemplate(
               padding: 32px 20px !important;
             }
             .header-content {
-              display: flex !important;
-              flex-direction: row !important;
-              align-items: flex-start !important;
-              gap: 20px !important;
-              justify-content: space-between !important;
-              max-width: 100% !important;
+              display: table !important;
               width: 100% !important;
+              table-layout: fixed !important;
             }
             .business-info {
-              text-align: left !important;
-              width: 100% !important;
-              margin-bottom: 0 !important;
-              display: block !important;
-              flex: 1 !important;
+              display: table-cell !important;
+              vertical-align: top !important;
+              width: 50% !important;
             }
             .business-name {
-              font-size: 14px !important;
+              font-size: 18px !important;
             }
             .invoice-info {
+              display: table-cell !important;
+              vertical-align: top !important;
               text-align: right !important;
-              margin-left: 0 !important;
-              width: 100% !important;
-              display: block !important;
-              flex: 0 0 auto !important;
-              margin-top: 20px !important;
+              width: 50% !important;
+              padding-left: 12px !important;
             }
             .invoice-title {
-              font-size: 9px !important;
+              font-size: 18px !important;
             }
             .invoice-number {
               font-size: 9px !important;
             }
+            .invoice-date-label,
+            .invoice-due-label {
+              font-size: 7px !important;
+            }
             .amount {
-              font-size: 24px !important;
+              font-size: 28px !important;
+            }
+            .invoice-number {
+              font-size: 14px !important;
+            }
+            .invoice-date-label {
+              font-size: 12px !important;
+            }
+            .invoice-due-label {
+              font-size: 12px !important;
             }
             .content {
               padding: 32px 24px !important;
@@ -1568,40 +1574,46 @@ export function generateCreativeEmailTemplate(
               padding: 32px 20px !important;
             }
             .header-content {
-              display: flex !important;
-              flex-direction: row !important;
-              align-items: flex-start !important;
-              gap: 20px !important;
-              justify-content: space-between !important;
-              max-width: 100% !important;
+              display: table !important;
               width: 100% !important;
+              table-layout: fixed !important;
             }
             .business-info {
-              text-align: left !important;
-              width: 100% !important;
-              margin-bottom: 0 !important;
-              display: block !important;
-              flex: 1 !important;
+              display: table-cell !important;
+              vertical-align: top !important;
+              width: 50% !important;
             }
             .business-name {
-              font-size: 14px !important;
+              font-size: 18px !important;
             }
             .invoice-info {
+              display: table-cell !important;
+              vertical-align: top !important;
               text-align: right !important;
-              margin-left: 0 !important;
-              width: 100% !important;
-              display: block !important;
-              flex: 0 0 auto !important;
-              margin-top: 20px !important;
+              width: 50% !important;
+              padding-left: 12px !important;
             }
             .invoice-title {
-              font-size: 9px !important;
+              font-size: 18px !important;
             }
             .invoice-number {
               font-size: 9px !important;
             }
+            .invoice-date-label,
+            .invoice-due-label {
+              font-size: 7px !important;
+            }
             .amount {
-              font-size: 24px !important;
+              font-size: 28px !important;
+            }
+            .invoice-number {
+              font-size: 14px !important;
+            }
+            .invoice-date-label {
+              font-size: 12px !important;
+            }
+            .invoice-due-label {
+              font-size: 12px !important;
             }
             .content {
               padding: 32px 24px !important;
