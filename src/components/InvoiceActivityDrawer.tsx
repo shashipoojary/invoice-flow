@@ -92,19 +92,32 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
           }
           
           // Process overdue events separately (show all, not just latest)
+          // Calculate due date once for consistent timestamp calculation
+          const due = (invoice as any).dueDate || (invoice as any).due_date;
+          let dueStart: Date | null = null;
+          if (due) {
+            const dueDate = new Date(due);
+            dueStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
+          }
+          
           const overdueEvents = events.filter((ev: any) => ev.type === 'overdue' || ev.type === 'late_fee_applied');
           for (const ev of overdueEvents) {
             if (ev.type === 'overdue') {
               const days = ev.metadata?.days || 0;
-              if (days > 0) {
+              if (days > 0 && dueStart) {
+                // Calculate accurate timestamp: dueDate + days (end of that day)
+                const overdueDate = new Date(dueStart);
+                overdueDate.setUTCDate(overdueDate.getUTCDate() + days);
+                overdueDate.setUTCHours(23, 59, 59, 999);
+                
                 const overdueItem = {
                   id: `overdue-${ev.id}`,
                   type: 'status',
                   title: `${days} day${days !== 1 ? 's' : ''} overdue`,
-                  at: ev.created_at,
+                  at: overdueDate.toISOString(), // Use calculated timestamp for consistency
                   icon: 'overdue' as const
                 };
-                const eventKey = `overdue-${days}-${new Date(ev.created_at).getTime()}`;
+                const eventKey = `overdue-${days}-${overdueDate.getTime()}`;
                 if (!eventMap.has(eventKey)) {
                   eventMap.set(eventKey, overdueItem);
                   items.push(overdueItem);
@@ -314,18 +327,23 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                     icon: 'overdue'
                   });
                 } else {
-                  // Event exists, add it to items from database
+                  // Event exists, add it to items from database with calculated timestamp
                   if (existingOverdueEvents) {
                     const existingEvent = existingOverdueEvents.find((ev: any) => {
                       const evDays = ev.metadata?.days || parseInt(ev.metadata?.title?.match(/(\d+)/)?.[1] || '0');
                       return evDays === day;
                     });
                     if (existingEvent) {
+                      // Calculate accurate timestamp: dueDate + day (end of that day)
+                      const overdueDate = new Date(dueStart);
+                      overdueDate.setUTCDate(overdueDate.getUTCDate() + day);
+                      overdueDate.setUTCHours(23, 59, 59, 999);
+                      
                       items.push({
                         id: `overdue-${existingEvent.id}`,
                         type: 'status',
                         title: `${day} day${day !== 1 ? 's' : ''} overdue`,
-                        at: existingEvent.created_at,
+                        at: overdueDate.toISOString(), // Use calculated timestamp for consistency
                         icon: 'overdue'
                       });
                     }
@@ -436,7 +454,19 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
         }, [] as ActivityItem[]);
 
         // Sort chronologically (oldest to newest) for proper timeline order
-        setActivities(deduped.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime()));
+        // Use stable sort: if timestamps are equal, maintain original order (stable sort)
+        const sorted = deduped.sort((a, b) => {
+          const timeA = new Date(a.at).getTime();
+          const timeB = new Date(b.at).getTime();
+          // Primary sort: by timestamp
+          if (timeA !== timeB) {
+            return timeA - timeB;
+          }
+          // Secondary sort: by ID to ensure stable ordering (same timestamp = maintain insertion order)
+          return a.id.localeCompare(b.id);
+        });
+        
+        setActivities(sorted);
       } catch (e) {
         setActivities([]);
       } finally {
