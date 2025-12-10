@@ -1313,10 +1313,10 @@ export function generateCreativeEmailTemplate(
             table-layout: fixed;
           }
           .business-name {
-            font-size: 22px;
-            font-weight: 700;
+            font-size: 20px;
+            font-weight: 400;
             color: ${primaryColor} !important;
-            letter-spacing: -0.02em;
+            letter-spacing: 0;
             margin: 0;
             padding: 0;
           }
@@ -1333,22 +1333,35 @@ export function generateCreativeEmailTemplate(
             padding-left: 24px;
           }
           .invoice-title {
-            font-size: 12px;
-            font-weight: 500;
-            color: #333333 !important;
-            margin-bottom: 4px;
+            font-size: 20px;
+            font-weight: 400;
+            color: ${primaryColor} !important;
+            letter-spacing: 0;
+            margin: 0 0 12px 0;
+            padding: 0;
           }
           .invoice-number {
-            font-size: 12px;
-            color: #333333 !important;
-            margin-bottom: 8px;
-            font-weight: 500;
+            font-size: 10px;
+            color: #000000 !important;
+            margin: 0 0 8px 0;
+            font-weight: 700;
+          }
+          .invoice-date-label {
+            font-size: 8px;
+            color: #808080 !important;
+            margin: 0 0 4px 0;
+          }
+          .invoice-due-label {
+            font-size: 8px;
+            color: #808080 !important;
+            margin: 8px 0 0 0;
           }
           .amount {
-            font-size: 28px;
-            font-weight: 800;
+            font-size: 32px;
+            font-weight: 700;
             color: #000000;
-            letter-spacing: -0.03em;
+            letter-spacing: -0.5px;
+            margin: 16px 0 0 0;
           }
           .content {
             padding: 48px 40px;
