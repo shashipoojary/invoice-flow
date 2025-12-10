@@ -1158,26 +1158,6 @@ export default function DashboardOverview() {
     );
   }
 
-  // Handle session expiration - wait for potential refresh from visibility handlers
-  useEffect(() => {
-    const handleSessionCheck = async () => {
-      if (!user && !loading) {
-        // Wait a moment for visibility/focus handlers to refresh session
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // Check one more time before redirecting
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          window.location.href = '/auth?message=session_expired';
-        }
-      }
-    };
-
-    if (!user && !loading) {
-      handleSessionCheck();
-    }
-  }, [user, loading]);
-
   if (!user && !loading) {
     // Show loading while checking session (layout will handle redirect)
     return (
