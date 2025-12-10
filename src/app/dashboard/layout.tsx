@@ -22,7 +22,7 @@ export default function DashboardLayout({
       if (authLoading) return;
       
       if (!user) {
-        router.push('/auth');
+        router.replace('/auth');
         return;
       }
 
@@ -30,7 +30,7 @@ export default function DashboardLayout({
         // Check if user has completed onboarding (has business_name in user_settings)
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
-          router.push('/auth');
+          router.replace('/auth');
           return;
         }
 
@@ -44,7 +44,7 @@ export default function DashboardLayout({
           const data = await response.json();
           // If no businessName is set, redirect to onboarding (first-time user)
           if (!data.settings?.businessName || data.settings?.businessName.trim() === '') {
-            router.push('/onboarding');
+            router.replace('/onboarding');
             return;
           }
         }

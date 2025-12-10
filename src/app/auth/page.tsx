@@ -10,6 +10,8 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -35,14 +37,25 @@ export default function AuthPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccessMessage('');
+    setShowVerificationMessage(false);
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { error, data } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
         });
-        if (error) throw error;
+        
+        if (error) {
+          // Check if email is not verified
+          if (error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')) {
+            setError('Please verify your email address before signing in. Check your inbox for the verification link.');
+            setShowVerificationMessage(true);
+            throw error;
+          }
+          throw error;
+        }
         
         // Check if user has completed onboarding
         const { data: { session } } = await supabase.auth.getSession();
@@ -67,21 +80,55 @@ export default function AuthPage() {
         
         router.push('/dashboard');
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
           options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
             data: {
               name: `${formData.firstName} ${formData.lastName}`,
             },
           },
         });
-        if (error) throw error;
-        // New users always go to onboarding
-        router.push('/onboarding');
+        
+        if (error) {
+          // Check if user already exists
+          if (error.message.includes('User already registered') || 
+              error.message.includes('already registered') ||
+              error.message.includes('already exists')) {
+            setError(`An account with this email already exists. Please sign in instead.`);
+            // Switch to login mode after a delay
+            setTimeout(() => {
+              setIsLogin(true);
+              setError('');
+            }, 3000);
+            throw error;
+          }
+          throw error;
+        }
+        
+        // Check if email confirmation is required
+        if (data.user && !data.session) {
+          // Email confirmation required
+          setSuccessMessage('Account created successfully!');
+          setShowVerificationMessage(true);
+          // Clear form
+          setFormData({
+            firstName: '',
+            lastName: '',
+            email: formData.email, // Keep email so they know which one to check
+            password: '',
+            agreeToTerms: false,
+          });
+        } else if (data.session) {
+          // Email confirmation not required (shouldn't happen in production)
+          router.push('/onboarding');
+        }
       }
     } catch (error: any) {
-      setError(error.message);
+      if (!error.message.includes('already registered') && !error.message.includes('already exists')) {
+        setError(error.message || 'An error occurred. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -97,7 +144,7 @@ export default function AuthPage() {
 
   return (
     <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6">
-      <div className="flex flex-col lg:flex-row w-full max-w-6xl bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="flex flex-col lg:flex-row w-full max-w-6xl bg-white overflow-hidden">
         {/* Left Panel - Desktop Only */}
         <div className="flex-1 relative overflow-hidden lg:block hidden bg-gray-50">
           <div className="absolute top-6 left-6 z-10">
@@ -216,16 +263,66 @@ export default function AuthPage() {
 
             {/* Session Expired Message */}
             {sessionExpired && (
-              <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm mb-6 flex items-center space-x-2">
+              <div className="bg-amber-50 text-amber-800 px-4 py-3 rounded-lg text-sm mb-6 flex items-center space-x-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>Your session has expired. Please sign in again to continue.</span>
               </div>
             )}
 
+            {/* Email Verification Message */}
+            {showVerificationMessage && (
+              <div className="bg-blue-50 text-blue-800 px-4 py-3 rounded-lg text-sm mb-6">
+                <div className="flex items-start space-x-2">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-medium mb-2">Check your email to verify your account</p>
+                    <p className="text-blue-700 mb-2">
+                      We&apos;ve sent a verification link to <strong>{formData.email || 'your email address'}</strong>. 
+                      Please click the link in the email to verify your account before signing in.
+                    </p>
+                    <div className="mt-3 pt-3">
+                      <p className="text-xs text-blue-600 mb-1">Didn&apos;t receive the email?</p>
+                      <ul className="text-xs text-blue-600 space-y-1 ml-4">
+                        <li>• Check your spam/junk folder</li>
+                        <li>• Make sure you entered the correct email address</li>
+                        <li>• Wait a few minutes and check again</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Success Message */}
+            {successMessage && !showVerificationMessage && (
+              <div className="bg-emerald-50 text-emerald-800 px-4 py-3 rounded-lg text-sm mb-6 flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{successMessage}</span>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-8">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
-                {error}
+              <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">
+                <div className="flex items-start space-x-2">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p>{error}</p>
+                    {error.includes('already exists') && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsLogin(true);
+                          setError('');
+                          setFormData(prev => ({ ...prev, password: '' }));
+                        }}
+                        className="mt-2 text-red-700 font-medium hover:underline text-sm"
+                      >
+                        Click here to sign in →
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -242,7 +339,7 @@ export default function AuthPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   placeholder="my.account@email.com"
-                  className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
+                  className="w-full px-4 py-4 text-base bg-gray-50 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all"
                   required
                 />
                 {formData.email && (
@@ -271,7 +368,7 @@ export default function AuthPage() {
                   value={formData.password}
                   onChange={handleInputChange}
                     placeholder="Enter your password"
-                    className="w-full px-4 py-3 pr-12 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
+                    className="w-full px-4 py-3 pr-12 text-base bg-gray-50 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all"
                   required
                 />
                 <button
@@ -303,7 +400,7 @@ export default function AuthPage() {
                     value={formData.firstName}
                     onChange={handleInputChange}
                     placeholder="John"
-                    className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
+                    className="w-full px-4 py-4 text-base bg-gray-50 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all"
                     required={!isLogin}
                   />
                 </div>
@@ -318,7 +415,7 @@ export default function AuthPage() {
                     value={formData.lastName}
                     onChange={handleInputChange}
                     placeholder="Doe"
-                    className="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
+                    className="w-full px-4 py-4 text-base bg-gray-50 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all"
                     required={!isLogin}
                   />
                 </div>
@@ -339,7 +436,7 @@ export default function AuthPage() {
                     value={formData.password}
                     onChange={handleInputChange}
                     placeholder="Create a password"
-                    className="w-full px-4 py-3 pr-12 text-base border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all"
+                    className="w-full px-4 py-3 pr-12 text-base bg-gray-50 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all"
                     required
                   />
                   <button
@@ -366,7 +463,7 @@ export default function AuthPage() {
                   name="agreeToTerms"
                   checked={formData.agreeToTerms}
                   onChange={handleInputChange}
-                  className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                  className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
                   required={!isLogin}
                 />
                 <label htmlFor="agreeToTerms" className="text-sm text-gray-600">
@@ -412,7 +509,13 @@ export default function AuthPage() {
             <div className="text-center mt-8">
               <button
                 type="button"
-                onClick={() => setIsLogin(!isLogin)}
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setError('');
+                  setSuccessMessage('');
+                  setShowVerificationMessage(false);
+                  setFormData(prev => ({ ...prev, password: '' }));
+                }}
                 className="text-indigo-600 hover:text-indigo-700 font-medium text-sm"
               >
                 {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
