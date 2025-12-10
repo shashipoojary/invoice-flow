@@ -1267,6 +1267,9 @@ export default function DashboardOverview() {
                               <div>{formatMoney(totalRevenue)}</div>
                             )}
                           </div>
+                          {/* Placeholder to match late fees line spacing */}
+                          <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px' }}>
+                          </div>
                         </div>
                         <div className="flex items-center space-x-1.5 justify-start leading-tight">
                           <CheckCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-emerald-500 flex-shrink-0" />
@@ -1362,6 +1365,9 @@ export default function DashboardOverview() {
                               <div>{overdueCount}</div>
                             )}
                           </div>
+                          {/* Placeholder to match late fees line spacing */}
+                          <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px' }}>
+                          </div>
                         </div>
                         <div className="flex items-center space-x-1.5 justify-start leading-tight">
                           <AlertCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-red-500 flex-shrink-0" />
@@ -1405,6 +1411,9 @@ export default function DashboardOverview() {
                             ) : (
                               <div>{totalClients}</div>
                             )}
+                          </div>
+                          {/* Placeholder to match late fees line spacing */}
+                          <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px' }}>
                           </div>
                         </div>
                         <div className="flex items-center space-x-1.5 justify-start leading-tight">
