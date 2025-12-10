@@ -1836,10 +1836,14 @@ export function generateOriginalFastInvoiceEmailTemplate(
         <style>
           body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.5;
+            line-height: 1.6;
             color: #000000;
             background-color: #f5f5f5;
             margin: 0;
+            padding: 0;
+          }
+          .email-wrapper {
+            background-color: #f5f5f5;
             padding: 20px;
           }
           .email-container {
@@ -1850,121 +1854,112 @@ export function generateOriginalFastInvoiceEmailTemplate(
           }
           .header {
             padding: 32px 32px 24px;
-            border-bottom: 1px solid #f0f0f0;
           }
-          .business-name {
-            font-size: 18px;
+          .greeting {
+            font-size: 16px;
             font-weight: 600;
             color: #000000;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
           }
-          .invoice-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+          .message {
+            font-size: 15px;
+            color: #333333;
+            line-height: 1.6;
             margin-bottom: 24px;
           }
-          .invoice-info {
-            text-align: right;
+          .invoice-details {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 24px 0;
+            border-radius: 4px;
           }
-          .invoice-label {
-            font-size: 11px;
-            color: #666666;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
-          }
-          .invoice-number {
+          .detail-item {
             font-size: 14px;
-            font-weight: 600;
             color: #000000;
             margin-bottom: 12px;
+            line-height: 1.6;
           }
-          .amount-section {
-            text-align: center;
-            padding: 24px 0;
-            border-top: 1px solid #f0f0f0;
-            border-bottom: 1px solid #f0f0f0;
-            margin: 24px 0;
-          }
-          .amount-label {
-            font-size: 11px;
-            color: #666666;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-          }
-          .amount {
-            font-size: 42px;
-            font-weight: 700;
-            color: #FF6B35;
-            letter-spacing: -1px;
-          }
-          .content {
-            padding: 24px 32px;
-          }
-          .details-section {
-            margin-bottom: 24px;
-          }
-          .detail-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #f5f5f5;
-            font-size: 14px;
-          }
-          .detail-row:last-child {
-            border-bottom: none;
+          .detail-item:last-child {
+            margin-bottom: 0;
           }
           .detail-label {
-            color: #666666;
-            font-weight: 500;
-          }
-          .detail-value {
+            font-weight: 600;
             color: #000000;
-            font-weight: 400;
-            text-align: right;
           }
           .cta-section {
             text-align: center;
-            margin: 32px 0 24px;
+            margin: 32px 0;
           }
           .cta-button {
             display: inline-block;
-            background: #000000;
-            color: #ffffff;
-            padding: 14px 28px;
+            background: #8B5CF6;
+            color: #ffffff !important;
+            padding: 14px 32px;
             text-decoration: none;
-            border-radius: 4px;
+            border-radius: 6px;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 15px;
           }
           .footer {
             padding: 24px 32px;
-            text-align: center;
             border-top: 1px solid #f0f0f0;
-            font-size: 12px;
-            color: #999999;
+            font-size: 13px;
+            color: #666666;
+            line-height: 1.6;
           }
+          .footer-name {
+            font-weight: 600;
+            color: #000000;
+            margin-bottom: 4px;
+          }
+          .footer-contact {
+            color: #666666;
+          }
+          .footer-link {
+            color: #2563eb;
+            text-decoration: underline;
+          }
+          /* Dark mode support */
+          @media (prefers-color-scheme: dark) {
+            .email-wrapper {
+              background-color: #1a1a1a !important;
+            }
+            .email-container {
+              background: #1f1f1f !important;
+              border-color: #333333 !important;
+            }
+            .greeting,
+            .detail-label,
+            .footer-name {
+              color: #ffffff !important;
+            }
+            .message,
+            .detail-item,
+            .footer-contact {
+              color: #e5e5e5 !important;
+            }
+            .invoice-details {
+              background: #2a2a2a !important;
+            }
+            .footer {
+              border-color: #333333 !important;
+            }
+          }
+          /* Mobile responsive */
           @media only screen and (max-width: 600px) {
-            body {
+            .email-wrapper {
               padding: 10px;
             }
             .header {
               padding: 24px 20px 20px;
             }
-            .invoice-header {
-              flex-direction: column;
+            .invoice-details {
+              padding: 16px;
             }
-            .invoice-info {
-              text-align: left;
-              margin-top: 16px;
-            }
-            .content {
-              padding: 20px;
-            }
-            .amount {
-              font-size: 36px;
+            .cta-button {
+              display: block;
+              width: 100%;
+              box-sizing: border-box;
             }
             .footer {
               padding: 20px;
@@ -1973,45 +1968,46 @@ export function generateOriginalFastInvoiceEmailTemplate(
         </style>
       </head>
       <body>
-        <div class="email-container">
-          <div class="header">
-            <div class="business-name">${businessSettings.businessName}</div>
-            <div class="invoice-header">
-              <div>
-                <div class="invoice-label">Bill To</div>
-                <div style="font-size: 14px; color: #000000; margin-top: 4px;">${invoice.clients.name}${invoice.clients.company ? `, ${invoice.clients.company}` : ''}</div>
+        <div class="email-wrapper">
+          <div class="email-container">
+            <div class="header">
+              <div class="greeting">${businessSettings.businessName} sent you an invoice.</div>
+              <div class="message">
+                Dear ${invoice.clients.name},<br><br>
+                We have generated a new invoice in the amount of <strong>${formatCurrency(invoice.total)}</strong>.<br><br>
+                We would appreciate payment of this invoice by ${formatDate(invoice.due_date)}.
               </div>
-              <div class="invoice-info">
-                <div class="invoice-label">Invoice</div>
-                <div class="invoice-number">#${invoice.invoice_number}</div>
+              
+              <div class="invoice-details">
+                <div class="detail-item">
+                  <span class="detail-label">Invoice:</span> #${invoice.invoice_number}
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Due date:</span> ${formatDate(invoice.due_date)}
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Amount due:</span> ${formatCurrency(invoice.total)}
+                </div>
+              </div>
+
+              <div class="cta-section">
+                <!--[if mso]>
+                <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${publicUrl}" style="height:48px;v-text-anchor:middle;width:200px;" arcsize="8%" stroke="f" fillcolor="#8B5CF6">
+                <w:anchorlock/>
+                <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:600;">View Invoice</center>
+                </v:roundrect>
+                <![endif]-->
+                <a href="${publicUrl}" class="cta-button" style="display: inline-block; background: #8B5CF6; color: #ffffff !important; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">View Invoice</a>
               </div>
             </div>
-          </div>
 
-          <div class="content">
-            <div class="amount-section">
-              <div class="amount-label">Amount Due</div>
-              <div class="amount">${formatCurrency(invoice.total)}</div>
-            </div>
-
-            <div class="details-section">
-              <div class="detail-row">
-                <div class="detail-label">Issue Date</div>
-                <div class="detail-value">${formatDate(invoice.issue_date)}</div>
-              </div>
-              <div class="detail-row">
-                <div class="detail-label">Due Date</div>
-                <div class="detail-value">${formatDate(invoice.due_date)}</div>
+            <div class="footer">
+              <div class="footer-name">${businessSettings.businessName}</div>
+              <div class="footer-contact">
+                ${businessSettings.businessPhone ? `${businessSettings.businessPhone}` : ''}
+                ${businessSettings.businessEmail ? `${businessSettings.businessPhone ? ' • ' : ''}<a href="mailto:${businessSettings.businessEmail}" class="footer-link">${businessSettings.businessEmail}</a>` : ''}
               </div>
             </div>
-
-            <div class="cta-section">
-              <a href="${publicUrl}" class="cta-button">View Invoice</a>
-            </div>
-          </div>
-
-          <div class="footer">
-            ${businessSettings.businessEmail ? `${businessSettings.businessEmail}` : ''}
           </div>
         </div>
       </body>
