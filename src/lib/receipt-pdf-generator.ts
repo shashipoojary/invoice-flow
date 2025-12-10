@@ -457,7 +457,7 @@ export async function generateReceiptPDF(
       y: totalY,
       size: 11,
       font: font,
-      color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b), // Primary color for total amount
+      color: rgb(0, 0.6, 0.3), // Green color for total amount paid
     });
 
     totalY -= 30;
