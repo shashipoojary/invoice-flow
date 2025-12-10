@@ -7,10 +7,22 @@ export function getBaseUrl(request?: Request): string {
   // First, check environment variable (most reliable)
   if (process.env.NEXT_PUBLIC_APP_URL) {
     // Ensure it doesn't contain localhost in production
-    const envUrl = process.env.NEXT_PUBLIC_APP_URL.trim();
+    let envUrl = process.env.NEXT_PUBLIC_APP_URL.trim();
+    // Remove trailing slash if present
+    envUrl = envUrl.replace(/\/$/, '');
+    
     if (process.env.NODE_ENV === 'production' && (envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
       console.warn('NEXT_PUBLIC_APP_URL contains localhost in production. This may cause issues.');
+      // Use production fallback instead
+      return 'https://invoice-flow-vert.vercel.app';
     }
+    
+    // Ensure URL has protocol
+    if (!envUrl.startsWith('http://') && !envUrl.startsWith('https://')) {
+      envUrl = `https://${envUrl}`;
+    }
+    
+    console.log('Using NEXT_PUBLIC_APP_URL:', envUrl);
     return envUrl;
   }
 
