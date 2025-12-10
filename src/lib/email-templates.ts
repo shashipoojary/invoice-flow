@@ -1838,9 +1838,9 @@ export function generateOriginalFastInvoiceEmailTemplate(
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.5;
             color: #000000;
-            background-color: #ffffff;
+            background-color: #f5f5f5;
             margin: 0;
-            padding: 0;
+            padding: 20px;
           }
           .email-container {
             max-width: 600px;
@@ -1849,68 +1849,125 @@ export function generateOriginalFastInvoiceEmailTemplate(
             border: 1px solid #e0e0e0;
           }
           .header {
-            padding: 40px 32px 32px;
-            text-align: center;
+            padding: 32px 32px 24px;
+            border-bottom: 1px solid #f0f0f0;
           }
           .business-name {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 600;
             color: #000000;
+            margin-bottom: 20px;
+          }
+          .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
             margin-bottom: 24px;
           }
-          .invoice-number {
-            font-size: 12px;
+          .invoice-info {
+            text-align: right;
+          }
+          .invoice-label {
+            font-size: 11px;
             color: #666666;
-            margin-bottom: 16px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            margin-bottom: 4px;
+          }
+          .invoice-number {
+            font-size: 14px;
+            font-weight: 600;
+            color: #000000;
+            margin-bottom: 12px;
+          }
+          .amount-section {
+            text-align: center;
+            padding: 24px 0;
+            border-top: 1px solid #f0f0f0;
+            border-bottom: 1px solid #f0f0f0;
+            margin: 24px 0;
+          }
+          .amount-label {
+            font-size: 11px;
+            color: #666666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
           }
           .amount {
-            font-size: 48px;
+            font-size: 42px;
             font-weight: 700;
             color: #FF6B35;
-            margin: 24px 0;
             letter-spacing: -1px;
           }
           .content {
-            padding: 0 32px 40px;
-            text-align: center;
+            padding: 24px 32px;
           }
-          .due-date {
+          .details-section {
+            margin-bottom: 24px;
+          }
+          .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f5f5f5;
             font-size: 14px;
+          }
+          .detail-row:last-child {
+            border-bottom: none;
+          }
+          .detail-label {
             color: #666666;
-            margin-bottom: 32px;
+            font-weight: 500;
+          }
+          .detail-value {
+            color: #000000;
+            font-weight: 400;
+            text-align: right;
+          }
+          .cta-section {
+            text-align: center;
+            margin: 32px 0 24px;
           }
           .cta-button {
             display: inline-block;
             background: #000000;
             color: #ffffff;
-            padding: 16px 32px;
+            padding: 14px 28px;
             text-decoration: none;
-            border-radius: 6px;
+            border-radius: 4px;
             font-weight: 600;
             font-size: 14px;
-            margin: 32px 0;
           }
           .footer {
-            padding: 32px;
+            padding: 24px 32px;
             text-align: center;
             border-top: 1px solid #f0f0f0;
             font-size: 12px;
             color: #999999;
           }
           @media only screen and (max-width: 600px) {
+            body {
+              padding: 10px;
+            }
             .header {
-              padding: 32px 24px 24px;
+              padding: 24px 20px 20px;
+            }
+            .invoice-header {
+              flex-direction: column;
+            }
+            .invoice-info {
+              text-align: left;
+              margin-top: 16px;
             }
             .content {
-              padding: 0 24px 32px;
+              padding: 20px;
             }
             .amount {
-              font-size: 40px;
+              font-size: 36px;
             }
             .footer {
-              padding: 24px;
+              padding: 20px;
             }
           }
         </style>
@@ -1919,13 +1976,38 @@ export function generateOriginalFastInvoiceEmailTemplate(
         <div class="email-container">
           <div class="header">
             <div class="business-name">${businessSettings.businessName}</div>
-            <div class="invoice-number">Invoice #${invoice.invoice_number}</div>
-            <div class="amount">${formatCurrency(invoice.total)}</div>
+            <div class="invoice-header">
+              <div>
+                <div class="invoice-label">Bill To</div>
+                <div style="font-size: 14px; color: #000000; margin-top: 4px;">${invoice.clients.name}${invoice.clients.company ? `, ${invoice.clients.company}` : ''}</div>
+              </div>
+              <div class="invoice-info">
+                <div class="invoice-label">Invoice</div>
+                <div class="invoice-number">#${invoice.invoice_number}</div>
+              </div>
+            </div>
           </div>
 
           <div class="content">
-            <div class="due-date">Due: ${formatDate(invoice.due_date)}</div>
-            <a href="${publicUrl}" class="cta-button">View Invoice</a>
+            <div class="amount-section">
+              <div class="amount-label">Amount Due</div>
+              <div class="amount">${formatCurrency(invoice.total)}</div>
+            </div>
+
+            <div class="details-section">
+              <div class="detail-row">
+                <div class="detail-label">Issue Date</div>
+                <div class="detail-value">${formatDate(invoice.issue_date)}</div>
+              </div>
+              <div class="detail-row">
+                <div class="detail-label">Due Date</div>
+                <div class="detail-value">${formatDate(invoice.due_date)}</div>
+              </div>
+            </div>
+
+            <div class="cta-section">
+              <a href="${publicUrl}" class="cta-button">View Invoice</a>
+            </div>
           </div>
 
           <div class="footer">
