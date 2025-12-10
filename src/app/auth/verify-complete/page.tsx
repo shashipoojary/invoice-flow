@@ -3,26 +3,22 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Loader2, CheckCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 export default function VerifyCompletePage() {
   const router = useRouter();
-  const [checking, setChecking] = useState(true);
-  const [error, setError] = useState('');
+  const [isRedirecting, setIsRedirecting] = useState(true);
 
   useEffect(() => {
     const checkAndRedirect = async () => {
       try {
         // Wait a moment for session to be fully established
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 200));
         
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError || !session) {
-          setError('Verification failed. Please try signing in again.');
-          setTimeout(() => {
-            router.replace('/auth');
-          }, 2000);
+          router.replace('/auth');
           return;
         }
 
@@ -58,48 +54,19 @@ export default function VerifyCompletePage() {
         }
       } catch (error) {
         console.error('Error in verification:', error);
-        setError('An error occurred. Redirecting to sign in...');
-        setTimeout(() => {
-          router.replace('/auth');
-        }, 2000);
-      } finally {
-        setChecking(false);
+        router.replace('/auth');
       }
     };
 
     checkAndRedirect();
   }, [router]);
 
-  if (checking) {
-    return (
-      <div className="w-full min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center space-y-4">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-          <p className="text-gray-600">Verifying your email...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="w-full min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center space-y-4 max-w-md mx-auto p-6">
-          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-            <span className="text-red-600 text-xl">!</span>
-          </div>
-          <p className="text-gray-900 font-medium">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Always show loading - never show content before redirect
   return (
     <div className="w-full min-h-screen flex items-center justify-center bg-gray-50">
       <div className="flex flex-col items-center space-y-4">
-        <CheckCircle className="w-12 h-12 text-emerald-600" />
-        <p className="text-gray-900 font-medium">Email verified successfully!</p>
-        <p className="text-gray-600">Redirecting...</p>
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+        <p className="text-gray-600">Verifying your email...</p>
       </div>
     </div>
   );

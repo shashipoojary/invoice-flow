@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import { DataProvider } from '@/contexts/DataContext';
-import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
 
@@ -13,27 +12,24 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+  const [isChecking, setIsChecking] = useState(true);
+  const [shouldRender, setShouldRender] = useState(false);
 
   useEffect(() => {
-    const checkOnboarding = async () => {
-      if (authLoading) return;
+    const checkAuthAndOnboarding = async () => {
+      setIsChecking(true);
       
-      if (!user) {
-        router.replace('/auth');
-        return;
-      }
-
       try {
-        // Check if user has completed onboarding (has business_name in user_settings)
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
+        // Get session first
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError || !session) {
           router.replace('/auth');
           return;
         }
 
+        // Check if user has completed onboarding
         const response = await fetch('/api/settings', {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
@@ -47,19 +43,27 @@ export default function DashboardLayout({
             router.replace('/onboarding');
             return;
           }
+        } else {
+          // If API fails, assume new user and send to onboarding
+          router.replace('/onboarding');
+          return;
         }
+
+        // All checks passed, allow rendering
+        setShouldRender(true);
       } catch (error) {
-        console.error('Error checking onboarding:', error);
+        console.error('Error checking auth/onboarding:', error);
+        router.replace('/auth');
       } finally {
-        setCheckingOnboarding(false);
+        setIsChecking(false);
       }
     };
 
-    checkOnboarding();
-  }, [user, authLoading, router]);
+    checkAuthAndOnboarding();
+  }, [router]);
 
-  // Show loading while checking auth and onboarding
-  if (authLoading || checkingOnboarding) {
+  // Show loading while checking - prevent any content flash
+  if (isChecking || !shouldRender) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center space-y-4">

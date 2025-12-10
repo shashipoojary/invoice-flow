@@ -57,7 +57,7 @@ export default function AuthPage() {
           throw error;
         }
         
-        // Check if user has completed onboarding
+        // Check if user has completed onboarding before redirecting
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           try {
@@ -68,17 +68,27 @@ export default function AuthPage() {
             });
             if (response.ok) {
               const data = await response.json();
-              if (!data.settings?.business_name) {
-                router.push('/onboarding');
+              // Check both business_name and businessName for compatibility
+              const businessName = data.settings?.businessName || data.settings?.business_name;
+              if (!businessName || businessName.trim() === '') {
+                router.replace('/onboarding');
                 return;
               }
+            } else {
+              // If API fails, assume new user and send to onboarding
+              router.replace('/onboarding');
+              return;
             }
           } catch (error) {
             console.error('Error checking onboarding:', error);
+            // If we can't check, assume new user and send to onboarding
+            router.replace('/onboarding');
+            return;
           }
         }
         
-        router.push('/dashboard');
+        // All checks passed, go to dashboard
+        router.replace('/dashboard');
       } else {
         const { data, error } = await supabase.auth.signUp({
           email: formData.email,

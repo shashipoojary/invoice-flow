@@ -61,7 +61,9 @@ export default function OnboardingPage() {
 
         if (response.ok) {
           const data = await response.json();
-          if (data.settings?.businessName && data.settings?.businessName.trim() !== '') {
+          // Check both businessName and business_name for compatibility
+          const businessName = data.settings?.businessName || data.settings?.business_name;
+          if (businessName && businessName.trim() !== '') {
             // Already completed onboarding, redirect to dashboard immediately
             router.replace('/dashboard');
             return;
