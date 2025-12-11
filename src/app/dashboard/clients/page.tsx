@@ -301,17 +301,6 @@ export default function ClientsPage() {
     }
   }, [user, loading]);
 
-  // Only show loading spinner if user is not authenticated yet
-  if (loading && !user) {
-    return (
-      <div className="min-h-screen transition-colors duration-200 bg-white">
-        <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
-        </div>
-      </div>
-    );
-  }
-
   // Handle session expiration - wait for potential refresh from visibility handlers
   useEffect(() => {
     const handleSessionCheck = async () => {
@@ -331,6 +320,17 @@ export default function ClientsPage() {
       handleSessionCheck();
     }
   }, [user, loading]);
+
+  // Only show loading spinner if user is not authenticated yet
+  if (loading && !user) {
+    return (
+      <div className="min-h-screen transition-colors duration-200 bg-white">
+        <div className="flex items-center justify-center h-screen">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
+        </div>
+      </div>
+    );
+  }
 
   if (!user && !loading) {
     // Show loading while checking session (layout will handle redirect)
