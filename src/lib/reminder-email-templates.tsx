@@ -107,6 +107,25 @@ export const getReminderEmailTemplate = (
     }
   };
 
+  // Determine tone color based on reminder type
+  const getToneColor = () => {
+    switch (reminderType) {
+      case 'friendly':
+        return '#3B82F6'; // Blue
+      case 'polite':
+        return '#10B981'; // Green
+      case 'firm':
+        return '#F59E0B'; // Amber
+      case 'urgent':
+        return '#EF4444'; // Red
+      default:
+        return '#1F2937'; // Dark gray
+    }
+  };
+
+  const toneColor = getToneColor();
+  const primaryColor = '#1F2937';
+
   return {
     subject: getSubject(),
     html: `
@@ -115,73 +134,151 @@ export const getReminderEmailTemplate = (
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="x-apple-disable-message-reformatting">
+        <meta name="color-scheme" content="light dark">
+        <meta name="supported-color-schemes" content="light dark">
         <title>Payment Reminder</title>
+        <!--[if mso]>
+        <noscript>
+          <xml>
+            <o:OfficeDocumentSettings>
+              <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+          </xml>
+        </noscript>
+        <![endif]-->
         <style>
+          * {
+            box-sizing: border-box;
+          }
           body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
-            color: #374151;
+            color: #000000;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px 0;
+          }
+          /* Dark mode support */
+          @media (prefers-color-scheme: dark) {
+            .email-container {
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
+            }
+            .header {
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
+            }
+            .content {
+              background: #ffffff !important;
+            }
+            .business-name,
+            .reminder-title {
+              color: ${primaryColor} !important;
+            }
+            .invoice-number,
+            .message {
+              color: #000000 !important;
+            }
+            .amount {
+              color: ${toneColor} !important;
+            }
+            .business-details,
+            .invoice-date-label {
+              color: #808080 !important;
+            }
+          }
+          .email-container {
             max-width: 600px;
             margin: 0 auto;
-            padding: 20px;
-            background-color: #f9fafb;
-          }
-          .container {
-            background-color: #ffffff;
-            border-radius: 8px;
-            padding: 32px;
-            border: 1px solid #e5e7eb;
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
           }
           .header {
-            margin-bottom: 24px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #e5e7eb;
+            padding: 40px 40px 32px 40px;
+            background: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
           }
-          .logo {
-            max-width: 120px;
-            height: auto;
-            margin-bottom: 16px;
+          .header-content {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+          }
+          .business-info {
+            display: table-cell;
+            vertical-align: top;
+            width: 50%;
           }
           .business-name {
             font-size: 20px;
-            font-weight: 600;
-            color: #1f2937;
+            font-weight: 400;
+            color: ${primaryColor} !important;
             margin: 0;
+            padding: 0;
+            letter-spacing: 0;
           }
-          .business-tagline {
-            color: #6b7280;
+          .business-details {
             font-size: 14px;
-            margin: 4px 0 0 0;
+            color: #808080 !important;
+            line-height: 1.5;
+            margin: 4px 0;
           }
-          .invoice-details {
-            background-color: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            padding: 20px;
-            margin: 24px 0;
+          .reminder-info {
+            display: table-cell;
+            vertical-align: top;
+            text-align: right;
+            width: 50%;
+            padding-left: 24px;
+          }
+          .reminder-title {
+            font-size: 20px;
+            font-weight: 400;
+            color: ${primaryColor} !important;
+            margin: 0 0 12px 0;
+            padding: 0;
+            letter-spacing: 0;
           }
           .invoice-number {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1f2937;
-            margin: 0 0 8px 0;
-          }
-          .invoice-amount {
-            font-size: 24px;
-            font-weight: 600;
-            color: #1f2937;
-            margin: 0 0 8px 0;
-          }
-          .invoice-due {
-            color: #6b7280;
             font-size: 14px;
-            margin: 0;
+            color: #000000 !important;
+            margin: 0 0 12px 0;
+            font-weight: 700;
+          }
+          .invoice-date-label {
+            font-size: 12px;
+            color: #808080 !important;
+            margin: 0 0 4px 0;
+          }
+          .amount {
+            font-size: 32px;
+            font-weight: 700;
+            color: ${toneColor} !important;
+            letter-spacing: -0.5px;
+            margin: 16px 0 0 0;
+          }
+          .content {
+            padding: 32px 40px 40px 40px;
+            background: #ffffff;
+          }
+          .message-section {
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #e0e0e0;
+          }
+          .message {
+            font-size: 14px !important;
+            color: #000000 !important;
+            line-height: 1.6 !important;
+            margin: 16px 0 !important;
+          }
+          .message p {
+            margin: 0 0 16px 0;
           }
           .overdue-notice {
             background-color: #fef2f2;
-            border: 1px solid #fecaca;
-            border-radius: 4px;
-            padding: 12px;
+            border-left: 4px solid #EF4444;
+            padding: 12px 16px;
             margin: 16px 0;
           }
           .overdue-text {
@@ -190,98 +287,124 @@ export const getReminderEmailTemplate = (
             font-size: 14px;
             margin: 0;
           }
+          .button-container {
+            text-align: center;
+            margin: 32px 0;
+          }
           .payment-button {
             display: inline-block;
-            background-color: #1f2937;
+            background-color: ${toneColor};
             color: #ffffff;
             text-decoration: none;
-            padding: 12px 24px;
-            border-radius: 4px;
+            padding: 14px 32px;
             font-weight: 500;
             text-align: center;
-            margin: 20px 0;
             font-size: 14px;
+            border: none;
           }
-          .payment-button:hover {
-            background-color: #111827;
+          .contact-info {
+            margin: 24px 0;
+            padding-top: 24px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 14px;
+            color: #666666;
+            line-height: 1.6;
           }
           .footer {
             margin-top: 32px;
             padding-top: 24px;
-            border-top: 1px solid #e5e7eb;
+            border-top: 1px solid #e0e0e0;
             text-align: center;
-            color: #6b7280;
             font-size: 14px;
+            color: #666666;
           }
-          .contact-info {
-            margin: 24px 0;
-            color: #6b7280;
-            font-size: 14px;
-            line-height: 1.8;
+          .footer p {
+            margin: 0 0 8px 0;
           }
-          .message {
-            color: #374151;
-            font-size: 15px;
-            line-height: 1.6;
-            margin: 24px 0;
+          .footer-note {
+            margin-top: 24px;
+            font-size: 12px;
+            color: #999999;
           }
-          .message p {
-            margin: 0 0 16px 0;
-          }
-          @media (max-width: 600px) {
+          @media only screen and (max-width: 600px) {
             body {
-              padding: 10px;
+              padding: 10px 0;
             }
-            .container {
-              padding: 20px;
+            .header {
+              padding: 30px 20px 24px 20px;
             }
-            .invoice-amount {
-              font-size: 24px;
+            .content {
+              padding: 24px 20px 32px 20px;
+            }
+            .header-content {
+              display: block;
+            }
+            .business-info,
+            .reminder-info {
+              display: block;
+              width: 100%;
+              text-align: left;
+              padding-left: 0;
+            }
+            .reminder-info {
+              margin-top: 16px;
+            }
+            .amount {
+              font-size: 28px;
             }
           }
         </style>
       </head>
       <body>
-        <div class="container">
+        <div class="email-container">
           <div class="header">
-            ${businessSettings.logo ? `<img src="${businessSettings.logo}" alt="${businessSettings.businessName}" class="logo">` : ''}
-            <h1 class="business-name">${businessSettings.businessName}</h1>
-            ${businessSettings.tagline ? `<p class="business-tagline">${businessSettings.tagline}</p>` : ''}
+            <div class="header-content">
+              <div class="business-info">
+                <div class="business-name">${businessSettings.businessName || 'Business'}</div>
+                ${businessSettings.email ? `<div class="business-details">${businessSettings.email}</div>` : ''}
+                ${businessSettings.phone ? `<div class="business-details">${businessSettings.phone}</div>` : ''}
+              </div>
+              <div class="reminder-info">
+                <div class="reminder-title">PAYMENT REMINDER</div>
+                <div class="invoice-number">#${invoice.invoiceNumber}</div>
+                <div class="invoice-date-label">Due: ${new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                <div class="amount">$${invoice.total.toLocaleString()}</div>
+              </div>
+            </div>
           </div>
 
-          <div class="invoice-details">
-            <h2 class="invoice-number">Invoice #${invoice.invoiceNumber}</h2>
-            <div class="invoice-amount">$${invoice.total.toLocaleString()}</div>
-            <p class="invoice-due">Due: ${new Date(invoice.dueDate).toLocaleDateString()}</p>
+          <div class="content">
             ${overdueDays > 0 ? `
               <div class="overdue-notice">
                 <p class="overdue-text">This invoice is ${overdueDays} day${overdueDays > 1 ? 's' : ''} overdue</p>
               </div>
             ` : ''}
-          </div>
 
-          <div class="message">
-            ${getGreeting()}
-            ${getMessage()}
-          </div>
+            <div class="message-section">
+              <div class="message">
+                ${getGreeting()}
+                ${getMessage()}
+              </div>
+            </div>
 
-          <div style="text-align: center; margin: 32px 0;">
-            <a href="${appBaseUrl}/invoice/${invoice.publicToken}" class="payment-button">
-              View & Pay Invoice
-            </a>
-          </div>
+            <div class="button-container">
+              <a href="${appBaseUrl}/invoice/${invoice.publicToken}" class="payment-button">
+                View & Pay Invoice
+              </a>
+            </div>
 
-          <div class="contact-info">
-            <p><strong>Questions?</strong> Reply to this email or contact us:</p>
-            <p>Email: ${businessSettings.email || 'contact@company.com'}</p>
-            ${businessSettings.phone ? `<p>Phone: ${businessSettings.phone}</p>` : ''}
-          </div>
+            <div class="contact-info">
+              <p><strong>Questions?</strong> Reply to this email or contact us:</p>
+              ${businessSettings.email ? `<p>Email: ${businessSettings.email}</p>` : ''}
+              ${businessSettings.phone ? `<p>Phone: ${businessSettings.phone}</p>` : ''}
+            </div>
 
-          <div class="footer">
-            ${getClosing()}
-            <p style="margin-top: 24px; font-size: 12px; color: #9ca3af;">
-              This is an automated reminder. Please do not reply to this email.
-            </p>
+            <div class="footer">
+              ${getClosing()}
+              <p class="footer-note">
+                This is an automated reminder. Please do not reply to this email.
+              </p>
+            </div>
           </div>
         </div>
       </body>

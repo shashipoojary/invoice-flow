@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import { getReminderEmailTemplate } from '@/lib/reminder-email-templates';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -110,16 +111,18 @@ export async function POST(request: NextRequest) {
       paymentNotes: userData.payment_notes
     };
 
-    // Determine reminder type based on settings
+    // Determine reminder type based on settings - map to 4-tone system
     const reminderCount = invoice.reminder_count || 0;
-    let actualReminderType = 'first';
+    let reminderType: 'friendly' | 'polite' | 'firm' | 'urgent' = 'friendly';
     
     if (reminderSettings.useSystemDefaults) {
       // Use system defaults - determine type by count
       if (reminderCount >= 2) {
-        actualReminderType = 'final';
+        reminderType = 'urgent';
       } else if (reminderCount >= 1) {
-        actualReminderType = 'second';
+        reminderType = 'firm';
+      } else {
+        reminderType = 'polite';
       }
     } else {
       // Use custom rules - handle both before and after due date
@@ -145,128 +148,57 @@ export async function POST(request: NextRequest) {
         }
         
         if (matchingRule) {
-          actualReminderType = matchingRule.type || 'friendly';
+          // Map custom rule type to 4-tone system
+          const ruleType = matchingRule.tone || matchingRule.type || 'friendly';
+          if (['friendly', 'polite', 'firm', 'urgent'].includes(ruleType)) {
+            reminderType = ruleType as 'friendly' | 'polite' | 'firm' | 'urgent';
+          } else {
+            // Default mapping for old types
+            reminderType = 'polite';
+          }
         }
       }
     }
 
-    // Create reminder message based on type
-    const reminderMessages = {
-      first: 'Your invoice is now overdue. Please make payment as soon as possible.',
-      second: 'This is a second reminder for your overdue invoice.',
-      final: 'This is a final notice for your overdue invoice.'
+    // Transform invoice data to match template structure
+    const templateInvoice = {
+      invoiceNumber: invoice.invoice_number,
+      total: invoice.total,
+      dueDate: invoice.due_date,
+      publicToken: invoice.public_token,
+      client: {
+        name: invoice.clients?.[0]?.name || 'Valued Customer',
+        email: invoice.clients?.[0]?.email || ''
+      }
     };
-    const reminderMessage = reminderMessages[actualReminderType as keyof typeof reminderMessages] || reminderMessages.first;
 
-    // Create professional reminder email
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Payment Reminder</title>
-          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-        </head>
-        <body style="margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: #f8fafc;">
-          <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-            
-            <!-- Header -->
-            <div style="background-color: #0D9488; padding: 24px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600; letter-spacing: 1px;">
-                PAYMENT REMINDER
-              </h1>
-            </div>
+    // Transform business settings to match template structure
+    const templateBusinessSettings = {
+      businessName: businessSettings.businessName || 'FlowInvoicer',
+      email: businessSettings.businessEmail || '',
+      phone: businessSettings.businessPhone || '',
+      website: '',
+      logo: businessSettings.logo || '',
+      tagline: '',
+      paymentNotes: businessSettings.paymentNotes || ''
+    };
 
-            <!-- Main Content -->
-            <div style="padding: 32px 24px;">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
-                <div style="flex: 0 0 auto; max-width: 50%;">
-                  <h2 style="margin: 0; color: #1e293b; font-size: 20px; font-weight: 600;">
-                    ${businessSettings.businessName || 'Business Name'}
-                  </h2>
-                </div>
-                <div style="text-align: right; flex: 0 0 auto; max-width: 50%; margin-left: auto;">
-                  <div style="color: #64748b; font-size: 14px; margin-bottom: 4px;">Amount Due</div>
-                  <div style="color: #dc2626; font-size: 24px; font-weight: 700;">$${invoice.total.toLocaleString()}</div>
-                </div>
-              </div>
-              
-              <p style="margin: 0 0 16px 0; color: #475569; font-size: 16px; line-height: 1.5;">
-                Dear ${invoice.clients?.[0]?.name || 'Valued Client'},
-              </p>
-              
-              <p style="margin: 0 0 24px 0; color: #475569; font-size: 16px; line-height: 1.5;">
-                ${reminderMessage}
-              </p>
+    // Get reminder email template using the new template function
+    const reminderTemplate = getReminderEmailTemplate(
+      templateInvoice,
+      templateBusinessSettings,
+      reminderType,
+      daysOverdue,
+      baseUrl
+    );
 
-              <!-- Invoice Details -->
-              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 24px 0;">
-                <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 18px; font-weight: 600;">
-                  Invoice Details
-                </h3>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                  <span style="color: #64748b; font-size: 14px;">Invoice #:</span>
-                  <span style="color: #1e293b; font-size: 14px; font-weight: 500;">${invoice.invoice_number}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                  <span style="color: #64748b; font-size: 14px;">Due Date:</span>
-                  <span style="color: #1e293b; font-size: 14px; font-weight: 500;">${new Date(invoice.due_date).toLocaleDateString()}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between;">
-                  <span style="color: #64748b; font-size: 14px;">Days Overdue:</span>
-                  <span style="color: #dc2626; font-size: 14px; font-weight: 500;">${daysOverdue} days</span>
-                </div>
-              </div>
+    const emailHtml = reminderTemplate.html;
 
-              <!-- Payment Information -->
-              ${businessSettings.paypalEmail || businessSettings.cashappId || businessSettings.venmoId || businessSettings.googlePayUpi || businessSettings.applePayId || businessSettings.bankAccount ? `
-                <div style="margin: 24px 0;">
-                  <h3 style="margin: 0 0 16px 0; color: #1e293b; font-size: 16px; font-weight: 600;">
-                    Payment Methods
-                  </h3>
-                  <div style="color: #475569; font-size: 14px; line-height: 1.6;">
-                    ${[
-                      businessSettings.paypalEmail ? `<div style="margin-bottom: 12px;"><strong>PayPal:</strong> ${businessSettings.paypalEmail}</div>` : '',
-                      businessSettings.cashappId ? `<div style="margin-bottom: 12px;"><strong>Cash App:</strong> ${businessSettings.cashappId}</div>` : '',
-                      businessSettings.venmoId ? `<div style="margin-bottom: 12px;"><strong>Venmo:</strong> ${businessSettings.venmoId}</div>` : '',
-                      businessSettings.googlePayUpi ? `<div style="margin-bottom: 12px;"><strong>Google Pay:</strong> ${businessSettings.googlePayUpi}</div>` : '',
-                      businessSettings.applePayId ? `<div style="margin-bottom: 12px;"><strong>Apple Pay:</strong> ${businessSettings.applePayId}</div>` : '',
-                      businessSettings.bankAccount ? `<div style="margin-bottom: 12px;"><strong>Bank Transfer:</strong> ${businessSettings.bankAccount}</div>` : ''
-                    ].filter(Boolean).join('')}
-                  </div>
-                </div>
-              ` : ''}
-
-              <!-- View Invoice Button -->
-              <div style="text-align: center; margin: 32px 0;">
-                <a href="${baseUrl}/invoice/${invoice.public_token}" 
-                   style="display: inline-block; background-color: #0D9488; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 500; font-size: 16px;">
-                  View Invoice Online
-                </a>
-              </div>
-
-              <p style="margin: 24px 0 0 0; color: #64748b; font-size: 14px; line-height: 1.5;">
-                If you have already made payment, please disregard this reminder. Thank you for your business.
-              </p>
-            </div>
-
-            <!-- Footer -->
-            <div style="background-color: #f8fafc; padding: 24px; text-align: center; border-top: 1px solid #e2e8f0;">
-              <p style="margin: 0; color: #64748b; font-size: 14px;">
-                Powered by <a href="https://invoiceflow.com" style="color: #0D9488; text-decoration: none;">FlowInvoicer</a>
-              </p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
-    // Send email using Resend
+    // Send email using Resend with the new template
     const emailResult = await resend.emails.send({
       from: 'FlowInvoicer <onboarding@resend.dev>',
       to: invoice.clients?.[0]?.email || '',
-      subject: `Payment Reminder - Invoice #${invoice.invoice_number}`,
+      subject: reminderTemplate.subject,
       html: emailHtml,
     });
 
@@ -305,7 +237,7 @@ export async function POST(request: NextRequest) {
         daysOverdue,
         total: invoice.total
       },
-      reminderType: actualReminderType,
+      reminderType: reminderType,
       emailId: emailResult.data?.id
     });
 
