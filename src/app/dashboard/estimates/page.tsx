@@ -243,9 +243,22 @@ function EstimatesContent(): React.JSX.Element {
           const refreshData = await refreshResponse.json();
           setEstimates(refreshData.estimates || []);
           setHasLoadedData(true);
+        } else {
+          setHasLoadedData(true);
         }
+        // Refresh entire page including sidebar
+        router.refresh();
       } else {
-        const error = await response.json();
+        const contentType = response.headers.get('content-type');
+        let error = null;
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const text = await response.text();
+            error = text ? JSON.parse(text) : null;
+          } catch (e) {
+            console.error('Error parsing error response:', e);
+          }
+        }
         showError('Send Failed', error?.error || `Failed to send estimate (${response.status}). Please try again.`);
         setSendEstimateModal(prev => ({ ...prev, isLoading: false }));
       }
