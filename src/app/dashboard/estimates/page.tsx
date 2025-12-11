@@ -35,17 +35,24 @@ function EstimatesContent(): React.JSX.Element {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   
-  // Session check
+  // Handle session expiration - wait for potential refresh from visibility handlers
   useEffect(() => {
-    const checkSession = async () => {
-      if (!loading) {
+    const handleSessionCheck = async () => {
+      if (!user && !loading) {
+        // Wait a moment for visibility/focus handlers to refresh session
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Check one more time before redirecting
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session && !user) {
-          window.location.href = '/auth';
+        if (!session) {
+          window.location.href = '/auth?message=session_expired';
         }
       }
     };
-    checkSession();
+
+    if (!user && !loading) {
+      handleSessionCheck();
+    }
   }, [user, loading]);
 
   // Debounced search
@@ -141,10 +148,36 @@ function EstimatesContent(): React.JSX.Element {
     }
   };
 
-  if (loading || isLoadingEstimates) {
+  // Only show loading spinner if user is not authenticated yet
+  if (loading && !user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      <div className="min-h-screen transition-colors duration-200 bg-white">
+        <div className="flex items-center justify-center h-screen">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user && !loading) {
+    // Show loading while checking session (layout will handle redirect)
+    return (
+      <div className="min-h-screen transition-colors duration-200 bg-white">
+        <div className="flex items-center justify-center h-screen">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading while fetching estimates
+  if (isLoadingEstimates) {
+    return (
+      <div className="flex min-h-screen bg-gray-50">
+        <ModernSidebar onCreateInvoice={() => {}} />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+        </div>
       </div>
     );
   }
