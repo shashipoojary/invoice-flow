@@ -8,6 +8,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useData } from '@/contexts/DataContext';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
 import dynamic from 'next/dynamic';
@@ -26,6 +27,7 @@ function EstimatesContent(): React.JSX.Element {
   const { user, loading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
   const { settings } = useSettings();
+  const { refreshInvoices } = useData();
   
   const [estimates, setEstimates] = useState<Estimate[]>([]);
   const [isLoadingEstimates, setIsLoadingEstimates] = useState(true);
@@ -276,15 +278,38 @@ function EstimatesContent(): React.JSX.Element {
       });
       
       if (response.ok) {
-        const data = await response.json();
-        showSuccess('Estimate Converted', `The estimate has been converted to invoice ${data.invoice?.invoiceNumber || ''} successfully.`);
+        const contentType = response.headers.get('content-type');
+        let data = null;
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const text = await response.text();
+            data = text ? JSON.parse(text) : null;
+          } catch (e) {
+            console.error('Error parsing convert response:', e);
+          }
+        }
+        showSuccess('Estimate Converted', `The estimate has been converted to invoice ${data?.invoice?.invoiceNumber || ''} successfully.`);
         // Refresh estimates
         setHasLoadedData(false); // Reset to allow refresh
         const refreshResponse = await fetch('/api/estimates', { headers });
         if (refreshResponse.ok) {
-          const refreshData = await refreshResponse.json();
-          setEstimates(refreshData.estimates || []);
+          try {
+            const refreshText = await refreshResponse.text();
+            const refreshData = refreshText ? JSON.parse(refreshText) : null;
+            setEstimates(refreshData?.estimates || []);
+            setHasLoadedData(true);
+          } catch (e) {
+            console.error('Error parsing refresh response:', e);
+            setHasLoadedData(true);
+          }
+        } else {
           setHasLoadedData(true);
+        }
+        // Refresh invoices list so the new invoice appears immediately
+        try {
+          await refreshInvoices();
+        } catch (e) {
+          console.error('Error refreshing invoices:', e);
         }
       } else {
         const error = await response.json();
