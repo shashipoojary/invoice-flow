@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useData } from '@/contexts/DataContext';
+import { useRouter } from 'next/navigation';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
 import dynamic from 'next/dynamic';
@@ -28,6 +29,7 @@ function EstimatesContent(): React.JSX.Element {
   const { toasts, removeToast, showSuccess, showError } = useToast();
   const { settings } = useSettings();
   const { refreshInvoices } = useData();
+  const router = useRouter();
   
   const [estimates, setEstimates] = useState<Estimate[]>([]);
   const [isLoadingEstimates, setIsLoadingEstimates] = useState(true);
@@ -244,7 +246,7 @@ function EstimatesContent(): React.JSX.Element {
         }
       } else {
         const error = await response.json();
-        showError('Send Failed', error.error || 'Failed to send estimate. Please try again.');
+        showError('Send Failed', error?.error || `Failed to send estimate (${response.status}). Please try again.`);
         setSendEstimateModal(prev => ({ ...prev, isLoading: false }));
       }
     } catch (error) {
@@ -258,7 +260,7 @@ function EstimatesContent(): React.JSX.Element {
         return newState;
       });
     }
-  }, [getAuthHeaders, showSuccess, showError]);
+  }, [getAuthHeaders, showSuccess, showError, router]);
 
   // Handle convert to invoice
   const handleConvertToInvoice = useCallback(async (estimate: Estimate) => {
@@ -311,6 +313,10 @@ function EstimatesContent(): React.JSX.Element {
         } catch (e) {
           console.error('Error refreshing invoices:', e);
         }
+        // Refresh entire page including sidebar (after a short delay to ensure data is saved)
+        setTimeout(() => {
+          router.refresh();
+        }, 500);
       } else {
         const error = await response.json();
         showError('Error', error.error || 'Failed to convert estimate');
@@ -325,7 +331,7 @@ function EstimatesContent(): React.JSX.Element {
         return newState;
       });
     }
-  }, [getAuthHeaders, showSuccess, showError]);
+  }, [getAuthHeaders, showSuccess, showError, router]);
 
   // Only show loading spinner if user is not authenticated yet
   if (loading && !user) {
@@ -751,8 +757,16 @@ function EstimatesContent(): React.JSX.Element {
               headers
             });
             if (response.ok) {
-              const data = await response.json();
-              setEstimates(data.estimates || []);
+              try {
+                const text = await response.text();
+                const data = text ? JSON.parse(text) : null;
+                setEstimates(data?.estimates || []);
+                setHasLoadedData(true);
+              } catch (e) {
+                console.error('Error parsing refresh response:', e);
+                setHasLoadedData(true);
+              }
+            } else {
               setHasLoadedData(true);
             }
           } catch (error) {
@@ -761,6 +775,8 @@ function EstimatesContent(): React.JSX.Element {
           } finally {
             setIsLoadingEstimates(false);
           }
+          // Refresh entire page including sidebar
+          router.refresh();
         }}
       />
 
