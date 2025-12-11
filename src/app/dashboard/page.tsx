@@ -1398,21 +1398,21 @@ export default function DashboardOverview() {
                 Quick Actions
               </h2>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {/* 60-Second Invoice */}
                 <button
                   onClick={() => setShowFastInvoice(true)}
-                  className="group relative p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-green-200 hover:bg-green-50/30 cursor-pointer"
+                  className="group relative p-2.5 sm:p-3 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-green-200 hover:bg-green-50/30 cursor-pointer"
                 >
-                  <div className="flex items-center space-x-2 sm:space-x-3">
-                    <div className="p-1 sm:p-2 rounded-lg bg-green-50">
-                      <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-green-700" />
+                  <div className="flex flex-col items-center space-y-2">
+                    <div className="p-1.5 rounded-lg bg-green-50">
+                      <Sparkles className="h-4 w-4 text-green-700" />
                     </div>
-                    <div className="text-left">
-                      <h3 className="font-medium text-sm" style={{color: '#1f2937'}}>
+                    <div className="text-center w-full">
+                      <h3 className="font-medium text-xs" style={{color: '#1f2937'}}>
                         Quick Invoice
                       </h3>
-                      <p className="text-xs" style={{color: '#6b7280'}}>
+                      <p className="text-[10px] leading-tight" style={{color: '#6b7280'}}>
                         60-second invoicing
                       </p>
                     </div>
@@ -1422,17 +1422,17 @@ export default function DashboardOverview() {
                 {/* Detailed Invoice */}
                 <button
                   onClick={() => setShowCreateInvoice(true)}
-                  className="group relative p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-blue-200 hover:bg-blue-50/30 cursor-pointer"
+                  className="group relative p-2.5 sm:p-3 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-blue-200 hover:bg-blue-50/30 cursor-pointer"
                 >
-                  <div className="flex items-center space-x-2 sm:space-x-3">
-                    <div className="p-1 sm:p-2 rounded-lg bg-blue-50">
-                      <FilePlus className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                  <div className="flex flex-col items-center space-y-2">
+                    <div className="p-1.5 rounded-lg bg-blue-50">
+                      <FilePlus className="h-4 w-4 text-blue-600" />
                     </div>
-                    <div className="text-left">
-                      <h3 className="font-medium text-sm" style={{color: '#1f2937'}}>
+                    <div className="text-center w-full">
+                      <h3 className="font-medium text-xs" style={{color: '#1f2937'}}>
                         Detailed Invoice
                       </h3>
-                      <p className="text-xs" style={{color: '#6b7280'}}>
+                      <p className="text-[10px] leading-tight" style={{color: '#6b7280'}}>
                         Full customization
                       </p>
                     </div>
@@ -1442,17 +1442,17 @@ export default function DashboardOverview() {
                 {/* Create Estimate */}
                 <button
                   onClick={() => setShowCreateEstimate(true)}
-                  className="group relative p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-teal-200 hover:bg-teal-50/30 cursor-pointer"
+                  className="group relative p-2.5 sm:p-3 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-teal-200 hover:bg-teal-50/30 cursor-pointer"
                 >
-                  <div className="flex items-center space-x-2 sm:space-x-3">
-                    <div className="p-1 sm:p-2 rounded-lg bg-teal-50">
-                      <ClipboardCheck className="h-4 w-4 sm:h-5 sm:w-5 text-teal-600" />
+                  <div className="flex flex-col items-center space-y-2">
+                    <div className="p-1.5 rounded-lg bg-teal-50">
+                      <ClipboardCheck className="h-4 w-4 text-teal-600" />
                     </div>
-                    <div className="text-left">
-                      <h3 className="font-medium text-sm" style={{color: '#1f2937'}}>
+                    <div className="text-center w-full">
+                      <h3 className="font-medium text-xs" style={{color: '#1f2937'}}>
                         Create Estimate
                       </h3>
-                      <p className="text-xs" style={{color: '#6b7280'}}>
+                      <p className="text-[10px] leading-tight" style={{color: '#6b7280'}}>
                         Get client approval
                       </p>
                     </div>
@@ -1462,17 +1462,17 @@ export default function DashboardOverview() {
                 {/* Add Client */}
                 <button
                   onClick={() => setShowCreateClient(true)}
-                  className="group relative p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-purple-200 hover:bg-purple-50/30 cursor-pointer"
+                  className="group relative p-2.5 sm:p-3 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-purple-200 hover:bg-purple-50/30 cursor-pointer"
                 >
-                  <div className="flex items-center space-x-2 sm:space-x-3">
-                    <div className="p-1 sm:p-2 rounded-lg bg-purple-50">
-                      <UserPlus className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+                  <div className="flex flex-col items-center space-y-2">
+                    <div className="p-1.5 rounded-lg bg-purple-50">
+                      <UserPlus className="h-4 w-4 text-purple-600" />
                     </div>
-                    <div className="text-left">
-                      <h3 className="font-medium text-sm" style={{color: '#1f2937'}}>
+                    <div className="text-center w-full">
+                      <h3 className="font-medium text-xs" style={{color: '#1f2937'}}>
                         Add Client
                       </h3>
-                      <p className="text-xs" style={{color: '#6b7280'}}>
+                      <p className="text-[10px] leading-tight" style={{color: '#6b7280'}}>
                         Manage clients
                       </p>
                     </div>
