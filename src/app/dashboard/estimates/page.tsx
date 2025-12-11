@@ -948,12 +948,14 @@ function EstimatesContent(): React.JSX.Element {
 
                   {/* Actions */}
                   <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200">
-                    <button
-                      onClick={closeEstimateModal}
-                      className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
-                    >
-                      Close
-                    </button>
+                    {selectedEstimate.status !== 'approved' && (
+                      <button
+                        onClick={closeEstimateModal}
+                        className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
+                      >
+                        Close
+                      </button>
+                    )}
                     {(selectedEstimate as any).public_token && (
                       <button
                         onClick={() => {

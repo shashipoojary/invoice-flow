@@ -109,9 +109,22 @@ export async function POST(request: NextRequest) {
       paymentNotes: settings.payment_notes || ''
     };
 
+    // Calculate subtotal from items
+    const subtotal = estimate.estimate_items.reduce((sum: number, item: any) => sum + parseFloat(item.line_total || 0), 0);
+    // Get discount and tax from estimate (use database field names)
+    const discount = parseFloat(estimate.discount || 0);
+    const taxAmount = parseFloat(estimate.tax || 0); // Database stores tax as amount, not rate
+    const afterDiscount = subtotal - discount;
+    // Calculate tax rate from stored tax amount
+    const taxRate = afterDiscount > 0 ? (taxAmount / afterDiscount) * 100 : 0;
+
     const estimateData = {
       estimate_number: estimate.estimate_number,
       total: parseFloat(estimate.total),
+      subtotal: subtotal,
+      discount: discount > 0 ? discount : 0,
+      taxRate: taxRate > 0 ? taxRate : 0,
+      taxAmount: taxAmount > 0 ? taxAmount : 0,
       issue_date: estimate.issue_date || new Date().toISOString().split('T')[0],
       expiry_date: estimate.expiry_date || undefined,
       notes: estimate.notes || undefined,

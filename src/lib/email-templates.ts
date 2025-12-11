@@ -2020,6 +2020,10 @@ export function generateEstimateEmailTemplate(
   estimate: {
     estimate_number: string;
     total: number;
+    subtotal: number;
+    discount?: number;
+    taxRate?: number;
+    taxAmount?: number;
     issue_date: string;
     expiry_date?: string;
     notes?: string;
@@ -2231,6 +2235,8 @@ export function generateEstimateEmailTemplate(
             font-weight: 400;
             display: table-cell;
             vertical-align: top;
+            text-align: right;
+            padding-left: 16px;
           }
           .items-section {
             margin-bottom: 32px;
@@ -2270,24 +2276,15 @@ export function generateEstimateEmailTemplate(
             display: inline-block;
             background: ${primaryColor};
             color: #ffffff !important;
-            padding: 10px 20px;
+            padding: 12px 32px;
             text-decoration: none;
             border-radius: 0;
-            font-weight: 400;
+            font-weight: 500;
             font-size: 14px;
-            margin: 0 4px 8px 4px;
+            margin: 0;
             text-align: center;
             letter-spacing: 0.5px;
             border: none;
-          }
-          .cta-button-approve {
-            background: #10b981;
-          }
-          .cta-button-reject {
-            background: #ef4444;
-          }
-          .cta-button-view {
-            background: #6366f1;
           }
           .footer {
             padding: 32px 40px;
@@ -2335,7 +2332,7 @@ export function generateEstimateEmailTemplate(
             .cta-button {
               display: block;
               width: 100%;
-              margin: 0 0 8px 0;
+              margin: 0;
             }
           }
         </style>
@@ -2382,8 +2379,24 @@ export function generateEstimateEmailTemplate(
 
             <div class="estimate-details-section">
               <div class="detail-row">
-                <div class="detail-label">Total</div>
-                <div class="detail-value">${formatCurrency(estimate.total)}</div>
+                <div class="detail-label">Subtotal</div>
+                <div class="detail-value">${formatCurrency(estimate.subtotal)}</div>
+              </div>
+              ${estimate.discount && estimate.discount > 0 ? `
+              <div class="detail-row">
+                <div class="detail-label">Discount${estimate.subtotal > 0 && estimate.discount < estimate.subtotal ? ` (${((estimate.discount / estimate.subtotal) * 100).toFixed(1)}%)` : ''}</div>
+                <div class="detail-value">-${formatCurrency(estimate.discount)}</div>
+              </div>
+              ` : ''}
+              ${estimate.taxAmount && estimate.taxAmount > 0 ? `
+              <div class="detail-row">
+                <div class="detail-label">Tax${estimate.taxRate && estimate.taxRate > 0 ? ` (${estimate.taxRate.toFixed(1)}%)` : ''}</div>
+                <div class="detail-value">${formatCurrency(estimate.taxAmount)}</div>
+              </div>
+              ` : ''}
+              <div class="detail-row" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
+                <div class="detail-label" style="font-weight: 600;">Total</div>
+                <div class="detail-value" style="font-weight: 600;">${formatCurrency(estimate.total)}</div>
               </div>
             </div>
 
@@ -2394,9 +2407,7 @@ export function generateEstimateEmailTemplate(
             ` : ''}
 
             <div class="cta-section">
-              <a href="${publicUrl}?action=approve" class="cta-button cta-button-approve">Approve Estimate</a>
-              <a href="${publicUrl}?action=reject" class="cta-button cta-button-reject">Reject Estimate</a>
-              <a href="${publicUrl}" class="cta-button cta-button-view">View Full Estimate</a>
+              <a href="${publicUrl}" class="cta-button">View Estimation</a>
             </div>
           </div>
 

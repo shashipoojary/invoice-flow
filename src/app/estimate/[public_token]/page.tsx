@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { AlertCircle, Loader2, CheckCircle, X as XIcon } from 'lucide-react'
+import { AlertCircle, Loader2, CheckCircle, X as XIcon, FileText } from 'lucide-react'
 
 interface EstimateItem {
   id: string
@@ -337,12 +337,64 @@ export default function PublicEstimatePage() {
             </div>
           </div>
 
-          {/* Action Message */}
-          {actionMessage && (
-            <div className={`mb-6 p-3 border ${
-              actionMessage.type === 'success' ? 'border-green-200 bg-green-50 text-green-800' : 'border-red-200 bg-red-50 text-red-800'
+          {/* Status Banner - Show when approved, rejected, or converted */}
+          {estimate.status === 'approved' && (
+            <div className="mb-6 px-4 py-3 bg-emerald-50 border-l-4 border-emerald-500">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-emerald-900">This estimate has been approved.</p>
+                  <p className="text-xs text-emerald-700 mt-0.5">Thank you for your approval. The business owner has been notified.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {estimate.status === 'rejected' && (
+            <div className="mb-6 px-4 py-3 bg-red-50 border-l-4 border-red-500">
+              <div className="flex items-start gap-2">
+                <XIcon className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-red-900">This estimate has been rejected.</p>
+                  {estimate.rejectionReason && (
+                    <div className="mt-2 p-2 bg-white border border-red-200 rounded">
+                      <p className="text-xs font-medium text-red-800 mb-1">Rejection Reason:</p>
+                      <p className="text-xs text-red-700">{estimate.rejectionReason}</p>
+                    </div>
+                  )}
+                  <p className="text-xs text-red-700 mt-2">The business owner has been notified of your decision.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {estimate.status === 'converted' && (
+            <div className="mb-6 px-4 py-3 bg-indigo-50 border-l-4 border-indigo-500">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-indigo-600 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-indigo-900">This estimate has been converted to an invoice.</p>
+                  <p className="text-xs text-indigo-700 mt-0.5">The estimate is no longer active. Please refer to the invoice for payment details.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Message - Show temporary success/error messages (only when status is still pending) */}
+          {actionMessage && estimate.status === 'sent' && estimate.approvalStatus === 'pending' && (
+            <div className={`mb-6 px-4 py-3 border-l-4 ${
+              actionMessage.type === 'success' 
+                ? 'border-emerald-500 bg-emerald-50 text-emerald-900' 
+                : 'border-red-500 bg-red-50 text-red-900'
             }`}>
-              <p className="text-sm">{actionMessage.text}</p>
+              <div className="flex items-center gap-2">
+                {actionMessage.type === 'success' ? (
+                  <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                )}
+                <p className="text-sm font-medium">{actionMessage.text}</p>
+              </div>
             </div>
           )}
 
@@ -428,27 +480,17 @@ export default function PublicEstimatePage() {
           )}
 
           {estimate.isExpired && (
-            <div className="mt-6 p-3 border border-yellow-200 bg-yellow-50">
-              <p className="text-sm text-yellow-800">This estimate has expired.</p>
+            <div className="mb-6 px-4 py-3 bg-amber-50 border-l-4 border-amber-500">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-amber-900">This estimate has expired.</p>
+                  <p className="text-xs text-amber-700 mt-0.5">Please contact the business owner for a new estimate.</p>
+                </div>
+              </div>
             </div>
           )}
 
-          {estimate.status === 'approved' && (
-            <div className="mt-6 p-3 border border-green-200 bg-green-50">
-              <p className="text-sm text-green-800">This estimate has been approved.</p>
-            </div>
-          )}
-
-          {estimate.status === 'rejected' && (
-            <div className="mt-6 p-3 border border-red-200 bg-red-50">
-              <p className="text-sm font-medium text-red-800 mb-2">This estimate has been rejected.</p>
-              {estimate.rejectionReason && (
-                <p className="text-sm text-red-700 mt-2">
-                  <strong>Reason:</strong> {estimate.rejectionReason}
-                </p>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Content */}
