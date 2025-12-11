@@ -25,8 +25,20 @@ export async function POST(
       .eq('id', id)
       .single();
 
-    if (estimateError || !estimate) {
+    if (estimateError) {
+      console.error('Error fetching estimate:', estimateError);
       return NextResponse.json({ error: 'Estimate not found' }, { status: 404 });
+    }
+
+    if (!estimate) {
+      return NextResponse.json({ error: 'Estimate not found' }, { status: 404 });
+    }
+
+    // Check if already approved or rejected
+    if (estimate.approval_status === 'approved' || estimate.approval_status === 'rejected') {
+      return NextResponse.json({ 
+        error: `Estimate has already been ${estimate.approval_status}` 
+      }, { status: 400 });
     }
 
     // Update estimate approval status
@@ -71,7 +83,7 @@ export async function POST(
             <html>
               <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
                 <h2 style="color: #10b981;">Estimate Approved!</h2>
-                <p>Great news! Your estimate <strong>${estimate.estimate_number}</strong> has been approved by <strong>${estimate.clients.name}</strong>.</p>
+                <p>Great news! Your estimate <strong>${estimate.estimate_number}</strong> has been approved by <strong>${estimate.clients?.name || 'Client'}</strong>.</p>
                 ${comment ? `<p><strong>Client Comment:</strong> ${comment}</p>` : ''}
                 <p>You can now convert this estimate to an invoice.</p>
               </body>

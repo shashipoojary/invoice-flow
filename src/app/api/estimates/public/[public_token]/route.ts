@@ -133,6 +133,7 @@ export async function GET(
         total: parseFloat(estimate.total || 0),
         status: estimate.status,
         approvalStatus: estimate.approval_status,
+        rejectionReason: estimate.rejection_reason,
         isExpired: isExpired,
         notes: estimate.notes,
         created_at: estimate.created_at,

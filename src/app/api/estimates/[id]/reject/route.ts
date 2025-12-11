@@ -10,7 +10,12 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { reason, comment } = await request.json();
+
+    const { reason } = await request.json();
+
+    if (!reason || reason.trim() === '') {
+      return NextResponse.json({ error: 'Rejection reason is required' }, { status: 400 });
+    }
 
     // Fetch estimate
     const { data: estimate, error: estimateError } = await supabaseAdmin
@@ -25,8 +30,20 @@ export async function POST(
       .eq('id', id)
       .single();
 
-    if (estimateError || !estimate) {
+    if (estimateError) {
+      console.error('Error fetching estimate:', estimateError);
       return NextResponse.json({ error: 'Estimate not found' }, { status: 404 });
+    }
+
+    if (!estimate) {
+      return NextResponse.json({ error: 'Estimate not found' }, { status: 404 });
+    }
+
+    // Check if already approved or rejected
+    if (estimate.approval_status === 'approved' || estimate.approval_status === 'rejected') {
+      return NextResponse.json({ 
+        error: `Estimate has already been ${estimate.approval_status}` 
+      }, { status: 400 });
     }
 
     // Update estimate rejection status
@@ -36,7 +53,7 @@ export async function POST(
         approval_status: 'rejected',
         status: 'rejected',
         rejected_at: new Date().toISOString(),
-        rejection_reason: reason || comment || '',
+        rejection_reason: reason || '',
         updated_at: new Date().toISOString()
       })
       .eq('id', id);
@@ -50,7 +67,7 @@ export async function POST(
     await supabaseAdmin.from('estimate_events').insert({
       estimate_id: id,
       type: 'rejected',
-      metadata: { reason: reason || '', comment: comment || '' }
+      metadata: { reason: reason || '' }
     });
 
     // Fetch user settings to send notification
@@ -72,9 +89,8 @@ export async function POST(
             <html>
               <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
                 <h2 style="color: #ef4444;">Estimate Rejected</h2>
-                <p>Your estimate <strong>${estimate.estimate_number}</strong> has been rejected by <strong>${estimate.clients.name}</strong>.</p>
-                ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
-                ${comment ? `<p><strong>Client Comment:</strong> ${comment}</p>` : ''}
+                <p>Your estimate <strong>${estimate.estimate_number}</strong> has been rejected by <strong>${estimate.clients?.name || 'Client'}</strong>.</p>
+                <p><strong>Reason:</strong> ${reason}</p>
                 <p>You may want to revise the estimate and send a new one.</p>
               </body>
             </html>

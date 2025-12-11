@@ -811,6 +811,14 @@ function EstimatesContent(): React.JSX.Element {
                     )}
                   </div>
 
+                  {/* Rejection Reason */}
+                  {selectedEstimate.status === 'rejected' && selectedEstimate.rejectionReason && (
+                    <div className="mt-4 p-3 bg-red-50 border border-red-200">
+                      <h4 className="text-sm font-medium text-red-800 mb-1">Rejection Reason</h4>
+                      <p className="text-sm text-red-700">{selectedEstimate.rejectionReason}</p>
+                    </div>
+                  )}
+
                   {/* Items */}
                   <div>
                     <h4 className="text-sm font-medium text-gray-500 mb-3">Items</h4>

@@ -29,6 +29,7 @@ interface Estimate {
   total: number
   status: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired' | 'converted'
   approvalStatus: 'pending' | 'approved' | 'rejected'
+  rejectionReason?: string
   isExpired: boolean
   notes?: string
   theme?: {
@@ -66,6 +67,8 @@ export default function PublicEstimatePage() {
   const [error, setError] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [rejectionReason, setRejectionReason] = useState('')
 
   const handleApprove = async () => {
     if (!estimate || actionLoading) return
@@ -80,9 +83,17 @@ export default function PublicEstimatePage() {
       })
 
       if (response.ok) {
-        setActionMessage({ type: 'success', text: 'Estimate approved successfully!' })
-        // Update estimate status
-        setEstimate(prev => prev ? { ...prev, status: 'approved', approvalStatus: 'approved' } : null)
+        const result = await response.json()
+        setActionMessage({ type: 'success', text: result.message || 'Estimate approved successfully!' })
+        // Reload estimate to get updated status
+        const reloadResponse = await fetch(`/api/estimates/public/${params.public_token}`)
+        if (reloadResponse.ok) {
+          const reloadData = await reloadResponse.json()
+          setEstimate(reloadData.estimate)
+        } else {
+          // Fallback: update estimate status locally
+          setEstimate(prev => prev ? { ...prev, status: 'approved', approvalStatus: 'approved' } : null)
+        }
       } else {
         const error = await response.json()
         setActionMessage({ type: 'error', text: error.error || 'Failed to approve estimate' })
@@ -95,8 +106,12 @@ export default function PublicEstimatePage() {
     }
   }
 
+  const handleRejectClick = () => {
+    setShowRejectModal(true)
+  }
+
   const handleReject = async () => {
-    if (!estimate || actionLoading) return
+    if (!estimate || actionLoading || !rejectionReason.trim()) return
 
     setActionLoading(true)
     setActionMessage(null)
@@ -104,13 +119,24 @@ export default function PublicEstimatePage() {
     try {
       const response = await fetch(`/api/estimates/${estimate.id}/reject`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: rejectionReason.trim() })
       })
 
       if (response.ok) {
-        setActionMessage({ type: 'success', text: 'Estimate rejected.' })
-        // Update estimate status
-        setEstimate(prev => prev ? { ...prev, status: 'rejected', approvalStatus: 'rejected' } : null)
+        const result = await response.json()
+        setActionMessage({ type: 'success', text: result.message || 'Estimate rejected successfully.' })
+        setShowRejectModal(false)
+        setRejectionReason('')
+        // Reload estimate to get updated status and rejection reason
+        const reloadResponse = await fetch(`/api/estimates/public/${params.public_token}`)
+        if (reloadResponse.ok) {
+          const reloadData = await reloadResponse.json()
+          setEstimate(reloadData.estimate)
+        } else {
+          // Fallback: update estimate status locally
+          setEstimate(prev => prev ? { ...prev, status: 'rejected', approvalStatus: 'rejected', rejectionReason: rejectionReason.trim() } : null)
+        }
       } else {
         const error = await response.json()
         setActionMessage({ type: 'error', text: error.error || 'Failed to reject estimate' })
@@ -128,33 +154,33 @@ export default function PublicEstimatePage() {
       try {
         const response = await fetch(`/api/estimates/public/${params.public_token}`)
         
-        if (response.ok) {
-          const data = await response.json()
-          setEstimate(data.estimate)
-          
-          // Log view event
-          if (data.estimate?.id) {
-            fetch('/api/estimates/events', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ estimateId: data.estimate.id, type: 'viewed' })
-            }).catch(() => {})
-          }
+      if (response.ok) {
+        const data = await response.json()
+        setEstimate(data.estimate)
+        
+        // Log view event
+        if (data.estimate?.id) {
+          fetch('/api/estimates/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ estimateId: data.estimate.id, type: 'viewed' })
+          }).catch(() => {})
+        }
 
-          // Check for action parameter from email links
-          const urlParams = new URLSearchParams(window.location.search)
-          const action = urlParams.get('action')
-          if (action === 'approve' && data.estimate?.approvalStatus === 'pending' && data.estimate?.status === 'sent') {
-            // Auto-approve when coming from email link
-            setTimeout(() => {
-              handleApprove()
-            }, 500)
-          } else if (action === 'reject' && data.estimate?.approvalStatus === 'pending' && data.estimate?.status === 'sent') {
-            // Auto-reject when coming from email link
-            setTimeout(() => {
-              handleReject()
-            }, 500)
-          }
+        // Check for action parameter from email links
+        const urlParams = new URLSearchParams(window.location.search)
+        const action = urlParams.get('action')
+        if (action === 'approve' && data.estimate?.approvalStatus === 'pending' && data.estimate?.status === 'sent') {
+          // Auto-approve when coming from email link
+          setTimeout(() => {
+            handleApprove()
+          }, 500)
+        } else if (action === 'reject' && data.estimate?.approvalStatus === 'pending' && data.estimate?.status === 'sent') {
+          // Show reject modal when coming from email link
+          setTimeout(() => {
+            setShowRejectModal(true)
+          }, 500)
+        }
         } else {
           setError('Estimate not found')
         }
@@ -193,7 +219,7 @@ export default function PublicEstimatePage() {
     )
   }
 
-  const canApproveReject = estimate.approvalStatus === 'pending' && estimate.status === 'sent' && !estimate.isExpired
+  const canApproveReject = estimate.approvalStatus === 'pending' && estimate.status === 'sent' && !estimate.isExpired && !actionLoading
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:py-12 sm:px-6 lg:px-8">
@@ -265,23 +291,62 @@ export default function PublicEstimatePage() {
                 )}
               </button>
               <button
-                onClick={handleReject}
+                onClick={handleRejectClick}
                 disabled={actionLoading}
                 className="flex-1 px-4 py-2 bg-red-600 text-white hover:bg-red-700 transition-colors font-normal text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ borderRadius: 0 }}
               >
-                {actionLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Processing...
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    <XIcon className="h-4 w-4" />
-                    Reject Estimate
-                  </span>
-                )}
+                <span className="flex items-center justify-center gap-2">
+                  <XIcon className="h-4 w-4" />
+                  Reject Estimate
+                </span>
               </button>
+            </div>
+          )}
+
+          {/* Rejection Modal */}
+          {showRejectModal && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white border border-gray-200 max-w-md w-full p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Reject Estimate</h3>
+                <p className="text-sm text-gray-600 mb-4">Please provide a reason for rejecting this estimate.</p>
+                <textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Enter rejection reason..."
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none text-sm"
+                  style={{ borderRadius: 0 }}
+                />
+                <div className="flex gap-3 mt-6">
+                  <button
+                    onClick={() => {
+                      setShowRejectModal(false)
+                      setRejectionReason('')
+                    }}
+                    disabled={actionLoading}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors font-normal text-sm cursor-pointer disabled:opacity-50"
+                    style={{ borderRadius: 0 }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleReject}
+                    disabled={actionLoading || !rejectionReason.trim()}
+                    className="flex-1 px-4 py-2 bg-red-600 text-white hover:bg-red-700 transition-colors font-normal text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ borderRadius: 0 }}
+                  >
+                    {actionLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Processing...
+                      </span>
+                    ) : (
+                      'Reject Estimate'
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -299,7 +364,12 @@ export default function PublicEstimatePage() {
 
           {estimate.status === 'rejected' && (
             <div className="mt-6 p-3 border border-red-200 bg-red-50">
-              <p className="text-sm text-red-800">This estimate has been rejected.</p>
+              <p className="text-sm font-medium text-red-800 mb-2">This estimate has been rejected.</p>
+              {estimate.rejectionReason && (
+                <p className="text-sm text-red-700 mt-2">
+                  <strong>Reason:</strong> {estimate.rejectionReason}
+                </p>
+              )}
             </div>
           )}
         </div>
