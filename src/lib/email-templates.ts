@@ -1686,25 +1686,25 @@ export function generateCreativeEmailTemplate(
               <div class="detail-section">
                 <h3>Bill To</h3>
                 <p style="margin-bottom: 32px !important;">
-                  ${invoice.clients.name}<br>
-                  ${invoice.clients.company ? `${invoice.clients.company}<br>` : ''}
-                  ${invoice.clients.email}
+                          ${invoice.clients.name}<br>
+                          ${invoice.clients.company ? `${invoice.clients.company}<br>` : ''}
+                          ${invoice.clients.email}
                 </p>
-              </div>
+                        </div>
               <div class="detail-section">
                 <h3>Invoice Details</h3>
                 <p>
-                  Issue Date: ${formatDate(invoice.issue_date)}<br>
-                  Due Date: ${formatDate(invoice.due_date)}<br>
-                  Status: Outstanding
+                          Issue Date: ${formatDate(invoice.issue_date)}<br>
+                          Due Date: ${formatDate(invoice.due_date)}<br>
+                          Status: Outstanding
                 </p>
-              </div>
-            </div>
+                        </div>
+                        </div>
 
             <div class="message-section">
               <p>Thank you for your business. Please find your invoice details below.</p>
               ${invoice.notes ? `<p><strong>Notes:</strong> ${invoice.notes}</p>` : ''}
-            </div>
+                        </div>
 
             <div class="cta-section">
               <a href="${publicUrl}" class="cta-button" style="background: ${primaryColor} !important; color: #ffffff !important; padding: 16px 32px; text-decoration: none; font-weight: 600; font-size: 14px; border-radius: 6px; display: inline-block;">
@@ -1712,44 +1712,44 @@ export function generateCreativeEmailTemplate(
               </a>
             </div>
 
-            ${(businessSettings.paypalEmail || businessSettings.cashappId || businessSettings.venmoId || businessSettings.googlePayUpi || businessSettings.applePayId || businessSettings.bankAccount || businessSettings.stripeAccount || businessSettings.paymentNotes) ? `
+                  ${(businessSettings.paypalEmail || businessSettings.cashappId || businessSettings.venmoId || businessSettings.googlePayUpi || businessSettings.applePayId || businessSettings.bankAccount || businessSettings.stripeAccount || businessSettings.paymentNotes) ? `
             <div class="payment-methods">
               <h3 style="color: ${primaryColor} !important;">Payment Methods</h3>
               <div class="payment-notice">
                 <p>Please use one of the following payment methods to settle this invoice. All payments are processed securely.</p>
-              </div>
-              <div class="payment-list">
-                ${businessSettings.paypalEmail ? `
+                    </div>
+                    <div class="payment-list">
+                      ${businessSettings.paypalEmail ? `
                   <div class="payment-method-item">
                     <div class="payment-method-name" style="color: ${primaryColor} !important;">PAYPAL</div>
                     <div class="payment-method-details">Send payment to: ${businessSettings.paypalEmail}</div>
-                  </div>
-                ` : ''}
-                ${businessSettings.cashappId ? `
+                        </div>
+                      ` : ''}
+                      ${businessSettings.cashappId ? `
                   <div class="payment-method-item">
                     <div class="payment-method-name" style="color: ${primaryColor} !important;">CASH APP</div>
                     <div class="payment-method-details">Send to: ${businessSettings.cashappId.startsWith('$') ? businessSettings.cashappId : '$' + businessSettings.cashappId}</div>
-                  </div>
-                ` : ''}
-                ${businessSettings.venmoId ? `
+                        </div>
+                      ` : ''}
+                      ${businessSettings.venmoId ? `
                   <div class="payment-method-item">
                     <div class="payment-method-name" style="color: ${primaryColor} !important;">VENMO</div>
                     <div class="payment-method-details">Send to: ${businessSettings.venmoId.startsWith('@') ? businessSettings.venmoId : '@' + businessSettings.venmoId}</div>
-                  </div>
-                ` : ''}
-                ${businessSettings.googlePayUpi ? `
+                        </div>
+                      ` : ''}
+                      ${businessSettings.googlePayUpi ? `
                   <div class="payment-method-item">
                     <div class="payment-method-name" style="color: ${primaryColor} !important;">GOOGLE PAY</div>
                     <div class="payment-method-details">UPI ID: ${businessSettings.googlePayUpi}</div>
-                  </div>
-                ` : ''}
-                ${businessSettings.applePayId ? `
+                        </div>
+                      ` : ''}
+                      ${businessSettings.applePayId ? `
                   <div class="payment-method-item">
                     <div class="payment-method-name" style="color: ${primaryColor} !important;">APPLE PAY</div>
                     <div class="payment-method-details">Send to: ${businessSettings.applePayId}</div>
-                  </div>
-                ` : ''}
-                ${businessSettings.bankAccount ? `
+                        </div>
+                      ` : ''}
+                      ${businessSettings.bankAccount ? `
                   <div class="payment-method-item">
                     <div class="payment-method-name" style="color: ${primaryColor} !important;">BANK TRANSFER</div>
                     <div class="payment-method-details">
@@ -1757,27 +1757,27 @@ export function generateCreativeEmailTemplate(
                       ${businessSettings.bankIfscSwift ? `<br>IFSC/SWIFT: ${businessSettings.bankIfscSwift}` : ''}
                       ${businessSettings.bankIban ? `<br>IBAN: ${businessSettings.bankIban}` : ''}
                     </div>
-                  </div>
-                ` : ''}
-                ${businessSettings.stripeAccount ? `
+                        </div>
+                      ` : ''}
+                      ${businessSettings.stripeAccount ? `
                   <div class="payment-method-item">
                     <div class="payment-method-name" style="color: ${primaryColor} !important;">CREDIT/DEBIT CARD</div>
                     <div class="payment-method-details">Processed securely via Stripe</div>
-                  </div>
-                ` : ''}
-                ${businessSettings.paymentNotes ? `
+                        </div>
+                      ` : ''}
+                      ${businessSettings.paymentNotes ? `
                   <div class="payment-method-item">
                     <div class="payment-method-name" style="color: ${primaryColor} !important;">OTHER</div>
                     <div class="payment-method-details">${businessSettings.paymentNotes}</div>
-                  </div>
-                ` : ''}
-              </div>
+                        </div>
+                      ` : ''}
+                    </div>
 
               <div class="payment-security">
                 <p>Security: All payment methods are secure and encrypted. Please include invoice number <strong>#${invoice.invoice_number}</strong> in your payment reference.</p>
-              </div>
-            </div>
-            ` : ''}
+                    </div>
+                  </div>
+                  ` : ''}
           </div>
 
           <div class="footer">
@@ -1940,8 +1940,8 @@ export function generateOriginalFastInvoiceEmailTemplate(
             }
             .invoice-details {
               background: #2a2a2a !important;
-            }
-            .footer {
+          }
+          .footer {
               border-color: #333333 !important;
             }
           }
@@ -2007,6 +2007,405 @@ export function generateOriginalFastInvoiceEmailTemplate(
                 ${businessSettings.businessPhone ? `${businessSettings.businessPhone}` : ''}
                 ${businessSettings.businessEmail ? `${businessSettings.businessPhone ? ' • ' : ''}<a href="mailto:${businessSettings.businessEmail}" class="footer-link">${businessSettings.businessEmail}</a>` : ''}
               </div>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+// Estimate Email Template - Modern, Simple, Clean, Minimal
+export function generateEstimateEmailTemplate(
+  estimate: {
+    estimate_number: string;
+    total: number;
+    issue_date: string;
+    expiry_date?: string;
+    notes?: string;
+    clients: {
+      name: string;
+      email: string;
+      company?: string;
+    };
+    estimate_items: Array<{
+      description: string;
+      qty: number;
+      rate: number;
+      line_total: number;
+    }>;
+  },
+  businessSettings: BusinessSettings,
+  publicUrl: string
+): string {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const primaryColor = '#1F2937';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Estimate ${estimate.estimate_number}</title>
+        <style>
+          * {
+            box-sizing: border-box;
+          }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #000000;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px 0;
+          }
+          /* Dark mode support - ensure readability */
+          @media (prefers-color-scheme: dark) {
+            .email-container {
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
+            }
+            .header {
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
+            }
+            .content {
+              background: #ffffff !important;
+            }
+            .footer {
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
+            }
+            .business-name,
+            .estimate-title,
+            .bill-to-label,
+            .detail-label {
+              color: ${primaryColor} !important;
+            }
+            .estimate-number,
+            .bill-to-content {
+              color: #000000 !important;
+            }
+            .amount {
+              color: #FF6B35 !important;
+            }
+            .business-details,
+            .estimate-date-label,
+            .bill-to-detail,
+            .footer p,
+            .business-contact {
+              color: #333333 !important;
+            }
+          }
+          .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+          }
+          .header {
+            padding: 40px 40px 32px 40px;
+            background: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+          }
+          .header-content {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+          }
+          .business-info {
+            display: table-cell;
+            vertical-align: top;
+            width: 50%;
+          }
+          .business-name {
+            font-size: 20px;
+            font-weight: 400;
+            color: ${primaryColor} !important;
+            margin: 0;
+            padding: 0;
+            letter-spacing: 0;
+          }
+          .business-details {
+            font-size: 14px;
+            color: #808080 !important;
+            line-height: 1.5;
+            margin: 4px 0;
+          }
+          .estimate-info {
+            display: table-cell;
+            vertical-align: top;
+            text-align: right;
+            width: 50%;
+            padding-left: 24px;
+          }
+          .estimate-title {
+            font-size: 20px;
+            font-weight: 400;
+            color: ${primaryColor} !important;
+            margin: 0 0 12px 0;
+            padding: 0;
+            letter-spacing: 0;
+          }
+          .estimate-number {
+            font-size: 14px;
+            color: #000000 !important;
+            margin: 0 0 12px 0;
+            font-weight: 700;
+          }
+          .estimate-date-label {
+            font-size: 12px;
+            color: #808080 !important;
+            margin: 0 0 4px 0;
+          }
+          .amount {
+            font-size: 32px;
+            font-weight: 700;
+            color: #FF6B35 !important;
+            letter-spacing: -0.5px;
+            margin: 16px 0 0 0;
+          }
+          .content {
+            padding: 32px 40px 40px 40px;
+            background: #ffffff;
+          }
+          .bill-to-section {
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #e0e0e0;
+          }
+          .bill-to-label {
+            font-size: 14px !important;
+            font-weight: 400 !important;
+            color: ${primaryColor} !important;
+            margin: 0 0 16px 0 !important;
+          }
+          .bill-to-content {
+            font-size: 14px !important;
+            color: #000000 !important;
+            line-height: 1.6 !important;
+            margin: 4px 0 !important;
+          }
+          .bill-to-detail {
+            font-size: 14px !important;
+            color: #666666 !important;
+            line-height: 1.6 !important;
+            margin: 4px 0 !important;
+          }
+          .estimate-details-section {
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #e0e0e0;
+          }
+          .detail-row {
+            display: table;
+            width: 100%;
+            margin-bottom: 12px;
+          }
+          .detail-label {
+            font-size: 14px;
+            color: ${primaryColor} !important;
+            font-weight: 400;
+            display: table-cell;
+            padding-right: 16px;
+            vertical-align: top;
+          }
+          .detail-value {
+            font-size: 14px;
+            color: #000000 !important;
+            font-weight: 400;
+            display: table-cell;
+            vertical-align: top;
+          }
+          .items-section {
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #e0e0e0;
+          }
+          .items-label {
+            font-size: 14px;
+            color: ${primaryColor} !important;
+            font-weight: 400;
+            margin-bottom: 12px;
+          }
+          .item-row {
+            display: table;
+            width: 100%;
+            margin-bottom: 8px;
+          }
+          .item-description {
+            font-size: 14px;
+            color: #000000 !important;
+            display: table-cell;
+            vertical-align: top;
+          }
+          .item-amount {
+            font-size: 14px;
+            color: #000000 !important;
+            display: table-cell;
+            text-align: right;
+            vertical-align: top;
+            padding-left: 16px;
+          }
+          .cta-section {
+            text-align: center;
+            margin: 32px 0;
+          }
+          .cta-button {
+            display: inline-block;
+            background: ${primaryColor};
+            color: #ffffff !important;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 0;
+            font-weight: 400;
+            font-size: 14px;
+            margin: 0 4px 8px 4px;
+            text-align: center;
+            letter-spacing: 0.5px;
+            border: none;
+          }
+          .cta-button-approve {
+            background: #10b981;
+          }
+          .cta-button-reject {
+            background: #ef4444;
+          }
+          .cta-button-view {
+            background: #6366f1;
+          }
+          .footer {
+            padding: 32px 40px;
+            border-top: 1px solid #e0e0e0;
+            text-align: left;
+            background: #ffffff;
+          }
+          .footer p {
+            margin: 0 0 12px 0 !important;
+            font-size: 14px !important;
+            color: #000000 !important;
+            line-height: 1.6 !important;
+          }
+          .footer p:last-child {
+            margin-bottom: 0 !important;
+          }
+          .business-contact {
+            font-size: 14px;
+            color: #333333 !important;
+            margin-top: 12px;
+          }
+          @media only screen and (max-width: 600px) {
+            .header {
+              padding: 24px 20px 20px;
+            }
+            .header-content {
+              display: block;
+            }
+            .business-info,
+            .estimate-info {
+              display: block;
+              width: 100%;
+              padding-left: 0;
+              margin-bottom: 20px;
+            }
+            .estimate-info {
+              text-align: left;
+            }
+            .content {
+              padding: 24px 20px;
+            }
+            .footer {
+              padding: 24px 20px;
+            }
+            .cta-button {
+              display: block;
+              width: 100%;
+              margin: 0 0 8px 0;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="email-container">
+          <div class="header">
+            <div class="header-content">
+              <div class="business-info">
+                <div class="business-name">${businessSettings.businessName}</div>
+                ${businessSettings.address ? `<div class="business-details">${businessSettings.address}</div>` : ''}
+                ${businessSettings.businessPhone ? `<div class="business-details">${businessSettings.businessPhone}</div>` : ''}
+                ${businessSettings.businessEmail ? `<div class="business-details">${businessSettings.businessEmail}</div>` : ''}
+              </div>
+              <div class="estimate-info">
+                <div class="estimate-title">ESTIMATE</div>
+                <div class="estimate-number">#${estimate.estimate_number}</div>
+                <div class="estimate-date-label">Issue: ${formatDate(estimate.issue_date)}</div>
+                ${estimate.expiry_date ? `<div class="estimate-date-label" style="margin-top: 8px;">Valid Until: ${formatDate(estimate.expiry_date)}</div>` : ''}
+                <div class="amount">${formatCurrency(estimate.total)}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="content">
+            <div class="bill-to-section">
+              <div class="bill-to-label">Bill To</div>
+              <div class="bill-to-content">${estimate.clients.name}</div>
+              ${estimate.clients.company ? `<div class="bill-to-detail">${estimate.clients.company}</div>` : ''}
+              ${estimate.clients.email ? `<div class="bill-to-detail">${estimate.clients.email}</div>` : ''}
+            </div>
+
+            ${estimate.estimate_items.length > 0 ? `
+            <div class="items-section">
+              <div class="items-label">Items</div>
+              ${estimate.estimate_items.map(item => `
+                <div class="item-row">
+                  <div class="item-description">${item.description}</div>
+                  <div class="item-amount">${formatCurrency(item.line_total)}</div>
+                </div>
+              `).join('')}
+            </div>
+            ` : ''}
+
+            <div class="estimate-details-section">
+              <div class="detail-row">
+                <div class="detail-label">Total</div>
+                <div class="detail-value">${formatCurrency(estimate.total)}</div>
+              </div>
+            </div>
+
+            ${estimate.notes ? `
+            <div style="margin: 32px 0; padding: 16px 0; border-bottom: 1px solid #e0e0e0;">
+              <p style="margin: 0 0 12px 0 !important; font-size: 14px !important; color: #000000 !important; line-height: 1.6 !important;">${estimate.notes}</p>
+            </div>
+            ` : ''}
+
+            <div class="cta-section">
+              <a href="${publicUrl}?action=approve" class="cta-button cta-button-approve">Approve Estimate</a>
+              <a href="${publicUrl}?action=reject" class="cta-button cta-button-reject">Reject Estimate</a>
+              <a href="${publicUrl}" class="cta-button cta-button-view">View Full Estimate</a>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p>Thank you for your business!</p>
+            <p>If you have any questions about this estimate, please don't hesitate to contact us.</p>
+            <div class="business-contact">
+              ${businessSettings.businessName}<br>
+              ${businessSettings.businessEmail}${businessSettings.businessPhone ? ` • ${businessSettings.businessPhone}` : ''}
             </div>
           </div>
         </div>

@@ -183,7 +183,7 @@ export default function EstimateModal({
                   ? 'text-gray-400' 
                   : 'text-gray-500'
               }`}>
-                Step {step} of 2
+                Create professional estimates for client approval
               </p>
             </div>
           </div>
@@ -197,6 +197,44 @@ export default function EstimateModal({
           >
             <X className="h-4 w-4" />
           </button>
+        </div>
+
+        {/* Step Indicator */}
+        <div className="px-4 sm:px-6 py-2">
+          <div className="flex items-center justify-center space-x-1 sm:space-x-3 overflow-x-auto">
+            {[
+              { step: 1, label: 'Client & Items', icon: User },
+              { step: 2, label: 'Details', icon: FileText }
+            ].map(({ step: stepNum, label, icon: Icon }) => (
+              <div key={stepNum} className="flex items-center flex-shrink-0">
+                <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
+                  stepNum <= step
+                    ? 'bg-indigo-600 text-white'
+                    : isDarkMode
+                    ? 'bg-gray-700 text-gray-400'
+                    : 'bg-gray-200 text-gray-500'
+                }`}>
+                  {stepNum < step ? (
+                    <CheckCircle className="h-3 w-3" />
+                  ) : (
+                    <Icon className="h-3 w-3" />
+                  )}
+                </div>
+                <span className={`ml-1 sm:ml-2 text-xs font-medium hidden xs:inline ${
+                  stepNum <= step
+                    ? isDarkMode ? 'text-indigo-400' : 'text-indigo-600'
+                    : isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                }`}>
+                  {label}
+                </span>
+                {stepNum < 2 && (
+                  <div className={`w-2 sm:w-6 h-0.5 mx-1 sm:mx-3 ${
+                    stepNum < step ? 'bg-indigo-600' : isDarkMode ? 'bg-gray-600' : 'bg-gray-300'
+                  }`} />
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Content */}
@@ -411,21 +449,21 @@ export default function EstimateModal({
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setStep(2)}
-                disabled={!selectedClientId || items.some(item => !item.description || item.rate <= 0)}
-                className={`w-full py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
-                  !selectedClientId || items.some(item => !item.description || item.rate <= 0)
-                    ? isDarkMode
-                      ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                }`}
-              >
-                <span>Continue</span>
-                <ArrowRight className="h-4 w-4" />
-              </button>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  disabled={!selectedClientId || items.some(item => !item.description || item.rate <= 0)}
+                  className={`w-full sm:w-auto bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                    !selectedClientId || items.some(item => !item.description || item.rate <= 0)
+                      ? 'opacity-50 cursor-not-allowed'
+                      : ''
+                  }`}
+                >
+                  <span>Continue</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           )}
 
@@ -535,8 +573,8 @@ export default function EstimateModal({
                   type="button"
                   onClick={() => setStep(1)}
                   className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
-                    isDarkMode
-                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    isDarkMode 
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -547,16 +585,23 @@ export default function EstimateModal({
                   type="button"
                   onClick={handleSubmit}
                   disabled={loading}
-                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm ${
-                    loading
-                      ? isDarkMode
-                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
+                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
+                    isDarkMode 
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
+                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
                   }`}
                 >
-                  <span>{loading ? 'Creating...' : 'Create Estimate'}</span>
-                  {!loading && <ArrowRight className="h-4 w-4" />}
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Creating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Create Estimate</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
                 </button>
               </div>
             </div>

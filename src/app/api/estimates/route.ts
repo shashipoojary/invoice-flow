@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
     const mappedEstimates = estimates.map((estimate: any) => ({
       id: estimate.id,
       estimateNumber: estimate.estimate_number,
+      public_token: estimate.public_token,
       clientId: estimate.client_id,
       client: estimate.clients,
       items: estimate.estimate_items.map((item: any) => ({

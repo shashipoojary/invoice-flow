@@ -3,6 +3,7 @@ import { Resend } from 'resend';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/auth-middleware';
 import { getBaseUrlFromRequest } from '@/lib/get-base-url';
+import { generateEstimateEmailTemplate } from '@/lib/email-templates';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -90,55 +91,85 @@ export async function POST(request: NextRequest) {
     const encodedToken = encodeURIComponent(estimate.public_token);
     const publicUrl = `${cleanBaseUrl}/estimate/${encodedToken}`;
 
-    // Generate simple estimate email (we'll enhance this later)
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Estimate ${estimate.estimate_number}</title>
-        </head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: #f8f9fa; padding: 30px; border-radius: 8px; margin-bottom: 20px;">
-            <h1 style="margin: 0 0 10px 0; color: #1f2937;">Estimate ${estimate.estimate_number}</h1>
-            <p style="margin: 0; color: #6b7280;">From ${settings.business_name || 'Your Business'}</p>
-          </div>
-          
-          <div style="background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 20px;">
-            <p>Dear ${estimate.clients.name},</p>
-            <p>Please find attached the estimate for your review.</p>
-            <p><strong>Total Amount:</strong> $${parseFloat(estimate.total).toFixed(2)}</p>
-            ${estimate.expiry_date ? `<p><strong>Valid Until:</strong> ${new Date(estimate.expiry_date).toLocaleDateString()}</p>` : ''}
-          </div>
+    // Generate estimate email using the modern template
+    const businessSettings = {
+      businessName: settings.business_name || 'Your Business',
+      businessEmail: settings.business_email || '',
+      businessPhone: settings.business_phone || '',
+      address: settings.business_address || '',
+      paypalEmail: settings.paypal_email || '',
+      cashappId: settings.cashapp_id || '',
+      venmoId: settings.venmo_id || '',
+      googlePayUpi: settings.google_pay_upi || '',
+      applePayId: settings.apple_pay_id || '',
+      bankAccount: settings.bank_account || '',
+      bankIfscSwift: settings.bank_ifsc_swift || '',
+      bankIban: settings.bank_iban || '',
+      stripeAccount: settings.stripe_account || '',
+      paymentNotes: settings.payment_notes || ''
+    };
 
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${publicUrl}" style="display: inline-block; background: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500;">View & Approve Estimate</a>
-          </div>
+    const estimateData = {
+      estimate_number: estimate.estimate_number,
+      total: parseFloat(estimate.total),
+      issue_date: estimate.issue_date || new Date().toISOString().split('T')[0],
+      expiry_date: estimate.expiry_date || undefined,
+      notes: estimate.notes || undefined,
+      clients: {
+        name: estimate.clients.name,
+        email: estimate.clients.email,
+        company: estimate.clients.company || undefined
+      },
+      estimate_items: estimate.estimate_items.map((item: any) => ({
+        description: item.description,
+        qty: item.qty || 1,
+        rate: item.rate,
+        line_total: item.line_total
+      }))
+    };
 
-          <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
-            You can approve or reject this estimate by clicking the link above.
-          </p>
-        </body>
-      </html>
-    `;
+    const emailHtml = generateEstimateEmailTemplate(estimateData, businessSettings, publicUrl);
 
-    // Send email
-    if (process.env.RESEND_API_KEY) {
-      try {
-        await resend.emails.send({
-          from: settings.email_from_address || `FlowInvoicer <noreply@${process.env.RESEND_DOMAIN || 'resend.dev'}>`,
-          to: estimate.clients.email,
-          subject: `Estimate ${estimate.estimate_number} - Please Review`,
-          html: emailHtml,
-        });
-      } catch (emailError: any) {
-        console.error('Error sending estimate email:', emailError);
-        // Don't fail the request if email fails
-      }
+    // Check if Resend API key is configured
+    if (!process.env.RESEND_API_KEY) {
+      return NextResponse.json({ 
+        error: 'Email service not configured. Please add RESEND_API_KEY to environment variables.' 
+      }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, message: 'Estimate sent successfully' }, { status: 200 });
+    if (!estimate.clients?.email) {
+      return NextResponse.json({ 
+        error: 'Client email address is missing' 
+      }, { status: 400 });
+    }
+
+    // Use Resend free plan default email address (same as invoice)
+    const fromAddress = `${businessSettings.businessName || 'FlowInvoicer'} <onboarding@resend.dev>`;
+
+    // Send email with Resend
+    const { data, error } = await resend.emails.send({
+      from: fromAddress,
+      to: [estimate.clients.email],
+      subject: `Estimate ${estimate.estimate_number} - Please Review`,
+      html: emailHtml,
+    });
+
+    if (error) {
+      console.error('Resend email error:', error);
+      return NextResponse.json({ 
+        error: 'Failed to send email',
+        details: error.message || JSON.stringify(error)
+      }, { status: 500 });
+    }
+
+    console.log('Estimate email sent successfully. Email ID:', data?.id);
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Estimate sent successfully',
+      emailSent: true,
+      emailId: data?.id
+    }, { status: 200 });
   } catch (error: any) {
     console.error('Error sending estimate:', error);
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });

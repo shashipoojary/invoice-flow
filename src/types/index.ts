@@ -120,6 +120,7 @@ export interface BusinessSettings {
 export interface Estimate {
   id: string;
   estimateNumber: string;
+  public_token?: string;
   clientId: string;
   client: Client;
   items: InvoiceItem[]; // Reuse InvoiceItem structure
