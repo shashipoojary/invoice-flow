@@ -161,13 +161,13 @@ export default function EstimateModal({
           <div className="flex items-center space-x-3">
             <div className={`p-2.5 rounded-lg ${
               isDarkMode 
-                ? 'bg-teal-500/20' 
-                : 'bg-teal-50'
+                ? 'bg-indigo-500/20' 
+                : 'bg-indigo-50'
             }`}>
               <ClipboardCheck className={`h-5 w-5 ${
                 isDarkMode 
-                  ? 'text-teal-400' 
-                  : 'text-teal-600'
+                  ? 'text-indigo-400' 
+                  : 'text-indigo-600'
               }`} />
             </div>
             <div>
@@ -217,22 +217,22 @@ export default function EstimateModal({
                 <h4 className={`text-sm font-semibold mb-3 flex items-center ${
                   isDarkMode ? 'text-white' : 'text-gray-900'
                 }`}>
-                  <User className="h-4 w-4 mr-2 text-teal-600" />
+                  <User className="h-4 w-4 mr-2 text-indigo-600" />
                   Select Client
                 </h4>
 
                 {selectedClientId ? (
                   <div className={`flex items-center justify-between p-3 rounded-lg ${
                     isDarkMode 
-                      ? 'bg-teal-500/10' 
-                      : 'bg-teal-50'
+                      ? 'bg-indigo-500/10' 
+                      : 'bg-indigo-50'
                   }`}>
                     <div className="flex items-center space-x-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        isDarkMode ? 'bg-teal-600' : 'bg-teal-100'
+                        isDarkMode ? 'bg-indigo-600' : 'bg-indigo-100'
                       }`}>
                         <User className={`h-4 w-4 ${
-                          isDarkMode ? 'text-white' : 'text-teal-600'
+                          isDarkMode ? 'text-white' : 'text-indigo-600'
                         }`} />
                       </div>
                       <div>
@@ -252,8 +252,8 @@ export default function EstimateModal({
                       onClick={() => setSelectedClientId('')}
                       className={`text-xs px-2 py-1 rounded ${
                         isDarkMode 
-                          ? 'text-teal-400 hover:bg-teal-500/20' 
-                          : 'text-teal-600 hover:bg-teal-100'
+                          ? 'text-indigo-400 hover:bg-indigo-500/20' 
+                          : 'text-indigo-600 hover:bg-indigo-100'
                       } transition-colors cursor-pointer`}
                     >
                       Change
@@ -265,8 +265,8 @@ export default function EstimateModal({
                     onChange={(e) => setSelectedClientId(e.target.value)}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
                       isDarkMode
-                        ? 'bg-gray-800 border-gray-700 text-white focus:border-teal-500 focus:ring-teal-500'
-                        : 'bg-white border-gray-300 text-gray-900 focus:border-teal-500 focus:ring-teal-500'
+                        ? 'bg-gray-800 border-gray-700 text-white focus:border-indigo-500 focus:ring-indigo-500'
+                        : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-500 focus:ring-indigo-500'
                     } focus:ring-2 focus:outline-none`}
                   >
                     <option value="">Choose a client...</option>
@@ -293,8 +293,8 @@ export default function EstimateModal({
                     onChange={(e) => setIssueDate(e.target.value)}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
                       isDarkMode
-                        ? 'bg-gray-800 border-gray-700 text-white focus:border-teal-500 focus:ring-teal-500'
-                        : 'bg-white border-gray-300 text-gray-900 focus:border-teal-500 focus:ring-teal-500'
+                        ? 'bg-gray-800 border-gray-700 text-white focus:border-indigo-500 focus:ring-indigo-500'
+                        : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-500 focus:ring-indigo-500'
                     } focus:ring-2 focus:outline-none`}
                   />
                 </div>
@@ -311,8 +311,8 @@ export default function EstimateModal({
                     onChange={(e) => setExpiryDate(e.target.value)}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
                       isDarkMode
-                        ? 'bg-gray-800 border-gray-700 text-white focus:border-teal-500 focus:ring-teal-500'
-                        : 'bg-white border-gray-300 text-gray-900 focus:border-teal-500 focus:ring-teal-500'
+                        ? 'bg-gray-800 border-gray-700 text-white focus:border-indigo-500 focus:ring-indigo-500'
+                        : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-500 focus:ring-indigo-500'
                     } focus:ring-2 focus:outline-none`}
                   />
                 </div>
@@ -324,15 +324,15 @@ export default function EstimateModal({
                   <h4 className={`text-sm font-semibold flex items-center ${
                     isDarkMode ? 'text-white' : 'text-gray-900'
                   }`}>
-                    <FileText className="h-4 w-4 mr-2 text-teal-600" />
+                    <FileText className="h-4 w-4 mr-2 text-indigo-600" />
                     Items <span className="text-red-500 ml-1">*</span>
                   </h4>
                   <button
                     onClick={addItem}
                     className={`flex items-center space-x-1 px-3 py-1.5 text-xs rounded-lg transition-colors cursor-pointer ${
                       isDarkMode
-                        ? 'bg-teal-500/20 text-teal-400 hover:bg-teal-500/30'
-                        : 'bg-teal-50 text-teal-600 hover:bg-teal-100'
+                        ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30'
+                        : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
                     }`}
                   >
                     <Plus className="h-3 w-3" />
@@ -355,8 +355,8 @@ export default function EstimateModal({
                           onChange={(e) => updateItem(item.id, 'description', e.target.value)}
                           className={`w-full px-3 py-2 rounded-lg border transition-colors ${
                             isDarkMode
-                              ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-teal-500 focus:ring-teal-500'
-                              : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-teal-500 focus:ring-teal-500'
+                              ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-indigo-500 focus:ring-indigo-500'
+                              : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:ring-indigo-500'
                           } focus:ring-2 focus:outline-none`}
                         />
                       </div>
@@ -414,12 +414,12 @@ export default function EstimateModal({
               <button
                 onClick={() => setStep(2)}
                 disabled={!selectedClientId || items.some(item => !item.description || item.rate <= 0)}
-                className={`w-full py-3 rounded-lg font-medium transition-colors cursor-pointer ${
+                className={`w-full py-3 px-6 rounded-lg font-medium transition-colors text-sm cursor-pointer ${
                   !selectedClientId || items.some(item => !item.description || item.rate <= 0)
                     ? isDarkMode
                       ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-teal-600 text-white hover:bg-teal-700'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
                 }`}
               >
                 Continue
@@ -524,14 +524,14 @@ export default function EstimateModal({
                   isDarkMode ? 'border-gray-700' : 'border-gray-200'
                 }`}>
                   <span className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Total:</span>
-                  <span className="font-bold text-lg text-teal-600">${total.toFixed(2)}</span>
+                  <span className="font-bold text-lg text-indigo-600">${total.toFixed(2)}</span>
                 </div>
               </div>
 
-              <div className="flex space-x-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => setStep(1)}
-                  className={`flex-1 py-3 rounded-lg font-medium transition-colors cursor-pointer ${
+                  className={`flex-1 py-3 px-6 rounded-lg font-medium transition-colors text-sm cursor-pointer ${
                     isDarkMode
                       ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -542,12 +542,12 @@ export default function EstimateModal({
                 <button
                   onClick={handleSubmit}
                   disabled={loading}
-                  className={`flex-1 py-3 rounded-lg font-medium transition-colors ${
+                  className={`flex-1 py-3 px-6 rounded-lg font-medium transition-colors text-sm ${
                     loading
                       ? isDarkMode
                         ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-teal-600 text-white hover:bg-teal-700 cursor-pointer'
+                      : 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
                   }`}
                 >
                   {loading ? 'Creating...' : 'Create Estimate'}
