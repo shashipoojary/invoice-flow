@@ -150,8 +150,8 @@ export default function EstimateModal({
   const total = calculateTotal()
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className={`rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden overflow-y-auto scroll-smooth ${
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+      <div className={`rounded-xl shadow-2xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden overflow-y-auto scroll-smooth ${
         isDarkMode 
           ? 'bg-gray-900' 
           : 'bg-white'
@@ -380,12 +380,12 @@ export default function EstimateModal({
 
                 <div className="space-y-3">
                   {items.map((item, index) => (
-                    <div key={item.id} className={`flex items-center space-x-3 p-3 rounded-lg border ${
+                    <div key={item.id} className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 rounded-lg border ${
                       isDarkMode
                         ? 'bg-gray-800 border-gray-700'
                         : 'bg-gray-50 border-gray-200'
                     }`}>
-                      <div className="flex-1">
+                      <div className="flex-1 w-full sm:w-auto">
                         <input
                           type="text"
                           placeholder="Item description"
@@ -398,52 +398,54 @@ export default function EstimateModal({
                           } focus:ring-2 focus:outline-none`}
                         />
                       </div>
-                      <div className="w-20">
-                        <input
-                          type="number"
-                          placeholder="Qty"
-                          value={item.qty}
-                          onChange={(e) => updateItem(item.id, 'qty', parseInt(e.target.value) || 1)}
-                          min="1"
-                          className={`w-full px-3 py-2 rounded-lg border transition-colors ${
-                            isDarkMode
-                              ? 'bg-gray-700 border-gray-600 text-white focus:border-teal-500 focus:ring-teal-500'
-                              : 'bg-white border-gray-300 text-gray-900 focus:border-teal-500 focus:ring-teal-500'
-                          } focus:ring-2 focus:outline-none`}
-                        />
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <div className="w-20 sm:w-20">
+                          <input
+                            type="number"
+                            placeholder="Qty"
+                            value={item.qty}
+                            onChange={(e) => updateItem(item.id, 'qty', parseInt(e.target.value) || 1)}
+                            min="1"
+                            className={`w-full px-3 py-2 rounded-lg border transition-colors ${
+                              isDarkMode
+                                ? 'bg-gray-700 border-gray-600 text-white focus:border-teal-500 focus:ring-teal-500'
+                                : 'bg-white border-gray-300 text-gray-900 focus:border-teal-500 focus:ring-teal-500'
+                            } focus:ring-2 focus:outline-none`}
+                          />
+                        </div>
+                        <div className="w-28 sm:w-28">
+                          <input
+                            type="number"
+                            placeholder="Rate"
+                            value={item.rate || ''}
+                            onChange={(e) => updateItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
+                            min="0"
+                            step="0.01"
+                            className={`w-full px-3 py-2 rounded-lg border transition-colors ${
+                              isDarkMode
+                                ? 'bg-gray-700 border-gray-600 text-white focus:border-teal-500 focus:ring-teal-500'
+                                : 'bg-white border-gray-300 text-gray-900 focus:border-teal-500 focus:ring-teal-500'
+                            } focus:ring-2 focus:outline-none`}
+                          />
+                        </div>
+                        <div className={`flex-1 sm:flex-none sm:w-24 text-right ${
+                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                        }`}>
+                          <span className="text-sm font-medium">${(item.rate * item.qty).toFixed(2)}</span>
+                        </div>
+                        {items.length > 1 && (
+                          <button
+                            onClick={() => removeItem(item.id)}
+                            className={`p-2 rounded-lg transition-colors cursor-pointer flex-shrink-0 ${
+                              isDarkMode
+                                ? 'text-red-400 hover:bg-red-500/20'
+                                : 'text-red-500 hover:bg-red-50'
+                            }`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
-                      <div className="w-28">
-                        <input
-                          type="number"
-                          placeholder="Rate"
-                          value={item.rate || ''}
-                          onChange={(e) => updateItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
-                          min="0"
-                          step="0.01"
-                          className={`w-full px-3 py-2 rounded-lg border transition-colors ${
-                            isDarkMode
-                              ? 'bg-gray-700 border-gray-600 text-white focus:border-teal-500 focus:ring-teal-500'
-                              : 'bg-white border-gray-300 text-gray-900 focus:border-teal-500 focus:ring-teal-500'
-                          } focus:ring-2 focus:outline-none`}
-                        />
-                      </div>
-                      <div className={`w-24 text-right ${
-                        isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                      }`}>
-                        <span className="text-sm font-medium">${(item.rate * item.qty).toFixed(2)}</span>
-                      </div>
-                      {items.length > 1 && (
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          className={`p-2 rounded-lg transition-colors cursor-pointer ${
-                            isDarkMode
-                              ? 'text-red-400 hover:bg-red-500/20'
-                              : 'text-red-500 hover:bg-red-50'
-                          }`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -478,46 +480,47 @@ export default function EstimateModal({
                 }`}>Set discount, tax, and notes</p>
               </div>
 
-              {/* Discount */}
-              <div>
-                <label className={`block text-sm font-medium mb-2 ${
-                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Discount ($)
-                </label>
-                <input
-                  type="number"
-                  value={discount || ''}
-                  onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                  min="0"
-                  step="0.01"
-                  className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                    isDarkMode
-                      ? 'bg-gray-800 border-gray-700 text-white focus:border-teal-500 focus:ring-teal-500'
-                      : 'bg-white border-gray-300 text-gray-900 focus:border-teal-500 focus:ring-teal-500'
-                  } focus:ring-2 focus:outline-none`}
-                />
-              </div>
+              {/* Discount & Tax Rate */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Discount ($)
+                  </label>
+                  <input
+                    type="number"
+                    value={discount || ''}
+                    onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                    min="0"
+                    step="0.01"
+                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
+                      isDarkMode
+                        ? 'bg-gray-800 border-gray-700 text-white focus:border-teal-500 focus:ring-teal-500'
+                        : 'bg-white border-gray-300 text-gray-900 focus:border-teal-500 focus:ring-teal-500'
+                    } focus:ring-2 focus:outline-none`}
+                  />
+                </div>
 
-              {/* Tax Rate */}
-              <div>
-                <label className={`block text-sm font-medium mb-2 ${
-                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Tax Rate (%)
-                </label>
-                <input
-                  type="number"
-                  value={taxRate || ''}
-                  onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
-                  min="0"
-                  step="0.01"
-                  className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                    isDarkMode
-                      ? 'bg-gray-800 border-gray-700 text-white focus:border-teal-500 focus:ring-teal-500'
-                      : 'bg-white border-gray-300 text-gray-900 focus:border-teal-500 focus:ring-teal-500'
-                  } focus:ring-2 focus:outline-none`}
-                />
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Tax Rate (%)
+                  </label>
+                  <input
+                    type="number"
+                    value={taxRate || ''}
+                    onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
+                    min="0"
+                    step="0.01"
+                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
+                      isDarkMode
+                        ? 'bg-gray-800 border-gray-700 text-white focus:border-teal-500 focus:ring-teal-500'
+                        : 'bg-white border-gray-300 text-gray-900 focus:border-teal-500 focus:ring-teal-500'
+                    } focus:ring-2 focus:outline-none`}
+                  />
+                </div>
               </div>
 
               {/* Notes */}
