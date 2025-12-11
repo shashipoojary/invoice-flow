@@ -83,20 +83,50 @@ export default function PublicEstimatePage() {
       })
 
       if (response.ok) {
-        const result = await response.json()
-        setActionMessage({ type: 'success', text: result.message || 'Estimate approved successfully!' })
+        const contentType = response.headers.get('content-type')
+        let result = null
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const text = await response.text()
+            result = text ? JSON.parse(text) : null
+          } catch (e) {
+            console.error('Error parsing approve response:', e)
+          }
+        }
+        setActionMessage({ type: 'success', text: result?.message || 'Estimate approved successfully!' })
         // Reload estimate to get updated status
         const reloadResponse = await fetch(`/api/estimates/public/${params.public_token}`)
         if (reloadResponse.ok) {
-          const reloadData = await reloadResponse.json()
-          setEstimate(reloadData.estimate)
+          try {
+            const reloadText = await reloadResponse.text()
+            const reloadData = reloadText ? JSON.parse(reloadText) : null
+            if (reloadData?.estimate) {
+              setEstimate(reloadData.estimate)
+            } else {
+              // Fallback: update estimate status locally
+              setEstimate(prev => prev ? { ...prev, status: 'approved', approvalStatus: 'approved' } : null)
+            }
+          } catch (e) {
+            console.error('Error parsing reload response:', e)
+            // Fallback: update estimate status locally
+            setEstimate(prev => prev ? { ...prev, status: 'approved', approvalStatus: 'approved' } : null)
+          }
         } else {
           // Fallback: update estimate status locally
           setEstimate(prev => prev ? { ...prev, status: 'approved', approvalStatus: 'approved' } : null)
         }
       } else {
-        const error = await response.json()
-        setActionMessage({ type: 'error', text: error.error || 'Failed to approve estimate' })
+        const contentType = response.headers.get('content-type')
+        let error = null
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const text = await response.text()
+            error = text ? JSON.parse(text) : null
+          } catch (e) {
+            console.error('Error parsing error response:', e)
+          }
+        }
+        setActionMessage({ type: 'error', text: error?.error || `Failed to approve estimate (${response.status})` })
       }
     } catch (error) {
       console.error('Error approving estimate:', error)
@@ -124,22 +154,53 @@ export default function PublicEstimatePage() {
       })
 
       if (response.ok) {
-        const result = await response.json()
-        setActionMessage({ type: 'success', text: result.message || 'Estimate rejected successfully.' })
+        const contentType = response.headers.get('content-type')
+        let result = null
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const text = await response.text()
+            result = text ? JSON.parse(text) : null
+          } catch (e) {
+            console.error('Error parsing reject response:', e)
+          }
+        }
+        setActionMessage({ type: 'success', text: result?.message || 'Estimate rejected successfully.' })
         setShowRejectModal(false)
+        const reasonText = rejectionReason.trim()
         setRejectionReason('')
         // Reload estimate to get updated status and rejection reason
         const reloadResponse = await fetch(`/api/estimates/public/${params.public_token}`)
         if (reloadResponse.ok) {
-          const reloadData = await reloadResponse.json()
-          setEstimate(reloadData.estimate)
+          try {
+            const reloadText = await reloadResponse.text()
+            const reloadData = reloadText ? JSON.parse(reloadText) : null
+            if (reloadData?.estimate) {
+              setEstimate(reloadData.estimate)
+            } else {
+              // Fallback: update estimate status locally
+              setEstimate(prev => prev ? { ...prev, status: 'rejected', approvalStatus: 'rejected', rejectionReason: reasonText } : null)
+            }
+          } catch (e) {
+            console.error('Error parsing reload response:', e)
+            // Fallback: update estimate status locally
+            setEstimate(prev => prev ? { ...prev, status: 'rejected', approvalStatus: 'rejected', rejectionReason: reasonText } : null)
+          }
         } else {
           // Fallback: update estimate status locally
-          setEstimate(prev => prev ? { ...prev, status: 'rejected', approvalStatus: 'rejected', rejectionReason: rejectionReason.trim() } : null)
+          setEstimate(prev => prev ? { ...prev, status: 'rejected', approvalStatus: 'rejected', rejectionReason: reasonText } : null)
         }
       } else {
-        const error = await response.json()
-        setActionMessage({ type: 'error', text: error.error || 'Failed to reject estimate' })
+        const contentType = response.headers.get('content-type')
+        let error = null
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const text = await response.text()
+            error = text ? JSON.parse(text) : null
+          } catch (e) {
+            console.error('Error parsing error response:', e)
+          }
+        }
+        setActionMessage({ type: 'error', text: error?.error || `Failed to reject estimate (${response.status})` })
       }
     } catch (error) {
       console.error('Error rejecting estimate:', error)
@@ -154,9 +215,25 @@ export default function PublicEstimatePage() {
       try {
         const response = await fetch(`/api/estimates/public/${params.public_token}`)
         
-      if (response.ok) {
-        const data = await response.json()
-        setEstimate(data.estimate)
+        if (response.ok) {
+          const contentType = response.headers.get('content-type')
+          let data = null
+          if (contentType && contentType.includes('application/json')) {
+            try {
+              const text = await response.text()
+              data = text ? JSON.parse(text) : null
+            } catch (e) {
+              console.error('Error parsing estimate response:', e)
+              setError('Error parsing estimate data')
+              return
+            }
+          }
+          if (data?.estimate) {
+            setEstimate(data.estimate)
+          } else {
+            setError('Invalid estimate data received')
+            return
+          }
         
         // Log view event
         if (data.estimate?.id) {

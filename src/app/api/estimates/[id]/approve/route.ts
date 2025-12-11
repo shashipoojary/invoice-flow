@@ -10,7 +10,13 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { comment } = await request.json();
+    let comment = '';
+    try {
+      const body = await request.json();
+      comment = body.comment || '';
+    } catch (e) {
+      // Request body might be empty, that's okay
+    }
 
     // Fetch estimate
     const { data: estimate, error: estimateError } = await supabaseAdmin
