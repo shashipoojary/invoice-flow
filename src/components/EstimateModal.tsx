@@ -7,7 +7,7 @@ import {
   Hash, MessageSquare, 
   CheckCircle, Sparkles,
   Clock, Trash2, AlertCircle,
-  ClipboardCheck
+  ClipboardCheck, ArrowRight, ArrowLeft
 } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import { useData } from '@/contexts/DataContext'
@@ -412,9 +412,10 @@ export default function EstimateModal({
               </div>
 
               <button
+                type="button"
                 onClick={() => setStep(2)}
                 disabled={!selectedClientId || items.some(item => !item.description || item.rate <= 0)}
-                className={`w-full py-3 px-6 rounded-lg font-medium transition-colors text-sm cursor-pointer ${
+                className={`w-full py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
                   !selectedClientId || items.some(item => !item.description || item.rate <= 0)
                     ? isDarkMode
                       ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
@@ -422,7 +423,8 @@ export default function EstimateModal({
                     : 'bg-indigo-600 text-white hover:bg-indigo-700'
                 }`}
               >
-                Continue
+                <span>Continue</span>
+                <ArrowRight className="h-4 w-4" />
               </button>
             </div>
           )}
@@ -530,19 +532,22 @@ export default function EstimateModal({
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
+                  type="button"
                   onClick={() => setStep(1)}
-                  className={`flex-1 py-3 px-6 rounded-lg font-medium transition-colors text-sm cursor-pointer ${
+                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
                     isDarkMode
                       ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  Back
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back</span>
                 </button>
                 <button
+                  type="button"
                   onClick={handleSubmit}
                   disabled={loading}
-                  className={`flex-1 py-3 px-6 rounded-lg font-medium transition-colors text-sm ${
+                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm ${
                     loading
                       ? isDarkMode
                         ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
@@ -550,7 +555,8 @@ export default function EstimateModal({
                       : 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
                   }`}
                 >
-                  {loading ? 'Creating...' : 'Create Estimate'}
+                  <span>{loading ? 'Creating...' : 'Create Estimate'}</span>
+                  {!loading && <ArrowRight className="h-4 w-4" />}
                 </button>
               </div>
             </div>
