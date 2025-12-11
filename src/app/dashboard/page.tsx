@@ -6,7 +6,7 @@ import {
   FileText, Users, 
   Clock, CheckCircle, AlertCircle, AlertTriangle, UserPlus, FilePlus, Sparkles, Receipt, Timer,
   Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2, ArrowRight, ChevronDown, ChevronUp,
-  ArrowUp, ArrowDown
+  ArrowUp, ArrowDown, ClipboardCheck
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -41,6 +41,10 @@ const ClientModal = dynamic(() => import('@/components/ClientModal'), {
   loading: () => null
 });
 
+const EstimateModal = dynamic(() => import('@/components/EstimateModal'), {
+  loading: () => <div className="flex items-center justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+});
+
 
 export default function DashboardOverview() {
   const { user, loading, getAuthHeaders } = useAuth();
@@ -59,6 +63,7 @@ export default function DashboardOverview() {
   const [showInvoiceTypeSelection, setShowInvoiceTypeSelection] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [showReminderDates, setShowReminderDates] = useState(false);
+  const [showCreateEstimate, setShowCreateEstimate] = useState(false);
   
   // Loading states for action buttons
   const [loadingActions, setLoadingActions] = useState<{
@@ -1434,6 +1439,26 @@ export default function DashboardOverview() {
                   </div>
                 </button>
 
+                {/* Create Estimate */}
+                <button
+                  onClick={() => setShowCreateEstimate(true)}
+                  className="group relative p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-teal-200 hover:bg-teal-50/30 cursor-pointer"
+                >
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className="p-1 sm:p-2 rounded-lg bg-teal-50">
+                      <ClipboardCheck className="h-4 w-4 sm:h-5 sm:w-5 text-teal-600" />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-medium text-sm" style={{color: '#1f2937'}}>
+                        Create Estimate
+                      </h3>
+                      <p className="text-xs" style={{color: '#6b7280'}}>
+                        Get client approval
+                      </p>
+                    </div>
+                  </div>
+                </button>
+
                 {/* Add Client */}
                 <button
                   onClick={() => setShowCreateClient(true)}
@@ -2025,6 +2050,16 @@ export default function DashboardOverview() {
          }}
          invoiceNumber={sendInvoiceModal.invoice?.invoiceNumber || ''}
          isLoading={sendInvoiceModal.isLoading}
+       />
+
+       {/* Estimate Modal */}
+       <EstimateModal
+         isOpen={showCreateEstimate}
+         onClose={() => setShowCreateEstimate(false)}
+         onSuccess={() => {
+           setShowCreateEstimate(false);
+           showSuccess('Estimate Created', 'Your estimate has been created successfully.');
+         }}
        />
 
        {/* Toast Container */}

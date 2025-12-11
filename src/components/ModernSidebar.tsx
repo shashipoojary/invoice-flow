@@ -14,6 +14,7 @@ import {
   Plus,
   Loader2,
   Mail,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -81,6 +82,13 @@ const ModernSidebar = ({
       icon: FileText,
       description: 'Manage Invoices',
       route: '/dashboard/invoices'
+    },
+    {
+      id: 'estimates',
+      label: 'Estimates',
+      icon: ClipboardCheck,
+      description: 'Manage Estimates',
+      route: '/dashboard/estimates'
     },
     {
       id: 'reminders',

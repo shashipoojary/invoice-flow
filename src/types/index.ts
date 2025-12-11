@@ -116,3 +116,50 @@ export interface BusinessSettings {
   stripeAccount: string;
   paymentNotes: string;
 }
+
+export interface Estimate {
+  id: string;
+  estimateNumber: string;
+  clientId: string;
+  client: Client;
+  items: InvoiceItem[]; // Reuse InvoiceItem structure
+  subtotal: number;
+  discount?: number;
+  taxRate: number;
+  taxAmount: number;
+  total: number;
+  status: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired' | 'converted';
+  approvalStatus: 'pending' | 'approved' | 'rejected';
+  approvedAt?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+  convertedToInvoiceId?: string;
+  expiryDate: string;
+  createdAt: string;
+  updatedAt?: string;
+  notes?: string;
+  clientName: string;
+  clientEmail: string;
+  clientCompany: string;
+  clientAddress?: string;
+  // Enhanced fields (similar to Invoice)
+  issueDate?: string;
+  paymentTerms?: {
+    enabled: boolean;
+    terms: string;
+  };
+  theme?: {
+    primaryColor: string;
+    secondaryColor: string;
+    accentColor: string;
+  };
+  // Database field names (for compatibility)
+  client_id?: string;
+  issue_date?: string;
+  expiry_date?: string;
+  estimate_number?: string;
+  approval_status?: string;
+  converted_to_invoice_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
