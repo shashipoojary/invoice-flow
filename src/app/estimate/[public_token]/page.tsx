@@ -352,17 +352,11 @@ export default function PublicEstimatePage() {
 
           {estimate.status === 'rejected' && (
             <div className="mb-6 px-4 py-3 bg-red-50 border-l-4 border-red-500">
-              <div className="flex items-start gap-2">
-                <XIcon className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <XIcon className="h-5 w-5 text-red-600 flex-shrink-0" />
+                <div>
                   <p className="text-sm font-medium text-red-900">This estimate has been rejected.</p>
-                  {estimate.rejectionReason && (
-                    <div className="mt-2 p-2 bg-white border border-red-200 rounded">
-                      <p className="text-xs font-medium text-red-800 mb-1">Rejection Reason:</p>
-                      <p className="text-xs text-red-700">{estimate.rejectionReason}</p>
-                    </div>
-                  )}
-                  <p className="text-xs text-red-700 mt-2">The business owner has been notified of your decision.</p>
+                  <p className="text-xs text-red-700 mt-0.5">The business owner has been notified of your decision.</p>
                 </div>
               </div>
             </div>
