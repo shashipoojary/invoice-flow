@@ -38,6 +38,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch estimates' }, { status: 500 });
     }
 
+    // Check and update expired estimates
+    const currentDate = new Date()
+    currentDate.setHours(0, 0, 0, 0)
+    
+    for (const estimate of estimates) {
+      if (estimate.expiry_date && estimate.status === 'sent' && estimate.approval_status === 'pending') {
+        const expiryDate = new Date(estimate.expiry_date)
+        expiryDate.setHours(0, 0, 0, 0)
+        if (expiryDate < currentDate) {
+          // Update status to expired
+          await supabaseAdmin
+            .from('estimates')
+            .update({ status: 'expired' })
+            .eq('id', estimate.id)
+          estimate.status = 'expired'
+        }
+      }
+    }
+
     // Map to frontend format
     const mappedEstimates = estimates.map((estimate: any) => ({
       id: estimate.id,

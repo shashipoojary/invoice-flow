@@ -103,10 +103,25 @@ export async function GET(
       console.error('Error fetching user settings:', settingsError)
     }
 
-    // Check if estimate is expired
+    // Check if estimate is expired and update status if needed
     const currentDate = new Date()
+    currentDate.setHours(0, 0, 0, 0) // Set to start of day for comparison
     const expiryDate = estimate.expiry_date ? new Date(estimate.expiry_date) : null
+    if (expiryDate) {
+      expiryDate.setHours(0, 0, 0, 0) // Set to start of day for comparison
+    }
     const isExpired = expiryDate ? expiryDate < currentDate : false
+    
+    // Update status to 'expired' if expired and still in 'sent' status
+    if (isExpired && estimate.status === 'sent' && estimate.approval_status === 'pending') {
+      await supabaseAdmin
+        .from('estimates')
+        .update({ status: 'expired' })
+        .eq('id', estimate.id)
+      
+      // Update local estimate object
+      estimate.status = 'expired'
+    }
 
     // Return formatted estimate data
     return NextResponse.json({ 

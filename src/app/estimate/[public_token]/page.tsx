@@ -473,13 +473,22 @@ export default function PublicEstimatePage() {
             </div>
           )}
 
-          {estimate.isExpired && (
+          {(estimate.isExpired || estimate.status === 'expired') && (
             <div className="mb-6 px-4 py-3 bg-amber-50 border-l-4 border-amber-500">
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-                <div>
+                <div className="flex-1">
                   <p className="text-sm font-medium text-amber-900">This estimate has expired.</p>
-                  <p className="text-xs text-amber-700 mt-0.5">Please contact the business owner for a new estimate.</p>
+                  <p className="text-xs text-amber-700 mt-0.5">This estimate is no longer valid. Please contact the business owner to request a new estimate.</p>
+                  {estimate.freelancerSettings?.email && (
+                    <a
+                      href={`mailto:${estimate.freelancerSettings.email}?subject=Request for New Estimate - ${estimate.estimateNumber}`}
+                      className="inline-block mt-2 px-3 py-1.5 text-xs font-medium text-amber-900 bg-white border border-amber-300 hover:bg-amber-100 transition-colors cursor-pointer"
+                      style={{ borderRadius: 0 }}
+                    >
+                      Contact Business Owner
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
