@@ -18,6 +18,18 @@ interface EstimateModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
+  estimate?: {
+    id: string
+    clientId: string
+    items: Array<{ id: string; description: string; rate: number; qty?: number; amount?: number }>
+    subtotal: number
+    discount?: number
+    taxRate?: number
+    taxAmount?: number
+    notes?: string
+    issueDate?: string
+    expiryDate?: string
+  } | null
 }
 
 interface EstimateItem {
@@ -30,7 +42,8 @@ interface EstimateItem {
 export default function EstimateModal({ 
   isOpen, 
   onClose, 
-  onSuccess
+  onSuccess,
+  estimate = null
 }: EstimateModalProps) {
   const { showSuccess, showError } = useToast()
   const { clients } = useData()
@@ -40,21 +53,79 @@ export default function EstimateModal({
   // Dark mode not currently used in settings, default to false
   const isDarkMode = false
   
+  const isEditMode = !!estimate
+  
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState(1)
-  const [selectedClientId, setSelectedClientId] = useState('')
-  const [items, setItems] = useState<EstimateItem[]>([
-    { id: '1', description: '', rate: 0, qty: 1 }
-  ])
-  const [discount, setDiscount] = useState(0)
-  const [taxRate, setTaxRate] = useState(0)
-  const [notes, setNotes] = useState('')
-  const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0])
-  const [expiryDate, setExpiryDate] = useState(() => {
-    const date = new Date()
-    date.setDate(date.getDate() + 30) // Default 30 days
-    return date.toISOString().split('T')[0]
-  })
+  const [selectedClientId, setSelectedClientId] = useState(estimate?.clientId || '')
+  const [items, setItems] = useState<EstimateItem[]>(
+    estimate?.items && estimate.items.length > 0
+      ? estimate.items.map((item, idx) => ({
+          id: item.id || (idx + 1).toString(),
+          description: item.description || '',
+          rate: item.rate || 0,
+          qty: item.qty || 1
+        }))
+      : [{ id: '1', description: '', rate: 0, qty: 1 }]
+  )
+  const [discount, setDiscount] = useState(estimate?.discount || 0)
+  const [taxRate, setTaxRate] = useState(estimate?.taxRate || 0)
+  const [notes, setNotes] = useState(estimate?.notes || '')
+  const [issueDate, setIssueDate] = useState(
+    estimate?.issueDate || new Date().toISOString().split('T')[0]
+  )
+  const [expiryDate, setExpiryDate] = useState(
+    estimate?.expiryDate || (() => {
+      const date = new Date()
+      date.setDate(date.getDate() + 30) // Default 30 days
+      return date.toISOString().split('T')[0]
+    })()
+  )
+  
+  // Update form when estimate prop changes
+  useEffect(() => {
+    if (estimate) {
+      setSelectedClientId(estimate.clientId)
+      setItems(
+        estimate.items && estimate.items.length > 0
+          ? estimate.items.map((item, idx) => {
+              // Calculate rate from amount if rate is not available
+              let rate = item.rate || 0;
+              if (!rate && item.amount) {
+                const qty = item.qty || 1;
+                rate = typeof item.amount === 'number' ? item.amount / qty : parseFloat(String(item.amount)) / qty;
+              }
+              return {
+                id: item.id || (idx + 1).toString(),
+                description: item.description || '',
+                rate: rate,
+                qty: item.qty || 1
+              };
+            })
+          : [{ id: '1', description: '', rate: 0, qty: 1 }]
+      )
+      setDiscount(estimate.discount || 0)
+      setTaxRate(estimate.taxRate || 0)
+      setNotes(estimate.notes || '')
+      setIssueDate(estimate.issueDate || new Date().toISOString().split('T')[0])
+      setExpiryDate(estimate.expiryDate || (() => {
+        const date = new Date()
+        date.setDate(date.getDate() + 30)
+        return date.toISOString().split('T')[0]
+      })())
+    } else {
+      // Reset to defaults for new estimate
+      setSelectedClientId('')
+      setItems([{ id: '1', description: '', rate: 0, qty: 1 }])
+      setDiscount(0)
+      setTaxRate(0)
+      setNotes('')
+      setIssueDate(new Date().toISOString().split('T')[0])
+      const date = new Date()
+      date.setDate(date.getDate() + 30)
+      setExpiryDate(date.toISOString().split('T')[0])
+    }
+  }, [estimate])
 
   const handleClose = () => {
     setSelectedClientId('')
@@ -107,38 +178,54 @@ export default function EstimateModal({
     setLoading(true)
     try {
       const headers = await getAuthHeaders()
-      const response = await fetch('/api/estimates/create', {
-        method: 'POST',
+      const subtotal = calculateSubtotal()
+      
+      const requestBody = {
+        clientId: selectedClientId,
+        items: items.map(item => ({
+          description: item.description,
+          rate: item.rate,
+          qty: item.qty,
+        })),
+        subtotal,
+        discount,
+        taxRate,
+        notes,
+        issueDate,
+        expiryDate,
+      }
+
+      const url = isEditMode && estimate?.id 
+        ? `/api/estimates/${estimate.id}`
+        : '/api/estimates/create'
+      
+      const method = isEditMode ? 'PUT' : 'POST'
+
+      const response = await fetch(url, {
+        method,
         headers: {
           ...headers,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          clientId: selectedClientId,
-          items: items.map(item => ({
-            description: item.description,
-            rate: item.rate,
-            qty: item.qty,
-          })),
-          discount,
-          taxRate,
-          notes,
-          issueDate,
-          expiryDate,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       if (response.ok) {
-        showSuccess('Estimate Created', 'Your estimate has been created successfully.')
+        showSuccess(
+          isEditMode ? 'Estimate Updated' : 'Estimate Created',
+          isEditMode 
+            ? 'Your estimate has been updated successfully.'
+            : 'Your estimate has been created successfully.'
+        )
         onSuccess()
         handleClose()
       } else {
         const error = await response.json()
-        showError('Error', error.error || 'Failed to create estimate')
+        showError('Error', error.error || (isEditMode ? 'Failed to update estimate' : 'Failed to create estimate'))
       }
     } catch (error: any) {
-      console.error('Error creating estimate:', error)
-      showError('Error', 'Failed to create estimate')
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} estimate:`, error)
+      showError('Error', isEditMode ? 'Failed to update estimate' : 'Failed to create estimate')
     } finally {
       setLoading(false)
     }
@@ -176,7 +263,7 @@ export default function EstimateModal({
                   ? 'text-white' 
                   : 'text-gray-900'
               }`}>
-                Create Estimate
+                {isEditMode ? 'Edit Estimate' : 'Create Estimate'}
               </h2>
               <p className={`text-xs sm:text-sm ${
                 isDarkMode 
@@ -597,11 +684,11 @@ export default function EstimateModal({
                   {loading ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Creating...</span>
+                      <span>{isEditMode ? 'Updating...' : 'Creating...'}</span>
                     </>
                   ) : (
                     <>
-                      <span>Create Estimate</span>
+                      <span>{isEditMode ? 'Update Estimate' : 'Create Estimate'}</span>
                       <ArrowRight className="h-4 w-4" />
                     </>
                   )}

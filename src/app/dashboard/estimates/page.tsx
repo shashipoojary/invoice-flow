@@ -38,6 +38,7 @@ function EstimatesContent(): React.JSX.Element {
   const [estimates, setEstimates] = useState<Estimate[]>([]);
   const [isLoadingEstimates, setIsLoadingEstimates] = useState(true);
   const [showCreateEstimate, setShowCreateEstimate] = useState(false);
+  const [editingEstimate, setEditingEstimate] = useState<Estimate | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -672,43 +673,48 @@ function EstimatesContent(): React.JSX.Element {
                               </span>
                             </div>
 
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-1">
                               <button 
                                 onClick={() => handleViewEstimate(estimate)} 
-                                className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer" 
+                                className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
                                 title="View"
                               >
-                                <Eye className="h-4 w-4 text-gray-700" />
+                                <Eye className="h-4 w-4 text-gray-600" />
                               </button>
                               {estimate.status === 'draft' && (
-                                <button 
-                                  onClick={() => handleSendEstimate(estimate)}
-                                  disabled={loadingActions[`send-${estimate.id}`]}
-                                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer ${
-                                    loadingActions[`send-${estimate.id}`] ? 'opacity-50 cursor-not-allowed' : ''
-                                  }`}
-                                  title="Send"
-                                >
-                                  {loadingActions[`send-${estimate.id}`] ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                                  ) : (
-                                    <Send className="h-4 w-4 text-gray-700" />
-                                  )}
-                                </button>
+                                <>
+                                  <button 
+                                    onClick={() => setEditingEstimate(estimate)}
+                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
+                                    title="Edit"
+                                  >
+                                    <Edit className="h-4 w-4 text-gray-600" />
+                                  </button>
+                                  <button 
+                                    onClick={() => handleSendEstimate(estimate)}
+                                    disabled={loadingActions[`send-${estimate.id}`]}
+                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`send-${estimate.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                    title="Send"
+                                  >
+                                    {loadingActions[`send-${estimate.id}`] ? (
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                                    ) : (
+                                      <Send className="h-4 w-4 text-gray-600" />
+                                    )}
+                                  </button>
+                                </>
                               )}
                               {estimate.status === 'approved' && (
                                 <button 
                                   onClick={() => showConvertConfirmation(estimate)}
                                   disabled={loadingActions[`convert-${estimate.id}`]}
-                                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer ${
-                                    loadingActions[`convert-${estimate.id}`] ? 'opacity-50 cursor-not-allowed' : ''
-                                  }`}
+                                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`convert-${estimate.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                   title="Convert to Invoice"
                                 >
                                   {loadingActions[`convert-${estimate.id}`] ? (
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                                   ) : (
-                                    <FileText className="h-4 w-4 text-gray-700" />
+                                    <FileText className="h-4 w-4 text-gray-600" />
                                   )}
                                 </button>
                               )}
@@ -718,73 +724,79 @@ function EstimatesContent(): React.JSX.Element {
                       </div>
 
                       {/* Desktop */}
-                      <div className="hidden sm:block p-4 sm:p-6">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4 flex-1">
-                            <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-gray-100">
-                              <ClipboardCheck className="h-5 w-5 text-gray-700" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center space-x-3 mb-1">
+                      <div className="hidden sm:block p-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
+                                <ClipboardCheck className="h-4 w-4 text-gray-600" />
+                              </div>
+                              <div>
                                 <div className="font-medium text-sm" style={{ color: '#1f2937' }}>{estimate.estimateNumber}</div>
-                                <span
-                                  className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${getStatusColor(estimate.status)}`}
-                                >
-                                  {getStatusIcon(estimate.status)}
-                                  <span className="capitalize">{estimate.status}</span>
-                                </span>
-                              </div>
-                              <div className="text-xs" style={{ color: '#6b7280' }}>{estimate.client?.name || 'Unknown Client'}</div>
-                              <div className="text-xs mt-1" style={{ color: '#6b7280' }}>
-                                Issue: {new Date(estimate.issueDate || estimate.createdAt).toLocaleDateString()}
-                                {estimate.expiryDate && ` • Expires: ${new Date(estimate.expiryDate).toLocaleDateString()}`}
+                                <div className="text-xs" style={{ color: '#6b7280' }}>{estimate.client?.name || 'Unknown Client'}</div>
                               </div>
                             </div>
-                          </div>
-                          <div className="flex items-center space-x-6">
-                            <div className="text-right min-w-[100px]">
+                            <div className="text-right">
                               <div className="font-semibold text-base text-gray-900">
                                 ${estimate.total.toLocaleString()}
                               </div>
-                              <div className="text-xs mt-0.5" style={{ color: '#6b7280' }}>Total</div>
+                              <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
+                              <div className="text-xs" style={{ color: '#6b7280' }}>{new Date(estimate.issueDate || estimate.createdAt).toLocaleDateString()}</div>
                             </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${getStatusColor(estimate.status)}`}
+                              >
+                                {getStatusIcon(estimate.status)}
+                                <span className="capitalize">{estimate.status}</span>
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center space-x-1">
                               <button 
                                 onClick={() => handleViewEstimate(estimate)} 
-                                className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer" 
+                                className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
                                 title="View"
                               >
-                                <Eye className="h-4 w-4 text-gray-700" />
+                                <Eye className="h-4 w-4 text-gray-600" />
                               </button>
                               {estimate.status === 'draft' && (
-                                <button 
-                                  onClick={() => handleSendEstimate(estimate)}
-                                  disabled={loadingActions[`send-${estimate.id}`]}
-                                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer ${
-                                    loadingActions[`send-${estimate.id}`] ? 'opacity-50 cursor-not-allowed' : ''
-                                  }`}
-                                  title="Send"
-                                >
-                                  {loadingActions[`send-${estimate.id}`] ? (
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                                  ) : (
-                                    <Send className="h-4 w-4 text-gray-700" />
-                                  )}
-                                </button>
+                                <>
+                                  <button 
+                                    onClick={() => setEditingEstimate(estimate)}
+                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
+                                    title="Edit"
+                                  >
+                                    <Edit className="h-4 w-4 text-gray-600" />
+                                  </button>
+                                  <button 
+                                    onClick={() => handleSendEstimate(estimate)}
+                                    disabled={loadingActions[`send-${estimate.id}`]}
+                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`send-${estimate.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                    title="Send"
+                                  >
+                                    {loadingActions[`send-${estimate.id}`] ? (
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                                    ) : (
+                                      <Send className="h-4 w-4 text-gray-600" />
+                                    )}
+                                  </button>
+                                </>
                               )}
                               {estimate.status === 'approved' && (
                                 <button 
                                   onClick={() => showConvertConfirmation(estimate)}
                                   disabled={loadingActions[`convert-${estimate.id}`]}
-                                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer ${
-                                    loadingActions[`convert-${estimate.id}`] ? 'opacity-50 cursor-not-allowed' : ''
-                                  }`}
+                                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`convert-${estimate.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                   title="Convert to Invoice"
                                 >
                                   {loadingActions[`convert-${estimate.id}`] ? (
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                                   ) : (
-                                    <FileText className="h-4 w-4 text-gray-700" />
+                                    <FileText className="h-4 w-4 text-gray-600" />
                                   )}
                                 </button>
                               )}
@@ -802,43 +814,6 @@ function EstimatesContent(): React.JSX.Element {
       </div>
 
       {/* Modals */}
-      <EstimateModal
-        isOpen={showCreateEstimate}
-        onClose={() => setShowCreateEstimate(false)}
-        onSuccess={async () => {
-          setShowCreateEstimate(false);
-          showSuccess('Estimate Created', 'Your estimate has been created successfully.');
-          // Refresh estimates
-          try {
-            setIsLoadingEstimates(true);
-            setHasLoadedData(false); // Reset to allow refresh
-            const headers = await getAuthHeaders();
-            const response = await fetch('/api/estimates', {
-              headers
-            });
-            if (response.ok) {
-              try {
-                const text = await response.text();
-                const data = text ? JSON.parse(text) : null;
-                setEstimates(data?.estimates || []);
-                setHasLoadedData(true);
-              } catch (e) {
-                console.error('Error parsing refresh response:', e);
-                setHasLoadedData(true);
-              }
-            } else {
-              setHasLoadedData(true);
-            }
-          } catch (error) {
-            console.error('Error refreshing estimates:', error);
-            setHasLoadedData(true); // Mark as loaded even on error
-          } finally {
-            setIsLoadingEstimates(false);
-          }
-          // Refresh entire page including sidebar
-          router.refresh();
-        }}
-      />
 
       {/* Sliding Modal for Estimate Details */}
       {showEstimateModal && selectedEstimate && (
@@ -1028,15 +1003,78 @@ function EstimatesContent(): React.JSX.Element {
         </div>
       )}
 
+      {/* Estimate Modal - Create/Edit */}
+      <EstimateModal
+        isOpen={showCreateEstimate || !!editingEstimate}
+        onClose={() => {
+          setShowCreateEstimate(false);
+          setEditingEstimate(null);
+        }}
+        onSuccess={() => {
+          setShowCreateEstimate(false);
+          setEditingEstimate(null);
+          setHasLoadedData(false); // Reset to allow refresh
+          // Refresh estimates
+          const refreshEstimates = async () => {
+            try {
+              const headers = await getAuthHeaders();
+              const response = await fetch('/api/estimates', { headers });
+              if (response.ok) {
+                const text = await response.text();
+                const data = text ? JSON.parse(text) : null;
+                setEstimates(data?.estimates || []);
+                setHasLoadedData(true);
+              }
+            } catch (error) {
+              console.error('Error refreshing estimates:', error);
+              setHasLoadedData(true);
+            }
+          };
+          refreshEstimates();
+          router.refresh();
+          showSuccess(
+            editingEstimate ? 'Estimate Updated' : 'Estimate Created',
+            editingEstimate 
+              ? 'Your estimate has been updated successfully.'
+              : 'Your estimate has been created successfully.'
+          );
+        }}
+        estimate={editingEstimate ? {
+          id: editingEstimate.id,
+          clientId: editingEstimate.clientId,
+          items: editingEstimate.items.map(item => {
+            // Calculate rate from amount if rate is not available
+            let rate = item.rate || 0;
+            const qty = (item as any).qty || 1;
+            if (!rate && item.amount) {
+              rate = typeof item.amount === 'number' ? item.amount / qty : parseFloat(String(item.amount)) / qty;
+            }
+            return {
+              id: item.id || '',
+              description: item.description || '',
+              rate: rate,
+              qty: qty,
+              amount: rate * qty
+            };
+          }),
+          subtotal: editingEstimate.subtotal,
+          discount: editingEstimate.discount,
+          taxRate: editingEstimate.taxRate,
+          taxAmount: editingEstimate.taxAmount,
+          notes: editingEstimate.notes,
+          issueDate: editingEstimate.issueDate,
+          expiryDate: editingEstimate.expiryDate
+        } : null}
+      />
+
       {/* Send Estimate Modal */}
       <SendEstimateModal
         isOpen={sendEstimateModal.isOpen}
         onClose={() => setSendEstimateModal({ isOpen: false, estimate: null, isLoading: false })}
         onEdit={() => {
           if (sendEstimateModal.estimate) {
-            // For now, just close and show message - edit functionality can be added later
-            showError('Edit', 'Edit functionality coming soon. Please create a new estimate.');
             setSendEstimateModal({ isOpen: false, estimate: null, isLoading: false });
+            setEditingEstimate(sendEstimateModal.estimate);
           }
         }}
         onSend={() => {
