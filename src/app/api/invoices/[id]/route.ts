@@ -128,6 +128,35 @@ export async function PUT(
     const body = await request.json()
     const { status, notes } = body
 
+    // CRITICAL: Check current invoice status before allowing status changes
+    const { data: currentInvoice, error: fetchError } = await supabaseAdmin
+      .from('invoices')
+      .select('status')
+      .eq('id', invoiceId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (fetchError || !currentInvoice) {
+      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
+    }
+
+    // CRITICAL: Prevent changing status from sent/paid/pending back to draft
+    // This prevents reverting sent invoices back to draft
+    if (status && status === 'draft' && currentInvoice.status !== 'draft') {
+      return NextResponse.json({ 
+        error: `Cannot change invoice status from "${currentInvoice.status}" to "draft". Once an invoice is sent, it cannot be reverted to draft.` 
+      }, { status: 400 })
+    }
+
+    // CRITICAL: Prevent editing sent/paid invoices (only allow status changes for specific cases)
+    // Allow status changes: draft -> sent, sent -> paid, etc.
+    // But prevent: sent -> draft, paid -> draft, etc.
+    if (status && currentInvoice.status === 'paid' && status !== 'paid') {
+      return NextResponse.json({ 
+        error: 'Cannot change status of a paid invoice.' 
+      }, { status: 400 })
+    }
+
     // Update invoice in Supabase
     const { data, error } = await supabaseAdmin
       .from('invoices')

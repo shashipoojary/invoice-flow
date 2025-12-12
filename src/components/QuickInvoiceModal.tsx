@@ -309,6 +309,14 @@ export default function QuickInvoiceModal({
   useEffect(() => {
     if (isOpen) {
       if (editingInvoice) {
+        // CRITICAL: Only allow editing draft invoices
+        if (editingInvoice.status !== 'draft') {
+          console.error('Cannot edit non-draft invoice:', editingInvoice.status);
+          showError(`Cannot edit invoice: Only draft invoices can be edited. This invoice is "${editingInvoice.status}".`);
+          onClose();
+          return;
+        }
+        
         // Pre-fill form when editing an invoice
         setInvoiceNumber(editingInvoice.invoiceNumber || '')
         // Handle issue date with proper formatting

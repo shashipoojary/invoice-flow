@@ -2036,226 +2036,212 @@ export function generateEstimateApprovalEmailTemplate(
         <meta name="color-scheme" content="light dark">
         <meta name="supported-color-schemes" content="light dark">
         <title>Estimate ${estimateNumber} Approved</title>
-        <style>
-          * {
-            box-sizing: border-box;
-          }
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #000000;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 20px 0;
-          }
-          /* Dark mode support */
-          @media (prefers-color-scheme: dark) {
-            .email-container {
-              background: #ffffff !important;
-              border-color: #e0e0e0 !important;
-            }
-            .header {
-              background: #ffffff !important;
-              border-color: #e0e0e0 !important;
-            }
-            .content {
-              background: #ffffff !important;
-            }
-            .footer {
-              background: #ffffff !important;
-              border-color: #e0e0e0 !important;
-            }
-            .title,
-            .estimate-number-label {
-              color: ${primaryColor} !important;
-            }
-            .message,
-            .estimate-number {
-              color: #000000 !important;
-            }
-            .client-name {
-              color: #000000 !important;
-            }
-            .footer-text {
-              color: #666666 !important;
-            }
-          }
-          .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #ffffff;
-            border: 1px solid #e0e0e0;
-          }
-          .header {
-            padding: 40px 40px 32px 40px;
-            background: #ffffff;
-            border-bottom: 1px solid #e0e0e0;
-          }
-          .title {
-            font-size: 20px;
-            font-weight: 400;
-            color: ${primaryColor} !important;
-            margin: 0;
-            padding: 0;
-            letter-spacing: 0;
-          }
-          .content {
-            padding: 32px 40px 40px 40px;
-            background: #ffffff;
-          }
-          .message {
-            font-size: 14px;
-            color: #000000 !important;
-            line-height: 1.6;
-            margin: 0 0 24px 0;
-          }
-          .estimate-info {
-            background: #f9fafb;
-            border-left: 3px solid ${successColor};
-            padding: 16px 20px;
-            margin: 24px 0;
-          }
-          .estimate-number-label {
-            font-size: 12px;
-            color: #666666 !important;
-            margin: 0 0 4px 0;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          }
-          .estimate-number {
-            font-size: 16px;
-            font-weight: 700;
-            color: #000000 !important;
-            margin: 0;
-          }
-          .client-name {
-            font-size: 14px;
-            color: #000000 !important;
-            font-weight: 500;
-            margin: 8px 0 0 0;
-          }
-          .comment-section {
-            margin: 24px 0;
-            padding: 16px;
-            background: #f9fafb;
-            border-radius: 4px;
-          }
-          .comment-label {
-            font-size: 12px;
-            color: #666666 !important;
-            margin: 0 0 8px 0;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          }
-          .comment-text {
-            font-size: 14px;
-            color: #000000 !important;
-            line-height: 1.6;
-            margin: 0;
-          }
-          .button-container {
-            margin: 32px 0 0 0;
-            text-align: center;
-          }
-          .action-button {
-            display: inline-block;
-            background-color: ${successColor} !important;
-            color: #ffffff !important;
-            text-decoration: none !important;
-            padding: 14px 32px !important;
-            font-weight: 500 !important;
-            text-align: center !important;
-            font-size: 14px !important;
-            border: none !important;
-            border-radius: 0 !important;
-          }
-          .action-button span {
-            color: #ffffff !important;
-          }
-          /* Gmail desktop fix */
-          u + .body .action-button span {
-            color: #ffffff !important;
-          }
-          /* MSO conditional styles for Outlook */
-          <!--[if mso]>
-          <style type="text/css">
-            .action-button {
-              background-color: ${successColor} !important;
-            }
-          </style>
-          <![endif]-->
-          .footer {
-            padding: 24px 40px;
-            background: #ffffff;
-            border-top: 1px solid #e0e0e0;
-            text-align: center;
-          }
-          .footer-text {
-            font-size: 12px;
-            color: #666666 !important;
-            margin: 0;
-            line-height: 1.5;
-          }
+        <!--[if mso]>
+        <style type="text/css">
+          body, table, td {font-family: Arial, sans-serif !important;}
+          .email-container {width: 600px !important;}
+        </style>
+        <![endif]-->
+        <style type="text/css">
           @media only screen and (max-width: 600px) {
-            .header {
-              padding: 32px 24px 24px 24px;
-            }
-            .content {
-              padding: 24px;
-            }
-            .footer {
-              padding: 20px 24px;
-            }
+            .email-container {width: 100% !important; max-width: 100% !important;}
+            .header-padding {padding: 32px 24px 24px 24px !important;}
+            .content-padding {padding: 24px !important;}
+            .footer-padding {padding: 20px 24px !important;}
+            .button-link {display: block !important; width: 100% !important; text-align: center !important;}
           }
         </style>
       </head>
-      <body>
-        <div class="email-container">
-          <div class="header">
-            <h1 class="title">Estimate Approved</h1>
-          </div>
-          <div class="content">
-            <p class="message">
-              Great news! Your estimate has been approved by <strong class="client-name">${clientName}</strong>.
-            </p>
-            
-            <div class="estimate-info">
-              <div class="estimate-number-label">Estimate Number</div>
-              <div class="estimate-number">${estimateNumber}</div>
-            </div>
-            
-            ${comment ? `
-              <div class="comment-section">
-                <div class="comment-label">Client Comment</div>
-                <div class="comment-text">${comment}</div>
-              </div>
-            ` : ''}
-            
-            <p class="message">
-              You can now convert this estimate to an invoice from your dashboard.
-            </p>
-            
-            <div class="button-container">
-              <!--[if mso]>
-              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${dashboardUrl}/dashboard/estimates" style="height:42px;v-text-anchor:middle;width:200px;" arcsize="0%" strokecolor="${successColor}" fillcolor="${successColor}">
-                <w:anchorlock/>
-                <center style="color:#ffffff;font-family:sans-serif;font-size:14px;font-weight:500;">View Estimate</center>
-              </v:roundrect>
-              <![endif]-->
-              <![if !mso]>
-              <a href="${dashboardUrl}/dashboard/estimates" class="action-button" style="background-color: ${successColor}; color: #ffffff; text-decoration: none; padding: 14px 32px; font-weight: 500; text-align: center; font-size: 14px; border: none; border-radius: 0;">
-                <span style="color: #ffffff;">View Estimate</span>
-              </a>
-              <![endif]>
-            </div>
-          </div>
-          <div class="footer">
-            <p class="footer-text">
-              This is an automated notification from FlowInvoicer.<br>
-              You're receiving this because an estimate you sent was approved.
-            </p>
-          </div>
-        </div>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #000000; background-color: #f5f5f5;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f5f5f5;">
+          <tr>
+            <td style="padding: 20px 0;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="email-container" style="max-width: 600px; width: 100%; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0;">
+                <!-- Header -->
+                <tr>
+                  <td class="header-padding" style="padding: 40px 40px 32px 40px; background: #ffffff; border-bottom: 1px solid #e0e0e0;">
+                    <h1 style="margin: 0; padding: 0; font-size: 20px; font-weight: 400; color: ${primaryColor}; letter-spacing: 0;">Estimate Approved</h1>
+                  </td>
+                </tr>
+                <!-- Content -->
+                <tr>
+                  <td class="content-padding" style="padding: 32px 40px 40px 40px; background: #ffffff;">
+                    <p style="margin: 0 0 24px 0; font-size: 14px; color: #000000; line-height: 1.6;">
+                      Great news! Your estimate has been approved by <strong style="color: #000000; font-weight: 500;">${clientName}</strong>.
+                    </p>
+                    
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #f9fafb; border-left: 3px solid ${successColor}; margin: 24px 0;">
+                      <tr>
+                        <td style="padding: 16px 20px;">
+                          <div style="font-size: 12px; color: #666666; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px;">Estimate Number</div>
+                          <div style="font-size: 16px; font-weight: 700; color: #000000; margin: 0;">${estimateNumber}</div>
+                        </td>
+                      </tr>
+                    </table>
+                    
+                    ${comment ? `
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0;">
+                      <tr>
+                        <td style="padding: 16px; background: #f9fafb; border-radius: 4px;">
+                          <div style="font-size: 12px; color: #666666; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">Client Comment</div>
+                          <div style="font-size: 14px; color: #000000; line-height: 1.6; margin: 0;">${comment}</div>
+                        </td>
+                      </tr>
+                    </table>
+                    ` : ''}
+                    
+                    <p style="margin: 0 0 32px 0; font-size: 14px; color: #000000; line-height: 1.6;">
+                      You can now convert this estimate to an invoice from your dashboard.
+                    </p>
+                    
+                    <!-- Button -->
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                      <tr>
+                        <td align="center" style="padding: 0;">
+                          <!--[if mso]>
+                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${dashboardUrl}/dashboard/estimates" style="height:42px;v-text-anchor:middle;width:200px;" arcsize="0%" strokecolor="${successColor}" fillcolor="${successColor}">
+                            <w:anchorlock/>
+                            <center style="color:#ffffff;font-family:sans-serif;font-size:14px;font-weight:500;">View Estimate</center>
+                          </v:roundrect>
+                          <![endif]-->
+                          <![if !mso]>
+                          <a href="${dashboardUrl}/dashboard/estimates" class="button-link" style="display: inline-block; background-color: ${successColor}; color: #ffffff !important; text-decoration: none; padding: 14px 32px; font-weight: 500; text-align: center; font-size: 14px; border: none; border-radius: 0;">
+                            <span style="color: #ffffff !important;">View Estimate</span>
+                          </a>
+                          <![endif]>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <!-- Footer -->
+                <tr>
+                  <td class="footer-padding" style="padding: 24px 40px; background: #ffffff; border-top: 1px solid #e0e0e0; text-align: center;">
+                    <p style="margin: 0; font-size: 12px; color: #666666; line-height: 1.5;">
+                      This is an automated notification from FlowInvoicer.<br>
+                      You're receiving this because an estimate you sent was approved.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `;
+}
+
+// Estimate Rejection Notification Email Template
+export function generateEstimateRejectionEmailTemplate(
+  estimateNumber: string,
+  clientName: string,
+  reason: string,
+  dashboardUrl: string
+): string {
+  const primaryColor = '#1F2937';
+  const errorColor = '#EF4444';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="x-apple-disable-message-reformatting">
+        <meta name="color-scheme" content="light dark">
+        <meta name="supported-color-schemes" content="light dark">
+        <title>Estimate ${estimateNumber} Rejected</title>
+        <!--[if mso]>
+        <style type="text/css">
+          body, table, td {font-family: Arial, sans-serif !important;}
+          .email-container {width: 600px !important;}
+        </style>
+        <![endif]-->
+        <style type="text/css">
+          @media only screen and (max-width: 600px) {
+            .email-container {width: 100% !important; max-width: 100% !important;}
+            .header-padding {padding: 32px 24px 24px 24px !important;}
+            .content-padding {padding: 24px !important;}
+            .footer-padding {padding: 20px 24px !important;}
+            .button-link {display: block !important; width: 100% !important; text-align: center !important;}
+          }
+        </style>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #000000; background-color: #f5f5f5;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f5f5f5;">
+          <tr>
+            <td style="padding: 20px 0;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="email-container" style="max-width: 600px; width: 100%; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0;">
+                <!-- Header -->
+                <tr>
+                  <td class="header-padding" style="padding: 40px 40px 32px 40px; background: #ffffff; border-bottom: 1px solid #e0e0e0;">
+                    <h1 style="margin: 0; padding: 0; font-size: 20px; font-weight: 400; color: ${errorColor}; letter-spacing: 0;">Estimate Rejected</h1>
+                  </td>
+                </tr>
+                <!-- Content -->
+                <tr>
+                  <td class="content-padding" style="padding: 32px 40px 40px 40px; background: #ffffff;">
+                    <p style="margin: 0 0 24px 0; font-size: 14px; color: #000000; line-height: 1.6;">
+                      Your estimate has been rejected by <strong style="color: #000000; font-weight: 500;">${clientName}</strong>.
+                    </p>
+                    
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #f9fafb; border-left: 3px solid ${errorColor}; margin: 24px 0;">
+                      <tr>
+                        <td style="padding: 16px 20px;">
+                          <div style="font-size: 12px; color: #666666; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px;">Estimate Number</div>
+                          <div style="font-size: 16px; font-weight: 700; color: #000000; margin: 0;">${estimateNumber}</div>
+                        </td>
+                      </tr>
+                    </table>
+                    
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0;">
+                      <tr>
+                        <td style="padding: 16px; background: #f9fafb; border-radius: 4px;">
+                          <div style="font-size: 12px; color: #666666; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">Rejection Reason</div>
+                          <div style="font-size: 14px; color: #000000; line-height: 1.6; margin: 0;">${reason}</div>
+                        </td>
+                      </tr>
+                    </table>
+                    
+                    <p style="margin: 0 0 32px 0; font-size: 14px; color: #000000; line-height: 1.6;">
+                      You may want to revise the estimate and send a new one.
+                    </p>
+                    
+                    <!-- Button -->
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                      <tr>
+                        <td align="center" style="padding: 0;">
+                          <!--[if mso]>
+                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${dashboardUrl}/dashboard/estimates" style="height:42px;v-text-anchor:middle;width:200px;" arcsize="0%" strokecolor="${primaryColor}" fillcolor="${primaryColor}">
+                            <w:anchorlock/>
+                            <center style="color:#ffffff;font-family:sans-serif;font-size:14px;font-weight:500;">View Estimate</center>
+                          </v:roundrect>
+                          <![endif]-->
+                          <![if !mso]>
+                          <a href="${dashboardUrl}/dashboard/estimates" class="button-link" style="display: inline-block; background-color: ${primaryColor}; color: #ffffff !important; text-decoration: none; padding: 14px 32px; font-weight: 500; text-align: center; font-size: 14px; border: none; border-radius: 0;">
+                            <span style="color: #ffffff !important;">View Estimate</span>
+                          </a>
+                          <![endif]>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <!-- Footer -->
+                <tr>
+                  <td class="footer-padding" style="padding: 24px 40px; background: #ffffff; border-top: 1px solid #e0e0e0; text-align: center;">
+                    <p style="margin: 0; font-size: 12px; color: #666666; line-height: 1.5;">
+                      This is an automated notification from FlowInvoicer.<br>
+                      You're receiving this because an estimate you sent was rejected.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
       </body>
     </html>
   `;

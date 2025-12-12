@@ -103,6 +103,12 @@ export async function GET(
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
     }
 
+    // CRITICAL: Draft invoices should not be accessible via public URL
+    // They should only be viewable by the owner in the dashboard
+    if (invoice.status === 'draft') {
+      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
+    }
+
     // Fetch invoice items
     const { data: itemsData, error: itemsError } = await supabaseAdmin
       .from('invoice_items')
@@ -133,8 +139,9 @@ export async function GET(
     const dueDateStart = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate())
     
     // Invoice is overdue only if due date has passed (not on the due date itself)
-    const isOverdue = dueDateStart < todayStart && invoice.status !== 'paid'
-    const isDueToday = dueDateStart.getTime() === todayStart.getTime() && invoice.status !== 'paid'
+    // CRITICAL: Only calculate overdue for sent/pending invoices, not drafts
+    const isOverdue = dueDateStart < todayStart && invoice.status !== 'paid' && invoice.status !== 'draft'
+    const isDueToday = dueDateStart.getTime() === todayStart.getTime() && invoice.status !== 'paid' && invoice.status !== 'draft'
     
     // Parse late fees settings from database
     let lateFeesSettings = null
@@ -148,8 +155,9 @@ export async function GET(
     }
     
     // Calculate late fees only if user has enabled them and invoice is overdue
+    // CRITICAL: Don't calculate late fees for draft invoices
     let lateFees = 0
-    if (isOverdue && invoice.status !== 'paid' && lateFeesSettings && lateFeesSettings.enabled) {
+    if (isOverdue && invoice.status !== 'paid' && invoice.status !== 'draft' && lateFeesSettings && lateFeesSettings.enabled) {
       const daysOverdue = Math.round((todayStart.getTime() - dueDateStart.getTime()) / (1000 * 60 * 60 * 24))
       
       // Check if grace period has passed
@@ -169,6 +177,7 @@ export async function GET(
     return NextResponse.json({ 
       invoice: {
         id: invoice.id,
+        userId: invoice.user_id, // Include user_id to check ownership
         invoiceNumber: invoice.invoice_number,
         issueDate: invoice.issue_date,
         dueDate: invoice.due_date,

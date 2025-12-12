@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { supabaseAdmin } from '@/lib/supabase';
+import { generateEstimateRejectionEmailTemplate } from '@/lib/email-templates';
+import { getBaseUrlFromRequest } from '@/lib/get-base-url';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -102,9 +104,21 @@ export async function POST(
         console.error('RESEND_API_KEY is not configured. Cannot send rejection notification email.');
       } else {
         try {
+          // Get base URL for dashboard link
+          const baseUrl = getBaseUrlFromRequest(request);
+          const dashboardUrl = baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://invoice-flow-vert.vercel.app';
+          
+          // Generate clean, modern email template
+          const emailHtml = generateEstimateRejectionEmailTemplate(
+            estimate.estimate_number,
+            estimate.clients?.name || 'Client',
+            reason,
+            dashboardUrl
+          );
+
           // Use email_from_address if available, otherwise use Resend default
           const fromAddress = settings?.email_from_address || 'onboarding@resend.dev';
-          
+
           console.log('Sending rejection notification email:', {
             to: userEmail,
             from: fromAddress,
@@ -115,17 +129,7 @@ export async function POST(
             from: fromAddress,
             to: userEmail,
             subject: `Estimate ${estimate.estimate_number} Rejected`,
-            html: `
-              <!DOCTYPE html>
-              <html>
-                <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-                  <h2 style="color: #ef4444;">Estimate Rejected</h2>
-                  <p>Your estimate <strong>${estimate.estimate_number}</strong> has been rejected by <strong>${estimate.clients?.name || 'Client'}</strong>.</p>
-                  <p><strong>Reason:</strong> ${reason}</p>
-                  <p>You may want to revise the estimate and send a new one.</p>
-                </body>
-              </html>
-            `,
+            html: emailHtml,
           });
 
           console.log('Rejection notification email sent successfully:', emailResult);

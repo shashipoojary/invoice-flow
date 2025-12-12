@@ -229,6 +229,26 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Invoice ID is required' }, { status: 400 })
     }
 
+    // CRITICAL: Check current invoice status - only draft invoices can be edited
+    const { data: currentInvoice, error: fetchError } = await supabaseAdmin
+      .from('invoices')
+      .select('status')
+      .eq('id', invoiceId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (fetchError || !currentInvoice) {
+      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
+    }
+
+    // CRITICAL: Prevent editing sent, pending, paid, or overdue invoices
+    // Only draft invoices can be edited
+    if (currentInvoice.status !== 'draft') {
+      return NextResponse.json({ 
+        error: `Cannot edit invoice with status "${currentInvoice.status}". Only draft invoices can be edited.` 
+      }, { status: 400 })
+    }
+
     // Start a transaction to update invoice and items
     const { data: invoice, error: invoiceError } = await supabaseAdmin
       .from('invoices')
@@ -393,7 +413,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Fetch the complete updated invoice with client data and items
-    const { data: completeInvoice, error: fetchError } = await supabaseAdmin
+    const { data: completeInvoice, error: fetchCompleteError } = await supabaseAdmin
       .from('invoices')
       .select(`
         *,
@@ -416,8 +436,8 @@ export async function PUT(request: NextRequest) {
       .eq('id', invoiceId)
       .single();
 
-    if (fetchError) {
-      console.error('Error fetching updated invoice:', fetchError);
+    if (fetchCompleteError) {
+      console.error('Error fetching updated invoice:', fetchCompleteError);
       return NextResponse.json({ error: 'Failed to fetch updated invoice' }, { status: 500 });
     }
 

@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { CheckCircle, Clock, AlertCircle, Mail, MapPin, Building2, CreditCard, Smartphone, DollarSign, Shield, Copy, Check } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 
 interface InvoiceItem {
   id: string
@@ -13,6 +14,7 @@ interface InvoiceItem {
 
 interface Invoice {
   id: string
+  userId?: string // Invoice owner's user ID
   invoiceNumber: string
   issueDate: string
   dueDate: string
@@ -117,9 +119,19 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
       setCopiedMethod(methodType)
       setTimeout(() => setCopiedMethod(null), 2000)
 
-      // Log the copy event
+      // Log the copy event - only if viewer is NOT the owner
       if (invoice.id) {
         try {
+          // Check if the viewer is authenticated
+          const { data: { session } } = await supabase.auth.getSession()
+          
+          // If user is authenticated and owns the invoice, don't log
+          if (session?.user && invoice.userId && session.user.id === invoice.userId) {
+            // Owner copying their own payment method - don't log as customer action
+            return
+          }
+          
+          // Log as customer action (either not authenticated or not the owner)
           await fetch('/api/invoices/events', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -634,8 +646,19 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
       setCopiedMethod(methodType)
       setTimeout(() => setCopiedMethod(null), 2000)
 
+      // Log the copy event - only if viewer is NOT the owner
       if (invoice.id) {
         try {
+          // Check if the viewer is authenticated
+          const { data: { session } } = await supabase.auth.getSession()
+          
+          // If user is authenticated and owns the invoice, don't log
+          if (session?.user && invoice.userId && session.user.id === invoice.userId) {
+            // Owner copying their own payment method - don't log as customer action
+            return
+          }
+          
+          // Log as customer action (either not authenticated or not the owner)
           await fetch('/api/invoices/events', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1148,8 +1171,19 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
       setCopiedMethod(methodType)
       setTimeout(() => setCopiedMethod(null), 2000)
 
+      // Log the copy event - only if viewer is NOT the owner
       if (invoice.id) {
         try {
+          // Check if the viewer is authenticated
+          const { data: { session } } = await supabase.auth.getSession()
+          
+          // If user is authenticated and owns the invoice, don't log
+          if (session?.user && invoice.userId && session.user.id === invoice.userId) {
+            // Owner copying their own payment method - don't log as customer action
+            return
+          }
+          
+          // Log as customer action (either not authenticated or not the owner)
           await fetch('/api/invoices/events', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1662,8 +1696,19 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
       setCopiedMethod(methodType)
       setTimeout(() => setCopiedMethod(null), 2000)
 
+      // Log the copy event - only if viewer is NOT the owner
       if (invoice.id) {
         try {
+          // Check if the viewer is authenticated
+          const { data: { session } } = await supabase.auth.getSession()
+          
+          // If user is authenticated and owns the invoice, don't log
+          if (session?.user && invoice.userId && session.user.id === invoice.userId) {
+            // Owner copying their own payment method - don't log as customer action
+            return
+          }
+          
+          // Log as customer action (either not authenticated or not the owner)
           await fetch('/api/invoices/events', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

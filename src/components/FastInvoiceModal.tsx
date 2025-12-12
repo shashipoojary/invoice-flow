@@ -54,6 +54,14 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   useEffect(() => {
     if (isOpen) {
       if (editingInvoice) {
+        // CRITICAL: Only allow editing draft invoices
+        if (editingInvoice.status !== 'draft') {
+          console.error('Cannot edit non-draft invoice:', editingInvoice.status);
+          showError(`Cannot edit invoice: Only draft invoices can be edited. This invoice is "${editingInvoice.status}".`);
+          onClose();
+          return;
+        }
+        
         // Pre-fill form when editing an invoice
         setSelectedClientId(editingInvoice.clientId || editingInvoice.client_id || '')
         setClientName(editingInvoice.clientName || '')

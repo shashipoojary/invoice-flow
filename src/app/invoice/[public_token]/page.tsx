@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Download, AlertCircle, Receipt, Loader2 } from 'lucide-react'
 import InvoiceTemplateRenderer from '@/components/InvoiceTemplateRenderer'
+import { supabase } from '@/lib/supabase'
 
 interface InvoiceItem {
   id: string
@@ -14,6 +15,7 @@ interface InvoiceItem {
 
 interface Invoice {
   id: string
+  userId?: string // Invoice owner's user ID
   invoiceNumber: string
   issueDate: string
   dueDate: string
@@ -88,11 +90,22 @@ export default function PublicInvoicePage() {
     loadInvoice()
   }, [params.public_token])
 
-  // Log public view when invoice is loaded
+  // Log public view when invoice is loaded - only if viewer is NOT the owner
   useEffect(() => {
     const logView = async () => {
       try {
         if (!invoice?.id) return
+        
+        // Check if the viewer is authenticated
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        // If user is authenticated and owns the invoice, don't log
+        if (session?.user && invoice.userId && session.user.id === invoice.userId) {
+          // Owner viewing their own invoice - don't log as customer view
+          return
+        }
+        
+        // Log as customer view (either not authenticated or not the owner)
         await fetch('/api/invoices/events', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -101,7 +114,7 @@ export default function PublicInvoicePage() {
       } catch {}
     }
     logView()
-  }, [invoice?.id])
+  }, [invoice?.id, invoice?.userId])
 
 
   const handleDownloadReceipt = async () => {
@@ -145,13 +158,19 @@ export default function PublicInvoicePage() {
         window.URL.revokeObjectURL(downloadUrl);
         document.body.removeChild(a);
 
-        // Log receipt download event
+        // Log receipt download event - only if viewer is NOT the owner
         if (invoice?.id) {
-          fetch('/api/invoices/events', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ invoiceId: (invoice as any).id, type: 'receipt_downloaded_by_customer' })
-          }).catch(() => {});
+          // Check if the viewer is authenticated and owns the invoice
+          const { data: { session } } = await supabase.auth.getSession()
+          
+          // Only log if user is not authenticated or doesn't own the invoice
+          if (!session?.user || !invoice.userId || session.user.id !== invoice.userId) {
+            fetch('/api/invoices/events', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ invoiceId: (invoice as any).id, type: 'receipt_downloaded_by_customer' })
+            }).catch(() => {});
+          }
         }
       } else {
         const errorText = await response.text();

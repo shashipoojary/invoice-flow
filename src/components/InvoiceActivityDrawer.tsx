@@ -41,6 +41,10 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
         let latestViewedEvent: any = null;
         
         if (events) {
+          // CRITICAL: For draft invoices, filter out events that shouldn't exist
+          // Draft invoices should only show: created, edited, downloaded_pdf
+          const isDraft = invoice.status === 'draft';
+          
           // Group events by type and keep only the latest one of each type
           const eventsByType = new Map<string, any>();
           for (const ev of events) {
@@ -49,8 +53,20 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
               continue;
             }
             
-            // For privacy: only track the latest "viewed_by_customer" event
-            if (ev.type === 'viewed_by_customer') {
+            // CRITICAL: For draft invoices, exclude all "sent" related events
+            if (isDraft) {
+              if (ev.type === 'sent' || 
+                  ev.type === 'viewed_by_customer' || 
+                  ev.type === 'downloaded_by_customer' ||
+                  ev.type === 'payment_method_copied' ||
+                  ev.type === 'overdue' || 
+                  ev.type === 'late_fee_applied') {
+                continue; // Skip these events for draft invoices
+              }
+            }
+            
+            // For privacy: only track the latest "viewed_by_customer" event (only for non-draft invoices)
+            if (ev.type === 'viewed_by_customer' && !isDraft) {
               if (!latestViewedEvent || new Date(ev.created_at) > new Date(latestViewedEvent.created_at)) {
                 latestViewedEvent = ev;
               }
@@ -58,6 +74,7 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
             }
             
             // For overdue events, keep all of them (not just latest) - we want cumulative history
+            // But skip for draft invoices (already filtered above)
             if (ev.type === 'overdue' || ev.type === 'late_fee_applied') {
               // Don't filter overdue events - we want all of them
               continue; // Skip here, we'll handle them separately below
@@ -108,7 +125,10 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
             dueStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
           }
           
-          const overdueEvents = events.filter((ev: any) => ev.type === 'overdue' || ev.type === 'late_fee_applied');
+          // CRITICAL: Only process overdue events for non-draft invoices
+          const overdueEvents = events.filter((ev: any) => 
+            (ev.type === 'overdue' || ev.type === 'late_fee_applied') && !isDraft
+          );
           for (const ev of overdueEvents) {
             if (ev.type === 'overdue') {
               const days = ev.metadata?.days || 0;
@@ -152,7 +172,8 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
         }
         
         // Add only the latest "viewed_by_customer" event (for privacy)
-        if (latestViewedEvent) {
+        // CRITICAL: Only show for non-draft invoices
+        if (latestViewedEvent && invoice.status !== 'draft') {
           const viewItem = { 
             id: `view-${latestViewedEvent.id}`, 
             type: 'client', 
