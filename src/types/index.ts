@@ -78,6 +78,7 @@ export interface Invoice {
   tax_rate?: number;
   invoice_number?: string;
   created_at?: string;
+  public_token?: string;
 }
 
 export interface FreelancerSettings {

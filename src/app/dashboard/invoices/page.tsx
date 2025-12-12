@@ -1734,6 +1734,7 @@ function InvoicesContent(): React.JSX.Element {
           }
         }}
         invoiceNumber={sendInvoiceModal.invoice?.invoiceNumber || ''}
+        invoice={sendInvoiceModal.invoice}
         isLoading={sendInvoiceModal.isLoading}
       />
 

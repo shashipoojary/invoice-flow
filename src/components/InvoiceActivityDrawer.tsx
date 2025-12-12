@@ -547,7 +547,20 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
               </ul>
             )}
           </div>
-          <div className="p-5 border-t border-gray-200">
+          <div className="p-5 border-t border-gray-200 space-y-3">
+            {invoice.public_token && (
+              <button
+                onClick={() => {
+                  const token = invoice.public_token;
+                  if (token) {
+                    window.open(`/invoice/${encodeURIComponent(token)}`, '_blank');
+                  }
+                }}
+                className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
+              >
+                View Public Page
+              </button>
+            )}
             <button onClick={onClose} className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors">Close</button>
           </div>
         </div>

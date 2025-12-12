@@ -2049,6 +2049,7 @@ export default function DashboardOverview() {
            }
          }}
          invoiceNumber={sendInvoiceModal.invoice?.invoiceNumber || ''}
+         invoice={sendInvoiceModal.invoice}
          isLoading={sendInvoiceModal.isLoading}
        />
 
