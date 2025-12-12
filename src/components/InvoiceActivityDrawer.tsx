@@ -281,9 +281,10 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
         }
 
         // Create overdue events for each day (cumulative, not replacing)
+        // CRITICAL: Do not calculate overdue or late fees for draft invoices
         try {
           const due = (invoice as any).dueDate || (invoice as any).due_date;
-          if (due && invoice.status !== 'paid') {
+          if (due && invoice.status !== 'paid' && invoice.status !== 'draft') {
             const today = new Date();
             const dueDate = new Date(due);
             const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));

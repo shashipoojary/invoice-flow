@@ -60,6 +60,7 @@ async function processReminders(request: NextRequest) {
     // Fetch scheduled reminders with invoice and client data
     // Data isolation: Each reminder is linked to an invoice via invoice_id
     // Each invoice has user_id, ensuring proper isolation when fetching user settings
+    // CRITICAL: Exclude draft invoices - they should never have reminders sent
     const { data: scheduledReminders, error: remindersError } = await supabaseAdmin
       .from('invoice_reminders')
       .select(`
@@ -84,6 +85,7 @@ async function processReminders(request: NextRequest) {
         )
       `)
       .eq('reminder_status', 'scheduled')
+      .neq('invoices.status', 'draft')
       .lte('sent_at', now);
 
     if (remindersError) {

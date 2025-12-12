@@ -116,6 +116,7 @@ export default function ReminderHistoryPage() {
       
       // If invoiceIds is very large, we might need to chunk it
       // For most use cases, this should be fine
+      // CRITICAL: Exclude draft invoices - they should never have reminders
       if (invoiceIds.length > 0) {
         const { data, error } = await supabase
           .from('invoice_reminders')
@@ -156,8 +157,13 @@ export default function ReminderHistoryPage() {
         console.log(`Found ${reminderData.length} reminder(s) in database`);
         
         // Filter out reminders with null invoices (in case of orphaned reminders)
-        const validReminders = reminderData.filter(reminder => reminder.invoices && reminder.invoices.invoice_number);
-        console.log(`After filtering, ${validReminders.length} valid reminder(s)`);
+        // CRITICAL: Also filter out draft invoices - they should never have reminders
+        const validReminders = reminderData.filter(reminder => 
+          reminder.invoices && 
+          reminder.invoices.invoice_number && 
+          reminder.invoices.status !== 'draft'
+        );
+        console.log(`After filtering (excluding drafts), ${validReminders.length} valid reminder(s)`);
         
         
         const formattedReminders: ReminderHistory[] = validReminders.map(reminder => {
@@ -281,6 +287,11 @@ export default function ReminderHistoryPage() {
     return reminders.filter(reminder => {
       // Safety check for invoice data
       if (!reminder.invoice || !reminder.invoice.invoice_number) {
+        return false;
+      }
+
+      // CRITICAL: Exclude draft invoices - they should never have reminders
+      if (reminder.invoice.status === 'draft') {
         return false;
       }
       

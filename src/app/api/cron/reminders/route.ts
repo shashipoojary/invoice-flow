@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
 
+    // CRITICAL: Exclude draft invoices - they should never have reminders sent
     const { data: scheduledReminders, error: remindersError } = await supabaseAdmin
       .from('invoice_reminders')
       .select(`
@@ -45,6 +46,7 @@ export async function POST(request: NextRequest) {
       `)
       .eq('reminder_status', 'scheduled')
       .eq('invoices.status', 'sent')
+      .neq('invoices.status', 'draft')
       .gte('sent_at', todayStart.toISOString())
       .lt('sent_at', todayEnd.toISOString());
 
