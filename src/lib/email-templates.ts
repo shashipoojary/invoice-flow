@@ -2015,6 +2015,252 @@ export function generateOriginalFastInvoiceEmailTemplate(
   `;
 }
 
+// Estimate Approval Notification Email Template
+export function generateEstimateApprovalEmailTemplate(
+  estimateNumber: string,
+  clientName: string,
+  comment: string | null,
+  dashboardUrl: string
+): string {
+  const primaryColor = '#1F2937';
+  const successColor = '#10B981';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="x-apple-disable-message-reformatting">
+        <meta name="color-scheme" content="light dark">
+        <meta name="supported-color-schemes" content="light dark">
+        <title>Estimate ${estimateNumber} Approved</title>
+        <style>
+          * {
+            box-sizing: border-box;
+          }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #000000;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px 0;
+          }
+          /* Dark mode support */
+          @media (prefers-color-scheme: dark) {
+            .email-container {
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
+            }
+            .header {
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
+            }
+            .content {
+              background: #ffffff !important;
+            }
+            .footer {
+              background: #ffffff !important;
+              border-color: #e0e0e0 !important;
+            }
+            .title,
+            .estimate-number-label {
+              color: ${primaryColor} !important;
+            }
+            .message,
+            .estimate-number {
+              color: #000000 !important;
+            }
+            .client-name {
+              color: #000000 !important;
+            }
+            .footer-text {
+              color: #666666 !important;
+            }
+          }
+          .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+          }
+          .header {
+            padding: 40px 40px 32px 40px;
+            background: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+          }
+          .title {
+            font-size: 20px;
+            font-weight: 400;
+            color: ${primaryColor} !important;
+            margin: 0;
+            padding: 0;
+            letter-spacing: 0;
+          }
+          .content {
+            padding: 32px 40px 40px 40px;
+            background: #ffffff;
+          }
+          .message {
+            font-size: 14px;
+            color: #000000 !important;
+            line-height: 1.6;
+            margin: 0 0 24px 0;
+          }
+          .estimate-info {
+            background: #f9fafb;
+            border-left: 3px solid ${successColor};
+            padding: 16px 20px;
+            margin: 24px 0;
+          }
+          .estimate-number-label {
+            font-size: 12px;
+            color: #666666 !important;
+            margin: 0 0 4px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .estimate-number {
+            font-size: 16px;
+            font-weight: 700;
+            color: #000000 !important;
+            margin: 0;
+          }
+          .client-name {
+            font-size: 14px;
+            color: #000000 !important;
+            font-weight: 500;
+            margin: 8px 0 0 0;
+          }
+          .comment-section {
+            margin: 24px 0;
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 4px;
+          }
+          .comment-label {
+            font-size: 12px;
+            color: #666666 !important;
+            margin: 0 0 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .comment-text {
+            font-size: 14px;
+            color: #000000 !important;
+            line-height: 1.6;
+            margin: 0;
+          }
+          .button-container {
+            margin: 32px 0 0 0;
+            text-align: center;
+          }
+          .action-button {
+            display: inline-block;
+            background-color: ${successColor} !important;
+            color: #ffffff !important;
+            text-decoration: none !important;
+            padding: 14px 32px !important;
+            font-weight: 500 !important;
+            text-align: center !important;
+            font-size: 14px !important;
+            border: none !important;
+            border-radius: 0 !important;
+          }
+          .action-button span {
+            color: #ffffff !important;
+          }
+          /* Gmail desktop fix */
+          u + .body .action-button span {
+            color: #ffffff !important;
+          }
+          /* MSO conditional styles for Outlook */
+          <!--[if mso]>
+          <style type="text/css">
+            .action-button {
+              background-color: ${successColor} !important;
+            }
+          </style>
+          <![endif]-->
+          .footer {
+            padding: 24px 40px;
+            background: #ffffff;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+          }
+          .footer-text {
+            font-size: 12px;
+            color: #666666 !important;
+            margin: 0;
+            line-height: 1.5;
+          }
+          @media only screen and (max-width: 600px) {
+            .header {
+              padding: 32px 24px 24px 24px;
+            }
+            .content {
+              padding: 24px;
+            }
+            .footer {
+              padding: 20px 24px;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="email-container">
+          <div class="header">
+            <h1 class="title">Estimate Approved</h1>
+          </div>
+          <div class="content">
+            <p class="message">
+              Great news! Your estimate has been approved by <strong class="client-name">${clientName}</strong>.
+            </p>
+            
+            <div class="estimate-info">
+              <div class="estimate-number-label">Estimate Number</div>
+              <div class="estimate-number">${estimateNumber}</div>
+            </div>
+            
+            ${comment ? `
+              <div class="comment-section">
+                <div class="comment-label">Client Comment</div>
+                <div class="comment-text">${comment}</div>
+              </div>
+            ` : ''}
+            
+            <p class="message">
+              You can now convert this estimate to an invoice from your dashboard.
+            </p>
+            
+            <div class="button-container">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${dashboardUrl}/dashboard/estimates" style="height:42px;v-text-anchor:middle;width:200px;" arcsize="0%" strokecolor="${successColor}" fillcolor="${successColor}">
+                <w:anchorlock/>
+                <center style="color:#ffffff;font-family:sans-serif;font-size:14px;font-weight:500;">View Estimate</center>
+              </v:roundrect>
+              <![endif]-->
+              <![if !mso]>
+              <a href="${dashboardUrl}/dashboard/estimates" class="action-button" style="background-color: ${successColor}; color: #ffffff; text-decoration: none; padding: 14px 32px; font-weight: 500; text-align: center; font-size: 14px; border: none; border-radius: 0;">
+                <span style="color: #ffffff;">View Estimate</span>
+              </a>
+              <![endif]>
+            </div>
+          </div>
+          <div class="footer">
+            <p class="footer-text">
+              This is an automated notification from FlowInvoicer.<br>
+              You're receiving this because an estimate you sent was approved.
+            </p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
 // Estimate Email Template - Modern, Simple, Clean, Minimal
 export function generateEstimateEmailTemplate(
   estimate: {

@@ -67,14 +67,20 @@ export default function PublicEstimatePage() {
   const [error, setError] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [showApproveModal, setShowApproveModal] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [rejectionReason, setRejectionReason] = useState('')
+
+  const handleApproveClick = () => {
+    setShowApproveModal(true)
+  }
 
   const handleApprove = async () => {
     if (!estimate || actionLoading) return
 
     setActionLoading(true)
     setActionMessage(null)
+    setShowApproveModal(false)
 
     try {
       const response = await fetch(`/api/estimates/${estimate.id}/approve`, {
@@ -396,22 +402,15 @@ export default function PublicEstimatePage() {
           {canApproveReject && (
             <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={handleApprove}
+                onClick={handleApproveClick}
                 disabled={actionLoading}
                 className="flex-1 px-4 py-2 bg-green-600 text-white hover:bg-green-700 transition-colors font-normal text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ borderRadius: 0 }}
               >
-                {actionLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Processing...
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    <CheckCircle className="h-4 w-4" />
-                    Approve Estimate
-                  </span>
-                )}
+                <span className="flex items-center justify-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  Approve Estimate
+                </span>
               </button>
               <button
                 onClick={handleRejectClick}
@@ -424,6 +423,43 @@ export default function PublicEstimatePage() {
                   Reject Estimate
                 </span>
               </button>
+            </div>
+          )}
+
+          {/* Approval Confirmation Modal */}
+          {showApproveModal && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white border border-gray-200 max-w-md w-full p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Approve Estimate</h3>
+                <p className="text-sm text-gray-600 mb-6">Are you sure you want to approve this estimate? This action cannot be undone.</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowApproveModal(false)
+                    }}
+                    disabled={actionLoading}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors font-normal text-sm cursor-pointer disabled:opacity-50"
+                    style={{ borderRadius: 0 }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleApprove}
+                    disabled={actionLoading}
+                    className="flex-1 px-4 py-2 bg-green-600 text-white hover:bg-green-700 transition-colors font-normal text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ borderRadius: 0 }}
+                  >
+                    {actionLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Processing...
+                      </span>
+                    ) : (
+                      'Approve Estimate'
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 

@@ -70,35 +70,77 @@ export async function POST(
       metadata: { reason: reason || '' }
     });
 
-    // Fetch user settings to send notification
+    // Fetch user email for notification (try auth email first, then business_email)
+    let userEmail = '';
+    try {
+      const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(estimate.user_id);
+      userEmail = authUser?.user?.email || '';
+    } catch (error) {
+      console.error('Error fetching user email from auth:', error);
+    }
+
+    // If no auth email, try business_email from settings
+    if (!userEmail) {
+      const { data: settingsData } = await supabaseAdmin
+        .from('user_settings')
+        .select('business_email, email_from_address')
+        .eq('user_id', estimate.user_id)
+        .single();
+      userEmail = settingsData?.business_email || '';
+    }
+
+    // Fetch email_from_address for from address
     const { data: settings } = await supabaseAdmin
       .from('user_settings')
-      .select('business_email, email_from_address')
+      .select('email_from_address')
       .eq('user_id', estimate.user_id)
       .single();
 
-    // Send notification email to user
-    if (settings && process.env.RESEND_API_KEY) {
-      try {
-        await resend.emails.send({
-          from: settings.email_from_address || `FlowInvoicer <noreply@${process.env.RESEND_DOMAIN || 'resend.dev'}>`,
-          to: settings.business_email,
-          subject: `Estimate ${estimate.estimate_number} Rejected`,
-          html: `
-            <!DOCTYPE html>
-            <html>
-              <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h2 style="color: #ef4444;">Estimate Rejected</h2>
-                <p>Your estimate <strong>${estimate.estimate_number}</strong> has been rejected by <strong>${estimate.clients?.name || 'Client'}</strong>.</p>
-                <p><strong>Reason:</strong> ${reason}</p>
-                <p>You may want to revise the estimate and send a new one.</p>
-              </body>
-            </html>
-          `,
-        });
-      } catch (emailError) {
-        console.error('Error sending rejection notification:', emailError);
+    // Send notification email to user if we have an email
+    if (userEmail) {
+      if (!process.env.RESEND_API_KEY) {
+        console.error('RESEND_API_KEY is not configured. Cannot send rejection notification email.');
+      } else {
+        try {
+          // Use email_from_address if available, otherwise use Resend default
+          const fromAddress = settings?.email_from_address || 'onboarding@resend.dev';
+          
+          console.log('Sending rejection notification email:', {
+            to: userEmail,
+            from: fromAddress,
+            estimateNumber: estimate.estimate_number
+          });
+
+          const emailResult = await resend.emails.send({
+            from: fromAddress,
+            to: userEmail,
+            subject: `Estimate ${estimate.estimate_number} Rejected`,
+            html: `
+              <!DOCTYPE html>
+              <html>
+                <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <h2 style="color: #ef4444;">Estimate Rejected</h2>
+                  <p>Your estimate <strong>${estimate.estimate_number}</strong> has been rejected by <strong>${estimate.clients?.name || 'Client'}</strong>.</p>
+                  <p><strong>Reason:</strong> ${reason}</p>
+                  <p>You may want to revise the estimate and send a new one.</p>
+                </body>
+              </html>
+            `,
+          });
+
+          console.log('Rejection notification email sent successfully:', emailResult);
+        } catch (emailError: any) {
+          console.error('Error sending rejection notification:', emailError);
+          console.error('Email error details:', {
+            message: emailError?.message,
+            name: emailError?.name,
+            stack: emailError?.stack
+          });
+          // Don't fail the request if email fails, but log it
+        }
       }
+    } else {
+      console.warn('No user email found for estimate rejection notification. User ID:', estimate.user_id);
     }
 
     return NextResponse.json({ success: true, message: 'Estimate rejected' }, { status: 200 });

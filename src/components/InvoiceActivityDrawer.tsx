@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { X, AlertTriangle, CheckCircle, Mail, Eye as EyeIcon, Download as DownloadIcon, Send as SendIcon, Clock, Link as LinkIcon } from 'lucide-react';
+import { X, AlertTriangle, CheckCircle, Mail, Eye as EyeIcon, Download as DownloadIcon, Send as SendIcon, Clock, Link as LinkIcon, Copy } from 'lucide-react';
 import type { Invoice } from '@/types';
 import { supabase } from '@/lib/supabase';
 
@@ -10,7 +10,7 @@ type ActivityItem = {
   type: string;
   title: string;
   at: string;
-  icon: 'sent' | 'delivered' | 'opened' | 'clicked' | 'downloaded' | 'paid' | 'created' | 'scheduled' | 'failed' | 'overdue';
+  icon: 'sent' | 'delivered' | 'opened' | 'clicked' | 'downloaded' | 'paid' | 'created' | 'scheduled' | 'failed' | 'overdue' | 'copied';
   details?: string;
 };
 
@@ -79,6 +79,14 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
               paid: { id: `paid-${ev.id}`, type: 'status', title: 'Invoice paid in full.', at: ev.created_at, icon: 'paid' },
               downloaded_by_customer: { id: `dl-${ev.id}`, type: 'client', title: 'Invoice downloaded by customer.', at: ev.created_at, icon: 'downloaded' },
               downloaded_pdf: { id: `dl-owner-${ev.id}`, type: 'owner', title: 'PDF downloaded.', at: ev.created_at, icon: 'downloaded' },
+              payment_method_copied: { 
+                id: `copy-${ev.id}`, 
+                type: 'client', 
+                title: 'Payment method copied.', 
+                details: ev.metadata?.paymentMethod || 'Unknown',
+                at: ev.created_at, 
+                icon: 'copied' 
+              },
             } as any;
             const mapped = mapping[ev.type];
             if (mapped) {
@@ -486,6 +494,7 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
       case 'delivered': return <CheckCircle className="h-4 w-4 text-emerald-600" />;
       case 'opened': return <EyeIcon className="h-4 w-4 text-indigo-600" />;
       case 'downloaded': return <DownloadIcon className="h-4 w-4 text-gray-700" />;
+      case 'copied': return <Copy className="h-4 w-4 text-indigo-600" />;
       case 'failed': return <AlertTriangle className="h-4 w-4 text-red-600" />;
       case 'overdue': return <AlertTriangle className="h-4 w-4 text-red-600" />;
       case 'paid': return <CheckCircle className="h-4 w-4 text-emerald-600" />;

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getBaseUrlFromRequest } from '@/lib/get-base-url';
+import { generateEstimateApprovalEmailTemplate } from '@/lib/email-templates';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -70,35 +72,79 @@ export async function POST(
       metadata: { comment: comment || '' }
     });
 
-    // Fetch user settings to send notification
+    // Fetch user email for notification (try auth email first, then business_email)
+    let userEmail = '';
+    try {
+      const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(estimate.user_id);
+      userEmail = authUser?.user?.email || '';
+    } catch (error) {
+      console.error('Error fetching user email from auth:', error);
+    }
+
+    // If no auth email, try business_email from settings
+    if (!userEmail) {
+      const { data: settings } = await supabaseAdmin
+        .from('user_settings')
+        .select('business_email, email_from_address')
+        .eq('user_id', estimate.user_id)
+        .single();
+      userEmail = settings?.business_email || '';
+    }
+
+    // Fetch email_from_address for from address
     const { data: settings } = await supabaseAdmin
       .from('user_settings')
-      .select('business_email, email_from_address')
+      .select('email_from_address')
       .eq('user_id', estimate.user_id)
       .single();
 
-    // Send notification email to user
-    if (settings && process.env.RESEND_API_KEY) {
-      try {
-        await resend.emails.send({
-          from: settings.email_from_address || `FlowInvoicer <noreply@${process.env.RESEND_DOMAIN || 'resend.dev'}>`,
-          to: settings.business_email,
-          subject: `Estimate ${estimate.estimate_number} Approved`,
-          html: `
-            <!DOCTYPE html>
-            <html>
-              <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h2 style="color: #10b981;">Estimate Approved!</h2>
-                <p>Great news! Your estimate <strong>${estimate.estimate_number}</strong> has been approved by <strong>${estimate.clients?.name || 'Client'}</strong>.</p>
-                ${comment ? `<p><strong>Client Comment:</strong> ${comment}</p>` : ''}
-                <p>You can now convert this estimate to an invoice.</p>
-              </body>
-            </html>
-          `,
-        });
-      } catch (emailError) {
-        console.error('Error sending approval notification:', emailError);
+    // Send notification email to user if we have an email
+    if (userEmail) {
+      if (!process.env.RESEND_API_KEY) {
+        console.error('RESEND_API_KEY is not configured. Cannot send approval notification email.');
+      } else {
+        try {
+          // Get base URL for dashboard link
+          const baseUrl = getBaseUrlFromRequest(request);
+          const dashboardUrl = baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://invoice-flow-vert.vercel.app';
+          
+          // Generate clean, modern email template
+          const emailHtml = generateEstimateApprovalEmailTemplate(
+            estimate.estimate_number,
+            estimate.clients?.name || 'Client',
+            comment || null,
+            dashboardUrl
+          );
+
+          // Use email_from_address if available, otherwise use Resend default
+          const fromAddress = settings?.email_from_address || 'onboarding@resend.dev';
+
+          console.log('Sending approval notification email:', {
+            to: userEmail,
+            from: fromAddress,
+            estimateNumber: estimate.estimate_number
+          });
+
+          const emailResult = await resend.emails.send({
+            from: fromAddress,
+            to: userEmail,
+            subject: `Estimate ${estimate.estimate_number} Approved`,
+            html: emailHtml,
+          });
+
+          console.log('Approval notification email sent successfully:', emailResult);
+        } catch (emailError: any) {
+          console.error('Error sending approval notification:', emailError);
+          console.error('Email error details:', {
+            message: emailError?.message,
+            name: emailError?.name,
+            stack: emailError?.stack
+          });
+          // Don't fail the request if email fails, but log it
+        }
       }
+    } else {
+      console.warn('No user email found for estimate approval notification. User ID:', estimate.user_id);
     }
 
     return NextResponse.json({ success: true, message: 'Estimate approved successfully' }, { status: 200 });

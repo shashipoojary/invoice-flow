@@ -1,8 +1,8 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import Image from 'next/image'
-import { CheckCircle, Clock, AlertCircle, Mail, MapPin, Building2, CreditCard, Smartphone, DollarSign, Shield } from 'lucide-react'
+import { CheckCircle, Clock, AlertCircle, Mail, MapPin, Building2, CreditCard, Smartphone, DollarSign, Shield, Copy, Check } from 'lucide-react'
 
 interface InvoiceItem {
   id: string
@@ -109,6 +109,34 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
   // Fixed colors for fast invoice - no customization
   const primaryColor = '#0D9488'   // Teal (only for amount)
   const secondaryColor = '#3B82F6' // Blue
+  const [copiedMethod, setCopiedMethod] = useState<string | null>(null)
+
+  const handleCopyPaymentMethod = async (methodType: string, details: string) => {
+    try {
+      await navigator.clipboard.writeText(details)
+      setCopiedMethod(methodType)
+      setTimeout(() => setCopiedMethod(null), 2000)
+
+      // Log the copy event
+      if (invoice.id) {
+        try {
+          await fetch('/api/invoices/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              invoiceId: invoice.id,
+              type: 'payment_method_copied',
+              metadata: { paymentMethod: methodType }
+            })
+          })
+        } catch (error) {
+          console.error('Failed to log payment method copy event:', error)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to copy:', error)
+    }
+  }
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'paid':
@@ -162,15 +190,9 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
     }, 0)
   }
 
-  const calculateTax = () => {
-    return invoice.taxAmount || 0
-  }
-
   const calculateTotal = () => {
-    const subtotal = invoice.subtotal || calculateSubtotal()
-    const tax = calculateTax()
-    const discount = invoice.discount || 0
-    return subtotal + tax - discount
+    // Fast Invoice: No tax, discount, or late fees - just subtotal
+    return invoice.subtotal || calculateSubtotal()
   }
 
   return (
@@ -192,6 +214,19 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
               {invoice.freelancerSettings?.email && (
                 <div className="text-sm text-gray-500 mt-1">{invoice.freelancerSettings.email}</div>
               )}
+              
+              {/* Payment Overdue Notice - Status Banner Style */}
+              {invoice.isOverdue && (
+                <div className="mt-4 px-4 py-3 bg-red-50 border-l-4 border-red-500">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-red-900">Payment Overdue</p>
+                      <p className="text-xs text-red-700 mt-0.5">This invoice is {invoice.daysOverdue} days past due. Please remit payment immediately to avoid additional charges.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="text-left sm:text-right flex-1 w-full sm:w-auto sm:pl-6">
               <div className="text-lg sm:text-xl font-normal text-gray-900 mb-3" style={{ color: '#1F2937', letterSpacing: 0 }}>
@@ -205,7 +240,7 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
                 Due: {new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
               <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: primaryColor || '#0D9488', letterSpacing: '-0.5px' }}>
-                ${invoice.isOverdue ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2)}
+                ${calculateTotal().toFixed(2)}
               </div>
               {/* Status Badge */}
               <div className="mt-3">
@@ -213,11 +248,6 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
                   {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                 </div>
-                {invoice.isOverdue && (
-                  <div className="text-xs text-red-600 font-medium mt-1">
-                    {invoice.daysOverdue} days overdue
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -264,39 +294,30 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
             </div>
           )}
 
-          {/* Summary */}
+          {/* Summary - Fast Invoice: No discount, tax, or late fees */}
           <div className="mb-8 pb-6 border-b border-gray-200">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-900" style={{ color: '#1F2937' }}>Subtotal</span>
-              <span className="text-black">${invoice.subtotal.toFixed(2)}</span>
-            </div>
-            {invoice.discount > 0 && (
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
-                <span className="text-black">-${invoice.discount.toFixed(2)}</span>
-              </div>
-            )}
-            {invoice.taxAmount > 0 && (
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
-                <span className="text-black">${invoice.taxAmount.toFixed(2)}</span>
-              </div>
-            )}
-            {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
-              <span className="font-bold text-black">
-                {invoice.isOverdue && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Total'}
-              </span>
-              <span className={`font-bold ${invoice.isOverdue && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`} style={{ color: invoice.isOverdue && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? undefined : primaryColor }}>
-                ${invoice.isOverdue && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2)}
+            <div className="flex justify-between text-sm pt-2 mt-2">
+              <span className="font-bold text-black">Total</span>
+              <span className="font-bold text-black" style={{ color: primaryColor }}>
+                ${calculateTotal().toFixed(2)}
               </span>
             </div>
           </div>
+
+          {/* Status Message */}
+          {invoice.status === 'paid' && (
+            <div className="mb-8 pb-6 border-b border-gray-200">
+              <div className="px-4 py-3 bg-emerald-50 border-l-4 border-emerald-500">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-emerald-900">Payment Received</p>
+                    <p className="text-xs text-emerald-700 mt-0.5">Thank you! This invoice has been paid in full.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Payment Information */}
           {invoice.freelancerSettings && invoice.status !== 'paid' && (
@@ -321,9 +342,28 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
                 {/* PayPal */}
                 {invoice.freelancerSettings.paypalEmail && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <CreditCard className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium text-gray-900">PayPal</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium text-gray-900">PayPal</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('PayPal', invoice.freelancerSettings?.paypalEmail || '')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy PayPal email"
+                      >
+                        {copiedMethod === 'PayPal' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600 break-all">{invoice.freelancerSettings.paypalEmail}</p>
                   </div>
@@ -332,9 +372,28 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
                 {/* Cash App */}
                 {invoice.freelancerSettings.cashappId && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <DollarSign className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium text-gray-900">Cash App</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium text-gray-900">Cash App</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Cash App', invoice.freelancerSettings?.cashappId?.startsWith('$') ? invoice.freelancerSettings.cashappId : '$' + (invoice.freelancerSettings?.cashappId || ''))}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy Cash App ID"
+                      >
+                        {copiedMethod === 'Cash App' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600">{invoice.freelancerSettings.cashappId.startsWith('$') ? invoice.freelancerSettings.cashappId : '$' + invoice.freelancerSettings.cashappId}</p>
                   </div>
@@ -343,9 +402,28 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
                 {/* Venmo */}
                 {invoice.freelancerSettings.venmoId && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Smartphone className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium text-gray-900">Venmo</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium text-gray-900">Venmo</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Venmo', invoice.freelancerSettings?.venmoId?.startsWith('@') ? invoice.freelancerSettings.venmoId : '@' + (invoice.freelancerSettings?.venmoId || ''))}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy Venmo ID"
+                      >
+                        {copiedMethod === 'Venmo' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600">{invoice.freelancerSettings.venmoId.startsWith('@') ? invoice.freelancerSettings.venmoId : '@' + invoice.freelancerSettings.venmoId}</p>
                   </div>
@@ -354,9 +432,28 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
                 {/* Google Pay */}
                 {invoice.freelancerSettings.googlePayUpi && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Smartphone className="h-4 w-4 text-purple-600" />
-                      <span className="text-sm font-medium text-gray-900">Google Pay</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4 text-purple-600" />
+                        <span className="text-sm font-medium text-gray-900">Google Pay</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Google Pay', invoice.freelancerSettings?.googlePayUpi || '')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy Google Pay UPI"
+                      >
+                        {copiedMethod === 'Google Pay' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600 break-all">{invoice.freelancerSettings.googlePayUpi}</p>
                   </div>
@@ -365,9 +462,28 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
                 {/* Apple Pay */}
                 {invoice.freelancerSettings.applePayId && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Smartphone className="h-4 w-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-900">Apple Pay</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4 text-gray-600" />
+                        <span className="text-sm font-medium text-gray-900">Apple Pay</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Apple Pay', invoice.freelancerSettings?.applePayId || '')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy Apple Pay ID"
+                      >
+                        {copiedMethod === 'Apple Pay' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600 break-all">{invoice.freelancerSettings.applePayId}</p>
                   </div>
@@ -376,9 +492,35 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
                 {/* Bank Transfer */}
                 {invoice.freelancerSettings.bankAccount && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Building2 className="h-4 w-4 text-indigo-600" />
-                      <span className="text-sm font-medium text-gray-900">Bank Transfer</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-indigo-600" />
+                        <span className="text-sm font-medium text-gray-900">Bank Transfer</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const bankDetails = [
+                            invoice.freelancerSettings?.bankAccount,
+                            invoice.freelancerSettings?.bankIfscSwift && `IFSC/SWIFT: ${invoice.freelancerSettings.bankIfscSwift}`,
+                            invoice.freelancerSettings?.bankIban && `IBAN: ${invoice.freelancerSettings.bankIban}`
+                          ].filter(Boolean).join('\n')
+                          handleCopyPaymentMethod('Bank Transfer', bankDetails)
+                        }}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy bank details"
+                      >
+                        {copiedMethod === 'Bank Transfer' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <div className="text-sm text-gray-600 space-y-1">
                       <p className="break-words">{invoice.freelancerSettings.bankAccount}</p>
@@ -395,9 +537,28 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
                 {/* Stripe */}
                 {invoice.freelancerSettings.stripeAccount && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <CreditCard className="h-4 w-4 text-purple-600" />
-                      <span className="text-sm font-medium text-gray-900">Credit/Debit Card</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-purple-600" />
+                        <span className="text-sm font-medium text-gray-900">Credit/Debit Card</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Stripe', 'Processed securely via Stripe')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy payment info"
+                      >
+                        {copiedMethod === 'Stripe' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600">Processed securely via Stripe</p>
                   </div>
@@ -406,9 +567,28 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
                 {/* Other Payment Methods */}
                 {invoice.freelancerSettings.paymentNotes && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <CreditCard className="h-4 w-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-900">Other Methods</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-gray-600" />
+                        <span className="text-sm font-medium text-gray-900">Other Methods</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Other Methods', invoice.freelancerSettings?.paymentNotes || '')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy payment notes"
+                      >
+                        {copiedMethod === 'Other Methods' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600 break-words">{invoice.freelancerSettings.paymentNotes}</p>
                   </div>
@@ -426,6 +606,18 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
               <div className="text-sm text-gray-700 whitespace-pre-wrap">{invoice.notes}</div>
             </div>
           )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="text-center sm:text-left">
+              <p className="text-gray-600 font-medium text-sm sm:text-base">Thank you for your business!</p>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                Generated with <a href={process.env.NEXT_PUBLIC_APP_URL || '/'} className="text-indigo-600 hover:text-indigo-700">FlowInvoicer</a>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -434,6 +626,34 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
 
 // Modern Template (Template 4) - Modern Design with Clean Aesthetics
 function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: Invoice, primaryColor: string, secondaryColor: string }) {
+  const [copiedMethod, setCopiedMethod] = useState<string | null>(null)
+
+  const handleCopyPaymentMethod = async (methodType: string, details: string) => {
+    try {
+      await navigator.clipboard.writeText(details)
+      setCopiedMethod(methodType)
+      setTimeout(() => setCopiedMethod(null), 2000)
+
+      if (invoice.id) {
+        try {
+          await fetch('/api/invoices/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              invoiceId: invoice.id,
+              type: 'payment_method_copied',
+              metadata: { paymentMethod: methodType }
+            })
+          })
+        } catch (error) {
+          console.error('Failed to log payment method copy event:', error)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to copy:', error)
+    }
+  }
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'paid':
@@ -483,6 +703,19 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
               {invoice.freelancerSettings?.email && (
                 <div className="text-sm text-gray-500 mt-1">{invoice.freelancerSettings.email}</div>
               )}
+              
+              {/* Payment Overdue Notice - Status Banner Style */}
+              {invoice.isOverdue && (
+                <div className="mt-4 px-4 py-3 bg-red-50 border-l-4 border-red-500">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-red-900">Payment Overdue</p>
+                      <p className="text-xs text-red-700 mt-0.5">This invoice is {invoice.daysOverdue} days past due. Please remit payment immediately to avoid additional charges.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="text-left sm:text-right flex-1 w-full sm:w-auto sm:pl-6">
               <div className="text-lg sm:text-xl font-normal mb-3" style={{ color: primaryColor || '#1F2937', letterSpacing: 0 }}>
@@ -504,11 +737,6 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                   {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                 </div>
-                {invoice.isOverdue && (
-                  <div className="text-xs text-red-600 font-medium mt-1">
-                    {invoice.daysOverdue} days overdue
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -592,33 +820,18 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
           {/* Status Message */}
           {invoice.status === 'paid' && (
             <div className="px-6 sm:px-8 py-6 border-t border-gray-200">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
+              <div className="px-4 py-3 bg-emerald-50 border-l-4 border-emerald-500">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0" />
                   <div>
-                    <h3 className="text-lg font-semibold text-green-800">Payment Received</h3>
-                    <p className="text-green-700">Thank you! This invoice has been paid in full.</p>
+                    <p className="text-sm font-medium text-emerald-900">Payment Received</p>
+                    <p className="text-xs text-emerald-700 mt-0.5">Thank you! This invoice has been paid in full.</p>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {invoice.isOverdue && (
-            <div className="px-6 sm:px-8 py-6 border-t border-gray-200">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-center gap-3">
-                  <AlertCircle className="h-6 w-6 text-red-600" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-red-800">Payment Overdue</h3>
-                    <p className="text-red-700">
-                      This invoice is {invoice.daysOverdue} days past due. Please remit payment immediately to avoid additional charges.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Payment Information */}
           {invoice.freelancerSettings && invoice.status !== 'paid' && (
@@ -643,9 +856,28 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                 {/* PayPal */}
                 {invoice.freelancerSettings.paypalEmail && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <CreditCard className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium text-gray-900">PayPal</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium text-gray-900">PayPal</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('PayPal', invoice.freelancerSettings?.paypalEmail || '')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy PayPal email"
+                      >
+                        {copiedMethod === 'PayPal' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600 break-all">{invoice.freelancerSettings.paypalEmail}</p>
                   </div>
@@ -654,9 +886,28 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                 {/* Cash App */}
                 {invoice.freelancerSettings.cashappId && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <DollarSign className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium text-gray-900">Cash App</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium text-gray-900">Cash App</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Cash App', invoice.freelancerSettings?.cashappId?.startsWith('$') ? invoice.freelancerSettings.cashappId : '$' + (invoice.freelancerSettings?.cashappId || ''))}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy Cash App ID"
+                      >
+                        {copiedMethod === 'Cash App' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600">{invoice.freelancerSettings.cashappId.startsWith('$') ? invoice.freelancerSettings.cashappId : '$' + invoice.freelancerSettings.cashappId}</p>
                   </div>
@@ -665,9 +916,28 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                 {/* Venmo */}
                 {invoice.freelancerSettings.venmoId && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Smartphone className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium text-gray-900">Venmo</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium text-gray-900">Venmo</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Venmo', invoice.freelancerSettings?.venmoId?.startsWith('@') ? invoice.freelancerSettings.venmoId : '@' + (invoice.freelancerSettings?.venmoId || ''))}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy Venmo ID"
+                      >
+                        {copiedMethod === 'Venmo' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600">{invoice.freelancerSettings.venmoId.startsWith('@') ? invoice.freelancerSettings.venmoId : '@' + invoice.freelancerSettings.venmoId}</p>
                   </div>
@@ -676,9 +946,28 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                 {/* Google Pay */}
                 {invoice.freelancerSettings.googlePayUpi && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Smartphone className="h-4 w-4 text-purple-600" />
-                      <span className="text-sm font-medium text-gray-900">Google Pay</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4 text-purple-600" />
+                        <span className="text-sm font-medium text-gray-900">Google Pay</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Google Pay', invoice.freelancerSettings?.googlePayUpi || '')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy Google Pay UPI"
+                      >
+                        {copiedMethod === 'Google Pay' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600 break-all">{invoice.freelancerSettings.googlePayUpi}</p>
                   </div>
@@ -687,9 +976,28 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                 {/* Apple Pay */}
                 {invoice.freelancerSettings.applePayId && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Smartphone className="h-4 w-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-900">Apple Pay</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4 text-gray-600" />
+                        <span className="text-sm font-medium text-gray-900">Apple Pay</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Apple Pay', invoice.freelancerSettings?.applePayId || '')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy Apple Pay ID"
+                      >
+                        {copiedMethod === 'Apple Pay' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600 break-all">{invoice.freelancerSettings.applePayId}</p>
                   </div>
@@ -698,9 +1006,35 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                 {/* Bank Transfer */}
                 {invoice.freelancerSettings.bankAccount && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Building2 className="h-4 w-4 text-indigo-600" />
-                      <span className="text-sm font-medium text-gray-900">Bank Transfer</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-indigo-600" />
+                        <span className="text-sm font-medium text-gray-900">Bank Transfer</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const bankDetails = [
+                            invoice.freelancerSettings?.bankAccount,
+                            invoice.freelancerSettings?.bankIfscSwift && `IFSC/SWIFT: ${invoice.freelancerSettings.bankIfscSwift}`,
+                            invoice.freelancerSettings?.bankIban && `IBAN: ${invoice.freelancerSettings.bankIban}`
+                          ].filter(Boolean).join('\n')
+                          handleCopyPaymentMethod('Bank Transfer', bankDetails)
+                        }}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy bank details"
+                      >
+                        {copiedMethod === 'Bank Transfer' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <div className="text-sm text-gray-600 space-y-1">
                       <p className="break-words">{invoice.freelancerSettings.bankAccount}</p>
@@ -717,9 +1051,28 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                 {/* Stripe */}
                 {invoice.freelancerSettings.stripeAccount && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <CreditCard className="h-4 w-4 text-purple-600" />
-                      <span className="text-sm font-medium text-gray-900">Credit/Debit Card</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-purple-600" />
+                        <span className="text-sm font-medium text-gray-900">Credit/Debit Card</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Stripe', 'Processed securely via Stripe')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy payment info"
+                      >
+                        {copiedMethod === 'Stripe' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600">Processed securely via Stripe</p>
                   </div>
@@ -728,9 +1081,28 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                 {/* Other Payment Methods */}
                 {invoice.freelancerSettings.paymentNotes && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <CreditCard className="h-4 w-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-900">Other Methods</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-gray-600" />
+                        <span className="text-sm font-medium text-gray-900">Other Methods</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Other Methods', invoice.freelancerSettings?.paymentNotes || '')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy payment notes"
+                      >
+                        {copiedMethod === 'Other Methods' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600 break-words">{invoice.freelancerSettings.paymentNotes}</p>
                   </div>
@@ -748,6 +1120,18 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
               <div className="text-sm text-gray-700 whitespace-pre-wrap">{invoice.notes}</div>
             </div>
           )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="text-center sm:text-left">
+              <p className="text-gray-600 font-medium text-sm sm:text-base">Thank you for your business!</p>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                Generated with <a href={process.env.NEXT_PUBLIC_APP_URL || '/'} className="text-indigo-600 hover:text-indigo-700">FlowInvoicer</a>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -756,6 +1140,34 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
 
 // Creative Template (Template 5) - Senior Graphic Designer Style
 function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: Invoice, primaryColor: string, secondaryColor: string }) {
+  const [copiedMethod, setCopiedMethod] = useState<string | null>(null)
+
+  const handleCopyPaymentMethod = async (methodType: string, details: string) => {
+    try {
+      await navigator.clipboard.writeText(details)
+      setCopiedMethod(methodType)
+      setTimeout(() => setCopiedMethod(null), 2000)
+
+      if (invoice.id) {
+        try {
+          await fetch('/api/invoices/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              invoiceId: invoice.id,
+              type: 'payment_method_copied',
+              metadata: { paymentMethod: methodType }
+            })
+          })
+        } catch (error) {
+          console.error('Failed to log payment method copy event:', error)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to copy:', error)
+    }
+  }
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'paid':
@@ -805,6 +1217,19 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
               {invoice.freelancerSettings?.email && (
                 <div className="text-sm text-gray-500 mt-1">{invoice.freelancerSettings.email}</div>
               )}
+              
+              {/* Payment Overdue Notice - Status Banner Style */}
+              {invoice.isOverdue && (
+                <div className="mt-4 px-4 py-3 bg-red-50 border-l-4 border-red-500">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-red-900">Payment Overdue</p>
+                      <p className="text-xs text-red-700 mt-0.5">This invoice is {invoice.daysOverdue} days past due. Please remit payment immediately to avoid additional charges.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="text-left sm:text-right flex-1 w-full sm:w-auto sm:pl-6">
               <div className="text-lg sm:text-xl font-normal mb-3" style={{ color: primaryColor || '#1F2937', letterSpacing: 0 }}>
@@ -826,11 +1251,6 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                   {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                 </div>
-                {invoice.isOverdue && (
-                  <div className="text-xs text-red-600 font-medium mt-1">
-                    {invoice.daysOverdue} days overdue
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -914,33 +1334,18 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
           {/* Status Message */}
           {invoice.status === 'paid' && (
             <div className="px-6 sm:px-8 py-6 border-t border-gray-200">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
+              <div className="px-4 py-3 bg-emerald-50 border-l-4 border-emerald-500">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0" />
                   <div>
-                    <h3 className="text-lg font-semibold text-green-800">Payment Received</h3>
-                    <p className="text-green-700">Thank you! This invoice has been paid in full.</p>
+                    <p className="text-sm font-medium text-emerald-900">Payment Received</p>
+                    <p className="text-xs text-emerald-700 mt-0.5">Thank you! This invoice has been paid in full.</p>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {invoice.isOverdue && (
-            <div className="px-6 sm:px-8 py-6 border-t border-gray-200">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-center gap-3">
-                  <AlertCircle className="h-6 w-6 text-red-600" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-red-800">Payment Overdue</h3>
-                    <p className="text-red-700">
-                      This invoice is {invoice.daysOverdue} days past due. Please remit payment immediately to avoid additional charges.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Payment Information */}
           {invoice.freelancerSettings && invoice.status !== 'paid' && (
@@ -965,9 +1370,28 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                 {/* PayPal */}
                 {invoice.freelancerSettings.paypalEmail && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <CreditCard className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium text-gray-900">PayPal</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium text-gray-900">PayPal</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('PayPal', invoice.freelancerSettings?.paypalEmail || '')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy PayPal email"
+                      >
+                        {copiedMethod === 'PayPal' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600 break-all">{invoice.freelancerSettings.paypalEmail}</p>
                   </div>
@@ -976,9 +1400,28 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                 {/* Cash App */}
                 {invoice.freelancerSettings.cashappId && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <DollarSign className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium text-gray-900">Cash App</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium text-gray-900">Cash App</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Cash App', invoice.freelancerSettings?.cashappId?.startsWith('$') ? invoice.freelancerSettings.cashappId : '$' + (invoice.freelancerSettings?.cashappId || ''))}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy Cash App ID"
+                      >
+                        {copiedMethod === 'Cash App' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600">{invoice.freelancerSettings.cashappId.startsWith('$') ? invoice.freelancerSettings.cashappId : '$' + invoice.freelancerSettings.cashappId}</p>
                   </div>
@@ -987,9 +1430,28 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                 {/* Venmo */}
                 {invoice.freelancerSettings.venmoId && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Smartphone className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium text-gray-900">Venmo</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium text-gray-900">Venmo</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Venmo', invoice.freelancerSettings?.venmoId?.startsWith('@') ? invoice.freelancerSettings.venmoId : '@' + (invoice.freelancerSettings?.venmoId || ''))}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy Venmo ID"
+                      >
+                        {copiedMethod === 'Venmo' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600">{invoice.freelancerSettings.venmoId.startsWith('@') ? invoice.freelancerSettings.venmoId : '@' + invoice.freelancerSettings.venmoId}</p>
                   </div>
@@ -998,9 +1460,28 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                 {/* Google Pay */}
                 {invoice.freelancerSettings.googlePayUpi && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Smartphone className="h-4 w-4 text-purple-600" />
-                      <span className="text-sm font-medium text-gray-900">Google Pay</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4 text-purple-600" />
+                        <span className="text-sm font-medium text-gray-900">Google Pay</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Google Pay', invoice.freelancerSettings?.googlePayUpi || '')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy Google Pay UPI"
+                      >
+                        {copiedMethod === 'Google Pay' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600 break-all">{invoice.freelancerSettings.googlePayUpi}</p>
                   </div>
@@ -1009,9 +1490,28 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                 {/* Apple Pay */}
                 {invoice.freelancerSettings.applePayId && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Smartphone className="h-4 w-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-900">Apple Pay</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4 text-gray-600" />
+                        <span className="text-sm font-medium text-gray-900">Apple Pay</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Apple Pay', invoice.freelancerSettings?.applePayId || '')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy Apple Pay ID"
+                      >
+                        {copiedMethod === 'Apple Pay' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600 break-all">{invoice.freelancerSettings.applePayId}</p>
                   </div>
@@ -1020,9 +1520,35 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                 {/* Bank Transfer */}
                 {invoice.freelancerSettings.bankAccount && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Building2 className="h-4 w-4 text-indigo-600" />
-                      <span className="text-sm font-medium text-gray-900">Bank Transfer</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-indigo-600" />
+                        <span className="text-sm font-medium text-gray-900">Bank Transfer</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const bankDetails = [
+                            invoice.freelancerSettings?.bankAccount,
+                            invoice.freelancerSettings?.bankIfscSwift && `IFSC/SWIFT: ${invoice.freelancerSettings.bankIfscSwift}`,
+                            invoice.freelancerSettings?.bankIban && `IBAN: ${invoice.freelancerSettings.bankIban}`
+                          ].filter(Boolean).join('\n')
+                          handleCopyPaymentMethod('Bank Transfer', bankDetails)
+                        }}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy bank details"
+                      >
+                        {copiedMethod === 'Bank Transfer' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <div className="text-sm text-gray-600 space-y-1">
                       <p className="break-words">{invoice.freelancerSettings.bankAccount}</p>
@@ -1039,9 +1565,28 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                 {/* Stripe */}
                 {invoice.freelancerSettings.stripeAccount && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <CreditCard className="h-4 w-4 text-purple-600" />
-                      <span className="text-sm font-medium text-gray-900">Credit/Debit Card</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-purple-600" />
+                        <span className="text-sm font-medium text-gray-900">Credit/Debit Card</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Stripe', 'Processed securely via Stripe')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy payment info"
+                      >
+                        {copiedMethod === 'Stripe' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600">Processed securely via Stripe</p>
                   </div>
@@ -1050,9 +1595,28 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                 {/* Other Payment Methods */}
                 {invoice.freelancerSettings.paymentNotes && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <CreditCard className="h-4 w-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-900">Other Methods</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-gray-600" />
+                        <span className="text-sm font-medium text-gray-900">Other Methods</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Other Methods', invoice.freelancerSettings?.paymentNotes || '')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy payment notes"
+                      >
+                        {copiedMethod === 'Other Methods' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600 break-words">{invoice.freelancerSettings.paymentNotes}</p>
                   </div>
@@ -1071,6 +1635,18 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
             </div>
           )}
         </div>
+
+        {/* Footer */}
+        <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="text-center sm:text-left">
+              <p className="text-gray-600 font-medium text-sm sm:text-base">Thank you for your business!</p>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                Generated with <a href={process.env.NEXT_PUBLIC_APP_URL || '/'} className="text-indigo-600 hover:text-indigo-700">FlowInvoicer</a>
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -1078,6 +1654,34 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
 
 // Minimal Template (Template 6) - Copy of 60-second invoice with Dynamic Colors
 function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }: { invoice: Invoice, primaryColor: string, secondaryColor: string, accentColor: string }) {
+  const [copiedMethod, setCopiedMethod] = useState<string | null>(null)
+
+  const handleCopyPaymentMethod = async (methodType: string, details: string) => {
+    try {
+      await navigator.clipboard.writeText(details)
+      setCopiedMethod(methodType)
+      setTimeout(() => setCopiedMethod(null), 2000)
+
+      if (invoice.id) {
+        try {
+          await fetch('/api/invoices/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              invoiceId: invoice.id,
+              type: 'payment_method_copied',
+              metadata: { paymentMethod: methodType }
+            })
+          })
+        } catch (error) {
+          console.error('Failed to log payment method copy event:', error)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to copy:', error)
+    }
+  }
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'paid':
@@ -1127,6 +1731,19 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
               {invoice.freelancerSettings?.email && (
                 <div className="text-sm text-gray-500 mt-1">{invoice.freelancerSettings.email}</div>
               )}
+              
+              {/* Payment Overdue Notice - Status Banner Style */}
+              {invoice.isOverdue && (
+                <div className="mt-4 px-4 py-3 bg-red-50 border-l-4 border-red-500">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-red-900">Payment Overdue</p>
+                      <p className="text-xs text-red-700 mt-0.5">This invoice is {invoice.daysOverdue} days past due. Please remit payment immediately to avoid additional charges.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="text-left sm:text-right flex-1 w-full sm:w-auto sm:pl-6">
               <div className="text-lg sm:text-xl font-normal mb-3" style={{ color: primaryColor || '#1F2937', letterSpacing: 0 }}>
@@ -1148,11 +1765,6 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                   {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                 </div>
-                {invoice.isOverdue && (
-                  <div className="text-xs text-red-600 font-medium mt-1">
-                    {invoice.daysOverdue} days overdue
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -1236,33 +1848,18 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
           {/* Status Message */}
           {invoice.status === 'paid' && (
             <div className="px-6 sm:px-8 py-6 border-t border-gray-200">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
+              <div className="px-4 py-3 bg-emerald-50 border-l-4 border-emerald-500">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0" />
                   <div>
-                    <h3 className="text-lg font-semibold text-green-800">Payment Received</h3>
-                    <p className="text-green-700">Thank you! This invoice has been paid in full.</p>
+                    <p className="text-sm font-medium text-emerald-900">Payment Received</p>
+                    <p className="text-xs text-emerald-700 mt-0.5">Thank you! This invoice has been paid in full.</p>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {invoice.isOverdue && (
-            <div className="px-6 sm:px-8 py-6 border-t border-gray-200">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-center gap-3">
-                  <AlertCircle className="h-6 w-6 text-red-600" />
-                  <div>
-                    <h3 className="text-lg font-semibold text-red-800">Payment Overdue</h3>
-                    <p className="text-red-700">
-                      This invoice is {invoice.daysOverdue} days past due. Please remit payment immediately to avoid additional charges.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Payment Information */}
           {invoice.freelancerSettings && invoice.status !== 'paid' && (
@@ -1287,9 +1884,28 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                 {/* PayPal */}
                 {invoice.freelancerSettings.paypalEmail && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <CreditCard className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium text-gray-900">PayPal</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium text-gray-900">PayPal</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('PayPal', invoice.freelancerSettings?.paypalEmail || '')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy PayPal email"
+                      >
+                        {copiedMethod === 'PayPal' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600 break-all">{invoice.freelancerSettings.paypalEmail}</p>
                   </div>
@@ -1298,9 +1914,28 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                 {/* Cash App */}
                 {invoice.freelancerSettings.cashappId && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <DollarSign className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium text-gray-900">Cash App</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium text-gray-900">Cash App</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Cash App', invoice.freelancerSettings?.cashappId?.startsWith('$') ? invoice.freelancerSettings.cashappId : '$' + (invoice.freelancerSettings?.cashappId || ''))}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy Cash App ID"
+                      >
+                        {copiedMethod === 'Cash App' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600">{invoice.freelancerSettings.cashappId.startsWith('$') ? invoice.freelancerSettings.cashappId : '$' + invoice.freelancerSettings.cashappId}</p>
                   </div>
@@ -1309,9 +1944,28 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                 {/* Venmo */}
                 {invoice.freelancerSettings.venmoId && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Smartphone className="h-4 w-4 text-blue-600" />
-                      <span className="text-sm font-medium text-gray-900">Venmo</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium text-gray-900">Venmo</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Venmo', invoice.freelancerSettings?.venmoId?.startsWith('@') ? invoice.freelancerSettings.venmoId : '@' + (invoice.freelancerSettings?.venmoId || ''))}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy Venmo ID"
+                      >
+                        {copiedMethod === 'Venmo' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600">{invoice.freelancerSettings.venmoId.startsWith('@') ? invoice.freelancerSettings.venmoId : '@' + invoice.freelancerSettings.venmoId}</p>
                   </div>
@@ -1320,9 +1974,28 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                 {/* Google Pay */}
                 {invoice.freelancerSettings.googlePayUpi && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Smartphone className="h-4 w-4 text-purple-600" />
-                      <span className="text-sm font-medium text-gray-900">Google Pay</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4 text-purple-600" />
+                        <span className="text-sm font-medium text-gray-900">Google Pay</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Google Pay', invoice.freelancerSettings?.googlePayUpi || '')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy Google Pay UPI"
+                      >
+                        {copiedMethod === 'Google Pay' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600 break-all">{invoice.freelancerSettings.googlePayUpi}</p>
                   </div>
@@ -1331,9 +2004,28 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                 {/* Apple Pay */}
                 {invoice.freelancerSettings.applePayId && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Smartphone className="h-4 w-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-900">Apple Pay</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4 text-gray-600" />
+                        <span className="text-sm font-medium text-gray-900">Apple Pay</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Apple Pay', invoice.freelancerSettings?.applePayId || '')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy Apple Pay ID"
+                      >
+                        {copiedMethod === 'Apple Pay' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600 break-all">{invoice.freelancerSettings.applePayId}</p>
                   </div>
@@ -1342,9 +2034,35 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                 {/* Bank Transfer */}
                 {invoice.freelancerSettings.bankAccount && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Building2 className="h-4 w-4 text-indigo-600" />
-                      <span className="text-sm font-medium text-gray-900">Bank Transfer</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-indigo-600" />
+                        <span className="text-sm font-medium text-gray-900">Bank Transfer</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const bankDetails = [
+                            invoice.freelancerSettings?.bankAccount,
+                            invoice.freelancerSettings?.bankIfscSwift && `IFSC/SWIFT: ${invoice.freelancerSettings.bankIfscSwift}`,
+                            invoice.freelancerSettings?.bankIban && `IBAN: ${invoice.freelancerSettings.bankIban}`
+                          ].filter(Boolean).join('\n')
+                          handleCopyPaymentMethod('Bank Transfer', bankDetails)
+                        }}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy bank details"
+                      >
+                        {copiedMethod === 'Bank Transfer' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <div className="text-sm text-gray-600 space-y-1">
                       <p className="break-words">{invoice.freelancerSettings.bankAccount}</p>
@@ -1361,9 +2079,28 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                 {/* Stripe */}
                 {invoice.freelancerSettings.stripeAccount && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <CreditCard className="h-4 w-4 text-purple-600" />
-                      <span className="text-sm font-medium text-gray-900">Credit/Debit Card</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-purple-600" />
+                        <span className="text-sm font-medium text-gray-900">Credit/Debit Card</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Stripe', 'Processed securely via Stripe')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy payment info"
+                      >
+                        {copiedMethod === 'Stripe' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600">Processed securely via Stripe</p>
                   </div>
@@ -1372,9 +2109,28 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                 {/* Other Payment Methods */}
                 {invoice.freelancerSettings.paymentNotes && (
                   <div className="pb-3 border-b border-gray-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <CreditCard className="h-4 w-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-900">Other Methods</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-gray-600" />
+                        <span className="text-sm font-medium text-gray-900">Other Methods</span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPaymentMethod('Other Methods', invoice.freelancerSettings?.paymentNotes || '')}
+                        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                        title="Copy payment notes"
+                      >
+                        {copiedMethod === 'Other Methods' ? (
+                          <>
+                            <Check className="h-3 w-3 text-emerald-600" />
+                            <span className="text-emerald-600">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-3 w-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <p className="text-sm text-gray-600 break-words">{invoice.freelancerSettings.paymentNotes}</p>
                   </div>
@@ -1385,23 +2141,23 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
 
           {/* Notes */}
           {invoice.notes && (
-            <div className="px-6 sm:px-8 py-6 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Notes</h3>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-gray-700">{invoice.notes}</p>
+            <div className="mb-8 pb-6 border-b border-gray-200">
+              <div className="text-sm font-normal text-gray-900 mb-4" style={{ color: primaryColor || '#1F2937' }}>
+                Notes
               </div>
+              <div className="text-sm text-gray-700 whitespace-pre-wrap">{invoice.notes}</div>
             </div>
           )}
+        </div>
 
-          {/* Footer */}
-          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-200">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-              <div className="text-center sm:text-left">
-                <p className="text-gray-600 font-medium text-sm sm:text-base">Thank you for your business!</p>
-                <p className="text-xs sm:text-sm text-gray-500 mt-1">
-                  Generated with <a href={process.env.NEXT_PUBLIC_APP_URL || '/'} className="text-indigo-600 hover:text-indigo-700">FlowInvoicer</a>
-                </p>
-              </div>
+        {/* Footer */}
+        <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="text-center sm:text-left">
+              <p className="text-gray-600 font-medium text-sm sm:text-base">Thank you for your business!</p>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                Generated with <a href={process.env.NEXT_PUBLIC_APP_URL || '/'} className="text-indigo-600 hover:text-indigo-700">FlowInvoicer</a>
+              </p>
             </div>
           </div>
         </div>

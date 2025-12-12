@@ -292,15 +292,42 @@ export const getReminderEmailTemplate = (
             margin: 32px 0;
           }
           .payment-button {
-            display: inline-block;
-            background-color: ${toneColor};
-            color: #ffffff;
-            text-decoration: none;
-            padding: 14px 32px;
-            font-weight: 500;
-            text-align: center;
-            font-size: 14px;
-            border: none;
+            display: inline-block !important;
+            background-color: ${toneColor} !important;
+            color: #ffffff !important;
+            text-decoration: none !important;
+            padding: 14px 32px !important;
+            font-weight: 500 !important;
+            text-align: center !important;
+            font-size: 14px !important;
+            border: none !important;
+            border-radius: 0 !important;
+          }
+          .payment-button span {
+            color: #ffffff !important;
+          }
+          /* Gmail desktop fix - force white text */
+          u + .body .payment-button {
+            color: #ffffff !important;
+          }
+          /* Gmail desktop link color fix */
+          .payment-button,
+          .payment-button:link,
+          .payment-button:visited,
+          .payment-button:hover,
+          .payment-button:active {
+            color: #ffffff !important;
+          }
+          /* Force white text on all child elements */
+          .payment-button * {
+            color: #ffffff !important;
+          }
+          /* Gmail specific fix */
+          [class~="payment-button"] {
+            color: #ffffff !important;
+          }
+          [class~="payment-button"] * {
+            color: #ffffff !important;
           }
           .contact-info {
             margin: 24px 0;
@@ -388,9 +415,17 @@ export const getReminderEmailTemplate = (
             </div>
 
             <div class="button-container">
-              <a href="${appBaseUrl}/invoice/${invoice.publicToken}" class="payment-button">
-                View & Pay Invoice
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${appBaseUrl}/invoice/${invoice.publicToken}" style="height:44px;v-text-anchor:middle;width:200px;" arcsize="0%" stroke="f" fillcolor="${toneColor}">
+                <w:anchorlock/>
+                <center style="color:#ffffff;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;font-size:14px;font-weight:500;">View &amp; Pay Invoice</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-- -->
+              <a href="${appBaseUrl}/invoice/${invoice.publicToken}" class="payment-button" style="display: inline-block; background-color: ${toneColor} !important; color: #ffffff !important; text-decoration: none !important; padding: 14px 32px !important; font-weight: 500 !important; text-align: center !important; font-size: 14px !important; border: none !important; border-radius: 0 !important; mso-hide: all;">
+                <span style="color: #ffffff !important;">View &amp; Pay Invoice</span>
               </a>
+              <!--<![endif]-->
             </div>
 
             <div class="contact-info">
