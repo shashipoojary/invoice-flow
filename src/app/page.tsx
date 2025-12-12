@@ -45,7 +45,8 @@ import {
   MapPin,
   ChevronDown,
   Sparkles,
-  Minus
+  Minus,
+  ClipboardCheck
 } from 'lucide-react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
@@ -1759,7 +1760,7 @@ export default function LandingPage() {
               {/* Header */}
               <div className="text-center mb-12 sm:mb-16">
                 <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-900 mb-3 tracking-tight">Everything you need</h2>
-                <p className="text-base text-gray-500 max-w-xl mx-auto">All the tools to create, send, and track invoices.</p>
+                <p className="text-base text-gray-500 max-w-xl mx-auto">All the tools to create, send, and track invoices and estimates.</p>
               </div>
 
               {/* Features Grid */}
@@ -2011,6 +2012,50 @@ export default function LandingPage() {
                           <p className="text-xs sm:text-sm font-medium text-gray-900">Payment received: $2,500.</p>
                           <p className="text-xs text-gray-600 mt-0.5">Via bank transfer</p>
                           <p className="text-xs text-gray-500 mt-1">Just now</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Feature 7 - Estimate Management */}
+                <div>
+                  <div className="mb-4 sm:mb-5">
+                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Estimate Management</h3>
+                    <p className="text-sm text-gray-600">Create professional estimates and convert them to invoices when approved.</p>
+                  </div>
+                  
+                  {/* Exact Dashboard Estimate Card Screenshot */}
+                  <div className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
+                    <div className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
+                              <ClipboardCheck className="h-4 w-4 text-gray-600" />
+                            </div>
+                            <div>
+                              <div className="font-medium text-sm" style={{ color: '#1f2937' }}>EST-001</div>
+                              <div className="text-xs" style={{ color: '#6b7280' }}>Acme Corporation</div>
+                            </div>
+                          </div>
+                          <div className="text-right min-h-[56px] flex flex-col items-end">
+                            <div className="font-semibold text-base text-gray-900">$2,500</div>
+                            <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
+                            <div className="text-xs" style={{ color: '#6b7280' }}>Dec 15, 2024</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-orange-500">
+                              <span className="capitalize">Sent</span>
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <button className="p-1.5 rounded-md transition-colors hover:bg-gray-100">
+                              <Eye className="h-4 w-4 text-gray-600" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2721,6 +2766,34 @@ export default function LandingPage() {
                       <div className="px-6 pb-4">
                         <p className="text-sm leading-relaxed text-gray-600">
                           Clients can pay through their preferred methods like PayPal, Venmo, bank transfers, or checks. You track payment status manually and mark invoices as paid when you receive payment.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
+                      <button className="w-full px-6 py-4 text-left flex items-center justify-between">
+                        <h3 className="font-heading text-lg font-semibold text-gray-900">
+                          How do estimates work?
+                        </h3>
+                        <span className="text-2xl font-light text-gray-600">+</span>
+                      </button>
+                      <div className="px-6 pb-4">
+                        <p className="text-sm leading-relaxed text-gray-600">
+                          Create professional estimates for your clients with itemized services, discounts, and taxes. Send estimates via email, and clients can approve or reject them directly. Once approved, you can convert estimates to invoices with one click. Estimates have expiry dates and can be edited while in draft status.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
+                      <button className="w-full px-6 py-4 text-left flex items-center justify-between">
+                        <h3 className="font-heading text-lg font-semibold text-gray-900">
+                          Can clients approve or reject estimates?
+                        </h3>
+                        <span className="text-2xl font-light text-gray-600">+</span>
+                      </button>
+                      <div className="px-6 pb-4">
+                        <p className="text-sm leading-relaxed text-gray-600">
+                          Yes! When you send an estimate, clients receive a link to view it. They can approve the estimate, which notifies you in your dashboard, or reject it with an optional reason. Once approved, you can convert the estimate to an invoice instantly.
                         </p>
                       </div>
                     </div>

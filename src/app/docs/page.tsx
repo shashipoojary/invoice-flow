@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { ArrowLeft, FileText, Zap, Users, Settings, Mail, CreditCard, Bell, Download, Eye, Plus, CheckCircle, Search, Menu, X, ChevronRight, BookOpen, Code, HelpCircle, Rocket, Shield, BarChart3, Palette } from 'lucide-react';
+import { ArrowLeft, FileText, Zap, Users, Settings, Mail, CreditCard, Bell, Download, Eye, Plus, CheckCircle, Search, Menu, X, ChevronRight, BookOpen, Code, HelpCircle, Rocket, Shield, BarChart3, Palette, ClipboardCheck } from 'lucide-react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 
@@ -327,6 +327,186 @@ export default function DocsPage() {
                     <li>• Auto reminder email templates - Fixed format, cannot be customized</li>
                   </ul>
                 </div>
+              </div>
+            </div>
+          )
+        }
+      ]
+    },
+    {
+      id: 'estimates',
+      title: 'Estimates',
+      icon: ClipboardCheck,
+      subsections: [
+        {
+          id: 'creating-estimates',
+          title: 'Creating Estimates',
+          content: (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">What are Estimates?</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Estimates are professional quotes you send to clients before starting work. They allow clients to review and approve pricing before you begin a project. Once approved, estimates can be converted to invoices with one click.
+                </p>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Creating an Estimate</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  To create an estimate:
+                </p>
+                <div className="p-4 rounded-lg border bg-gray-50 border-gray-200 mb-4">
+                  <ol className="space-y-2 text-sm ml-4" style={{color: '#6b7280'}}>
+                    <li>1. Go to Estimates in the sidebar</li>
+                    <li>2. Click &quot;Create Estimate&quot;</li>
+                    <li>3. Select a client (or add a new one)</li>
+                    <li>4. Add line items with descriptions, quantities, and rates</li>
+                    <li>5. Set discount and tax if needed</li>
+                    <li>6. Set issue date and expiry date</li>
+                    <li>7. Add notes (optional)</li>
+                    <li>8. Save as draft or send immediately</li>
+                  </ol>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Estimate Features</h3>
+                <div className="p-4 rounded-lg border bg-gray-50 border-gray-200 mb-4">
+                  <p className="text-sm font-medium text-gray-900 mb-2">Available Features:</p>
+                  <ul className="space-y-2 text-sm ml-4" style={{color: '#6b7280'}}>
+                    <li>• Multiple line items with descriptions</li>
+                    <li>• Discounts (percentage or fixed amount)</li>
+                    <li>• Tax calculations</li>
+                    <li>• Custom expiry dates</li>
+                    <li>• Professional email templates</li>
+                    <li>• Client approval/rejection workflow</li>
+                    <li>• One-click conversion to invoices</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )
+        },
+        {
+          id: 'managing-estimates',
+          title: 'Managing Estimates',
+          content: (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Estimate Status</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Estimates have different statuses:
+                </p>
+                <div className="space-y-3">
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                      <span className="font-semibold text-gray-900">Draft</span>
+                    </div>
+                    <p className="text-sm ml-5" style={{color: '#6b7280'}}>Estimate created but not sent. Can be edited or deleted.</p>
+                  </div>
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                      <span className="font-semibold text-gray-900">Sent</span>
+                    </div>
+                    <p className="text-sm ml-5" style={{color: '#6b7280'}}>Estimate sent to client, awaiting approval or rejection.</p>
+                  </div>
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                      <span className="font-semibold text-gray-900">Approved</span>
+                    </div>
+                    <p className="text-sm ml-5" style={{color: '#6b7280'}}>Client approved the estimate. Ready to convert to invoice.</p>
+                  </div>
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                      <span className="font-semibold text-gray-900">Rejected</span>
+                    </div>
+                    <p className="text-sm ml-5" style={{color: '#6b7280'}}>Client rejected the estimate. You can see the rejection reason.</p>
+                  </div>
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                      <span className="font-semibold text-gray-900">Expired</span>
+                    </div>
+                    <p className="text-sm ml-5" style={{color: '#6b7280'}}>Estimate has passed its expiry date. Client can request a new one.</p>
+                  </div>
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                      <span className="font-semibold text-gray-900">Converted</span>
+                    </div>
+                    <p className="text-sm ml-5" style={{color: '#6b7280'}}>Estimate has been converted to an invoice.</p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Editing Estimates</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  You can edit estimates while they are in &quot;Draft&quot; status. Once sent, estimates cannot be edited. If you need to make changes to a sent estimate, you&apos;ll need to create a new one.
+                </p>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Converting to Invoice</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  When a client approves an estimate, you can convert it to an invoice with one click. The conversion will:
+                </p>
+                <ul className="space-y-2 ml-6 text-sm" style={{color: '#6b7280'}}>
+                  <li>• Create a new invoice with all estimate details</li>
+                  <li>• Preserve all line items, discounts, and taxes</li>
+                  <li>• Set the invoice due date based on your payment terms</li>
+                  <li>• Mark the estimate as &quot;Converted&quot;</li>
+                  <li>• Link the invoice to the original estimate</li>
+                </ul>
+              </div>
+            </div>
+          )
+        },
+        {
+          id: 'client-approval',
+          title: 'Client Approval Process',
+          content: (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">How Clients View Estimates</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  When you send an estimate, clients receive an email with a link to view it. The public estimate page shows:
+                </p>
+                <ul className="space-y-2 ml-6 text-sm" style={{color: '#6b7280'}}>
+                  <li>• All estimate details and line items</li>
+                  <li>• Total amount with discounts and taxes</li>
+                  <li>• Issue date and expiry date</li>
+                  <li>• Your business information</li>
+                  <li>• Approve and Reject buttons</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Client Actions</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  Clients can:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <h4 className="font-semibold text-gray-900 mb-2">Approve</h4>
+                    <p className="text-sm" style={{color: '#6b7280'}}>Client approves the estimate. You&apos;ll be notified in your dashboard and can convert it to an invoice.</p>
+                  </div>
+                  <div className="p-4 rounded-lg border bg-white border-gray-200">
+                    <h4 className="font-semibold text-gray-900 mb-2">Reject</h4>
+                    <p className="text-sm" style={{color: '#6b7280'}}>Client can reject with an optional reason. You&apos;ll see the reason in your dashboard.</p>
+                  </div>
+                </div>
+                <div className="p-4 rounded-lg border bg-blue-50 border-blue-200">
+                  <p className="text-sm font-medium text-blue-900 mb-2">Important:</p>
+                  <p className="text-sm" style={{color: '#1e40af'}}>
+                    Clients can only approve or reject an estimate once. After an action is taken, the buttons are disabled. If an estimate expires, clients cannot approve or reject it, but can contact you to request a new one.
+                  </p>
+                </div>
+              </div>
+              <div>
+                <h3 className="font-heading text-xl font-semibold mb-4 text-gray-900">Expired Estimates</h3>
+                <p className="text-base leading-relaxed mb-4" style={{color: '#6b7280'}}>
+                  If an estimate passes its expiry date before being approved or rejected, it automatically becomes &quot;Expired&quot;. Clients can no longer take action on expired estimates, but they can contact you via a provided link to request a new estimate.
+                </p>
               </div>
             </div>
           )
