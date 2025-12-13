@@ -127,6 +127,7 @@ export async function GET(
     return NextResponse.json({ 
       estimate: {
         id: estimate.id,
+        userId: estimate.user_id, // Include user_id to check ownership
         estimateNumber: estimate.estimate_number,
         issueDate: estimate.issue_date,
         expiryDate: estimate.expiry_date,

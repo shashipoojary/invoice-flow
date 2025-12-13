@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { AlertCircle, Loader2, CheckCircle, X as XIcon, FileText } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 
 interface EstimateItem {
   id: string
@@ -14,6 +15,7 @@ interface EstimateItem {
 
 interface Estimate {
   id: string
+  userId?: string // Estimate owner's user ID
   estimateNumber: string
   issueDate: string
   expiryDate?: string
@@ -70,6 +72,7 @@ export default function PublicEstimatePage() {
   const [showApproveModal, setShowApproveModal] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [rejectionReason, setRejectionReason] = useState('')
+  const [isOwner, setIsOwner] = useState(false) // Track if viewer is the owner
 
   const handleApproveClick = () => {
     setShowApproveModal(true)
@@ -235,35 +238,43 @@ export default function PublicEstimatePage() {
             }
           }
           if (data?.estimate) {
+            // Check if the viewer is authenticated and owns the estimate
+            const { data: { session } } = await supabase.auth.getSession()
+            const viewerIsOwner = session?.user && data.estimate.userId && session.user.id === data.estimate.userId
+            
+            setIsOwner(viewerIsOwner)
             setEstimate(data.estimate)
+            
+            // Log view event - only if viewer is NOT the owner
+            if (!viewerIsOwner && data.estimate.id) {
+              fetch('/api/estimates/events', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ estimateId: data.estimate.id, type: 'viewed' })
+              }).catch(() => {})
+            }
+
+            // Check for action parameter from email links
+            // CRITICAL: Only auto-approve/reject if viewer is NOT the owner
+            const urlParams = new URLSearchParams(window.location.search)
+            const action = urlParams.get('action')
+            if (!viewerIsOwner) {
+              if (action === 'approve' && data.estimate?.approvalStatus === 'pending' && data.estimate?.status === 'sent') {
+                // Auto-approve when coming from email link (only for clients, not owners)
+                setTimeout(() => {
+                  handleApprove()
+                }, 500)
+              } else if (action === 'reject' && data.estimate?.approvalStatus === 'pending' && data.estimate?.status === 'sent') {
+                // Show reject modal when coming from email link (only for clients, not owners)
+                setTimeout(() => {
+                  setShowRejectModal(true)
+                }, 500)
+              }
+            }
           } else {
             setError('Invalid estimate data received')
             return
           }
-        
-        // Log view event
-        if (data.estimate?.id) {
-          fetch('/api/estimates/events', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ estimateId: data.estimate.id, type: 'viewed' })
-          }).catch(() => {})
-        }
-
-        // Check for action parameter from email links
-        const urlParams = new URLSearchParams(window.location.search)
-        const action = urlParams.get('action')
-        if (action === 'approve' && data.estimate?.approvalStatus === 'pending' && data.estimate?.status === 'sent') {
-          // Auto-approve when coming from email link
-          setTimeout(() => {
-            handleApprove()
-          }, 500)
-        } else if (action === 'reject' && data.estimate?.approvalStatus === 'pending' && data.estimate?.status === 'sent') {
-          // Show reject modal when coming from email link
-          setTimeout(() => {
-            setShowRejectModal(true)
-          }, 500)
-        }
         } else {
           setError('Estimate not found')
         }
@@ -302,7 +313,9 @@ export default function PublicEstimatePage() {
     )
   }
 
-  const canApproveReject = estimate.approvalStatus === 'pending' && estimate.status === 'sent' && !estimate.isExpired && !actionLoading
+  // CRITICAL: Only allow approve/reject if viewer is NOT the owner
+  // Owner should not be able to approve/reject their own estimates
+  const canApproveReject = !isOwner && estimate.approvalStatus === 'pending' && estimate.status === 'sent' && !estimate.isExpired && !actionLoading
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:py-12 sm:px-6 lg:px-8">
