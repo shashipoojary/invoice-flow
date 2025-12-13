@@ -125,9 +125,18 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
           // Check if the viewer is authenticated
           const { data: { session } } = await supabase.auth.getSession()
           
+          // Check URL parameters for owner flag (works in incognito mode)
+          const urlParams = new URLSearchParams(window.location.search)
+          const isOwnerView = urlParams.get('owner') === 'true'
+          
           // If user is authenticated and owns the invoice, don't log
           if (session?.user && invoice.userId && session.user.id === invoice.userId) {
             // Owner copying their own payment method - don't log as customer action
+            return
+          }
+          
+          // If URL has owner=true parameter, don't log (owner viewing in incognito)
+          if (isOwnerView) {
             return
           }
           
@@ -652,9 +661,18 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
           // Check if the viewer is authenticated
           const { data: { session } } = await supabase.auth.getSession()
           
+          // Check URL parameters for owner flag (works in incognito mode)
+          const urlParams = new URLSearchParams(window.location.search)
+          const isOwnerView = urlParams.get('owner') === 'true'
+          
           // If user is authenticated and owns the invoice, don't log
           if (session?.user && invoice.userId && session.user.id === invoice.userId) {
             // Owner copying their own payment method - don't log as customer action
+            return
+          }
+          
+          // If URL has owner=true parameter, don't log (owner viewing in incognito)
+          if (isOwnerView) {
             return
           }
           
@@ -1177,9 +1195,18 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
           // Check if the viewer is authenticated
           const { data: { session } } = await supabase.auth.getSession()
           
+          // Check URL parameters for owner flag (works in incognito mode)
+          const urlParams = new URLSearchParams(window.location.search)
+          const isOwnerView = urlParams.get('owner') === 'true'
+          
           // If user is authenticated and owns the invoice, don't log
           if (session?.user && invoice.userId && session.user.id === invoice.userId) {
             // Owner copying their own payment method - don't log as customer action
+            return
+          }
+          
+          // If URL has owner=true parameter, don't log (owner viewing in incognito)
+          if (isOwnerView) {
             return
           }
           
@@ -1702,9 +1729,18 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
           // Check if the viewer is authenticated
           const { data: { session } } = await supabase.auth.getSession()
           
+          // Check URL parameters for owner flag (works in incognito mode)
+          const urlParams = new URLSearchParams(window.location.search)
+          const isOwnerView = urlParams.get('owner') === 'true'
+          
           // If user is authenticated and owns the invoice, don't log
           if (session?.user && invoice.userId && session.user.id === invoice.userId) {
             // Owner copying their own payment method - don't log as customer action
+            return
+          }
+          
+          // If URL has owner=true parameter, don't log (owner viewing in incognito)
+          if (isOwnerView) {
             return
           }
           

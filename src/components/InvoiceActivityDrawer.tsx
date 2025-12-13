@@ -574,7 +574,8 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                 onClick={() => {
                   const token = invoice.public_token;
                   if (token) {
-                    window.open(`/invoice/${encodeURIComponent(token)}`, '_blank');
+                    // Add owner=true parameter so server can detect owner view (even in incognito)
+                    window.open(`/invoice/${encodeURIComponent(token)}?owner=true&view=preview`, '_blank');
                   }
                 }}
                 className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"

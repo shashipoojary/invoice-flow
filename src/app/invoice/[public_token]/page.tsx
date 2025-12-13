@@ -99,9 +99,18 @@ export default function PublicInvoicePage() {
         // Check if the viewer is authenticated
         const { data: { session } } = await supabase.auth.getSession()
         
+        // Check URL parameters for owner flag (works in incognito mode)
+        const urlParams = new URLSearchParams(window.location.search)
+        const isOwnerView = urlParams.get('owner') === 'true'
+        
         // If user is authenticated and owns the invoice, don't log
         if (session?.user && invoice.userId && session.user.id === invoice.userId) {
           // Owner viewing their own invoice - don't log as customer view
+          return
+        }
+        
+        // If URL has owner=true parameter, don't log (owner viewing in incognito)
+        if (isOwnerView) {
           return
         }
         
