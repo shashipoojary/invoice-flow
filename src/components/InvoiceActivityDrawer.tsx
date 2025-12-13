@@ -129,6 +129,11 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
           const overdueEvents = events.filter((ev: any) => 
             (ev.type === 'overdue' || ev.type === 'late_fee_applied') && !isDraft
           );
+          
+          // Get today's end time for filtering future events
+          const todayEnd = new Date();
+          todayEnd.setUTCHours(23, 59, 59, 999);
+          
           for (const ev of overdueEvents) {
             if (ev.type === 'overdue') {
               const days = ev.metadata?.days || 0;
@@ -137,6 +142,12 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                 const overdueDate = new Date(dueStart);
                 overdueDate.setUTCDate(overdueDate.getUTCDate() + days);
                 overdueDate.setUTCHours(23, 59, 59, 999);
+                
+                // CRITICAL: Only show overdue events for days that have actually passed (today or past)
+                if (overdueDate > todayEnd) {
+                  // This is a future date - don't show it yet
+                  continue;
+                }
                 
                 const overdueItem = {
                   id: `overdue-${ev.id}`,
@@ -155,6 +166,14 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
               const amount = ev.metadata?.amount || 0;
               // Use metadata appliedDate if available (more accurate), otherwise use created_at
               const displayDate = ev.metadata?.appliedDate || ev.created_at;
+              const lateFeeDate = new Date(displayDate);
+              
+              // CRITICAL: Only show late fee events that have actually occurred (today or past)
+              if (lateFeeDate > todayEnd) {
+                // This is a future date - don't show it yet
+                continue;
+              }
+              
               const lateFeeItem = {
                 id: `latefee-${ev.id}`,
                 type: 'status',
@@ -259,16 +278,24 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
               reminderItem = { id: `failed-${r.id}`, type: 'email', title: 'Email bounced.', at, icon: 'failed', details: r.failure_reason };
             } else if (r.reminder_status === 'sent') {
               reminderItem = { id: `reminder-${r.id}`, type: 'email', title: 'Reminder sent.', at, icon: 'sent' };
-            } else if (r.reminder_status === 'scheduled') {
-              reminderItem = { id: `sched-${r.id}`, type: 'email', title: 'Reminder scheduled.', at, icon: 'scheduled' };
             }
+            // CRITICAL: Do NOT show scheduled reminders - only show what has actually happened
+            // Scheduled reminders are future events that haven't occurred yet
             
             if (reminderItem) {
-              // Use status + timestamp as key to prevent duplicates
-              const reminderKey = `${r.reminder_status}-${new Date(at).getTime()}`;
-              if (!reminderMap.has(reminderKey)) {
-                reminderMap.set(reminderKey, reminderItem);
-                items.push(reminderItem);
+              // CRITICAL: Only show reminders that have actually been sent (past or present, not future)
+              const reminderDate = new Date(at);
+              const today = new Date();
+              today.setHours(23, 59, 59, 999); // End of today
+              
+              // Only add if the reminder date is today or in the past
+              if (reminderDate <= today) {
+                // Use status + timestamp as key to prevent duplicates
+                const reminderKey = `${r.reminder_status}-${new Date(at).getTime()}`;
+                if (!reminderMap.has(reminderKey)) {
+                  reminderMap.set(reminderKey, reminderItem);
+                  items.push(reminderItem);
+                }
               }
             }
           }
@@ -333,15 +360,25 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                 });
               }
               
-              // Create overdue events for each day that doesn't exist yet
+              // CRITICAL: Only create overdue events for days that have ACTUALLY passed
+              // Don't show future overdue dates - only show what has happened
               const eventsToCreate = [];
+              const todayEnd = new Date();
+              todayEnd.setUTCHours(23, 59, 59, 999); // End of today
+              
               for (let day = 1; day <= totalOverdueDays; day++) {
+                // Calculate the date when this overdue day occurred
+                const overdueDate = new Date(dueStart);
+                overdueDate.setUTCDate(overdueDate.getUTCDate() + day);
+                overdueDate.setUTCHours(23, 59, 59, 999); // End of that day
+                
+                // CRITICAL: Only show overdue events for days that have actually passed (today or past)
+                if (overdueDate > todayEnd) {
+                  // This is a future date - don't show it yet
+                  continue;
+                }
+                
                 if (!existingDays.has(day)) {
-                  const overdueDate = new Date(dueStart);
-                  overdueDate.setUTCDate(overdueDate.getUTCDate() + day);
-                  // Set time to end of day (23:59:59) for that day
-                  overdueDate.setUTCHours(23, 59, 59, 999);
-                  
                   eventsToCreate.push({
                     invoice_id: invoice.id,
                     type: 'overdue',
@@ -364,11 +401,6 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                       return evDays === day;
                     });
                     if (existingEvent) {
-                      // Calculate accurate timestamp: dueDate + day (end of that day)
-                      const overdueDate = new Date(dueStart);
-                      overdueDate.setUTCDate(overdueDate.getUTCDate() + day);
-                      overdueDate.setUTCHours(23, 59, 59, 999);
-                      
                       items.push({
                         id: `overdue-${existingEvent.id}`,
                         type: 'status',
@@ -397,7 +429,16 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                 // Late fee applies on: dueDate + gracePeriod + 1 day (the day after grace period ends)
                 const lateFeeApplicationDay = grace + 1;
                 
-                if (totalOverdueDays >= lateFeeApplicationDay) {
+                // Calculate when late fee was/will be applied
+                const lateFeeDate = new Date(dueStart);
+                lateFeeDate.setUTCDate(lateFeeDate.getUTCDate() + lateFeeApplicationDay);
+                lateFeeDate.setUTCHours(23, 59, 59, 999);
+                
+                // CRITICAL: Only show late fee if it has actually been applied (today or past)
+                const todayEnd = new Date();
+                todayEnd.setUTCHours(23, 59, 59, 999);
+                
+                if (totalOverdueDays >= lateFeeApplicationDay && lateFeeDate <= todayEnd) {
                   // Check if late fee event already exists
                   const { data: lateFeeEvents } = await supabase
                     .from('invoice_events')
@@ -463,7 +504,17 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
         // Final robust deduplication: remove items with same title and timestamp within 5 seconds
         // Also check by ID to prevent exact duplicates
         const seenIds = new Set<string>();
+        const todayEnd = new Date();
+        todayEnd.setUTCHours(23, 59, 59, 999); // End of today
+        
         const deduped = items.reduce((acc, item) => {
+          // CRITICAL: Filter out any future-dated events (safety check)
+          const itemDate = new Date(item.at);
+          if (itemDate > todayEnd) {
+            // This is a future event - don't show it yet
+            return acc;
+          }
+          
           // Skip if we've already seen this exact ID
           if (seenIds.has(item.id)) {
             return acc;
