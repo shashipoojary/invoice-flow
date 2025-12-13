@@ -3,6 +3,7 @@ import { Resend } from 'resend';
 import { supabaseAdmin } from '@/lib/supabase';
 import { generateEstimateRejectionEmailTemplate } from '@/lib/email-templates';
 import { getBaseUrlFromRequest } from '@/lib/get-base-url';
+import { isOwnerRequest } from '@/lib/estimate-owner-detection';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -46,6 +47,16 @@ export async function POST(
       return NextResponse.json({ 
         error: `Estimate has already been ${estimate.approval_status}` 
       }, { status: 400 });
+    }
+
+    // CRITICAL: Prevent owner from rejecting their own estimate
+    // This works even in incognito mode by checking referer and other signals
+    const isOwner = await isOwnerRequest(request, estimate.user_id);
+    if (isOwner) {
+      console.warn(`[SECURITY] Owner attempted to reject their own estimate. Estimate ID: ${id}, User ID: ${estimate.user_id}`);
+      return NextResponse.json({ 
+        error: 'You cannot reject your own estimate. Only clients can reject estimates.' 
+      }, { status: 403 });
     }
 
     // Update estimate rejection status

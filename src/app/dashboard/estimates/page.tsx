@@ -966,7 +966,8 @@ function EstimatesContent(): React.JSX.Element {
                       <button
                         onClick={() => {
                           const token = (selectedEstimate as any).public_token;
-                          window.open(`/estimate/${encodeURIComponent(token)}`, '_blank');
+                          // Add owner=true parameter so server can detect owner view (even in incognito)
+                          window.open(`/estimate/${encodeURIComponent(token)}?owner=true&view=preview`, '_blank');
                         }}
                         className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
                       >

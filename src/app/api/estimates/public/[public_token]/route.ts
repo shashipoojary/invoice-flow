@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { isOwnerRequest } from '@/lib/estimate-owner-detection'
 
 export async function GET(
   request: NextRequest,
@@ -123,11 +124,15 @@ export async function GET(
       estimate.status = 'expired'
     }
 
+    // Detect if this is an owner view (for UI purposes - server-side validation is the real security)
+    const isOwnerView = await isOwnerRequest(request, estimate.user_id);
+
     // Return formatted estimate data
     return NextResponse.json({ 
       estimate: {
         id: estimate.id,
         userId: estimate.user_id, // Include user_id to check ownership
+        isOwnerView: isOwnerView, // Flag to hide buttons on frontend
         estimateNumber: estimate.estimate_number,
         issueDate: estimate.issue_date,
         expiryDate: estimate.expiry_date,

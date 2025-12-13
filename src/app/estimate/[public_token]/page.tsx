@@ -16,6 +16,7 @@ interface EstimateItem {
 interface Estimate {
   id: string
   userId?: string // Estimate owner's user ID
+  isOwnerView?: boolean // Server-detected owner view flag
   estimateNumber: string
   issueDate: string
   expiryDate?: string
@@ -238,9 +239,14 @@ export default function PublicEstimatePage() {
             }
           }
           if (data?.estimate) {
-            // Check if the viewer is authenticated and owns the estimate
+            // Use server-detected owner flag (more reliable - checks referer, auth, etc.)
+            // Also check client-side as fallback
             const { data: { session } } = await supabase.auth.getSession()
-            const viewerIsOwner = session?.user && data.estimate.userId && session.user.id === data.estimate.userId
+            const clientSideOwnerCheck = session?.user && data.estimate.userId && session.user.id === data.estimate.userId
+            const serverDetectedOwner = data.estimate.isOwnerView === true
+            
+            // Use server detection if available, otherwise fall back to client-side check
+            const viewerIsOwner = serverDetectedOwner || clientSideOwnerCheck
             
             setIsOwner(viewerIsOwner)
             setEstimate(data.estimate)
