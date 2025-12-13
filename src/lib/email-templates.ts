@@ -2058,18 +2058,18 @@ export function generateEstimateApprovalEmailTemplate(
       <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #000000; background-color: #f5f5f5;">
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f5f5f5;">
           <tr>
-            <td style="padding: 20px 0;">
+            <td class="outer-padding" style="padding: 20px 0;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="email-container" style="max-width: 600px; width: 100%; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0;">
                 <!-- Header -->
                 <tr>
                   <td class="header-padding" style="padding: 40px 40px 32px 40px; background: #ffffff; border-bottom: 1px solid #e0e0e0;">
-                    <h1 style="margin: 0; padding: 0; font-size: 20px; font-weight: 400; color: ${primaryColor}; letter-spacing: 0;">Estimate Approved</h1>
+                    <h1 class="header-title" style="margin: 0; padding: 0; font-size: 20px; font-weight: 400; color: ${primaryColor}; letter-spacing: 0;">Estimate Approved</h1>
                   </td>
                 </tr>
                 <!-- Content -->
                 <tr>
                   <td class="content-padding" style="padding: 32px 40px 40px 40px; background: #ffffff;">
-                    <p style="margin: 0 0 24px 0; font-size: 14px; color: #000000; line-height: 1.6;">
+                    <p class="content-text" style="margin: 0 0 24px 0; font-size: 14px; color: #000000; line-height: 1.6;">
                       Great news! Your estimate has been approved by <strong style="color: #000000; font-weight: 500;">${clientName}</strong>.
                     </p>
                     
@@ -2083,24 +2083,24 @@ export function generateEstimateApprovalEmailTemplate(
                     </table>
                     
                     ${comment ? `
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="comment-box" style="margin: 24px 0;">
                       <tr>
-                        <td style="padding: 16px; background: #f9fafb; border-radius: 4px;">
-                          <div style="font-size: 12px; color: #666666; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">Client Comment</div>
-                          <div style="font-size: 14px; color: #000000; line-height: 1.6; margin: 0;">${comment}</div>
+                        <td class="comment-box" style="padding: 16px; background: #f9fafb; border-radius: 4px;">
+                          <div class="comment-label" style="font-size: 12px; color: #666666; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">Client Comment</div>
+                          <div class="comment-text" style="font-size: 14px; color: #000000; line-height: 1.6; margin: 0;">${comment}</div>
                         </td>
                       </tr>
                     </table>
                     ` : ''}
                     
-                    <p style="margin: 0 0 32px 0; font-size: 14px; color: #000000; line-height: 1.6;">
+                    <p class="content-text" style="margin: 0 0 32px 0; font-size: 14px; color: #000000; line-height: 1.6;">
                       You can now convert this estimate to an invoice from your dashboard.
                     </p>
                     
                     <!-- Button -->
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="button-wrapper">
                       <tr>
-                        <td align="center" style="padding: 0;">
+                        <td align="center" class="button-wrapper" style="padding: 0;">
                           <!--[if mso]>
                           <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${dashboardUrl}/dashboard/estimates" style="height:42px;v-text-anchor:middle;width:200px;" arcsize="0%" strokecolor="${successColor}" fillcolor="${successColor}">
                             <w:anchorlock/>
@@ -2178,32 +2178,39 @@ export function generateEstimateRejectionEmailTemplate(
         <![endif]-->
         <style type="text/css">
           @media only screen and (max-width: 600px) {
-            .email-container {width: 100% !important; max-width: 100% !important;}
-            .header-padding {padding: 32px 24px 24px 24px !important;}
-            .content-padding {padding: 24px !important;}
-            .footer-padding {padding: 20px 24px !important;}
-            .button-link {display: block !important; width: 100% !important; text-align: center !important; padding: 14px 24px !important;}
-            .status-banner {padding: 12px 16px !important; margin: 20px 0 !important;}
-            .status-banner-label {font-size: 11px !important;}
-            .status-banner-value {font-size: 15px !important;}
+            .email-container {width: 100% !important; max-width: 100% !important; border: none !important;}
+            .outer-padding {padding: 0 !important;}
+            .header-padding {padding: 24px 20px 20px 20px !important;}
+            .content-padding {padding: 20px !important;}
+            .footer-padding {padding: 20px !important;}
+            .button-link {display: block !important; width: 100% !important; text-align: center !important; padding: 14px 20px !important; margin: 0 !important;}
+            .status-banner {padding: 14px 16px !important; margin: 20px 0 !important;}
+            .status-banner-label {font-size: 11px !important; line-height: 1.4 !important;}
+            .status-banner-value {font-size: 16px !important; line-height: 1.4 !important;}
+            .comment-box {padding: 14px !important; margin: 20px 0 !important;}
+            .comment-label {font-size: 11px !important; margin-bottom: 8px !important;}
+            .comment-text {font-size: 14px !important; line-height: 1.5 !important;}
+            .content-text {font-size: 14px !important; line-height: 1.6 !important; margin-bottom: 20px !important;}
+            .header-title {font-size: 18px !important;}
+            .button-wrapper {padding: 0 !important; margin-top: 24px !important;}
           }
         </style>
       </head>
       <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #000000; background-color: #f5f5f5;">
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f5f5f5;">
           <tr>
-            <td style="padding: 20px 0;">
+            <td class="outer-padding" style="padding: 20px 0;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="email-container" style="max-width: 600px; width: 100%; margin: 0 auto; background: #ffffff; border: 1px solid #e0e0e0;">
                 <!-- Header -->
                 <tr>
                   <td class="header-padding" style="padding: 40px 40px 32px 40px; background: #ffffff; border-bottom: 1px solid #e0e0e0;">
-                    <h1 style="margin: 0; padding: 0; font-size: 20px; font-weight: 400; color: ${errorColor}; letter-spacing: 0;">Estimate Rejected</h1>
+                    <h1 class="header-title" style="margin: 0; padding: 0; font-size: 20px; font-weight: 400; color: ${errorColor}; letter-spacing: 0;">Estimate Rejected</h1>
                   </td>
                 </tr>
                 <!-- Content -->
                 <tr>
                   <td class="content-padding" style="padding: 32px 40px 40px 40px; background: #ffffff;">
-                    <p style="margin: 0 0 24px 0; font-size: 14px; color: #000000; line-height: 1.6;">
+                    <p class="content-text" style="margin: 0 0 24px 0; font-size: 14px; color: #000000; line-height: 1.6;">
                       Your estimate has been rejected by <strong style="color: #000000; font-weight: 500;">${clientName}</strong>.
                     </p>
                     
@@ -2216,23 +2223,23 @@ export function generateEstimateRejectionEmailTemplate(
                       </tr>
                     </table>
                     
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="comment-box" style="margin: 24px 0;">
                       <tr>
-                        <td style="padding: 16px; background: #f9fafb; border-radius: 4px;">
-                          <div style="font-size: 12px; color: #666666; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">Rejection Reason</div>
-                          <div style="font-size: 14px; color: #000000; line-height: 1.6; margin: 0;">${reason}</div>
+                        <td class="comment-box" style="padding: 16px; background: #f9fafb; border-radius: 4px;">
+                          <div class="comment-label" style="font-size: 12px; color: #666666; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">Rejection Reason</div>
+                          <div class="comment-text" style="font-size: 14px; color: #000000; line-height: 1.6; margin: 0;">${reason}</div>
                         </td>
                       </tr>
                     </table>
                     
-                    <p style="margin: 0 0 32px 0; font-size: 14px; color: #000000; line-height: 1.6;">
+                    <p class="content-text" style="margin: 0 0 32px 0; font-size: 14px; color: #000000; line-height: 1.6;">
                       You may want to revise the estimate and send a new one.
                     </p>
                     
                     <!-- Button -->
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="button-wrapper">
                       <tr>
-                        <td align="center" style="padding: 0;">
+                        <td align="center" class="button-wrapper" style="padding: 0;">
                           <!--[if mso]>
                           <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${dashboardUrl}/dashboard/estimates" style="height:42px;v-text-anchor:middle;width:200px;" arcsize="0%" strokecolor="${primaryColor}" fillcolor="${primaryColor}">
                             <w:anchorlock/>
