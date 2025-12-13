@@ -2048,7 +2048,10 @@ export function generateEstimateApprovalEmailTemplate(
             .header-padding {padding: 32px 24px 24px 24px !important;}
             .content-padding {padding: 24px !important;}
             .footer-padding {padding: 20px 24px !important;}
-            .button-link {display: block !important; width: 100% !important; text-align: center !important;}
+            .button-link {display: block !important; width: 100% !important; text-align: center !important; padding: 14px 24px !important;}
+            .status-banner {padding: 12px 16px !important; margin: 20px 0 !important;}
+            .status-banner-label {font-size: 11px !important;}
+            .status-banner-value {font-size: 15px !important;}
           }
         </style>
       </head>
@@ -2070,11 +2073,11 @@ export function generateEstimateApprovalEmailTemplate(
                       Great news! Your estimate has been approved by <strong style="color: #000000; font-weight: 500;">${clientName}</strong>.
                     </p>
                     
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #f9fafb; border-left: 3px solid ${successColor}; margin: 24px 0;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="status-banner" style="background: #f9fafb; border-left: 3px solid ${successColor}; margin: 24px 0;">
                       <tr>
-                        <td style="padding: 16px 20px;">
-                          <div style="font-size: 12px; color: #666666; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px;">Estimate Number</div>
-                          <div style="font-size: 16px; font-weight: 700; color: #000000; margin: 0;">${estimateNumber}</div>
+                        <td class="status-banner" style="padding: 16px 20px;">
+                          <div class="status-banner-label" style="font-size: 12px; color: #666666; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px;">Estimate Number</div>
+                          <div class="status-banner-value" style="font-size: 16px; font-weight: 700; color: #000000; margin: 0;">${estimateNumber}</div>
                         </td>
                       </tr>
                     </table>
@@ -2116,11 +2119,25 @@ export function generateEstimateApprovalEmailTemplate(
                 </tr>
                 <!-- Footer -->
                 <tr>
-                  <td class="footer-padding" style="padding: 24px 40px; background: #ffffff; border-top: 1px solid #e0e0e0; text-align: center;">
-                    <p style="margin: 0; font-size: 12px; color: #666666; line-height: 1.5;">
+                  <td class="footer-padding" style="padding: 24px 40px; background: #ffffff; border-top: 1px solid #e0e0e0;">
+                    <!--[if mso]>
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                      <tr>
+                        <td align="center" style="padding: 0;">
+                          <p style="margin: 0; font-size: 12px; color: #666666; line-height: 1.5; font-family: Arial, sans-serif;">
+                            This is an automated notification from FlowInvoicer.<br>
+                            You're receiving this because an estimate you sent was approved.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                    <![endif]-->
+                    <![if !mso]>
+                    <p style="margin: 0; font-size: 12px; color: #666666; line-height: 1.5; text-align: center;">
                       This is an automated notification from FlowInvoicer.<br>
                       You're receiving this because an estimate you sent was approved.
                     </p>
+                    <![endif]>
                   </td>
                 </tr>
               </table>
@@ -2165,7 +2182,10 @@ export function generateEstimateRejectionEmailTemplate(
             .header-padding {padding: 32px 24px 24px 24px !important;}
             .content-padding {padding: 24px !important;}
             .footer-padding {padding: 20px 24px !important;}
-            .button-link {display: block !important; width: 100% !important; text-align: center !important;}
+            .button-link {display: block !important; width: 100% !important; text-align: center !important; padding: 14px 24px !important;}
+            .status-banner {padding: 12px 16px !important; margin: 20px 0 !important;}
+            .status-banner-label {font-size: 11px !important;}
+            .status-banner-value {font-size: 15px !important;}
           }
         </style>
       </head>
@@ -2187,11 +2207,11 @@ export function generateEstimateRejectionEmailTemplate(
                       Your estimate has been rejected by <strong style="color: #000000; font-weight: 500;">${clientName}</strong>.
                     </p>
                     
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #f9fafb; border-left: 3px solid ${errorColor}; margin: 24px 0;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="status-banner" style="background: #f9fafb; border-left: 3px solid ${errorColor}; margin: 24px 0;">
                       <tr>
-                        <td style="padding: 16px 20px;">
-                          <div style="font-size: 12px; color: #666666; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px;">Estimate Number</div>
-                          <div style="font-size: 16px; font-weight: 700; color: #000000; margin: 0;">${estimateNumber}</div>
+                        <td class="status-banner" style="padding: 16px 20px;">
+                          <div class="status-banner-label" style="font-size: 12px; color: #666666; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px;">Estimate Number</div>
+                          <div class="status-banner-value" style="font-size: 16px; font-weight: 700; color: #000000; margin: 0;">${estimateNumber}</div>
                         </td>
                       </tr>
                     </table>
@@ -2231,11 +2251,25 @@ export function generateEstimateRejectionEmailTemplate(
                 </tr>
                 <!-- Footer -->
                 <tr>
-                  <td class="footer-padding" style="padding: 24px 40px; background: #ffffff; border-top: 1px solid #e0e0e0; text-align: center;">
-                    <p style="margin: 0; font-size: 12px; color: #666666; line-height: 1.5;">
+                  <td class="footer-padding" style="padding: 24px 40px; background: #ffffff; border-top: 1px solid #e0e0e0;">
+                    <!--[if mso]>
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                      <tr>
+                        <td align="center" style="padding: 0;">
+                          <p style="margin: 0; font-size: 12px; color: #666666; line-height: 1.5; font-family: Arial, sans-serif;">
+                            This is an automated notification from FlowInvoicer.<br>
+                            You're receiving this because an estimate you sent was rejected.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                    <![endif]-->
+                    <![if !mso]>
+                    <p style="margin: 0; font-size: 12px; color: #666666; line-height: 1.5; text-align: center;">
                       This is an automated notification from FlowInvoicer.<br>
                       You're receiving this because an estimate you sent was rejected.
                     </p>
+                    <![endif]>
                   </td>
                 </tr>
               </table>
