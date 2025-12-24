@@ -337,10 +337,11 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
             const dueDate = new Date(due);
             const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
             const dueStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
-            const diffDays = Math.round((dueStart.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24));
+            // Calculate days difference: today - dueDate (positive if overdue)
+            const diffDays = Math.floor((todayStart.getTime() - dueStart.getTime()) / (1000 * 60 * 60 * 24));
             
-            if (diffDays < 0) {
-              const totalOverdueDays = Math.abs(diffDays);
+            if (diffDays > 0) {
+              const totalOverdueDays = diffDays;
               
               // Get existing overdue events from database
               const { data: existingOverdueEvents } = await supabase

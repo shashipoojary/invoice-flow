@@ -186,32 +186,42 @@ function InvoicesContent(): React.JSX.Element {
     const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
     const dueDateStart = new Date(Date.UTC(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate()));
     
-    const diffTime = dueDateStart.getTime() - todayStart.getTime();
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    // Calculate days difference: today - dueDate (positive if overdue)
+    const diffTime = todayStart.getTime() - dueDateStart.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
     
     // Draft invoices should never be marked as overdue, even if past due date
     if (invoiceStatus === 'draft') {
-      if (diffDays < 0) {
-        return { status: 'draft-past-due', days: Math.abs(diffDays), color: 'text-gray-500' };
+      if (diffDays > 0) {
+        return { status: 'draft-past-due', days: diffDays, color: 'text-gray-500' };
       } else if (diffDays === 0) {
         return { status: 'draft-due-today', days: 0, color: 'text-gray-500' };
-      } else if (diffDays <= 3) {
-        return { status: 'draft-due-soon', days: diffDays, color: 'text-gray-500' };
       } else {
-        return { status: 'draft-upcoming', days: diffDays, color: 'text-gray-500' };
+        // diffDays < 0 means due date is in the future
+        const daysUntilDue = Math.abs(diffDays);
+        if (daysUntilDue <= 3) {
+          return { status: 'draft-due-soon', days: daysUntilDue, color: 'text-gray-500' };
+        } else {
+          return { status: 'draft-upcoming', days: daysUntilDue, color: 'text-gray-500' };
+        }
       }
     }
     
     // Only sent/pending invoices can be overdue
-    if (diffDays < 0) {
-      return { status: 'overdue', days: Math.abs(diffDays), color: 'text-red-600' };
+    if (diffDays > 0) {
+      // diffDays > 0 means today is past the due date (overdue)
+      return { status: 'overdue', days: diffDays, color: 'text-red-600' };
     } else if (diffDays === 0) {
       return { status: 'due-today', days: 0, color: 'text-orange-500' };
-    } else if (diffDays <= 3) {
-      return { status: 'due-soon', days: diffDays, color: 'text-yellow-600' };
     } else {
-      return { status: 'upcoming', days: diffDays, color: 'text-gray-600' };
+      // diffDays < 0 means due date is in the future
+      const daysUntilDue = Math.abs(diffDays);
+      if (daysUntilDue <= 3) {
+        return { status: 'due-soon', days: daysUntilDue, color: 'text-yellow-600' };
+      } else {
+        return { status: 'upcoming', days: daysUntilDue, color: 'text-gray-600' };
+      }
     }
   }, [parseDateOnly]);
 
@@ -330,12 +340,13 @@ function InvoicesContent(): React.JSX.Element {
     const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
     const dueDateStart = new Date(Date.UTC(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate()));
     
-    const diffTime = dueDateStart.getTime() - todayStart.getTime();
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    // Calculate days difference: today - dueDate (positive if overdue)
+    const diffTime = todayStart.getTime() - dueDateStart.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
     // Only calculate late fees if invoice is overdue and late fees are enabled
-    if (diffDays < 0 && invoice.lateFees?.enabled) {
-      const overdueDays = Math.abs(diffDays);
+    if (diffDays > 0 && invoice.lateFees?.enabled) {
+      const overdueDays = diffDays;
       const gracePeriod = invoice.lateFees.gracePeriod || 0;
       
       if (overdueDays > gracePeriod) {
