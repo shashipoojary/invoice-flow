@@ -351,7 +351,8 @@ export default function PublicEstimatePage() {
               <div className="text-xs text-gray-500 mb-1">
                 Issue: {new Date(estimate.issueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
-              {estimate.expiryDate && (
+              {/* Only show expiry date for estimates that are still pending (not approved/rejected) */}
+              {estimate.expiryDate && estimate.status !== 'approved' && estimate.status !== 'rejected' && (
                 <div className="text-xs text-gray-500 mb-4">
                   Valid Until: {new Date(estimate.expiryDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </div>
@@ -528,7 +529,8 @@ export default function PublicEstimatePage() {
             </div>
           )}
 
-          {(estimate.isExpired || estimate.status === 'expired') && (
+          {/* Only show expired banner for estimates that are actually expired (not approved/rejected) */}
+          {(estimate.isExpired || estimate.status === 'expired') && estimate.status !== 'approved' && estimate.status !== 'rejected' && (
             <div className="mb-6 px-4 py-3 bg-amber-50 border-l-4 border-amber-500">
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />

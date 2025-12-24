@@ -105,23 +105,31 @@ export async function GET(
     }
 
     // Check if estimate is expired and update status if needed
+    // CRITICAL: Only check expiry for estimates that are still pending (sent status with pending approval)
+    // Approved/rejected estimates should NOT expire
     const currentDate = new Date()
     currentDate.setHours(0, 0, 0, 0) // Set to start of day for comparison
     const expiryDate = estimate.expiry_date ? new Date(estimate.expiry_date) : null
     if (expiryDate) {
       expiryDate.setHours(0, 0, 0, 0) // Set to start of day for comparison
     }
-    const isExpired = expiryDate ? expiryDate < currentDate : false
     
-    // Update status to 'expired' if expired and still in 'sent' status
-    if (isExpired && estimate.status === 'sent' && estimate.approval_status === 'pending') {
-      await supabaseAdmin
-        .from('estimates')
-        .update({ status: 'expired' })
-        .eq('id', estimate.id)
+    // Only calculate expiry if estimate is still pending (sent status with pending approval)
+    // Approved/rejected estimates should never expire
+    let isExpired = false
+    if (estimate.status === 'sent' && estimate.approval_status === 'pending') {
+      isExpired = expiryDate ? expiryDate < currentDate : false
       
-      // Update local estimate object
-      estimate.status = 'expired'
+      // Update status to 'expired' if expired and still in 'sent' status
+      if (isExpired) {
+        await supabaseAdmin
+          .from('estimates')
+          .update({ status: 'expired' })
+          .eq('id', estimate.id)
+        
+        // Update local estimate object
+        estimate.status = 'expired'
+      }
     }
 
     // Detect if this is an owner view (for UI purposes - server-side validation is the real security)
