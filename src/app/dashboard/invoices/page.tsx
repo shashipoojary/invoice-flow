@@ -13,9 +13,11 @@ import { useData } from '@/contexts/DataContext';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
 import UnifiedInvoiceCard from '@/components/UnifiedInvoiceCard';
+import PartialPaymentModal from '@/components/PartialPaymentModal';
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { getInvoicePaymentData } from '@/lib/invoice-payments';
 
 // Lazy load heavy modal components for better performance
 const FastInvoiceModal = dynamic(() => import('@/components/FastInvoiceModal'), {
@@ -45,7 +47,7 @@ function InvoicesContent(): React.JSX.Element {
   const { user, loading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
   const { settings } = useSettings();
-  const { invoices, clients, isLoadingInvoices, hasInitiallyLoaded, updateInvoice, deleteInvoice, refreshInvoices } = useData();
+  const { invoices, clients, isLoadingInvoices, hasInitiallyLoaded, addInvoice, updateInvoice, deleteInvoice, refreshInvoices } = useData();
   const searchParams = useSearchParams();
   
   // Local state for UI
@@ -57,6 +59,7 @@ function InvoicesContent(): React.JSX.Element {
   const [showInvoiceTypeSelection, setShowInvoiceTypeSelection] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [showReminderDates, setShowReminderDates] = useState(false);
+  const [showPartialPayment, setShowPartialPayment] = useState(false);
   
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,6 +67,9 @@ function InvoicesContent(): React.JSX.Element {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
   const [filterAppliedManually, setFilterAppliedManually] = useState(false);
+  const [invoicesWithPartialPayments, setInvoicesWithPartialPayments] = useState<Set<string>>(new Set());
+  const [paymentDataMap, setPaymentDataMap] = useState<Record<string, { totalPaid: number; remainingBalance: number }>>({});
+  const [isLoadingPayments, setIsLoadingPayments] = useState(false);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -95,6 +101,119 @@ function InvoicesContent(): React.JSX.Element {
     isLoading: false
   });
   
+  // Extract payment data from invoices immediately - now instant since it's direct properties
+  useEffect(() => {
+    if (!invoices || invoices.length === 0) {
+      setPaymentDataMap({});
+      setInvoicesWithPartialPayments(new Set());
+      return;
+    }
+
+    // Payment data is now direct properties on invoice objects (totalPaid, remainingBalance)
+    const payments: Record<string, { totalPaid: number; remainingBalance: number }> = {};
+    const partialSet = new Set<string>();
+    
+    invoices.forEach((invoice: any) => {
+      // Direct property access - no extraction needed
+      const totalPaid = invoice.totalPaid || 0;
+      const remainingBalance = invoice.remainingBalance || 0;
+      
+      if (totalPaid > 0 || remainingBalance !== invoice.total) {
+        payments[invoice.id] = { totalPaid, remainingBalance };
+      }
+      
+      if (totalPaid > 0 && remainingBalance > 0) {
+        partialSet.add(invoice.id);
+      }
+    });
+
+    setPaymentDataMap(payments);
+    setInvoicesWithPartialPayments(partialSet);
+  }, [invoices]);
+
+  // Fallback: Fetch payment data if not received from initial load
+  useEffect(() => {
+    let isMounted = true;
+    let fetchTimeout: NodeJS.Timeout | null = null;
+    
+    const fetchBulkPayments = async () => {
+      // Only fetch if we don't already have payment data
+      if (Object.keys(paymentDataMap).length > 0) {
+        return;
+      }
+      
+      // Wait for invoices to be available
+      if (!invoices || invoices.length === 0) {
+        return;
+      }
+      
+      // Only fetch for sent/pending invoices
+      const eligibleInvoices = invoices.filter(
+        inv => (inv.status === 'sent' || inv.status === 'pending') && inv.id
+      );
+      
+      if (eligibleInvoices.length === 0) {
+        if (isMounted) {
+          setPaymentDataMap({});
+          setInvoicesWithPartialPayments(new Set());
+        }
+        return;
+      }
+      
+      try {
+        setIsLoadingPayments(true);
+        const headers = await getAuthHeaders();
+        const response = await fetch('/api/invoices/payments/bulk', {
+          method: 'POST',
+          headers: {
+            ...headers,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            invoiceIds: eligibleInvoices.map(inv => inv.id)
+          }),
+          cache: 'no-store'
+        });
+        
+        if (response.ok && isMounted) {
+          const data = await response.json();
+          const payments = data.payments || {};
+          setPaymentDataMap(payments);
+          
+          // Update partial payments set
+          const partialSet = new Set<string>();
+          Object.keys(payments).forEach(invoiceId => {
+            if (payments[invoiceId].totalPaid > 0 && payments[invoiceId].remainingBalance > 0) {
+              partialSet.add(invoiceId);
+            }
+          });
+          setInvoicesWithPartialPayments(partialSet);
+        }
+      } catch (error) {
+        console.error('Error fetching bulk payments:', error);
+        // Silently fail - payment data is optional
+      } finally {
+        if (isMounted) {
+          setIsLoadingPayments(false);
+        }
+      }
+    };
+    
+    // Only fetch if payment data wasn't received from initial load
+    if (invoices && invoices.length > 0 && Object.keys(paymentDataMap).length === 0) {
+      fetchTimeout = setTimeout(() => {
+        fetchBulkPayments();
+      }, 100);
+    }
+    
+    return () => {
+      isMounted = false;
+      if (fetchTimeout) {
+        clearTimeout(fetchTimeout);
+      }
+    };
+  }, [invoices, isLoadingInvoices, getAuthHeaders, paymentDataMap]);
+
   // Business settings are now managed by SettingsContext
 
 
@@ -283,6 +402,14 @@ function InvoicesContent(): React.JSX.Element {
           const dueDateStart = new Date(Date.UTC(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate()));
           return dueDateStart < todayStart;
         });
+      } else if (statusFilter === 'partial') {
+        // Filter for invoices with partial payments
+        filtered = filtered.filter(invoice => {
+          // Only sent/pending invoices can have partial payments
+          if (invoice.status !== 'sent' && invoice.status !== 'pending') return false;
+          // Check if this invoice has partial payments
+          return invoicesWithPartialPayments.has(invoice.id);
+        });
       } else {
         filtered = filtered.filter(invoice => {
           switch (statusFilter) {
@@ -301,7 +428,7 @@ function InvoicesContent(): React.JSX.Element {
     );
     
     return uniqueInvoices;
-  }, [invoices, debouncedSearchQuery, statusFilter, parseDateOnly]);
+  }, [invoices, debouncedSearchQuery, statusFilter, invoicesWithPartialPayments, parseDateOnly]);
 
   // Pagination logic
   const paginatedInvoices = useMemo(() => {
@@ -321,14 +448,17 @@ function InvoicesContent(): React.JSX.Element {
   const hasPrevPage = currentPage > 1;
 
   // Helper function to calculate due charges and total payable
-  const calculateDueCharges = useCallback((invoice: Invoice) => {
+  const calculateDueCharges = useCallback((invoice: Invoice, paymentData?: { totalPaid: number; remainingBalance: number } | null) => {
     // Only calculate late fees for sent invoices that are actually overdue
     if (invoice.status !== 'pending' && invoice.status !== 'sent') {
       return {
         hasLateFees: false,
         lateFeeAmount: 0,
         totalPayable: invoice.total,
-        overdueDays: 0
+        overdueDays: 0,
+        totalPaid: paymentData?.totalPaid || 0,
+        remainingBalance: paymentData?.remainingBalance || invoice.total,
+        isPartiallyPaid: (paymentData?.totalPaid || 0) > 0 && (paymentData?.remainingBalance || invoice.total) > 0
       };
     }
 
@@ -344,6 +474,9 @@ function InvoicesContent(): React.JSX.Element {
     const diffTime = todayStart.getTime() - dueDateStart.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
+    // Calculate base amount (considering partial payments)
+    const baseAmount = paymentData ? paymentData.remainingBalance : invoice.total;
+    
     // Only calculate late fees if invoice is overdue and late fees are enabled
     if (diffDays > 0 && invoice.lateFees?.enabled) {
       const overdueDays = diffDays;
@@ -356,15 +489,19 @@ function InvoicesContent(): React.JSX.Element {
         if (invoice.lateFees.type === 'fixed') {
           lateFeeAmount = invoice.lateFees.amount;
         } else if (invoice.lateFees.type === 'percentage') {
-          lateFeeAmount = (invoice.total * invoice.lateFees.amount) / 100;
+          // Calculate late fee on the remaining balance (after partial payments)
+          lateFeeAmount = (baseAmount * invoice.lateFees.amount) / 100;
         }
         
-        const totalPayable = invoice.total + lateFeeAmount;
+        const totalPayable = baseAmount + lateFeeAmount;
         return {
           hasLateFees: true,
           lateFeeAmount,
           totalPayable,
-          overdueDays: chargeableDays
+          overdueDays: chargeableDays,
+          totalPaid: paymentData?.totalPaid || 0,
+          remainingBalance: totalPayable,
+          isPartiallyPaid: (paymentData?.totalPaid || 0) > 0 && totalPayable > 0
         };
       }
     }
@@ -372,8 +509,11 @@ function InvoicesContent(): React.JSX.Element {
     return {
       hasLateFees: false,
       lateFeeAmount: 0,
-      totalPayable: invoice.total,
-      overdueDays: 0
+      totalPayable: baseAmount,
+      overdueDays: 0,
+      totalPaid: paymentData?.totalPaid || 0,
+      remainingBalance: baseAmount,
+      isPartiallyPaid: (paymentData?.totalPaid || 0) > 0 && baseAmount > 0 && baseAmount < invoice.total
     };
   }, [parseDateOnly]);
 
@@ -594,6 +734,64 @@ function InvoicesContent(): React.JSX.Element {
     }
   }, [getAuthHeaders, showSuccess, showError]);
 
+  const handleDuplicateInvoice = useCallback((invoice: Invoice) => {
+    setConfirmationModal({
+      isOpen: true,
+      title: 'Duplicate Invoice',
+      message: `Are you sure you want to duplicate invoice ${invoice.invoiceNumber}? This will create a new draft invoice with the same details that you can edit.`,
+      type: 'info',
+      onConfirm: () => performDuplicateInvoice(invoice),
+      isLoading: false
+    });
+  }, []);
+
+  const performDuplicateInvoice = useCallback(async (invoice: Invoice) => {
+    const actionKey = `duplicate-${invoice.id}`;
+    setLoadingActions(prev => ({ ...prev, [actionKey]: true }));
+    setConfirmationModal(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/invoices/duplicate', {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ invoiceId: invoice.id }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.invoice) {
+          // Add new invoice to global state
+          addInvoice(result.invoice);
+          // Refresh invoices list
+          await refreshInvoices();
+          showSuccess('Invoice Duplicated', `Invoice ${result.invoice.invoiceNumber} has been created. You can now edit it.`);
+          setConfirmationModal(prev => ({ ...prev, isOpen: false, isLoading: false }));
+          // Open the duplicated invoice for editing
+          setSelectedInvoice(result.invoice);
+          if (result.invoice.type === 'fast') {
+            setShowFastInvoice(true);
+          } else {
+            setShowCreateInvoice(true);
+          }
+        }
+      } else {
+        const error = await response.json();
+        showError('Duplicate Failed', error.error || 'Failed to duplicate invoice. Please try again.');
+        setConfirmationModal(prev => ({ ...prev, isLoading: false }));
+      }
+    } catch (error) {
+      console.error('Error duplicating invoice:', error);
+      showError('Duplicate Failed', 'Failed to duplicate invoice. Please try again.');
+      setConfirmationModal(prev => ({ ...prev, isLoading: false }));
+    } finally {
+      setLoadingActions(prev => ({ ...prev, [actionKey]: false }));
+    }
+  }, [getAuthHeaders, showSuccess, showError, addInvoice, refreshInvoices]);
+
   // Memoized Invoice Card Component - optimized with React.memo
   const InvoiceCard = React.memo(({ invoice, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, handleDeleteInvoice, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions }: {
     invoice: Invoice;
@@ -609,11 +807,56 @@ function InvoicesContent(): React.JSX.Element {
     formatPaymentTerms: (paymentTerms?: { enabled: boolean; terms: string }) => string | null;
     formatLateFees: (lateFees?: { enabled: boolean; type: 'fixed' | 'percentage'; amount: number; gracePeriod: number }) => string | null;
     formatReminders: (reminders?: { enabled: boolean; useSystemDefaults: boolean; rules?: Array<{ enabled: boolean }>; customRules?: Array<{ enabled: boolean }> }) => string | null;
-    calculateDueCharges: (invoice: Invoice) => { hasLateFees: boolean; lateFeeAmount: number; totalPayable: number; overdueDays: number };
+    calculateDueCharges: (invoice: Invoice, paymentData?: { totalPaid: number; remainingBalance: number } | null) => { hasLateFees: boolean; lateFeeAmount: number; totalPayable: number; overdueDays: number; totalPaid: number; remainingBalance: number; isPartiallyPaid: boolean };
     loadingActions: { [key: string]: boolean };
   }) => {
+    const [paymentData, setPaymentData] = useState<{ totalPaid: number; remainingBalance: number } | null>(null);
+    
+    // Fetch payment data for sent/pending invoices
+    useEffect(() => {
+      if ((invoice.status === 'sent' || invoice.status === 'pending') && invoice.id) {
+        const fetchPayments = async () => {
+          try {
+            const headers = await getAuthHeaders();
+            const response = await fetch(`/api/invoices/${invoice.id}/payments`, { headers });
+            if (response.ok) {
+              const data = await response.json();
+              if (data.totalPaid > 0 && data.remainingBalance > 0) {
+                setPaymentData({ totalPaid: data.totalPaid, remainingBalance: data.remainingBalance });
+                // Track this invoice as having partial payments
+                setInvoicesWithPartialPayments(prev => new Set(prev).add(invoice.id));
+              } else {
+                setPaymentData(null);
+                setInvoicesWithPartialPayments(prev => {
+                  const newSet = new Set(prev);
+                  newSet.delete(invoice.id);
+                  return newSet;
+                });
+              }
+            }
+          } catch (error) {
+            // Silently fail - payment data is optional
+            setPaymentData(null);
+            setInvoicesWithPartialPayments(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(invoice.id);
+              return newSet;
+            });
+          }
+        };
+        fetchPayments();
+      } else {
+        setPaymentData(null);
+        setInvoicesWithPartialPayments(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(invoice.id);
+          return newSet;
+        });
+      }
+    }, [invoice.id, invoice.status]);
+    
     const dueDateStatus = getDueDateStatus(invoice.dueDate, invoice.status, invoice.paymentTerms, (invoice as any).updatedAt);
-    const dueCharges = calculateDueCharges(invoice);
+    const dueCharges = calculateDueCharges(invoice, paymentData);
     
     
     
@@ -650,9 +893,14 @@ function InvoicesContent(): React.JSX.Element {
                   invoice.status === 'draft' ? ('text-gray-600') :
                   ('text-red-600')
               }`}>
-                ${dueCharges.totalPayable.toLocaleString()}
+                ${dueCharges.totalPayable.toFixed(2)}
                   </div>
-                  {dueCharges.hasLateFees ? (
+                  {dueCharges.isPartiallyPaid ? (
+                    <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                      Paid: ${dueCharges.totalPaid.toFixed(2)} • Remaining: ${dueCharges.remainingBalance.toFixed(2)}
+                      {dueCharges.hasLateFees && ` • Late fee: ${dueCharges.lateFeeAmount.toFixed(2)}`}
+                    </div>
+                  ) : dueCharges.hasLateFees ? (
                     <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
                       Base ${invoice.total.toLocaleString()} • Late fee ${dueCharges.lateFeeAmount.toLocaleString()}
                     </div>
@@ -676,6 +924,12 @@ function InvoicesContent(): React.JSX.Element {
                 {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status}</span>
               </span>
+                {dueCharges.isPartiallyPaid && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
+                    <DollarSign className="h-3 w-3" />
+                    <span>Partial Payment</span>
+                  </span>
+                )}
                 {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
                   <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-red-600'}`}>
                     <AlertTriangle className="h-3 w-3" />
@@ -769,9 +1023,14 @@ function InvoicesContent(): React.JSX.Element {
                   invoice.status === 'draft' ? ('text-gray-600') :
                   ('text-red-600')
             }`}>
-              ${dueCharges.totalPayable.toLocaleString()}
+              ${dueCharges.totalPayable.toFixed(2)}
                 </div>
-              {dueCharges.hasLateFees ? (
+              {dueCharges.isPartiallyPaid ? (
+                <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                  Paid: ${dueCharges.totalPaid.toFixed(2)} • Remaining: ${dueCharges.remainingBalance.toFixed(2)}
+                  {dueCharges.hasLateFees && ` • Late fee: ${dueCharges.lateFeeAmount.toFixed(2)}`}
+            </div>
+              ) : dueCharges.hasLateFees ? (
                 <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
                   Base ${invoice.total.toLocaleString()} • Late fee ${dueCharges.lateFeeAmount.toLocaleString()}
             </div>
@@ -795,6 +1054,12 @@ function InvoicesContent(): React.JSX.Element {
                 {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status}</span>
                   </span>
+                {dueCharges.isPartiallyPaid && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
+                    <DollarSign className="h-3 w-3" />
+                    <span>Partial Payment</span>
+                  </span>
+                )}
                 {dueDateStatus.status === 'overdue' && (invoice.status === 'pending' || invoice.status === 'sent') && (
                   <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${'text-red-600'}`}>
                     <AlertTriangle className="h-3 w-3" />
@@ -1105,6 +1370,19 @@ function InvoicesContent(): React.JSX.Element {
                       >
                         Draft
                       </button>
+                      <button
+                        onClick={() => {
+                          setStatusFilter('partial');
+                          setFilterAppliedManually(true);
+                        }}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                          statusFilter === 'partial' 
+                            ? 'bg-blue-100 text-blue-800 border border-blue-300' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        Partial Payment
+                      </button>
                     </div>
                   </div>
                 )}
@@ -1132,13 +1410,13 @@ function InvoicesContent(): React.JSX.Element {
                 
               {/* Invoice List */}
               {(isLoadingInvoices || !hasInitiallyLoaded) ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="rounded-lg p-6 bg-white/70 border border-gray-200 backdrop-blur-sm">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
                       <div className="animate-pulse">
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center space-x-3">
-                            <div className="w-12 h-12 bg-gray-300 rounded-lg"></div>
+                            <div className="w-10 h-10 bg-gray-300 rounded-lg"></div>
                             <div>
                               <div className="h-4 bg-gray-300 rounded w-32 mb-2"></div>
                               <div className="h-3 bg-gray-300 rounded w-24"></div>
@@ -1148,6 +1426,13 @@ function InvoicesContent(): React.JSX.Element {
                         </div>
                         <div className="h-3 bg-gray-300 rounded w-full mb-2"></div>
                         <div className="h-3 bg-gray-300 rounded w-3/4"></div>
+                        <div className="flex items-center justify-between mt-4">
+                          <div className="h-6 bg-gray-300 rounded w-20"></div>
+                          <div className="flex space-x-2">
+                            <div className="h-8 w-8 bg-gray-300 rounded"></div>
+                            <div className="h-8 w-8 bg-gray-300 rounded"></div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1178,6 +1463,8 @@ function InvoicesContent(): React.JSX.Element {
                       onMarkPaid={handleMarkAsPaid}
                       onEdit={handleEditInvoice}
                       onDelete={handleDeleteInvoice}
+                      onDuplicate={handleDuplicateInvoice}
+                      paymentData={paymentDataMap[invoice.id] || null}
                     />
                   ))}
                 </div>
@@ -1374,7 +1661,7 @@ function InvoicesContent(): React.JSX.Element {
       {/* View Invoice Modal */}
       {showViewInvoice && selectedInvoice && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className="rounded-xl sm:rounded-2xl p-2 sm:p-4 max-w-6xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-hidden bg-white border-gray-200 flex flex-col">
+          <div className="rounded-lg sm:rounded-lg p-2 sm:p-4 max-w-6xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-hidden bg-white border-gray-200 flex flex-col">
             <div className="flex items-center justify-between mb-3 sm:mb-4 flex-shrink-0">
               <div className="flex items-center gap-3">
                 <h2 className="text-base sm:text-xl font-bold" style={{color: '#1f2937'}}>Invoice Details</h2>
@@ -1640,6 +1927,30 @@ function InvoicesContent(): React.JSX.Element {
               )}
             </div>
             </div>
+            
+            {/* Footer with Actions */}
+            <div className="flex-shrink-0 border-t border-gray-200 px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
+              <button
+                onClick={() => {
+                  setShowViewInvoice(false);
+                  setShowReminderDates(false);
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+              {(selectedInvoice.status === 'sent' || selectedInvoice.status === 'pending') && (
+                <button
+                  onClick={() => {
+                    setShowPartialPayment(true);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer flex items-center gap-2"
+                >
+                  <DollarSign className="h-4 w-4" />
+                  Record Payment
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -1650,7 +1961,7 @@ function InvoicesContent(): React.JSX.Element {
       {/* Invoice Type Selection Modal */}
       {showInvoiceTypeSelection && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="text-center mb-6">
               <h3 className="font-heading text-xl font-semibold mb-2" style={{color: '#1f2937'}}>
                 Choose Invoice Type
@@ -1748,6 +2059,76 @@ function InvoicesContent(): React.JSX.Element {
         invoice={sendInvoiceModal.invoice}
         isLoading={sendInvoiceModal.isLoading}
       />
+
+      {/* Partial Payment Modal */}
+      {selectedInvoice && (
+        <PartialPaymentModal
+          invoice={selectedInvoice}
+          isOpen={showPartialPayment}
+          onClose={async () => {
+            setShowPartialPayment(false);
+            await refreshInvoices();
+            // Trigger bulk payment refresh
+            const eligibleInvoices = invoices.filter(
+              inv => (inv.status === 'sent' || inv.status === 'pending') && inv.id
+            );
+            if (eligibleInvoices.length > 0) {
+              try {
+                const headers = await getAuthHeaders();
+                const response = await fetch('/api/invoices/payments/bulk', {
+                  method: 'POST',
+                  headers: { ...headers, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ invoiceIds: eligibleInvoices.map(inv => inv.id) })
+                });
+                if (response.ok) {
+                  const data = await response.json();
+                  setPaymentDataMap(data.payments || {});
+                  const partialSet = new Set<string>();
+                  Object.keys(data.payments || {}).forEach(id => {
+                    if (data.payments[id].totalPaid > 0 && data.payments[id].remainingBalance > 0) {
+                      partialSet.add(id);
+                    }
+                  });
+                  setInvoicesWithPartialPayments(partialSet);
+                }
+              } catch (error) {
+                // Silently fail
+              }
+            }
+          }}
+          onPaymentAdded={async () => {
+            await refreshInvoices();
+            // Trigger bulk payment refresh
+            const eligibleInvoices = invoices.filter(
+              inv => (inv.status === 'sent' || inv.status === 'pending') && inv.id
+            );
+            if (eligibleInvoices.length > 0) {
+              try {
+                const headers = await getAuthHeaders();
+                const response = await fetch('/api/invoices/payments/bulk', {
+                  method: 'POST',
+                  headers: { ...headers, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ invoiceIds: eligibleInvoices.map(inv => inv.id) })
+                });
+                if (response.ok) {
+                  const data = await response.json();
+                  setPaymentDataMap(data.payments || {});
+                  const partialSet = new Set<string>();
+                  Object.keys(data.payments || {}).forEach(id => {
+                    if (data.payments[id].totalPaid > 0 && data.payments[id].remainingBalance > 0) {
+                      partialSet.add(id);
+                    }
+                  });
+                  setInvoicesWithPartialPayments(partialSet);
+                }
+              } catch (error) {
+                // Silently fail
+              }
+            }
+          }}
+          getAuthHeaders={getAuthHeaders}
+        />
+      )}
 
       {/* Toast Container */}
       <ToastContainer

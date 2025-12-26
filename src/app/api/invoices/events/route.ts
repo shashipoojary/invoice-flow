@@ -8,6 +8,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'invoiceId and type are required' }, { status: 400 });
     }
     
+    // CRITICAL: For privacy and legal compliance, do not track any activities for paid invoices
+    const { data: invoice } = await supabaseAdmin
+      .from('invoices')
+      .select('status')
+      .eq('id', invoiceId)
+      .single();
+    
+    if (invoice && invoice.status === 'paid') {
+      // Silently skip logging for paid invoices - return success to avoid client errors
+      return NextResponse.json({ ok: true, skipped: true, reason: 'Invoice is paid - activity tracking disabled' }, { status: 200 });
+    }
+    
     // For privacy reasons, only log "viewed_by_customer" once per day per invoice
     if (type === 'viewed_by_customer') {
       const today = new Date();

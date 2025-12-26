@@ -79,6 +79,9 @@ export interface Invoice {
   invoice_number?: string;
   created_at?: string;
   public_token?: string;
+  // Partial payment fields (always available, 0 if no payments)
+  totalPaid?: number;
+  remainingBalance?: number;
 }
 
 export interface FreelancerSettings {

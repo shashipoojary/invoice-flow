@@ -49,6 +49,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   const [amount, setAmount] = useState('')
   const [dueDate, setDueDate] = useState('')
   const [notes, setNotes] = useState('')
+  const [markAsPaid, setMarkAsPaid] = useState(false)
 
   // Pre-fill form when editing an invoice OR reset when creating new
   useEffect(() => {
@@ -101,6 +102,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
     setAmount('')
     setDueDate('')
     setNotes('')
+    setMarkAsPaid(false)
   }
 
   const handleClose = () => {
@@ -157,7 +159,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         notes: notes,
         billing_choice: 'per_invoice',
         type: 'fast', // Mark as fast invoice
-        status: isEditing ? editingInvoice.status : 'sent' // Keep existing status when editing
+        status: isEditing ? editingInvoice.status : (markAsPaid ? 'paid' : 'draft') // Allow marking as paid during creation
       }
       
       // Add invoice ID to payload if editing
@@ -284,7 +286,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className={`rounded-xl shadow-2xl max-w-md w-full overflow-hidden ${
+      <div className={`rounded-lg shadow-2xl max-w-md w-full overflow-hidden ${
         isDarkMode 
           ? 'bg-gray-900' 
           : 'bg-white'
@@ -632,6 +634,36 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                     placeholder="Payment terms, additional details... (optional)"
                     rows={2}
                   />
+                </div>
+
+                {/* Mark as Paid Option */}
+                <div className={`p-4 rounded-lg border ${
+                  isDarkMode 
+                    ? 'border-gray-700 bg-gray-800/50' 
+                    : 'border-gray-200 bg-gray-50'
+                }`}>
+                  <label className="flex items-start space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={markAsPaid}
+                      onChange={(e) => setMarkAsPaid(e.target.checked)}
+                      className={`mt-0.5 w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer ${
+                        isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white'
+                      }`}
+                    />
+                    <div className="flex-1">
+                      <span className={`text-sm font-medium ${
+                        isDarkMode ? 'text-white' : 'text-gray-900'
+                      }`}>
+                        Mark as Paid
+                      </span>
+                      <p className={`text-xs mt-0.5 ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        Use this if payment was already received. You can still send the invoice to the client.
+                      </p>
+                    </div>
+                  </label>
                 </div>
               </div>
 

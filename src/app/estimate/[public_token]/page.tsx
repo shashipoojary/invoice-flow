@@ -330,6 +330,27 @@ export default function PublicEstimatePage() {
         <div className="px-6 py-8 sm:px-10 sm:py-10 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row items-start justify-between mb-8 gap-6">
             <div className="flex-1 w-full sm:w-auto">
+              {/* Modern Logo Display */}
+              {estimate.freelancerSettings?.logo && (
+                <div className="mb-4">
+                  <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center">
+                    <img
+                      src={estimate.freelancerSettings.logo}
+                      alt={estimate.freelancerSettings.businessName || 'Business Logo'}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        // Fallback to business name initial if logo fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-2xl font-bold text-gray-600">${(estimate.freelancerSettings?.businessName || 'B').charAt(0).toUpperCase()}</div>`;
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
               <div className="text-lg sm:text-xl font-normal text-gray-900 mb-1" style={{ color: '#1F2937', letterSpacing: 0 }}>
                 {estimate.freelancerSettings?.businessName || 'Business'}
               </div>
@@ -449,7 +470,7 @@ export default function PublicEstimatePage() {
           {/* Approval Confirmation Modal */}
           {showApproveModal && (
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-white border border-gray-200 max-w-md w-full p-6">
+              <div className="bg-white rounded-lg border border-gray-200 max-w-md w-full p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Approve Estimate</h3>
                 <p className="text-sm text-gray-600 mb-6">Are you sure you want to approve this estimate? This action cannot be undone.</p>
                 <div className="flex gap-3">
@@ -486,7 +507,7 @@ export default function PublicEstimatePage() {
           {/* Rejection Modal */}
           {showRejectModal && (
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-white border border-gray-200 max-w-md w-full p-6">
+              <div className="bg-white rounded-lg border border-gray-200 max-w-md w-full p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Reject Estimate</h3>
                 <p className="text-sm text-gray-600 mb-4">Please provide a reason for rejecting this estimate.</p>
                 <textarea

@@ -18,6 +18,20 @@ export async function POST(
     }
 
     const { id } = await params;
+    
+    // Get invoice type and template from request body
+    let body: any = {};
+    try {
+      body = await request.json();
+    } catch (e) {
+      console.error('Error parsing request body:', e);
+      // Default values if body parsing fails - this is OK, we'll use defaults
+      body = {};
+    }
+    const invoiceType: 'fast' | 'detailed' = body.invoiceType || 'detailed';
+    const template: number | undefined = body.template; // PDF template number (1 for fast, 4/5/6 for detailed)
+    
+    console.log('Conversion request - invoiceType:', invoiceType, 'template:', template);
 
     // Fetch estimate with items
     const { data: estimate, error: estimateError } = await supabaseAdmin
@@ -68,6 +82,51 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to generate public token' }, { status: 500 });
     }
 
+    // Parse estimate theme if it's a string
+    let parsedEstimateTheme: any = null;
+    if (estimate.theme) {
+      try {
+        parsedEstimateTheme = typeof estimate.theme === 'string' ? JSON.parse(estimate.theme) : estimate.theme;
+      } catch (e) {
+        console.error('Error parsing estimate theme:', e);
+        parsedEstimateTheme = null;
+      }
+    }
+
+    // Prepare theme based on invoice type and template
+    let invoiceTheme = null;
+    if (invoiceType === 'detailed' && template) {
+      // For detailed invoices, store template in theme
+      invoiceTheme = {
+        template: template, // PDF template number (4, 5, or 6)
+        primary_color: parsedEstimateTheme?.primary_color || '#5C2D91',
+        secondary_color: parsedEstimateTheme?.secondary_color || '#8B5CF6',
+        accent_color: parsedEstimateTheme?.accent_color || '#3B82F6'
+      };
+    }
+
+    // Parse payment_terms if it's a string
+    let paymentTerms = null;
+    if (invoiceType !== 'fast' && estimate.payment_terms) {
+      try {
+        paymentTerms = typeof estimate.payment_terms === 'string' ? estimate.payment_terms : JSON.stringify(estimate.payment_terms);
+      } catch (e) {
+        console.error('Error processing payment_terms:', e);
+        paymentTerms = null;
+      }
+    }
+
+    // Parse branding if it's a string
+    let branding = null;
+    if (estimate.branding) {
+      try {
+        branding = typeof estimate.branding === 'string' ? estimate.branding : JSON.stringify(estimate.branding);
+      } catch (e) {
+        console.error('Error processing branding:', e);
+        branding = null;
+      }
+    }
+
     // Create invoice from estimate
     const invoice = {
       user_id: user.id,
@@ -75,17 +134,17 @@ export async function POST(
       invoice_number: invoiceNumberData,
       public_token: publicTokenData,
       subtotal: estimate.subtotal,
-      discount: estimate.discount,
-      tax: estimate.tax,
+      discount: estimate.discount || 0,
+      tax: estimate.tax || 0,
       total: estimate.total,
       status: 'draft',
       issue_date: estimate.issue_date || new Date().toISOString().split('T')[0],
       due_date: estimate.expiry_date || null, // Use expiry date as due date
-      notes: estimate.notes || '',
-      type: 'detailed',
-      payment_terms: estimate.payment_terms,
-      theme: estimate.theme,
-      branding: estimate.branding,
+      notes: estimate.notes || null,
+      type: invoiceType, // 'fast' or 'detailed'
+      payment_terms: paymentTerms,
+      theme: invoiceType === 'fast' ? null : (invoiceTheme ? JSON.stringify(invoiceTheme) : (estimate.theme ? (typeof estimate.theme === 'string' ? estimate.theme : JSON.stringify(estimate.theme)) : null)),
+      branding: branding,
     };
 
     const { data: newInvoice, error: insertError } = await supabase
@@ -100,11 +159,19 @@ export async function POST(
     }
 
     // Create invoice items from estimate items
+    if (!estimate.estimate_items || estimate.estimate_items.length === 0) {
+      console.error('No estimate items found');
+      // Rollback invoice creation
+      await supabase.from('invoices').delete().eq('id', newInvoice.id);
+      return NextResponse.json({ error: 'Estimate has no items to convert' }, { status: 400 });
+    }
+
     const invoiceItems = estimate.estimate_items.map((item: any) => ({
       invoice_id: newInvoice.id,
-      description: item.description,
-      rate: item.rate,
-      line_total: item.line_total,
+      description: item.description || 'Item',
+      qty: item.qty || 1,
+      rate: item.rate || 0,
+      line_total: item.line_total || 0,
     }));
 
     const { error: itemsError } = await supabase
@@ -136,16 +203,27 @@ export async function POST(
       metadata: { invoice_id: newInvoice.id }
     });
 
+    // Determine template name for response
+    const templateName = invoiceType === 'fast' 
+      ? 'Fast Invoice' 
+      : template === 6 ? 'Minimal' : template === 4 ? 'Modern' : template === 5 ? 'Creative' : 'Default';
+
     return NextResponse.json({ 
       success: true, 
       invoice: {
         id: newInvoice.id,
-        invoiceNumber: newInvoice.invoice_number
+        invoiceNumber: newInvoice.invoice_number,
+        type: invoiceType,
+        template: templateName
       }
     }, { status: 200 });
   } catch (error: any) {
     console.error('Error converting estimate:', error);
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+    console.error('Error stack:', error.stack);
+    return NextResponse.json({ 
+      error: error.message || 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    }, { status: 500 });
   }
 }
 

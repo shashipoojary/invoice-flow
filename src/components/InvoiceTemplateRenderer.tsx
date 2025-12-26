@@ -28,6 +28,8 @@ interface Invoice {
   discount: number
   taxAmount: number
   total: number
+  totalPaid?: number
+  remainingBalance?: number
   lateFees: number
   totalWithLateFees: number
   status: 'draft' | 'pending' | 'paid' | 'overdue' | 'due today'
@@ -120,7 +122,8 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
       setTimeout(() => setCopiedMethod(null), 2000)
 
       // Log the copy event - only if viewer is NOT the owner
-      if (invoice.id) {
+      // CRITICAL: Do not track activities for paid invoices (privacy and legal compliance)
+      if (invoice.id && invoice.status !== 'paid') {
         try {
           // Check if the viewer is authenticated
           const { data: { session } } = await supabase.auth.getSession()
@@ -223,6 +226,27 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
         <div className="px-6 py-8 sm:px-10 sm:py-10 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row items-start justify-between mb-8 gap-6">
             <div className="flex-1 w-full sm:w-auto">
+              {/* Modern Logo Display */}
+              {invoice.freelancerSettings?.logo && (
+                <div className="mb-4">
+                  <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center">
+                    <img
+                      src={invoice.freelancerSettings.logo}
+                      alt={invoice.freelancerSettings.businessName || 'Business Logo'}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        // Fallback to business name initial if logo fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-2xl font-bold text-gray-600">${(invoice.freelancerSettings?.businessName || 'B').charAt(0).toUpperCase()}</div>`;
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
               <div className="text-lg sm:text-xl font-normal text-gray-900 mb-1" style={{ color: '#1F2937', letterSpacing: 0 }}>
                 {invoice.freelancerSettings?.businessName || 'Business'}
               </div>
@@ -261,14 +285,25 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
                 Due: {new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
               <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: primaryColor || '#0D9488', letterSpacing: '-0.5px' }}>
-                ${calculateTotal().toFixed(2)}
+                ${invoice.totalPaid && invoice.totalPaid > 0 ? (invoice.remainingBalance || invoice.total).toFixed(2) : calculateTotal().toFixed(2)}
               </div>
+              {invoice.totalPaid && invoice.totalPaid > 0 && (
+                <div className="text-xs text-gray-500 mt-1">
+                  Paid: ${invoice.totalPaid.toFixed(2)} • Remaining: ${(invoice.remainingBalance || invoice.total).toFixed(2)}
+                </div>
+              )}
               {/* Status Badge */}
-              <div className="mt-3">
+              <div className="mt-3 flex items-center justify-end sm:justify-end gap-2 flex-wrap">
                 <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium ${getStatusColor(invoice.status)}`}>
                   {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                 </div>
+                {invoice.totalPaid && invoice.totalPaid > 0 && invoice.status !== 'paid' && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100">
+                    <DollarSign className="h-4 w-4 text-blue-500" />
+                    <span>Partial Payment Received</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -656,7 +691,8 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
       setTimeout(() => setCopiedMethod(null), 2000)
 
       // Log the copy event - only if viewer is NOT the owner
-      if (invoice.id) {
+      // CRITICAL: Do not track activities for paid invoices (privacy and legal compliance)
+      if (invoice.id && invoice.status !== 'paid') {
         try {
           // Check if the viewer is authenticated
           const { data: { session } } = await supabase.auth.getSession()
@@ -732,6 +768,27 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
         <div className="px-6 py-8 sm:px-10 sm:py-10 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row items-start justify-between mb-8 gap-6">
             <div className="flex-1 w-full sm:w-auto">
+              {/* Modern Logo Display */}
+              {invoice.freelancerSettings?.logo && (
+                <div className="mb-4">
+                  <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center">
+                    <img
+                      src={invoice.freelancerSettings.logo}
+                      alt={invoice.freelancerSettings.businessName || 'Business Logo'}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        // Fallback to business name initial if logo fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-2xl font-bold" style="color: ${primaryColor || '#1F2937'}">${(invoice.freelancerSettings?.businessName || 'B').charAt(0).toUpperCase()}</div>`;
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
               <div className="text-lg sm:text-xl font-normal mb-1" style={{ color: primaryColor || '#1F2937', letterSpacing: 0 }}>
                 {invoice.freelancerSettings?.businessName || 'Business'}
               </div>
@@ -770,14 +827,27 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                 Due: {new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
               <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: primaryColor || '#FF6B35', letterSpacing: '-0.5px' }}>
-                ${invoice.isOverdue ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2)}
+                ${invoice.totalPaid && invoice.totalPaid > 0 
+                  ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + invoice.lateFees).toFixed(2) : (invoice.remainingBalance || invoice.total).toFixed(2))
+                  : (invoice.isOverdue ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2))}
               </div>
+              {invoice.totalPaid && invoice.totalPaid > 0 && (
+                <div className="text-xs text-gray-500 mt-1">
+                  Paid: ${invoice.totalPaid.toFixed(2)} • Remaining: ${(invoice.remainingBalance || invoice.total).toFixed(2)}
+                </div>
+              )}
               {/* Status Badge */}
-              <div className="mt-3">
+              <div className="mt-3 flex items-center justify-end sm:justify-end gap-2 flex-wrap">
                 <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium ${getStatusColor(invoice.status)}`}>
                   {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                 </div>
+                {invoice.totalPaid && invoice.totalPaid > 0 && invoice.status !== 'paid' && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100">
+                    <DollarSign className="h-4 w-4 text-blue-500" />
+                    <span>Partial Payment Received</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1190,7 +1260,8 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
       setTimeout(() => setCopiedMethod(null), 2000)
 
       // Log the copy event - only if viewer is NOT the owner
-      if (invoice.id) {
+      // CRITICAL: Do not track activities for paid invoices (privacy and legal compliance)
+      if (invoice.id && invoice.status !== 'paid') {
         try {
           // Check if the viewer is authenticated
           const { data: { session } } = await supabase.auth.getSession()
@@ -1266,6 +1337,27 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
         <div className="px-6 py-8 sm:px-10 sm:py-10 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row items-start justify-between mb-8 gap-6">
             <div className="flex-1 w-full sm:w-auto">
+              {/* Modern Logo Display */}
+              {invoice.freelancerSettings?.logo && (
+                <div className="mb-4">
+                  <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center">
+                    <img
+                      src={invoice.freelancerSettings.logo}
+                      alt={invoice.freelancerSettings.businessName || 'Business Logo'}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        // Fallback to business name initial if logo fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-2xl font-bold" style="color: ${primaryColor || '#1F2937'}">${(invoice.freelancerSettings?.businessName || 'B').charAt(0).toUpperCase()}</div>`;
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
               <div className="text-lg sm:text-xl font-normal mb-1" style={{ color: primaryColor || '#1F2937', letterSpacing: 0 }}>
                 {invoice.freelancerSettings?.businessName || 'Business'}
               </div>
@@ -1304,14 +1396,27 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                 Due: {new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
               <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: primaryColor || '#FF6B35', letterSpacing: '-0.5px' }}>
-                ${invoice.isOverdue ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2)}
+                ${invoice.totalPaid && invoice.totalPaid > 0 
+                  ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + invoice.lateFees).toFixed(2) : (invoice.remainingBalance || invoice.total).toFixed(2))
+                  : (invoice.isOverdue ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2))}
               </div>
+              {invoice.totalPaid && invoice.totalPaid > 0 && (
+                <div className="text-xs text-gray-500 mt-1">
+                  Paid: ${invoice.totalPaid.toFixed(2)} • Remaining: ${(invoice.remainingBalance || invoice.total).toFixed(2)}
+                </div>
+              )}
               {/* Status Badge */}
-              <div className="mt-3">
+              <div className="mt-3 flex items-center justify-end sm:justify-end gap-2 flex-wrap">
                 <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium ${getStatusColor(invoice.status)}`}>
                   {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                 </div>
+                {invoice.totalPaid && invoice.totalPaid > 0 && invoice.status !== 'paid' && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100">
+                    <DollarSign className="h-4 w-4 text-blue-500" />
+                    <span>Partial Payment Received</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1724,7 +1829,8 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
       setTimeout(() => setCopiedMethod(null), 2000)
 
       // Log the copy event - only if viewer is NOT the owner
-      if (invoice.id) {
+      // CRITICAL: Do not track activities for paid invoices (privacy and legal compliance)
+      if (invoice.id && invoice.status !== 'paid') {
         try {
           // Check if the viewer is authenticated
           const { data: { session } } = await supabase.auth.getSession()
@@ -1800,6 +1906,27 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
         <div className="px-6 py-8 sm:px-10 sm:py-10 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row items-start justify-between mb-8 gap-6">
             <div className="flex-1 w-full sm:w-auto">
+              {/* Modern Logo Display */}
+              {invoice.freelancerSettings?.logo && (
+                <div className="mb-4">
+                  <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center">
+                    <img
+                      src={invoice.freelancerSettings.logo}
+                      alt={invoice.freelancerSettings.businessName || 'Business Logo'}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        // Fallback to business name initial if logo fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-2xl font-bold" style="color: ${primaryColor || '#1F2937'}">${(invoice.freelancerSettings?.businessName || 'B').charAt(0).toUpperCase()}</div>`;
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
               <div className="text-lg sm:text-xl font-normal mb-1" style={{ color: primaryColor || '#1F2937', letterSpacing: 0 }}>
                 {invoice.freelancerSettings?.businessName || 'Business'}
               </div>
@@ -1838,14 +1965,27 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                 Due: {new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
               <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: primaryColor || '#FF6B35', letterSpacing: '-0.5px' }}>
-                ${invoice.isOverdue ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2)}
+                ${invoice.totalPaid && invoice.totalPaid > 0 
+                  ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + invoice.lateFees).toFixed(2) : (invoice.remainingBalance || invoice.total).toFixed(2))
+                  : (invoice.isOverdue ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2))}
               </div>
+              {invoice.totalPaid && invoice.totalPaid > 0 && (
+                <div className="text-xs text-gray-500 mt-1">
+                  Paid: ${invoice.totalPaid.toFixed(2)} • Remaining: ${(invoice.remainingBalance || invoice.total).toFixed(2)}
+                </div>
+              )}
               {/* Status Badge */}
-              <div className="mt-3">
+              <div className="mt-3 flex items-center justify-end sm:justify-end gap-2 flex-wrap">
                 <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium ${getStatusColor(invoice.status)}`}>
                   {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                 </div>
+                {invoice.totalPaid && invoice.totalPaid > 0 && invoice.status !== 'paid' && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100">
+                    <DollarSign className="h-4 w-4 text-blue-500" />
+                    <span>Partial Payment Received</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

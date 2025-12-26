@@ -6,7 +6,7 @@ import {
   FileText, Users, 
   Clock, CheckCircle, AlertCircle, AlertTriangle, UserPlus, FilePlus, Sparkles, Receipt, Timer,
   Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2, ArrowRight, ChevronDown, ChevronUp,
-  ArrowUp, ArrowDown, ClipboardCheck
+  ArrowUp, ArrowDown, ClipboardCheck, Copy
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -50,12 +50,14 @@ export default function DashboardOverview() {
   const { user, loading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError, showWarning } = useToast();
   const { settings } = useSettings();
-  const { invoices, clients, isLoadingInvoices, isLoadingClients, hasInitiallyLoaded, updateInvoice, deleteInvoice, refreshInvoices } = useData();
+  const { invoices, clients, isLoadingInvoices, isLoadingClients, hasInitiallyLoaded, addInvoice, updateInvoice, deleteInvoice, refreshInvoices } = useData();
   const router = useRouter();
   
   // Local state for UI
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [paymentDataMap, setPaymentDataMap] = useState<Record<string, { totalPaid: number; remainingBalance: number }>>({});
+  const [invoicesWithPartialPayments, setInvoicesWithPartialPayments] = useState<Set<string>>(new Set());
   const [showFastInvoice, setShowFastInvoice] = useState(false);
   const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   const [showCreateClient, setShowCreateClient] = useState(false);
@@ -93,6 +95,113 @@ export default function DashboardOverview() {
   
   // Business settings are now managed by SettingsContext
 
+  // Extract payment data from invoices immediately - now instant since it's direct properties
+  useEffect(() => {
+    if (!invoices || invoices.length === 0) {
+      setPaymentDataMap({});
+      setInvoicesWithPartialPayments(new Set());
+      return;
+    }
+
+    // Payment data is now direct properties on invoice objects (totalPaid, remainingBalance)
+    const payments: Record<string, { totalPaid: number; remainingBalance: number }> = {};
+    const partialSet = new Set<string>();
+    
+    invoices.forEach((invoice: any) => {
+      // Direct property access - no extraction needed
+      const totalPaid = invoice.totalPaid || 0;
+      const remainingBalance = invoice.remainingBalance || 0;
+      
+      if (totalPaid > 0 || remainingBalance !== invoice.total) {
+        payments[invoice.id] = { totalPaid, remainingBalance };
+      }
+      
+      if (totalPaid > 0 && remainingBalance > 0) {
+        partialSet.add(invoice.id);
+      }
+    });
+
+    setPaymentDataMap(payments);
+    setInvoicesWithPartialPayments(partialSet);
+  }, [invoices]);
+
+  // Fallback: Fetch payment data if not received from initial load
+  useEffect(() => {
+    let isMounted = true;
+    let fetchTimeout: NodeJS.Timeout | null = null;
+    
+    const fetchBulkPayments = async () => {
+      // Only fetch if we don't already have payment data
+      if (Object.keys(paymentDataMap).length > 0) {
+        return;
+      }
+      
+      // Wait for invoices to be available
+      if (!invoices || invoices.length === 0) {
+        return;
+      }
+      
+      // Only fetch for sent/pending invoices
+      const eligibleInvoices = invoices.filter(
+        inv => (inv.status === 'sent' || inv.status === 'pending') && inv.id
+      );
+      
+      if (eligibleInvoices.length === 0) {
+        if (isMounted) {
+          setPaymentDataMap({});
+          setInvoicesWithPartialPayments(new Set());
+        }
+        return;
+      }
+      
+      try {
+        const headers = await getAuthHeaders();
+        const response = await fetch('/api/invoices/payments/bulk', {
+          method: 'POST',
+          headers: {
+            ...headers,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            invoiceIds: eligibleInvoices.map(inv => inv.id)
+          }),
+          cache: 'no-store'
+        });
+        
+        if (response.ok && isMounted) {
+          const data = await response.json();
+          const payments = data.payments || {};
+          setPaymentDataMap(payments);
+          
+          // Update partial payments set
+          const partialSet = new Set<string>();
+          Object.keys(payments).forEach(invoiceId => {
+            if (payments[invoiceId].totalPaid > 0 && payments[invoiceId].remainingBalance > 0) {
+              partialSet.add(invoiceId);
+            }
+          });
+          setInvoicesWithPartialPayments(partialSet);
+        }
+      } catch (error) {
+        console.error('Error fetching bulk payments:', error);
+        // Silently fail - payment data is optional
+      }
+    };
+    
+    // Only fetch if payment data wasn't received from initial load
+    if (invoices && invoices.length > 0 && Object.keys(paymentDataMap).length === 0) {
+      fetchTimeout = setTimeout(() => {
+        fetchBulkPayments();
+      }, 100);
+    }
+    
+    return () => {
+      isMounted = false;
+      if (fetchTimeout) {
+        clearTimeout(fetchTimeout);
+      }
+    };
+  }, [invoices, isLoadingInvoices, getAuthHeaders, paymentDataMap]);
 
   // Create invoice handler
   const handleCreateInvoice = useCallback(() => {
@@ -232,14 +341,17 @@ export default function DashboardOverview() {
   }, []);
 
   // Helper function to calculate due charges and total payable
-  const calculateDueCharges = useCallback((invoice: Invoice) => {
+  const calculateDueCharges = useCallback((invoice: Invoice, paymentData?: { totalPaid: number; remainingBalance: number } | null) => {
     // Only calculate late fees for pending/sent invoices that are overdue
     if (invoice.status !== 'pending' && invoice.status !== 'sent') {
       return {
         hasLateFees: false,
         lateFeeAmount: 0,
         totalPayable: invoice.total,
-        overdueDays: 0
+        overdueDays: 0,
+        totalPaid: paymentData?.totalPaid || 0,
+        remainingBalance: paymentData?.remainingBalance || invoice.total,
+        isPartiallyPaid: (paymentData?.totalPaid || 0) > 0 && (paymentData?.remainingBalance || invoice.total) > 0
       };
     }
 
@@ -255,6 +367,9 @@ export default function DashboardOverview() {
     const diffTime = todayStart.getTime() - dueDateStart.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
+    // Calculate base amount (considering partial payments)
+    const baseAmount = paymentData ? paymentData.remainingBalance : invoice.total;
+    
     // Only calculate late fees if invoice is overdue and late fees are enabled
     if (diffDays > 0 && invoice.lateFees?.enabled) {
       const overdueDays = diffDays;
@@ -267,15 +382,19 @@ export default function DashboardOverview() {
         if (invoice.lateFees.type === 'fixed') {
           lateFeeAmount = invoice.lateFees.amount;
         } else if (invoice.lateFees.type === 'percentage') {
-          lateFeeAmount = (invoice.total * invoice.lateFees.amount) / 100;
+          // Calculate late fee on the remaining balance (after partial payments)
+          lateFeeAmount = (baseAmount * invoice.lateFees.amount) / 100;
         }
         
-        const totalPayable = invoice.total + lateFeeAmount;
+        const totalPayable = baseAmount + lateFeeAmount;
         return {
           hasLateFees: true,
           lateFeeAmount,
           totalPayable,
-          overdueDays: chargeableDays
+          overdueDays: chargeableDays,
+          totalPaid: paymentData?.totalPaid || 0,
+          remainingBalance: totalPayable,
+          isPartiallyPaid: (paymentData?.totalPaid || 0) > 0 && totalPayable > 0
         };
       }
     }
@@ -283,8 +402,11 @@ export default function DashboardOverview() {
     return {
       hasLateFees: false,
       lateFeeAmount: 0,
-      totalPayable: invoice.total,
-      overdueDays: 0
+      totalPayable: baseAmount,
+      overdueDays: 0,
+      totalPaid: paymentData?.totalPaid || 0,
+      remainingBalance: baseAmount,
+      isPartiallyPaid: (paymentData?.totalPaid || 0) > 0 && baseAmount > 0 && baseAmount < invoice.total
     };
   }, [parseDateOnly]);
 
@@ -467,6 +589,64 @@ export default function DashboardOverview() {
     }
   }, [getAuthHeaders, showSuccess, showError]);
 
+  const handleDuplicateInvoice = useCallback((invoice: Invoice) => {
+    setConfirmationModal({
+      isOpen: true,
+      title: 'Duplicate Invoice',
+      message: `Are you sure you want to duplicate invoice ${invoice.invoiceNumber}? This will create a new draft invoice with the same details that you can edit.`,
+      type: 'info',
+      onConfirm: () => performDuplicateInvoice(invoice),
+      isLoading: false
+    });
+  }, []);
+
+  const performDuplicateInvoice = useCallback(async (invoice: Invoice) => {
+    const actionKey = `duplicate-${invoice.id}`;
+    setLoadingActions(prev => ({ ...prev, [actionKey]: true }));
+    setConfirmationModal(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/invoices/duplicate', {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ invoiceId: invoice.id }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.invoice) {
+          // Add new invoice to global state
+          addInvoice(result.invoice);
+          // Refresh invoices list
+          await refreshInvoices();
+          showSuccess('Invoice Duplicated', `Invoice ${result.invoice.invoiceNumber} has been created. You can now edit it.`);
+          setConfirmationModal(prev => ({ ...prev, isOpen: false, isLoading: false }));
+          // Open the duplicated invoice for editing
+          setSelectedInvoice(result.invoice);
+          if (result.invoice.type === 'fast') {
+            setShowFastInvoice(true);
+          } else {
+            setShowCreateInvoice(true);
+          }
+        }
+      } else {
+        const error = await response.json();
+        showError('Duplicate Failed', error.error || 'Failed to duplicate invoice. Please try again.');
+        setConfirmationModal(prev => ({ ...prev, isLoading: false }));
+      }
+    } catch (error) {
+      console.error('Error duplicating invoice:', error);
+      showError('Duplicate Failed', 'Failed to duplicate invoice. Please try again.');
+      setConfirmationModal(prev => ({ ...prev, isLoading: false }));
+    } finally {
+      setLoadingActions(prev => ({ ...prev, [actionKey]: false }));
+    }
+  }, [getAuthHeaders, showSuccess, showError, addInvoice, refreshInvoices]);
+
   const handleDeleteInvoice = useCallback((invoice: Invoice) => {
     setConfirmationModal({
       isOpen: true,
@@ -505,7 +685,7 @@ export default function DashboardOverview() {
   }, [getAuthHeaders, showSuccess, showError]);
 
   // Modern Invoice Card Component - Responsive Design
-  const ModernInvoiceCard = ({ invoice, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, handleDeleteInvoice, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions }: {
+  const ModernInvoiceCard = ({ invoice, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, handleDeleteInvoice, handleDuplicateInvoice, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions, paymentData }: {
     invoice: Invoice;
     handleViewInvoice: (invoice: Invoice) => void;
     handleDownloadPDF: (invoice: Invoice) => void;
@@ -513,17 +693,19 @@ export default function DashboardOverview() {
     handleEditInvoice: (invoice: Invoice) => void;
     handleMarkAsPaid: (invoice: Invoice) => void;
     handleDeleteInvoice: (invoice: Invoice) => void;
+    handleDuplicateInvoice: (invoice: Invoice) => void;
     getStatusIcon: (status: string) => React.ReactElement;
     getStatusColor: (status: string) => string;
     getDueDateStatus: (dueDate: string, invoiceStatus: string, paymentTerms?: { enabled: boolean; terms: string }, updatedAt?: string) => { status: string; days: number; color: string };
     formatPaymentTerms: (paymentTerms?: { enabled: boolean; terms: string }) => string | null;
     formatLateFees: (lateFees?: { enabled: boolean; type: 'fixed' | 'percentage'; amount: number; gracePeriod: number }) => string | null;
     formatReminders: (reminders?: { enabled: boolean; useSystemDefaults: boolean; rules?: Array<{ enabled: boolean }>; customRules?: Array<{ enabled: boolean }> }) => string | null;
-    calculateDueCharges: (invoice: Invoice) => { hasLateFees: boolean; lateFeeAmount: number; totalPayable: number; overdueDays: number };
+    calculateDueCharges: (invoice: Invoice, paymentData?: { totalPaid: number; remainingBalance: number } | null) => { hasLateFees: boolean; lateFeeAmount: number; totalPayable: number; overdueDays: number; totalPaid: number; remainingBalance: number; isPartiallyPaid: boolean };
     loadingActions: { [key: string]: boolean };
+    paymentData?: { totalPaid: number; remainingBalance: number } | null;
   }) => {
     const dueDateStatus = getDueDateStatus(invoice.dueDate, invoice.status, invoice.paymentTerms, (invoice as any).updatedAt);
-    const dueCharges = calculateDueCharges(invoice);
+    const dueCharges = calculateDueCharges(invoice, paymentData);
     
     return (
       <div className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
@@ -726,6 +908,18 @@ export default function DashboardOverview() {
                     <Download className="h-4 w-4 text-gray-600" />
                   )}
                 </button>
+                <button
+                  onClick={() => handleDuplicateInvoice(invoice)}
+                  disabled={loadingActions[`duplicate-${invoice.id}`]}
+                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`duplicate-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  title="Duplicate"
+                >
+                  {loadingActions[`duplicate-${invoice.id}`] ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  ) : (
+                    <Copy className="h-4 w-4 text-gray-600" />
+                  )}
+                </button>
                 {invoice.status === 'draft' && (
                   <button 
                     onClick={() => handleSendInvoice(invoice)}
@@ -763,7 +957,7 @@ export default function DashboardOverview() {
   };
 
   // Memoized Invoice Card Component - optimized with React.memo
-  const InvoiceCard = React.memo(({ invoice, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, handleDeleteInvoice, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions }: {
+  const InvoiceCard = React.memo(({ invoice, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, handleDeleteInvoice, handleDuplicateInvoice, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions, paymentData }: {
     invoice: Invoice;
     handleViewInvoice: (invoice: Invoice) => void;
     handleDownloadPDF: (invoice: Invoice) => void;
@@ -771,17 +965,19 @@ export default function DashboardOverview() {
     handleEditInvoice: (invoice: Invoice) => void;
     handleMarkAsPaid: (invoice: Invoice) => void;
     handleDeleteInvoice: (invoice: Invoice) => void;
+    handleDuplicateInvoice: (invoice: Invoice) => void;
     getStatusIcon: (status: string) => React.ReactElement;
     getStatusColor: (status: string) => string;
     getDueDateStatus: (dueDate: string, invoiceStatus: string, paymentTerms?: { enabled: boolean; terms: string }, updatedAt?: string) => { status: string; days: number; color: string };
     formatPaymentTerms: (paymentTerms?: { enabled: boolean; terms: string }) => string | null;
     formatLateFees: (lateFees?: { enabled: boolean; type: 'fixed' | 'percentage'; amount: number; gracePeriod: number }) => string | null;
     formatReminders: (reminders?: { enabled: boolean; useSystemDefaults: boolean; rules?: Array<{ enabled: boolean }>; customRules?: Array<{ enabled: boolean }> }) => string | null;
-    calculateDueCharges: (invoice: Invoice) => { hasLateFees: boolean; lateFeeAmount: number; totalPayable: number; overdueDays: number };
+    calculateDueCharges: (invoice: Invoice, paymentData?: { totalPaid: number; remainingBalance: number } | null) => { hasLateFees: boolean; lateFeeAmount: number; totalPayable: number; overdueDays: number; totalPaid: number; remainingBalance: number; isPartiallyPaid: boolean };
     loadingActions: { [key: string]: boolean };
+    paymentData?: { totalPaid: number; remainingBalance: number } | null;
   }) => {
     const dueDateStatus = getDueDateStatus(invoice.dueDate, invoice.status, invoice.paymentTerms, (invoice as any).updatedAt);
-    const dueCharges = calculateDueCharges(invoice);
+    const dueCharges = calculateDueCharges(invoice, paymentData);
     
     
     // Show enhanced features for all invoice statuses
@@ -818,9 +1014,14 @@ export default function DashboardOverview() {
                 dueDateStatus.status === 'overdue' ? 'text-red-600' :
                 'text-gray-800'
               }`}>
-                ${dueCharges.totalPayable.toLocaleString()}
+                ${dueCharges.totalPayable.toFixed(2)}
                   </div>
-                {dueCharges.hasLateFees ? (
+                {dueCharges.isPartiallyPaid ? (
+                  <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                    Paid: ${dueCharges.totalPaid.toFixed(2)} • Remaining: ${dueCharges.remainingBalance.toFixed(2)}
+                    {dueCharges.hasLateFees && ` • Late fee: ${dueCharges.lateFeeAmount.toFixed(2)}`}
+                  </div>
+                ) : dueCharges.hasLateFees ? (
                   <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
                     Base ${invoice.total.toLocaleString()} • Late fee ${dueCharges.lateFeeAmount.toLocaleString()}
                   </div>
@@ -847,6 +1048,12 @@ export default function DashboardOverview() {
                 {getStatusIcon(invoice.status)}
                 <span className="capitalize">{invoice.status}</span>
               </span>
+              {dueCharges.isPartiallyPaid && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
+                  <DollarSign className="h-3 w-3" />
+                  <span>Partial Payment</span>
+                </span>
+              )}
               {(invoice.status === 'pending' || invoice.status === 'sent') && dueDateStatus.status === 'overdue' && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border bg-red-50 text-red-800 border-red-300">
                   <AlertTriangle className="h-3 w-3" />
@@ -890,9 +1097,14 @@ export default function DashboardOverview() {
                   dueDateStatus.status === 'overdue' ? 'text-red-600' :
                   'text-gray-700'
             }`}>
-              ${dueCharges.totalPayable.toLocaleString()}
+              ${dueCharges.totalPayable.toFixed(2)}
                 </div>
-              {dueCharges.hasLateFees ? (
+              {dueCharges.isPartiallyPaid ? (
+                <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                  Paid: ${dueCharges.totalPaid.toFixed(2)} • Remaining: ${dueCharges.remainingBalance.toFixed(2)}
+                  {dueCharges.hasLateFees && ` • Late fee: ${dueCharges.lateFeeAmount.toFixed(2)}`}
+            </div>
+              ) : dueCharges.hasLateFees ? (
                 <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
                   Base ${invoice.total.toLocaleString()} • Late fee ${dueCharges.lateFeeAmount.toLocaleString()}
             </div>
@@ -911,7 +1123,13 @@ export default function DashboardOverview() {
               >
                 {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status}</span>
-                  </span>
+              </span>
+              {dueCharges.isPartiallyPaid && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
+                  <DollarSign className="h-3 w-3" />
+                  <span>Partial Payment</span>
+                </span>
+              )}
                 <span className={`px-2 py-0.5 text-xs font-medium rounded-full border`}
                   style={((invoice.type || 'detailed') === 'fast' 
                     ? { backgroundColor: '#dbeafe', color: '#1e40af', borderColor: '#bfdbfe' }
@@ -940,7 +1158,7 @@ export default function DashboardOverview() {
             <Eye className="h-3.5 w-3.5" />
             <span>View</span>
           </button>
-          <button 
+          <button
             onClick={() => handleDownloadPDF(invoice)}
             disabled={loadingActions[`pdf-${invoice.id}`]}
             className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
@@ -951,6 +1169,18 @@ export default function DashboardOverview() {
               <Download className="h-3.5 w-3.5" />
             )}
             <span>PDF</span>
+          </button>
+          <button
+            onClick={() => handleDuplicateInvoice(invoice)}
+            disabled={loadingActions[`duplicate-${invoice.id}`]}
+            className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-gray-50 text-gray-800 hover:bg-gray-100 border border-gray-300 ${loadingActions[`duplicate-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+          >
+            {loadingActions[`duplicate-${invoice.id}`] ? (
+              <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></div>
+            ) : (
+              <Copy className="h-3.5 w-3.5" />
+            )}
+            <span>Duplicate</span>
           </button>
           {invoice.status === 'draft' && (
             <button 
@@ -1108,7 +1338,7 @@ export default function DashboardOverview() {
       
       // Total payable and overdue count (pending/sent invoices only)
       if (status === 'pending' || status === 'sent') {
-      const charges = calculateDueCharges(invoice);
+      const charges = calculateDueCharges(invoice, paymentDataMap[invoice.id] || null);
         totalPayableAmount += charges.totalPayable;
         totalLateFees += charges.lateFeeAmount;
         
@@ -1133,7 +1363,7 @@ export default function DashboardOverview() {
       overdueCount,
       totalLateFees
     };
-  }, [invoices, calculateDueCharges, parseDateOnly]);
+  }, [invoices, calculateDueCharges, parseDateOnly, paymentDataMap]);
   
   // Extract individual values for easier access
   const { recentInvoices, totalRevenue, totalPayableAmount, overdueCount, totalLateFees } = dashboardStats;
@@ -1403,19 +1633,19 @@ export default function DashboardOverview() {
 
 
             {/* Quick Actions - Modern Design */}
-            <div className="mt-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="font-heading text-2xl font-semibold" style={{color: '#1f2937'}}>
+            <div className="mt-6 sm:mt-8">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
                 Quick Actions
               </h2>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
                 {/* 60-Second Invoice */}
                 <button
                   onClick={() => setShowFastInvoice(true)}
-                  className="group relative p-2.5 sm:p-3 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-green-200 hover:bg-green-50/30 cursor-pointer"
+                  className="group relative p-2 sm:p-3 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-green-200 hover:bg-green-50/30 cursor-pointer"
                 >
-                  <div className="flex flex-col items-center space-y-2">
+                  <div className="flex flex-col items-center space-y-1.5 sm:space-y-2">
                     <div className="p-1.5 rounded-lg bg-green-50">
                       <Sparkles className="h-4 w-4 text-green-700" />
                     </div>
@@ -1433,9 +1663,9 @@ export default function DashboardOverview() {
                 {/* Detailed Invoice */}
                 <button
                   onClick={() => setShowCreateInvoice(true)}
-                  className="group relative p-2.5 sm:p-3 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-blue-200 hover:bg-blue-50/30 cursor-pointer"
+                  className="group relative p-2 sm:p-3 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-blue-200 hover:bg-blue-50/30 cursor-pointer"
                 >
-                  <div className="flex flex-col items-center space-y-2">
+                  <div className="flex flex-col items-center space-y-1.5 sm:space-y-2">
                     <div className="p-1.5 rounded-lg bg-blue-50">
                       <FilePlus className="h-4 w-4 text-blue-600" />
                     </div>
@@ -1453,9 +1683,9 @@ export default function DashboardOverview() {
                 {/* Create Estimate */}
                 <button
                   onClick={() => setShowCreateEstimate(true)}
-                  className="group relative p-2.5 sm:p-3 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-teal-200 hover:bg-teal-50/30 cursor-pointer"
+                  className="group relative p-2 sm:p-3 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-teal-200 hover:bg-teal-50/30 cursor-pointer"
                 >
-                  <div className="flex flex-col items-center space-y-2">
+                  <div className="flex flex-col items-center space-y-1.5 sm:space-y-2">
                     <div className="p-1.5 rounded-lg bg-teal-50">
                       <ClipboardCheck className="h-4 w-4 text-teal-600" />
                     </div>
@@ -1473,9 +1703,9 @@ export default function DashboardOverview() {
                 {/* Add Client */}
                 <button
                   onClick={() => setShowCreateClient(true)}
-                  className="group relative p-2.5 sm:p-3 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-purple-200 hover:bg-purple-50/30 cursor-pointer"
+                  className="group relative p-2 sm:p-3 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-purple-200 hover:bg-purple-50/30 cursor-pointer"
                 >
-                  <div className="flex flex-col items-center space-y-2">
+                  <div className="flex flex-col items-center space-y-1.5 sm:space-y-2">
                     <div className="p-1.5 rounded-lg bg-purple-50">
                       <UserPlus className="h-4 w-4 text-purple-600" />
                     </div>
@@ -1494,9 +1724,9 @@ export default function DashboardOverview() {
             </div>
 
             {/* Recent Invoices - Modern Design */}
-            <div className="mt-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="font-heading text-2xl font-semibold" style={{color: '#1f2937'}}>
+            <div className="mt-6 sm:mt-8">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
                 Recent Invoices
               </h2>
                 <button
@@ -1509,19 +1739,28 @@ export default function DashboardOverview() {
               </div>
               
               {(isLoadingInvoices || !hasInitiallyLoaded) ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="rounded-xl p-4 bg-white border border-gray-200">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
                       <div className="animate-pulse">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center space-x-3">
                             <div className="w-10 h-10 bg-gray-300 rounded-lg"></div>
-                            <div className="space-y-2">
-                              <div className="h-4 bg-gray-300 rounded w-32"></div>
+                            <div>
+                              <div className="h-4 bg-gray-300 rounded w-32 mb-2"></div>
                               <div className="h-3 bg-gray-300 rounded w-24"></div>
                             </div>
                           </div>
+                          <div className="h-6 bg-gray-300 rounded w-16"></div>
+                        </div>
+                        <div className="h-3 bg-gray-300 rounded w-full mb-2"></div>
+                        <div className="h-3 bg-gray-300 rounded w-3/4"></div>
+                        <div className="flex items-center justify-between mt-4">
                           <div className="h-6 bg-gray-300 rounded w-20"></div>
+                          <div className="flex space-x-2">
+                            <div className="h-8 w-8 bg-gray-300 rounded"></div>
+                            <div className="h-8 w-8 bg-gray-300 rounded"></div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1564,6 +1803,8 @@ export default function DashboardOverview() {
                       onMarkPaid={handleMarkAsPaid}
                       onEdit={handleEditInvoice}
                       onDelete={handleDeleteInvoice}
+                      onDuplicate={handleDuplicateInvoice}
+                      paymentData={paymentDataMap[invoice.id] || null}
                     />
                   ))}
                 </div>
@@ -1581,7 +1822,7 @@ export default function DashboardOverview() {
       {/* Invoice Type Selection Modal */}
       {showInvoiceTypeSelection && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="text-center mb-6">
               <h3 className="font-heading text-xl font-semibold mb-2" style={{color: '#1f2937'}}>
                 Choose Invoice Type
@@ -1758,7 +1999,7 @@ export default function DashboardOverview() {
        {/* View Invoice Modal */}
        {showViewInvoice && selectedInvoice && (
          <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
-           <div className="rounded-xl sm:rounded-2xl p-2 sm:p-4 max-w-6xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-hidden bg-white border-gray-200 flex flex-col">
+           <div className="rounded-lg sm:rounded-lg p-2 sm:p-4 max-w-6xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-hidden bg-white border-gray-200 flex flex-col">
              <div className="flex items-center justify-between mb-3 sm:mb-4 flex-shrink-0">
                <div className="flex items-center gap-3">
                  <h2 className="text-base sm:text-xl font-bold" style={{color: '#1f2937'}}>Invoice Details</h2>

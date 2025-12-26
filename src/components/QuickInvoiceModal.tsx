@@ -219,6 +219,7 @@ export default function QuickInvoiceModal({
   const [shouldSend, setShouldSend] = useState(false)
   const [pdfLoading, setPdfLoading] = useState(false)
   const [discount, setDiscount] = useState('')
+  const [markAsPaid, setMarkAsPaid] = useState(false)
   
   // Reminder settings
   const [reminders, setReminders] = useState<ReminderSettings>({
@@ -406,6 +407,7 @@ export default function QuickInvoiceModal({
           address: ''
         })
         setDiscount('')
+        setMarkAsPaid(false)
         setNotes('Thank you for your business!')
         setItems([{
           id: Date.now().toString(),
@@ -569,7 +571,7 @@ export default function QuickInvoiceModal({
         type: 'detailed',
         invoice_number: invoiceNumber || undefined,
         issue_date: issueDate || undefined,
-        status: isEditing ? editingInvoice?.status : 'sent', // Keep existing status when editing
+        status: isEditing ? editingInvoice?.status : (markAsPaid ? 'paid' : 'draft'), // Allow marking as paid during creation
         // Enhanced features
         payment_terms: paymentTerms.enabled ? {
           enabled: true,
@@ -727,6 +729,11 @@ export default function QuickInvoiceModal({
       const isEditing = editingInvoice && editingInvoice.id
       const endpoint = isEditing ? '/api/invoices/update' : '/api/invoices/create'
       const method = isEditing ? 'PUT' : 'POST'
+      
+      // Add status to payload
+      if (!isEditing) {
+        (payload as any).status = markAsPaid ? 'paid' : 'draft'
+      }
       
       // Add invoice ID to payload if editing
       if (isEditing) {
@@ -1010,7 +1017,7 @@ export default function QuickInvoiceModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className={`rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden overflow-y-auto scroll-smooth ${
+      <div className={`rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden overflow-y-auto scroll-smooth ${
         isDarkMode 
           ? 'bg-gray-900' 
           : 'bg-white'
@@ -1349,6 +1356,30 @@ export default function QuickInvoiceModal({
                     </p>
                   )}
                 </div>
+              </div>
+
+              {/* Mark as Paid Option */}
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+                <label className="flex items-center space-x-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={markAsPaid}
+                    onChange={(e) => setMarkAsPaid(e.target.checked)}
+                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                  />
+                  <div className="flex-1">
+                    <span className={`text-sm font-medium ${
+                      isDarkMode ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      Mark as Paid
+                    </span>
+                    <p className={`text-xs mt-0.5 ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      Use this if payment was already received. You can still send the invoice to the client.
+                    </p>
+                  </div>
+                </label>
               </div>
 
               <div className="flex justify-end">

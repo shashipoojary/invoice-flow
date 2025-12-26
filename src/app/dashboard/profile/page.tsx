@@ -821,7 +821,7 @@ export default function ProfilePage() {
       {/* Password Change Modal */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-heading text-lg font-semibold" style={{color: '#1f2937'}}>
                 Change Password
@@ -932,7 +932,7 @@ export default function ProfilePage() {
       {/* Delete Progress Modal */}
       {showDeleteProgressModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="flex items-center space-x-3 mb-4">
               <div className="flex-shrink-0">
                 <RotateCcw className="w-6 h-6 text-orange-600" />
@@ -991,7 +991,7 @@ export default function ProfilePage() {
       {/* Delete Account Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="flex items-center space-x-3 mb-4">
               <div className="flex-shrink-0">
                 <AlertTriangle className="w-6 h-6 text-red-600" />
@@ -1050,7 +1050,7 @@ export default function ProfilePage() {
       {/* Subscription Modal */}
       {showSubscriptionModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-xl border border-gray-200 max-w-4xl w-full shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="bg-white rounded-lg border border-gray-200 max-w-4xl w-full shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">
               <div className="flex-1 min-w-0 pr-2">
@@ -1322,7 +1322,7 @@ export default function ProfilePage() {
       {/* Format Selection Modal */}
       {showFormatModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-heading text-lg font-semibold" style={{color: '#1f2937'}}>
                 Choose Export Format
@@ -1430,7 +1430,7 @@ export default function ProfilePage() {
       {/* Export Data Modal */}
       {showExportModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-heading text-lg font-semibold" style={{color: '#1f2937'}}>
                 Export Data
@@ -1510,7 +1510,7 @@ export default function ProfilePage() {
       {/* Invoice Type Selection Modal */}
       {showInvoiceTypeSelection && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="text-center mb-6">
               <h3 className="font-heading text-xl font-semibold mb-2" style={{color: '#1f2937'}}>
                 Choose Invoice Type

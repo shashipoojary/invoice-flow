@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Send, Edit, X, AlertTriangle, Calendar } from 'lucide-react';
+import { Send, Edit, X, FileText, AlertCircle } from 'lucide-react';
 import type { Invoice } from '@/types';
 
 interface SendInvoiceModalProps {
@@ -174,7 +174,7 @@ const SendInvoiceModal: React.FC<SendInvoiceModalProps> = ({
       />
       
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-200 max-w-md w-full mx-4 transform transition-all duration-300 scale-100 overflow-hidden">
+      <div className="relative bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full mx-4 transform transition-all duration-300 scale-100 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
@@ -204,29 +204,33 @@ const SendInvoiceModal: React.FC<SendInvoiceModalProps> = ({
           {(warnings.isOverdue || warnings.passedReminders.length > 0) && (
             <div className="space-y-3 pt-2 border-t border-gray-200">
               {warnings.isOverdue && (
-                <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-amber-900">
-                      Due Date Has Passed
-                    </p>
-                    <p className="text-xs text-amber-700 mt-1">
-                      This invoice is {warnings.overdueDays} day{warnings.overdueDays !== 1 ? 's' : ''} overdue. Consider updating the due date before sending.
-                    </p>
+                <div className="px-4 py-3 bg-amber-50 border-l-4 border-amber-500">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-900">
+                        Due Date Has Passed
+                      </p>
+                      <p className="text-xs text-amber-700 mt-0.5">
+                        This invoice is {warnings.overdueDays} day{warnings.overdueDays !== 1 ? 's' : ''} overdue. Consider updating the due date before sending.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
 
               {warnings.passedReminders.length > 0 && (
-                <div className="flex items-start gap-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                  <Calendar className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-orange-900">
-                      Reminder Dates Have Passed
-                    </p>
-                    <p className="text-xs text-orange-700 mt-1">
-                      {warnings.passedReminders.length} scheduled reminder{warnings.passedReminders.length !== 1 ? 's' : ''} {warnings.passedReminders.length === 1 ? 'date has' : 'dates have'} already passed. Reminders will be rescheduled based on the current date when sent.
-                    </p>
+                <div className="px-4 py-3 bg-indigo-50 border-l-4 border-indigo-500">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-indigo-600 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-indigo-900">
+                        Reminder Dates Have Passed
+                      </p>
+                      <p className="text-xs text-indigo-700 mt-0.5">
+                        {warnings.passedReminders.length} scheduled reminder{warnings.passedReminders.length !== 1 ? 's' : ''} {warnings.passedReminders.length === 1 ? 'date has' : 'dates have'} already passed. Reminders will be rescheduled based on the current date when sent.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}

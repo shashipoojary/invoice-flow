@@ -1954,14 +1954,14 @@ export function generateOriginalFastInvoiceEmailTemplate(
               padding: 24px 20px 20px;
             }
             .invoice-details {
-              padding: 16px;
+            padding: 16px;
             }
             .cta-button {
               display: block;
               width: 100%;
               box-sizing: border-box;
-            }
-            .footer {
+          }
+          .footer {
               padding: 20px;
             }
           }
@@ -2044,14 +2044,24 @@ export function generateEstimateApprovalEmailTemplate(
         <![endif]-->
         <style type="text/css">
           @media only screen and (max-width: 600px) {
-            .email-container {width: 100% !important; max-width: 100% !important;}
-            .header-padding {padding: 32px 24px 24px 24px !important;}
-            .content-padding {padding: 24px !important;}
-            .footer-padding {padding: 20px 24px !important;}
-            .button-link {display: block !important; width: 100% !important; text-align: center !important; padding: 14px 24px !important;}
-            .status-banner {padding: 12px 16px !important; margin: 20px 0 !important;}
-            .status-banner-label {font-size: 11px !important;}
-            .status-banner-value {font-size: 15px !important;}
+            .email-container {width: 100% !important; max-width: 100% !important; border: none !important;}
+            .outer-padding {padding: 0 !important;}
+            .header-padding {padding: 24px 20px 20px 20px !important;}
+            .content-padding {padding: 20px !important;}
+            .footer-padding {padding: 20px !important;}
+            .button-wrapper {width: 100% !important; padding: 0 !important; margin-top: 24px !important;}
+            .button-wrapper td {width: 100% !important; padding: 0 !important; text-align: center !important;}
+            .button-link {display: block !important; width: 100% !important; max-width: 100% !important; text-align: center !important; padding: 14px 20px !important; margin: 0 auto !important; box-sizing: border-box !important;}
+            .status-banner {width: 100% !important; padding: 14px 16px !important; margin: 20px 0 !important; box-sizing: border-box !important;}
+            .status-banner td {width: 100% !important; padding: 14px 16px !important; box-sizing: border-box !important;}
+            .status-banner-label {font-size: 11px !important; line-height: 1.4 !important; word-wrap: break-word !important;}
+            .status-banner-value {font-size: 16px !important; line-height: 1.4 !important; word-wrap: break-word !important;}
+            .comment-box {width: 100% !important; padding: 14px !important; margin: 20px 0 !important; box-sizing: border-box !important;}
+            .comment-box td {width: 100% !important; padding: 14px !important; box-sizing: border-box !important;}
+            .comment-label {font-size: 11px !important; margin-bottom: 8px !important; word-wrap: break-word !important;}
+            .comment-text {font-size: 14px !important; line-height: 1.5 !important; word-wrap: break-word !important;}
+            .content-text {font-size: 14px !important; line-height: 1.6 !important; margin-bottom: 20px !important;}
+            .header-title {font-size: 18px !important;}
           }
         </style>
       </head>
@@ -2073,21 +2083,21 @@ export function generateEstimateApprovalEmailTemplate(
                       Great news! Your estimate has been approved by <strong style="color: #000000; font-weight: 500;">${clientName}</strong>.
                     </p>
                     
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="status-banner" style="background: #f9fafb; border-left: 3px solid ${successColor}; margin: 24px 0;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="status-banner" style="width: 100%; background: #f9fafb; border-left: 3px solid ${successColor}; margin: 24px 0; box-sizing: border-box;">
                       <tr>
-                        <td class="status-banner" style="padding: 16px 20px;">
-                          <div class="status-banner-label" style="font-size: 12px; color: #666666; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px;">Estimate Number</div>
-                          <div class="status-banner-value" style="font-size: 16px; font-weight: 700; color: #000000; margin: 0;">${estimateNumber}</div>
+                        <td class="status-banner" style="width: 100%; padding: 16px 20px; box-sizing: border-box;">
+                          <div class="status-banner-label" style="font-size: 12px; color: #666666; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px; word-wrap: break-word;">Estimate Number</div>
+                          <div class="status-banner-value" style="font-size: 16px; font-weight: 700; color: #000000; margin: 0; word-wrap: break-word;">${estimateNumber}</div>
                         </td>
                       </tr>
                     </table>
                     
                     ${comment ? `
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="comment-box" style="margin: 24px 0;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="comment-box" style="width: 100%; margin: 24px 0; box-sizing: border-box;">
                       <tr>
-                        <td class="comment-box" style="padding: 16px; background: #f9fafb; border-radius: 4px;">
-                          <div class="comment-label" style="font-size: 12px; color: #666666; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">Client Comment</div>
-                          <div class="comment-text" style="font-size: 14px; color: #000000; line-height: 1.6; margin: 0;">${comment}</div>
+                        <td class="comment-box" style="width: 100%; padding: 16px; background: #f9fafb; border-radius: 4px; box-sizing: border-box;">
+                          <div class="comment-label" style="font-size: 12px; color: #666666; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px; word-wrap: break-word;">Client Comment</div>
+                          <div class="comment-text" style="font-size: 14px; color: #000000; line-height: 1.6; margin: 0; word-wrap: break-word;">${comment}</div>
                         </td>
                       </tr>
                     </table>
@@ -2098,9 +2108,9 @@ export function generateEstimateApprovalEmailTemplate(
                     </p>
                     
                     <!-- Button -->
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="button-wrapper">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="button-wrapper" style="width: 100%; margin-top: 32px;">
                       <tr>
-                        <td align="center" class="button-wrapper" style="padding: 0;">
+                        <td align="center" class="button-wrapper" style="width: 100%; padding: 0; text-align: center;">
                           <!--[if mso]>
                           <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${dashboardUrl}/dashboard/estimates" style="height:42px;v-text-anchor:middle;width:200px;" arcsize="0%" strokecolor="${successColor}" fillcolor="${successColor}">
                             <w:anchorlock/>
@@ -2183,16 +2193,19 @@ export function generateEstimateRejectionEmailTemplate(
             .header-padding {padding: 24px 20px 20px 20px !important;}
             .content-padding {padding: 20px !important;}
             .footer-padding {padding: 20px !important;}
-            .button-link {display: block !important; width: 100% !important; text-align: center !important; padding: 14px 20px !important; margin: 0 !important;}
-            .status-banner {padding: 14px 16px !important; margin: 20px 0 !important;}
-            .status-banner-label {font-size: 11px !important; line-height: 1.4 !important;}
-            .status-banner-value {font-size: 16px !important; line-height: 1.4 !important;}
-            .comment-box {padding: 14px !important; margin: 20px 0 !important;}
-            .comment-label {font-size: 11px !important; margin-bottom: 8px !important;}
-            .comment-text {font-size: 14px !important; line-height: 1.5 !important;}
+            .button-wrapper {width: 100% !important; padding: 0 !important; margin-top: 24px !important;}
+            .button-wrapper td {width: 100% !important; padding: 0 !important; text-align: center !important;}
+            .button-link {display: block !important; width: 100% !important; max-width: 100% !important; text-align: center !important; padding: 14px 20px !important; margin: 0 auto !important; box-sizing: border-box !important;}
+            .status-banner {width: 100% !important; padding: 14px 16px !important; margin: 20px 0 !important; box-sizing: border-box !important;}
+            .status-banner td {width: 100% !important; padding: 14px 16px !important; box-sizing: border-box !important;}
+            .status-banner-label {font-size: 11px !important; line-height: 1.4 !important; word-wrap: break-word !important;}
+            .status-banner-value {font-size: 16px !important; line-height: 1.4 !important; word-wrap: break-word !important;}
+            .comment-box {width: 100% !important; padding: 14px !important; margin: 20px 0 !important; box-sizing: border-box !important;}
+            .comment-box td {width: 100% !important; padding: 14px !important; box-sizing: border-box !important;}
+            .comment-label {font-size: 11px !important; margin-bottom: 8px !important; word-wrap: break-word !important;}
+            .comment-text {font-size: 14px !important; line-height: 1.5 !important; word-wrap: break-word !important;}
             .content-text {font-size: 14px !important; line-height: 1.6 !important; margin-bottom: 20px !important;}
             .header-title {font-size: 18px !important;}
-            .button-wrapper {padding: 0 !important; margin-top: 24px !important;}
           }
         </style>
       </head>
@@ -2214,20 +2227,20 @@ export function generateEstimateRejectionEmailTemplate(
                       Your estimate has been rejected by <strong style="color: #000000; font-weight: 500;">${clientName}</strong>.
                     </p>
                     
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="status-banner" style="background: #f9fafb; border-left: 3px solid ${errorColor}; margin: 24px 0;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="status-banner" style="width: 100%; background: #f9fafb; border-left: 3px solid ${errorColor}; margin: 24px 0; box-sizing: border-box;">
                       <tr>
-                        <td class="status-banner" style="padding: 16px 20px;">
-                          <div class="status-banner-label" style="font-size: 12px; color: #666666; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px;">Estimate Number</div>
-                          <div class="status-banner-value" style="font-size: 16px; font-weight: 700; color: #000000; margin: 0;">${estimateNumber}</div>
+                        <td class="status-banner" style="width: 100%; padding: 16px 20px; box-sizing: border-box;">
+                          <div class="status-banner-label" style="font-size: 12px; color: #666666; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px; word-wrap: break-word;">Estimate Number</div>
+                          <div class="status-banner-value" style="font-size: 16px; font-weight: 700; color: #000000; margin: 0; word-wrap: break-word;">${estimateNumber}</div>
                         </td>
                       </tr>
                     </table>
                     
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="comment-box" style="margin: 24px 0;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="comment-box" style="width: 100%; margin: 24px 0; box-sizing: border-box;">
                       <tr>
-                        <td class="comment-box" style="padding: 16px; background: #f9fafb; border-radius: 4px;">
-                          <div class="comment-label" style="font-size: 12px; color: #666666; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px;">Rejection Reason</div>
-                          <div class="comment-text" style="font-size: 14px; color: #000000; line-height: 1.6; margin: 0;">${reason}</div>
+                        <td class="comment-box" style="width: 100%; padding: 16px; background: #f9fafb; border-radius: 4px; box-sizing: border-box;">
+                          <div class="comment-label" style="font-size: 12px; color: #666666; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px; word-wrap: break-word;">Rejection Reason</div>
+                          <div class="comment-text" style="font-size: 14px; color: #000000; line-height: 1.6; margin: 0; word-wrap: break-word;">${reason}</div>
                         </td>
                       </tr>
                     </table>
@@ -2237,9 +2250,9 @@ export function generateEstimateRejectionEmailTemplate(
                     </p>
                     
                     <!-- Button -->
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="button-wrapper">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="button-wrapper" style="width: 100%; margin-top: 32px;">
                       <tr>
-                        <td align="center" class="button-wrapper" style="padding: 0;">
+                        <td align="center" class="button-wrapper" style="width: 100%; padding: 0; text-align: center;">
                           <!--[if mso]>
                           <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${dashboardUrl}/dashboard/estimates" style="height:42px;v-text-anchor:middle;width:200px;" arcsize="0%" strokecolor="${primaryColor}" fillcolor="${primaryColor}">
                             <w:anchorlock/>
@@ -2388,29 +2401,29 @@ export function generateEstimateEmailTemplate(
             .business-contact {
               color: #333333 !important;
             }
-          }
-          .email-container {
+            }
+            .email-container {
             max-width: 600px;
             margin: 0 auto;
             background: #ffffff;
             border: 1px solid #e0e0e0;
-          }
-          .header {
+            }
+            .header {
             padding: 40px 40px 32px 40px;
             background: #ffffff;
             border-bottom: 1px solid #e0e0e0;
-          }
-          .header-content {
+            }
+            .header-content {
             display: table;
             width: 100%;
             table-layout: fixed;
-          }
-          .business-info {
+            }
+            .business-info {
             display: table-cell;
             vertical-align: top;
             width: 50%;
-          }
-          .business-name {
+            }
+            .business-name {
             font-size: 20px;
             font-weight: 400;
             color: ${primaryColor} !important;
@@ -2558,14 +2571,14 @@ export function generateEstimateEmailTemplate(
             text-align: center;
             letter-spacing: 0.5px;
             border: none;
-          }
-          .footer {
+            }
+            .footer {
             padding: 32px 40px;
             border-top: 1px solid #e0e0e0;
             text-align: left;
             background: #ffffff;
-          }
-          .footer p {
+            }
+            .footer p {
             margin: 0 0 12px 0 !important;
             font-size: 14px !important;
             color: #000000 !important;
@@ -2573,8 +2586,8 @@ export function generateEstimateEmailTemplate(
           }
           .footer p:last-child {
             margin-bottom: 0 !important;
-          }
-          .business-contact {
+            }
+            .business-contact {
             font-size: 14px;
             color: #333333 !important;
             margin-top: 12px;
@@ -2645,7 +2658,7 @@ export function generateEstimateEmailTemplate(
                 <div class="item-row">
                   <div class="item-description">${item.description}</div>
                   <div class="item-amount">${formatCurrency(item.line_total)}</div>
-                </div>
+            </div>
               `).join('')}
             </div>
             ` : ''}
@@ -2659,37 +2672,37 @@ export function generateEstimateEmailTemplate(
               <div class="detail-row">
                 <div class="detail-label">Discount${estimate.subtotal > 0 && estimate.discount < estimate.subtotal ? ` (${((estimate.discount / estimate.subtotal) * 100).toFixed(1)}%)` : ''}</div>
                 <div class="detail-value">-${formatCurrency(estimate.discount)}</div>
-              </div>
-              ` : ''}
+                  </div>
+                ` : ''}
               ${estimate.taxAmount && estimate.taxAmount > 0 ? `
               <div class="detail-row">
                 <div class="detail-label">Tax${estimate.taxRate && estimate.taxRate > 0 ? ` (${estimate.taxRate.toFixed(1)}%)` : ''}</div>
                 <div class="detail-value">${formatCurrency(estimate.taxAmount)}</div>
-              </div>
-              ` : ''}
+                  </div>
+                ` : ''}
               <div class="detail-row" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
                 <div class="detail-label" style="font-weight: 600;">Total</div>
                 <div class="detail-value" style="font-weight: 600;">${formatCurrency(estimate.total)}</div>
-              </div>
-            </div>
+                  </div>
+                  </div>
 
             ${estimate.notes ? `
             <div style="margin: 32px 0; padding: 16px 0; border-bottom: 1px solid #e0e0e0;">
               <p style="margin: 0 0 12px 0 !important; font-size: 14px !important; color: #000000 !important; line-height: 1.6 !important;">${estimate.notes}</p>
-            </div>
-            ` : ''}
+                  </div>
+                ` : ''}
 
             <div class="cta-section">
               <a href="${publicUrl}" class="cta-button">View Estimation</a>
-            </div>
+              </div>
           </div>
 
           <div class="footer">
             <p>Thank you for your business!</p>
             <p>If you have any questions about this estimate, please don't hesitate to contact us.</p>
-            <div class="business-contact">
+              <div class="business-contact">
               ${businessSettings.businessName}<br>
-              ${businessSettings.businessEmail}${businessSettings.businessPhone ? ` • ${businessSettings.businessPhone}` : ''}
+                ${businessSettings.businessEmail}${businessSettings.businessPhone ? ` • ${businessSettings.businessPhone}` : ''}
             </div>
           </div>
         </div>

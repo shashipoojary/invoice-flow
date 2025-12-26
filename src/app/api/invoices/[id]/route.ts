@@ -178,6 +178,43 @@ export async function PUT(
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
     }
 
+    // CRITICAL: If invoice is being marked as paid, cancel all scheduled reminders
+    // This prevents reminders from being sent after payment is received
+    if (status === 'paid' && currentInvoice.status !== 'paid') {
+      try {
+        const { error: reminderError } = await supabaseAdmin
+          .from('invoice_reminders')
+          .update({
+            reminder_status: 'failed',
+            failure_reason: 'Invoice marked as paid - reminders cancelled'
+          })
+          .eq('invoice_id', invoiceId)
+          .eq('reminder_status', 'scheduled')
+
+        if (reminderError) {
+          console.error('Error cancelling scheduled reminders:', reminderError)
+          // Don't fail the invoice update if reminder cancellation fails
+        } else {
+          console.log(`✅ Cancelled scheduled reminders for invoice ${invoiceId} (marked as paid)`)
+        }
+        
+        // Log the "paid" event - this serves as the cutoff point for activity tracking
+        // For privacy and legal compliance, no activities are tracked after this event
+        try {
+          await supabaseAdmin.from('invoice_events').insert({ 
+            invoice_id: invoiceId, 
+            type: 'paid' 
+          });
+        } catch (eventError) {
+          console.error('Error logging paid event:', eventError)
+          // Don't fail the invoice update if event logging fails
+        }
+      } catch (reminderCancelError) {
+        console.error('Error cancelling scheduled reminders:', reminderCancelError)
+        // Don't fail the invoice update if reminder cancellation fails
+      }
+    }
+
     return NextResponse.json({ invoice: data })
 
   } catch (error) {

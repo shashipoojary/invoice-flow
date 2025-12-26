@@ -248,35 +248,30 @@ const ModernSidebar = ({
 
       {/* Quick Actions - Always rendered to maintain height */}
       <div className={`transition-all duration-300 ease-in-out h-20 flex items-center ${isCollapsed ? 'px-3' : 'px-6'}`}>
-        {!isCollapsed ? (
-          <button
-            onClick={() => {
-              onCreateInvoice();
-              // Close mobile menu when creating invoice
-              if (window.innerWidth < 1024) {
-                setIsMobileOpen(false);
-              }
-            }}
-            className="w-full flex items-center justify-center space-x-2 px-6 py-3 rounded-lg transition-colors text-sm font-medium cursor-pointer bg-black text-white hover:bg-gray-800"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create Invoice</span>
-          </button>
-        ) : (
-          <button
-            onClick={() => {
-              onCreateInvoice();
-              // Close mobile menu when creating invoice
-              if (window.innerWidth < 1024) {
-                setIsMobileOpen(false);
-              }
-            }}
-            className="w-full flex items-center justify-center p-3 rounded-lg transition-colors cursor-pointer bg-black text-white hover:bg-gray-800"
-            title="Create Invoice"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
-        )}
+        <button
+          onClick={() => {
+            onCreateInvoice();
+            // Close mobile menu when creating invoice
+            if (window.innerWidth < 1024) {
+              setIsMobileOpen(false);
+            }
+          }}
+          className={`w-full flex items-center justify-center rounded-lg transition-all duration-300 ease-in-out cursor-pointer bg-black text-white hover:bg-gray-800 overflow-hidden ${
+            isCollapsed 
+              ? 'p-3' 
+              : 'px-6 py-3 space-x-2'
+          }`}
+          title={isCollapsed ? 'Create Invoice' : undefined}
+        >
+          <Plus className={`flex-shrink-0 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} />
+          <span className={`transition-all duration-300 ease-in-out whitespace-nowrap ${
+            isCollapsed 
+              ? 'opacity-0 w-0 overflow-hidden' 
+              : 'opacity-100 text-sm font-medium'
+          }`}>
+            Create Invoice
+          </span>
+        </button>
       </div>
 
       {/* Navigation */}

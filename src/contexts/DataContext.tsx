@@ -84,9 +84,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       
       if (response.ok) {
         const data = await response.json();
-        setInvoices(Array.isArray(data.invoices) ? data.invoices : []);
+        const invoicesList = Array.isArray(data.invoices) ? data.invoices : [];
+        
+        // Invoices now have totalPaid and remainingBalance as direct properties
+        // No extraction needed - data is already in the right format
+        setInvoices(invoicesList);
         setLastFetched(prev => ({ ...prev, invoices: now }));
-        setHasInitiallyLoaded(true); // Mark as loaded after first successful fetch
+        setHasInitiallyLoaded(true);
       } else if (response.status === 401) {
         // Authentication or connection issue
         const errorText = await response.text().catch(() => '');

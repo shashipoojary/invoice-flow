@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
-import { FileText, AlertTriangle, Eye, Download, Send, CheckCircle, Edit, Trash2, Info } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileText, AlertTriangle, Eye, Download, Send, CheckCircle, Edit, Trash2, Info, Copy, DollarSign } from 'lucide-react';
 import InvoiceActivityDrawer from '@/components/InvoiceActivityDrawer';
 import type { Invoice } from '@/types';
+import { useAuth } from '@/hooks/useAuth';
 
 type DueStatus = { status: string; days: number; color: string };
 
@@ -16,11 +17,14 @@ export type UnifiedInvoiceCardProps = {
     paymentTerms?: { enabled: boolean; terms: string },
     updatedAt?: string
   ) => DueStatus;
-  calculateDueCharges: (invoice: Invoice) => {
+  calculateDueCharges: (invoice: Invoice, paymentData?: { totalPaid: number; remainingBalance: number } | null) => {
     hasLateFees: boolean;
     lateFeeAmount: number;
     totalPayable: number;
     overdueDays: number;
+    totalPaid: number;
+    remainingBalance: number;
+    isPartiallyPaid: boolean;
   };
   loadingActions: { [key: string]: boolean };
   onView: (invoice: Invoice) => void;
@@ -29,6 +33,8 @@ export type UnifiedInvoiceCardProps = {
   onMarkPaid: (invoice: Invoice) => void;
   onEdit?: (invoice: Invoice) => void;
   onDelete?: (invoice: Invoice) => void;
+  onDuplicate?: (invoice: Invoice) => void;
+  paymentData?: { totalPaid: number; remainingBalance: number } | null;
 };
 
 export function UnifiedInvoiceCard({
@@ -43,15 +49,22 @@ export function UnifiedInvoiceCard({
   onMarkPaid,
   onEdit,
   onDelete,
+  onDuplicate,
+  paymentData: propPaymentData,
 }: UnifiedInvoiceCardProps) {
+  const { getAuthHeaders } = useAuth();
   const [showActivity, setShowActivity] = useState(false);
+  
+  // Use payment data from props (fetched in bulk) instead of individual fetch
+  const paymentData = propPaymentData || null;
+  
   const dueDateStatus = getDueDateStatus(
     invoice.dueDate,
     invoice.status,
     invoice.paymentTerms,
     (invoice as any).updatedAt
   );
-  const dueCharges = calculateDueCharges(invoice);
+  const dueCharges = calculateDueCharges(invoice, paymentData);
 
   const displayTotal = dueCharges.totalPayable;
 
@@ -96,7 +109,12 @@ export function UnifiedInvoiceCard({
               >
                 ${displayTotal.toLocaleString()}
               </div>
-              {dueCharges.hasLateFees ? (
+              {dueCharges.isPartiallyPaid ? (
+                <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                  Paid: ${dueCharges.totalPaid.toFixed(2)} • Remaining: ${dueCharges.remainingBalance.toFixed(2)}
+                  {dueCharges.hasLateFees && ` • Late fee: ${dueCharges.lateFeeAmount.toFixed(2)}`}
+                </div>
+              ) : dueCharges.hasLateFees ? (
                 <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
                   Base ${invoice.total.toLocaleString()} • Late fee ${dueCharges.lateFeeAmount.toLocaleString()}
                 </div>
@@ -123,6 +141,12 @@ export function UnifiedInvoiceCard({
                 {getStatusIcon(invoice.status)}
                 <span className="capitalize">{invoice.status}</span>
               </span>
+              {dueCharges.isPartiallyPaid && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
+                  <DollarSign className="h-3 w-3" />
+                  <span>Partial Payment</span>
+                </span>
+              )}
               {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
                 <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600">
                   <AlertTriangle className="h-3 w-3" />
@@ -152,6 +176,22 @@ export function UnifiedInvoiceCard({
                   <Download className="h-4 w-4 text-gray-700" />
                 )}
               </button>
+              {onDuplicate && (
+                <button
+                  onClick={() => onDuplicate(invoice)}
+                  disabled={loadingActions[`duplicate-${invoice.id}`]}
+                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${
+                    loadingActions[`duplicate-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                  }`}
+                  title="Duplicate"
+                >
+                  {loadingActions[`duplicate-${invoice.id}`] ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  ) : (
+                    <Copy className="h-4 w-4 text-gray-700" />
+                  )}
+                </button>
+              )}
               {invoice.status === 'draft' && (
                 <button
                   onClick={() => { onSend(invoice); logEvent('sent'); }}
@@ -236,7 +276,12 @@ export function UnifiedInvoiceCard({
               >
                 ${displayTotal.toLocaleString()}
               </div>
-              {dueCharges.hasLateFees ? (
+              {dueCharges.isPartiallyPaid ? (
+                <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                  Paid: ${dueCharges.totalPaid.toFixed(2)} • Remaining: ${dueCharges.remainingBalance.toFixed(2)}
+                  {dueCharges.hasLateFees && ` • Late fee: ${dueCharges.lateFeeAmount.toFixed(2)}`}
+                </div>
+              ) : dueCharges.hasLateFees ? (
                 <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
                   Base ${invoice.total.toLocaleString()} • Late fee ${dueCharges.lateFeeAmount.toLocaleString()}
                 </div>
@@ -263,6 +308,12 @@ export function UnifiedInvoiceCard({
                 {getStatusIcon(invoice.status)}
                 <span className="capitalize">{invoice.status}</span>
               </span>
+              {dueCharges.isPartiallyPaid && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
+                  <DollarSign className="h-3 w-3" />
+                  <span>Partial Payment</span>
+                </span>
+              )}
               {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
                 <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600">
                   <AlertTriangle className="h-3 w-3" />
@@ -291,6 +342,22 @@ export function UnifiedInvoiceCard({
                   <Download className="h-4 w-4 text-gray-700" />
                 )}
               </button>
+              {onDuplicate && (
+                <button
+                  onClick={() => onDuplicate(invoice)}
+                  disabled={loadingActions[`duplicate-${invoice.id}`]}
+                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${
+                    loadingActions[`duplicate-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                  }`}
+                  title="Duplicate"
+                >
+                  {loadingActions[`duplicate-${invoice.id}`] ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  ) : (
+                    <Copy className="h-4 w-4 text-gray-700" />
+                  )}
+                </button>
+              )}
               {invoice.status === 'draft' && (
                 <button
                   onClick={() => onSend(invoice)}

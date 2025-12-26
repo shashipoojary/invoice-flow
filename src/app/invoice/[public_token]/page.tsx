@@ -91,10 +91,16 @@ export default function PublicInvoicePage() {
   }, [params.public_token])
 
   // Log public view when invoice is loaded - only if viewer is NOT the owner
+  // CRITICAL: Do not track activities for paid invoices (privacy and legal compliance)
   useEffect(() => {
     const logView = async () => {
       try {
         if (!invoice?.id) return
+        
+        // Do not track activities for paid invoices
+        if (invoice.status === 'paid') {
+          return
+        }
         
         // Check if the viewer is authenticated
         const { data: { session } } = await supabase.auth.getSession()
@@ -123,7 +129,7 @@ export default function PublicInvoicePage() {
       } catch {}
     }
     logView()
-  }, [invoice?.id, invoice?.userId])
+  }, [invoice?.id, invoice?.userId, invoice?.status])
 
 
   const handleDownloadReceipt = async () => {
@@ -168,7 +174,8 @@ export default function PublicInvoicePage() {
         document.body.removeChild(a);
 
         // Log receipt download event - only if viewer is NOT the owner
-        if (invoice?.id) {
+        // CRITICAL: Do not track activities for paid invoices (privacy and legal compliance)
+        if (invoice?.id && invoice.status !== 'paid') {
           // Check if the viewer is authenticated and owns the invoice
           const { data: { session } } = await supabase.auth.getSession()
           

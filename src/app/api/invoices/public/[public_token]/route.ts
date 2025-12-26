@@ -173,6 +173,24 @@ export async function GET(
       }
     }
 
+    // Fetch payment data for sent/pending invoices
+    let totalPaid = 0;
+    let remainingBalance = invoice.total || 0;
+    if (invoice.status === 'sent' || invoice.status === 'pending') {
+      const { data: payments } = await supabaseAdmin
+        .from('invoice_payments')
+        .select('amount')
+        .eq('invoice_id', invoice.id);
+      
+      if (payments && payments.length > 0) {
+        totalPaid = payments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+        remainingBalance = Math.max(0, (invoice.total || 0) - totalPaid);
+      }
+    }
+    
+    // Calculate total with late fees on remaining balance
+    const totalWithLateFees = remainingBalance + lateFees;
+
     // Return formatted invoice data
     return NextResponse.json({ 
       invoice: {
@@ -196,8 +214,10 @@ export async function GET(
         discount: invoice.discount || 0,
         taxAmount: invoice.tax_amount || 0,
         total: invoice.total || 0,
+        totalPaid: totalPaid,
+        remainingBalance: remainingBalance,
         lateFees: lateFees,
-        totalWithLateFees: (invoice.total || 0) + lateFees,
+        totalWithLateFees: totalWithLateFees,
         status: isOverdue && invoice.status !== 'paid' ? 'overdue' : (isDueToday ? 'due today' : (invoice.status === 'sent' ? 'pending' : invoice.status)),
         isOverdue: isOverdue,
         daysOverdue: isOverdue ? Math.round((todayStart.getTime() - dueDateStart.getTime()) / (1000 * 60 * 60 * 24)) : 0,

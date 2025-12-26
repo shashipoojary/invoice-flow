@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { X, AlertTriangle, CheckCircle, Mail, Eye as EyeIcon, Download as DownloadIcon, Send as SendIcon, Clock, Link as LinkIcon, Copy } from 'lucide-react';
+import { X, AlertTriangle, CheckCircle, Mail, Eye as EyeIcon, Download as DownloadIcon, Send as SendIcon, Clock, Link as LinkIcon, Copy, DollarSign } from 'lucide-react';
 import type { Invoice } from '@/types';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 
 type ActivityItem = {
   id: string;
@@ -15,6 +16,7 @@ type ActivityItem = {
 };
 
 export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invoice: Invoice; open: boolean; onClose: () => void }) {
+  const { getAuthHeaders } = useAuth();
   const [loading, setLoading] = useState(false);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
 
@@ -37,8 +39,36 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
           .eq('invoice_id', invoice.id)
           .order('created_at', { ascending: false });
         
+        // Fetch payment data for sent/pending invoices
+        const fetchedPayments = await (async () => {
+          if ((invoice.status === 'sent' || invoice.status === 'pending') && invoice.id) {
+            try {
+              const headers = await getAuthHeaders();
+              const response = await fetch(`/api/invoices/${invoice.id}/payments`, { headers });
+              if (response.ok) {
+                const paymentData = await response.json();
+                return paymentData.payments || [];
+              }
+            } catch (error) {
+              // Silently fail
+            }
+          }
+          return [];
+        })();
+        const payments = fetchedPayments;
+        
         // Track viewed_by_customer events separately to show only the latest one
         let latestViewedEvent: any = null;
+        
+        // CRITICAL: For privacy and legal compliance, find when invoice was marked as paid
+        // Do not show any activity events after the invoice was marked as paid
+        let paidEventTimestamp: Date | null = null;
+        if (invoice.status === 'paid' && events) {
+          const paidEvent = events.find(ev => ev.type === 'paid');
+          if (paidEvent) {
+            paidEventTimestamp = new Date(paidEvent.created_at);
+          }
+        }
         
         if (events) {
           // CRITICAL: For draft invoices, filter out events that shouldn't exist
@@ -48,6 +78,16 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
           // Group events by type and keep only the latest one of each type
           const eventsByType = new Map<string, any>();
           for (const ev of events) {
+            // CRITICAL: For privacy and legal compliance, exclude all events after invoice was marked as paid
+            if (paidEventTimestamp) {
+              const eventTimestamp = new Date(ev.created_at);
+              // Only show events that occurred before or at the same time as the paid event
+              // Allow the paid event itself to show, but nothing after it
+              if (eventTimestamp > paidEventTimestamp && ev.type !== 'paid') {
+                continue; // Skip events after payment for privacy
+              }
+            }
+            
             // Filter out "paid" events if invoice is not currently paid
             if (ev.type === 'paid' && invoice.status !== 'paid') {
               continue;
@@ -126,9 +166,20 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
           }
           
           // CRITICAL: Only process overdue events for non-draft invoices
-          const overdueEvents = events.filter((ev: any) => 
-            (ev.type === 'overdue' || ev.type === 'late_fee_applied') && !isDraft
-          );
+          // CRITICAL: For privacy, exclude overdue events that occurred after payment
+          const overdueEvents = events.filter((ev: any) => {
+            if (isDraft) return false;
+            if (ev.type !== 'overdue' && ev.type !== 'late_fee_applied') return false;
+            
+            // Exclude events that occurred after payment
+            if (paidEventTimestamp) {
+              const eventTimestamp = new Date(ev.created_at);
+              if (eventTimestamp > paidEventTimestamp) {
+                return false; // Skip events after payment
+              }
+            }
+            return true;
+          });
           
           // Get today's end time for filtering future events
           const todayEnd = new Date();
@@ -192,6 +243,18 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
         
         // Add only the latest "viewed_by_customer" event (for privacy)
         // CRITICAL: Only show for non-draft invoices
+        // CRITICAL: For privacy, exclude view events that occurred after payment
+        if (latestViewedEvent && invoice.status !== 'draft') {
+          // Check if view event occurred after payment
+          if (paidEventTimestamp) {
+            const viewTimestamp = new Date(latestViewedEvent.created_at);
+            if (viewTimestamp > paidEventTimestamp) {
+              // View occurred after payment - don't show for privacy
+              latestViewedEvent = null;
+            }
+          }
+        }
+        
         if (latestViewedEvent && invoice.status !== 'draft') {
           const viewItem = { 
             id: `view-${latestViewedEvent.id}`, 
@@ -205,6 +268,31 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
             eventMap.set(eventKey, viewItem);
             items.push(viewItem);
             eventTypes.add('viewed_by_customer');
+          }
+        }
+        
+        // Add payment events (only if invoice is not fully paid or marked as paid)
+        if (payments.length > 0 && invoice.status !== 'paid') {
+          // Filter payments that occurred before the paid event (if any)
+          const validPayments = paidEventTimestamp 
+            ? payments.filter((p: any) => new Date(p.created_at) <= paidEventTimestamp)
+            : payments;
+          
+          for (const payment of validPayments) {
+            const paymentDate = payment.payment_date || payment.created_at;
+            const paymentItem: ActivityItem = {
+              id: `payment-${payment.id}`,
+              type: 'client',
+              title: `Partial payment received: $${parseFloat(payment.amount.toString()).toFixed(2)}`,
+              at: paymentDate,
+              icon: 'paid' as const,
+              details: payment.payment_method ? `Method: ${payment.payment_method}` : undefined
+            };
+            const eventKey = `payment-${payment.id}-${new Date(paymentDate).getTime()}`;
+            if (!eventMap.has(eventKey)) {
+              eventMap.set(eventKey, paymentItem);
+              items.push(paymentItem);
+            }
           }
         }
         
@@ -296,33 +384,6 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                   reminderMap.set(reminderKey, reminderItem);
                   items.push(reminderItem);
                 }
-              }
-            }
-          }
-        }
-        // Payments - only show if invoice is actually paid, otherwise just record as payment (not paid status)
-        const { data: payments } = await supabase
-          .from('payments')
-          .select('*')
-          .eq('invoice_id', invoice.id)
-          .order('created_at', { ascending: false });
-        if (payments && payments.length > 0) {
-          // Track payments by timestamp to prevent duplicates
-          const paymentMap = new Map<string, ActivityItem>();
-          
-          for (const p of payments) {
-            const paymentKey = `payment-${new Date(p.created_at).getTime()}`;
-            if (!paymentMap.has(paymentKey)) {
-              // Only show payments with "paid" icon if invoice status is actually paid
-              if (invoice.status === 'paid') {
-                const paymentItem = { id: `payment-${p.id}`, type: 'payment', title: 'Payment recorded.', at: p.created_at, icon: 'paid' as const };
-                paymentMap.set(paymentKey, paymentItem);
-                items.push(paymentItem);
-              } else {
-                // For pending invoices, show payments but with neutral icon
-                const paymentItem = { id: `payment-${p.id}`, type: 'payment', title: 'Payment received.', at: p.created_at, icon: 'scheduled' as const };
-                paymentMap.set(paymentKey, paymentItem);
-                items.push(paymentItem);
               }
             }
           }

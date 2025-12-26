@@ -11,10 +11,10 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 // Function to create scheduled reminders
 async function createScheduledReminders(invoiceId: string, reminderSettings: any, dueDate: string, paymentTerms?: any, invoiceStatus?: string, updatedAt?: string) {
   try {
-    // CRITICAL: Do not schedule reminders for draft invoices
-    if (invoiceStatus === 'draft') {
-      console.log(`⏭️ Skipping reminder scheduling for invoice ${invoiceId} - invoice is in draft status`);
-      // Delete any existing scheduled reminders for draft invoices
+    // CRITICAL: Do not schedule reminders for draft or paid invoices
+    if (invoiceStatus === 'draft' || invoiceStatus === 'paid') {
+      console.log(`⏭️ Skipping reminder scheduling for invoice ${invoiceId} - invoice is in ${invoiceStatus} status`);
+      // Delete any existing scheduled reminders for draft or paid invoices
       await supabaseAdmin
         .from('invoice_reminders')
         .delete()
@@ -465,6 +465,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Ensure invoice status is set to 'sent' immediately for drafts
+    // But preserve 'paid' status if invoice was already marked as paid
     if (invoice.status === 'draft') {
       await supabaseAdmin
         .from('invoices')
@@ -473,6 +474,13 @@ export async function POST(request: NextRequest) {
         .eq('user_id', user.id);
       // Reflect in local invoice object for response mapping
       invoice.status = 'sent';
+    } else if (invoice.status === 'paid') {
+      // Keep paid status but update timestamp
+      await supabaseAdmin
+        .from('invoices')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', invoiceId)
+        .eq('user_id', user.id);
     }
 
     // Use Resend free plan default email address

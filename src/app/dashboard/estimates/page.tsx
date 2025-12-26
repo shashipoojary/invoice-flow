@@ -28,6 +28,10 @@ const ConfirmationModal = dynamic(() => import('@/components/ConfirmationModal')
   loading: () => null
 });
 
+const EstimateConversionModal = dynamic(() => import('@/components/EstimateConversionModal'), {
+  loading: () => null
+});
+
 function EstimatesContent(): React.JSX.Element {
   const { user, loading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
@@ -303,7 +307,7 @@ function EstimatesContent(): React.JSX.Element {
   }, [showError]);
 
   // Handle convert to invoice
-  const handleConvertToInvoice = useCallback(async (estimate: Estimate) => {
+  const handleConvertToInvoice = useCallback(async (estimate: Estimate, invoiceType: 'fast' | 'detailed', template?: number) => {
     if (estimate.status !== 'approved') {
       showError('Error', 'Only approved estimates can be converted to invoices');
       return;
@@ -317,7 +321,14 @@ function EstimatesContent(): React.JSX.Element {
       const headers = await getAuthHeaders();
       const response = await fetch(`/api/estimates/${estimate.id}/convert`, {
         method: 'POST',
-        headers
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          invoiceType,
+          template
+        }),
       });
       
       if (response.ok) {
@@ -331,7 +342,10 @@ function EstimatesContent(): React.JSX.Element {
             console.error('Error parsing convert response:', e);
           }
         }
-        showSuccess('Estimate Converted', `The estimate has been converted to invoice ${data?.invoice?.invoiceNumber || ''} successfully.`);
+        const templateName = invoiceType === 'fast' 
+          ? 'Fast Invoice' 
+          : template === 6 ? 'Minimal' : template === 4 ? 'Modern' : 'Creative';
+        showSuccess('Estimate Converted', `The estimate has been converted to ${invoiceType} invoice ${data?.invoice?.invoiceNumber || ''} using ${templateName} template.`);
         // Close confirmation modal
         setConvertConfirmationModal({ isOpen: false, estimate: null, isLoading: false });
         // Refresh estimates
@@ -1087,20 +1101,16 @@ function EstimatesContent(): React.JSX.Element {
         isLoading={sendEstimateModal.isLoading}
       />
 
-      {/* Convert Confirmation Modal */}
-      <ConfirmationModal
+      {/* Convert Estimate Modal */}
+      <EstimateConversionModal
         isOpen={convertConfirmationModal.isOpen}
         onClose={() => setConvertConfirmationModal({ isOpen: false, estimate: null, isLoading: false })}
-        onConfirm={() => {
+        onConfirm={(invoiceType, template) => {
           if (convertConfirmationModal.estimate) {
-            handleConvertToInvoice(convertConfirmationModal.estimate);
+            handleConvertToInvoice(convertConfirmationModal.estimate, invoiceType, template);
           }
         }}
-        title="Convert Estimate to Invoice"
-        message={`Are you sure you want to convert estimate ${convertConfirmationModal.estimate?.estimateNumber || ''} to an invoice? This action cannot be undone.`}
-        confirmText="Convert to Invoice"
-        cancelText="Cancel"
-        type="info"
+        estimate={convertConfirmationModal.estimate}
         isLoading={convertConfirmationModal.isLoading}
       />
 

@@ -122,7 +122,7 @@ ClientCard.displayName = 'ClientCard';
 export default function ClientsPage() {
   const { user, loading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
-  const { clients, isLoadingClients, updateClient, deleteClient } = useData();
+  const { clients, isLoadingClients, updateClient, deleteClient, invoices } = useData();
   
   // Local state for UI
   const [hasLoadedData, setHasLoadedData] = useState(false);
@@ -480,76 +480,164 @@ export default function ClientsPage() {
       )}
 
       {/* View Client Modal */}
-      {showViewClient && selectedClient && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className="rounded-xl sm:rounded-2xl p-2 sm:p-4 max-w-2xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scroll-smooth custom-scrollbar bg-white border-gray-200">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h2 className="text-base sm:text-xl font-bold" style={{color: '#1f2937'}}>Client Details</h2>
-              <button
-                onClick={() => {
-                  setShowViewClient(false);
-                  setSelectedClient(null);
-                }}
-                className="p-1 sm:p-2 rounded-lg transition-colors hover:bg-gray-100 cursor-pointer"
-              >
-                <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
-              </button>
-            </div>
-            
-            {/* Client Details */}
-            <div className="w-full bg-white rounded-lg border border-gray-200 overflow-hidden">
+      {showViewClient && selectedClient && (() => {
+        // Calculate client statistics
+        const clientInvoices = invoices?.filter(inv => inv.clientId === selectedClient.id) || [];
+        const totalInvoices = clientInvoices.length;
+        const paidInvoices = clientInvoices.filter(inv => inv.status === 'paid').length;
+        const pendingInvoices = clientInvoices.filter(inv => inv.status === 'sent' || inv.status === 'pending').length;
+        const totalAmount = clientInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
+        const recentInvoices = clientInvoices.slice(0, 5).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
+            <div className="rounded-lg p-4 sm:p-6 max-w-2xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scroll-smooth custom-scrollbar bg-white border-gray-200">
               {/* Header */}
-              <div className="p-3 sm:p-6 border-b border-gray-200">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 rounded-xl bg-indigo-50">
-                    <Users className="h-8 w-8 text-indigo-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg sm:text-2xl font-bold text-gray-900">
-                      {selectedClient.name}
-                    </h3>
-                    {selectedClient.company && (
-                      <p className="text-sm sm:text-base text-gray-600">
-                        {selectedClient.company}
-                      </p>
-                    )}
-                  </div>
-                </div>
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900">Client Details</h2>
+                <button
+                  onClick={() => {
+                    setShowViewClient(false);
+                    setSelectedClient(null);
+                  }}
+                  className="p-1.5 rounded-lg transition-colors hover:bg-gray-100 cursor-pointer"
+                >
+                  <X className="h-5 w-5 text-gray-500" />
+                </button>
               </div>
-              
-              {/* Contact Information */}
-              <div className="p-3 sm:p-6 space-y-4">
+
+              <div className="space-y-6">
+                {/* Client Name */}
                 <div>
-                  <h4 className="text-sm sm:text-base font-semibold mb-2 text-gray-900">Contact Information</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-3">
-                      <Mail className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm sm:text-base text-gray-600">{selectedClient.email}</span>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-1">
+                    {selectedClient.name}
+                  </h3>
+                  {selectedClient.company && (
+                    <p className="text-sm text-gray-600">
+                      {selectedClient.company}
+                    </p>
+                  )}
+                </div>
+
+                {/* Contact Information */}
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3 text-sm">
+                    <Mail className="h-4 w-4 text-gray-400" />
+                    <a href={`mailto:${selectedClient.email}`} className="text-gray-900 hover:text-gray-700">
+                      {selectedClient.email}
+                    </a>
+                  </div>
+                  {selectedClient.phone && (
+                    <div className="flex items-center space-x-3 text-sm">
+                      <Phone className="h-4 w-4 text-gray-400" />
+                      <a href={`tel:${selectedClient.phone}`} className="text-gray-900 hover:text-gray-700">
+                        {selectedClient.phone}
+                      </a>
                     </div>
-                    {selectedClient.phone && (
-                      <div className="flex items-center space-x-3">
-                        <Phone className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm sm:text-base text-gray-600">{selectedClient.phone}</span>
-                      </div>
-                    )}
-                    {selectedClient.address && (
-                      <div className="flex items-start space-x-3">
-                        <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-gray-500" />
-                        <span className="text-sm sm:text-base text-gray-600">{selectedClient.address}</span>
-                      </div>
-                    )}
+                  )}
+                  {selectedClient.address && (
+                    <div className="flex items-start space-x-3 text-sm">
+                      <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-900">{selectedClient.address}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Statistics */}
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <p className="text-2xl font-semibold text-gray-900">{totalInvoices}</p>
+                      <p className="text-xs text-gray-500 mt-1">Invoices</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-semibold text-gray-900">{paidInvoices}</p>
+                      <p className="text-xs text-gray-500 mt-1">Paid</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-semibold text-gray-900">{pendingInvoices}</p>
+                      <p className="text-xs text-gray-500 mt-1">Pending</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-gray-200 text-center">
+                    <p className="text-sm text-gray-500">Total Amount</p>
+                    <p className="text-xl font-semibold text-gray-900 mt-1">${totalAmount.toLocaleString()}</p>
                   </div>
                 </div>
+
+                {/* Actions */}
+                <div className="pt-4 border-t border-gray-200 flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={() => {
+                      setShowViewClient(false);
+                      setSelectedClient(null);
+                      handleCreateInvoice();
+                    }}
+                    className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
+                  >
+                    <FilePlus className="h-4 w-4" />
+                    <span>Create Invoice</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowViewClient(false);
+                      handleEditClient(selectedClient);
+                    }}
+                    className="flex items-center justify-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span>Edit</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowViewClient(false);
+                      handleDeleteClient(selectedClient);
+                    }}
+                    className="flex items-center justify-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span>Delete</span>
+                  </button>
+                </div>
+
+                {/* Recent Invoices */}
+                {recentInvoices.length > 0 && (
+                  <div className="pt-4 border-t border-gray-200">
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">Recent Invoices</h4>
+                    <div className="space-y-1">
+                      {recentInvoices.map((invoice) => (
+                        <div key={invoice.id} className="flex items-center justify-between py-2 text-sm border-b border-gray-100 last:border-0">
+                          <div className="flex items-center space-x-3">
+                            <span className="text-gray-900 font-medium">#{invoice.invoiceNumber}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded ${
+                              invoice.status === 'paid' ? 'bg-emerald-100 text-emerald-700' :
+                              invoice.status === 'sent' || invoice.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                              invoice.status === 'draft' ? 'bg-gray-100 text-gray-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {invoice.status}
+                            </span>
+                            <span className="text-gray-400">•</span>
+                            <span className="text-gray-500">
+                              {new Date(invoice.dueDate).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <span className="text-gray-900 font-medium">${invoice.total.toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Invoice Type Selection Modal */}
       {showInvoiceTypeSelection && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="text-center mb-6">
               <h3 className="font-heading text-xl font-semibold mb-2" style={{color: '#1f2937'}}>
                 Choose Invoice Type
@@ -617,10 +705,15 @@ export default function ClientsPage() {
       {showFastInvoice && (
         <FastInvoiceModal
           isOpen={showFastInvoice}
-          onClose={() => setShowFastInvoice(false)}
+          onClose={() => {
+            setShowFastInvoice(false);
+            setSelectedClient(null);
+          }}
           user={user!}
+          clients={clients}
           onSuccess={() => {
             setShowFastInvoice(false);
+            setSelectedClient(null);
             showSuccess('Invoice created successfully');
           }}
           getAuthHeaders={getAuthHeaders}
@@ -634,11 +727,15 @@ export default function ClientsPage() {
       {showCreateInvoice && (
         <QuickInvoiceModal
           isOpen={showCreateInvoice}
-          onClose={() => setShowCreateInvoice(false)}
+          onClose={() => {
+            setShowCreateInvoice(false);
+            setSelectedClient(null);
+          }}
           getAuthHeaders={getAuthHeaders}
           clients={clients}
           onSuccess={() => {
             setShowCreateInvoice(false);
+            setSelectedClient(null);
             showSuccess('Invoice created successfully');
           }}
         />

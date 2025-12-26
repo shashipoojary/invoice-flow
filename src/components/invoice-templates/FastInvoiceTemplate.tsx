@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   businessText: {
     fontSize: 9,
     color: '#6B7280',
-    marginBottom: 4,
+    marginBottom: 6,
     lineHeight: 1.6,
   },
   // Clean bill to section with better spacing

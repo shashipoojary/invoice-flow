@@ -325,39 +325,44 @@ async function generateTemplate1DetailedPDF(
     color: rgb(0, 0, 0),
   });
 
+  // Business contact information with consistent spacing
+  let contactY = height - 115;
   if (businessSettings.address) {
     const addressLines = formatAddressForPDF(businessSettings.address, businessSettings);
-    let addressY = height - 115;
     addressLines.forEach((line, index) => {
       page.drawText(line, {
         x: 110,
-        y: addressY - (index * 12), // 12px spacing between lines
+        y: contactY - (index * 12), // 12px spacing between address lines
         size: 9,
         font: font,
         color: rgb(0, 0, 0),
       });
     });
-    // Adjust phone and email position based on number of address lines
-    const phoneYOffset = addressLines.length > 1 ? addressLines.length * 12 : 15;
-    if (businessSettings.businessPhone) {
-      page.drawText(businessSettings.businessPhone, {
-        x: 110,
-        y: height - 115 - phoneYOffset,
-        size: 9,
-        font: font,
-        color: rgb(0, 0, 0),
-      });
-    }
+    // Calculate final Y position after all address lines
+    contactY = contactY - (addressLines.length * 12);
+  }
+  
+  // Consistent 12px spacing between all contact fields
+  if (businessSettings.businessPhone) {
+    contactY -= 12;
+    page.drawText(businessSettings.businessPhone, {
+      x: 110,
+      y: contactY,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
+  }
 
-    if (businessSettings.businessEmail) {
-      page.drawText(businessSettings.businessEmail, {
-        x: 110,
-        y: height - 115 - phoneYOffset - 15,
-        size: 9,
-        font: font,
-        color: rgb(0, 0, 0),
-      });
-    }
+  if (businessSettings.businessEmail) {
+    contactY -= 12;
+    page.drawText(businessSettings.businessEmail, {
+      x: 110,
+      y: contactY,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
   }
 
   // Invoice details
@@ -748,39 +753,44 @@ async function generateTemplate2PDF(
     color: rgb(0, 0, 0),
   });
 
+  // Business contact information with consistent spacing
+  let contactY = height - 135;
   if (businessSettings.address) {
     const addressLines = formatAddressForPDF(businessSettings.address, businessSettings);
-    let addressY = height - 135;
     addressLines.forEach((line, index) => {
       page.drawText(line, {
         x: 100,
-        y: addressY - (index * 12),
+        y: contactY - (index * 12), // 12px spacing between address lines
         size: 9,
         font: font,
         color: rgb(0, 0, 0),
       });
     });
-    // Adjust phone and email position based on number of address lines
-    const phoneYOffset = addressLines.length > 1 ? addressLines.length * 12 : 15;
-    if (businessSettings.businessPhone) {
-      page.drawText(businessSettings.businessPhone, {
-        x: 100,
-        y: height - 135 - phoneYOffset,
-        size: 9,
-        font: font,
-        color: rgb(0, 0, 0),
-      });
-    }
+    // Calculate final Y position after all address lines
+    contactY = contactY - (addressLines.length * 12);
+  }
+  
+  // Consistent 12px spacing between all contact fields
+  if (businessSettings.businessPhone) {
+    contactY -= 12;
+    page.drawText(businessSettings.businessPhone, {
+      x: 100,
+      y: contactY,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
+  }
 
-    if (businessSettings.businessEmail) {
-      page.drawText(businessSettings.businessEmail, {
-        x: 100,
-        y: height - 135 - phoneYOffset - 15,
-        size: 9,
-        font: font,
-        color: rgb(0, 0, 0),
-      });
-    }
+  if (businessSettings.businessEmail) {
+    contactY -= 12;
+    page.drawText(businessSettings.businessEmail, {
+      x: 100,
+      y: contactY,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
   }
 
   // Invoice details
@@ -1094,39 +1104,44 @@ async function generateTemplate3PDF(
     color: rgb(0, 0, 0),
   });
 
+  // Business contact information with consistent spacing
+  let contactY = height - 75;
   if (businessSettings.address) {
     const addressLines = formatAddressForPDF(businessSettings.address, businessSettings);
-    let addressY = height - 75;
     addressLines.forEach((line, index) => {
       page.drawText(line, {
         x: 50,
-        y: addressY - (index * 12),
+        y: contactY - (index * 12), // 12px spacing between address lines
         size: 9,
         font: font,
         color: rgb(0.3, 0.3, 0.3),
       });
     });
-    // Adjust phone and email position based on number of address lines
-    const phoneYOffset = addressLines.length > 1 ? addressLines.length * 12 : 15;
-    if (businessSettings.businessPhone) {
-      page.drawText(businessSettings.businessPhone, {
-        x: 50,
-        y: height - 75 - phoneYOffset,
-        size: 9,
-        font: font,
-        color: rgb(0.3, 0.3, 0.3),
-      });
-    }
+    // Calculate final Y position after all address lines
+    contactY = contactY - (addressLines.length * 12);
+  }
+  
+  // Consistent 12px spacing between all contact fields
+  if (businessSettings.businessPhone) {
+    contactY -= 12;
+    page.drawText(businessSettings.businessPhone, {
+      x: 50,
+      y: contactY,
+      size: 9,
+      font: font,
+      color: rgb(0.3, 0.3, 0.3),
+    });
+  }
 
-    if (businessSettings.businessEmail) {
-      page.drawText(businessSettings.businessEmail, {
-        x: 50,
-        y: height - 75 - phoneYOffset - 15,
-        size: 9,
-        font: font,
-        color: rgb(0.3, 0.3, 0.3),
-      });
-    }
+  if (businessSettings.businessEmail) {
+    contactY -= 12;
+    page.drawText(businessSettings.businessEmail, {
+      x: 50,
+      y: contactY,
+      size: 9,
+      font: font,
+      color: rgb(0.3, 0.3, 0.3),
+    });
   }
 
   // Creative invoice details section with artistic elements
@@ -1548,39 +1563,44 @@ async function generateModernTemplatePDF(
     color: rgb(1, 1, 1), // White text on purple background
   });
 
+  // Business contact information with consistent spacing
+  let contactY = height - 75;
   if (businessSettings.address) {
     const addressLines = formatAddressForPDF(businessSettings.address, businessSettings);
-    let addressY = height - 75;
     addressLines.forEach((line, index) => {
       page.drawText(line, {
         x: 60,
-        y: addressY - (index * 10), // Slightly tighter spacing for modern template
+        y: contactY - (index * 10), // 10px spacing between address lines
         size: 8,
         font: font,
         color: rgb(1, 1, 1), // White text on purple background
       });
     });
-    // Adjust phone and email position based on number of address lines
-    const phoneYOffset = addressLines.length > 1 ? addressLines.length * 10 : 15;
-    if (businessSettings.businessPhone) {
-      page.drawText(businessSettings.businessPhone, {
-        x: 60,
-        y: height - 75 - phoneYOffset,
-        size: 8,
-        font: font,
-        color: rgb(1, 1, 1), // White text on purple background
-      });
-    }
+    // Calculate final Y position after all address lines
+    contactY = contactY - (addressLines.length * 10);
+  }
+  
+  // Consistent 10px spacing between all contact fields
+  if (businessSettings.businessPhone) {
+    contactY -= 10;
+    page.drawText(businessSettings.businessPhone, {
+      x: 60,
+      y: contactY,
+      size: 8,
+      font: font,
+      color: rgb(1, 1, 1), // White text on purple background
+    });
+  }
 
-    if (businessSettings.businessEmail) {
-      page.drawText(businessSettings.businessEmail, {
-        x: 60,
-        y: height - 75 - phoneYOffset - 10,
-        size: 8,
-        font: font,
-        color: rgb(1, 1, 1), // White text on purple background
-      });
-    }
+  if (businessSettings.businessEmail) {
+    contactY -= 10;
+    page.drawText(businessSettings.businessEmail, {
+      x: 60,
+      y: contactY,
+      size: 8,
+      font: font,
+      color: rgb(1, 1, 1), // White text on purple background
+    });
   }
 
   // Modern invoice details card
@@ -2057,39 +2077,44 @@ async function generateSimpleCleanTemplatePDF(
     color: rgb(1, 1, 1),
   });
 
+  // Business contact information with consistent spacing
+  let contactY = height - 75;
   if (businessSettings.address) {
     const addressLines = formatAddressForPDF(businessSettings.address, businessSettings);
-    let addressY = height - 75;
     addressLines.forEach((line, index) => {
       page.drawText(line, {
         x: 50,
-        y: addressY - (index * 10),
+        y: contactY - (index * 10), // 10px spacing between address lines
         size: 8,
         font: font,
         color: rgb(1, 1, 1),
       });
     });
-    // Adjust phone and email position based on number of address lines
-    const phoneYOffset = addressLines.length > 1 ? addressLines.length * 10 : 15;
-    if (businessSettings.businessPhone) {
-      page.drawText(businessSettings.businessPhone, {
-        x: 50,
-        y: height - 75 - phoneYOffset,
-        size: 8,
-        font: font,
-        color: rgb(1, 1, 1),
-      });
-    }
+    // Calculate final Y position after all address lines
+    contactY = contactY - (addressLines.length * 10);
+  }
+  
+  // Consistent 10px spacing between all contact fields
+  if (businessSettings.businessPhone) {
+    contactY -= 10;
+    page.drawText(businessSettings.businessPhone, {
+      x: 50,
+      y: contactY,
+      size: 8,
+      font: font,
+      color: rgb(1, 1, 1),
+    });
+  }
 
-    if (businessSettings.businessEmail) {
-      page.drawText(businessSettings.businessEmail, {
-        x: 50,
-        y: height - 75 - phoneYOffset - 10,
-        size: 8,
-        font: font,
-        color: rgb(1, 1, 1),
-      });
-    }
+  if (businessSettings.businessEmail) {
+    contactY -= 10;
+    page.drawText(businessSettings.businessEmail, {
+      x: 50,
+      y: contactY,
+      size: 8,
+      font: font,
+      color: rgb(1, 1, 1),
+    });
   }
 
   // Invoice details card - matching Subtotal section design
@@ -2630,43 +2655,48 @@ async function generateMinimalTemplatePDF(
     x: 50,
     y: height - 50,
     size: 20,
-    font: boldFont, // Make it bold and bigger
+    font: font, // Use regular font to match minimal template style
     color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b), // Primary color
   });
 
+  // Business contact information with consistent spacing
+  let contactY = height - 68;
   if (businessSettings.address) {
     const addressLines = formatAddressForPDF(businessSettings.address, businessSettings);
-    let addressY = height - 68;
     addressLines.forEach((line, index) => {
       page.drawText(line, {
         x: 50,
-        y: addressY - (index * 11),
+        y: contactY - (index * 11), // 11px spacing between address lines
         size: 9,
         font: font,
         color: rgb(0.5, 0.5, 0.5),
       });
     });
-    // Adjust phone and email position based on number of address lines
-    const phoneYOffset = addressLines.length > 1 ? addressLines.length * 11 : 12;
-    if (businessSettings.businessPhone) {
-      page.drawText(businessSettings.businessPhone, {
-        x: 50,
-        y: height - 68 - phoneYOffset,
-        size: 9,
-        font: font,
-        color: rgb(0.5, 0.5, 0.5),
-      });
-    }
+    // Calculate final Y position after all address lines
+    contactY = contactY - (addressLines.length * 11);
+  }
+  
+  // Consistent 11px spacing between all contact fields
+  if (businessSettings.businessPhone) {
+    contactY -= 11;
+    page.drawText(businessSettings.businessPhone, {
+      x: 50,
+      y: contactY,
+      size: 9,
+      font: font,
+      color: rgb(0.5, 0.5, 0.5),
+    });
+  }
 
-    if (businessSettings.businessEmail) {
-      page.drawText(businessSettings.businessEmail, {
-        x: 50,
-        y: height - 68 - phoneYOffset - 12,
-        size: 9,
-        font: font,
-        color: rgb(0.5, 0.5, 0.5),
-      });
-    }
+  if (businessSettings.businessEmail) {
+    contactY -= 11;
+    page.drawText(businessSettings.businessEmail, {
+      x: 50,
+      y: contactY,
+      size: 9,
+      font: font,
+      color: rgb(0.5, 0.5, 0.5),
+    });
   }
 
   // Minimal invoice title - smaller, with primary color accent

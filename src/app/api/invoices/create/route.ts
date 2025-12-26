@@ -10,10 +10,10 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 // Function to create scheduled reminders
 async function createScheduledReminders(invoiceId: string, reminderSettings: any, dueDate: string, paymentTerms?: any, invoiceStatus?: string, updatedAt?: string) {
   try {
-    // CRITICAL: Do not schedule reminders for draft invoices
-    if (invoiceStatus === 'draft') {
-      console.log(`⏭️ Skipping reminder scheduling for invoice ${invoiceId} - invoice is in draft status`);
-      // Delete any existing scheduled reminders for draft invoices
+    // CRITICAL: Do not schedule reminders for draft or paid invoices
+    if (invoiceStatus === 'draft' || invoiceStatus === 'paid') {
+      console.log(`⏭️ Skipping reminder scheduling for invoice ${invoiceId} - invoice is in ${invoiceStatus} status`);
+      // Delete any existing scheduled reminders for draft or paid invoices
       await supabaseAdmin
         .from('invoice_reminders')
         .delete()
@@ -577,7 +577,7 @@ export async function POST(request: NextRequest) {
       subtotal,
       discount,
       total,
-      status: 'draft',
+      status: invoiceData.status || 'draft', // Allow 'paid' status if provided
       issue_date: invoiceData.issue_date || new Date().toISOString().split('T')[0],
       due_date: invoiceData.due_date,
       notes: invoiceData.notes || '',
