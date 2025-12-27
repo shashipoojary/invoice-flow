@@ -185,7 +185,7 @@ export async function PUT(
         const { error: reminderError } = await supabaseAdmin
           .from('invoice_reminders')
           .update({
-            reminder_status: 'failed',
+            reminder_status: 'cancelled',
             failure_reason: 'Invoice marked as paid - reminders cancelled'
           })
           .eq('invoice_id', invoiceId)

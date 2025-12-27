@@ -577,7 +577,10 @@ export async function POST(request: NextRequest) {
       subtotal,
       discount,
       total,
-      status: invoiceData.status || 'draft', // Allow 'paid' status if provided
+      // IMPORTANT: Allow 'paid' status if user marked invoice as paid during creation
+      // This is for the use case where client already paid, but asks for invoice later
+      // These invoices can still be sent as receipts, but won't get reminders
+      status: invoiceData.status || 'draft',
       issue_date: invoiceData.issue_date || new Date().toISOString().split('T')[0],
       due_date: invoiceData.due_date,
       notes: invoiceData.notes || '',
@@ -672,6 +675,23 @@ export async function POST(request: NextRequest) {
     if (fetchError) {
       console.error('Invoice fetch error:', fetchError);
       return NextResponse.json({ error: 'Failed to fetch complete invoice' }, { status: 500 });
+    }
+
+    // IMPORTANT: If invoice was created with 'paid' status (via "Mark as Paid" during creation),
+    // log a 'paid' event for consistency with existing flow
+    // This ensures activity tracking and other systems recognize it as paid from the start
+    if (completeInvoice.status === 'paid') {
+      try {
+        await supabaseAdmin.from('invoice_events').insert({ 
+          invoice_id: completeInvoice.id, 
+          type: 'paid',
+          metadata: { created_as_paid: true } // Flag to distinguish from invoices marked as paid later
+        });
+        console.log(`✅ Logged 'paid' event for invoice ${completeInvoice.id} (created as paid)`);
+      } catch (eventError) {
+        console.error('Error logging paid event for newly created paid invoice:', eventError);
+        // Don't fail invoice creation if event logging fails
+      }
     }
 
     // Map database fields to frontend interface

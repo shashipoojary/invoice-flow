@@ -39,9 +39,13 @@ interface ReminderHistory {
   overdue_days: number;
   sent_at: string;
   email_id: string;
-  reminder_status: 'sent' | 'failed' | 'scheduled' | 'delivered' | 'bounced';
+  reminder_status: 'sent' | 'failed' | 'scheduled' | 'delivered' | 'bounced' | 'cancelled';
   failure_reason?: string;
   created_at?: string;
+  paymentData?: {
+    totalPaid: number;
+    remainingBalance: number;
+  };
   invoice: {
     invoice_number: string;
     total: number;
@@ -141,6 +145,38 @@ export default function ReminderHistoryPage() {
         
         reminderData = data || [];
         reminderError = error;
+        
+        // Fetch payment data for all invoice IDs in bulk
+        if (reminderData && reminderData.length > 0) {
+          const uniqueInvoiceIds = [...new Set(reminderData.map((r: any) => r.invoice_id))];
+          
+          // Fetch payments for all invoices
+          const { data: paymentsData } = await supabase
+            .from('invoice_payments')
+            .select('invoice_id, amount')
+            .in('invoice_id', uniqueInvoiceIds);
+          
+          // Store payment data in a map for quick lookup
+          const paymentsMap = new Map<string, number>();
+          if (paymentsData) {
+            paymentsData.forEach((p: any) => {
+              const currentTotal = paymentsMap.get(p.invoice_id) || 0;
+              paymentsMap.set(p.invoice_id, currentTotal + parseFloat(p.amount.toString()));
+            });
+          }
+          
+          // Attach payment data to each reminder
+          reminderData = reminderData.map((reminder: any) => {
+            const totalPaid = paymentsMap.get(reminder.invoice_id) || 0;
+            return {
+              ...reminder,
+              paymentData: {
+                totalPaid,
+                remainingBalance: Math.max(0, (reminder.invoices?.total || 0) - totalPaid)
+              }
+            };
+          });
+        }
       }
 
       if (reminderError) {
@@ -189,6 +225,7 @@ export default function ReminderHistoryPage() {
             reminder_status: reminderStatus,
             failure_reason: reminder.failure_reason || null,
             created_at: reminder.created_at || new Date().toISOString(),
+            paymentData: reminder.paymentData || undefined,
             invoice: {
               invoice_number: reminder.invoices.invoice_number,
               total: reminder.invoices.total || 0,
@@ -338,15 +375,16 @@ export default function ReminderHistoryPage() {
         return false; // Skip reminders scheduled for past or more than 1 day ahead
       }
       
-      // Show ALL sent/failed/delivered/bounced reminders (complete history)
+      // Show ALL sent/failed/delivered/bounced/cancelled reminders (complete history)
       return true;
     }).sort((a, b) => {
-      // Sort by status priority: sent/failed/delivered/bounced first, then scheduled
+      // Sort by status priority: sent/failed/delivered/bounced/cancelled first, then scheduled
       const statusPriority: Record<string, number> = { 
         'sent': 1, 
         'delivered': 1, 
         'failed': 1, 
-        'bounced': 1, 
+        'bounced': 1,
+        'cancelled': 1,
         'scheduled': 2 
       };
       const aPriority = statusPriority[a.reminder_status] || 3;
@@ -392,8 +430,53 @@ export default function ReminderHistoryPage() {
       case 'scheduled': return 'text-yellow-600';
       case 'failed': return 'text-red-600';
       case 'bounced': return 'text-orange-600';
+      case 'cancelled': return 'text-gray-500';
       default: return 'text-gray-600';
     }
+  };
+
+  // Helper function to calculate total with late fees and partial payments
+  const calculateReminderTotal = (reminder: ReminderHistory) => {
+    const baseAmount = reminder.paymentData?.remainingBalance || reminder.invoice.total;
+    let lateFeesAmount = 0;
+    let totalPayable = baseAmount;
+    
+    // Parse late fees settings
+    let lateFeesSettings = null;
+    if (reminder.invoice.late_fees) {
+      try {
+        lateFeesSettings = typeof reminder.invoice.late_fees === 'string' 
+          ? JSON.parse(reminder.invoice.late_fees) 
+          : reminder.invoice.late_fees;
+      } catch (e) {
+        lateFeesSettings = null;
+      }
+    }
+    
+    // Calculate late fees if invoice is overdue and late fees are enabled
+    if (reminder.overdue_days > 0 && reminder.invoice.status !== 'paid' && lateFeesSettings && lateFeesSettings.enabled) {
+      const gracePeriod = lateFeesSettings.gracePeriod || 0;
+      const chargeableDays = Math.max(0, reminder.overdue_days - gracePeriod);
+      
+      if (chargeableDays > 0) {
+        if (lateFeesSettings.type === 'percentage') {
+          // Calculate late fee on remaining balance (after partial payments)
+          lateFeesAmount = baseAmount * ((lateFeesSettings.amount || 0) / 100);
+        } else if (lateFeesSettings.type === 'fixed') {
+          lateFeesAmount = lateFeesSettings.amount || 0;
+        }
+        totalPayable = baseAmount + lateFeesAmount;
+      }
+    }
+    
+    return {
+      baseAmount,
+      lateFeesAmount,
+      totalPayable,
+      hasLateFees: lateFeesAmount > 0,
+      totalPaid: reminder.paymentData?.totalPaid || 0,
+      isPartiallyPaid: (reminder.paymentData?.totalPaid || 0) > 0 && (reminder.paymentData?.remainingBalance || 0) > 0
+    };
   };
 
   const sendManualReminder = async (invoiceId: string, reminderType: string) => {
@@ -624,6 +707,16 @@ export default function ReminderHistoryPage() {
                     >
                       Bounced
                     </button>
+                    <button
+                      onClick={() => setStatusFilter('cancelled')}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                        statusFilter === 'cancelled' 
+                          ? 'bg-gray-100 text-gray-800 border border-gray-200' 
+                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                      }`}
+                    >
+                      Cancelled
+                    </button>
                   </div>
                 </div>
 
@@ -729,8 +822,13 @@ export default function ReminderHistoryPage() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {filteredReminders.map((reminder) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+            {filteredReminders.map((reminder) => {
+              const totals = calculateReminderTotal(reminder);
+              const sentDate = new Date(reminder.sent_at);
+              const dueDate = new Date(reminder.invoice.due_date);
+              
+              return (
               <div key={reminder.id} className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
                 {/* Mobile Layout */}
                 <div className="block sm:hidden p-4">
@@ -751,12 +849,27 @@ export default function ReminderHistoryPage() {
                         </div>
                       </div>
                       <div className="text-right min-h-[56px] flex flex-col items-end">
-                        <div className="font-semibold text-base text-green-600">
-                          ${reminder.invoice.total.toLocaleString()}
+                        <div className={`font-semibold text-base ${
+                          reminder.invoice.status === 'paid' ? 'text-emerald-600' :
+                          totals.hasLateFees ? 'text-red-600' :
+                          'text-green-600'
+                        }`}>
+                          ${totals.totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
-                        <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
+                        {totals.isPartiallyPaid ? (
+                          <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                            Paid: ${totals.totalPaid.toFixed(2)} • Remaining: ${totals.baseAmount.toFixed(2)}
+                            {totals.hasLateFees && ` • Late fee: ${totals.lateFeesAmount.toFixed(2)}`}
+                          </div>
+                        ) : totals.hasLateFees ? (
+                          <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                            Base ${reminder.invoice.total.toLocaleString()} • Late fee ${totals.lateFeesAmount.toLocaleString()}
+                          </div>
+                        ) : (
+                          <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
+                        )}
                         <div className="text-xs" style={{color: '#6b7280'}}>
-                          {new Date(reminder.sent_at).toLocaleDateString()}
+                          {sentDate.toLocaleDateString()}
                         </div>
                       </div>
                     </div>
@@ -784,7 +897,8 @@ export default function ReminderHistoryPage() {
                       </div>
                       
                       <div className="flex items-center space-x-1">
-                        {reminder.reminder_status === 'failed' && (
+                        {/* Only show manual send button for failed reminders (not cancelled) */}
+                        {reminder.reminder_status === 'failed' && !reminder.failure_reason?.includes('Invoice already paid') && !reminder.failure_reason?.includes('Invoice fully paid') && !reminder.failure_reason?.includes('reminders cancelled') && (
                           <button
                             onClick={() => sendManualReminder(reminder.invoice_id, reminder.reminder_type)}
                             disabled={sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`)}
@@ -830,12 +944,27 @@ export default function ReminderHistoryPage() {
                         </div>
                       </div>
                       <div className="text-right min-h-[56px] flex flex-col items-end">
-                        <div className="font-semibold text-base text-green-600">
-                          ${reminder.invoice.total.toLocaleString()}
+                        <div className={`font-semibold text-base ${
+                          reminder.invoice.status === 'paid' ? 'text-emerald-600' :
+                          totals.hasLateFees ? 'text-red-600' :
+                          'text-green-600'
+                        }`}>
+                          ${totals.totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
-                        <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
+                        {totals.isPartiallyPaid ? (
+                          <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                            Paid: ${totals.totalPaid.toFixed(2)} • Remaining: ${totals.baseAmount.toFixed(2)}
+                            {totals.hasLateFees && ` • Late fee: ${totals.lateFeesAmount.toFixed(2)}`}
+                          </div>
+                        ) : totals.hasLateFees ? (
+                          <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                            Base ${reminder.invoice.total.toLocaleString()} • Late fee ${totals.lateFeesAmount.toLocaleString()}
+                          </div>
+                        ) : (
+                          <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
+                        )}
                         <div className="text-xs" style={{color: '#6b7280'}}>
-                          {new Date(reminder.sent_at).toLocaleDateString()}
+                          {sentDate.toLocaleDateString()}
                         </div>
                       </div>
                     </div>
@@ -861,7 +990,8 @@ export default function ReminderHistoryPage() {
                         )}
                       </div>
                       <div className="flex items-center space-x-1">
-                        {reminder.reminder_status === 'failed' && (
+                        {/* Only show manual send button for failed reminders (not cancelled) */}
+                        {reminder.reminder_status === 'failed' && !reminder.failure_reason?.includes('Invoice already paid') && !reminder.failure_reason?.includes('Invoice fully paid') && !reminder.failure_reason?.includes('reminders cancelled') && (
                           <button
                             onClick={() => sendManualReminder(reminder.invoice_id, reminder.reminder_type)}
                             disabled={sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`)}
@@ -889,7 +1019,8 @@ export default function ReminderHistoryPage() {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
 
             {filteredReminders.length === 0 && !loading && (
               <div className="col-span-full">
@@ -1104,6 +1235,7 @@ export default function ReminderHistoryPage() {
                   >
                     Close
                   </button>
+                  {/* Only show send button for failed reminders (not cancelled) */}
                   {selectedReminder.reminder_status === 'failed' && (
                     <button
                       onClick={async () => {
@@ -1232,4 +1364,6 @@ export default function ReminderHistoryPage() {
     </div>
   );
 }
+
+
 

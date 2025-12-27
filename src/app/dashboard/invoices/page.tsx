@@ -587,15 +587,15 @@ function InvoicesContent(): React.JSX.Element {
   }, [settings, showSuccess, showError]);
 
   const handleSendInvoice = useCallback((invoice: Invoice) => {
-    // Only show modal for draft invoices
-    if (invoice.status === 'draft') {
+    // Show modal for draft and paid invoices
+    if (invoice.status === 'draft' || invoice.status === 'paid') {
       setSendInvoiceModal({
         isOpen: true,
         invoice,
         isLoading: false
       });
     } else {
-      // For non-draft invoices, send directly (shouldn't happen, but just in case)
+      // For other statuses (sent/pending), send directly
       performSendInvoice(invoice);
     }
   }, []);
@@ -1091,13 +1091,13 @@ function InvoicesContent(): React.JSX.Element {
                     <Download className="h-4 w-4 text-gray-600" />
             )}
           </button>
-          {invoice.status === 'draft' && (
+          {(invoice.status === 'draft' || invoice.status === 'paid') && (
             <button 
               data-testid={`invoice-${invoice.id}-send`}
               onClick={() => handleSendInvoice(invoice)}
               disabled={loadingActions[`send-${invoice.id}`]}
                     className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                    title="Send"
+                    title={invoice.status === 'paid' ? 'Send Receipt' : 'Send'}
             >
               {loadingActions[`send-${invoice.id}`] ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>

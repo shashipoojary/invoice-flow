@@ -154,28 +154,9 @@ export async function GET(
       }
     }
     
-    // Calculate late fees only if user has enabled them and invoice is overdue
-    // CRITICAL: Don't calculate late fees for draft invoices
-    let lateFees = 0
-    if (isOverdue && invoice.status !== 'paid' && invoice.status !== 'draft' && lateFeesSettings && lateFeesSettings.enabled) {
-      const daysOverdue = Math.round((todayStart.getTime() - dueDateStart.getTime()) / (1000 * 60 * 60 * 24))
-      
-      // Check if grace period has passed
-      if (daysOverdue > (lateFeesSettings.gracePeriod || 0)) {
-        if (lateFeesSettings.type === 'percentage') {
-          // Percentage-based late fees
-          const percentage = lateFeesSettings.amount || 0
-          lateFees = (invoice.total || 0) * (percentage / 100)
-        } else {
-          // Fixed amount late fees
-          lateFees = lateFeesSettings.amount || 0
-        }
-      }
-    }
-
-    // Fetch payment data for sent/pending invoices
-    let totalPaid = 0;
-    let remainingBalance = invoice.total || 0;
+    // Fetch payment data for sent/pending invoices FIRST (before calculating late fees)
+    let totalPaid: number | undefined = undefined;
+    let remainingBalance: number | undefined = undefined;
     if (invoice.status === 'sent' || invoice.status === 'pending') {
       const { data: payments } = await supabaseAdmin
         .from('invoice_payments')
@@ -183,13 +164,40 @@ export async function GET(
         .eq('invoice_id', invoice.id);
       
       if (payments && payments.length > 0) {
-        totalPaid = payments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
-        remainingBalance = Math.max(0, (invoice.total || 0) - totalPaid);
+        const calculatedTotalPaid = payments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+        if (calculatedTotalPaid > 0) {
+          totalPaid = calculatedTotalPaid;
+          remainingBalance = Math.max(0, (invoice.total || 0) - calculatedTotalPaid);
+        }
+      }
+    }
+    
+    // Calculate late fees only if user has enabled them and invoice is overdue
+    // CRITICAL: Don't calculate late fees for draft invoices
+    // IMPORTANT: Calculate late fees on remaining balance (after partial payments), not full total
+    let lateFees = 0
+    if (isOverdue && invoice.status !== 'paid' && invoice.status !== 'draft' && lateFeesSettings && lateFeesSettings.enabled) {
+      const daysOverdue = Math.round((todayStart.getTime() - dueDateStart.getTime()) / (1000 * 60 * 60 * 24))
+      
+      // Check if grace period has passed
+      if (daysOverdue > (lateFeesSettings.gracePeriod || 0)) {
+        // Use remaining balance for late fee calculation if partial payments exist
+        const baseAmount = remainingBalance !== undefined && remainingBalance > 0 ? remainingBalance : (invoice.total || 0);
+        
+        if (lateFeesSettings.type === 'percentage') {
+          // Percentage-based late fees - calculate on remaining balance
+          const percentage = lateFeesSettings.amount || 0
+          lateFees = baseAmount * (percentage / 100)
+        } else {
+          // Fixed amount late fees
+          lateFees = lateFeesSettings.amount || 0
+        }
       }
     }
     
     // Calculate total with late fees on remaining balance
-    const totalWithLateFees = remainingBalance + lateFees;
+    const baseAmount = remainingBalance !== undefined && remainingBalance >= 0 ? remainingBalance : (invoice.total || 0);
+    const totalWithLateFees = baseAmount + lateFees;
 
     // Return formatted invoice data
     return NextResponse.json({ 
@@ -214,8 +222,11 @@ export async function GET(
         discount: invoice.discount || 0,
         taxAmount: invoice.tax_amount || 0,
         total: invoice.total || 0,
-        totalPaid: totalPaid,
-        remainingBalance: remainingBalance,
+        // Only include payment data if there are actual partial payments
+        ...(totalPaid !== undefined && totalPaid > 0 && remainingBalance !== undefined && remainingBalance > 0 ? {
+          totalPaid: totalPaid,
+          remainingBalance: remainingBalance
+        } : {}),
         lateFees: lateFees,
         totalWithLateFees: totalWithLateFees,
         status: isOverdue && invoice.status !== 'paid' ? 'overdue' : (isDueToday ? 'due today' : (invoice.status === 'sent' ? 'pending' : invoice.status)),

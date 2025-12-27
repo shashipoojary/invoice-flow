@@ -149,8 +149,8 @@ export async function POST(
         await supabaseAdmin
           .from('invoice_reminders')
           .update({
-            reminder_status: 'failed',
-            failure_reason: 'Invoice fully paid - reminders cancelled'
+            reminder_status: 'cancelled',
+            failure_reason: 'Invoice fully paid via partial payments - reminders cancelled'
           })
           .eq('invoice_id', invoiceId)
           .eq('reminder_status', 'scheduled');

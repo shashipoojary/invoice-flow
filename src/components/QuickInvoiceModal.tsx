@@ -282,6 +282,27 @@ export default function QuickInvoiceModal({
     }
   }, [isOpen, fetchClients, propClients])
 
+  // IMPORTANT: When "Mark as Paid" is selected, auto-set payment terms to "Due on Receipt"
+  // and disable late fees and reminders
+  useEffect(() => {
+    if (markAsPaid) {
+      // Auto-set payment terms to "Due on Receipt" and enable it
+      setPaymentTerms({
+        enabled: true,
+        options: ['Due on Receipt', 'Net 15', 'Net 30', '2/10 Net 30'],
+        defaultOption: 'Due on Receipt'
+      })
+      // Set due date to issue date (Due on Receipt)
+      if (issueDate) {
+        setDueDate(issueDate)
+      }
+      // Disable late fees
+      setLateFees(prev => ({ ...prev, enabled: false }))
+      // Disable reminders
+      setReminders(prev => ({ ...prev, enabled: false }))
+    }
+  }, [markAsPaid, issueDate])
+
   // Auto-calculate due date when payment terms are enabled or issue date changes
   useEffect(() => {
     if (paymentTerms.enabled) {
@@ -1639,19 +1660,23 @@ export default function QuickInvoiceModal({
               {/* Payment Terms */}
               <div className={`p-5 rounded-lg border ${
                 isDarkMode ? 'border-gray-700' : 'border-gray-200'
-              }`}>
+              } ${markAsPaid ? 'opacity-60' : ''}`}>
                 <div className="flex items-center justify-between mb-4">
                   <h4 className={`text-sm font-semibold flex items-center ${
                     isDarkMode ? 'text-white' : 'text-gray-900'
                   }`}>
                     <CreditCard className="h-4 w-4 mr-2 text-green-600" />
                     Payment Terms
+                    {markAsPaid && (
+                      <span className="ml-2 text-xs text-orange-600">(Locked - Due on Receipt)</span>
+                    )}
                   </h4>
-                  <label className="relative inline-flex items-center cursor-pointer">
+                  <label className={`relative inline-flex items-center ${markAsPaid ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                     <input
                       type="checkbox"
                       checked={paymentTerms.enabled}
-                      onChange={(e) => setPaymentTerms({...paymentTerms, enabled: e.target.checked})}
+                      onChange={(e) => !markAsPaid && setPaymentTerms({...paymentTerms, enabled: e.target.checked})}
+                      disabled={markAsPaid}
                       className="sr-only peer"
                     />
                     <div className={`w-11 h-6 rounded-full peer transition-colors ${
@@ -1698,6 +1723,7 @@ export default function QuickInvoiceModal({
                       <select
                         value={paymentTerms.defaultOption}
                         onChange={(e) => {
+                          if (markAsPaid) return // Prevent changes when mark as paid is selected
                           const selectedTerm = e.target.value
                           setPaymentTerms({...paymentTerms, defaultOption: selectedTerm})
                           
@@ -1718,7 +1744,12 @@ export default function QuickInvoiceModal({
                             setDueDate(newDueDate.toISOString().split('T')[0])
                           }
                         }}
-                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-colors cursor-pointer ${
+                        disabled={markAsPaid}
+                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-colors ${
+                          markAsPaid 
+                            ? 'cursor-not-allowed opacity-60' 
+                            : 'cursor-pointer'
+                        } ${
                           isDarkMode 
                             ? 'border-gray-700 bg-gray-800 text-white' 
                             : 'border-gray-300 bg-white text-gray-900'
@@ -1771,19 +1802,23 @@ export default function QuickInvoiceModal({
               {/* Auto Reminders */}
               <div className={`p-5 rounded-lg border ${
                 isDarkMode ? 'border-gray-700' : 'border-gray-200'
-              }`}>
+              } ${markAsPaid ? 'opacity-60' : ''}`}>
                 <div className="flex items-center justify-between mb-4">
                   <h4 className={`text-sm font-semibold flex items-center ${
                     isDarkMode ? 'text-white' : 'text-gray-900'
                   }`}>
                     <Bell className="h-4 w-4 mr-2 text-indigo-600" />
                     Auto Reminders
+                    {markAsPaid && (
+                      <span className="ml-2 text-xs text-orange-600">(Locked - Disabled)</span>
+                    )}
                   </h4>
-                  <label className="relative inline-flex items-center cursor-pointer">
+                  <label className={`relative inline-flex items-center ${markAsPaid ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                     <input
                       type="checkbox"
                       checked={reminders.enabled}
-                      onChange={(e) => setReminders({...reminders, enabled: e.target.checked})}
+                      onChange={(e) => !markAsPaid && setReminders({...reminders, enabled: e.target.checked})}
+                      disabled={markAsPaid}
                       className="sr-only peer"
                     />
                     <div className={`w-11 h-6 rounded-full peer transition-colors ${
@@ -1978,8 +2013,11 @@ export default function QuickInvoiceModal({
                           <div key={rule.id} className="flex items-center space-x-3 py-2">
                             <select
                               value={rule.type}
-                              onChange={(e) => updateReminderRule(rule.id, { type: e.target.value as 'before' | 'after' })}
-                              className={`px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors cursor-pointer ${
+                              onChange={(e) => !markAsPaid && updateReminderRule(rule.id, { type: e.target.value as 'before' | 'after' })}
+                              disabled={markAsPaid}
+                              className={`px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                                markAsPaid ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                              } ${
                                 isDarkMode 
                                   ? 'border-gray-700 bg-gray-800' 
                                   : 'border-gray-300 bg-white'
@@ -1996,8 +2034,11 @@ export default function QuickInvoiceModal({
                             <input
                               type="number"
                               value={rule.days}
-                              onChange={(e) => updateReminderRule(rule.id, { days: parseInt(e.target.value) || 0 })}
+                              onChange={(e) => !markAsPaid && updateReminderRule(rule.id, { days: parseInt(e.target.value) || 0 })}
+                              disabled={markAsPaid}
                               className={`w-20 px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                                markAsPaid ? 'cursor-not-allowed opacity-60' : ''
+                              } ${
                                 isDarkMode 
                                   ? 'border-gray-700 bg-gray-800 text-white' 
                                   : 'border-gray-300 bg-white text-gray-900'
@@ -2014,8 +2055,11 @@ export default function QuickInvoiceModal({
                             <button
                               type="button"
                               data-testid={`remove-reminder-rule-${rule.id}`}
-                              onClick={() => removeReminderRule(rule.id)}
-                              className="ml-auto text-red-500 hover:text-red-700 p-1 cursor-pointer"
+                              onClick={() => !markAsPaid && removeReminderRule(rule.id)}
+                              disabled={markAsPaid}
+                              className={`ml-auto text-red-500 hover:text-red-700 p-1 ${
+                                markAsPaid ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                              }`}
                               title="Delete rule"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -2031,19 +2075,23 @@ export default function QuickInvoiceModal({
               {/* Late Fees */}
               <div className={`p-5 rounded-lg border ${
                 isDarkMode ? 'border-gray-700' : 'border-gray-200'
-              }`}>
+              } ${markAsPaid ? 'opacity-60' : ''}`}>
                 <div className="flex items-center justify-between mb-4">
                   <h4 className={`text-sm font-semibold flex items-center ${
                     isDarkMode ? 'text-white' : 'text-gray-900'
                   }`}>
                     <AlertTriangle className="h-4 w-4 mr-2 text-orange-600" />
                     Late Fees
+                    {markAsPaid && (
+                      <span className="ml-2 text-xs text-orange-600">(Locked - Disabled)</span>
+                    )}
                   </h4>
-                  <label className="relative inline-flex items-center cursor-pointer">
+                  <label className={`relative inline-flex items-center ${markAsPaid ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                     <input
                       type="checkbox"
                       checked={lateFees.enabled}
-                      onChange={(e) => setLateFees({...lateFees, enabled: e.target.checked})}
+                      onChange={(e) => !markAsPaid && setLateFees({...lateFees, enabled: e.target.checked})}
+                      disabled={markAsPaid}
                       className="sr-only peer"
                     />
                     <div className={`w-11 h-6 rounded-full peer transition-colors ${
@@ -2080,8 +2128,11 @@ export default function QuickInvoiceModal({
                         </label>
                         <select
                           value={lateFees.type}
-                          onChange={(e) => setLateFees({...lateFees, type: e.target.value as 'fixed' | 'percentage'})}
-                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors cursor-pointer ${
+                          onChange={(e) => !markAsPaid && setLateFees({...lateFees, type: e.target.value as 'fixed' | 'percentage'})}
+                          disabled={markAsPaid}
+                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                            markAsPaid ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                          } ${
                             isDarkMode 
                               ? 'border-gray-700 bg-gray-800 text-white' 
                               : 'border-gray-300 bg-white text-gray-900'
@@ -2105,8 +2156,11 @@ export default function QuickInvoiceModal({
                         <input
                           type="number"
                           value={lateFees.amount}
-                          onChange={(e) => setLateFees({...lateFees, amount: parseFloat(e.target.value) || 0})}
+                          onChange={(e) => !markAsPaid && setLateFees({...lateFees, amount: parseFloat(e.target.value) || 0})}
+                          disabled={markAsPaid}
                           className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                            markAsPaid ? 'cursor-not-allowed opacity-60' : ''
+                          } ${
                             isDarkMode 
                               ? 'border-gray-700 bg-gray-800 text-white' 
                               : 'border-gray-300 bg-white text-gray-900'
@@ -2133,8 +2187,11 @@ export default function QuickInvoiceModal({
                         <input
                           type="number"
                           value={lateFees.gracePeriod}
-                          onChange={(e) => setLateFees({...lateFees, gracePeriod: parseInt(e.target.value) || 0})}
+                          onChange={(e) => !markAsPaid && setLateFees({...lateFees, gracePeriod: parseInt(e.target.value) || 0})}
+                          disabled={markAsPaid}
                           className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                            markAsPaid ? 'cursor-not-allowed opacity-60' : ''
+                          } ${
                             isDarkMode 
                               ? 'border-gray-700 bg-gray-800 text-white' 
                               : 'border-gray-300 bg-white text-gray-900'
@@ -2377,59 +2434,64 @@ export default function QuickInvoiceModal({
                   <span>Back</span>
                 </button>
                 
-                <button
-                  type="button"
-                  onClick={handleGeneratePDF}
-                  disabled={pdfLoading}
-                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
-                    isDarkMode 
-                      ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                >
-                  {pdfLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Generating...</span>
-                    </>
-                  ) : (
-                    <>
-                  <Download className="h-4 w-4" />
-                  <span>Generate PDF</span>
-                    </>
-                  )}
-                </button>
-                
-                <button
-                  type="button"
-                  data-testid="quick-invoice-create-draft"
-                  onClick={handleCreateDraft}
-                  disabled={creatingLoading || sendingLoading}
-                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
-                    isDarkMode 
-                      ? 'bg-gray-600 text-white hover:bg-gray-700' 
-                      : 'bg-gray-500 text-white hover:bg-gray-600'
-                  }`}
-                >
-                  {creatingLoading ? (
-                    <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Creating...</span>
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="h-4 w-4" />
-                      <span>Create</span>
-                    </>
-                  )}
-                </button>
+                {/* Hide Generate PDF and Create Draft buttons when markAsPaid is true */}
+                {!markAsPaid && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleGeneratePDF}
+                      disabled={pdfLoading}
+                      className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
+                        isDarkMode 
+                          ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      {pdfLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Generating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download className="h-4 w-4" />
+                          <span>Generate PDF</span>
+                        </>
+                      )}
+                    </button>
+                    
+                    <button
+                      type="button"
+                      data-testid="quick-invoice-create-draft"
+                      onClick={handleCreateDraft}
+                      disabled={creatingLoading || sendingLoading}
+                      className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
+                        isDarkMode 
+                          ? 'bg-gray-600 text-white hover:bg-gray-700' 
+                          : 'bg-gray-500 text-white hover:bg-gray-600'
+                      }`}
+                    >
+                      {creatingLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Creating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="h-4 w-4" />
+                          <span>Create</span>
+                        </>
+                      )}
+                    </button>
+                  </>
+                )}
                 
                 <button
                   type="submit"
                   data-testid="quick-invoice-create-and-send"
                   onClick={() => setShouldSend(true)}
                   disabled={creatingLoading || sendingLoading}
-                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
+                  className={`flex-1 ${markAsPaid ? 'sm:flex-1' : ''} py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
                     isDarkMode 
                       ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
                       : 'bg-indigo-600 text-white hover:bg-indigo-700'
@@ -2437,13 +2499,13 @@ export default function QuickInvoiceModal({
                 >
                   {sendingLoading ? (
                     <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                       <span>Sending...</span>
                     </>
                   ) : (
                     <>
                       <Send className="h-4 w-4" />
-                      <span>Create & Send</span>
+                      <span>{markAsPaid ? 'Create & Send Receipt' : 'Create & Send'}</span>
                     </>
                   )}
                 </button>

@@ -105,11 +105,11 @@ async function processReminders(request: NextRequest) {
         const totalPaid = payments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
         // If fully paid via partial payments, skip this reminder
         if (totalPaid >= invoice.total) {
-          // Mark reminder as failed and update invoice status
+          // Mark reminder as cancelled (not failed) since invoice is fully paid
           await supabaseAdmin
             .from('invoice_reminders')
             .update({
-              reminder_status: 'failed',
+              reminder_status: 'cancelled',
               failure_reason: 'Invoice fully paid via partial payments - reminders cancelled'
             })
             .eq('id', reminder.id);
@@ -149,7 +149,7 @@ async function processReminders(request: NextRequest) {
       });
     }
 
-    console.log(`📧 Found ${scheduledReminders.length} scheduled reminder(s) to process`);
+    console.log(`📧 Found ${scheduledReminders.length} scheduled reminder(s) to process, ${validReminders.length} valid after filtering`);
 
     const sentReminders = [];
     let successCount = 0;
@@ -159,7 +159,8 @@ async function processReminders(request: NextRequest) {
     // Helper function to delay execution (respects Resend rate limit: 2 requests per second)
     const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-    for (const reminder of scheduledReminders) {
+    // Use validReminders (pre-filtered to exclude fully paid invoices) instead of scheduledReminders
+    for (const reminder of validReminders) {
       const invoice = reminder.invoices;
       
       // Skip if invoice doesn't exist or is null
@@ -193,12 +194,12 @@ async function processReminders(request: NextRequest) {
       // Skip if invoice is paid (always skip paid invoices)
       if (invoice.status === 'paid') {
         console.log(`⏭️ Skipping reminder for invoice ${invoice.invoice_number} - invoice is already paid`);
-        // Update reminder status to indicate it was skipped
+        // Update reminder status to cancelled (not failed) since invoice is paid
         await supabaseAdmin
           .from('invoice_reminders')
           .update({
-            reminder_status: 'failed',
-            failure_reason: 'Invoice already paid'
+            reminder_status: 'cancelled',
+            failure_reason: 'Invoice already paid - reminders cancelled'
           })
           .eq('id', reminder.id);
         skippedCount++;
@@ -212,47 +213,9 @@ async function processReminders(request: NextRequest) {
         continue;
       }
       
-      // CRITICAL: Check if invoice is fully paid via partial payments
-      const { data: payments } = await supabaseAdmin
-        .from('invoice_payments')
-        .select('amount')
-        .eq('invoice_id', invoice.id);
-      
-      if (payments && payments.length > 0) {
-        const totalPaid = payments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
-        // If fully paid via partial payments, skip reminder and mark invoice as paid
-        if (totalPaid >= invoice.total) {
-          console.log(`⏭️ Skipping reminder for invoice ${invoice.invoice_number} - fully paid via partial payments ($${totalPaid.toFixed(2)} of $${invoice.total.toFixed(2)})`);
-          
-          // Mark reminder as failed
-          await supabaseAdmin
-            .from('invoice_reminders')
-            .update({
-              reminder_status: 'failed',
-              failure_reason: 'Invoice fully paid via partial payments - reminders cancelled'
-            })
-            .eq('id', reminder.id);
-          
-          // Update invoice status to paid if not already
-          if (invoice.status !== 'paid') {
-            await supabaseAdmin
-              .from('invoices')
-              .update({ status: 'paid', updated_at: new Date().toISOString() })
-              .eq('id', invoice.id);
-            
-            // Log paid event
-            try {
-              await supabaseAdmin.from('invoice_events').insert({ 
-                invoice_id: invoice.id, 
-                type: 'paid' 
-              });
-            } catch {}
-          }
-          
-          skippedCount++;
-          continue;
-        }
-      }
+      // Note: Partial payment check is already done in the pre-filter (validReminders),
+      // so we don't need to check again here. Payment data will be fetched in sendReminderEmail
+      // for accurate late fee calculation on remaining balance.
       
       // Skip if client email is missing
       if (!invoice.clients || !invoice.clients.email) {
@@ -284,8 +247,21 @@ async function processReminders(request: NextRequest) {
         
         console.log(`📤 Sending ${reminder.reminder_type} reminder for invoice ${invoice.invoice_number} to ${invoice.clients.email}`);
         
-        // Send the reminder email
-        const emailResult = await sendReminderEmail(invoice, reminder.reminder_type, reminder.overdue_days);
+        // Fetch partial payments to calculate remaining balance for late fee calculations
+        let totalPaid = 0;
+        let remainingBalance = invoice.total;
+        const { data: payments } = await supabaseAdmin
+          .from('invoice_payments')
+          .select('amount')
+          .eq('invoice_id', invoice.id);
+        
+        if (payments && payments.length > 0) {
+          totalPaid = payments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+          remainingBalance = Math.max(0, invoice.total - totalPaid);
+        }
+        
+        // Send the reminder email (pass payment data for accurate late fee calculation)
+        const emailResult = await sendReminderEmail(invoice, reminder.reminder_type, reminder.overdue_days, { totalPaid, remainingBalance });
         
         console.log(`✅ Email sent successfully - ID: ${emailResult.id}`);
         
@@ -393,7 +369,7 @@ async function processReminders(request: NextRequest) {
 }
 
 // Function to send reminder email
-async function sendReminderEmail(invoice: any, reminderType: string, overdueDays: number) {
+async function sendReminderEmail(invoice: any, reminderType: string, overdueDays: number, paymentData?: { totalPaid: number; remainingBalance: number }) {
   if (!resend) {
     throw new Error('Resend client not initialized - RESEND_API_KEY missing');
   }
@@ -443,9 +419,28 @@ async function sendReminderEmail(invoice: any, reminderType: string, overdueDays
   const invoiceTotal = typeof invoice.total === 'number' ? invoice.total.toFixed(2) : '0.00';
   const dueDate = invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A';
   
+  // Fetch partial payments if not provided
+  let totalPaid = paymentData?.totalPaid || 0;
+  let remainingBalance = paymentData?.remainingBalance || (invoice.total || 0);
+  
+  if (!paymentData) {
+    const { data: payments } = await supabaseAdmin
+      .from('invoice_payments')
+      .select('amount')
+      .eq('invoice_id', invoice.id);
+    
+    if (payments && payments.length > 0) {
+      totalPaid = payments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+      remainingBalance = Math.max(0, (invoice.total || 0) - totalPaid);
+    }
+  }
+  
+  // Calculate base amount (considering partial payments)
+  const baseAmount = remainingBalance;
+  
   // Calculate late fees if invoice is overdue (same logic as manual send route and public page)
   let lateFeesAmount = 0;
-  let totalPayable = invoice.total || 0;
+  let totalPayable = baseAmount;
   
   // Parse late fees settings
   let lateFeesSettings = null;
@@ -459,17 +454,19 @@ async function sendReminderEmail(invoice: any, reminderType: string, overdueDays
   }
   
   // Calculate late fees if invoice is overdue and late fees are enabled
+  // IMPORTANT: For percentage-based late fees, calculate on remaining balance (after partial payments)
   if (overdueDays > 0 && invoice.status !== 'paid' && lateFeesSettings && lateFeesSettings.enabled) {
     const gracePeriod = lateFeesSettings.gracePeriod || 0;
     const chargeableDays = Math.max(0, overdueDays - gracePeriod);
     
     if (chargeableDays > 0) {
       if (lateFeesSettings.type === 'percentage') {
-        lateFeesAmount = (invoice.total || 0) * ((lateFeesSettings.amount || 0) / 100);
+        // Calculate late fee on remaining balance (after partial payments)
+        lateFeesAmount = baseAmount * ((lateFeesSettings.amount || 0) / 100);
       } else if (lateFeesSettings.type === 'fixed') {
         lateFeesAmount = lateFeesSettings.amount || 0;
       }
-      totalPayable = (invoice.total || 0) + lateFeesAmount;
+      totalPayable = baseAmount + lateFeesAmount;
     }
   }
   
@@ -527,9 +524,12 @@ async function sendReminderEmail(invoice: any, reminderType: string, overdueDays
   const templateInvoice = {
     invoiceNumber: invoice.invoice_number,
     total: totalPayable, // Use totalPayable which includes late fees
-    baseTotal: invoice.total || 0, // Base invoice total (before late fees)
+    baseTotal: baseAmount, // Base amount (remaining balance after partial payments, before late fees)
+    originalTotal: invoice.total || 0, // Original invoice total (before partial payments)
     lateFees: lateFeesAmount, // Late fees amount
     hasLateFees: lateFeesAmount > 0, // Whether late fees apply
+    totalPaid: totalPaid, // Total paid via partial payments
+    remainingBalance: baseAmount, // Remaining balance (before late fees)
     dueDate: invoice.due_date,
     publicToken: invoice.public_token,
     client: {

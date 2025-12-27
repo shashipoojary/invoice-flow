@@ -487,14 +487,21 @@ export async function POST(request: NextRequest) {
     const fromAddress = `${businessSettings.businessName || 'FlowInvoicer'} <onboarding@resend.dev>`;
 
     // Send email with Resend
+    // Use "Receipt" in subject for paid invoices, "Invoice" for others
+    const emailSubject = invoice.status === 'paid' 
+      ? `Receipt #${invoice.invoice_number} - $${invoice.total.toFixed(2)}`
+      : `Invoice #${invoice.invoice_number} - $${invoice.total.toFixed(2)}`;
+    
     const { data, error } = await resend.emails.send({
       from: fromAddress,
       to: [clientEmail],
-      subject: `Invoice #${invoice.invoice_number} - $${invoice.total.toFixed(2)}`,
+      subject: emailSubject,
       html: emailHtml,
       attachments: [
         {
-          filename: `Invoice-${invoice.invoice_number}.pdf`,
+          filename: invoice.status === 'paid' 
+            ? `Receipt-${invoice.invoice_number}.pdf`
+            : `Invoice-${invoice.invoice_number}.pdf`,
           content: Buffer.from(pdfBuffer),
         },
       ],

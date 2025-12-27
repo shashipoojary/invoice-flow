@@ -90,6 +90,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Auto reminders are not enabled for this invoice' }, { status: 400 });
     }
 
+    // Check if invoice is already paid
+    if (invoice.status === 'paid') {
+      return NextResponse.json({ 
+        error: 'Invoice is already paid',
+        details: 'Cannot send reminders for invoices that are already marked as paid'
+      }, { status: 400 });
+    }
+
+    // Check if invoice is fully paid via partial payments
+    const { data: payments } = await supabaseAdmin
+      .from('invoice_payments')
+      .select('amount')
+      .eq('invoice_id', invoice.id);
+
+    if (payments && payments.length > 0) {
+      const totalPaid = payments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+      if (totalPaid >= invoice.total) {
+        return NextResponse.json({ 
+          error: 'Invoice is fully paid',
+          details: `Invoice is fully paid via partial payments ($${totalPaid.toFixed(2)} of $${invoice.total.toFixed(2)}). Cannot send reminders for fully paid invoices.`
+        }, { status: 400 });
+      }
+    }
+
     // Check if invoice is overdue
     const dueDate = new Date(invoice.due_date);
     const today = new Date();
@@ -160,6 +184,19 @@ export async function POST(request: NextRequest) {
       stripe_account?: string;
     } = userSettings || {};
 
+    // Fetch partial payments to calculate remaining balance for late fee calculations
+    let totalPaid = 0;
+    let remainingBalance = invoice.total;
+    const { data: paymentRecords } = await supabaseAdmin
+      .from('invoice_payments')
+      .select('amount')
+      .eq('invoice_id', invoice.id);
+    
+    if (paymentRecords && paymentRecords.length > 0) {
+      totalPaid = paymentRecords.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+      remainingBalance = Math.max(0, invoice.total - totalPaid);
+    }
+    
     // Calculate current total including late fees (same logic as public invoice page)
     const currentDate = new Date();
     const dueDateForCalc = new Date(invoice.due_date);
@@ -175,8 +212,11 @@ export async function POST(request: NextRequest) {
       daysOverdue = 0;
     }
     
+    // Calculate base amount (considering partial payments)
+    const baseAmount = remainingBalance;
+    
     let lateFeesAmount = 0;
-    let totalPayable = invoice.total;
+    let totalPayable = baseAmount;
     
     // Parse late fees settings
     let lateFeesSettings = null;
@@ -190,17 +230,19 @@ export async function POST(request: NextRequest) {
     }
     
     // Calculate late fees if invoice is overdue and late fees are enabled
+    // IMPORTANT: For percentage-based late fees, calculate on remaining balance (after partial payments)
     if (isOverdueCalc && invoice.status !== 'paid' && lateFeesSettings && lateFeesSettings.enabled) {
       const gracePeriod = lateFeesSettings.gracePeriod || 0;
       const chargeableDays = Math.max(0, daysOverdue - gracePeriod);
       
       if (chargeableDays > 0) {
         if (lateFeesSettings.type === 'percentage') {
-          lateFeesAmount = (invoice.total || 0) * ((lateFeesSettings.amount || 0) / 100);
+          // Calculate late fee on remaining balance (after partial payments)
+          lateFeesAmount = baseAmount * ((lateFeesSettings.amount || 0) / 100);
         } else if (lateFeesSettings.type === 'fixed') {
           lateFeesAmount = lateFeesSettings.amount || 0;
         }
-        totalPayable = invoice.total + lateFeesAmount;
+        totalPayable = baseAmount + lateFeesAmount;
       }
     }
 
@@ -208,6 +250,12 @@ export async function POST(request: NextRequest) {
     const templateInvoice = {
       invoiceNumber: invoice.invoice_number,
       total: totalPayable, // Use totalPayable which includes late fees
+      baseTotal: baseAmount, // Base amount (remaining balance after partial payments, before late fees)
+      originalTotal: invoice.total, // Original invoice total (before partial payments)
+      lateFees: lateFeesAmount, // Late fees amount
+      hasLateFees: lateFeesAmount > 0, // Whether late fees apply
+      totalPaid: totalPaid, // Total paid via partial payments
+      remainingBalance: baseAmount, // Remaining balance (before late fees)
       dueDate: invoice.due_date,
       publicToken: invoice.public_token,
       client: {

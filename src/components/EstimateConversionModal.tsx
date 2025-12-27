@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X, FileText, Zap, Loader2 } from 'lucide-react';
 import { Estimate } from '@/types';
 
@@ -19,8 +19,33 @@ export default function EstimateConversionModal({
   estimate,
   isLoading = false
 }: EstimateConversionModalProps) {
-  const [invoiceType, setInvoiceType] = useState<'fast' | 'detailed'>('detailed');
+  // Check if estimate can be converted to fast invoice (only 1 item)
+  const canConvertToFast = useMemo(() => {
+    if (!estimate || !estimate.items) return false;
+    return estimate.items.length === 1;
+  }, [estimate]);
+
+  // Default to detailed if fast is not available
+  const [invoiceType, setInvoiceType] = useState<'fast' | 'detailed'>(() => {
+    return canConvertToFast ? 'fast' : 'detailed';
+  });
   const [selectedTemplate, setSelectedTemplate] = useState<number>(1); // 1=Minimal, 2=Modern, 3=Creative
+
+  // Update invoice type if fast becomes unavailable
+  React.useEffect(() => {
+    if (!canConvertToFast && invoiceType === 'fast') {
+      setInvoiceType('detailed');
+    }
+  }, [canConvertToFast, invoiceType]);
+
+  // Reset state when modal opens/closes
+  React.useEffect(() => {
+    if (isOpen) {
+      // Set default based on whether fast is available
+      setInvoiceType(canConvertToFast ? 'fast' : 'detailed');
+      setSelectedTemplate(1);
+    }
+  }, [isOpen, canConvertToFast]);
 
   if (!isOpen) return null;
 
@@ -36,7 +61,7 @@ export default function EstimateConversionModal({
 
   const handleClose = () => {
     if (!isLoading) {
-      setInvoiceType('detailed');
+      setInvoiceType(canConvertToFast ? 'fast' : 'detailed');
       setSelectedTemplate(1);
       onClose();
     }
@@ -82,28 +107,39 @@ export default function EstimateConversionModal({
             <label className="block text-sm font-medium text-gray-700 mb-3">
               Invoice Type
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setInvoiceType('fast')}
-                disabled={isLoading}
-                className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
-                  invoiceType === 'fast'
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <div className="flex items-center space-x-2 mb-2">
-                  <Zap className={`h-5 w-5 ${invoiceType === 'fast' ? 'text-blue-500' : 'text-gray-400'}`} />
-                  <span className={`font-medium ${invoiceType === 'fast' ? 'text-blue-700' : 'text-gray-700'}`}>
-                    Fast Invoice
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 text-left">
-                  Quick 60-second invoice with minimal details
-                </p>
-              </button>
+            <div className={`grid gap-3 ${canConvertToFast ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              {/* Fast Invoice Option - Only show if estimate has 1 item */}
+              {canConvertToFast && (
+                <button
+                  type="button"
+                  onClick={() => setInvoiceType('fast')}
+                  disabled={isLoading}
+                  className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                    invoiceType === 'fast'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Zap className={`h-5 w-5 ${invoiceType === 'fast' ? 'text-blue-500' : 'text-gray-400'}`} />
+                    <span className={`font-medium ${invoiceType === 'fast' ? 'text-blue-700' : 'text-gray-700'}`}>
+                      Fast Invoice
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 text-left">
+                    Quick 60-second invoice with minimal details
+                  </p>
+                  <div className="mt-2 pt-2 border-t border-gray-200">
+                    <p className="text-[10px] text-gray-500 text-left">
+                      • Single item only<br/>
+                      • No auto reminders<br/>
+                      • No late fees
+                    </p>
+                  </div>
+                </button>
+              )}
 
+              {/* Detailed Invoice Option */}
               <button
                 type="button"
                 onClick={() => setInvoiceType('detailed')}
@@ -123,6 +159,13 @@ export default function EstimateConversionModal({
                 <p className="text-xs text-gray-500 text-left">
                   Full-featured invoice with customizable templates
                 </p>
+                <div className="mt-2 pt-2 border-t border-gray-200">
+                  <p className="text-[10px] text-gray-500 text-left">
+                    • Multiple items<br/>
+                    • Auto reminders<br/>
+                    • Late fees & custom templates
+                  </p>
+                </div>
               </button>
             </div>
           </div>
@@ -148,6 +191,7 @@ export default function EstimateConversionModal({
                     Minimal
                   </div>
                   <div className="h-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded border border-gray-300"></div>
+                  <p className="text-[10px] text-gray-500 mt-1">Clean & simple</p>
                 </button>
 
                 <button
@@ -164,6 +208,7 @@ export default function EstimateConversionModal({
                     Modern
                   </div>
                   <div className="h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded border border-blue-300"></div>
+                  <p className="text-[10px] text-gray-500 mt-1">Professional</p>
                 </button>
 
                 <button
@@ -180,10 +225,12 @@ export default function EstimateConversionModal({
                     Creative
                   </div>
                   <div className="h-12 bg-gradient-to-br from-purple-100 to-pink-100 rounded border border-purple-300"></div>
+                  <p className="text-[10px] text-gray-500 mt-1">Bold & vibrant</p>
                 </button>
               </div>
             </div>
           )}
+
         </div>
 
         {/* Actions */}

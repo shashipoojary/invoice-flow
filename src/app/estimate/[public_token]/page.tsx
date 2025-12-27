@@ -324,7 +324,24 @@ export default function PublicEstimatePage() {
   const canApproveReject = !isOwner && estimate.approvalStatus === 'pending' && estimate.status === 'sent' && !estimate.isExpired && !actionLoading
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:py-12 sm:px-6 lg:px-8 relative">
+      {/* Modern Loading Overlay - Matches page design */}
+      {actionLoading && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-gray-200 max-w-sm w-full p-8 text-center" style={{ borderRadius: 0 }}>
+            <div className="mb-4 flex justify-center">
+              <div className="w-12 h-12 border-2 border-gray-300 border-t-gray-900 animate-spin" style={{ borderRadius: 0 }}></div>
+            </div>
+            <h3 className="text-base font-semibold text-gray-900 mb-2" style={{ color: '#1F2937' }}>
+              Processing your response...
+            </h3>
+            <p className="text-sm text-gray-600" style={{ color: '#6B7280' }}>
+              Please wait while we confirm your decision.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-3xl mx-auto bg-white border border-gray-200">
         {/* Header */}
         <div className="px-6 py-8 sm:px-10 sm:py-10 border-b border-gray-200">
@@ -470,7 +487,7 @@ export default function PublicEstimatePage() {
           {/* Approval Confirmation Modal */}
           {showApproveModal && (
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-lg border border-gray-200 max-w-md w-full p-6">
+              <div className="bg-white border border-gray-200 max-w-md w-full p-6" style={{ borderRadius: 0 }}>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Approve Estimate</h3>
                 <p className="text-sm text-gray-600 mb-6">Are you sure you want to approve this estimate? This action cannot be undone.</p>
                 <div className="flex gap-3">
@@ -507,7 +524,7 @@ export default function PublicEstimatePage() {
           {/* Rejection Modal */}
           {showRejectModal && (
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-lg border border-gray-200 max-w-md w-full p-6">
+              <div className="bg-white border border-gray-200 max-w-md w-full p-6" style={{ borderRadius: 0 }}>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Reject Estimate</h3>
                 <p className="text-sm text-gray-600 mb-4">Please provide a reason for rejecting this estimate.</p>
                 <textarea

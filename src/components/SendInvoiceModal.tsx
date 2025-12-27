@@ -197,7 +197,15 @@ const SendInvoiceModal: React.FC<SendInvoiceModalProps> = ({
         {/* Content */}
         <div className="p-6 bg-white space-y-4">
           <p className="text-gray-600 leading-relaxed">
-            You&apos;re about to send invoice <span className="font-semibold text-gray-900">{invoiceNumber}</span> to your client. Would you like to edit it first or send it now?
+            {invoice?.status === 'paid' ? (
+              <>
+                You&apos;re about to send a receipt for invoice <span className="font-semibold text-gray-900">{invoiceNumber}</span> to your client. This invoice is already marked as paid and will be sent as a confirmation/receipt.
+              </>
+            ) : (
+              <>
+                You&apos;re about to send invoice <span className="font-semibold text-gray-900">{invoiceNumber}</span> to your client. Would you like to edit it first or send it now?
+              </>
+            )}
           </p>
 
           {/* Warnings */}
@@ -247,14 +255,16 @@ const SendInvoiceModal: React.FC<SendInvoiceModalProps> = ({
           >
             Cancel
           </button>
-          <button
-            onClick={onEdit}
-            disabled={isLoading}
-            className="px-6 py-3 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center space-x-2"
-          >
-            <Edit className="h-4 w-4" />
-            <span>Edit</span>
-          </button>
+          {invoice?.status !== 'paid' && (
+            <button
+              onClick={onEdit}
+              disabled={isLoading}
+              className="px-6 py-3 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center space-x-2"
+            >
+              <Edit className="h-4 w-4" />
+              <span>Edit</span>
+            </button>
+          )}
           <button
             onClick={onSend}
             disabled={isLoading}
@@ -268,7 +278,7 @@ const SendInvoiceModal: React.FC<SendInvoiceModalProps> = ({
             ) : (
               <>
                 <Send className="h-4 w-4" />
-                <span>Send</span>
+                <span>{invoice?.status === 'paid' ? 'Send Receipt' : 'Send'}</span>
               </>
             )}
           </button>

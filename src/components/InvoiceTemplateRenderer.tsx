@@ -285,23 +285,25 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
                 Due: {new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
               <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: primaryColor || '#0D9488', letterSpacing: '-0.5px' }}>
-                ${invoice.totalPaid && invoice.totalPaid > 0 ? (invoice.remainingBalance || invoice.total).toFixed(2) : calculateTotal().toFixed(2)}
+                ${invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0
+                  ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2))
+                  : (invoice.isOverdue ? (invoice.totalWithLateFees || calculateTotal()).toFixed(2) : calculateTotal().toFixed(2))}
               </div>
-              {invoice.totalPaid && invoice.totalPaid > 0 && (
+              {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
                 <div className="text-xs text-gray-500 mt-1">
-                  Paid: ${invoice.totalPaid.toFixed(2)} • Remaining: ${(invoice.remainingBalance || invoice.total).toFixed(2)}
+                  Paid: ${invoice.totalPaid.toFixed(2)} • Remaining: ${invoice.remainingBalance.toFixed(2)}
                 </div>
               )}
               {/* Status Badge */}
-              <div className="mt-3 flex items-center justify-end sm:justify-end gap-2 flex-wrap">
-                <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium ${getStatusColor(invoice.status)}`}>
+              <div className="mt-3 flex items-center justify-start sm:justify-end gap-2 flex-wrap">
+                <div className={`inline-flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium ${getStatusColor(invoice.status)}`}>
                   {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                 </div>
-                {invoice.totalPaid && invoice.totalPaid > 0 && invoice.status !== 'paid' && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100">
-                    <DollarSign className="h-4 w-4 text-blue-500" />
-                    <span>Partial Payment Received</span>
+                {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance && invoice.remainingBalance > 0 && invoice.status !== 'paid' && (
+                  <div className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium text-blue-700 bg-blue-100">
+                    <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
+                    <span className="whitespace-nowrap">Partial Payment</span>
                   </div>
                 )}
               </div>
@@ -827,25 +829,25 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                 Due: {new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
               <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: primaryColor || '#FF6B35', letterSpacing: '-0.5px' }}>
-                ${invoice.totalPaid && invoice.totalPaid > 0 
-                  ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + invoice.lateFees).toFixed(2) : (invoice.remainingBalance || invoice.total).toFixed(2))
-                  : (invoice.isOverdue ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2))}
+                ${invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0
+                  ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2))
+                  : (invoice.isOverdue ? (invoice.totalWithLateFees || invoice.total).toFixed(2) : invoice.total.toFixed(2))}
               </div>
-              {invoice.totalPaid && invoice.totalPaid > 0 && (
+              {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
                 <div className="text-xs text-gray-500 mt-1">
-                  Paid: ${invoice.totalPaid.toFixed(2)} • Remaining: ${(invoice.remainingBalance || invoice.total).toFixed(2)}
+                  Paid: ${invoice.totalPaid.toFixed(2)} • Remaining: ${invoice.remainingBalance.toFixed(2)}
                 </div>
               )}
               {/* Status Badge */}
-              <div className="mt-3 flex items-center justify-end sm:justify-end gap-2 flex-wrap">
-                <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium ${getStatusColor(invoice.status)}`}>
+              <div className="mt-3 flex items-center justify-start sm:justify-end gap-2 flex-wrap">
+                <div className={`inline-flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium ${getStatusColor(invoice.status)}`}>
                   {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                 </div>
-                {invoice.totalPaid && invoice.totalPaid > 0 && invoice.status !== 'paid' && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100">
-                    <DollarSign className="h-4 w-4 text-blue-500" />
-                    <span>Partial Payment Received</span>
+                {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance && invoice.remainingBalance > 0 && invoice.status !== 'paid' && (
+                  <div className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium text-blue-700 bg-blue-100">
+                    <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
+                    <span className="whitespace-nowrap">Partial Payment</span>
                   </div>
                 )}
               </div>
@@ -1396,25 +1398,25 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                 Due: {new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
               <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: primaryColor || '#FF6B35', letterSpacing: '-0.5px' }}>
-                ${invoice.totalPaid && invoice.totalPaid > 0 
-                  ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + invoice.lateFees).toFixed(2) : (invoice.remainingBalance || invoice.total).toFixed(2))
-                  : (invoice.isOverdue ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2))}
+                ${invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0
+                  ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2))
+                  : (invoice.isOverdue ? (invoice.totalWithLateFees || invoice.total).toFixed(2) : invoice.total.toFixed(2))}
               </div>
-              {invoice.totalPaid && invoice.totalPaid > 0 && (
+              {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
                 <div className="text-xs text-gray-500 mt-1">
-                  Paid: ${invoice.totalPaid.toFixed(2)} • Remaining: ${(invoice.remainingBalance || invoice.total).toFixed(2)}
+                  Paid: ${invoice.totalPaid.toFixed(2)} • Remaining: ${invoice.remainingBalance.toFixed(2)}
                 </div>
               )}
               {/* Status Badge */}
-              <div className="mt-3 flex items-center justify-end sm:justify-end gap-2 flex-wrap">
-                <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium ${getStatusColor(invoice.status)}`}>
+              <div className="mt-3 flex items-center justify-start sm:justify-end gap-2 flex-wrap">
+                <div className={`inline-flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium ${getStatusColor(invoice.status)}`}>
                   {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                 </div>
-                {invoice.totalPaid && invoice.totalPaid > 0 && invoice.status !== 'paid' && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100">
-                    <DollarSign className="h-4 w-4 text-blue-500" />
-                    <span>Partial Payment Received</span>
+                {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance && invoice.remainingBalance > 0 && invoice.status !== 'paid' && (
+                  <div className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium text-blue-700 bg-blue-100">
+                    <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
+                    <span className="whitespace-nowrap">Partial Payment</span>
                   </div>
                 )}
               </div>
@@ -1965,25 +1967,25 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                 Due: {new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
               <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: primaryColor || '#FF6B35', letterSpacing: '-0.5px' }}>
-                ${invoice.totalPaid && invoice.totalPaid > 0 
-                  ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + invoice.lateFees).toFixed(2) : (invoice.remainingBalance || invoice.total).toFixed(2))
-                  : (invoice.isOverdue ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2))}
+                ${invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0
+                  ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2))
+                  : (invoice.isOverdue ? (invoice.totalWithLateFees || invoice.total).toFixed(2) : invoice.total.toFixed(2))}
               </div>
-              {invoice.totalPaid && invoice.totalPaid > 0 && (
+              {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
                 <div className="text-xs text-gray-500 mt-1">
-                  Paid: ${invoice.totalPaid.toFixed(2)} • Remaining: ${(invoice.remainingBalance || invoice.total).toFixed(2)}
+                  Paid: ${invoice.totalPaid.toFixed(2)} • Remaining: ${invoice.remainingBalance.toFixed(2)}
                 </div>
               )}
               {/* Status Badge */}
-              <div className="mt-3 flex items-center justify-end sm:justify-end gap-2 flex-wrap">
-                <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium ${getStatusColor(invoice.status)}`}>
+              <div className="mt-3 flex items-center justify-start sm:justify-end gap-2 flex-wrap">
+                <div className={`inline-flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium ${getStatusColor(invoice.status)}`}>
                   {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status === 'due today' ? 'Due Today' : invoice.status}</span>
                 </div>
-                {invoice.totalPaid && invoice.totalPaid > 0 && invoice.status !== 'paid' && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100">
-                    <DollarSign className="h-4 w-4 text-blue-500" />
-                    <span>Partial Payment Received</span>
+                {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance && invoice.remainingBalance > 0 && invoice.status !== 'paid' && (
+                  <div className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-medium text-blue-700 bg-blue-100">
+                    <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
+                    <span className="whitespace-nowrap">Partial Payment</span>
                   </div>
                 )}
               </div>

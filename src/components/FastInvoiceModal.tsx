@@ -51,6 +51,15 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   const [notes, setNotes] = useState('')
   const [markAsPaid, setMarkAsPaid] = useState(false)
 
+  // IMPORTANT: When "Mark as Paid" is selected, set due date to today (Due on Receipt)
+  useEffect(() => {
+    if (markAsPaid) {
+      // Set due date to today (Due on Receipt)
+      const today = new Date().toISOString().split('T')[0]
+      setDueDate(today)
+    }
+  }, [markAsPaid])
+
   // Pre-fill form when editing an invoice OR reset when creating new
   useEffect(() => {
     if (isOpen) {
@@ -606,8 +615,11 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                       <input
                         type="date"
                         value={dueDate}
-                        onChange={(e) => setDueDate(e.target.value)}
+                        onChange={(e) => !markAsPaid && setDueDate(e.target.value)}
+                        disabled={markAsPaid}
                         className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                          markAsPaid ? 'cursor-not-allowed opacity-60' : ''
+                        } ${
                           isDarkMode 
                             ? 'border-gray-700 bg-gray-800 text-white' 
                             : 'border-gray-300 bg-white text-gray-900'
@@ -617,7 +629,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                     <p className={`text-xs mt-1 ${
                       isDarkMode ? 'text-gray-400' : 'text-gray-500'
                     }`}>
-                      Due Date
+                      Due Date {markAsPaid && <span className="text-orange-600">(Locked - Due on Receipt)</span>}
                     </p>
                   </div>
                 </div>
@@ -681,30 +693,33 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                   <ArrowLeft className="h-4 w-4" />
                   <span>Back</span>
                 </button>
-                <button
-                  type="button"
-                  data-testid="fast-invoice-create-and-send"
-                  onClick={() => handleCreateInvoice(true)}
-                  disabled={loading || sendLoading}
-                  className={`flex-1 px-3 py-2 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-xs disabled:opacity-50 cursor-pointer ${
-                    isDarkMode 
-                      ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
-                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                  }`}
-                >
-                  {loading ? (
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
-                  ) : (
-                    <CheckCircle className="h-3 w-3" />
-                  )}
-                  <span>{loading ? 'Creating...' : 'Create'}</span>
-                </button>
+                {/* Hide "Create" button when markAsPaid is true */}
+                {!markAsPaid && (
+                  <button
+                    type="button"
+                    data-testid="fast-invoice-create-and-send"
+                    onClick={() => handleCreateInvoice(true)}
+                    disabled={loading || sendLoading}
+                    className={`flex-1 px-3 py-2 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-xs disabled:opacity-50 cursor-pointer ${
+                      isDarkMode 
+                        ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    }`}
+                  >
+                    {loading ? (
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                    ) : (
+                      <CheckCircle className="h-3 w-3" />
+                    )}
+                    <span>{loading ? 'Creating...' : 'Create'}</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   data-testid="fast-invoice-create-draft"
                   onClick={handleCreateAndSend}
                   disabled={loading || sendLoading}
-                  className={`flex-1 px-3 py-2 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-xs disabled:opacity-50 cursor-pointer ${
+                  className={`flex-1 ${markAsPaid ? 'sm:flex-1' : ''} px-3 py-2 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-xs disabled:opacity-50 cursor-pointer ${
                     isDarkMode 
                       ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
                       : 'bg-indigo-600 text-white hover:bg-indigo-700'
@@ -715,7 +730,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                   ) : (
                     <Send className="h-3 w-3" />
                   )}
-                  <span>{sendLoading ? 'Sending...' : 'Create & Send'}</span>
+                  <span>{sendLoading ? 'Sending...' : (markAsPaid ? 'Create & Send Receipt' : 'Create & Send')}</span>
                 </button>
               </div>
             </div>
