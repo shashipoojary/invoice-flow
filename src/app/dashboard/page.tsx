@@ -15,6 +15,7 @@ import { useData } from '@/contexts/DataContext';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
 import UnifiedInvoiceCard from '@/components/UnifiedInvoiceCard';
+import PartialPaymentModal from '@/components/PartialPaymentModal';
 import { Client, Invoice } from '@/types';
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
@@ -66,6 +67,7 @@ export default function DashboardOverview() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [showReminderDates, setShowReminderDates] = useState(false);
   const [showCreateEstimate, setShowCreateEstimate] = useState(false);
+  const [showPartialPayment, setShowPartialPayment] = useState(false);
   
   // Loading states for action buttons
   const [loadingActions, setLoadingActions] = useState<{
@@ -125,83 +127,8 @@ export default function DashboardOverview() {
     setInvoicesWithPartialPayments(partialSet);
   }, [invoices]);
 
-  // Fallback: Fetch payment data if not received from initial load
-  useEffect(() => {
-    let isMounted = true;
-    let fetchTimeout: NodeJS.Timeout | null = null;
-    
-    const fetchBulkPayments = async () => {
-      // Only fetch if we don't already have payment data
-      if (Object.keys(paymentDataMap).length > 0) {
-        return;
-      }
-      
-      // Wait for invoices to be available
-      if (!invoices || invoices.length === 0) {
-        return;
-      }
-      
-      // Only fetch for sent/pending invoices
-      const eligibleInvoices = invoices.filter(
-        inv => (inv.status === 'sent' || inv.status === 'pending') && inv.id
-      );
-      
-      if (eligibleInvoices.length === 0) {
-        if (isMounted) {
-          setPaymentDataMap({});
-          setInvoicesWithPartialPayments(new Set());
-        }
-        return;
-      }
-      
-      try {
-        const headers = await getAuthHeaders();
-        const response = await fetch('/api/invoices/payments/bulk', {
-          method: 'POST',
-          headers: {
-            ...headers,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            invoiceIds: eligibleInvoices.map(inv => inv.id)
-          }),
-          cache: 'no-store'
-        });
-        
-        if (response.ok && isMounted) {
-          const data = await response.json();
-          const payments = data.payments || {};
-          setPaymentDataMap(payments);
-          
-          // Update partial payments set
-          const partialSet = new Set<string>();
-          Object.keys(payments).forEach(invoiceId => {
-            if (payments[invoiceId].totalPaid > 0 && payments[invoiceId].remainingBalance > 0) {
-              partialSet.add(invoiceId);
-            }
-          });
-          setInvoicesWithPartialPayments(partialSet);
-        }
-      } catch (error) {
-        console.error('Error fetching bulk payments:', error);
-        // Silently fail - payment data is optional
-      }
-    };
-    
-    // Only fetch if payment data wasn't received from initial load
-    if (invoices && invoices.length > 0 && Object.keys(paymentDataMap).length === 0) {
-      fetchTimeout = setTimeout(() => {
-        fetchBulkPayments();
-      }, 100);
-    }
-    
-    return () => {
-      isMounted = false;
-      if (fetchTimeout) {
-        clearTimeout(fetchTimeout);
-      }
-    };
-  }, [invoices, isLoadingInvoices, getAuthHeaders, paymentDataMap]);
+  // Payment data is now embedded directly in invoices from /api/invoices
+  // No need for separate bulk fetch - removed to prevent infinite loops
 
   // Create invoice handler
   const handleCreateInvoice = useCallback(() => {
@@ -1182,7 +1109,7 @@ export default function DashboardOverview() {
             )}
             <span>Duplicate</span>
           </button>
-          {(invoice.status === 'draft' || invoice.status === 'paid') && (
+          {invoice.status === 'draft' && (
             <button 
               onClick={() => handleSendInvoice(invoice)}
               disabled={loadingActions[`send-${invoice.id}`]}
@@ -1193,7 +1120,7 @@ export default function DashboardOverview() {
               ) : (
                 <Send className="h-3.5 w-3.5" />
               )}
-              <span>{invoice.status === 'paid' ? 'Send Receipt' : 'Send'}</span>
+              <span>Send</span>
             </button>
           )}
           {invoice.status === 'pending' && (
@@ -1330,10 +1257,17 @@ export default function DashboardOverview() {
     for (const invoice of invoices) {
       const { status, total, dueDate } = invoice;
       
-      // Total revenue (only paid invoices) - early return for non-paid
+      // Total revenue calculation - includes fully paid invoices and partial payments
       if (status === 'paid') {
+        // Fully paid invoice - add full total
         totalRevenue += total;
-        continue;
+      } else {
+        // Check for partial payments on non-paid invoices
+        const paymentData = paymentDataMap[invoice.id];
+        if (paymentData && paymentData.totalPaid > 0) {
+          // Add partial payments to revenue
+          totalRevenue += paymentData.totalPaid;
+        }
       }
       
       // Total payable and overdue count (pending/sent invoices only)
@@ -1476,31 +1410,31 @@ export default function DashboardOverview() {
               )}
               
               {/* Stats Grid */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 lg:gap-4">
                 {/* Total Revenue */}
                 <button 
                   onClick={handlePaidInvoicesClick}
-                  className="group relative overflow-hidden rounded-lg p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-emerald-500 backdrop-blur-sm h-full"
+                  className="group relative overflow-hidden rounded-lg p-3 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-emerald-500 backdrop-blur-sm h-full"
                 >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-2 sm:pr-3 flex flex-col justify-between h-full">
-                      <div className="space-y-1 sm:space-y-1.5">
-                        <p className="text-[10px] sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Revenue</p>
-                        <div>
-                          <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-emerald-600 text-left break-words" style={{ display: 'block' }}>
+                      <div className="space-y-1.5 sm:space-y-1.5">
+                        <p className="text-xs sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Revenue</p>
+                        <div className="min-h-[48px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
+                          <div className="font-heading text-xl sm:text-xl lg:text-2xl xl:text-3xl font-bold text-emerald-600 text-left break-words" style={{ display: 'block' }}>
                             {isLoadingStats ? (
-                              <div className="animate-pulse bg-gray-300 h-5 sm:h-6 lg:h-8 w-16 sm:w-20 lg:w-24 rounded"></div>
+                              <div className="animate-pulse bg-gray-300 h-6 sm:h-6 lg:h-8 w-20 sm:w-20 lg:w-24 rounded"></div>
                             ) : (
                               <div>{formatMoney(totalRevenue)}</div>
                             )}
                           </div>
-                          {/* Placeholder to match late fees line spacing */}
-                          <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '12px', minHeight: '12px' }}>
+                          {/* Fixed height placeholder to match late fees line spacing - ensures alignment */}
+                          <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-1 sm:space-x-1.5 justify-start leading-tight">
-                          <CheckCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-emerald-500 flex-shrink-0" />
-                          <span className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-emerald-600 truncate">Paid invoices</span>
+                        <div className="flex items-center space-x-1 sm:space-x-1.5 justify-start leading-tight mt-auto">
+                          <CheckCircle className="h-3 w-3 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-emerald-500 flex-shrink-0" />
+                          <span className="text-[10px] sm:text-[10px] lg:text-xs font-medium text-emerald-600 truncate">Paid invoices</span>
                         </div>
                       </div>
                     </div>
@@ -1517,29 +1451,28 @@ export default function DashboardOverview() {
                 {/* Outstanding Amount */}
                 <button 
                   onClick={handlePendingInvoicesClick}
-                  className="group relative overflow-hidden rounded-lg p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-amber-500 backdrop-blur-sm h-full"
+                  className="group relative overflow-hidden rounded-lg p-3 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-amber-500 backdrop-blur-sm h-full"
                 >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-2 sm:pr-3 flex flex-col justify-between h-full">
-                      <div className="space-y-1 sm:space-y-1.5">
-                        <p className="text-[10px] sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Payable</p>
-                        <div>
-                          <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-orange-500 text-left break-words" style={{ display: 'block' }}>
+                      <div className="space-y-1.5 sm:space-y-1.5">
+                        <p className="text-xs sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Payable</p>
+                        <div className="min-h-[48px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
+                          <div className="font-heading text-xl sm:text-xl lg:text-2xl xl:text-3xl font-bold text-orange-500 text-left break-words" style={{ display: 'block' }}>
                             {isLoadingStats ? (
-                              <div className="animate-pulse bg-gray-300 h-5 sm:h-6 lg:h-8 w-16 sm:w-20 lg:w-24 rounded"></div>
+                              <div className="animate-pulse bg-gray-300 h-6 sm:h-6 lg:h-8 w-20 sm:w-20 lg:w-24 rounded"></div>
                             ) : (
                               <div>{formatMoney(totalPayableAmount)}</div>
                             )}
                           </div>
-                          {totalLateFees > 0 && (
-                            <div className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-amber-600 text-left mt-0.5" style={{ display: 'block' }}>
-                              (+${totalLateFees.toFixed(2)} late fees)
-                            </div>
-                          )}
+                          {/* Fixed height container for late fees - always reserves space for alignment */}
+                          <div className="text-[10px] sm:text-[10px] lg:text-xs font-medium text-amber-600 text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
+                            {totalLateFees > 0 ? `(+$${totalLateFees.toFixed(2)} late fees)` : ''}
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-1 sm:space-x-1.5 justify-start leading-tight">
-                          <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-orange-500 flex-shrink-0" />
-                          <span className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-orange-500 truncate">
+                        <div className="flex items-center space-x-1 sm:space-x-1.5 justify-start leading-tight mt-auto">
+                          <Clock className="h-3 w-3 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-orange-500 flex-shrink-0" />
+                          <span className="text-[10px] sm:text-[10px] lg:text-xs font-medium text-orange-500 truncate">
                             {invoices.filter(inv => inv.status === 'pending' || inv.status === 'sent').length} pending
                           </span>
                         </div>
@@ -1558,27 +1491,27 @@ export default function DashboardOverview() {
                 {/* Overdue Invoices */}
                 <button 
                   onClick={handleOverdueInvoicesClick}
-                  className="group relative overflow-hidden rounded-lg p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-red-500 backdrop-blur-sm h-full"
+                  className="group relative overflow-hidden rounded-lg p-3 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-red-500 backdrop-blur-sm h-full"
                 >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-2 sm:pr-3 flex flex-col justify-between h-full">
-                      <div className="space-y-1 sm:space-y-1.5">
-                        <p className="text-[10px] sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Overdue</p>
-                        <div>
-                          <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-red-600 text-left" style={{ display: 'block' }}>
+                      <div className="space-y-1.5 sm:space-y-1.5">
+                        <p className="text-xs sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Overdue</p>
+                        <div className="min-h-[48px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
+                          <div className="font-heading text-xl sm:text-xl lg:text-2xl xl:text-3xl font-bold text-red-600 text-left" style={{ display: 'block' }}>
                             {isLoadingStats ? (
-                              <div className="animate-pulse bg-gray-300 h-5 sm:h-6 lg:h-8 w-6 sm:w-8 lg:w-10 rounded"></div>
+                              <div className="animate-pulse bg-gray-300 h-6 sm:h-6 lg:h-8 w-8 sm:w-8 lg:w-10 rounded"></div>
                             ) : (
                               <div>{overdueCount}</div>
                             )}
                           </div>
-                          {/* Placeholder to match late fees line spacing */}
-                          <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '12px', minHeight: '12px' }}>
+                          {/* Fixed height placeholder to match late fees line spacing - ensures alignment */}
+                          <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-1 sm:space-x-1.5 justify-start leading-tight">
-                          <AlertCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-red-500 flex-shrink-0" />
-                          <span className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-red-600 truncate">Need attention</span>
+                        <div className="flex items-center space-x-1 sm:space-x-1.5 justify-start leading-tight mt-auto">
+                          <AlertCircle className="h-3 w-3 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-red-500 flex-shrink-0" />
+                          <span className="text-[10px] sm:text-[10px] lg:text-xs font-medium text-red-600 truncate">Need attention</span>
                         </div>
                       </div>
                     </div>
@@ -1595,27 +1528,27 @@ export default function DashboardOverview() {
                 {/* Total Clients */}
                 <button 
                   onClick={handleClientsClick}
-                  className="group relative overflow-hidden rounded-lg p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-indigo-500 backdrop-blur-sm h-full"
+                  className="group relative overflow-hidden rounded-lg p-3 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-indigo-500 backdrop-blur-sm h-full"
                 >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-2 sm:pr-3 flex flex-col justify-between h-full">
-                      <div className="space-y-1 sm:space-y-1.5">
-                        <p className="text-[10px] sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Clients</p>
-                        <div>
-                          <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-indigo-600 text-left" style={{ display: 'block' }}>
+                      <div className="space-y-1.5 sm:space-y-1.5">
+                        <p className="text-xs sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Clients</p>
+                        <div className="min-h-[48px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
+                          <div className="font-heading text-xl sm:text-xl lg:text-2xl xl:text-3xl font-bold text-indigo-600 text-left" style={{ display: 'block' }}>
                             {isLoadingStats ? (
-                              <div className="animate-pulse bg-gray-300 h-5 sm:h-6 lg:h-8 w-6 sm:w-8 lg:w-10 rounded"></div>
+                              <div className="animate-pulse bg-gray-300 h-6 sm:h-6 lg:h-8 w-8 sm:w-8 lg:w-10 rounded"></div>
                             ) : (
                               <div>{totalClients}</div>
                             )}
                           </div>
-                          {/* Placeholder to match late fees line spacing */}
-                          <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '12px', minHeight: '12px' }}>
+                          {/* Fixed height placeholder to match late fees line spacing - ensures alignment */}
+                          <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-1 sm:space-x-1.5 justify-start leading-tight">
-                          <Users className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-indigo-500 flex-shrink-0" />
-                          <span className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-indigo-600 truncate">Active clients</span>
+                        <div className="flex items-center space-x-1 sm:space-x-1.5 justify-start leading-tight mt-auto">
+                          <Users className="h-3 w-3 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-indigo-500 flex-shrink-0" />
+                          <span className="text-[10px] sm:text-[10px] lg:text-xs font-medium text-indigo-600 truncate">Active clients</span>
                         </div>
                       </div>
                     </div>
@@ -2265,6 +2198,30 @@ export default function DashboardOverview() {
                )}
              </div>
             </div>
+            
+            {/* Footer with Actions */}
+            <div className="flex-shrink-0 border-t border-gray-200 px-2 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-3">
+              <button
+                onClick={() => {
+                  setShowViewInvoice(false);
+                  setShowReminderDates(false);
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+              {(selectedInvoice.status === 'sent' || selectedInvoice.status === 'pending') && (
+                <button
+                  onClick={() => {
+                    setShowPartialPayment(true);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer flex items-center gap-2"
+                >
+                  <DollarSign className="h-4 w-4" />
+                  Record Payment
+                </button>
+              )}
+            </div>
           </div>
         </div>
        )}
@@ -2314,6 +2271,24 @@ export default function DashboardOverview() {
            showSuccess('Estimate Created', 'Your estimate has been created successfully.');
          }}
        />
+
+       {/* Partial Payment Modal */}
+       {showPartialPayment && selectedInvoice && (
+         <PartialPaymentModal
+           invoice={selectedInvoice}
+           isOpen={showPartialPayment}
+           onClose={async () => {
+             setShowPartialPayment(false);
+             // refreshInvoices() already includes payment data embedded in invoices
+             await refreshInvoices();
+           }}
+           onPaymentAdded={async () => {
+             // refreshInvoices() already includes payment data embedded in invoices
+             await refreshInvoices();
+           }}
+           getAuthHeaders={getAuthHeaders}
+         />
+       )}
 
        {/* Toast Container */}
        <ToastContainer

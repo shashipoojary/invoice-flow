@@ -144,6 +144,16 @@ export default function QuickInvoiceModal({
     address: ''
   })
   
+  // Validation errors
+  const [errors, setErrors] = useState<{
+    client?: string
+    clientName?: string
+    clientEmail?: string
+    items?: { [key: string]: { description?: string; amount?: string } }
+    dueDate?: string
+    issueDate?: string
+  }>({})
+  
   // Invoice basic details
   const [invoiceNumber, setInvoiceNumber] = useState('')
   const [issueDate, setIssueDate] = useState('')
@@ -554,25 +564,75 @@ export default function QuickInvoiceModal({
     }
   }
 
+  // Validation function
+  const validateForm = (): boolean => {
+    const newErrors: typeof errors = {}
+    
+    // Client validation
+    if (!selectedClientId) {
+      if (!newClient.name || !newClient.name.trim()) {
+        newErrors.clientName = 'Client name is required'
+      }
+      if (!newClient.email || !newClient.email.trim()) {
+        newErrors.clientEmail = 'Client email is required'
+      } else {
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(newClient.email.trim())) {
+          newErrors.clientEmail = 'Please enter a valid email address'
+        }
+      }
+    }
+    
+    // Items validation
+    const itemErrors: { [key: string]: { description?: string; amount?: string } } = {}
+    items.forEach((item, index) => {
+      if (!item.description || !item.description.trim()) {
+        if (!itemErrors[item.id]) itemErrors[item.id] = {}
+        itemErrors[item.id].description = 'Description is required'
+      }
+      if (!item.amount || !item.amount.toString().trim()) {
+        if (!itemErrors[item.id]) itemErrors[item.id] = {}
+        itemErrors[item.id].amount = 'Amount is required'
+      } else {
+        const parsedAmount = parseFloat(item.amount.toString())
+        if (isNaN(parsedAmount) || parsedAmount <= 0) {
+          if (!itemErrors[item.id]) itemErrors[item.id] = {}
+          itemErrors[item.id].amount = 'Please enter a valid amount greater than 0'
+        }
+      }
+    })
+    if (Object.keys(itemErrors).length > 0) {
+      newErrors.items = itemErrors
+    }
+    
+    // Due date validation
+    if (!dueDate || !dueDate.trim()) {
+      newErrors.dueDate = 'Due date is required'
+    }
+    
+    // Issue date validation
+    if (!issueDate || !issueDate.trim()) {
+      newErrors.issueDate = 'Issue date is required'
+    }
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleCreateDraft = async () => {
     setCreatingLoading(true)
 
     try {
+      // Validate form before proceeding
+      if (!validateForm()) {
+        showError('Please fill in all required fields correctly')
+        setCreatingLoading(false)
+        return
+      }
+      
       calculateTotals()
       // Calculate totals for validation
-
-      // Validate required fields
-      if (!selectedClientId && !newClient.name) {
-        showWarning('Please select a client or enter client details')
-        setCreatingLoading(false)
-        return
-      }
-
-      if (items.some(item => !item.description || !item.amount || parseFloat(item.amount.toString()) <= 0)) {
-        showWarning('Please fill in all item details with valid amounts')
-        setCreatingLoading(false)
-        return
-      }
 
       // Determine if we're editing or creating
       const isEditing = editingInvoice && editingInvoice.id
@@ -678,21 +738,15 @@ export default function QuickInvoiceModal({
     setSendingLoading(true)
 
     try {
+      // Validate form before proceeding
+      if (!validateForm()) {
+        showError('Please fill in all required fields correctly')
+        setSendingLoading(false)
+        return
+      }
+      
       calculateTotals()
       // Calculate totals for validation
-
-      // Validate required fields
-      if (!selectedClientId && !newClient.name) {
-        showWarning('Please select a client or enter client details')
-        setSendingLoading(false)
-        return
-      }
-
-      if (items.some(item => !item.description || !item.amount || parseFloat(item.amount.toString()) <= 0)) {
-        showWarning('Please fill in all item details with valid amounts')
-        setSendingLoading(false)
-        return
-      }
 
       const payload = {
         client_id: selectedClientId || undefined,

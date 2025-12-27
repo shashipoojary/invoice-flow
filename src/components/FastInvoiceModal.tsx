@@ -50,6 +50,16 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   const [dueDate, setDueDate] = useState('')
   const [notes, setNotes] = useState('')
   const [markAsPaid, setMarkAsPaid] = useState(false)
+  
+  // Validation errors
+  const [errors, setErrors] = useState<{
+    client?: string
+    clientName?: string
+    clientEmail?: string
+    description?: string
+    amount?: string
+    dueDate?: string
+  }>({})
 
   // IMPORTANT: When "Mark as Paid" is selected, set due date to today (Due on Receipt)
   useEffect(() => {
@@ -112,6 +122,51 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
     setDueDate('')
     setNotes('')
     setMarkAsPaid(false)
+    setErrors({})
+  }
+  
+  // Validation function
+  const validateForm = (): boolean => {
+    const newErrors: typeof errors = {}
+    
+    // Client validation
+    if (!selectedClientId) {
+      if (!clientName || !clientName.trim()) {
+        newErrors.clientName = 'Client name is required'
+      }
+      if (!clientEmail || !clientEmail.trim()) {
+        newErrors.clientEmail = 'Client email is required'
+      } else {
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(clientEmail.trim())) {
+          newErrors.clientEmail = 'Please enter a valid email address'
+        }
+      }
+    }
+    
+    // Description validation
+    if (!description || !description.trim()) {
+      newErrors.description = 'Description is required'
+    }
+    
+    // Amount validation
+    if (!amount || !amount.trim()) {
+      newErrors.amount = 'Amount is required'
+    } else {
+      const parsedAmount = parseFloat(amount)
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        newErrors.amount = 'Please enter a valid amount greater than 0'
+      }
+    }
+    
+    // Due date validation
+    if (!dueDate || !dueDate.trim()) {
+      newErrors.dueDate = 'Due date is required'
+    }
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
   }
 
   const handleClose = () => {
@@ -120,6 +175,12 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   }
 
   const handleCreateInvoice = async (showToast = true, isSending = false) => {
+    // Validate form before proceeding
+    if (!validateForm()) {
+      showError('Please fill in all required fields correctly')
+      return
+    }
+    
     if (!isSending) {
       setLoading(true)
     }
@@ -478,16 +539,26 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                           <input
                             type="text"
                             value={clientName}
-                            onChange={(e) => setClientName(e.target.value)}
+                            onChange={(e) => {
+                              setClientName(e.target.value)
+                              if (errors.clientName) {
+                                setErrors(prev => ({ ...prev, clientName: undefined }))
+                              }
+                            }}
                             className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                              isDarkMode 
-                                ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
-                                : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                              errors.clientName
+                                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                                : isDarkMode 
+                                  ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                                  : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                             }`}
                             placeholder="Client name"
                             required={!selectedClientId}
                           />
                         </div>
+                        {errors.clientName && (
+                          <p className="mt-1 text-xs text-red-600">{errors.clientName}</p>
+                        )}
                       </div>
 
                       <div>
@@ -498,16 +569,26 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                           <input
                             type="email"
                             value={clientEmail}
-                            onChange={(e) => setClientEmail(e.target.value)}
+                            onChange={(e) => {
+                              setClientEmail(e.target.value)
+                              if (errors.clientEmail) {
+                                setErrors(prev => ({ ...prev, clientEmail: undefined }))
+                              }
+                            }}
                             className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                              isDarkMode 
-                                ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
-                                : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                              errors.clientEmail
+                                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                                : isDarkMode 
+                                  ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                                  : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                             }`}
                             placeholder="client@example.com"
                             required={!selectedClientId}
                           />
                         </div>
+                        {errors.clientEmail && (
+                          <p className="mt-1 text-xs text-red-600">{errors.clientEmail}</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -568,17 +649,27 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                     }`} />
                     <textarea
                       value={description}
-                      onChange={(e) => setDescription(e.target.value)}
+                      onChange={(e) => {
+                        setDescription(e.target.value)
+                        if (errors.description) {
+                          setErrors(prev => ({ ...prev, description: undefined }))
+                        }
+                      }}
                       className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
-                        isDarkMode 
-                          ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
-                          : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                        errors.description
+                          ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                          : isDarkMode 
+                            ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                            : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                       }`}
                       placeholder="Describe the work or service provided"
                       rows={3}
                       required
                     />
                   </div>
+                  {errors.description && (
+                    <p className="mt-1 text-xs text-red-600">{errors.description}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -592,17 +683,27 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                       <input
                         type="number"
                         value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
+                        onChange={(e) => {
+                          setAmount(e.target.value)
+                          if (errors.amount) {
+                            setErrors(prev => ({ ...prev, amount: undefined }))
+                          }
+                        }}
                         className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                          isDarkMode 
-                            ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
-                            : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                          errors.amount
+                            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                            : isDarkMode 
+                              ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                              : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                         }`}
                         placeholder="0.00"
                         step="0.01"
                         required
                       />
                     </div>
+                    {errors.amount && (
+                      <p className="mt-1 text-xs text-red-600">{errors.amount}</p>
+                    )}
                   </div>
 
                   <div>
@@ -615,22 +716,35 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                       <input
                         type="date"
                         value={dueDate}
-                        onChange={(e) => !markAsPaid && setDueDate(e.target.value)}
+                        onChange={(e) => {
+                          if (!markAsPaid) {
+                            setDueDate(e.target.value)
+                            if (errors.dueDate) {
+                              setErrors(prev => ({ ...prev, dueDate: undefined }))
+                            }
+                          }
+                        }}
                         disabled={markAsPaid}
                         className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                           markAsPaid ? 'cursor-not-allowed opacity-60' : ''
                         } ${
-                          isDarkMode 
-                            ? 'border-gray-700 bg-gray-800 text-white' 
-                            : 'border-gray-300 bg-white text-gray-900'
+                          errors.dueDate
+                            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                            : isDarkMode 
+                              ? 'border-gray-700 bg-gray-800 text-white' 
+                              : 'border-gray-300 bg-white text-gray-900'
                         }`}
                       />
                     </div>
-                    <p className={`text-xs mt-1 ${
-                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                    }`}>
-                      Due Date {markAsPaid && <span className="text-orange-600">(Locked - Due on Receipt)</span>}
-                    </p>
+                    {errors.dueDate ? (
+                      <p className="text-xs mt-1 text-red-600">{errors.dueDate}</p>
+                    ) : (
+                      <p className={`text-xs mt-1 ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        Due Date {markAsPaid && <span className="text-orange-600">(Locked - Due on Receipt)</span>}
+                      </p>
+                    )}
                   </div>
                 </div>
 

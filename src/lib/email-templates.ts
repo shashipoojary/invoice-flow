@@ -49,7 +49,8 @@ interface BusinessSettings {
 export function generateMinimalEmailTemplate(
   invoice: InvoiceData,
   businessSettings: BusinessSettings,
-  publicUrl: string
+  publicUrl: string,
+  hidePaymentMethods: boolean = false
 ): string {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -685,7 +686,7 @@ export function generateMinimalEmailTemplate(
                 ${businessSettings.stripeAccount ? `
                   <div class="payment-method-item">
                     <div class="payment-method-name">CREDIT/DEBIT CARD</div>
-                    <div class="payment-method-details">Processed securely via Stripe</div>
+                    <div class="payment-method-details">${businessSettings.stripeAccount}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.paymentNotes ? `
@@ -731,7 +732,8 @@ export function generateMinimalEmailTemplate(
 export function generateModernEmailTemplate(
   invoice: InvoiceData,
   businessSettings: BusinessSettings,
-  publicUrl: string
+  publicUrl: string,
+  hidePaymentMethods: boolean = false
 ): string {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -1179,7 +1181,7 @@ export function generateModernEmailTemplate(
               </a>
             </div>
 
-            ${(businessSettings.paypalEmail || businessSettings.cashappId || businessSettings.venmoId || businessSettings.googlePayUpi || businessSettings.applePayId || businessSettings.bankAccount || businessSettings.stripeAccount || businessSettings.paymentNotes) ? `
+            ${!hidePaymentMethods && (businessSettings.paypalEmail || businessSettings.cashappId || businessSettings.venmoId || businessSettings.googlePayUpi || businessSettings.applePayId || businessSettings.bankAccount || businessSettings.stripeAccount || businessSettings.paymentNotes) ? `
             <div class="payment-methods">
               <h3>Payment Methods</h3>
               <div class="payment-notice">
@@ -1229,7 +1231,7 @@ export function generateModernEmailTemplate(
                 ${businessSettings.stripeAccount ? `
                   <div class="payment-method-item">
                     <div class="payment-method-name">CREDIT/DEBIT CARD</div>
-                    <div class="payment-method-details">Processed securely via Stripe</div>
+                    <div class="payment-method-details">${businessSettings.stripeAccount}</div>
                   </div>
                 ` : ''}
                 ${businessSettings.paymentNotes ? `
@@ -1263,7 +1265,8 @@ export function generateModernEmailTemplate(
 export function generateCreativeEmailTemplate(
   invoice: InvoiceData,
   businessSettings: BusinessSettings,
-  publicUrl: string
+  publicUrl: string,
+  hidePaymentMethods: boolean = false
 ): string {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -1712,7 +1715,7 @@ export function generateCreativeEmailTemplate(
               </a>
             </div>
 
-                  ${(businessSettings.paypalEmail || businessSettings.cashappId || businessSettings.venmoId || businessSettings.googlePayUpi || businessSettings.applePayId || businessSettings.bankAccount || businessSettings.stripeAccount || businessSettings.paymentNotes) ? `
+                  ${!hidePaymentMethods && (businessSettings.paypalEmail || businessSettings.cashappId || businessSettings.venmoId || businessSettings.googlePayUpi || businessSettings.applePayId || businessSettings.bankAccount || businessSettings.stripeAccount || businessSettings.paymentNotes) ? `
             <div class="payment-methods">
               <h3 style="color: ${primaryColor} !important;">Payment Methods</h3>
               <div class="payment-notice">
@@ -1762,7 +1765,7 @@ export function generateCreativeEmailTemplate(
                       ${businessSettings.stripeAccount ? `
                   <div class="payment-method-item">
                     <div class="payment-method-name" style="color: ${primaryColor} !important;">CREDIT/DEBIT CARD</div>
-                    <div class="payment-method-details">Processed securely via Stripe</div>
+                    <div class="payment-method-details">${businessSettings.stripeAccount}</div>
                         </div>
                       ` : ''}
                       ${businessSettings.paymentNotes ? `
@@ -1809,7 +1812,8 @@ export function generateCreativeEmailTemplate(
 export function generateOriginalFastInvoiceEmailTemplate(
   invoice: InvoiceData,
   businessSettings: BusinessSettings,
-  publicUrl: string
+  publicUrl: string,
+  hidePaymentMethods: boolean = false
 ): string {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -2716,20 +2720,24 @@ export function getEmailTemplate(
   template: number,
   invoice: InvoiceData,
   businessSettings: BusinessSettings,
-  publicUrl: string
+  publicUrl: string,
+  invoiceStatus?: string // Add optional invoice status parameter
 ): string {
-  console.log(`Email Template Selection - Template: ${template}, Invoice Type: ${invoice.type}, Theme: ${JSON.stringify(invoice.theme)}`);
+  console.log(`Email Template Selection - Template: ${template}, Invoice Type: ${invoice.type}, Theme: ${JSON.stringify(invoice.theme)}, Status: ${invoiceStatus}`);
+  
+  // Determine if payment methods should be hidden (for paid invoices)
+  const hidePaymentMethods = invoiceStatus === 'paid';
   
   switch (template) {
     case 1: // Fast Invoice (60-second) - use original template
-      return generateOriginalFastInvoiceEmailTemplate(invoice, businessSettings, publicUrl);
+      return generateOriginalFastInvoiceEmailTemplate(invoice, businessSettings, publicUrl, hidePaymentMethods);
     case 4: // Modern
-      return generateModernEmailTemplate(invoice, businessSettings, publicUrl);
+      return generateModernEmailTemplate(invoice, businessSettings, publicUrl, hidePaymentMethods);
     case 5: // Creative
-      return generateCreativeEmailTemplate(invoice, businessSettings, publicUrl);
+      return generateCreativeEmailTemplate(invoice, businessSettings, publicUrl, hidePaymentMethods);
     case 6: // Minimal - detailed invoice template
-      return generateMinimalEmailTemplate(invoice, businessSettings, publicUrl);
+      return generateMinimalEmailTemplate(invoice, businessSettings, publicUrl, hidePaymentMethods);
     default:
-      return generateOriginalFastInvoiceEmailTemplate(invoice, businessSettings, publicUrl);
+      return generateOriginalFastInvoiceEmailTemplate(invoice, businessSettings, publicUrl, hidePaymentMethods);
   }
 }

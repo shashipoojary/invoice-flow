@@ -192,14 +192,14 @@ export function UnifiedInvoiceCard({
                   )}
                 </button>
               )}
-              {(invoice.status === 'draft' || invoice.status === 'paid') && (
+              {invoice.status === 'draft' && (
                 <button
                   onClick={() => { onSend(invoice); logEvent('sent'); }}
                   disabled={loadingActions[`send-${invoice.id}`]}
                   className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${
                     loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                   }`}
-                  title={invoice.status === 'paid' ? 'Send Receipt' : 'Send'}
+                  title="Send"
                 >
                   {loadingActions[`send-${invoice.id}`] ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>

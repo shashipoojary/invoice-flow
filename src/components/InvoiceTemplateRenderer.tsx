@@ -593,7 +593,7 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
                 )}
 
                 {/* Stripe */}
-                {invoice.freelancerSettings.stripeAccount && (
+                {invoice.freelancerSettings?.stripeAccount && (
                   <div className="pb-3 border-b border-gray-200">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
@@ -601,7 +601,7 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
                         <span className="text-sm font-medium text-gray-900">Credit/Debit Card</span>
                       </div>
                       <button
-                        onClick={() => handleCopyPaymentMethod('Stripe', 'Processed securely via Stripe')}
+                        onClick={() => handleCopyPaymentMethod('Stripe', invoice.freelancerSettings?.stripeAccount || '')}
                         className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
                         title="Copy payment info"
                       >
@@ -618,7 +618,7 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
                         )}
                       </button>
                     </div>
-                    <p className="text-sm text-gray-600">Processed securely via Stripe</p>
+                    <p className="text-sm text-gray-600">{invoice.freelancerSettings?.stripeAccount}</p>
                   </div>
                 )}
 
@@ -1162,7 +1162,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                 )}
 
                 {/* Stripe */}
-                {invoice.freelancerSettings.stripeAccount && (
+                {invoice.freelancerSettings?.stripeAccount && (
                   <div className="pb-3 border-b border-gray-200">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
@@ -1170,7 +1170,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                         <span className="text-sm font-medium text-gray-900">Credit/Debit Card</span>
                       </div>
                       <button
-                        onClick={() => handleCopyPaymentMethod('Stripe', 'Processed securely via Stripe')}
+                        onClick={() => handleCopyPaymentMethod('Stripe', invoice.freelancerSettings?.stripeAccount || '')}
                         className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
                         title="Copy payment info"
                       >
@@ -1187,7 +1187,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                         )}
                       </button>
                     </div>
-                    <p className="text-sm text-gray-600">Processed securely via Stripe</p>
+                    <p className="text-sm text-gray-600">{invoice.freelancerSettings?.stripeAccount}</p>
                   </div>
                 )}
 
@@ -1731,7 +1731,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                 )}
 
                 {/* Stripe */}
-                {invoice.freelancerSettings.stripeAccount && (
+                {invoice.freelancerSettings?.stripeAccount && (
                   <div className="pb-3 border-b border-gray-200">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
@@ -1739,7 +1739,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                         <span className="text-sm font-medium text-gray-900">Credit/Debit Card</span>
                       </div>
                       <button
-                        onClick={() => handleCopyPaymentMethod('Stripe', 'Processed securely via Stripe')}
+                        onClick={() => handleCopyPaymentMethod('Stripe', invoice.freelancerSettings?.stripeAccount || '')}
                         className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
                         title="Copy payment info"
                       >
@@ -1756,7 +1756,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                         )}
                       </button>
                     </div>
-                    <p className="text-sm text-gray-600">Processed securely via Stripe</p>
+                    <p className="text-sm text-gray-600">{invoice.freelancerSettings?.stripeAccount}</p>
                   </div>
                 )}
 
@@ -2300,7 +2300,7 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                 )}
 
                 {/* Stripe */}
-                {invoice.freelancerSettings.stripeAccount && (
+                {invoice.freelancerSettings?.stripeAccount && (
                   <div className="pb-3 border-b border-gray-200">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
@@ -2308,7 +2308,7 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                         <span className="text-sm font-medium text-gray-900">Credit/Debit Card</span>
                       </div>
                       <button
-                        onClick={() => handleCopyPaymentMethod('Stripe', 'Processed securely via Stripe')}
+                        onClick={() => handleCopyPaymentMethod('Stripe', invoice.freelancerSettings?.stripeAccount || '')}
                         className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 transition-colors"
                         title="Copy payment info"
                       >
@@ -2325,7 +2325,7 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                         )}
                       </button>
                     </div>
-                    <p className="text-sm text-gray-600">Processed securely via Stripe</p>
+                    <p className="text-sm text-gray-600">{invoice.freelancerSettings?.stripeAccount}</p>
                   </div>
                 )}
 

@@ -272,6 +272,7 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
         }
         
         // Add payment events (only if invoice is not fully paid or marked as paid)
+        // IMPORTANT: Payments are added here but will be sorted chronologically with all other events
         if (payments.length > 0 && invoice.status !== 'paid') {
           // Filter payments that occurred before the paid event (if any)
           const validPayments = paidEventTimestamp 
@@ -279,16 +280,18 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
             : payments;
           
           for (const payment of validPayments) {
-            const paymentDate = payment.payment_date || payment.created_at;
+            // Use created_at for accurate timestamp (when payment was recorded)
+            // payment_date is just a date without time, so created_at is more accurate for chronological sorting
+            const paymentTimestamp = payment.created_at || payment.payment_date;
             const paymentItem: ActivityItem = {
               id: `payment-${payment.id}`,
               type: 'client',
               title: `Partial payment received: $${parseFloat(payment.amount.toString()).toFixed(2)}`,
-              at: paymentDate,
+              at: paymentTimestamp,
               icon: 'paid' as const,
               details: payment.payment_method ? `Method: ${payment.payment_method}` : undefined
             };
-            const eventKey = `payment-${payment.id}-${new Date(paymentDate).getTime()}`;
+            const eventKey = `payment-${payment.id}-${new Date(paymentTimestamp).getTime()}`;
             if (!eventMap.has(eventKey)) {
               eventMap.set(eventKey, paymentItem);
               items.push(paymentItem);

@@ -82,6 +82,12 @@ export default function EstimateModal({
     })()
   )
   
+  // Validation errors
+  const [errors, setErrors] = useState<{
+    client?: string
+    items?: { [key: string]: { description?: string; rate?: string } }
+  }>({})
+  
   // Update form when estimate prop changes
   useEffect(() => {
     if (estimate) {
@@ -164,14 +170,39 @@ export default function EstimateModal({
     return afterDiscount + tax
   }
 
-  const handleSubmit = async () => {
+  // Validation function
+  const validateForm = (): boolean => {
+    const newErrors: typeof errors = {}
+    
+    // Client validation
     if (!selectedClientId) {
-      showError('Error', 'Please select a client')
-      return
+      newErrors.client = 'Please select a client'
     }
+    
+    // Items validation
+    const itemErrors: { [key: string]: { description?: string; rate?: string } } = {}
+    items.forEach((item) => {
+      if (!item.description || !item.description.trim()) {
+        if (!itemErrors[item.id]) itemErrors[item.id] = {}
+        itemErrors[item.id].description = 'Description is required'
+      }
+      if (!item.rate || item.rate <= 0) {
+        if (!itemErrors[item.id]) itemErrors[item.id] = {}
+        itemErrors[item.id].rate = 'Please enter a valid rate greater than 0'
+      }
+    })
+    if (Object.keys(itemErrors).length > 0) {
+      newErrors.items = itemErrors
+    }
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
-    if (items.some(item => !item.description || item.rate <= 0)) {
-      showError('Error', 'Please fill in all item descriptions and rates')
+  const handleSubmit = async () => {
+    // Validate form before proceeding
+    if (!validateForm()) {
+      showError('Error', 'Please fill in all required fields correctly')
       return
     }
 
@@ -385,22 +416,34 @@ export default function EstimateModal({
                     </button>
                   </div>
                 ) : (
-                  <select
-                    value={selectedClientId}
-                    onChange={(e) => setSelectedClientId(e.target.value)}
-                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                      isDarkMode
-                        ? 'bg-gray-800 border-gray-700 text-white focus:border-indigo-500 focus:ring-indigo-500'
-                        : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-500 focus:ring-indigo-500'
-                    } focus:ring-2 focus:outline-none`}
-                  >
-                    <option value="">Choose a client...</option>
-                    {clients.map((client) => (
-                      <option key={client.id} value={client.id}>
-                        {client.name} {client.company ? `(${client.company})` : ''}
-                      </option>
-                    ))}
-                  </select>
+                  <>
+                    <select
+                      value={selectedClientId}
+                      onChange={(e) => {
+                        setSelectedClientId(e.target.value)
+                        if (errors.client) {
+                          setErrors(prev => ({ ...prev, client: undefined }))
+                        }
+                      }}
+                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
+                        errors.client
+                          ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                          : isDarkMode
+                            ? 'bg-gray-800 border-gray-700 text-white focus:border-indigo-500 focus:ring-indigo-500'
+                            : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-500 focus:ring-indigo-500'
+                      } focus:ring-2 focus:outline-none`}
+                    >
+                      <option value="">Choose a client...</option>
+                      {clients.map((client) => (
+                        <option key={client.id} value={client.id}>
+                          {client.name} {client.company ? `(${client.company})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.client && (
+                      <p className="mt-1 text-xs text-red-600">{errors.client}</p>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -477,13 +520,32 @@ export default function EstimateModal({
                           type="text"
                           placeholder="Item description"
                           value={item.description}
-                          onChange={(e) => updateItem(item.id, 'description', e.target.value)}
+                          onChange={(e) => {
+                            updateItem(item.id, 'description', e.target.value)
+                            if (errors.items?.[item.id]?.description) {
+                              setErrors(prev => {
+                                const newErrors = { ...prev }
+                                if (newErrors.items?.[item.id]) {
+                                  delete newErrors.items[item.id].description
+                                  if (Object.keys(newErrors.items[item.id]).length === 0) {
+                                    delete newErrors.items[item.id]
+                                  }
+                                }
+                                return newErrors
+                              })
+                            }
+                          }}
                           className={`w-full px-3 py-2 rounded-lg border transition-colors ${
-                            isDarkMode
-                              ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-indigo-500 focus:ring-indigo-500'
-                              : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:ring-indigo-500'
+                            errors.items?.[item.id]?.description
+                              ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                              : isDarkMode
+                                ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-indigo-500 focus:ring-indigo-500'
+                                : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:ring-indigo-500'
                           } focus:ring-2 focus:outline-none`}
                         />
+                        {errors.items?.[item.id]?.description && (
+                          <p className="mt-1 text-xs text-red-600">{errors.items[item.id].description}</p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 w-full sm:w-auto">
                         <div className="w-20 sm:w-20">
@@ -505,15 +567,34 @@ export default function EstimateModal({
                             type="number"
                             placeholder="Rate"
                             value={item.rate || ''}
-                            onChange={(e) => updateItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
+                            onChange={(e) => {
+                              updateItem(item.id, 'rate', parseFloat(e.target.value) || 0)
+                              if (errors.items?.[item.id]?.rate) {
+                                setErrors(prev => {
+                                  const newErrors = { ...prev }
+                                  if (newErrors.items?.[item.id]) {
+                                    delete newErrors.items[item.id].rate
+                                    if (Object.keys(newErrors.items[item.id]).length === 0) {
+                                      delete newErrors.items[item.id]
+                                    }
+                                  }
+                                  return newErrors
+                                })
+                              }
+                            }}
                             min="0"
                             step="0.01"
                             className={`w-full px-3 py-2 rounded-lg border transition-colors ${
-                              isDarkMode
-                                ? 'bg-gray-700 border-gray-600 text-white focus:border-teal-500 focus:ring-teal-500'
-                                : 'bg-white border-gray-300 text-gray-900 focus:border-teal-500 focus:ring-teal-500'
+                              errors.items?.[item.id]?.rate
+                                ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                : isDarkMode
+                                  ? 'bg-gray-700 border-gray-600 text-white focus:border-teal-500 focus:ring-teal-500'
+                                  : 'bg-white border-gray-300 text-gray-900 focus:border-teal-500 focus:ring-teal-500'
                             } focus:ring-2 focus:outline-none`}
                           />
+                          {errors.items?.[item.id]?.rate && (
+                            <p className="mt-1 text-xs text-red-600">{errors.items[item.id].rate}</p>
+                          )}
                         </div>
                         <div className={`flex-1 sm:flex-none sm:w-24 text-right ${
                           isDarkMode ? 'text-gray-300' : 'text-gray-700'

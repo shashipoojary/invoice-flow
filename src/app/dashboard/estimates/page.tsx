@@ -629,19 +629,25 @@ function EstimatesContent(): React.JSX.Element {
                   ))}
                 </div>
               ) : filteredEstimates.length === 0 ? (
-                <div className="text-center py-12">
-                  <ClipboardCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No estimates found</h3>
-                  <p className="text-sm text-gray-500 mb-4">
+                <div className="rounded-lg p-12 text-center bg-white/70 border border-gray-200 backdrop-blur-sm">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl mb-6 bg-gray-100">
+                    <ClipboardCheck className="h-10 w-10 text-gray-500" />
+                  </div>
+                  
+                  <h3 className="text-xl font-semibold mb-3" style={{color: '#1f2937'}}>
+                    No estimates found
+                  </h3>
+                  <p className="text-sm mb-8 max-w-md mx-auto" style={{color: '#374151'}}>
                     {estimates.length === 0 
-                      ? "Get started by creating your first estimate"
+                      ? "Get started by creating your first estimate to send professional quotes to your clients."
                       : "Try adjusting your search or filter criteria"
                     }
                   </p>
+                  
                   {estimates.length === 0 && (
                     <button
                       onClick={() => setShowCreateEstimate(true)}
-                      className="inline-flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
+                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium mx-auto cursor-pointer"
                     >
                       <Plus className="h-4 w-4" />
                       <span>Create Estimate</span>

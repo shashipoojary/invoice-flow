@@ -455,7 +455,8 @@ export async function POST(request: NextRequest) {
     const publicUrl = `${cleanBaseUrl}/invoice/${encodedToken}`;
     
     console.log('Generated public URL:', publicUrl);
-    const emailHtml = getEmailTemplate(template, invoice, businessSettings, publicUrl);
+    // Pass invoice status to hide payment methods for paid invoices
+    const emailHtml = getEmailTemplate(template, invoice, businessSettings, publicUrl, invoice.status);
 
     // Check if Resend API key is configured
     if (!process.env.RESEND_API_KEY) {

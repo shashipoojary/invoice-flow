@@ -131,88 +131,8 @@ function InvoicesContent(): React.JSX.Element {
     setInvoicesWithPartialPayments(partialSet);
   }, [invoices]);
 
-  // Fallback: Fetch payment data if not received from initial load
-  useEffect(() => {
-    let isMounted = true;
-    let fetchTimeout: NodeJS.Timeout | null = null;
-    
-    const fetchBulkPayments = async () => {
-      // Only fetch if we don't already have payment data
-      if (Object.keys(paymentDataMap).length > 0) {
-        return;
-      }
-      
-      // Wait for invoices to be available
-      if (!invoices || invoices.length === 0) {
-        return;
-      }
-      
-      // Only fetch for sent/pending invoices
-      const eligibleInvoices = invoices.filter(
-        inv => (inv.status === 'sent' || inv.status === 'pending') && inv.id
-      );
-      
-      if (eligibleInvoices.length === 0) {
-        if (isMounted) {
-          setPaymentDataMap({});
-          setInvoicesWithPartialPayments(new Set());
-        }
-        return;
-      }
-      
-      try {
-        setIsLoadingPayments(true);
-        const headers = await getAuthHeaders();
-        const response = await fetch('/api/invoices/payments/bulk', {
-          method: 'POST',
-          headers: {
-            ...headers,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            invoiceIds: eligibleInvoices.map(inv => inv.id)
-          }),
-          cache: 'no-store'
-        });
-        
-        if (response.ok && isMounted) {
-          const data = await response.json();
-          const payments = data.payments || {};
-          setPaymentDataMap(payments);
-          
-          // Update partial payments set
-          const partialSet = new Set<string>();
-          Object.keys(payments).forEach(invoiceId => {
-            if (payments[invoiceId].totalPaid > 0 && payments[invoiceId].remainingBalance > 0) {
-              partialSet.add(invoiceId);
-            }
-          });
-          setInvoicesWithPartialPayments(partialSet);
-        }
-      } catch (error) {
-        console.error('Error fetching bulk payments:', error);
-        // Silently fail - payment data is optional
-      } finally {
-        if (isMounted) {
-          setIsLoadingPayments(false);
-        }
-      }
-    };
-    
-    // Only fetch if payment data wasn't received from initial load
-    if (invoices && invoices.length > 0 && Object.keys(paymentDataMap).length === 0) {
-      fetchTimeout = setTimeout(() => {
-        fetchBulkPayments();
-      }, 100);
-    }
-    
-    return () => {
-      isMounted = false;
-      if (fetchTimeout) {
-        clearTimeout(fetchTimeout);
-      }
-    };
-  }, [invoices, isLoadingInvoices, getAuthHeaders, paymentDataMap]);
+  // Payment data is now embedded directly in invoices from /api/invoices
+  // No need for separate bulk fetch - removed to prevent infinite loops
 
   // Business settings are now managed by SettingsContext
 
@@ -1091,13 +1011,13 @@ function InvoicesContent(): React.JSX.Element {
                     <Download className="h-4 w-4 text-gray-600" />
             )}
           </button>
-          {(invoice.status === 'draft' || invoice.status === 'paid') && (
+          {invoice.status === 'draft' && (
             <button 
               data-testid={`invoice-${invoice.id}-send`}
               onClick={() => handleSendInvoice(invoice)}
               disabled={loadingActions[`send-${invoice.id}`]}
                     className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                    title={invoice.status === 'paid' ? 'Send Receipt' : 'Send'}
+                    title="Send"
             >
               {loadingActions[`send-${invoice.id}`] ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
@@ -2067,64 +1987,12 @@ function InvoicesContent(): React.JSX.Element {
           isOpen={showPartialPayment}
           onClose={async () => {
             setShowPartialPayment(false);
+            // refreshInvoices() already includes payment data embedded in invoices
             await refreshInvoices();
-            // Trigger bulk payment refresh
-            const eligibleInvoices = invoices.filter(
-              inv => (inv.status === 'sent' || inv.status === 'pending') && inv.id
-            );
-            if (eligibleInvoices.length > 0) {
-              try {
-                const headers = await getAuthHeaders();
-                const response = await fetch('/api/invoices/payments/bulk', {
-                  method: 'POST',
-                  headers: { ...headers, 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ invoiceIds: eligibleInvoices.map(inv => inv.id) })
-                });
-                if (response.ok) {
-                  const data = await response.json();
-                  setPaymentDataMap(data.payments || {});
-                  const partialSet = new Set<string>();
-                  Object.keys(data.payments || {}).forEach(id => {
-                    if (data.payments[id].totalPaid > 0 && data.payments[id].remainingBalance > 0) {
-                      partialSet.add(id);
-                    }
-                  });
-                  setInvoicesWithPartialPayments(partialSet);
-                }
-              } catch (error) {
-                // Silently fail
-              }
-            }
           }}
           onPaymentAdded={async () => {
+            // refreshInvoices() already includes payment data embedded in invoices
             await refreshInvoices();
-            // Trigger bulk payment refresh
-            const eligibleInvoices = invoices.filter(
-              inv => (inv.status === 'sent' || inv.status === 'pending') && inv.id
-            );
-            if (eligibleInvoices.length > 0) {
-              try {
-                const headers = await getAuthHeaders();
-                const response = await fetch('/api/invoices/payments/bulk', {
-                  method: 'POST',
-                  headers: { ...headers, 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ invoiceIds: eligibleInvoices.map(inv => inv.id) })
-                });
-                if (response.ok) {
-                  const data = await response.json();
-                  setPaymentDataMap(data.payments || {});
-                  const partialSet = new Set<string>();
-                  Object.keys(data.payments || {}).forEach(id => {
-                    if (data.payments[id].totalPaid > 0 && data.payments[id].remainingBalance > 0) {
-                      partialSet.add(id);
-                    }
-                  });
-                  setInvoicesWithPartialPayments(partialSet);
-                }
-              } catch (error) {
-                // Silently fail
-              }
-            }
           }}
           getAuthHeaders={getAuthHeaders}
         />
