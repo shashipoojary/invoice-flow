@@ -1423,7 +1423,7 @@ export default function DashboardOverview() {
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
                       <div className="space-y-1 sm:space-y-1.5">
-                        <p className="text-[10px] sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Revenue</p>
+                        <p className="text-sm sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Revenue</p>
                         <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
                           <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-emerald-600 text-left break-words" style={{ display: 'block' }}>
                             {isLoadingStats ? (
@@ -1460,7 +1460,7 @@ export default function DashboardOverview() {
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
                       <div className="space-y-1 sm:space-y-1.5">
-                        <p className="text-[10px] sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Payable</p>
+                        <p className="text-sm sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Payable</p>
                         <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
                           <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-orange-500 text-left break-words" style={{ display: 'block' }}>
                             {isLoadingStats ? (
@@ -1500,7 +1500,7 @@ export default function DashboardOverview() {
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
                       <div className="space-y-1 sm:space-y-1.5">
-                        <p className="text-[10px] sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Overdue</p>
+                        <p className="text-sm sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Overdue</p>
                         <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
                           <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-red-600 text-left" style={{ display: 'block' }}>
                             {isLoadingStats ? (
@@ -1537,7 +1537,7 @@ export default function DashboardOverview() {
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
                       <div className="space-y-1 sm:space-y-1.5">
-                        <p className="text-[10px] sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Clients</p>
+                        <p className="text-sm sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Clients</p>
                         <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
                           <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-indigo-600 text-left" style={{ display: 'block' }}>
                             {isLoadingStats ? (
