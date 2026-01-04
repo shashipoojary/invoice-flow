@@ -87,7 +87,8 @@ function InvoicesContent(): React.JSX.Element {
     message: '',
     type: 'danger' as 'danger' | 'warning' | 'info' | 'success',
     onConfirm: () => {},
-    isLoading: false
+    isLoading: false,
+    confirmText: 'Confirm' as string | undefined
   });
 
   // Send invoice modal state
@@ -579,7 +580,8 @@ function InvoicesContent(): React.JSX.Element {
       message: `Are you sure you want to mark invoice ${invoice.invoiceNumber} as paid? This will update the invoice status and cannot be easily undone.`,
       type: 'success',
       onConfirm: () => performMarkAsPaid(invoice),
-      isLoading: false
+      isLoading: false,
+      confirmText: 'Mark as Paid'
     });
   }, []);
 
@@ -624,7 +626,8 @@ function InvoicesContent(): React.JSX.Element {
       message: `Are you sure you want to delete invoice ${invoice.invoiceNumber}? This action cannot be undone and will permanently remove the invoice from your records.`,
       type: 'danger',
       onConfirm: () => performDeleteInvoice(invoice),
-      isLoading: false
+      isLoading: false,
+      confirmText: 'Delete Invoice'
     });
   }, []);
 
@@ -661,7 +664,8 @@ function InvoicesContent(): React.JSX.Element {
       message: `Are you sure you want to duplicate invoice ${invoice.invoiceNumber}? This will create a new draft invoice with the same details that you can edit.`,
       type: 'info',
       onConfirm: () => performDuplicateInvoice(invoice),
-      isLoading: false
+      isLoading: false,
+      confirmText: 'Create Duplicate'
     });
   }, []);
 
@@ -1957,7 +1961,7 @@ function InvoicesContent(): React.JSX.Element {
         message={confirmationModal.message}
         type={confirmationModal.type}
         isLoading={confirmationModal.isLoading}
-        confirmText={confirmationModal.type === 'success' ? 'Mark as Paid' : 'Delete Invoice'}
+        confirmText={confirmationModal.confirmText || (confirmationModal.type === 'success' ? 'Mark as Paid' : confirmationModal.type === 'info' ? 'Create Duplicate' : 'Delete Invoice')}
         cancelText="Cancel"
       />
 

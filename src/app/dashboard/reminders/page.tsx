@@ -22,6 +22,7 @@ import ModernSidebar from '@/components/ModernSidebar';
 import { supabase } from '@/lib/supabase';
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
+import { RotatingAmountBreakdown, useSynchronizedRotation } from '@/components/RotatingComponents';
 
 // Lazy load heavy components
 const FastInvoiceModal = dynamic(() => import('@/components/FastInvoiceModal'), {
@@ -435,6 +436,226 @@ export default function ReminderHistoryPage() {
     }
   };
 
+  // Reminder Card Component - Extracted to fix Rules of Hooks violation
+  const ReminderCard = React.memo(({ 
+    reminder, 
+    totals, 
+    sentDate, 
+    getReminderStatusColor, 
+    sendManualReminder, 
+    sendingReminders, 
+    handleViewReminder 
+  }: {
+    reminder: ReminderHistory;
+    totals: ReturnType<typeof calculateReminderTotal>;
+    sentDate: Date;
+    getReminderStatusColor: (status: string) => string;
+    sendManualReminder: (invoiceId: string, reminderType: string) => void;
+    sendingReminders: Set<string>;
+    handleViewReminder: (reminder: ReminderHistory) => void;
+  }) => {
+    // Prepare breakdowns for rotation (only amount breakdowns rotate, badges stay static)
+    const breakdowns = [
+      ...(totals.isPartiallyPaid ? [
+        <div key="partial">Paid: ${totals.totalPaid.toFixed(2)} • Remaining: ${totals.baseAmount.toFixed(2)}</div>
+      ] : []),
+      ...(totals.hasLateFees ? [
+        <div key="latefees">Base ${totals.baseAmount.toFixed(2)} • Late fee ${totals.lateFeesAmount.toFixed(2)}</div>
+      ] : []),
+      ...(!totals.isPartiallyPaid && !totals.hasLateFees ? [
+        <div key="empty" className="min-h-[14px] sm:min-h-[16px]"></div>
+      ] : [])
+    ];
+
+    // Use rotation state only for amount breakdowns
+    const rotationState = useSynchronizedRotation(breakdowns.length);
+
+    return (
+      <div className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
+        {/* Mobile Layout */}
+        <div className="block sm:hidden p-4">
+          <div className="space-y-3">
+            {/* Top Row: Invoice Info + Amount */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
+                  <Mail className="h-4 w-4 text-gray-700" />
+                </div>
+                <div>
+                  <div className="font-medium text-sm" style={{color: '#1f2937'}}>
+                    {reminder.invoice.invoice_number}
+                  </div>
+                  <div className="text-xs" style={{color: '#6b7280'}}>
+                    {reminder.invoice.clients.name}
+                  </div>
+                </div>
+              </div>
+              <div className="text-right min-h-[56px] flex flex-col items-end">
+                <div className={`font-semibold text-base ${
+                  reminder.invoice.status === 'paid' ? 'text-emerald-600' :
+                  totals.hasLateFees ? 'text-red-600' :
+                  'text-green-600'
+                }`}>
+                  ${totals.totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+                <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500" style={{ minHeight: '14px' }}>
+                  <RotatingAmountBreakdown
+                    breakdowns={breakdowns}
+                    rotationState={rotationState}
+                  />
+                </div>
+                <div className="text-xs" style={{color: '#6b7280'}}>
+                  {sentDate.toLocaleDateString()}
+                </div>
+              </div>
+            </div>
+            
+            {/* Bottom Row: Reminder Type, Status & Actions */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                {/* Static badges - no rotation */}
+                <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
+                  reminder.reminder_type === 'friendly' ? 'text-blue-600' :
+                  reminder.reminder_type === 'polite' ? 'text-emerald-600' :
+                  reminder.reminder_type === 'firm' ? 'text-yellow-600' :
+                  'text-red-600'
+                }`}>
+                  <span className="capitalize">{reminder.reminder_type}</span>
+                </span>
+                <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${getReminderStatusColor(reminder.reminder_status)}`}>
+                  <span className="capitalize">{reminder.reminder_status}</span>
+                </span>
+                {reminder.failure_reason && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600" title={reminder.failure_reason}>
+                    <AlertTriangle className="h-3 w-3" />
+                    <span className="truncate max-w-[100px]">{reminder.failure_reason}</span>
+                  </span>
+                )}
+              </div>
+              
+              <div className="flex items-center space-x-1">
+                {/* Only show manual send button for failed reminders (not cancelled) */}
+                {reminder.reminder_status === 'failed' && !reminder.failure_reason?.includes('Invoice already paid') && !reminder.failure_reason?.includes('Invoice fully paid') && !reminder.failure_reason?.includes('reminders cancelled') && (
+                  <button
+                    onClick={() => sendManualReminder(reminder.invoice_id, reminder.reminder_type)}
+                    disabled={sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`)}
+                    className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${
+                      sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                    }`}
+                    title="Send again"
+                  >
+                    {sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : (
+                      <Send className="h-4 w-4 text-gray-700" />
+                    )}
+                  </button>
+                )}
+                <button
+                  onClick={() => handleViewReminder(reminder)}
+                  className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
+                  title="View reminder details"
+                >
+                  <Eye className="h-4 w-4 text-gray-700" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop Layout */}
+        <div className="hidden sm:block p-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
+                  <Mail className="h-4 w-4 text-gray-700" />
+                </div>
+                <div>
+                  <div className="font-medium text-sm" style={{color: '#1f2937'}}>
+                    {reminder.invoice.invoice_number}
+                  </div>
+                  <div className="text-xs" style={{color: '#6b7280'}}>
+                    {reminder.invoice.clients.name}
+                  </div>
+                </div>
+              </div>
+              <div className="text-right min-h-[56px] flex flex-col items-end">
+                <div className={`font-semibold text-base ${
+                  reminder.invoice.status === 'paid' ? 'text-emerald-600' :
+                  totals.hasLateFees ? 'text-red-600' :
+                  'text-green-600'
+                }`}>
+                  ${totals.totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+                <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500" style={{ minHeight: '14px' }}>
+                  <RotatingAmountBreakdown
+                    breakdowns={breakdowns}
+                    rotationState={rotationState}
+                  />
+                </div>
+                <div className="text-xs" style={{color: '#6b7280'}}>
+                  {sentDate.toLocaleDateString()}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                {/* Static badges - no rotation */}
+                <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
+                  reminder.reminder_type === 'friendly' ? 'text-blue-600' :
+                  reminder.reminder_type === 'polite' ? 'text-emerald-600' :
+                  reminder.reminder_type === 'firm' ? 'text-yellow-600' :
+                  'text-red-600'
+                }`}>
+                  <span className="capitalize">{reminder.reminder_type}</span>
+                </span>
+                <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${getReminderStatusColor(reminder.reminder_status)}`}>
+                  <span className="capitalize">{reminder.reminder_status}</span>
+                </span>
+                {reminder.failure_reason && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600" title={reminder.failure_reason}>
+                    <AlertTriangle className="h-3 w-3" />
+                    <span>{reminder.failure_reason}</span>
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center space-x-1">
+                {/* Only show manual send button for failed reminders (not cancelled) */}
+                {reminder.reminder_status === 'failed' && !reminder.failure_reason?.includes('Invoice already paid') && !reminder.failure_reason?.includes('Invoice fully paid') && !reminder.failure_reason?.includes('reminders cancelled') && (
+                  <button
+                    onClick={() => sendManualReminder(reminder.invoice_id, reminder.reminder_type)}
+                    disabled={sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`)}
+                    className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${
+                      sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                    }`}
+                    title="Send again"
+                  >
+                    {sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : (
+                      <Send className="h-4 w-4 text-gray-700" />
+                    )}
+                  </button>
+                )}
+                <button
+                  onClick={() => handleViewReminder(reminder)}
+                  className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
+                  title="View reminder details"
+                >
+                  <Eye className="h-4 w-4 text-gray-700" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  });
+
+  ReminderCard.displayName = 'ReminderCard';
+
   // Helper function to calculate total with late fees and partial payments
   const calculateReminderTotal = (reminder: ReminderHistory) => {
     const baseAmount = reminder.paymentData?.remainingBalance || reminder.invoice.total;
@@ -826,199 +1047,18 @@ export default function ReminderHistoryPage() {
             {filteredReminders.map((reminder) => {
               const totals = calculateReminderTotal(reminder);
               const sentDate = new Date(reminder.sent_at);
-              const dueDate = new Date(reminder.invoice.due_date);
               
               return (
-              <div key={reminder.id} className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
-                {/* Mobile Layout */}
-                <div className="block sm:hidden p-4">
-                  <div className="space-y-3">
-                    {/* Top Row: Invoice Info + Amount */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
-                          <Mail className="h-4 w-4 text-gray-700" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-sm" style={{color: '#1f2937'}}>
-                            {reminder.invoice.invoice_number}
-                          </div>
-                          <div className="text-xs" style={{color: '#6b7280'}}>
-                            {reminder.invoice.clients.name}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right min-h-[56px] flex flex-col items-end">
-                        <div className={`font-semibold text-base ${
-                          reminder.invoice.status === 'paid' ? 'text-emerald-600' :
-                          totals.hasLateFees ? 'text-red-600' :
-                          'text-green-600'
-                        }`}>
-                          ${totals.totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </div>
-                        {totals.isPartiallyPaid ? (
-                          <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
-                            Paid: ${totals.totalPaid.toFixed(2)} • Remaining: ${totals.baseAmount.toFixed(2)}
-                            {totals.hasLateFees && ` • Late fee: ${totals.lateFeesAmount.toFixed(2)}`}
-                          </div>
-                        ) : totals.hasLateFees ? (
-                          <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
-                            Base ${reminder.invoice.total.toLocaleString()} • Late fee ${totals.lateFeesAmount.toLocaleString()}
-                          </div>
-                        ) : (
-                          <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
-                        )}
-                        <div className="text-xs" style={{color: '#6b7280'}}>
-                          {sentDate.toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Bottom Row: Reminder Type, Status & Actions */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
-                          reminder.reminder_type === 'friendly' ? 'text-blue-600' :
-                          reminder.reminder_type === 'polite' ? 'text-emerald-600' :
-                          reminder.reminder_type === 'firm' ? 'text-yellow-600' :
-                          'text-red-600'
-                        }`}>
-                          <span className="capitalize">{reminder.reminder_type}</span>
-                        </span>
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${getReminderStatusColor(reminder.reminder_status)}`}>
-                          <span className="capitalize">{reminder.reminder_status}</span>
-                        </span>
-                        {reminder.failure_reason && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600" title={reminder.failure_reason}>
-                            <AlertTriangle className="h-3 w-3" />
-                            <span className="truncate max-w-[100px]">{reminder.failure_reason}</span>
-                          </span>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center space-x-1">
-                        {/* Only show manual send button for failed reminders (not cancelled) */}
-                        {reminder.reminder_status === 'failed' && !reminder.failure_reason?.includes('Invoice already paid') && !reminder.failure_reason?.includes('Invoice fully paid') && !reminder.failure_reason?.includes('reminders cancelled') && (
-                          <button
-                            onClick={() => sendManualReminder(reminder.invoice_id, reminder.reminder_type)}
-                            disabled={sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`)}
-                            className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${
-                              sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                            }`}
-                            title="Send again"
-                          >
-                            {sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                            ) : (
-                              <Send className="h-4 w-4 text-gray-700" />
-                            )}
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleViewReminder(reminder)}
-                          className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
-                          title="View reminder details"
-                        >
-                          <Eye className="h-4 w-4 text-gray-700" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Desktop Layout */}
-                <div className="hidden sm:block p-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
-                          <Mail className="h-4 w-4 text-gray-700" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-sm" style={{color: '#1f2937'}}>
-                            {reminder.invoice.invoice_number}
-                          </div>
-                          <div className="text-xs" style={{color: '#6b7280'}}>
-                            {reminder.invoice.clients.name}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right min-h-[56px] flex flex-col items-end">
-                        <div className={`font-semibold text-base ${
-                          reminder.invoice.status === 'paid' ? 'text-emerald-600' :
-                          totals.hasLateFees ? 'text-red-600' :
-                          'text-green-600'
-                        }`}>
-                          ${totals.totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </div>
-                        {totals.isPartiallyPaid ? (
-                          <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
-                            Paid: ${totals.totalPaid.toFixed(2)} • Remaining: ${totals.baseAmount.toFixed(2)}
-                            {totals.hasLateFees && ` • Late fee: ${totals.lateFeesAmount.toFixed(2)}`}
-                          </div>
-                        ) : totals.hasLateFees ? (
-                          <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
-                            Base ${reminder.invoice.total.toLocaleString()} • Late fee ${totals.lateFeesAmount.toLocaleString()}
-                          </div>
-                        ) : (
-                          <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
-                        )}
-                        <div className="text-xs" style={{color: '#6b7280'}}>
-                          {sentDate.toLocaleDateString()}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
-                          reminder.reminder_type === 'friendly' ? 'text-blue-600' :
-                          reminder.reminder_type === 'polite' ? 'text-emerald-600' :
-                          reminder.reminder_type === 'firm' ? 'text-yellow-600' :
-                          'text-red-600'
-                        }`}>
-                          <span className="capitalize">{reminder.reminder_type}</span>
-                        </span>
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${getReminderStatusColor(reminder.reminder_status)}`}>
-                          <span className="capitalize">{reminder.reminder_status}</span>
-                        </span>
-                        {reminder.failure_reason && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600" title={reminder.failure_reason}>
-                            <AlertTriangle className="h-3 w-3" />
-                            <span>{reminder.failure_reason}</span>
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        {/* Only show manual send button for failed reminders (not cancelled) */}
-                        {reminder.reminder_status === 'failed' && !reminder.failure_reason?.includes('Invoice already paid') && !reminder.failure_reason?.includes('Invoice fully paid') && !reminder.failure_reason?.includes('reminders cancelled') && (
-                          <button
-                            onClick={() => sendManualReminder(reminder.invoice_id, reminder.reminder_type)}
-                            disabled={sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`)}
-                            className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${
-                              sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                            }`}
-                            title="Send again"
-                          >
-                            {sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                            ) : (
-                              <Send className="h-4 w-4 text-gray-700" />
-                            )}
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleViewReminder(reminder)}
-                          className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
-                          title="View reminder details"
-                        >
-                          <Eye className="h-4 w-4 text-gray-700" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                <ReminderCard
+                  key={reminder.id}
+                  reminder={reminder}
+                  totals={totals}
+                  sentDate={sentDate}
+                  getReminderStatusColor={getReminderStatusColor}
+                  sendManualReminder={sendManualReminder}
+                  sendingReminders={sendingReminders}
+                  handleViewReminder={handleViewReminder}
+                />
               );
             })}
 

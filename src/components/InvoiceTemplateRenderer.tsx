@@ -354,12 +354,46 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
 
           {/* Summary - Fast Invoice: No discount, tax, or late fees */}
           <div className="mb-8 pb-6 border-b border-gray-200">
-            <div className="flex justify-between text-sm pt-2 mt-2">
+            <div className="flex justify-between text-sm mb-2">
               <span className="font-bold text-black">Total</span>
               <span className="font-bold text-black" style={{ color: primaryColor }}>
                 ${calculateTotal().toFixed(2)}
               </span>
             </div>
+            {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
+              <>
+                <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
+                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Amount Paid</span>
+                  <span className="text-emerald-600">-${invoice.totalPaid.toFixed(2)}</span>
+                </div>
+                {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                    <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
+                  <span className="font-bold text-black">
+                    {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Remaining Balance'}
+                  </span>
+                  <span className={`font-bold ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`} style={invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? {} : { color: primaryColor }}>
+                    ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2)}
+                  </span>
+                </div>
+              </>
+            )}
+            {(!invoice.totalPaid || invoice.totalPaid === 0 || !invoice.remainingBalance || invoice.remainingBalance === 0) && invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+              <>
+                <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
+                  <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                  <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
+                  <span className="font-bold text-red-600">Total Payable</span>
+                  <span className="font-bold text-red-600">${invoice.totalWithLateFees.toFixed(2)}</span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Status Message */}
@@ -914,20 +948,44 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                 <span className="text-black">${invoice.taxAmount.toFixed(2)}</span>
               </div>
             )}
-            {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
-              </div>
-            )}
             <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
-              <span className="font-bold text-black">
-                {invoice.isOverdue && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Total'}
-              </span>
-              <span className={`font-bold ${invoice.isOverdue && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`}>
-                ${invoice.isOverdue && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2)}
-              </span>
+              <span className="font-bold text-black">Total</span>
+              <span className="font-bold text-black">${invoice.total.toFixed(2)}</span>
             </div>
+            {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
+              <>
+                <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
+                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Amount Paid</span>
+                  <span className="text-emerald-600">-${invoice.totalPaid.toFixed(2)}</span>
+                </div>
+                {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                    <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
+                  <span className="font-bold text-black">
+                    {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Remaining Balance'}
+                  </span>
+                  <span className={`font-bold ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`}>
+                    ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2)}
+                  </span>
+                </div>
+              </>
+            )}
+            {(!invoice.totalPaid || invoice.totalPaid === 0 || !invoice.remainingBalance || invoice.remainingBalance === 0) && invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+              <>
+                <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
+                  <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                  <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
+                  <span className="font-bold text-red-600">Total Payable</span>
+                  <span className="font-bold text-red-600">${invoice.totalWithLateFees.toFixed(2)}</span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Status Message */}
@@ -1483,20 +1541,44 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                 <span className="text-black">${invoice.taxAmount.toFixed(2)}</span>
               </div>
             )}
-            {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
-              </div>
-            )}
             <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
-              <span className="font-bold text-black">
-                {invoice.isOverdue && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Total'}
-              </span>
-              <span className={`font-bold ${invoice.isOverdue && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`}>
-                ${invoice.isOverdue && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2)}
-              </span>
+              <span className="font-bold text-black">Total</span>
+              <span className="font-bold text-black">${invoice.total.toFixed(2)}</span>
             </div>
+            {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
+              <>
+                <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
+                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Amount Paid</span>
+                  <span className="text-emerald-600">-${invoice.totalPaid.toFixed(2)}</span>
+                </div>
+                {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                    <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
+                  <span className="font-bold text-black">
+                    {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Remaining Balance'}
+                  </span>
+                  <span className={`font-bold ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`}>
+                    ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2)}
+                  </span>
+                </div>
+              </>
+            )}
+            {(!invoice.totalPaid || invoice.totalPaid === 0 || !invoice.remainingBalance || invoice.remainingBalance === 0) && invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+              <>
+                <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
+                  <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                  <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
+                  <span className="font-bold text-red-600">Total Payable</span>
+                  <span className="font-bold text-red-600">${invoice.totalWithLateFees.toFixed(2)}</span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Status Message */}
@@ -2052,20 +2134,44 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                 <span className="text-black">${invoice.taxAmount.toFixed(2)}</span>
               </div>
             )}
-            {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
-              </div>
-            )}
             <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
-              <span className="font-bold text-black">
-                {invoice.isOverdue && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Total'}
-              </span>
-              <span className={`font-bold ${invoice.isOverdue && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`}>
-                ${invoice.isOverdue && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? invoice.totalWithLateFees.toFixed(2) : invoice.total.toFixed(2)}
-              </span>
+              <span className="font-bold text-black">Total</span>
+              <span className="font-bold text-black">${invoice.total.toFixed(2)}</span>
             </div>
+            {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
+              <>
+                <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
+                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Amount Paid</span>
+                  <span className="text-emerald-600">-${invoice.totalPaid.toFixed(2)}</span>
+                </div>
+                {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                    <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
+                  <span className="font-bold text-black">
+                    {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Remaining Balance'}
+                  </span>
+                  <span className={`font-bold ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`}>
+                    ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2)}
+                  </span>
+                </div>
+              </>
+            )}
+            {(!invoice.totalPaid || invoice.totalPaid === 0 || !invoice.remainingBalance || invoice.remainingBalance === 0) && invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+              <>
+                <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
+                  <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                  <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
+                  <span className="font-bold text-red-600">Total Payable</span>
+                  <span className="font-bold text-red-600">${invoice.totalWithLateFees.toFixed(2)}</span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Status Message */}
