@@ -1410,20 +1410,20 @@ export default function DashboardOverview() {
               )}
               
               {/* Stats Grid */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 lg:gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
                 {/* Total Revenue */}
                 <button 
                   onClick={handlePaidInvoicesClick}
-                  className="group relative overflow-hidden rounded-lg p-3 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-emerald-500 backdrop-blur-sm h-full"
+                  className="group relative overflow-hidden rounded-lg p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-emerald-500 backdrop-blur-sm h-full"
                 >
                   <div className="flex items-start justify-between h-full">
-                    <div className="flex-1 min-w-0 pr-2 sm:pr-3 flex flex-col justify-between h-full">
-                      <div className="space-y-1.5 sm:space-y-1.5">
-                        <p className="text-xs sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Revenue</p>
-                        <div className="min-h-[48px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
-                          <div className="font-heading text-xl sm:text-xl lg:text-2xl xl:text-3xl font-bold text-emerald-600 text-left break-words" style={{ display: 'block' }}>
+                    <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
+                      <div className="space-y-1 sm:space-y-1.5">
+                        <p className="text-[10px] sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Revenue</p>
+                        <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
+                          <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-emerald-600 text-left break-words" style={{ display: 'block' }}>
                             {isLoadingStats ? (
-                              <div className="animate-pulse bg-gray-300 h-6 sm:h-6 lg:h-8 w-20 sm:w-20 lg:w-24 rounded"></div>
+                              <div className="animate-pulse bg-gray-300 h-5 sm:h-6 lg:h-8 w-16 sm:w-20 lg:w-24 rounded"></div>
                             ) : (
                               <div>{formatMoney(totalRevenue)}</div>
                             )}
@@ -1432,9 +1432,9 @@ export default function DashboardOverview() {
                           <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-1 sm:space-x-1.5 justify-start leading-tight mt-auto">
-                          <CheckCircle className="h-3 w-3 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-emerald-500 flex-shrink-0" />
-                          <span className="text-[10px] sm:text-[10px] lg:text-xs font-medium text-emerald-600 truncate">Paid invoices</span>
+                        <div className="flex items-center space-x-0.5 sm:space-x-1.5 justify-start leading-tight mt-auto">
+                          <CheckCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-emerald-500 flex-shrink-0" />
+                          <span className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-emerald-600 truncate">Paid invoices</span>
                         </div>
                       </div>
                     </div>
@@ -1451,28 +1451,28 @@ export default function DashboardOverview() {
                 {/* Outstanding Amount */}
                 <button 
                   onClick={handlePendingInvoicesClick}
-                  className="group relative overflow-hidden rounded-lg p-3 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-amber-500 backdrop-blur-sm h-full"
+                  className="group relative overflow-hidden rounded-lg p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-amber-500 backdrop-blur-sm h-full"
                 >
                   <div className="flex items-start justify-between h-full">
-                    <div className="flex-1 min-w-0 pr-2 sm:pr-3 flex flex-col justify-between h-full">
-                      <div className="space-y-1.5 sm:space-y-1.5">
-                        <p className="text-xs sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Payable</p>
-                        <div className="min-h-[48px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
-                          <div className="font-heading text-xl sm:text-xl lg:text-2xl xl:text-3xl font-bold text-orange-500 text-left break-words" style={{ display: 'block' }}>
+                    <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
+                      <div className="space-y-1 sm:space-y-1.5">
+                        <p className="text-[10px] sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Payable</p>
+                        <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
+                          <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-orange-500 text-left break-words" style={{ display: 'block' }}>
                             {isLoadingStats ? (
-                              <div className="animate-pulse bg-gray-300 h-6 sm:h-6 lg:h-8 w-20 sm:w-20 lg:w-24 rounded"></div>
+                              <div className="animate-pulse bg-gray-300 h-5 sm:h-6 lg:h-8 w-16 sm:w-20 lg:w-24 rounded"></div>
                             ) : (
                               <div>{formatMoney(totalPayableAmount)}</div>
                             )}
                           </div>
                           {/* Fixed height container for late fees - always reserves space for alignment */}
-                          <div className="text-[10px] sm:text-[10px] lg:text-xs font-medium text-amber-600 text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
+                          <div className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-amber-600 text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
                             {totalLateFees > 0 ? `(+$${totalLateFees.toFixed(2)} late fees)` : ''}
                           </div>
                         </div>
-                        <div className="flex items-center space-x-1 sm:space-x-1.5 justify-start leading-tight mt-auto">
-                          <Clock className="h-3 w-3 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-orange-500 flex-shrink-0" />
-                          <span className="text-[10px] sm:text-[10px] lg:text-xs font-medium text-orange-500 truncate">
+                        <div className="flex items-center space-x-0.5 sm:space-x-1.5 justify-start leading-tight mt-auto">
+                          <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-orange-500 flex-shrink-0" />
+                          <span className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-orange-500 truncate">
                             {invoices.filter(inv => inv.status === 'pending' || inv.status === 'sent').length} pending
                           </span>
                         </div>
@@ -1491,16 +1491,16 @@ export default function DashboardOverview() {
                 {/* Overdue Invoices */}
                 <button 
                   onClick={handleOverdueInvoicesClick}
-                  className="group relative overflow-hidden rounded-lg p-3 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-red-500 backdrop-blur-sm h-full"
+                  className="group relative overflow-hidden rounded-lg p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-red-500 backdrop-blur-sm h-full"
                 >
                   <div className="flex items-start justify-between h-full">
-                    <div className="flex-1 min-w-0 pr-2 sm:pr-3 flex flex-col justify-between h-full">
-                      <div className="space-y-1.5 sm:space-y-1.5">
-                        <p className="text-xs sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Overdue</p>
-                        <div className="min-h-[48px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
-                          <div className="font-heading text-xl sm:text-xl lg:text-2xl xl:text-3xl font-bold text-red-600 text-left" style={{ display: 'block' }}>
+                    <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
+                      <div className="space-y-1 sm:space-y-1.5">
+                        <p className="text-[10px] sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Overdue</p>
+                        <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
+                          <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-red-600 text-left" style={{ display: 'block' }}>
                             {isLoadingStats ? (
-                              <div className="animate-pulse bg-gray-300 h-6 sm:h-6 lg:h-8 w-8 sm:w-8 lg:w-10 rounded"></div>
+                              <div className="animate-pulse bg-gray-300 h-5 sm:h-6 lg:h-8 w-6 sm:w-8 lg:w-10 rounded"></div>
                             ) : (
                               <div>{overdueCount}</div>
                             )}
@@ -1509,9 +1509,9 @@ export default function DashboardOverview() {
                           <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-1 sm:space-x-1.5 justify-start leading-tight mt-auto">
-                          <AlertCircle className="h-3 w-3 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-red-500 flex-shrink-0" />
-                          <span className="text-[10px] sm:text-[10px] lg:text-xs font-medium text-red-600 truncate">Need attention</span>
+                        <div className="flex items-center space-x-0.5 sm:space-x-1.5 justify-start leading-tight mt-auto">
+                          <AlertCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-red-500 flex-shrink-0" />
+                          <span className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-red-600 truncate">Need attention</span>
                         </div>
                       </div>
                     </div>
@@ -1528,16 +1528,16 @@ export default function DashboardOverview() {
                 {/* Total Clients */}
                 <button 
                   onClick={handleClientsClick}
-                  className="group relative overflow-hidden rounded-lg p-3 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-indigo-500 backdrop-blur-sm h-full"
+                  className="group relative overflow-hidden rounded-lg p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-indigo-500 backdrop-blur-sm h-full"
                 >
                   <div className="flex items-start justify-between h-full">
-                    <div className="flex-1 min-w-0 pr-2 sm:pr-3 flex flex-col justify-between h-full">
-                      <div className="space-y-1.5 sm:space-y-1.5">
-                        <p className="text-xs sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Clients</p>
-                        <div className="min-h-[48px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
-                          <div className="font-heading text-xl sm:text-xl lg:text-2xl xl:text-3xl font-bold text-indigo-600 text-left" style={{ display: 'block' }}>
+                    <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
+                      <div className="space-y-1 sm:space-y-1.5">
+                        <p className="text-[10px] sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Clients</p>
+                        <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
+                          <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-indigo-600 text-left" style={{ display: 'block' }}>
                             {isLoadingStats ? (
-                              <div className="animate-pulse bg-gray-300 h-6 sm:h-6 lg:h-8 w-8 sm:w-8 lg:w-10 rounded"></div>
+                              <div className="animate-pulse bg-gray-300 h-5 sm:h-6 lg:h-8 w-6 sm:w-8 lg:w-10 rounded"></div>
                             ) : (
                               <div>{totalClients}</div>
                             )}
@@ -1546,9 +1546,9 @@ export default function DashboardOverview() {
                           <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-1 sm:space-x-1.5 justify-start leading-tight mt-auto">
-                          <Users className="h-3 w-3 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-indigo-500 flex-shrink-0" />
-                          <span className="text-[10px] sm:text-[10px] lg:text-xs font-medium text-indigo-600 truncate">Active clients</span>
+                        <div className="flex items-center space-x-0.5 sm:space-x-1.5 justify-start leading-tight mt-auto">
+                          <Users className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-indigo-500 flex-shrink-0" />
+                          <span className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-indigo-600 truncate">Active clients</span>
                         </div>
                       </div>
                     </div>
