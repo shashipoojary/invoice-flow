@@ -15,25 +15,47 @@ const prefersReducedMotion = typeof window !== 'undefined'
 export type RotationState = { currentIndex: number; isAnimating: boolean };
 
 // Shared rotation hook for synchronized rotation between badges and breakdowns
-export function useSynchronizedRotation(itemCount: number): RotationState {
+export function useSynchronizedRotation(itemCount: number, enabled: boolean = true): RotationState {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
+  const isMountedRef = React.useRef(true);
 
   useEffect(() => {
-    // Don't animate if only one item or user prefers reduced motion
-    if (itemCount <= 1 || prefersReducedMotion) return;
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
-    // Clear any existing intervals/timeouts
+  useEffect(() => {
+    // Don't animate if only one item, disabled, or user prefers reduced motion
+    if (itemCount <= 1 || !enabled || prefersReducedMotion) {
+      // Clear any existing intervals/timeouts
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      return;
+    }
+
+    // Clear any existing intervals/timeouts before setting new ones
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
     intervalRef.current = setInterval(() => {
+      if (!isMountedRef.current) return;
+      
       setIsAnimating(true);
       
       // After animation completes, update index and reset animation state
       timeoutRef.current = setTimeout(() => {
+        if (!isMountedRef.current) return;
         setCurrentIndex((prev) => (prev + 1) % itemCount);
         setIsAnimating(false);
       }, ANIMATION_DURATION);
@@ -41,10 +63,16 @@ export function useSynchronizedRotation(itemCount: number): RotationState {
 
     // Cleanup function
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
     };
-  }, [itemCount]);
+  }, [itemCount, enabled]);
 
   return { currentIndex, isAnimating };
 }
@@ -163,87 +191,53 @@ export const RotatingBadges = React.memo(({ badges, rotationState }: { badges: R
 
 RotatingBadges.displayName = 'RotatingBadges';
 
-// Rotating Amount Breakdown Component - Production-grade smooth slide animation
+// Rotating Amount Breakdown Component - Instant swap, no transitions
 export const RotatingAmountBreakdown = React.memo(({ breakdowns, rotationState }: { breakdowns: React.ReactNode[]; rotationState: RotationState }) => {
   const { currentIndex, isAnimating } = rotationState;
-  const nextBreakdownRef = React.useRef<HTMLDivElement>(null);
-  const rafIdRef = React.useRef<number | null>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [displayIndex, setDisplayIndex] = React.useState(currentIndex);
 
-  // Animate next breakdown sliding up from below
+  // Instant swap - no animation, just immediate change
   React.useEffect(() => {
-    if (!isAnimating || !nextBreakdownRef.current) return;
-
-    // Cleanup any pending animation frames
-    if (rafIdRef.current) {
-      cancelAnimationFrame(rafIdRef.current);
+    if (!isAnimating) {
+      // When not animating, immediately update to current index
+      setDisplayIndex(currentIndex);
+      return;
     }
 
-    // Force the next breakdown to start from below, then animate up
-    rafIdRef.current = requestAnimationFrame(() => {
-      if (nextBreakdownRef.current) {
-        nextBreakdownRef.current.style.transform = 'translateY(100%)';
-        rafIdRef.current = requestAnimationFrame(() => {
-          if (nextBreakdownRef.current) {
-            nextBreakdownRef.current.style.transform = 'translateY(0)';
-          }
-        });
-      }
-    });
-
-    return () => {
-      if (rafIdRef.current) {
-        cancelAnimationFrame(rafIdRef.current);
-      }
-    };
-  }, [isAnimating]);
+    // When animation starts, immediately swap to next index (instant, no transition)
+    const nextIndex = (currentIndex + 1) % breakdowns.length;
+    setDisplayIndex(nextIndex);
+  }, [currentIndex, isAnimating, breakdowns.length]);
 
   // Memoize computed values
-  const nextIndex = React.useMemo(() => (currentIndex + 1) % breakdowns.length, [currentIndex, breakdowns.length]);
+  const currentBreakdown = React.useMemo(() => breakdowns[displayIndex], [breakdowns, displayIndex]);
 
   // Early returns
   if (breakdowns.length === 0) return null;
   if (breakdowns.length === 1) return <>{breakdowns[0]}</>;
 
-  const transitionStyle = isAnimating 
-    ? `transform ${ANIMATION_DURATION}ms ease-in-out` 
-    : 'none';
-
   return (
     <div 
+      ref={containerRef}
       className="relative overflow-hidden" 
       style={{ height: '16px' }}
       aria-live="polite"
       aria-atomic="true"
     >
-      {/* Current breakdown - always rendered, transforms based on animation state */}
+      {/* Current breakdown - always rendered, instant swap with no transitions */}
       <div
-        key={`breakdown-${currentIndex}`}
+        key={`breakdown-${displayIndex}`}
         style={{ 
           position: 'absolute',
           width: '100%',
-          transform: isAnimating ? 'translateY(100%)' : 'translateY(0)',
-          transition: transitionStyle,
-          willChange: isAnimating ? 'transform' : 'auto',
+          transform: 'translateY(0)',
+          transition: 'none', // No transition for instant swap
+          willChange: 'auto',
         }}
       >
-        {breakdowns[currentIndex]}
+        {currentBreakdown}
       </div>
-      {/* Next breakdown - only rendered when animating, slides up from below */}
-      {isAnimating && (
-        <div
-          ref={nextBreakdownRef}
-          key={`breakdown-in-${nextIndex}`}
-          style={{ 
-            position: 'absolute',
-            width: '100%',
-            transform: 'translateY(100%)',
-            transition: `transform ${ANIMATION_DURATION}ms ease-in-out`,
-            willChange: 'transform',
-          }}
-        >
-          {breakdowns[nextIndex]}
-        </div>
-      )}
       {/* Invisible placeholder to maintain size and prevent layout shift */}
       <div 
         className="invisible" 
@@ -255,7 +249,7 @@ export const RotatingAmountBreakdown = React.memo(({ breakdowns, rotationState }
         }}
         aria-hidden="true"
       >
-        {breakdowns[currentIndex]}
+        {currentBreakdown}
       </div>
     </div>
   );

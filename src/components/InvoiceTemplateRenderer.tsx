@@ -225,15 +225,16 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
         {/* Header */}
         <div className="px-6 py-8 sm:px-10 sm:py-10 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row items-start justify-between mb-8 gap-6">
-            <div className="flex-1 w-full sm:w-auto">
+            <div className="flex-1 w-full sm:w-auto" style={{ paddingLeft: 0, marginLeft: 0 }}>
               {/* Modern Logo Display */}
               {invoice.freelancerSettings?.logo && (
-                <div className="mb-4">
-                  <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center">
+                <div className="mb-4" style={{ paddingLeft: 0, marginLeft: 0 }}>
+                  <div className="relative w-28 h-28 sm:w-32 sm:h-32" style={{ marginLeft: 0, paddingLeft: 0 }}>
                     <img
                       src={invoice.freelancerSettings.logo}
                       alt={invoice.freelancerSettings.businessName || 'Business Logo'}
                       className="w-full h-full object-contain"
+                      style={{ display: 'block', margin: 0, padding: 0, verticalAlign: 'top' }}
                       onError={(e) => {
                         // Fallback to business name initial if logo fails to load
                         const target = e.target as HTMLImageElement;
@@ -247,17 +248,17 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
                   </div>
                 </div>
               )}
-              <div className="text-lg sm:text-xl font-normal text-gray-900 mb-1" style={{ color: '#1F2937', letterSpacing: 0 }}>
+              <div className="text-lg sm:text-xl font-normal text-gray-900 mb-1" style={{ color: '#1F2937', letterSpacing: 0, paddingLeft: 0, marginLeft: 0 }}>
                 {invoice.freelancerSettings?.businessName || 'Business'}
               </div>
               {invoice.freelancerSettings?.address && (
-                <div className="text-sm text-gray-500 mt-1">{invoice.freelancerSettings.address}</div>
+                <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>{invoice.freelancerSettings.address}</div>
               )}
               {invoice.freelancerSettings?.phone && (
-                <div className="text-sm text-gray-500 mt-1">{invoice.freelancerSettings.phone}</div>
+                <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>{invoice.freelancerSettings.phone}</div>
               )}
               {invoice.freelancerSettings?.email && (
-                <div className="text-sm text-gray-500 mt-1">{invoice.freelancerSettings.email}</div>
+                <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>{invoice.freelancerSettings.email}</div>
               )}
               
               {/* Payment Overdue Notice - Status Banner Style */}
@@ -352,48 +353,52 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
             </div>
           )}
 
-          {/* Summary - Fast Invoice: No discount, tax, or late fees */}
+          {/* Summary - Fast Invoice: No discount, tax, or late fees - Right-aligned for professional invoice layout */}
           <div className="mb-8 pb-6 border-b border-gray-200">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="font-bold text-black">Total</span>
-              <span className="font-bold text-black" style={{ color: primaryColor }}>
-                ${calculateTotal().toFixed(2)}
-              </span>
-            </div>
-            {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
-              <>
-                <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
-                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Amount Paid</span>
-                  <span className="text-emerald-600">-${invoice.totalPaid.toFixed(2)}</span>
+            <div className="flex justify-end">
+              <div className="w-full sm:w-1/2 lg:w-2/5 max-w-md">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="font-bold text-black">Total</span>
+                  <span className="font-bold text-black" style={{ color: primaryColor }}>
+                    ${calculateTotal().toFixed(2)}
+                  </span>
                 </div>
-                {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                    <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
-                  </div>
+                {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
+                  <>
+                    <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
+                      <span className="text-gray-900" style={{ color: '#1F2937' }}>Amount Paid</span>
+                      <span className="text-emerald-600">-${invoice.totalPaid.toFixed(2)}</span>
+                    </div>
+                    {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                        <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
+                      <span className="font-bold text-black">
+                        {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Remaining Balance'}
+                      </span>
+                      <span className={`font-bold ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`} style={invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? {} : { color: primaryColor }}>
+                        ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2)}
+                      </span>
+                    </div>
+                  </>
                 )}
-                <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
-                  <span className="font-bold text-black">
-                    {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Remaining Balance'}
-                  </span>
-                  <span className={`font-bold ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`} style={invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? {} : { color: primaryColor }}>
-                    ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2)}
-                  </span>
-                </div>
-              </>
-            )}
-            {(!invoice.totalPaid || invoice.totalPaid === 0 || !invoice.remainingBalance || invoice.remainingBalance === 0) && invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
-              <>
-                <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
-                  <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                  <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
-                  <span className="font-bold text-red-600">Total Payable</span>
-                  <span className="font-bold text-red-600">${invoice.totalWithLateFees.toFixed(2)}</span>
-                </div>
-              </>
-            )}
+                {(!invoice.totalPaid || invoice.totalPaid === 0 || !invoice.remainingBalance || invoice.remainingBalance === 0) && invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                  <>
+                    <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
+                      <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                      <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
+                      <span className="font-bold text-red-600">Total Payable</span>
+                      <span className="font-bold text-red-600">${invoice.totalWithLateFees.toFixed(2)}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Status Message */}
@@ -429,11 +434,11 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
                 </div>
               </div>
 
-              {/* Payment Methods */}
-              <div className="space-y-4 [&>div:last-child]:border-b-0">
+              {/* Payment Methods - Grid Layout: 2 columns on desktop, 1 column on mobile */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* PayPal */}
                 {invoice.freelancerSettings.paypalEmail && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-blue-600" />
@@ -463,7 +468,7 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
 
                 {/* Cash App */}
                 {invoice.freelancerSettings.cashappId && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <DollarSign className="h-4 w-4 text-green-600" />
@@ -493,7 +498,7 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
 
                 {/* Venmo */}
                 {invoice.freelancerSettings.venmoId && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <Smartphone className="h-4 w-4 text-blue-600" />
@@ -523,7 +528,7 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
 
                 {/* Google Pay */}
                 {invoice.freelancerSettings.googlePayUpi && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <Smartphone className="h-4 w-4 text-purple-600" />
@@ -553,7 +558,7 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
 
                 {/* Apple Pay */}
                 {invoice.freelancerSettings.applePayId && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <Smartphone className="h-4 w-4 text-gray-600" />
@@ -583,7 +588,7 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
 
                 {/* Bank Transfer */}
                 {invoice.freelancerSettings.bankAccount && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <Building2 className="h-4 w-4 text-indigo-600" />
@@ -628,7 +633,7 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
 
                 {/* Stripe */}
                 {invoice.freelancerSettings?.stripeAccount && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-purple-600" />
@@ -658,7 +663,7 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
 
                 {/* Other Payment Methods */}
                 {invoice.freelancerSettings.paymentNotes && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-gray-600" />
@@ -806,12 +811,23 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
             <div className="flex-1 w-full sm:w-auto">
               {/* Modern Logo Display */}
               {invoice.freelancerSettings?.logo && (
-                <div className="mb-4">
-                  <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center">
+                <div className="mb-4" style={{ paddingLeft: 0, marginLeft: 0, lineHeight: 0 }}>
+                  <div className="relative" style={{ marginLeft: 0, paddingLeft: 0, lineHeight: 0, display: 'inline-block' }}>
                     <img
                       src={invoice.freelancerSettings.logo}
                       alt={invoice.freelancerSettings.businessName || 'Business Logo'}
-                      className="w-full h-full object-contain"
+                      className="max-w-[112px] sm:max-w-[128px] h-auto"
+                      style={{ 
+                        display: 'block', 
+                        margin: 0, 
+                        padding: 0, 
+                        border: 'none',
+                        outline: 'none',
+                        boxShadow: 'none',
+                        verticalAlign: 'top',
+                        lineHeight: 0,
+                        maxHeight: '112px'
+                      }}
                       onError={(e) => {
                         // Fallback to business name initial if logo fails to load
                         const target = e.target as HTMLImageElement;
@@ -825,17 +841,17 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                   </div>
                 </div>
               )}
-              <div className="text-lg sm:text-xl font-normal mb-1" style={{ color: primaryColor || '#1F2937', letterSpacing: 0 }}>
+              <div className="text-lg sm:text-xl font-normal mb-1" style={{ color: primaryColor || '#1F2937', letterSpacing: 0, paddingLeft: 0, marginLeft: 0 }}>
                 {invoice.freelancerSettings?.businessName || 'Business'}
               </div>
               {invoice.freelancerSettings?.address && (
-                <div className="text-sm text-gray-500 mt-1">{invoice.freelancerSettings.address}</div>
+                <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>{invoice.freelancerSettings.address}</div>
               )}
               {invoice.freelancerSettings?.phone && (
-                <div className="text-sm text-gray-500 mt-1">{invoice.freelancerSettings.phone}</div>
+                <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>{invoice.freelancerSettings.phone}</div>
               )}
               {invoice.freelancerSettings?.email && (
-                <div className="text-sm text-gray-500 mt-1">{invoice.freelancerSettings.email}</div>
+                <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>{invoice.freelancerSettings.email}</div>
               )}
               
               {/* Payment Overdue Notice - Status Banner Style */}
@@ -930,62 +946,66 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
             </div>
           )}
 
-          {/* Summary */}
+          {/* Summary - Right-aligned for professional invoice layout */}
           <div className="mb-8 pb-6 border-b border-gray-200">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-900" style={{ color: '#1F2937' }}>Subtotal</span>
-              <span className="text-black">${invoice.subtotal.toFixed(2)}</span>
-            </div>
-            {invoice.discount > 0 && (
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
-                <span className="text-black">-${invoice.discount.toFixed(2)}</span>
-              </div>
-            )}
-            {invoice.taxAmount > 0 && (
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
-                <span className="text-black">${invoice.taxAmount.toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
-              <span className="font-bold text-black">Total</span>
-              <span className="font-bold text-black">${invoice.total.toFixed(2)}</span>
-            </div>
-            {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
-              <>
-                <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
-                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Amount Paid</span>
-                  <span className="text-emerald-600">-${invoice.totalPaid.toFixed(2)}</span>
+            <div className="flex justify-end">
+              <div className="w-full sm:w-1/2 lg:w-2/5 max-w-md">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Subtotal</span>
+                  <span className="text-black">${invoice.subtotal.toFixed(2)}</span>
                 </div>
-                {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                {invoice.discount > 0 && (
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                    <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                    <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
+                    <span className="text-black">-${invoice.discount.toFixed(2)}</span>
+                  </div>
+                )}
+                {invoice.taxAmount > 0 && (
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
+                    <span className="text-black">${invoice.taxAmount.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
-                  <span className="font-bold text-black">
-                    {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Remaining Balance'}
-                  </span>
-                  <span className={`font-bold ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`}>
-                    ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2)}
-                  </span>
+                  <span className="font-bold text-black">Total</span>
+                  <span className="font-bold text-black">${invoice.total.toFixed(2)}</span>
                 </div>
-              </>
-            )}
-            {(!invoice.totalPaid || invoice.totalPaid === 0 || !invoice.remainingBalance || invoice.remainingBalance === 0) && invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
-              <>
-                <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
-                  <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                  <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
-                  <span className="font-bold text-red-600">Total Payable</span>
-                  <span className="font-bold text-red-600">${invoice.totalWithLateFees.toFixed(2)}</span>
-                </div>
-              </>
-            )}
+                {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
+                  <>
+                    <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
+                      <span className="text-gray-900" style={{ color: '#1F2937' }}>Amount Paid</span>
+                      <span className="text-emerald-600">-${invoice.totalPaid.toFixed(2)}</span>
+                    </div>
+                    {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                        <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
+                      <span className="font-bold text-black">
+                        {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Remaining Balance'}
+                      </span>
+                      <span className={`font-bold ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`}>
+                        ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2)}
+                      </span>
+                    </div>
+                  </>
+                )}
+                {(!invoice.totalPaid || invoice.totalPaid === 0 || !invoice.remainingBalance || invoice.remainingBalance === 0) && invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                  <>
+                    <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
+                      <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                      <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
+                      <span className="font-bold text-red-600">Total Payable</span>
+                      <span className="font-bold text-red-600">${invoice.totalWithLateFees.toFixed(2)}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Status Message */}
@@ -1022,11 +1042,11 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                 </div>
               </div>
 
-              {/* Payment Methods */}
-              <div className="space-y-4 [&>div:last-child]:border-b-0">
+              {/* Payment Methods - Grid Layout: 2 columns on desktop, 1 column on mobile */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* PayPal */}
                 {invoice.freelancerSettings.paypalEmail && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-blue-600" />
@@ -1056,7 +1076,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
 
                 {/* Cash App */}
                 {invoice.freelancerSettings.cashappId && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <DollarSign className="h-4 w-4 text-green-600" />
@@ -1086,7 +1106,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
 
                 {/* Venmo */}
                 {invoice.freelancerSettings.venmoId && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <Smartphone className="h-4 w-4 text-blue-600" />
@@ -1116,7 +1136,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
 
                 {/* Google Pay */}
                 {invoice.freelancerSettings.googlePayUpi && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <Smartphone className="h-4 w-4 text-purple-600" />
@@ -1146,7 +1166,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
 
                 {/* Apple Pay */}
                 {invoice.freelancerSettings.applePayId && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <Smartphone className="h-4 w-4 text-gray-600" />
@@ -1176,7 +1196,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
 
                 {/* Bank Transfer */}
                 {invoice.freelancerSettings.bankAccount && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <Building2 className="h-4 w-4 text-indigo-600" />
@@ -1221,7 +1241,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
 
                 {/* Stripe */}
                 {invoice.freelancerSettings?.stripeAccount && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-purple-600" />
@@ -1251,7 +1271,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
 
                 {/* Other Payment Methods */}
                 {invoice.freelancerSettings.paymentNotes && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-gray-600" />
@@ -1399,12 +1419,23 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
             <div className="flex-1 w-full sm:w-auto">
               {/* Modern Logo Display */}
               {invoice.freelancerSettings?.logo && (
-                <div className="mb-4">
-                  <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center">
+                <div className="mb-4" style={{ paddingLeft: 0, marginLeft: 0, lineHeight: 0 }}>
+                  <div className="relative" style={{ marginLeft: 0, paddingLeft: 0, lineHeight: 0, display: 'inline-block' }}>
                     <img
                       src={invoice.freelancerSettings.logo}
                       alt={invoice.freelancerSettings.businessName || 'Business Logo'}
-                      className="w-full h-full object-contain"
+                      className="max-w-[112px] sm:max-w-[128px] h-auto"
+                      style={{ 
+                        display: 'block', 
+                        margin: 0, 
+                        padding: 0, 
+                        border: 'none',
+                        outline: 'none',
+                        boxShadow: 'none',
+                        verticalAlign: 'top',
+                        lineHeight: 0,
+                        maxHeight: '112px'
+                      }}
                       onError={(e) => {
                         // Fallback to business name initial if logo fails to load
                         const target = e.target as HTMLImageElement;
@@ -1418,17 +1449,17 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                   </div>
                 </div>
               )}
-              <div className="text-lg sm:text-xl font-normal mb-1" style={{ color: primaryColor || '#1F2937', letterSpacing: 0 }}>
+              <div className="text-lg sm:text-xl font-normal mb-1" style={{ color: primaryColor || '#1F2937', letterSpacing: 0, paddingLeft: 0, marginLeft: 0 }}>
                 {invoice.freelancerSettings?.businessName || 'Business'}
               </div>
               {invoice.freelancerSettings?.address && (
-                <div className="text-sm text-gray-500 mt-1">{invoice.freelancerSettings.address}</div>
+                <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>{invoice.freelancerSettings.address}</div>
               )}
               {invoice.freelancerSettings?.phone && (
-                <div className="text-sm text-gray-500 mt-1">{invoice.freelancerSettings.phone}</div>
+                <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>{invoice.freelancerSettings.phone}</div>
               )}
               {invoice.freelancerSettings?.email && (
-                <div className="text-sm text-gray-500 mt-1">{invoice.freelancerSettings.email}</div>
+                <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>{invoice.freelancerSettings.email}</div>
               )}
               
               {/* Payment Overdue Notice - Status Banner Style */}
@@ -1523,62 +1554,66 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
             </div>
           )}
 
-          {/* Summary */}
+          {/* Summary - Right-aligned for professional invoice layout */}
           <div className="mb-8 pb-6 border-b border-gray-200">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-900" style={{ color: '#1F2937' }}>Subtotal</span>
-              <span className="text-black">${invoice.subtotal.toFixed(2)}</span>
-            </div>
-            {invoice.discount > 0 && (
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
-                <span className="text-black">-${invoice.discount.toFixed(2)}</span>
-              </div>
-            )}
-            {invoice.taxAmount > 0 && (
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
-                <span className="text-black">${invoice.taxAmount.toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
-              <span className="font-bold text-black">Total</span>
-              <span className="font-bold text-black">${invoice.total.toFixed(2)}</span>
-            </div>
-            {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
-              <>
-                <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
-                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Amount Paid</span>
-                  <span className="text-emerald-600">-${invoice.totalPaid.toFixed(2)}</span>
+            <div className="flex justify-end">
+              <div className="w-full sm:w-1/2 lg:w-2/5 max-w-md">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Subtotal</span>
+                  <span className="text-black">${invoice.subtotal.toFixed(2)}</span>
                 </div>
-                {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                {invoice.discount > 0 && (
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                    <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                    <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
+                    <span className="text-black">-${invoice.discount.toFixed(2)}</span>
+                  </div>
+                )}
+                {invoice.taxAmount > 0 && (
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
+                    <span className="text-black">${invoice.taxAmount.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
-                  <span className="font-bold text-black">
-                    {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Remaining Balance'}
-                  </span>
-                  <span className={`font-bold ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`}>
-                    ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2)}
-                  </span>
+                  <span className="font-bold text-black">Total</span>
+                  <span className="font-bold text-black">${invoice.total.toFixed(2)}</span>
                 </div>
-              </>
-            )}
-            {(!invoice.totalPaid || invoice.totalPaid === 0 || !invoice.remainingBalance || invoice.remainingBalance === 0) && invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
-              <>
-                <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
-                  <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                  <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
-                  <span className="font-bold text-red-600">Total Payable</span>
-                  <span className="font-bold text-red-600">${invoice.totalWithLateFees.toFixed(2)}</span>
-                </div>
-              </>
-            )}
+                {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
+                  <>
+                    <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
+                      <span className="text-gray-900" style={{ color: '#1F2937' }}>Amount Paid</span>
+                      <span className="text-emerald-600">-${invoice.totalPaid.toFixed(2)}</span>
+                    </div>
+                    {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                        <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
+                      <span className="font-bold text-black">
+                        {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Remaining Balance'}
+                      </span>
+                      <span className={`font-bold ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`}>
+                        ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2)}
+                      </span>
+                    </div>
+                  </>
+                )}
+                {(!invoice.totalPaid || invoice.totalPaid === 0 || !invoice.remainingBalance || invoice.remainingBalance === 0) && invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                  <>
+                    <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
+                      <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                      <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
+                      <span className="font-bold text-red-600">Total Payable</span>
+                      <span className="font-bold text-red-600">${invoice.totalWithLateFees.toFixed(2)}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Status Message */}
@@ -1615,11 +1650,11 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                 </div>
               </div>
 
-              {/* Payment Methods */}
-              <div className="space-y-4 [&>div:last-child]:border-b-0">
+              {/* Payment Methods - Grid Layout: 2 columns on desktop, 1 column on mobile */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* PayPal */}
                 {invoice.freelancerSettings.paypalEmail && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-blue-600" />
@@ -1649,7 +1684,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
 
                 {/* Cash App */}
                 {invoice.freelancerSettings.cashappId && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <DollarSign className="h-4 w-4 text-green-600" />
@@ -1679,7 +1714,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
 
                 {/* Venmo */}
                 {invoice.freelancerSettings.venmoId && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <Smartphone className="h-4 w-4 text-blue-600" />
@@ -1709,7 +1744,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
 
                 {/* Google Pay */}
                 {invoice.freelancerSettings.googlePayUpi && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <Smartphone className="h-4 w-4 text-purple-600" />
@@ -1739,7 +1774,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
 
                 {/* Apple Pay */}
                 {invoice.freelancerSettings.applePayId && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <Smartphone className="h-4 w-4 text-gray-600" />
@@ -1769,7 +1804,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
 
                 {/* Bank Transfer */}
                 {invoice.freelancerSettings.bankAccount && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <Building2 className="h-4 w-4 text-indigo-600" />
@@ -1814,7 +1849,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
 
                 {/* Stripe */}
                 {invoice.freelancerSettings?.stripeAccount && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-purple-600" />
@@ -1844,7 +1879,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
 
                 {/* Other Payment Methods */}
                 {invoice.freelancerSettings.paymentNotes && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-gray-600" />
@@ -1992,12 +2027,23 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
             <div className="flex-1 w-full sm:w-auto">
               {/* Modern Logo Display */}
               {invoice.freelancerSettings?.logo && (
-                <div className="mb-4">
-                  <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center">
+                <div className="mb-4" style={{ paddingLeft: 0, marginLeft: 0, lineHeight: 0 }}>
+                  <div className="relative" style={{ marginLeft: 0, paddingLeft: 0, lineHeight: 0, display: 'inline-block' }}>
                     <img
                       src={invoice.freelancerSettings.logo}
                       alt={invoice.freelancerSettings.businessName || 'Business Logo'}
-                      className="w-full h-full object-contain"
+                      className="max-w-[112px] sm:max-w-[128px] h-auto"
+                      style={{ 
+                        display: 'block', 
+                        margin: 0, 
+                        padding: 0, 
+                        border: 'none',
+                        outline: 'none',
+                        boxShadow: 'none',
+                        verticalAlign: 'top',
+                        lineHeight: 0,
+                        maxHeight: '112px'
+                      }}
                       onError={(e) => {
                         // Fallback to business name initial if logo fails to load
                         const target = e.target as HTMLImageElement;
@@ -2011,17 +2057,17 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                   </div>
                 </div>
               )}
-              <div className="text-lg sm:text-xl font-normal mb-1" style={{ color: primaryColor || '#1F2937', letterSpacing: 0 }}>
+              <div className="text-lg sm:text-xl font-normal mb-1" style={{ color: primaryColor || '#1F2937', letterSpacing: 0, paddingLeft: 0, marginLeft: 0 }}>
                 {invoice.freelancerSettings?.businessName || 'Business'}
               </div>
               {invoice.freelancerSettings?.address && (
-                <div className="text-sm text-gray-500 mt-1">{invoice.freelancerSettings.address}</div>
+                <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>{invoice.freelancerSettings.address}</div>
               )}
               {invoice.freelancerSettings?.phone && (
-                <div className="text-sm text-gray-500 mt-1">{invoice.freelancerSettings.phone}</div>
+                <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>{invoice.freelancerSettings.phone}</div>
               )}
               {invoice.freelancerSettings?.email && (
-                <div className="text-sm text-gray-500 mt-1">{invoice.freelancerSettings.email}</div>
+                <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>{invoice.freelancerSettings.email}</div>
               )}
               
               {/* Payment Overdue Notice - Status Banner Style */}
@@ -2116,62 +2162,66 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
             </div>
           )}
 
-          {/* Summary */}
+          {/* Summary - Right-aligned for professional invoice layout */}
           <div className="mb-8 pb-6 border-b border-gray-200">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-900" style={{ color: '#1F2937' }}>Subtotal</span>
-              <span className="text-black">${invoice.subtotal.toFixed(2)}</span>
-            </div>
-            {invoice.discount > 0 && (
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
-                <span className="text-black">-${invoice.discount.toFixed(2)}</span>
-              </div>
-            )}
-            {invoice.taxAmount > 0 && (
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
-                <span className="text-black">${invoice.taxAmount.toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
-              <span className="font-bold text-black">Total</span>
-              <span className="font-bold text-black">${invoice.total.toFixed(2)}</span>
-            </div>
-            {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
-              <>
-                <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
-                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Amount Paid</span>
-                  <span className="text-emerald-600">-${invoice.totalPaid.toFixed(2)}</span>
+            <div className="flex justify-end">
+              <div className="w-full sm:w-1/2 lg:w-2/5 max-w-md">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Subtotal</span>
+                  <span className="text-black">${invoice.subtotal.toFixed(2)}</span>
                 </div>
-                {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                {invoice.discount > 0 && (
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                    <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                    <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
+                    <span className="text-black">-${invoice.discount.toFixed(2)}</span>
+                  </div>
+                )}
+                {invoice.taxAmount > 0 && (
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
+                    <span className="text-black">${invoice.taxAmount.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
-                  <span className="font-bold text-black">
-                    {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Remaining Balance'}
-                  </span>
-                  <span className={`font-bold ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`}>
-                    ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2)}
-                  </span>
+                  <span className="font-bold text-black">Total</span>
+                  <span className="font-bold text-black">${invoice.total.toFixed(2)}</span>
                 </div>
-              </>
-            )}
-            {(!invoice.totalPaid || invoice.totalPaid === 0 || !invoice.remainingBalance || invoice.remainingBalance === 0) && invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
-              <>
-                <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
-                  <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                  <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
-                  <span className="font-bold text-red-600">Total Payable</span>
-                  <span className="font-bold text-red-600">${invoice.totalWithLateFees.toFixed(2)}</span>
-                </div>
-              </>
-            )}
+                {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
+                  <>
+                    <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
+                      <span className="text-gray-900" style={{ color: '#1F2937' }}>Amount Paid</span>
+                      <span className="text-emerald-600">-${invoice.totalPaid.toFixed(2)}</span>
+                    </div>
+                    {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                        <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
+                      <span className="font-bold text-black">
+                        {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Remaining Balance'}
+                      </span>
+                      <span className={`font-bold ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`}>
+                        ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2)}
+                      </span>
+                    </div>
+                  </>
+                )}
+                {(!invoice.totalPaid || invoice.totalPaid === 0 || !invoice.remainingBalance || invoice.remainingBalance === 0) && invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
+                  <>
+                    <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
+                      <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
+                      <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
+                      <span className="font-bold text-red-600">Total Payable</span>
+                      <span className="font-bold text-red-600">${invoice.totalWithLateFees.toFixed(2)}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Status Message */}
@@ -2208,11 +2258,11 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                 </div>
               </div>
 
-              {/* Payment Methods */}
-              <div className="space-y-4 [&>div:last-child]:border-b-0">
+              {/* Payment Methods - Grid Layout: 2 columns on desktop, 1 column on mobile */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* PayPal */}
                 {invoice.freelancerSettings.paypalEmail && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-blue-600" />
@@ -2242,7 +2292,7 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
 
                 {/* Cash App */}
                 {invoice.freelancerSettings.cashappId && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <DollarSign className="h-4 w-4 text-green-600" />
@@ -2272,7 +2322,7 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
 
                 {/* Venmo */}
                 {invoice.freelancerSettings.venmoId && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <Smartphone className="h-4 w-4 text-blue-600" />
@@ -2302,7 +2352,7 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
 
                 {/* Google Pay */}
                 {invoice.freelancerSettings.googlePayUpi && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <Smartphone className="h-4 w-4 text-purple-600" />
@@ -2332,7 +2382,7 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
 
                 {/* Apple Pay */}
                 {invoice.freelancerSettings.applePayId && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <Smartphone className="h-4 w-4 text-gray-600" />
@@ -2362,7 +2412,7 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
 
                 {/* Bank Transfer */}
                 {invoice.freelancerSettings.bankAccount && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <Building2 className="h-4 w-4 text-indigo-600" />
@@ -2407,7 +2457,7 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
 
                 {/* Stripe */}
                 {invoice.freelancerSettings?.stripeAccount && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-purple-600" />
@@ -2437,7 +2487,7 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
 
                 {/* Other Payment Methods */}
                 {invoice.freelancerSettings.paymentNotes && (
-                  <div className="pb-3 border-b border-gray-200">
+                  <div className="pb-3 p-4 border border-gray-200 bg-gray-50/30 hover:bg-gray-50/50 transition-colors">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-gray-600" />

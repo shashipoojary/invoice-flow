@@ -455,23 +455,58 @@ export default function ReminderHistoryPage() {
     handleViewReminder: (reminder: ReminderHistory) => void;
   }) => {
     // Prepare breakdowns for rotation (only amount breakdowns rotate, badges stay static)
-    const breakdowns = [
-      ...(totals.isPartiallyPaid ? [
-        <div key="partial">Paid: ${totals.totalPaid.toFixed(2)} • Remaining: ${totals.baseAmount.toFixed(2)}</div>
-      ] : []),
-      ...(totals.hasLateFees ? [
-        <div key="latefees">Base ${totals.baseAmount.toFixed(2)} • Late fee ${totals.lateFeesAmount.toFixed(2)}</div>
-      ] : []),
-      ...(!totals.isPartiallyPaid && !totals.hasLateFees ? [
-        <div key="empty" className="min-h-[14px] sm:min-h-[16px]"></div>
-      ] : [])
-    ];
+    // Memoize to prevent recreation on every render
+    // Create complete strings atomically to prevent staggered rendering
+    const breakdowns = React.useMemo(() => {
+      const items: React.ReactNode[] = [];
+      
+      if (totals.isPartiallyPaid) {
+        // Create complete string atomically - no partial rendering
+        const partialText = `Paid: $${totals.totalPaid.toFixed(2)} • Remaining: $${totals.baseAmount.toFixed(2)}`;
+        items.push(<div key="partial">{partialText}</div>);
+      }
+      
+      if (totals.hasLateFees) {
+        // Create complete string atomically - no partial rendering
+        const lateFeesText = `Base $${totals.baseAmount.toFixed(2)} • Late fee $${totals.lateFeesAmount.toFixed(2)}`;
+        items.push(<div key="latefees">{lateFeesText}</div>);
+      }
+      
+      if (!totals.isPartiallyPaid && !totals.hasLateFees) {
+        items.push(<div key="empty" className="min-h-[14px] sm:min-h-[16px]"></div>);
+      }
+      
+      return items;
+    }, [totals.isPartiallyPaid, totals.hasLateFees, totals.totalPaid, totals.baseAmount, totals.lateFeesAmount]);
 
-    // Use rotation state only for amount breakdowns
-    const rotationState = useSynchronizedRotation(breakdowns.length);
+    // Use Intersection Observer to only enable rotation when card is visible
+    const [isVisible, setIsVisible] = React.useState(false);
+    const cardRef = React.useRef<HTMLDivElement>(null);
+
+    React.useEffect(() => {
+      if (!cardRef.current) return;
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            setIsVisible(entry.isIntersecting);
+          });
+        },
+        { threshold: 0.1 } // Trigger when 10% visible
+      );
+
+      observer.observe(cardRef.current);
+
+      return () => {
+        observer.disconnect();
+      };
+    }, []);
+
+    // Only enable rotation when card is visible to improve performance
+    const rotationState = useSynchronizedRotation(breakdowns.length, isVisible);
 
     return (
-      <div className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
+      <div ref={cardRef} className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
         {/* Mobile Layout */}
         <div className="block sm:hidden p-4">
           <div className="space-y-3">

@@ -82,7 +82,8 @@ export function UnifiedInvoiceCard({
   // Prepare badges and breakdowns arrays for synchronized rotation
   // Order matters: Partial Payment badge must match Paid/Remaining breakdown
   // Overdue badge must match Base/Late fee breakdown
-  const badges = [
+  // Memoize to prevent recreation on every render
+  const badges = React.useMemo(() => [
     ...(dueCharges.isPartiallyPaid ? [
       <span key="partial" className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
         <DollarSign className="h-3 w-3" />
@@ -95,28 +96,64 @@ export function UnifiedInvoiceCard({
         <span>{dueDateStatus.days}d overdue</span>
       </span>
     ] : [])
-  ];
+  ], [dueCharges.isPartiallyPaid, dueDateStatus.status, dueDateStatus.days, invoice.status]);
 
   // Prepare breakdowns - MUST match badge order for synchronization
   // Ensure complete strings are rendered atomically (no partial rendering)
-  const breakdowns = [
-    ...(dueCharges.isPartiallyPaid ? [
-      <div key="partial">Paid: ${dueCharges.totalPaid.toFixed(2)} • Remaining: ${dueCharges.remainingBalance.toFixed(2)}</div>
-    ] : []),
-    ...(dueCharges.hasLateFees ? [
-      <div key="latefees">Base ${dueCharges.remainingBalance.toFixed(2)} • Late fee ${dueCharges.lateFeeAmount.toFixed(2)}</div>
-    ] : []),
-    ...(!dueCharges.isPartiallyPaid && !dueCharges.hasLateFees ? [
-      <div key="empty" className="min-h-[14px] sm:min-h-[16px]"></div>
-    ] : [])
-  ];
+  // Memoize to prevent recreation on every render
+  // Create complete strings atomically to prevent staggered rendering
+  const breakdowns = React.useMemo(() => {
+    const items: React.ReactNode[] = [];
+    
+    if (dueCharges.isPartiallyPaid) {
+      // Create complete string atomically - no partial rendering
+      const partialText = `Paid: $${dueCharges.totalPaid.toFixed(2)} • Remaining: $${dueCharges.remainingBalance.toFixed(2)}`;
+      items.push(<div key="partial">{partialText}</div>);
+    }
+    
+    if (dueCharges.hasLateFees) {
+      // Create complete string atomically - no partial rendering
+      const lateFeesText = `Base $${dueCharges.remainingBalance.toFixed(2)} • Late fee $${dueCharges.lateFeeAmount.toFixed(2)}`;
+      items.push(<div key="latefees">{lateFeesText}</div>);
+    }
+    
+    if (!dueCharges.isPartiallyPaid && !dueCharges.hasLateFees) {
+      items.push(<div key="empty" className="min-h-[14px] sm:min-h-[16px]"></div>);
+    }
+    
+    return items;
+  }, [dueCharges.isPartiallyPaid, dueCharges.hasLateFees, dueCharges.totalPaid, dueCharges.remainingBalance, dueCharges.lateFeeAmount]);
+
+  // Use Intersection Observer to only enable rotation when card is visible
+  const [isVisible, setIsVisible] = React.useState(false);
+  const cardRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!cardRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          setIsVisible(entry.isIntersecting);
+        });
+      },
+      { threshold: 0.1 } // Trigger when 10% visible
+    );
+
+    observer.observe(cardRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   // Use shared rotation state for synchronization - use max length to ensure both rotate together
+  // Only enable rotation when card is visible to improve performance
   const maxItems = Math.max(badges.length, breakdowns.length);
-  const rotationState = useSynchronizedRotation(maxItems);
+  const rotationState = useSynchronizedRotation(maxItems, isVisible);
 
   return (
-    <div className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
+    <div ref={cardRef} className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
       {/* Mobile */}
       <div className="block sm:hidden p-4">
         <div className="space-y-3">
