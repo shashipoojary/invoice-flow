@@ -322,6 +322,19 @@
     outline-offset: 2px !important;
   }
 
+  /* Force square corners on form elements without explicit rounded classes - override browser defaults (especially mobile Safari) */
+  input[type="text"]:not([class*="rounded"]),
+  input[type="email"]:not([class*="rounded"]),
+  input[type="date"]:not([class*="rounded"]),
+  input[type="number"]:not([class*="rounded"]),
+  input[type="tel"]:not([class*="rounded"]),
+  textarea:not([class*="rounded"]),
+  button:not([class*="rounded"]) {
+    border-radius: 0 !important;
+    -webkit-border-radius: 0 !important;
+    -moz-border-radius: 0 !important;
+  }
+
 }
 
 @layer components {

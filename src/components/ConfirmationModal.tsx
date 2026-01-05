@@ -72,7 +72,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       />
       
       {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full mx-4 transform transition-all duration-300 scale-100 overflow-hidden">
+      <div className="relative bg-white shadow-2xl border border-gray-200 max-w-md w-full mx-4 transform transition-all duration-300 scale-100 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
@@ -104,14 +104,14 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="px-6 py-3 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="px-6 py-3 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {cancelText}
           </button>
           <button
             onClick={onConfirm}
             disabled={isLoading}
-            className={`px-6 py-3 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${typeStyles.confirmButton}`}
+            className={`px-6 py-3 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${typeStyles.confirmButton}`}
           >
             {isLoading ? (
               <div className="flex items-center space-x-2">

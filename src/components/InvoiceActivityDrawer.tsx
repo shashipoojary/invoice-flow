@@ -747,7 +747,7 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between p-5 border-b border-gray-200">
             <h3 className="text-base font-semibold text-gray-900">Invoice activity</h3>
-            <button onClick={onClose} className="p-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer">
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 transition-colors cursor-pointer">
               <X className="h-5 w-5 text-gray-500" />
             </button>
           </div>
@@ -793,12 +793,12 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                     window.open(`/invoice/${encodeURIComponent(token)}?owner=true&view=preview`, '_blank');
                   }
                 }}
-                className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
+                className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
               >
                 View Public Page
               </button>
             )}
-            <button onClick={onClose} className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors">Close</button>
+            <button onClick={onClose} className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors">Close</button>
           </div>
         </div>
       </div>

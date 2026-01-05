@@ -109,7 +109,7 @@ export default function TemplateSelector({
                 key={template.id}
                 data-testid={`template-${template.id}`}
                 onClick={() => handleTemplateSelect(template.id)}
-                className={`relative cursor-pointer rounded-lg border p-3 transition-all duration-200 ${
+                className={`relative cursor-pointer border p-3 transition-all duration-200 ${
                   isSelected
                     ? isDarkMode
                       ? 'border-indigo-500 bg-indigo-500/10'
@@ -128,7 +128,7 @@ export default function TemplateSelector({
                 {/* Template Preview */}
                 <div className="flex flex-col items-center text-center space-y-3">
                   <div 
-                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm bg-indigo-600"
+                    className="w-10 h-10 flex items-center justify-center text-white shadow-sm bg-indigo-600"
                   >
                     <IconComponent className="h-5 w-5" />
                   </div>
@@ -163,7 +163,7 @@ export default function TemplateSelector({
             type="button"
             data-testid="toggle-color-picker"
             onClick={() => setShowColorPicker(!showColorPicker)}
-            className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+            className={`text-xs font-medium px-3 py-1.5 transition-colors cursor-pointer ${
               showColorPicker
                 ? 'bg-indigo-600 text-white'
                 : isDarkMode
@@ -176,7 +176,7 @@ export default function TemplateSelector({
         </div>
 
         {showColorPicker && (
-          <div className={`p-4 rounded-lg border ${
+          <div className={`p-4 border ${
             isDarkMode ? 'bg-gray-800/30 border-gray-700' : 'bg-gray-50 border-gray-200'
           }`}>
             {/* Color Presets */}
@@ -196,7 +196,7 @@ export default function TemplateSelector({
                       type="button"
                       data-testid={`color-preset-${preset.name.toLowerCase()}`}
                       onClick={() => handleColorPreset(preset.primary, preset.secondary, preset.name)}
-                      className={`relative p-2 sm:p-2.5 rounded-lg border text-xs font-medium transition-colors min-h-[60px] flex flex-col items-center justify-center cursor-pointer ${
+                      className={`relative p-2 sm:p-2.5 border text-xs font-medium transition-colors min-h-[60px] flex flex-col items-center justify-center cursor-pointer ${
                         isSelected
                           ? isDarkMode
                             ? 'border-indigo-500 bg-indigo-500/10'
@@ -247,7 +247,7 @@ export default function TemplateSelector({
                     type="text"
                     value={primaryColor}
                     onChange={(e) => onPrimaryColorChange(e.target.value)}
-                    className={`flex-1 px-2 py-1.5 text-xs border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors ${
+                    className={`flex-1 px-2 py-1.5 text-xs border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors ${
                       isDarkMode
                         ? 'border-gray-600 bg-gray-800 text-white'
                         : 'border-gray-300 bg-white text-gray-900'
@@ -273,7 +273,7 @@ export default function TemplateSelector({
                     type="text"
                     value={secondaryColor}
                     onChange={(e) => onSecondaryColorChange(e.target.value)}
-                    className={`flex-1 px-2 py-1.5 text-xs border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors ${
+                    className={`flex-1 px-2 py-1.5 text-xs border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors ${
                       isDarkMode
                         ? 'border-gray-600 bg-gray-800 text-white'
                         : 'border-gray-300 bg-white text-gray-900'
@@ -291,19 +291,19 @@ export default function TemplateSelector({
               }`}>
                 Preview
               </h4>
-              <div className={`p-4 rounded-lg border ${
+              <div className={`p-4 border ${
                 isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
               }`}>
                 <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
                   <div className="flex items-center space-x-3">
                     <div 
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-sm"
+                      className="w-8 h-8 flex items-center justify-center text-white text-sm font-bold shadow-sm"
                       style={{ backgroundColor: primaryColor }}
                     >
                       P
                     </div>
                     <div 
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold shadow-sm"
+                      className="w-8 h-8 flex items-center justify-center text-white text-sm font-bold shadow-sm"
                       style={{ backgroundColor: secondaryColor }}
                     >
                       S

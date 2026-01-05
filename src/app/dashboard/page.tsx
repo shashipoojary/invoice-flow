@@ -639,13 +639,13 @@ export default function DashboardOverview() {
     const dueCharges = calculateDueCharges(invoice, paymentData);
     
     return (
-      <div className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
+      <div className="border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
         {/* Mobile Layout */}
         <div className="block sm:hidden p-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
+                <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
                   <FileText className="h-4 w-4 text-gray-700" />
                 </div>
                 <div>
@@ -706,7 +706,7 @@ export default function DashboardOverview() {
               <div className="flex items-center space-x-1 min-h-[24px]">
                 <button 
                   onClick={() => handleViewInvoice(invoice)}
-                  className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
+                  className="p-1.5 transition-colors hover:bg-gray-100 cursor-pointer"
                   title="View"
                 >
                   <Eye className="h-4 w-4 text-gray-700" />
@@ -714,7 +714,7 @@ export default function DashboardOverview() {
                 <button 
                   onClick={() => handleDownloadPDF(invoice)}
                   disabled={loadingActions[`pdf-${invoice.id}`]}
-                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  className={`p-1.5 transition-colors hover:bg-gray-100 ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   title="PDF"
                 >
                   {loadingActions[`pdf-${invoice.id}`] ? (
@@ -727,7 +727,7 @@ export default function DashboardOverview() {
                   <button 
                     onClick={() => handleSendInvoice(invoice)}
                     disabled={loadingActions[`send-${invoice.id}`]}
-                    className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    className={`p-1.5 transition-colors hover:bg-gray-100 ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     title="Send"
                   >
                     {loadingActions[`send-${invoice.id}`] ? (
@@ -741,7 +741,7 @@ export default function DashboardOverview() {
                   <button 
                     onClick={() => handleMarkAsPaid(invoice)}
                     disabled={loadingActions[`paid-${invoice.id}`]}
-                    className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    className={`p-1.5 transition-colors hover:bg-gray-100 ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     title="Mark Paid"
                   >
                     {loadingActions[`paid-${invoice.id}`] ? (
@@ -763,7 +763,7 @@ export default function DashboardOverview() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
+                  <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
                     <FileText className="h-4 w-4 text-gray-700" />
                   </div>
                   <div>
@@ -822,7 +822,7 @@ export default function DashboardOverview() {
               <div className="flex items-center space-x-1">
                 <button 
                   onClick={() => handleViewInvoice(invoice)}
-                  className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
+                  className="p-1.5 transition-colors hover:bg-gray-100 cursor-pointer"
                   title="View"
                 >
                   <Eye className="h-4 w-4 text-gray-600" />
@@ -830,7 +830,7 @@ export default function DashboardOverview() {
                 <button 
                   onClick={() => handleDownloadPDF(invoice)}
                   disabled={loadingActions[`pdf-${invoice.id}`]}
-                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  className={`p-1.5 transition-colors hover:bg-gray-100 ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   title="PDF"
                 >
                   {loadingActions[`pdf-${invoice.id}`] ? (
@@ -842,7 +842,7 @@ export default function DashboardOverview() {
                 <button
                   onClick={() => handleDuplicateInvoice(invoice)}
                   disabled={loadingActions[`duplicate-${invoice.id}`]}
-                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`duplicate-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  className={`p-1.5 transition-colors hover:bg-gray-100 ${loadingActions[`duplicate-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   title="Duplicate"
                 >
                   {loadingActions[`duplicate-${invoice.id}`] ? (
@@ -855,7 +855,7 @@ export default function DashboardOverview() {
                   <button 
                     onClick={() => handleSendInvoice(invoice)}
                     disabled={loadingActions[`send-${invoice.id}`]}
-                    className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    className={`p-1.5 transition-colors hover:bg-gray-100 ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     title="Send"
                   >
                     {loadingActions[`send-${invoice.id}`] ? (
@@ -869,7 +869,7 @@ export default function DashboardOverview() {
                   <button 
                     onClick={() => handleMarkAsPaid(invoice)}
                     disabled={loadingActions[`paid-${invoice.id}`]}
-                    className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    className={`p-1.5 transition-colors hover:bg-gray-100 ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                     title="Mark Paid"
                   >
                     {loadingActions[`paid-${invoice.id}`] ? (
@@ -917,7 +917,7 @@ export default function DashboardOverview() {
     const reminders = formatReminders(invoice.reminders);
     
     return (
-    <div className="rounded-lg border p-4 transition-all duration-200 hover:shadow-md bg-white border-gray-300 hover:shadow-lg">
+    <div className="border p-4 transition-all duration-200 hover:shadow-md bg-white border-gray-300 hover:shadow-lg">
       <div className="space-y-6">
         {/* Invoice Info Row */}
         <div className="space-y-4 sm:space-y-0">
@@ -1084,7 +1084,7 @@ export default function DashboardOverview() {
         <div className="flex flex-wrap gap-2 pt-3">
           <button 
             onClick={() => handleViewInvoice(invoice)}
-            className="flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-300 cursor-pointer"
+            className="flex items-center justify-center space-x-1.5 px-3 py-2 text-xs transition-all duration-200 font-medium bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-300 cursor-pointer"
           >
             <Eye className="h-3.5 w-3.5" />
             <span>View</span>
@@ -1092,7 +1092,7 @@ export default function DashboardOverview() {
           <button
             onClick={() => handleDownloadPDF(invoice)}
             disabled={loadingActions[`pdf-${invoice.id}`]}
-            className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs transition-all duration-200 font-medium bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 ${loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             {loadingActions[`pdf-${invoice.id}`] ? (
               <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></div>
@@ -1104,7 +1104,7 @@ export default function DashboardOverview() {
           <button
             onClick={() => handleDuplicateInvoice(invoice)}
             disabled={loadingActions[`duplicate-${invoice.id}`]}
-            className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-gray-50 text-gray-800 hover:bg-gray-100 border border-gray-300 ${loadingActions[`duplicate-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs transition-all duration-200 font-medium bg-gray-50 text-gray-800 hover:bg-gray-100 border border-gray-300 ${loadingActions[`duplicate-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             {loadingActions[`duplicate-${invoice.id}`] ? (
               <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></div>
@@ -1117,7 +1117,7 @@ export default function DashboardOverview() {
             <button 
               onClick={() => handleSendInvoice(invoice)}
               disabled={loadingActions[`send-${invoice.id}`]}
-              className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-indigo-50 text-indigo-800 hover:bg-indigo-100 border border-indigo-300 ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs transition-all duration-200 font-medium bg-indigo-50 text-indigo-800 hover:bg-indigo-100 border border-indigo-300 ${loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             >
               {loadingActions[`send-${invoice.id}`] ? (
                 <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></div>
@@ -1131,7 +1131,7 @@ export default function DashboardOverview() {
             <button 
               onClick={() => handleMarkAsPaid(invoice)}
               disabled={loadingActions[`paid-${invoice.id}`]}
-              className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs transition-all duration-200 font-medium bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-300 ${loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             >
               {loadingActions[`paid-${invoice.id}`] ? (
                 <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></div>
@@ -1145,7 +1145,7 @@ export default function DashboardOverview() {
             <>
               <button 
                 onClick={() => handleEditInvoice(invoice)}
-                className="flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-gray-50 text-gray-800 hover:bg-gray-100 border border-gray-300 cursor-pointer"
+                className="flex items-center justify-center space-x-1.5 px-3 py-2 text-xs transition-all duration-200 font-medium bg-gray-50 text-gray-800 hover:bg-gray-100 border border-gray-300 cursor-pointer"
               >
                 <Edit className="h-3.5 w-3.5" />
                 <span>Edit</span>
@@ -1153,7 +1153,7 @@ export default function DashboardOverview() {
               <button 
                 onClick={() => handleDeleteInvoice(invoice)}
                 disabled={loadingActions[`delete-${invoice.id}`]}
-                className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs rounded-lg transition-all duration-200 font-medium bg-red-50 text-red-800 hover:bg-red-100 border border-red-300 ${loadingActions[`delete-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                className={`flex items-center justify-center space-x-1.5 px-3 py-2 text-xs transition-all duration-200 font-medium bg-red-50 text-red-800 hover:bg-red-100 border border-red-300 ${loadingActions[`delete-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
               >
                 {loadingActions[`delete-${invoice.id}`] ? (
                   <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current"></div>
@@ -1374,9 +1374,9 @@ export default function DashboardOverview() {
               
               {/* Welcome message for new users */}
               {user && hasInitiallyLoaded && !isLoadingInvoices && !isLoadingClients && invoices.length === 0 && clients.length === 0 && (
-                <div className="rounded-lg p-6 mb-8 bg-white/70 border border-gray-200 backdrop-blur-sm">
+                <div className="p-6 mb-8 bg-white/70 border border-gray-200 backdrop-blur-sm">
                   <div className="flex items-center space-x-4 mb-4">
-                    <div className="p-3 rounded-xl bg-indigo-50">
+                    <div className="p-3 bg-indigo-50">
                       <Sparkles className="h-6 w-6 text-indigo-600" />
                     </div>
                     <div>
@@ -1397,14 +1397,14 @@ export default function DashboardOverview() {
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <button
                       onClick={handleCreateInvoice}
-                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
+                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
                     >
                       <Sparkles className="h-4 w-4" />
                       <span>Create Invoice</span>
                     </button>
                     <button
                       onClick={() => setShowCreateClient(true)}
-                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium cursor-pointer"
+                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors text-sm font-medium cursor-pointer"
                     >
                       <UserPlus className="h-4 w-4" />
                       <span>Add Client</span>
@@ -1418,7 +1418,7 @@ export default function DashboardOverview() {
                 {/* Total Revenue */}
                 <button 
                   onClick={handlePaidInvoicesClick}
-                  className="group relative overflow-hidden rounded-lg p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-emerald-500 backdrop-blur-sm h-full"
+                  className="group relative overflow-hidden p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-emerald-500 backdrop-blur-sm h-full"
                 >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
@@ -1455,7 +1455,7 @@ export default function DashboardOverview() {
                 {/* Outstanding Amount */}
                 <button 
                   onClick={handlePendingInvoicesClick}
-                  className="group relative overflow-hidden rounded-lg p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-amber-500 backdrop-blur-sm h-full"
+                  className="group relative overflow-hidden p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-amber-500 backdrop-blur-sm h-full"
                 >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
@@ -1495,7 +1495,7 @@ export default function DashboardOverview() {
                 {/* Overdue Invoices */}
                 <button 
                   onClick={handleOverdueInvoicesClick}
-                  className="group relative overflow-hidden rounded-lg p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-red-500 backdrop-blur-sm h-full"
+                  className="group relative overflow-hidden p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-red-500 backdrop-blur-sm h-full"
                 >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
@@ -1532,7 +1532,7 @@ export default function DashboardOverview() {
                 {/* Total Clients */}
                 <button 
                   onClick={handleClientsClick}
-                  className="group relative overflow-hidden rounded-lg p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-indigo-500 backdrop-blur-sm h-full"
+                  className="group relative overflow-hidden p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-indigo-500 backdrop-blur-sm h-full"
                 >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
@@ -1580,10 +1580,10 @@ export default function DashboardOverview() {
                 {/* 60-Second Invoice */}
                 <button
                   onClick={() => setShowFastInvoice(true)}
-                  className="group relative p-2 sm:p-3 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-green-200 hover:bg-green-50/30 cursor-pointer"
+                  className="group relative p-2 sm:p-3 border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-green-200 hover:bg-green-50/30 cursor-pointer"
                 >
                   <div className="flex flex-col items-center space-y-1.5 sm:space-y-2">
-                    <div className="p-1.5 rounded-lg bg-green-50">
+                    <div className="p-1.5 bg-green-50">
                       <Sparkles className="h-4 w-4 text-green-700" />
                     </div>
                     <div className="text-center w-full">
@@ -1600,10 +1600,10 @@ export default function DashboardOverview() {
                 {/* Detailed Invoice */}
                 <button
                   onClick={() => setShowCreateInvoice(true)}
-                  className="group relative p-2 sm:p-3 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-blue-200 hover:bg-blue-50/30 cursor-pointer"
+                  className="group relative p-2 sm:p-3 border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-blue-200 hover:bg-blue-50/30 cursor-pointer"
                 >
                   <div className="flex flex-col items-center space-y-1.5 sm:space-y-2">
-                    <div className="p-1.5 rounded-lg bg-blue-50">
+                    <div className="p-1.5 bg-blue-50">
                       <FilePlus className="h-4 w-4 text-blue-600" />
                     </div>
                     <div className="text-center w-full">
@@ -1620,10 +1620,10 @@ export default function DashboardOverview() {
                 {/* Create Estimate */}
                 <button
                   onClick={() => setShowCreateEstimate(true)}
-                  className="group relative p-2 sm:p-3 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-teal-200 hover:bg-teal-50/30 cursor-pointer"
+                  className="group relative p-2 sm:p-3 border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-teal-200 hover:bg-teal-50/30 cursor-pointer"
                 >
                   <div className="flex flex-col items-center space-y-1.5 sm:space-y-2">
-                    <div className="p-1.5 rounded-lg bg-teal-50">
+                    <div className="p-1.5 bg-teal-50">
                       <ClipboardCheck className="h-4 w-4 text-teal-600" />
                     </div>
                     <div className="text-center w-full">
@@ -1640,10 +1640,10 @@ export default function DashboardOverview() {
                 {/* Add Client */}
                 <button
                   onClick={() => setShowCreateClient(true)}
-                  className="group relative p-2 sm:p-3 rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-purple-200 hover:bg-purple-50/30 cursor-pointer"
+                  className="group relative p-2 sm:p-3 border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-purple-200 hover:bg-purple-50/30 cursor-pointer"
                 >
                   <div className="flex flex-col items-center space-y-1.5 sm:space-y-2">
-                    <div className="p-1.5 rounded-lg bg-purple-50">
+                    <div className="p-1.5 bg-purple-50">
                       <UserPlus className="h-4 w-4 text-purple-600" />
                     </div>
                     <div className="text-center w-full">
@@ -1668,7 +1668,7 @@ export default function DashboardOverview() {
               </h2>
                 <button
                   onClick={() => router.push('/dashboard/invoices')}
-                  className="group flex items-center space-x-2 text-sm font-medium px-4 py-2 rounded-lg transition-all duration-200 hover:scale-105 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 hover:border-indigo-300 cursor-pointer"
+                  className="group flex items-center space-x-2 text-sm font-medium px-4 py-2 transition-all duration-200 hover:scale-105 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 hover:border-indigo-300 cursor-pointer"
                 >
                   <span>View all</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -1678,7 +1678,7 @@ export default function DashboardOverview() {
               {(isLoadingInvoices || !hasInitiallyLoaded) ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
+                    <div key={i} className="border border-gray-200 bg-white p-4 sm:p-6">
                       <div className="animate-pulse">
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center space-x-3">
@@ -1704,7 +1704,7 @@ export default function DashboardOverview() {
                   ))}
                 </div>
               ) : hasInitiallyLoaded && !isLoadingInvoices && invoices.length === 0 ? (
-                <div className="rounded-xl p-8 text-center bg-white border border-gray-200">
+                <div className="p-8 text-center bg-white border border-gray-200">
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 bg-gray-100">
                     <FileText className="h-8 w-8 text-gray-500" />
                   </div>
@@ -1718,7 +1718,7 @@ export default function DashboardOverview() {
                   
                   <button
                     onClick={handleCreateInvoice}
-                    className="inline-flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                    className="inline-flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium"
                   >
                     <Sparkles className="h-4 w-4" />
                     <span>Create Invoice</span>
@@ -1759,7 +1759,7 @@ export default function DashboardOverview() {
       {/* Invoice Type Selection Modal */}
       {showInvoiceTypeSelection && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="text-center mb-6">
               <h3 className="font-heading text-xl font-semibold mb-2" style={{color: '#1f2937'}}>
                 Choose Invoice Type
@@ -1773,10 +1773,10 @@ export default function DashboardOverview() {
               {/* Fast Invoice Option */}
                   <button
                 onClick={handleSelectFastInvoice}
-                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+                className="w-full p-4 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                  <div className="p-2 bg-indigo-100 group-hover:bg-indigo-200 transition-colors">
                     <Sparkles className="w-5 h-5 text-indigo-600" />
                   </div>
                   <div className="text-left flex-1">
@@ -1794,10 +1794,10 @@ export default function DashboardOverview() {
               {/* Detailed Invoice Option */}
               <button
                 onClick={handleSelectDetailedInvoice}
-                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+                className="w-full p-4 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                  <div className="p-2 bg-indigo-100 group-hover:bg-indigo-200 transition-colors">
                     <FileText className="w-5 h-5 text-indigo-600" />
                 </div>
                   <div className="text-left flex-1">
@@ -1817,7 +1817,7 @@ export default function DashboardOverview() {
             <div className="mt-6 pt-4 border-t border-gray-200">
               <button
                 onClick={() => setShowInvoiceTypeSelection(false)}
-                className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+                className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -1936,7 +1936,7 @@ export default function DashboardOverview() {
        {/* View Invoice Modal */}
        {showViewInvoice && selectedInvoice && (
          <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
-           <div className="rounded-lg sm:rounded-lg p-2 sm:p-4 max-w-6xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-hidden bg-white border-gray-200 flex flex-col">
+           <div className="p-2 sm:p-4 max-w-6xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-hidden bg-white border-gray-200 flex flex-col">
              <div className="flex items-center justify-between mb-3 sm:mb-4 flex-shrink-0">
                <div className="flex items-center gap-3">
                  <h2 className="text-base sm:text-xl font-bold" style={{color: '#1f2937'}}>Invoice Details</h2>
@@ -1947,7 +1947,7 @@ export default function DashboardOverview() {
                    setShowViewInvoice(false);
                    setShowReminderDates(false); // Reset reminder dates visibility when closing modal
                  }}
-                 className="p-1 sm:p-2 rounded-lg transition-colors hover:bg-gray-100 cursor-pointer"
+                 className="p-1 sm:p-2 transition-colors hover:bg-gray-100 cursor-pointer"
                >
                  <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
                </button>
@@ -1955,7 +1955,7 @@ export default function DashboardOverview() {
              <div className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar">
              
              {/* Responsive Invoice View */}
-             <div className="w-full bg-white rounded-lg border border-gray-200 overflow-hidden">
+             <div className="w-full bg-white border border-gray-200 overflow-hidden">
                {/* Header */}
                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 sm:p-6 border-b border-gray-200">
                  <div className="w-full sm:w-auto mb-3 sm:mb-0">
@@ -2100,7 +2100,7 @@ export default function DashboardOverview() {
                    <h3 className="text-sm sm:text-base font-semibold mb-3 text-gray-900">Enhanced Features</h3>
                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs sm:text-sm">
                      {selectedInvoice.paymentTerms && (
-                       <div className="p-3 rounded-lg bg-gray-50">
+                       <div className="p-3 bg-gray-50">
                          <div className="flex items-center space-x-2 mb-2">
                            <CreditCard className="h-4 w-4 text-blue-500" />
                            <span className="font-medium text-gray-700">Payment Terms</span>
@@ -2111,7 +2111,7 @@ export default function DashboardOverview() {
                        </div>
                      )}
                      {selectedInvoice.lateFees && (
-                       <div className="p-3 rounded-lg bg-gray-50">
+                       <div className="p-3 bg-gray-50">
                          <div className="flex items-center space-x-2 mb-2">
                            <DollarSign className="h-4 w-4 text-orange-500" />
                            <span className="font-medium text-gray-700">Late Fees</span>
@@ -2125,7 +2125,7 @@ export default function DashboardOverview() {
                        </div>
                      )}
                      {selectedInvoice.reminders && (
-                       <div className="p-3 rounded-lg bg-gray-50">
+                       <div className="p-3 bg-gray-50">
                          <div className="flex items-center justify-between mb-2">
                            <div className="flex items-center space-x-2">
                              <Bell className="h-4 w-4 text-green-500" />
@@ -2210,7 +2210,7 @@ export default function DashboardOverview() {
                   setShowViewInvoice(false);
                   setShowReminderDates(false);
                 }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 Close
               </button>
@@ -2219,7 +2219,7 @@ export default function DashboardOverview() {
                   onClick={() => {
                     setShowPartialPayment(true);
                   }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer flex items-center gap-2"
+                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors cursor-pointer flex items-center gap-2"
                 >
                   <DollarSign className="h-4 w-4" />
                   Record Payment

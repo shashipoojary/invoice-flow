@@ -77,7 +77,7 @@ export default function CustomDropdown({
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`w-full px-3 py-2.5 text-sm border rounded-lg transition-colors text-left flex items-center justify-between ${
+        className={`w-full px-3 py-2.5 text-sm border transition-colors text-left flex items-center justify-between ${
           error
             ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
             : isDarkMode
@@ -102,7 +102,7 @@ export default function CustomDropdown({
       {/* Dropdown Menu */}
       {isOpen && !disabled && (
         <div
-          className={`absolute z-50 w-full mt-1 rounded-lg border shadow-lg ${
+          className={`absolute z-50 w-full mt-1 border shadow-lg ${
             isDarkMode
               ? 'bg-gray-800 border-gray-700'
               : 'bg-white border-gray-200'
@@ -117,7 +117,7 @@ export default function CustomDropdown({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search..."
-                className={`w-full px-2 py-1.5 text-sm border rounded-md focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ${
+                className={`w-full px-2 py-1.5 text-sm border focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ${
                   isDarkMode
                     ? 'bg-gray-700 border-gray-600 text-white'
                     : 'bg-white border-gray-300 text-gray-900'

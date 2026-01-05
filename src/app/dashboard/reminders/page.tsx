@@ -514,7 +514,7 @@ export default function ReminderHistoryPage() {
     const rotationState = useSynchronizedRotation(breakdowns.length, isVisible);
 
     return (
-      <div ref={cardRef} className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
+      <div ref={cardRef} className="border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
         {/* Mobile Layout */}
         <div className="block sm:hidden p-4">
           <div className="space-y-3">
@@ -905,7 +905,7 @@ export default function ReminderHistoryPage() {
 
           {/* Filter Options - Compact */}
           {showFilters && (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <div className="bg-gray-50 border border-gray-200 p-3">
               <div className="space-y-3">
                 {/* Status Filter */}
                 <div>
@@ -1060,7 +1060,7 @@ export default function ReminderHistoryPage() {
         {loading ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
+              <div key={i} className="border border-gray-200 bg-white p-4 sm:p-6">
                 <div className="animate-pulse">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
@@ -1107,7 +1107,7 @@ export default function ReminderHistoryPage() {
 
             {filteredReminders.length === 0 && !loading && (
               <div className="col-span-full">
-                <div className="rounded-lg border border-gray-200 bg-white p-6">
+                <div className="border border-gray-200 bg-white p-6">
                   <div className="text-center py-12">
                     <Mail className="mx-auto h-12 w-12 text-gray-400" />
                     <h3 className="mt-2 text-sm font-medium text-gray-900">
@@ -1361,7 +1361,7 @@ export default function ReminderHistoryPage() {
       {/* Invoice Type Selection Modal */}
       {showInvoiceTypeSelection && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="text-center mb-6">
               <h3 className="font-heading text-xl font-semibold mb-2" style={{color: '#1f2937'}}>
                 Choose Invoice Type

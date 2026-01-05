@@ -48,7 +48,7 @@ const ClientCard = memo(({ client, onView, onEdit, onDelete, isDeleting }: {
   }, []);
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
+    <div className="bg-white border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
           <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
@@ -218,7 +218,7 @@ export default function ClientsPage() {
     handleDeleteClient: (client: Client) => void;
     isDeleting: string | null;
   }) => (
-    <div className={`rounded-lg p-4 transition-all duration-300 hover:scale-[1.02] bg-white/70 border border-gray-200 backdrop-blur-sm ${isDeleting === client.id ? 'opacity-50 pointer-events-none' : ''}`}>
+    <div className={`p-4 transition-all duration-300 hover:scale-[1.02] bg-white/70 border border-gray-200 backdrop-blur-sm ${isDeleting === client.id ? 'opacity-50 pointer-events-none' : ''}`}>
       <div className="flex items-start justify-between mb-4">
         <div className="p-3 rounded-xl bg-indigo-50">
           <Building2 className="h-6 w-6 text-indigo-600" />
@@ -374,7 +374,7 @@ export default function ClientsPage() {
               {isLoadingClients ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="rounded-lg p-6 bg-white/70 border border-gray-200 backdrop-blur-sm">
+                    <div key={i} className="p-6 bg-white/70 border border-gray-200 backdrop-blur-sm">
                       <div className="animate-pulse">
                         <div className="flex items-center space-x-3 mb-4">
                           <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
@@ -403,7 +403,7 @@ export default function ClientsPage() {
                   ))}
                 </div>
               ) : (
-                <div className="rounded-lg p-12 text-center bg-white/70 border border-gray-200 backdrop-blur-sm">
+                <div className="p-12 text-center bg-white/70 border border-gray-200 backdrop-blur-sm">
                   <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl mb-6 bg-gray-100">
                     <Users className="h-10 w-10 text-gray-500" />
                   </div>
@@ -491,7 +491,7 @@ export default function ClientsPage() {
 
         return (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
-            <div className="rounded-lg p-4 sm:p-6 max-w-2xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scroll-smooth custom-scrollbar bg-white border-gray-200">
+            <div className="p-4 sm:p-6 max-w-2xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-y-auto scroll-smooth custom-scrollbar bg-white border-gray-200">
               {/* Header */}
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900">Client Details</h2>
@@ -637,7 +637,7 @@ export default function ClientsPage() {
       {/* Invoice Type Selection Modal */}
       {showInvoiceTypeSelection && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="text-center mb-6">
               <h3 className="font-heading text-xl font-semibold mb-2" style={{color: '#1f2937'}}>
                 Choose Invoice Type

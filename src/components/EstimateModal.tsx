@@ -407,7 +407,7 @@ export default function EstimateModal({
                     </div>
                     <button
                       onClick={() => setSelectedClientId('')}
-                      className={`text-xs px-2 py-1 rounded ${
+                      className={`text-xs px-2 py-1 ${
                         isDarkMode 
                           ? 'text-indigo-400 hover:bg-indigo-500/20' 
                           : 'text-indigo-600 hover:bg-indigo-100'
@@ -772,7 +772,7 @@ export default function EstimateModal({
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={4}
-                  className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
+                  className={`w-full px-4 py-2.5 border transition-colors ${
                     isDarkMode
                       ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-teal-500 focus:ring-teal-500'
                       : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-teal-500 focus:ring-teal-500'
@@ -826,7 +826,7 @@ export default function EstimateModal({
                   type="button"
                   onClick={handleSubmit}
                   disabled={loading}
-                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
+                  className={`flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
                     isDarkMode 
                       ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
                       : 'bg-indigo-600 text-white hover:bg-indigo-700'

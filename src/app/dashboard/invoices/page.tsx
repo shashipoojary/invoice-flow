@@ -790,7 +790,7 @@ function InvoicesContent(): React.JSX.Element {
     const reminders = formatReminders(invoice.reminders);
     
     return (
-      <div className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
+      <div className="border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
           {/* Mobile Layout */}
         <div className="block sm:hidden p-4">
           <div className="space-y-3">
@@ -1336,7 +1336,7 @@ function InvoicesContent(): React.JSX.Element {
               {(isLoadingInvoices || !hasInitiallyLoaded) ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
+                    <div key={i} className="border border-gray-200 bg-white p-4 sm:p-6">
                       <div className="animate-pulse">
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center space-x-3">
@@ -1465,7 +1465,7 @@ function InvoicesContent(): React.JSX.Element {
                   )}
                 </>
               ) : (
-                <div className="rounded-lg p-12 text-center bg-white/70 border border-gray-200 backdrop-blur-sm">
+                <div className="p-12 text-center bg-white/70 border border-gray-200 backdrop-blur-sm">
                   <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl mb-6 bg-gray-100">
                     <FileText className="h-10 w-10 text-gray-500" />
                   </div>

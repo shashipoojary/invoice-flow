@@ -1204,7 +1204,7 @@ export default function QuickInvoiceModal({
                 </h4>
 
                 {selectedClientId ? (
-                  <div className={`flex items-center justify-between p-3 rounded-lg ${
+                  <div className={`flex items-center justify-between p-3 ${
                     isDarkMode 
                       ? 'bg-indigo-500/10' 
                       : 'bg-indigo-50'
@@ -1234,7 +1234,7 @@ export default function QuickInvoiceModal({
                       type="button"
                       data-testid="quick-invoice-clear-client"
                       onClick={() => setSelectedClientId('')}
-                      className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
+                      className={`text-xs font-medium px-3 py-1.5 transition-colors cursor-pointer ${
                         isDarkMode 
                           ? 'text-gray-400 hover:text-white hover:bg-gray-700' 
                           : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
@@ -1539,7 +1539,7 @@ export default function QuickInvoiceModal({
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="w-full sm:w-auto bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer"
+                  className="w-full sm:w-auto bg-indigo-600 text-white py-3 px-6 hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer"
                 >
                   <span>Next</span>
                   <ArrowRight className="h-4 w-4" />
@@ -1573,7 +1573,7 @@ export default function QuickInvoiceModal({
                   <button
                     type="button"
                     onClick={addItem}
-                    className={`flex items-center text-sm font-medium px-3 py-2 rounded-lg transition-colors cursor-pointer ${
+                    className={`flex items-center text-sm font-medium px-3 py-2 transition-colors cursor-pointer ${
                       isDarkMode 
                         ? 'text-indigo-400 hover:text-indigo-200 hover:bg-indigo-800/30' 
                         : 'text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50'
@@ -1586,7 +1586,7 @@ export default function QuickInvoiceModal({
                 
                 <div className="space-y-3">
                   {items.map((item) => (
-                    <div key={item.id} className={`p-4 border rounded-lg ${
+                    <div key={item.id} className={`p-4 border ${
                       isDarkMode 
                         ? 'border-gray-700 bg-gray-800' 
                         : 'border-gray-200 bg-gray-50'
@@ -1636,7 +1636,7 @@ export default function QuickInvoiceModal({
                               type="button"
                               data-testid={`remove-item-${item.id}`}
                               onClick={() => removeItem(item.id)}
-                              className={`p-2 rounded-lg transition-colors ml-2 cursor-pointer ${
+                              className={`p-2 transition-colors ml-2 cursor-pointer ${
                                 isDarkMode 
                                   ? 'text-red-400 hover:text-red-200 hover:bg-red-900/20' 
                                   : 'text-red-500 hover:text-red-700 hover:bg-red-50'
@@ -1743,7 +1743,7 @@ export default function QuickInvoiceModal({
                 <button
                   type="button"
                   onClick={prevStep}
-                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
+                  className={`flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
                     isDarkMode 
                       ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1755,7 +1755,7 @@ export default function QuickInvoiceModal({
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer"
+                  className="flex-1 bg-indigo-600 text-white py-3 px-6 hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer"
                 >
                   <span>Next</span>
                   <ArrowRight className="h-4 w-4" />
@@ -1790,7 +1790,7 @@ export default function QuickInvoiceModal({
               </div>
 
               {/* Payment Terms */}
-              <div className={`p-5 rounded-lg border ${
+              <div className={`p-5 border ${
                 isDarkMode ? 'border-gray-700' : 'border-gray-200'
               } ${markAsPaid ? 'opacity-60' : ''}`}>
                 <div className="flex items-center justify-between mb-4">
@@ -1826,7 +1826,7 @@ export default function QuickInvoiceModal({
                 {paymentTerms.enabled && (
                   <div className="space-y-4">
                     {/* Payment Terms Info */}
-                    <div className={`flex items-start space-x-3 p-3 rounded-lg ${
+                    <div className={`flex items-start space-x-3 p-3 ${
                       isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'
                     }`}>
                       <Zap className={`h-4 w-4 mt-0.5 ${
@@ -1927,7 +1927,7 @@ export default function QuickInvoiceModal({
               </div>
 
               {/* Auto Reminders */}
-              <div className={`p-5 rounded-lg border ${
+              <div className={`p-5 border ${
                 isDarkMode ? 'border-gray-700' : 'border-gray-200'
               } ${markAsPaid ? 'opacity-60' : ''}`}>
                 <div className="flex items-center justify-between mb-4">
@@ -1964,7 +1964,7 @@ export default function QuickInvoiceModal({
                   <div className="space-y-4">
                     {/* Smart Reminder Logic Based on Payment Terms */}
                     {paymentTerms.enabled && (
-                      <div className={`p-3 rounded-lg border ${
+                      <div className={`p-3 border ${
                         isDarkMode 
                           ? 'bg-amber-900/20 border-amber-800' 
                           : 'bg-amber-50 border-amber-200'
@@ -2125,7 +2125,7 @@ export default function QuickInvoiceModal({
                           <button
                             type="button"
                             onClick={addReminderRule}
-                            className={`text-sm font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer ${
+                            className={`text-sm font-medium px-4 py-2 transition-colors cursor-pointer ${
                               isDarkMode 
                                 ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
                                 : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
@@ -2193,7 +2193,7 @@ export default function QuickInvoiceModal({
               </div>
 
               {/* Late Fees */}
-              <div className={`p-5 rounded-lg border ${
+              <div className={`p-5 border ${
                 isDarkMode ? 'border-gray-700' : 'border-gray-200'
               } ${markAsPaid ? 'opacity-60' : ''}`}>
                 <div className="flex items-center justify-between mb-4">
@@ -2229,7 +2229,7 @@ export default function QuickInvoiceModal({
                 {lateFees.enabled && (
                   <div className="space-y-4">
                     {/* Helpful description */}
-                    <div className={`p-3 rounded-lg ${
+                    <div className={`p-3 ${
                       isDarkMode ? 'bg-orange-500/10' : 'bg-orange-50'
                     }`}>
                       <p className={`text-xs ${
@@ -2352,7 +2352,7 @@ export default function QuickInvoiceModal({
                 <button
                   type="button"
                   onClick={prevStep}
-                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
+                  className={`flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
                     isDarkMode 
                       ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -2364,7 +2364,7 @@ export default function QuickInvoiceModal({
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer"
+                  className="flex-1 bg-indigo-600 text-white py-3 px-6 hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer"
                 >
                   <span>Review</span>
                   <ArrowRight className="h-4 w-4" />
@@ -2560,7 +2560,7 @@ export default function QuickInvoiceModal({
                 <button
                   type="button"
                   onClick={prevStep}
-                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
+                  className={`flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
                     isDarkMode 
                       ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -2577,7 +2577,7 @@ export default function QuickInvoiceModal({
                       type="button"
                       onClick={handleGeneratePDF}
                       disabled={pdfLoading}
-                      className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
+                      className={`flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
                         isDarkMode 
                           ? 'bg-blue-600 text-white hover:bg-blue-700' 
                           : 'bg-blue-600 text-white hover:bg-blue-700'
@@ -2601,7 +2601,7 @@ export default function QuickInvoiceModal({
                       data-testid="quick-invoice-create-draft"
                       onClick={handleCreateDraft}
                       disabled={creatingLoading || sendingLoading}
-                      className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
+                      className={`flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
                         isDarkMode 
                           ? 'bg-gray-600 text-white hover:bg-gray-700' 
                           : 'bg-gray-500 text-white hover:bg-gray-600'
@@ -2627,7 +2627,7 @@ export default function QuickInvoiceModal({
                   data-testid="quick-invoice-create-and-send"
                   onClick={() => setShouldSend(true)}
                   disabled={creatingLoading || sendingLoading}
-                  className={`flex-1 ${markAsPaid ? 'sm:flex-1' : ''} py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
+                  className={`flex-1 ${markAsPaid ? 'sm:flex-1' : ''} py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
                     isDarkMode 
                       ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
                       : 'bg-indigo-600 text-white hover:bg-indigo-700'

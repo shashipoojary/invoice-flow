@@ -76,7 +76,7 @@ export default function EstimateConversionModal({
       />
       
       {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-2xl border border-gray-200 max-w-lg w-full mx-4 transform transition-all duration-300 scale-100 overflow-hidden">
+      <div className="relative bg-white shadow-2xl border border-gray-200 max-w-lg w-full mx-4 transform transition-all duration-300 scale-100 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
@@ -114,7 +114,7 @@ export default function EstimateConversionModal({
                   type="button"
                   onClick={() => setInvoiceType('fast')}
                   disabled={isLoading}
-                  className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                  className={`p-4 border-2 transition-all cursor-pointer ${
                     invoiceType === 'fast'
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
@@ -181,7 +181,7 @@ export default function EstimateConversionModal({
                   type="button"
                   onClick={() => setSelectedTemplate(1)}
                   disabled={isLoading}
-                  className={`p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                  className={`p-3 border-2 transition-all cursor-pointer ${
                     selectedTemplate === 1
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
@@ -198,7 +198,7 @@ export default function EstimateConversionModal({
                   type="button"
                   onClick={() => setSelectedTemplate(2)}
                   disabled={isLoading}
-                  className={`p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                  className={`p-3 border-2 transition-all cursor-pointer ${
                     selectedTemplate === 2
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
@@ -215,7 +215,7 @@ export default function EstimateConversionModal({
                   type="button"
                   onClick={() => setSelectedTemplate(3)}
                   disabled={isLoading}
-                  className={`p-3 rounded-lg border-2 transition-all cursor-pointer ${
+                  className={`p-3 border-2 transition-all cursor-pointer ${
                     selectedTemplate === 3
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
@@ -238,14 +238,14 @@ export default function EstimateConversionModal({
           <button
             onClick={handleClose}
             disabled={isLoading}
-            className="px-6 py-3 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="px-6 py-3 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
             disabled={isLoading}
-            className="px-6 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center space-x-2"
+            className="px-6 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center space-x-2"
           >
             {isLoading ? (
               <>

@@ -171,7 +171,7 @@ export default function PartialPaymentModal({
       />
       
       {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-2xl border border-gray-200 w-full max-w-2xl max-h-[90vh] mx-4 overflow-hidden flex flex-col">
+      <div className="relative bg-white shadow-2xl border border-gray-200 w-full max-w-2xl max-h-[90vh] mx-4 overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
           <div>
@@ -180,7 +180,7 @@ export default function PartialPaymentModal({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+            className="p-2 hover:bg-gray-100 transition-colors cursor-pointer"
           >
             <X className="h-5 w-5 text-gray-500" />
           </button>
@@ -189,7 +189,7 @@ export default function PartialPaymentModal({
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-4 scroll-smooth custom-scrollbar">
           {/* Summary */}
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+          <div className="bg-gray-50 p-4 mb-6">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">Invoice Total</span>
               <span className="text-lg font-semibold text-gray-900">${invoice.total.toFixed(2)}</span>
@@ -231,7 +231,7 @@ export default function PartialPaymentModal({
                   max={remainingBalance}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="0.00"
                   required
                 />
@@ -246,7 +246,7 @@ export default function PartialPaymentModal({
                   type="date"
                   value={paymentDate}
                   onChange={(e) => setPaymentDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   required
                 />
               </div>
@@ -280,7 +280,7 @@ export default function PartialPaymentModal({
             <button
               type="submit"
               disabled={submitting || !amount || parseFloat(amount) <= 0}
-              className="w-full bg-indigo-600 text-white py-2.5 px-4 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+              className="w-full bg-indigo-600 text-white py-2.5 px-4 hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
             >
               {submitting ? 'Recording...' : 'Record Payment'}
             </button>
@@ -298,7 +298,7 @@ export default function PartialPaymentModal({
                 {payments.map((payment) => (
                   <div
                     key={payment.id}
-                    className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
+                    className="flex items-center justify-between p-3 bg-white border border-gray-200 hover:bg-gray-50"
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
@@ -315,7 +315,7 @@ export default function PartialPaymentModal({
                     <button
                       onClick={() => handleDeletePayment(payment.id)}
                       disabled={deleting === payment.id}
-                      className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
+                      className="p-1.5 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
                       title="Delete payment"
                     >
                       {deleting === payment.id ? (
@@ -335,7 +335,7 @@ export default function PartialPaymentModal({
         <div className="flex items-center justify-end px-6 py-4 border-t border-gray-200 bg-white flex-shrink-0">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+            className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
           >
             Close
           </button>

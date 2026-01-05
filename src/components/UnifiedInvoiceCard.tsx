@@ -168,13 +168,13 @@ export function UnifiedInvoiceCard({
   const rotationState = useSynchronizedRotation(maxItems, isVisible);
 
   return (
-    <div ref={cardRef} className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
+    <div ref={cardRef} className="border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
       {/* Mobile */}
       <div className="block sm:hidden p-4">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
+              <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
                 <FileText className="h-4 w-4 text-gray-700" />
               </div>
               <div>
@@ -240,7 +240,7 @@ export function UnifiedInvoiceCard({
               <button
                 onClick={() => { onPdf(invoice); logEvent('downloaded_pdf'); }}
                 disabled={loadingActions[`pdf-${invoice.id}`]}
-                className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${
+                className={`p-1.5 transition-colors hover:bg-gray-100 ${
                   loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                 }`}
                 title="PDF"
@@ -255,7 +255,7 @@ export function UnifiedInvoiceCard({
                 <button
                   onClick={() => onDuplicate(invoice)}
                   disabled={loadingActions[`duplicate-${invoice.id}`]}
-                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${
+                  className={`p-1.5 transition-colors hover:bg-gray-100 ${
                     loadingActions[`duplicate-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                   }`}
                   title="Duplicate"
@@ -271,7 +271,7 @@ export function UnifiedInvoiceCard({
                 <button
                   onClick={() => { onSend(invoice); logEvent('sent'); }}
                   disabled={loadingActions[`send-${invoice.id}`]}
-                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${
+                  className={`p-1.5 transition-colors hover:bg-gray-100 ${
                     loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                   }`}
                   title="Send"
@@ -286,7 +286,7 @@ export function UnifiedInvoiceCard({
               {invoice.status === 'draft' && onEdit && (
                 <button
                   onClick={() => onEdit(invoice)}
-                  className="p-1.5 rounded-md transition-colors hover:bg-gray-100"
+                  className="p-1.5 transition-colors hover:bg-gray-100"
                   title="Edit"
                 >
                   <Edit className="h-4 w-4 text-gray-700" />
@@ -295,7 +295,7 @@ export function UnifiedInvoiceCard({
               {invoice.status === 'draft' && onDelete && (
                 <button
                   onClick={() => onDelete(invoice)}
-                  className="p-1.5 rounded-md transition-colors hover:bg-gray-100"
+                  className="p-1.5 transition-colors hover:bg-gray-100"
                   title="Delete"
                 >
                   <Trash2 className="h-4 w-4 text-gray-700" />
@@ -305,7 +305,7 @@ export function UnifiedInvoiceCard({
                 <button
                   onClick={() => { onMarkPaid(invoice); logEvent('paid'); }}
                   disabled={loadingActions[`paid-${invoice.id}`]}
-                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${
+                  className={`p-1.5 transition-colors hover:bg-gray-100 ${
                     loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                   }`}
                   title="Mark Paid"
@@ -327,7 +327,7 @@ export function UnifiedInvoiceCard({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
+              <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
                 <FileText className="h-4 w-4 text-gray-700" />
               </div>
               <div>
@@ -392,7 +392,7 @@ export function UnifiedInvoiceCard({
               <button
                 onClick={() => onPdf(invoice)}
                 disabled={loadingActions[`pdf-${invoice.id}`]}
-                className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${
+                className={`p-1.5 transition-colors hover:bg-gray-100 ${
                   loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                 }`}
                 title="PDF"
@@ -407,7 +407,7 @@ export function UnifiedInvoiceCard({
                 <button
                   onClick={() => onDuplicate(invoice)}
                   disabled={loadingActions[`duplicate-${invoice.id}`]}
-                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${
+                  className={`p-1.5 transition-colors hover:bg-gray-100 ${
                     loadingActions[`duplicate-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                   }`}
                   title="Duplicate"
@@ -423,7 +423,7 @@ export function UnifiedInvoiceCard({
                 <button
                   onClick={() => onSend(invoice)}
                   disabled={loadingActions[`send-${invoice.id}`]}
-                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${
+                  className={`p-1.5 transition-colors hover:bg-gray-100 ${
                     loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                   }`}
                   title="Send"
@@ -438,7 +438,7 @@ export function UnifiedInvoiceCard({
               {invoice.status === 'draft' && onEdit && (
                 <button
                   onClick={() => onEdit(invoice)}
-                  className="p-1.5 rounded-md transition-colors hover:bg-gray-100"
+                  className="p-1.5 transition-colors hover:bg-gray-100"
                   title="Edit"
                 >
                   <Edit className="h-4 w-4 text-gray-700" />
@@ -447,7 +447,7 @@ export function UnifiedInvoiceCard({
               {invoice.status === 'draft' && onDelete && (
                 <button
                   onClick={() => onDelete(invoice)}
-                  className="p-1.5 rounded-md transition-colors hover:bg-gray-100"
+                  className="p-1.5 transition-colors hover:bg-gray-100"
                   title="Delete"
                 >
                   <Trash2 className="h-4 w-4 text-gray-700" />
@@ -457,7 +457,7 @@ export function UnifiedInvoiceCard({
                 <button
                   onClick={() => onMarkPaid(invoice)}
                   disabled={loadingActions[`paid-${invoice.id}`]}
-                  className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${
+                  className={`p-1.5 transition-colors hover:bg-gray-100 ${
                     loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                   }`}
                   title="Mark Paid"
