@@ -191,53 +191,87 @@ export const RotatingBadges = React.memo(({ badges, rotationState }: { badges: R
 
 RotatingBadges.displayName = 'RotatingBadges';
 
-// Rotating Amount Breakdown Component - Instant swap, no transitions
+// Rotating Amount Breakdown Component - Smooth slide animation (same as badges)
 export const RotatingAmountBreakdown = React.memo(({ breakdowns, rotationState }: { breakdowns: React.ReactNode[]; rotationState: RotationState }) => {
   const { currentIndex, isAnimating } = rotationState;
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const [displayIndex, setDisplayIndex] = React.useState(currentIndex);
+  const nextBreakdownRef = React.useRef<HTMLDivElement>(null);
+  const rafIdRef = React.useRef<number | null>(null);
 
-  // Instant swap - no animation, just immediate change
+  // Animate next breakdown sliding up from below
   React.useEffect(() => {
-    if (!isAnimating) {
-      // When not animating, immediately update to current index
-      setDisplayIndex(currentIndex);
-      return;
+    if (!isAnimating || !nextBreakdownRef.current) return;
+
+    // Cleanup any pending animation frames
+    if (rafIdRef.current) {
+      cancelAnimationFrame(rafIdRef.current);
     }
 
-    // When animation starts, immediately swap to next index (instant, no transition)
-    const nextIndex = (currentIndex + 1) % breakdowns.length;
-    setDisplayIndex(nextIndex);
-  }, [currentIndex, isAnimating, breakdowns.length]);
+    // Force the next breakdown to start from below, then animate up
+    rafIdRef.current = requestAnimationFrame(() => {
+      if (nextBreakdownRef.current) {
+        nextBreakdownRef.current.style.transform = 'translateY(100%)';
+        rafIdRef.current = requestAnimationFrame(() => {
+          if (nextBreakdownRef.current) {
+            nextBreakdownRef.current.style.transform = 'translateY(0)';
+          }
+        });
+      }
+    });
+
+    return () => {
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
+  }, [isAnimating]);
 
   // Memoize computed values
-  const currentBreakdown = React.useMemo(() => breakdowns[displayIndex], [breakdowns, displayIndex]);
+  const nextIndex = React.useMemo(() => (currentIndex + 1) % breakdowns.length, [currentIndex, breakdowns.length]);
 
   // Early returns
   if (breakdowns.length === 0) return null;
   if (breakdowns.length === 1) return <>{breakdowns[0]}</>;
 
+  const transitionStyle = isAnimating 
+    ? `transform ${ANIMATION_DURATION}ms ease-in-out` 
+    : 'none';
+
   return (
     <div 
-      ref={containerRef}
       className="relative overflow-hidden" 
-      style={{ height: '16px' }}
+      style={{ height: '16px', position: 'relative' }}
       aria-live="polite"
       aria-atomic="true"
     >
-      {/* Current breakdown - always rendered, instant swap with no transitions */}
+      {/* Current breakdown - always rendered, transforms based on animation state */}
       <div
-        key={`breakdown-${displayIndex}`}
+        key={`breakdown-${currentIndex}`}
         style={{ 
           position: 'absolute',
           width: '100%',
-          transform: 'translateY(0)',
-          transition: 'none', // No transition for instant swap
-          willChange: 'auto',
+          transform: isAnimating ? 'translateY(100%)' : 'translateY(0)',
+          transition: transitionStyle,
+          willChange: isAnimating ? 'transform' : 'auto',
         }}
       >
-        {currentBreakdown}
+        {breakdowns[currentIndex]}
       </div>
+      {/* Next breakdown - only rendered when animating, slides up from below */}
+      {isAnimating && (
+        <div
+          ref={nextBreakdownRef}
+          key={`breakdown-in-${nextIndex}`}
+          style={{ 
+            position: 'absolute',
+            width: '100%',
+            transform: 'translateY(100%)',
+            transition: `transform ${ANIMATION_DURATION}ms ease-in-out`,
+            willChange: 'transform',
+          }}
+        >
+          {breakdowns[nextIndex]}
+        </div>
+      )}
       {/* Invisible placeholder to maintain size and prevent layout shift */}
       <div 
         className="invisible" 
@@ -249,7 +283,7 @@ export const RotatingAmountBreakdown = React.memo(({ breakdowns, rotationState }
         }}
         aria-hidden="true"
       >
-        {currentBreakdown}
+        {breakdowns[currentIndex]}
       </div>
     </div>
   );
