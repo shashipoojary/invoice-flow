@@ -1161,10 +1161,13 @@ export default function ReminderHistoryPage() {
                         <span className="text-xs sm:text-sm font-medium text-gray-900 break-words">{selectedReminder.invoice.invoice_number}</span>
                       </div>
                       {(() => {
-                        // Calculate total with late fees (same logic as email and invoice page)
+                        // Base Amount: Actual invoice total (not remaining balance)
                         const baseAmount = selectedReminder.invoice.total || 0;
+                        const totalPaid = selectedReminder.paymentData?.totalPaid || 0;
+                        const remainingBalance = selectedReminder.paymentData?.remainingBalance || baseAmount;
+                        const isPartiallyPaid = totalPaid > 0 && remainingBalance > 0;
                         let lateFeesAmount = 0;
-                        let totalPayable = baseAmount;
+                        let totalPayable = remainingBalance;
                         
                         // Parse late fees settings
                         let lateFeesSettings = null;
@@ -1180,6 +1183,7 @@ export default function ReminderHistoryPage() {
                         }
                         
                         // Calculate late fees if invoice is overdue and late fees are enabled
+                        // CRITICAL: Calculate late fees on remaining balance (after partial payments)
                         const currentDate = new Date();
                         const dueDate = new Date(selectedReminder.invoice.due_date);
                         const todayStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
@@ -1193,11 +1197,12 @@ export default function ReminderHistoryPage() {
                           
                           if (chargeableDays > 0) {
                             if (lateFeesSettings.type === 'percentage') {
-                              lateFeesAmount = baseAmount * ((lateFeesSettings.amount || 0) / 100);
+                              // Calculate late fee on remaining balance (after partial payments)
+                              lateFeesAmount = remainingBalance * ((lateFeesSettings.amount || 0) / 100);
                             } else if (lateFeesSettings.type === 'fixed') {
                               lateFeesAmount = lateFeesSettings.amount || 0;
                             }
-                            totalPayable = baseAmount + lateFeesAmount;
+                            totalPayable = remainingBalance + lateFeesAmount;
                           }
                         }
                         
@@ -1209,11 +1214,19 @@ export default function ReminderHistoryPage() {
                                 ${baseAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                             </div>
+                            {isPartiallyPaid && (
+                              <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                                <span className="text-xs sm:text-sm text-gray-600">Partial Paid:</span>
+                                <span className="text-xs sm:text-sm font-medium text-blue-600 break-words">
+                                  -${totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            )}
                             {lateFeesAmount > 0 && (
                               <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
                                 <span className="text-xs sm:text-sm text-gray-600">Late Fees ({selectedReminder.overdue_days} days):</span>
                                 <span className="text-xs sm:text-sm font-medium text-red-600 break-words">
-                                  ${lateFeesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  +${lateFeesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                               </div>
                             )}

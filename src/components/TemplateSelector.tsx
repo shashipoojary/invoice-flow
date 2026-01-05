@@ -72,6 +72,7 @@ export default function TemplateSelector({
   isDarkMode = false
 }: TemplateSelectorProps) {
   const [showColorPicker, setShowColorPicker] = useState(false)
+  const [selectedPreset, setSelectedPreset] = useState<string | null>(null)
 
   const handleTemplateSelect = (templateId: number) => {
     onTemplateSelect(templateId)
@@ -82,9 +83,10 @@ export default function TemplateSelector({
     }
   }
 
-  const handleColorPreset = (primary: string, secondary: string) => {
+  const handleColorPreset = (primary: string, secondary: string, presetName: string) => {
     onPrimaryColorChange(primary)
     onSecondaryColorChange(secondary)
+    setSelectedPreset(presetName)
   }
 
   return (
@@ -185,31 +187,44 @@ export default function TemplateSelector({
                 Quick Presets
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
-                {colorPresets.map((preset) => (
-                  <button
-                    key={preset.name}
-                    type="button"
-                    data-testid={`color-preset-${preset.name.toLowerCase()}`}
-                    onClick={() => handleColorPreset(preset.primary, preset.secondary)}
-                    className={`p-2 sm:p-2.5 rounded-lg border text-xs font-medium transition-colors min-h-[60px] flex flex-col items-center justify-center cursor-pointer ${
-                      isDarkMode
-                        ? 'border-gray-600 bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-1.5 mb-1.5">
-                      <div 
-                        className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-500"
-                        style={{ backgroundColor: preset.primary }}
-                      ></div>
-                      <div 
-                        className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-500"
-                        style={{ backgroundColor: preset.secondary }}
-                      ></div>
-                    </div>
-                    {preset.name}
-                  </button>
-                ))}
+                {colorPresets.map((preset) => {
+                  const isSelected = selectedPreset === preset.name || 
+                    (primaryColor === preset.primary && secondaryColor === preset.secondary)
+                  return (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      data-testid={`color-preset-${preset.name.toLowerCase()}`}
+                      onClick={() => handleColorPreset(preset.primary, preset.secondary, preset.name)}
+                      className={`relative p-2 sm:p-2.5 rounded-lg border text-xs font-medium transition-colors min-h-[60px] flex flex-col items-center justify-center cursor-pointer ${
+                        isSelected
+                          ? isDarkMode
+                            ? 'border-indigo-500 bg-indigo-500/10'
+                            : 'border-indigo-500 bg-indigo-50'
+                          : isDarkMode
+                          ? 'border-gray-600 bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {isSelected && (
+                        <div className="absolute top-1 right-1 w-4 h-4 bg-indigo-600 rounded-full flex items-center justify-center">
+                          <Check className="h-2.5 w-2.5 text-white" />
+                        </div>
+                      )}
+                      <div className="flex items-center space-x-1.5 mb-1.5">
+                        <div 
+                          className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-500"
+                          style={{ backgroundColor: preset.primary }}
+                        ></div>
+                        <div 
+                          className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-500"
+                          style={{ backgroundColor: preset.secondary }}
+                        ></div>
+                      </div>
+                      {preset.name}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 

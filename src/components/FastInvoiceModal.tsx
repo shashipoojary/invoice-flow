@@ -5,6 +5,7 @@ import { X, DollarSign, Calendar, FileText, User, Mail, ArrowRight, ArrowLeft, C
 import { Invoice } from '@/types'
 import { useToast } from '@/hooks/useToast'
 import { useData } from '@/contexts/DataContext'
+import CustomDropdown from './CustomDropdown'
 
 interface Client {
   id: string
@@ -483,35 +484,26 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                   <div className="space-y-3">
                     {clients.length > 0 && (
                       <div>
-                        <div className="relative">
-                          <select
-                            value={selectedClientId}
-                            onChange={(e) => setSelectedClientId(e.target.value)}
-                            className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors appearance-none cursor-pointer ${
-                              isDarkMode 
-                                ? 'border-gray-700 bg-gray-800 text-white' 
-                                : 'border-gray-300 bg-white text-gray-900'
-                            }`}
-                          >
-                            <option value="">Select existing client</option>
-                            {clients.map(client => (
-                              <option key={client.id} value={client.id}>
-                                {client.name} {client.company && `(${client.company})`}
-                              </option>
-                            ))}
-                            {/* Show current client even if not in clients list */}
-                            {selectedClientId && !clients.find(c => c.id === selectedClientId) && editingInvoice?.client && (
-                              <option value={selectedClientId}>
-                                {editingInvoice.client.name} {editingInvoice.client.company && `(${editingInvoice.client.company})`}
-                              </option>
-                            )}
-                          </select>
-                          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </div>
-                        </div>
+                        <CustomDropdown
+                          value={selectedClientId}
+                          onChange={(value) => setSelectedClientId(value)}
+                          options={[
+                            ...clients.map(client => ({
+                              value: client.id,
+                              label: `${client.name}${client.company ? ` (${client.company})` : ''}`
+                            })),
+                            // Show current client even if not in clients list
+                            ...(selectedClientId && !clients.find(c => c.id === selectedClientId) && editingInvoice?.client
+                              ? [{
+                                  value: selectedClientId,
+                                  label: `${editingInvoice.client.name}${editingInvoice.client.company ? ` (${editingInvoice.client.company})` : ''}`
+                                }]
+                              : [])
+                          ]}
+                          placeholder="Select existing client"
+                          isDarkMode={isDarkMode}
+                          searchable={true}
+                        />
                       </div>
                     )}
 

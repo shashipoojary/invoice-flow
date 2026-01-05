@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   },
 })
 
-export default function Template1({ invoice, businessSettings, primaryColor = '#0D9488', secondaryColor = '#3B82F6' }: Template1Props) {
+export default function Template1({ invoice, businessSettings, primaryColor = '#5C2D91', secondaryColor = '#8B5CF6' }: Template1Props) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',

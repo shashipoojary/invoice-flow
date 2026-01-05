@@ -10,6 +10,7 @@ import {
   Zap, AlertCircle
 } from 'lucide-react'
 import TemplateSelector from './TemplateSelector'
+import CustomDropdown from './CustomDropdown'
 import { Invoice } from '@/types'
 import { useToast } from '@/hooks/useToast'
 import { useData } from '@/contexts/DataContext'
@@ -1245,35 +1246,26 @@ export default function QuickInvoiceModal({
                 ) : (
                   <div className="space-y-3">
                     {effectiveClients.length > 0 && (
-                    <div className="relative">
-                      <select
+                      <CustomDropdown
                         value={selectedClientId}
-                        onChange={(e) => setSelectedClientId(e.target.value)}
-                            className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors appearance-none cursor-pointer ${
-                              isDarkMode 
-                                ? 'border-gray-700 bg-gray-800 text-white' 
-                                : 'border-gray-300 bg-white text-gray-900'
-                            }`}
-                      >
-                          <option value="">Select existing client</option>
-                        {effectiveClients.map(client => (
-                          <option key={client.id} value={client.id}>
-                              {client.name} {client.company && `(${client.company})`}
-                          </option>
-                        ))}
-                        {/* Show current client even if not in clients list */}
-                        {selectedClientId && !effectiveClients.find(c => c.id === selectedClientId) && editingInvoice?.client && (
-                          <option value={selectedClientId}>
-                            {editingInvoice.client.name} {editingInvoice.client.company && `(${editingInvoice.client.company})`}
-                          </option>
-                        )}
-                      </select>
-                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                          <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                    </div>
+                        onChange={(value) => setSelectedClientId(value)}
+                        options={[
+                          ...effectiveClients.map(client => ({
+                            value: client.id,
+                            label: `${client.name}${client.company ? ` (${client.company})` : ''}`
+                          })),
+                          // Show current client even if not in clients list
+                          ...(selectedClientId && !effectiveClients.find(c => c.id === selectedClientId) && editingInvoice?.client
+                            ? [{
+                                value: selectedClientId,
+                                label: `${editingInvoice.client.name}${editingInvoice.client.company ? ` (${editingInvoice.client.company})` : ''}`
+                              }]
+                            : [])
+                        ]}
+                        placeholder="Select existing client"
+                        isDarkMode={isDarkMode}
+                        searchable={true}
+                      />
                     )}
                     
                     {effectiveClients.length > 0 && (
@@ -1774,11 +1766,10 @@ export default function QuickInvoiceModal({
                       }`}>
                         Select Payment Terms
                       </label>
-                      <select
+                      <CustomDropdown
                         value={paymentTerms.defaultOption}
-                        onChange={(e) => {
+                        onChange={(selectedTerm) => {
                           if (markAsPaid) return // Prevent changes when mark as paid is selected
-                          const selectedTerm = e.target.value
                           setPaymentTerms({...paymentTerms, defaultOption: selectedTerm})
                           
                           // Smart due date adjustment based on payment terms
@@ -1799,20 +1790,16 @@ export default function QuickInvoiceModal({
                           }
                         }}
                         disabled={markAsPaid}
-                        className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-colors ${
-                          markAsPaid 
-                            ? 'cursor-not-allowed opacity-60' 
-                            : 'cursor-pointer'
-                        } ${
-                          isDarkMode 
-                            ? 'border-gray-700 bg-gray-800 text-white' 
-                            : 'border-gray-300 bg-white text-gray-900'
-                        }`}
-                      >
-                        {paymentTerms.options.map((option) => (
-                          <option key={option} value={option}>{option}</option>
-                        ))}
-                      </select>
+                        options={[
+                          { value: 'Due on Receipt', label: 'Due on Receipt' },
+                          { value: 'Net 15', label: 'Net 15' },
+                          { value: 'Net 30', label: 'Net 30' },
+                          { value: '2/10 Net 30', label: '2/10 Net 30' },
+                          { value: 'Custom', label: 'Custom' }
+                        ]}
+                        placeholder="Select Payment Terms"
+                        isDarkMode={isDarkMode}
+                      />
                     </div>
 
                     {/* Payment Terms Explanation */}
@@ -2065,25 +2052,18 @@ export default function QuickInvoiceModal({
 
                         {reminders.rules.map((rule) => (
                           <div key={rule.id} className="flex items-center space-x-3 py-2">
-                            <select
+                            <CustomDropdown
                               value={rule.type}
-                              onChange={(e) => !markAsPaid && updateReminderRule(rule.id, { type: e.target.value as 'before' | 'after' })}
+                              onChange={(value) => !markAsPaid && updateReminderRule(rule.id, { type: value as 'before' | 'after' })}
                               disabled={markAsPaid}
-                              className={`px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                                markAsPaid ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
-                              } ${
-                                isDarkMode 
-                                  ? 'border-gray-700 bg-gray-800' 
-                                  : 'border-gray-300 bg-white'
-                              } ${
-                                rule.type === 'before'
-                                  ? 'text-green-600 dark:text-green-400'
-                                  : 'text-red-600 dark:text-red-400'
-                              }`}
-                            >
-                              <option value="before" className="text-green-600 dark:text-green-400">Before Due Date</option>
-                              <option value="after" className="text-red-600 dark:text-red-400">After Due Date</option>
-                            </select>
+                              options={[
+                                { value: 'before', label: 'Before Due Date' },
+                                { value: 'after', label: 'After Due Date' }
+                              ]}
+                              placeholder="Select type"
+                              isDarkMode={isDarkMode}
+                              className="w-32"
+                            />
                             
                             <input
                               type="number"
@@ -2180,21 +2160,17 @@ export default function QuickInvoiceModal({
                         }`}>
                           Fee Type
                         </label>
-                        <select
+                        <CustomDropdown
                           value={lateFees.type}
-                          onChange={(e) => !markAsPaid && setLateFees({...lateFees, type: e.target.value as 'fixed' | 'percentage'})}
+                          onChange={(value) => !markAsPaid && setLateFees({...lateFees, type: value as 'fixed' | 'percentage'})}
                           disabled={markAsPaid}
-                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                            markAsPaid ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
-                          } ${
-                            isDarkMode 
-                              ? 'border-gray-700 bg-gray-800 text-white' 
-                              : 'border-gray-300 bg-white text-gray-900'
-                          }`}
-                        >
-                          <option value="fixed">Fixed Amount ($)</option>
-                          <option value="percentage">Percentage (%)</option>
-                        </select>
+                          options={[
+                            { value: 'fixed', label: 'Fixed Amount ($)' },
+                            { value: 'percentage', label: 'Percentage (%)' }
+                          ]}
+                          placeholder="Select fee type"
+                          isDarkMode={isDarkMode}
+                        />
                         <p className={`text-xs mt-1 ${
                           isDarkMode ? 'text-gray-400' : 'text-gray-500'
                         }`}>
@@ -2209,10 +2185,20 @@ export default function QuickInvoiceModal({
                         </label>
                         <input
                           type="number"
-                          value={lateFees.amount}
-                          onChange={(e) => !markAsPaid && setLateFees({...lateFees, amount: parseFloat(e.target.value) || 0})}
+                          value={lateFees.amount === 0 ? '' : lateFees.amount}
+                          onChange={(e) => {
+                            if (!markAsPaid) {
+                              const value = e.target.value;
+                              setLateFees({...lateFees, amount: value === '' ? 0 : parseFloat(value) || 0});
+                            }
+                          }}
+                          onBlur={(e) => {
+                            if (!markAsPaid && e.target.value === '') {
+                              setLateFees({...lateFees, amount: 0});
+                            }
+                          }}
                           disabled={markAsPaid}
-                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                             markAsPaid ? 'cursor-not-allowed opacity-60' : ''
                           } ${
                             isDarkMode 
@@ -2240,10 +2226,20 @@ export default function QuickInvoiceModal({
                         </label>
                         <input
                           type="number"
-                          value={lateFees.gracePeriod}
-                          onChange={(e) => !markAsPaid && setLateFees({...lateFees, gracePeriod: parseInt(e.target.value) || 0})}
+                          value={lateFees.gracePeriod === 0 ? '' : lateFees.gracePeriod}
+                          onChange={(e) => {
+                            if (!markAsPaid) {
+                              const value = e.target.value;
+                              setLateFees({...lateFees, gracePeriod: value === '' ? 0 : parseInt(value) || 0});
+                            }
+                          }}
+                          onBlur={(e) => {
+                            if (!markAsPaid && e.target.value === '') {
+                              setLateFees({...lateFees, gracePeriod: 0});
+                            }
+                          }}
                           disabled={markAsPaid}
-                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                             markAsPaid ? 'cursor-not-allowed opacity-60' : ''
                           } ${
                             isDarkMode 

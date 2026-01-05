@@ -26,12 +26,12 @@ const styles = StyleSheet.create({
     marginBottom: 35,
     paddingBottom: 25,
     borderBottomWidth: 3,
-    borderBottomColor: '#0D9488',
+    borderBottomColor: '#5C2D91',
   },
   invoiceTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#0D9488',
+    color: '#5C2D91',
     letterSpacing: 1,
   },
   companyName: {
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#0D9488',
+    backgroundColor: '#5C2D91',
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
@@ -159,25 +159,31 @@ const styles = StyleSheet.create({
   },
   finalTotalContainer: {
     width: '100%',
-    paddingHorizontal: 16,
     paddingTop: 8,
-    alignItems: 'flex-end',
+  },
+  separatorLineContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    width: '100%',
+    marginBottom: 8,
+    paddingRight: 0,
+    marginRight: -50,
   },
   separatorLine: {
     width: '40%',
     height: 2,
     backgroundColor: '#E5E7EB',
-    marginBottom: 8,
   },
   finalTotalRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     width: '100%',
+    paddingHorizontal: 16,
   },
   finalTotal: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: '#0D9488',
+    color: '#5C2D91',
     textAlign: 'right',
     flex: 1.5,
     maxWidth: '18.75%',
@@ -220,9 +226,9 @@ const styles = StyleSheet.create({
 })
 
 export default function Template1({ invoice, businessSettings }: Template1Props) {
-  // Fixed colors for fast invoice - no customization needed
-  const primaryColor = '#0D9488'   // Teal
-  const secondaryColor = '#3B82F6' // Blue
+  // Fixed colors for fast invoice - purple theme to match site
+  const primaryColor = '#5C2D91'   // Purple
+  const secondaryColor = '#8B5CF6' // Light Purple
   const formatCurrency = (amount: number) => {
     // Ensure amount is a valid number
     const validAmount = isNaN(amount) ? 0 : amount
@@ -339,12 +345,6 @@ export default function Template1({ invoice, businessSettings }: Template1Props)
             <Text style={styles.totalLabel}>Subtotal:</Text>
             <Text style={styles.totalValue}>{formatCurrency(calculateSubtotal())}</Text>
           </View>
-          <View style={styles.finalTotalContainer}>
-            <View style={styles.separatorLine} />
-            <View style={styles.finalTotalRow}>
-              <Text style={styles.finalTotal}>{formatCurrency(calculateTotal())}</Text>
-            </View>
-          </View>
           {invoice.discount && invoice.discount > 0 && (
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Discount:</Text>
@@ -357,6 +357,14 @@ export default function Template1({ invoice, businessSettings }: Template1Props)
               <Text style={styles.totalValue}>{formatCurrency(calculateTax())}</Text>
             </View>
           )}
+          <View style={styles.finalTotalContainer}>
+            <View style={styles.separatorLineContainer}>
+              <View style={styles.separatorLine} />
+            </View>
+            <View style={styles.finalTotalRow}>
+              <Text style={styles.finalTotal}>{formatCurrency(calculateTotal())}</Text>
+            </View>
+          </View>
         </View>
 
         {/* Clean Notes Section */}

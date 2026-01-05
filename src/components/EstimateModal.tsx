@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/useToast'
 import { useData } from '@/contexts/DataContext'
 import { useSettings } from '@/contexts/SettingsContext'
 import { useAuth } from '@/hooks/useAuth'
+import CustomDropdown from './CustomDropdown'
 
 interface EstimateModalProps {
   isOpen: boolean
@@ -417,29 +418,23 @@ export default function EstimateModal({
                   </div>
                 ) : (
                   <>
-                    <select
+                    <CustomDropdown
                       value={selectedClientId}
-                      onChange={(e) => {
-                        setSelectedClientId(e.target.value)
+                      onChange={(value) => {
+                        setSelectedClientId(value)
                         if (errors.client) {
                           setErrors(prev => ({ ...prev, client: undefined }))
                         }
                       }}
-                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                        errors.client
-                          ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                          : isDarkMode
-                            ? 'bg-gray-800 border-gray-700 text-white focus:border-indigo-500 focus:ring-indigo-500'
-                            : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-500 focus:ring-indigo-500'
-                      } focus:ring-2 focus:outline-none`}
-                    >
-                      <option value="">Choose a client...</option>
-                      {clients.map((client) => (
-                        <option key={client.id} value={client.id}>
-                          {client.name} {client.company ? `(${client.company})` : ''}
-                        </option>
-                      ))}
-                    </select>
+                      options={clients.map((client) => ({
+                        value: client.id,
+                        label: `${client.name}${client.company ? ` (${client.company})` : ''}`
+                      }))}
+                      placeholder="Choose a client..."
+                      isDarkMode={isDarkMode}
+                      searchable={true}
+                      error={!!errors.client}
+                    />
                     {errors.client && (
                       <p className="mt-1 text-xs text-red-600">{errors.client}</p>
                     )}

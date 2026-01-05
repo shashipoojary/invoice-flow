@@ -195,7 +195,7 @@ function EstimatesContent(): React.JSX.Element {
       case 'sent':
         return 'text-orange-500';
       case 'converted':
-        return 'text-gray-600';
+        return 'text-indigo-600';
       case 'expired':
         return 'text-yellow-600';
       case 'draft':
