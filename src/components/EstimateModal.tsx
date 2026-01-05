@@ -270,7 +270,7 @@ export default function EstimateModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
-      <div className={`rounded-lg shadow-2xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden overflow-y-auto scroll-smooth ${
+      <div className={`shadow-2xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden overflow-y-auto scroll-smooth ${
         isDarkMode 
           ? 'bg-gray-900' 
           : 'bg-white'
@@ -278,7 +278,7 @@ export default function EstimateModal({
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-6">
           <div className="flex items-center space-x-3">
-            <div className={`p-2.5 rounded-lg ${
+            <div className={`p-2.5 ${
               isDarkMode 
                 ? 'bg-indigo-500/20' 
                 : 'bg-indigo-50'
@@ -308,7 +308,7 @@ export default function EstimateModal({
           </div>
           <button
             onClick={handleClose}
-            className={`transition-colors p-1.5 rounded-lg cursor-pointer ${
+            className={`transition-colors p-1.5 cursor-pointer ${
               isDarkMode 
                 ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' 
                 : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
@@ -379,7 +379,7 @@ export default function EstimateModal({
                 </h4>
 
                 {selectedClientId ? (
-                  <div className={`flex items-center justify-between p-3 rounded-lg ${
+                  <div className={`flex items-center justify-between p-3 ${
                     isDarkMode 
                       ? 'bg-indigo-500/10' 
                       : 'bg-indigo-50'
@@ -454,12 +454,40 @@ export default function EstimateModal({
                     type="date"
                     value={issueDate}
                     onChange={(e) => setIssueDate(e.target.value)}
-                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
+                    className={`w-full px-4 py-2.5 border transition-colors ${
                       isDarkMode
                         ? 'bg-gray-800 border-gray-700 text-white focus:border-indigo-500 focus:ring-indigo-500'
                         : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-500 focus:ring-indigo-500'
                     } focus:ring-2 focus:outline-none`}
                   />
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setIssueDate(new Date().toISOString().split('T')[0])}
+                      className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
+                        isDarkMode
+                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      Today
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const tomorrow = new Date();
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        setIssueDate(tomorrow.toISOString().split('T')[0]);
+                      }}
+                      className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
+                        isDarkMode
+                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      Tomorrow
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -472,12 +500,59 @@ export default function EstimateModal({
                     type="date"
                     value={expiryDate}
                     onChange={(e) => setExpiryDate(e.target.value)}
-                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
+                    className={`w-full px-4 py-2.5 border transition-colors ${
                       isDarkMode
                         ? 'bg-gray-800 border-gray-700 text-white focus:border-indigo-500 focus:ring-indigo-500'
                         : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-500 focus:ring-indigo-500'
                     } focus:ring-2 focus:outline-none`}
                   />
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const date = new Date();
+                        date.setDate(date.getDate() + 7);
+                        setExpiryDate(date.toISOString().split('T')[0]);
+                      }}
+                      className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
+                        isDarkMode
+                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      +7 days
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const date = new Date();
+                        date.setDate(date.getDate() + 30);
+                        setExpiryDate(date.toISOString().split('T')[0]);
+                      }}
+                      className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
+                        isDarkMode
+                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      +30 days
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const date = new Date();
+                        date.setDate(date.getDate() + 60);
+                        setExpiryDate(date.toISOString().split('T')[0]);
+                      }}
+                      className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
+                        isDarkMode
+                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      +60 days
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -492,7 +567,7 @@ export default function EstimateModal({
                   </h4>
                   <button
                     onClick={addItem}
-                    className={`flex items-center space-x-1 px-3 py-1.5 text-xs rounded-lg transition-colors cursor-pointer ${
+                    className={`flex items-center space-x-1 px-3 py-1.5 text-xs transition-colors cursor-pointer ${
                       isDarkMode
                         ? 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30'
                         : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
@@ -505,7 +580,7 @@ export default function EstimateModal({
 
                 <div className="space-y-3">
                   {items.map((item, index) => (
-                    <div key={item.id} className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 rounded-lg border ${
+                    <div key={item.id} className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 border ${
                       isDarkMode
                         ? 'bg-gray-800 border-gray-700'
                         : 'bg-gray-50 border-gray-200'
@@ -530,7 +605,7 @@ export default function EstimateModal({
                               })
                             }
                           }}
-                          className={`w-full px-3 py-2 rounded-lg border transition-colors ${
+                          className={`w-full px-3 py-2 border transition-colors ${
                             errors.items?.[item.id]?.description
                               ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                               : isDarkMode
@@ -550,7 +625,7 @@ export default function EstimateModal({
                             value={item.qty}
                             onChange={(e) => updateItem(item.id, 'qty', parseInt(e.target.value) || 1)}
                             min="1"
-                            className={`w-full px-3 py-2 rounded-lg border transition-colors ${
+                            className={`w-full px-3 py-2 border transition-colors ${
                               isDarkMode
                                 ? 'bg-gray-700 border-gray-600 text-white focus:border-teal-500 focus:ring-teal-500'
                                 : 'bg-white border-gray-300 text-gray-900 focus:border-teal-500 focus:ring-teal-500'
@@ -579,7 +654,7 @@ export default function EstimateModal({
                             }}
                             min="0"
                             step="0.01"
-                            className={`w-full px-3 py-2 rounded-lg border transition-colors ${
+                            className={`w-full px-3 py-2 border transition-colors ${
                               errors.items?.[item.id]?.rate
                                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                                 : isDarkMode
@@ -599,7 +674,7 @@ export default function EstimateModal({
                         {items.length > 1 && (
                           <button
                             onClick={() => removeItem(item.id)}
-                            className={`p-2 rounded-lg transition-colors cursor-pointer flex-shrink-0 ${
+                            className={`p-2 transition-colors cursor-pointer flex-shrink-0 ${
                               isDarkMode
                                 ? 'text-red-400 hover:bg-red-500/20'
                                 : 'text-red-500 hover:bg-red-50'
@@ -619,7 +694,7 @@ export default function EstimateModal({
                   type="button"
                   onClick={() => setStep(2)}
                   disabled={!selectedClientId || items.some(item => !item.description || item.rate <= 0)}
-                  className={`w-full sm:w-auto bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`w-full sm:w-auto bg-indigo-600 text-white py-3 px-6 hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                     !selectedClientId || items.some(item => !item.description || item.rate <= 0)
                       ? 'opacity-50 cursor-not-allowed'
                       : ''
@@ -657,7 +732,7 @@ export default function EstimateModal({
                     onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
                     min="0"
                     step="0.01"
-                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
+                    className={`w-full px-4 py-2.5 border transition-colors ${
                       isDarkMode
                         ? 'bg-gray-800 border-gray-700 text-white focus:border-teal-500 focus:ring-teal-500'
                         : 'bg-white border-gray-300 text-gray-900 focus:border-teal-500 focus:ring-teal-500'
@@ -677,7 +752,7 @@ export default function EstimateModal({
                     onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
                     min="0"
                     step="0.01"
-                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
+                    className={`w-full px-4 py-2.5 border transition-colors ${
                       isDarkMode
                         ? 'bg-gray-800 border-gray-700 text-white focus:border-teal-500 focus:ring-teal-500'
                         : 'bg-white border-gray-300 text-gray-900 focus:border-teal-500 focus:ring-teal-500'
@@ -707,7 +782,7 @@ export default function EstimateModal({
               </div>
 
               {/* Summary */}
-              <div className={`p-4 rounded-lg space-y-2 ${
+              <div className={`p-4 space-y-2 ${
                 isDarkMode ? 'bg-gray-800' : 'bg-gray-50'
               }`}>
                 <div className="flex justify-between">
@@ -738,7 +813,7 @@ export default function EstimateModal({
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className={`flex-1 py-3 px-6 rounded-lg transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
+                  className={`flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
                     isDarkMode 
                       ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'

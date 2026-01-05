@@ -1093,7 +1093,7 @@ export default function QuickInvoiceModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className={`rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden overflow-y-auto scroll-smooth ${
+      <div className={`shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden overflow-y-auto scroll-smooth ${
         isDarkMode 
           ? 'bg-gray-900' 
           : 'bg-white'
@@ -1101,7 +1101,7 @@ export default function QuickInvoiceModal({
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-6">
           <div className="flex items-center space-x-3">
-            <div className={`p-2.5 rounded-lg ${
+            <div className={`p-2.5 ${
               isDarkMode 
                 ? 'bg-indigo-500/20' 
                 : 'bg-indigo-50'
@@ -1131,7 +1131,7 @@ export default function QuickInvoiceModal({
           </div>
           <button
             onClick={handleClose}
-            className={`transition-colors p-1.5 rounded-lg cursor-pointer ${
+            className={`transition-colors p-1.5 cursor-pointer ${
               isDarkMode 
                 ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' 
                 : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
@@ -1294,7 +1294,7 @@ export default function QuickInvoiceModal({
                             placeholder="Client name"
                           value={newClient.name}
                           onChange={(e) => setNewClient({...newClient, name: e.target.value})}
-                            className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                            className={`w-full pl-10 pr-3 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                             isDarkMode 
                               ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                               : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
@@ -1312,7 +1312,7 @@ export default function QuickInvoiceModal({
                           placeholder="client@example.com"
                           value={newClient.email}
                           onChange={(e) => setNewClient({...newClient, email: e.target.value})}
-                            className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                            className={`w-full pl-10 pr-3 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                             isDarkMode 
                               ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                               : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
@@ -1336,7 +1336,7 @@ export default function QuickInvoiceModal({
                         type="text"
                         value={invoiceNumber}
                         readOnly
-                        className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg transition-colors ${
+                        className={`w-full pl-10 pr-3 py-2.5 text-sm border transition-colors ${
                           isDarkMode 
                             ? 'border-gray-700 bg-gray-800 text-gray-300' 
                             : 'border-gray-300 bg-gray-50 text-gray-600'
@@ -1366,7 +1366,7 @@ export default function QuickInvoiceModal({
                         type="date"
                         value={issueDate}
                         onChange={(e) => setIssueDate(e.target.value)}
-                        className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        className={`w-full pl-10 pr-3 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                           isDarkMode 
                             ? 'border-gray-700 bg-gray-800 text-white' 
                             : 'border-gray-300 bg-white text-gray-900'
@@ -1378,6 +1378,34 @@ export default function QuickInvoiceModal({
                           isDarkMode ? 'bg-blue-400' : 'bg-blue-500'
                         }`} title="Auto-selected current date"></div>
                     </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => setIssueDate(new Date().toISOString().split('T')[0])}
+                        className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
+                          isDarkMode
+                            ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        Today
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const tomorrow = new Date();
+                          tomorrow.setDate(tomorrow.getDate() + 1);
+                          setIssueDate(tomorrow.toISOString().split('T')[0]);
+                        }}
+                        className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
+                          isDarkMode
+                            ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        Tomorrow
+                      </button>
                     </div>
                     <p className={`text-xs mt-1 ${
                       isDarkMode ? 'text-gray-400' : 'text-gray-500'
@@ -1395,7 +1423,7 @@ export default function QuickInvoiceModal({
                       type="date"
                       value={dueDate}
                       onChange={(e) => setDueDate(e.target.value)}
-                      className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                      className={`w-full pl-10 pr-3 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                         isDarkMode 
                           ? 'border-gray-700 bg-gray-800 text-white' 
                           : 'border-gray-300 bg-white text-gray-900'
@@ -1409,6 +1437,64 @@ export default function QuickInvoiceModal({
                         }`} title="Auto-updated by payment terms"></div>
                   </div>
                     )}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => setDueDate(new Date().toISOString().split('T')[0])}
+                      className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
+                        isDarkMode
+                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      Today
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const tomorrow = new Date();
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        setDueDate(tomorrow.toISOString().split('T')[0]);
+                      }}
+                      className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
+                        isDarkMode
+                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      Tomorrow
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const date = new Date();
+                        date.setDate(date.getDate() + 7);
+                        setDueDate(date.toISOString().split('T')[0]);
+                      }}
+                      className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
+                        isDarkMode
+                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      +7 days
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const date = new Date();
+                        date.setDate(date.getDate() + 30);
+                        setDueDate(date.toISOString().split('T')[0]);
+                      }}
+                      className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
+                        isDarkMode
+                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      +30 days
+                    </button>
                   </div>
                   <p className={`text-xs mt-1 ${
                     isDarkMode ? 'text-gray-400' : 'text-gray-500'
@@ -1432,7 +1518,7 @@ export default function QuickInvoiceModal({
                     type="checkbox"
                     checked={markAsPaid}
                     onChange={(e) => setMarkAsPaid(e.target.checked)}
-                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+                    className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 cursor-pointer"
                   />
                   <div className="flex-1">
                     <span className={`text-sm font-medium ${
@@ -1517,7 +1603,7 @@ export default function QuickInvoiceModal({
                             placeholder="e.g., Website Development, Consulting, Design"
                             value={item.description}
                             onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                            className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                            className={`w-full px-3 py-2 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                               isDarkMode 
                                 ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                                 : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
@@ -1537,7 +1623,7 @@ export default function QuickInvoiceModal({
                               placeholder="0.00"
                               value={item.amount}
                               onChange={(e) => updateItem(item.id, 'amount', e.target.value)}
-                              className={`w-full px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                              className={`w-full px-3 py-2 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                                 isDarkMode 
                                   ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                                   : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
@@ -1591,7 +1677,7 @@ export default function QuickInvoiceModal({
                         placeholder="0"
                         value={discount}
                         onChange={(e) => setDiscount(e.target.value)}
-                        className={`w-full pl-10 pr-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        className={`w-full pl-10 pr-3 py-2 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                           isDarkMode 
                             ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                             : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
@@ -1616,7 +1702,7 @@ export default function QuickInvoiceModal({
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
+                    className={`w-full pl-10 pr-4 py-3 border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
                       isDarkMode 
                         ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                         : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
@@ -2070,7 +2156,7 @@ export default function QuickInvoiceModal({
                               value={rule.days}
                               onChange={(e) => !markAsPaid && updateReminderRule(rule.id, { days: parseInt(e.target.value) || 0 })}
                               disabled={markAsPaid}
-                              className={`w-20 px-3 py-2 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                              className={`w-20 px-3 py-2 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                                 markAsPaid ? 'cursor-not-allowed opacity-60' : ''
                               } ${
                                 isDarkMode 
@@ -2198,7 +2284,7 @@ export default function QuickInvoiceModal({
                             }
                           }}
                           disabled={markAsPaid}
-                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                          className={`w-full px-3 py-2 text-sm border focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                             markAsPaid ? 'cursor-not-allowed opacity-60' : ''
                           } ${
                             isDarkMode 
@@ -2239,7 +2325,7 @@ export default function QuickInvoiceModal({
                             }
                           }}
                           disabled={markAsPaid}
-                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                          className={`w-full px-3 py-2 text-sm border focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                             markAsPaid ? 'cursor-not-allowed opacity-60' : ''
                           } ${
                             isDarkMode 

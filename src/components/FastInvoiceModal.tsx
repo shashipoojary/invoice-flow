@@ -357,7 +357,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className={`rounded-lg shadow-2xl max-w-md w-full overflow-hidden ${
+      <div className={`shadow-2xl max-w-md w-full overflow-hidden ${
         isDarkMode 
           ? 'bg-gray-900' 
           : 'bg-white'
@@ -365,7 +365,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         {/* Header */}
         <div className="flex items-center justify-between p-6">
           <div className="flex items-center space-x-3">
-            <div className={`p-2.5 rounded-lg ${
+            <div className={`p-2.5 ${
               isDarkMode 
                 ? 'bg-indigo-500/20' 
                 : 'bg-indigo-50'
@@ -395,7 +395,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
           </div>
           <button
             onClick={handleClose}
-            className={`transition-colors p-1.5 rounded-lg cursor-pointer ${
+            className={`transition-colors p-1.5 cursor-pointer ${
               isDarkMode 
                 ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' 
                 : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
@@ -537,7 +537,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                                 setErrors(prev => ({ ...prev, clientName: undefined }))
                               }
                             }}
-                            className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                            className={`w-full pl-10 pr-3 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                               errors.clientName
                                 ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                                 : isDarkMode 
@@ -567,7 +567,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                                 setErrors(prev => ({ ...prev, clientEmail: undefined }))
                               }
                             }}
-                            className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                            className={`w-full pl-10 pr-3 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                               errors.clientEmail
                                 ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                                 : isDarkMode 
@@ -647,7 +647,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                           setErrors(prev => ({ ...prev, description: undefined }))
                         }
                       }}
-                      className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
+                      className={`w-full pl-10 pr-3 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
                         errors.description
                           ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                           : isDarkMode 
@@ -681,7 +681,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                             setErrors(prev => ({ ...prev, amount: undefined }))
                           }
                         }}
-                        className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        className={`w-full pl-10 pr-3 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                           errors.amount
                             ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                             : isDarkMode 
@@ -717,7 +717,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                           }
                         }}
                         disabled={markAsPaid}
-                        className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        className={`w-full pl-10 pr-3 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                           markAsPaid ? 'cursor-not-allowed opacity-60' : ''
                         } ${
                           errors.dueDate
@@ -744,7 +744,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
+                    className={`w-full px-3 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
                       isDarkMode 
                         ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                         : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
@@ -765,7 +765,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                       type="checkbox"
                       checked={markAsPaid}
                       onChange={(e) => setMarkAsPaid(e.target.checked)}
-                      className={`mt-0.5 w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer ${
+                      className={`mt-0.5 w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 cursor-pointer ${
                         isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white'
                       }`}
                     />
@@ -817,7 +817,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                     ) : (
                       <CheckCircle className="h-3 w-3" />
                     )}
-                    <span>{loading ? 'Creating...' : 'Create'}</span>
+                    <span>{loading ? 'Creating...' : 'Create invoice in 60 seconds'}</span>
                   </button>
                 )}
                 <button

@@ -173,7 +173,7 @@ export default function ClientModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
-      <div className={`rounded-lg shadow-2xl max-w-lg w-full overflow-hidden ${
+      <div className={`shadow-2xl max-w-lg w-full overflow-hidden ${
         isDarkMode 
           ? 'bg-gray-900' 
           : 'bg-white'
@@ -182,7 +182,7 @@ export default function ClientModal({
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className={`p-2 rounded-lg ${
+              <div className={`p-2 ${
                 isDarkMode 
                   ? 'bg-indigo-500/10' 
                   : 'bg-indigo-50'
@@ -212,7 +212,7 @@ export default function ClientModal({
             </div>
             <button
               onClick={handleClose}
-              className={`transition-colors p-1.5 rounded-lg cursor-pointer ${
+              className={`transition-colors p-1.5 cursor-pointer ${
                 isDarkMode 
                   ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' 
                   : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
@@ -242,7 +242,7 @@ export default function ClientModal({
                     type="text"
                     value={newClient.name}
                     onChange={(e) => setNewClient(prev => ({ ...prev, name: e.target.value }))}
-                    className={`w-full pl-10 pr-4 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                    className={`w-full pl-10 pr-4 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                       isDarkMode 
                         ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                         : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
@@ -267,7 +267,7 @@ export default function ClientModal({
                     type="email"
                     value={newClient.email}
                     onChange={(e) => setNewClient(prev => ({ ...prev, email: e.target.value }))}
-                    className={`w-full pl-10 pr-4 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                    className={`w-full pl-10 pr-4 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                       isDarkMode 
                         ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                         : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
@@ -294,7 +294,7 @@ export default function ClientModal({
                         type="tel"
                         value={newClient.phone || ''}
                         onChange={(e) => setNewClient(prev => ({ ...prev, phone: e.target.value }))}
-                        className={`w-full pl-10 pr-4 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        className={`w-full pl-10 pr-4 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                           isDarkMode 
                             ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                             : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
@@ -318,7 +318,7 @@ export default function ClientModal({
                         type="text"
                         value={newClient.company || ''}
                         onChange={(e) => setNewClient(prev => ({ ...prev, company: e.target.value }))}
-                        className={`w-full pl-10 pr-4 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        className={`w-full pl-10 pr-4 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                           isDarkMode 
                             ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                             : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
@@ -341,7 +341,7 @@ export default function ClientModal({
                       <textarea
                         value={newClient.address || ''}
                         onChange={(e) => setNewClient(prev => ({ ...prev, address: e.target.value }))}
-                        className={`w-full pl-10 pr-4 py-2.5 text-sm border rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
+                        className={`w-full pl-10 pr-4 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none ${
                           isDarkMode 
                             ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                             : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
@@ -357,7 +357,7 @@ export default function ClientModal({
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <button
                   onClick={handleClose}
-                  className={`flex-1 py-2.5 px-4 rounded-lg transition-colors font-medium text-sm cursor-pointer ${
+                  className={`flex-1 py-2.5 px-4 transition-colors font-medium text-sm cursor-pointer ${
                     isDarkMode 
                       ? 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700' 
                       : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
@@ -368,7 +368,7 @@ export default function ClientModal({
                 <button 
                   onClick={editingClient ? handleUpdateClient : handleCreateClient}
                   disabled={isCreatingClient || isUpdatingClient}
-                  className="flex-1 bg-indigo-600 text-white py-2.5 px-4 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="flex-1 bg-indigo-600 text-white py-2.5 px-4 hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {(isCreatingClient || isUpdatingClient) ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
