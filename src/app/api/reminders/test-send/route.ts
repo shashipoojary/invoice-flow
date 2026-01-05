@@ -22,7 +22,10 @@ export async function POST(request: NextRequest) {
     const template = getReminderEmailTemplate(
       {
         invoiceNumber: invoice.invoice_number,
-        total: invoice.total,
+        total: invoice.total || invoice.total,
+        baseTotal: invoice.baseTotal || invoice.total,
+        lateFees: invoice.lateFees || 0,
+        hasLateFees: invoice.hasLateFees || (invoice.lateFees > 0),
         dueDate: invoice.due_date,
         publicToken: invoice.public_token || '',
         client: {

@@ -110,9 +110,9 @@ export default function InvoiceTemplateRenderer({ invoice }: InvoiceTemplateRend
 
 // Fast Invoice Template (60-second) - Fixed Design (No color customization)
 function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
-  // Fixed colors for fast invoice - no customization
-  const primaryColor = '#0D9488'   // Teal (only for amount)
-  const secondaryColor = '#3B82F6' // Blue
+  // Fixed colors for fast invoice - purple theme to match site
+  const primaryColor = '#5C2D91'   // Purple (for amount and accents)
+  const secondaryColor = '#8B5CF6' // Light Purple
   const [copiedMethod, setCopiedMethod] = useState<string | null>(null)
 
   const handleCopyPaymentMethod = async (methodType: string, details: string) => {
@@ -285,7 +285,7 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
               <div className="text-xs text-gray-500 mb-4">
                 Due: {new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
-              <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: primaryColor || '#0D9488', letterSpacing: '-0.5px' }}>
+              <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: primaryColor || '#5C2D91', letterSpacing: '-0.5px' }}>
                 ${invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0
                   ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2))
                   : (invoice.isOverdue ? (invoice.totalWithLateFees || calculateTotal()).toFixed(2) : calculateTotal().toFixed(2))}

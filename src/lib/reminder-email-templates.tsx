@@ -49,7 +49,55 @@ export const getReminderEmailTemplate = (
     }
   };
 
+  // Calculate days until due (negative if overdue, positive if before due, 0 if due today)
+  const calculateDaysUntilDue = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueDate = new Date(invoice.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+    const diffTime = dueDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const daysUntilDue = calculateDaysUntilDue();
+  const isBeforeDue = daysUntilDue > 0;
+  const isDueOrOverdue = daysUntilDue <= 0;
+
   const getMessage = () => {
+    // Before due date messages
+    if (isBeforeDue) {
+      switch (reminderType) {
+        case 'friendly':
+          return `
+            <p>This is a reminder that payment for invoice <strong>#${invoice.invoiceNumber}</strong> in the amount of <strong>$${(invoice.total || 0).toLocaleString()}</strong> is due in <strong>${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''}</strong>.</p>
+            <p>The payment will be due on <strong>${new Date(invoice.dueDate).toLocaleDateString()}</strong>. Please process the payment at your earliest to avoid late fee charges. If you have already processed this payment, please disregard this message.</p>
+            <p>If you have any questions regarding this invoice, please contact us.</p>
+          `;
+        case 'polite':
+          return `
+            <p>We are writing to remind you that payment for invoice <strong>#${invoice.invoiceNumber}</strong> in the amount of <strong>$${(invoice.total || 0).toLocaleString()}</strong> will be due in <strong>${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''}</strong>.</p>
+            <p>The payment will be due on <strong>${new Date(invoice.dueDate).toLocaleDateString()}</strong>. Please process the payment at your earliest to avoid late fee charges. If you have already processed this payment, please accept our apologies for this reminder.</p>
+            <p>Please remit payment at your earliest convenience or contact us if you have any questions regarding this invoice.</p>
+          `;
+        case 'firm':
+          return `
+            <p>We are following up on invoice <strong>#${invoice.invoiceNumber}</strong> in the amount of <strong>$${(invoice.total || 0).toLocaleString()}</strong>, which will be due in <strong>${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''}</strong>.</p>
+            <p>The payment will be due on <strong>${new Date(invoice.dueDate).toLocaleDateString()}</strong>. Please process the payment at your earliest to avoid late fee charges.</p>
+            <p>Please remit payment promptly or contact us to discuss payment arrangements.</p>
+          `;
+        case 'urgent':
+          return `
+            <p>This is an important notice regarding invoice <strong>#${invoice.invoiceNumber}</strong> in the amount of <strong>$${(invoice.total || 0).toLocaleString()}</strong>, which will be due in <strong>${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''}</strong>.</p>
+            <p>The payment will be due on <strong>${new Date(invoice.dueDate).toLocaleDateString()}</strong>. Please process the payment at your earliest to avoid late fee charges.</p>
+            <p>Payment should be processed before the due date. Please remit payment promptly or contact us to discuss this matter.</p>
+          `;
+        default:
+          return `<p>This is a reminder about your upcoming invoice.</p>`;
+      }
+    }
+    
+    // Due or overdue messages (original logic)
     switch (reminderType) {
       case 'friendly':
         return `
@@ -413,7 +461,7 @@ export const getReminderEmailTemplate = (
             ` : ''}
 
             ${invoice.hasLateFees && invoice.lateFees > 0 ? `
-              <div style="background-color: #fef2f2; border-left: 4px solid #EF4444; padding: 16px; margin: 16px 0; border-radius: 4px;">
+              <div style="background-color: #fef2f2; border-left: 4px solid #EF4444; padding: 12px 16px; margin: 16px 0;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                   <span style="color: #1F2937; font-size: 14px; font-weight: 500;">Invoice Amount:</span>
                   <span style="color: #1F2937; font-size: 14px; font-weight: 500;">$${(invoice.baseTotal || ((invoice.total || 0) - (invoice.lateFees || 0))).toLocaleString()}</span>

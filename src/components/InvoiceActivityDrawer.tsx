@@ -214,7 +214,28 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                 }
               }
             } else if (ev.type === 'late_fee_applied') {
-              const amount = ev.metadata?.amount || 0;
+              // Recalculate late fee amount to ensure it's correct (fixes existing incorrect amounts)
+              // Calculate base amount (remaining balance after partial payments)
+              // CRITICAL: Late fees should be calculated on remaining balance, not full invoice total
+              let baseAmount = invoice.total || 0;
+              if (payments && payments.length > 0) {
+                const totalPaid = payments.reduce((sum: number, p: any) => sum + parseFloat(p.amount?.toString() || '0'), 0);
+                if (totalPaid > 0) {
+                  baseAmount = Math.max(0, (invoice.total || 0) - totalPaid);
+                }
+              }
+              
+              // Get late fee settings
+              const lf = (invoice as any).lateFees || (invoice as any).late_fees;
+              let correctAmount = ev.metadata?.amount || 0; // Default to stored amount
+              
+              // Recalculate if late fee settings are available
+              if (lf && (lf.enabled || lf?.enabled === true)) {
+                correctAmount = lf.type === 'percentage' 
+                  ? (baseAmount * (lf.amount || 0)) / 100 
+                  : (lf.amount || 0);
+              }
+              
               // Use metadata appliedDate if available (more accurate), otherwise use created_at
               const displayDate = ev.metadata?.appliedDate || ev.created_at;
               const lateFeeDate = new Date(displayDate);
@@ -225,10 +246,31 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                 continue;
               }
               
+              // Update the event in database if amount is significantly different (more than $0.01 difference)
+              const storedAmount = ev.metadata?.amount || 0;
+              const amountDifference = Math.abs(storedAmount - correctAmount);
+              if (amountDifference > 0.01) {
+                try {
+                  await supabase
+                    .from('invoice_events')
+                    .update({
+                      metadata: {
+                        ...(ev.metadata || {}),
+                        amount: correctAmount,
+                        baseAmount,
+                        correctedAt: new Date().toISOString() // Track when correction was made
+                      }
+                    })
+                    .eq('id', ev.id);
+                } catch (updateError) {
+                  console.error('Error updating late fee event amount:', updateError);
+                }
+              }
+              
               const lateFeeItem = {
                 id: `latefee-${ev.id}`,
                 type: 'status',
-                title: `Late fee applied: $${amount.toLocaleString()}`,
+                title: `Late fee applied: $${correctAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
                 at: displayDate,
                 icon: 'overdue' as const
               };
@@ -513,7 +555,22 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                     .limit(1);
                   
                   if (!lateFeeEvents || lateFeeEvents.length === 0) {
-                    const amount = lf.type === 'percentage' ? (invoice.total * (lf.amount || 0)) / 100 : (lf.amount || 0);
+                    // Calculate base amount (remaining balance after partial payments)
+                    // CRITICAL: Late fees should be calculated on remaining balance, not full invoice total
+                    let baseAmount = invoice.total || 0;
+                    if (payments && payments.length > 0) {
+                      const totalPaid = payments.reduce((sum: number, p: any) => sum + parseFloat(p.amount?.toString() || '0'), 0);
+                      if (totalPaid > 0) {
+                        baseAmount = Math.max(0, (invoice.total || 0) - totalPaid);
+                      }
+                    }
+                    
+                    // Calculate late fee amount based on type
+                    // For percentage: calculate on remaining balance (after partial payments)
+                    // For fixed: use the fixed amount
+                    const amount = lf.type === 'percentage' 
+                      ? (baseAmount * (lf.amount || 0)) / 100 
+                      : (lf.amount || 0);
                     
                     // Calculate exact date when late fee should be applied
                     // This is: dueDate + gracePeriod days + 1 day (start of the day after grace period)
@@ -528,6 +585,7 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                         type: 'late_fee_applied',
                         metadata: { 
                           amount,
+                          baseAmount, // Store base amount for reference
                           appliedDate: appliedDate.toISOString(), // Store exact application date
                           gracePeriod: grace,
                           applicationDay: lateFeeApplicationDay
@@ -541,19 +599,60 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                     items.push({
                       id: `latefee-${invoice.id}`,
                       type: 'status',
-                      title: `Late fee applied: $${amount.toLocaleString()}`,
+                      title: `Late fee applied: $${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
                       at: appliedDate.toISOString(),
                       icon: 'overdue'
                     });
                   } else {
+                    // Recalculate late fee amount to ensure it's correct (fixes existing incorrect amounts)
+                    // Calculate base amount (remaining balance after partial payments)
+                    // CRITICAL: Late fees should be calculated on remaining balance, not full invoice total
+                    let baseAmount = invoice.total || 0;
+                    if (payments && payments.length > 0) {
+                      const totalPaid = payments.reduce((sum: number, p: any) => sum + parseFloat(p.amount?.toString() || '0'), 0);
+                      if (totalPaid > 0) {
+                        baseAmount = Math.max(0, (invoice.total || 0) - totalPaid);
+                      }
+                    }
+                    
+                    // Recalculate late fee amount based on type
+                    const correctAmount = lf.type === 'percentage' 
+                      ? (baseAmount * (lf.amount || 0)) / 100 
+                      : (lf.amount || 0);
+                    
                     // Use existing late fee event - prefer metadata date if available
                     const lateFeeEvent = lateFeeEvents[0];
                     const displayDate = lateFeeEvent.metadata?.appliedDate || lateFeeEvent.created_at;
+                    const storedAmount = lateFeeEvent.metadata?.amount || 0;
+                    
+                    // Use the correct calculated amount (not the stored one, which might be wrong)
+                    // If the stored amount differs significantly, update the database record
+                    const amountToDisplay = correctAmount;
+                    const amountDifference = Math.abs(storedAmount - correctAmount);
+                    
+                    // Update the event in database if amount is significantly different (more than $0.01 difference)
+                    if (amountDifference > 0.01) {
+                      try {
+                        await supabase
+                          .from('invoice_events')
+                          .update({
+                            metadata: {
+                              ...(lateFeeEvent.metadata || {}),
+                              amount: correctAmount,
+                              baseAmount,
+                              correctedAt: new Date().toISOString() // Track when correction was made
+                            }
+                          })
+                          .eq('id', lateFeeEvent.id);
+                      } catch (updateError) {
+                        console.error('Error updating late fee event amount:', updateError);
+                      }
+                    }
                     
                     items.push({
                       id: `latefee-${lateFeeEvent.id}`,
                       type: 'status',
-                      title: `Late fee applied: $${(lateFeeEvent.metadata?.amount || 0).toLocaleString()}`,
+                      title: `Late fee applied: $${amountToDisplay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
                       at: displayDate,
                       icon: 'overdue'
                     });

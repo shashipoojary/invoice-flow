@@ -461,15 +461,23 @@ export default function ReminderHistoryPage() {
       const items: React.ReactNode[] = [];
       
       if (totals.isPartiallyPaid) {
-        // Create complete string atomically - no partial rendering
-        const partialText = `Paid: $${totals.totalPaid.toFixed(2)} • Remaining: $${totals.baseAmount.toFixed(2)}`;
-        items.push(<div key="partial">{partialText}</div>);
+        // Pre-compute all values before creating string to ensure atomic rendering
+        const totalPaidStr = totals.totalPaid.toFixed(2);
+        const remainingStr = totals.baseAmount.toFixed(2);
+        // Create complete string atomically - render as single text node to prevent partial rendering
+        // Use inline-block and nowrap to prevent layout shift
+        const partialText = `Paid: $${totalPaidStr} • Remaining: $${remainingStr}`;
+        items.push(<div key="partial" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>{partialText}</div>);
       }
       
       if (totals.hasLateFees) {
-        // Create complete string atomically - no partial rendering
-        const lateFeesText = `Base $${totals.baseAmount.toFixed(2)} • Late fee $${totals.lateFeesAmount.toFixed(2)}`;
-        items.push(<div key="latefees">{lateFeesText}</div>);
+        // Pre-compute all values before creating string to ensure atomic rendering
+        const baseStr = totals.baseAmount.toFixed(2);
+        const lateFeeStr = totals.lateFeesAmount.toFixed(2);
+        // Create complete string atomically - render as single text node to prevent partial rendering
+        // Use inline-block and nowrap to prevent layout shift
+        const lateFeesText = `Base $${baseStr} • Late fee $${lateFeeStr}`;
+        items.push(<div key="latefees" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>{lateFeesText}</div>);
       }
       
       if (!totals.isPartiallyPaid && !totals.hasLateFees) {

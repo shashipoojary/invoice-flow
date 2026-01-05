@@ -225,10 +225,28 @@ export const RotatingAmountBreakdown = React.memo(({ breakdowns, rotationState }
     };
   }, [isAnimating]);
 
-  // Memoize computed values
-  const nextIndex = React.useMemo(() => (currentIndex + 1) % breakdowns.length, [currentIndex, breakdowns.length]);
+  // Memoize computed values - MUST be called before early returns to follow Rules of Hooks
+  const nextIndex = React.useMemo(() => 
+    breakdowns.length > 0 ? (currentIndex + 1) % breakdowns.length : 0, 
+    [currentIndex, breakdowns.length]
+  );
 
-  // Early returns
+  // Find the widest breakdown to use as placeholder for fixed width
+  // MUST be called before early returns to follow Rules of Hooks
+  const widestBreakdown = React.useMemo(() => {
+    if (breakdowns.length === 0) return null;
+    if (breakdowns.length === 1) return breakdowns[0];
+    return breakdowns.reduce((widest, current) => {
+      // Use the longest text content as the widest
+      const currentText = typeof current === 'string' ? current : 
+        (current as any)?.props?.children || '';
+      const widestText = typeof widest === 'string' ? widest : 
+        (widest as any)?.props?.children || '';
+      return String(currentText).length > String(widestText).length ? current : widest;
+    }, breakdowns[0]);
+  }, [breakdowns]);
+
+  // Early returns - AFTER all hooks
   if (breakdowns.length === 0) return null;
   if (breakdowns.length === 1) return <>{breakdowns[0]}</>;
 
@@ -239,7 +257,7 @@ export const RotatingAmountBreakdown = React.memo(({ breakdowns, rotationState }
   return (
     <div 
       className="relative overflow-hidden" 
-      style={{ height: '16px', position: 'relative' }}
+      style={{ height: '16px', position: 'relative', minWidth: '100%' }}
       aria-live="polite"
       aria-atomic="true"
     >
@@ -249,6 +267,7 @@ export const RotatingAmountBreakdown = React.memo(({ breakdowns, rotationState }
         style={{ 
           position: 'absolute',
           width: '100%',
+          whiteSpace: 'nowrap',
           transform: isAnimating ? 'translateY(100%)' : 'translateY(0)',
           transition: transitionStyle,
           willChange: isAnimating ? 'transform' : 'auto',
@@ -264,6 +283,7 @@ export const RotatingAmountBreakdown = React.memo(({ breakdowns, rotationState }
           style={{ 
             position: 'absolute',
             width: '100%',
+            whiteSpace: 'nowrap',
             transform: 'translateY(100%)',
             transition: `transform ${ANIMATION_DURATION}ms ease-in-out`,
             willChange: 'transform',
@@ -280,10 +300,12 @@ export const RotatingAmountBreakdown = React.memo(({ breakdowns, rotationState }
           height: 0, 
           overflow: 'hidden',
           pointerEvents: 'none',
+          whiteSpace: 'nowrap',
+          display: 'inline-block',
         }}
         aria-hidden="true"
       >
-        {breakdowns[currentIndex]}
+        {widestBreakdown}
       </div>
     </div>
   );

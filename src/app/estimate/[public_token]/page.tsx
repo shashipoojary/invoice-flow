@@ -632,27 +632,31 @@ export default function PublicEstimatePage() {
             </div>
           )}
 
-          {/* Summary */}
+          {/* Summary - Right-aligned for professional estimate layout */}
           <div className="mb-8 pb-6 border-b border-gray-200">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-900" style={{ color: '#1F2937' }}>Subtotal</span>
-              <span className="text-black">${estimate.subtotal.toFixed(2)}</span>
-            </div>
-            {estimate.discount > 0 && (
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
-                <span className="text-black">-${estimate.discount.toFixed(2)}</span>
+            <div className="flex justify-end">
+              <div className="w-full sm:w-1/2 lg:w-2/5 max-w-md">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Subtotal</span>
+                  <span className="text-black">${estimate.subtotal.toFixed(2)}</span>
+                </div>
+                {estimate.discount > 0 && (
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
+                    <span className="text-black">-${estimate.discount.toFixed(2)}</span>
+                  </div>
+                )}
+                {estimate.taxAmount > 0 && (
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
+                    <span className="text-black">${estimate.taxAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
+                  <span className="font-bold text-black">Total</span>
+                  <span className="font-bold text-black">${estimate.total.toFixed(2)}</span>
+                </div>
               </div>
-            )}
-            {estimate.taxAmount > 0 && (
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
-                <span className="text-black">${estimate.taxAmount.toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
-              <span className="font-bold text-black">Total</span>
-              <span className="font-bold text-black">${estimate.total.toFixed(2)}</span>
             </div>
           </div>
 

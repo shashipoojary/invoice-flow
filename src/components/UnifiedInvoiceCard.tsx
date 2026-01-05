@@ -105,16 +105,31 @@ export function UnifiedInvoiceCard({
   const breakdowns = React.useMemo(() => {
     const items: React.ReactNode[] = [];
     
+    // Calculate base amount (before late fees are added)
+    // When hasLateFees is true, remainingBalance includes late fees, so we need to subtract them
+    const baseAmount = dueCharges.hasLateFees 
+      ? dueCharges.remainingBalance - dueCharges.lateFeeAmount
+      : dueCharges.remainingBalance;
+    
     if (dueCharges.isPartiallyPaid) {
-      // Create complete string atomically - no partial rendering
-      const partialText = `Paid: $${dueCharges.totalPaid.toFixed(2)} • Remaining: $${dueCharges.remainingBalance.toFixed(2)}`;
-      items.push(<div key="partial">{partialText}</div>);
+      // Pre-compute all values before creating string to ensure atomic rendering
+      // Use baseAmount (not remainingBalance) to show correct remaining balance before late fees
+      const totalPaidStr = dueCharges.totalPaid.toFixed(2);
+      const remainingStr = baseAmount.toFixed(2);
+      // Create complete string atomically - render as single text node to prevent partial rendering
+      // Use inline-block and nowrap to prevent layout shift
+      const partialText = `Paid: $${totalPaidStr} • Remaining: $${remainingStr}`;
+      items.push(<div key="partial" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>{partialText}</div>);
     }
     
     if (dueCharges.hasLateFees) {
-      // Create complete string atomically - no partial rendering
-      const lateFeesText = `Base $${dueCharges.remainingBalance.toFixed(2)} • Late fee $${dueCharges.lateFeeAmount.toFixed(2)}`;
-      items.push(<div key="latefees">{lateFeesText}</div>);
+      // Pre-compute all values before creating string to ensure atomic rendering
+      const baseStr = baseAmount.toFixed(2);
+      const lateFeeStr = dueCharges.lateFeeAmount.toFixed(2);
+      // Create complete string atomically - render as single text node to prevent partial rendering
+      // Use inline-block and nowrap to prevent layout shift
+      const lateFeesText = `Base $${baseStr} • Late fee $${lateFeeStr}`;
+      items.push(<div key="latefees" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>{lateFeesText}</div>);
     }
     
     if (!dueCharges.isPartiallyPaid && !dueCharges.hasLateFees) {
