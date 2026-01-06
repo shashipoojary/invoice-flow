@@ -64,12 +64,20 @@ class DodoPaymentClient {
         note: 'Dodo Payment uses single API key. 401 means key recognized but may lack write permissions.'
       });
       
-      // Try different endpoint and auth combinations
-      const endpoint = '/payments/create';
+      // Try different endpoints - Dodo Payment might use checkout-sessions instead
+      const endpoints = [
+        '/checkout-sessions',
+        '/v1/checkout-sessions',
+        '/api/v1/checkout-sessions',
+        '/api/checkout-sessions',
+        '/payments/create',
+        '/v1/payments/create',
+        '/api/v1/payments/create',
+      ];
       
       // Try multiple authentication methods
       // Since X-API-Key returned 401 (recognized but unauthorized), it's likely the correct format
-      // The 401 probably means: API key is correct format but lacks write permissions
+      // The 401 probably means: API key is correct format but endpoint or request format is wrong
       const authMethods: Array<{ name: string; headers: Record<string, string>; bodyExtra?: Record<string, any> }> = [
         // Primary: X-API-Key header (we know this format is recognized)
         {
@@ -125,126 +133,142 @@ class DodoPaymentClient {
       ];
       
       let lastError: any = null;
+      let lastSuccessfulEndpoint: string | null = null;
       
-      for (const authMethod of authMethods) {
-        try {
-          console.log(`🔍 Trying auth method: ${authMethod.name} on ${this.baseUrl}${endpoint}`);
-          
-          const requestBody = {
-            amount: params.amount,
-            currency: params.currency,
-            description: params.description,
-            customer: {
-              email: params.customerEmail,
-              name: params.customerName,
-            },
-            metadata: params.metadata || {},
-            success_url: params.successUrl,
-            cancel_url: params.cancelUrl,
-            mode: 'payment', // One-time payment
-            ...(authMethod.bodyExtra || {}), // Add any extra body params for this auth method
-          };
-          
-          const response = await fetch(`${this.baseUrl}${endpoint}`, {
-            method: 'POST',
-            headers: authMethod.headers,
-            body: JSON.stringify(requestBody),
-          });
-
-          // Get response text first to handle non-JSON responses
-          const responseText = await response.text();
-          
-          // Log raw response for debugging
-          console.log(`Dodo Payment API response (${authMethod.name}):`, {
-            status: response.status,
-            statusText: response.statusText,
-            url: `${this.baseUrl}${endpoint}`,
-            responseLength: responseText.length,
-            responsePreview: responseText.substring(0, 200)
-          });
-
-          // If 404 or 405, try next auth method
-          if (response.status === 404) {
-            console.log(`❌ Auth method "${authMethod.name}" returned 404, trying next...`);
-            lastError = { status: 404, authMethod: authMethod.name };
-            continue;
-          }
-          
-          if (response.status === 405) {
-            console.log(`❌ Auth method "${authMethod.name}" returned 405 (Method Not Allowed), trying next...`);
-            lastError = { status: 405, authMethod: authMethod.name, hint: 'Endpoint exists but authentication failed' };
-            continue;
-          }
-          
-          // 401/403 means auth failed but endpoint exists
-          if (response.status === 401 || response.status === 403) {
-            console.log(`❌ Auth method "${authMethod.name}" returned ${response.status} (Unauthorized)`);
-            console.log(`   Response: ${responseText.substring(0, 200)}`);
-            console.log(`   💡 IMPORTANT: This means the header format is CORRECT!`);
-            console.log(`   🔧 The issue is likely:`);
-            console.log(`      1. API key doesn't have WRITE ACCESS enabled`);
-            console.log(`         → Go to Dodo Dashboard → Developer → API Keys`);
-            console.log(`         → Find your key and enable "Write Access"`);
-            console.log(`      2. API key is wrong/invalid`);
-            console.log(`         → Copy the key fresh from Dodo dashboard`);
-            console.log(`      3. API key is for wrong environment`);
-            console.log(`         → Make sure you're using sandbox key for sandbox`);
-            lastError = { status: response.status, authMethod: authMethod.name, responseText, hint: 'Header format correct - check API key has write access enabled' };
-            continue;
-          }
-
-          // Try to parse JSON, but handle empty or invalid responses
-          let data;
+      // Try each endpoint with each auth method
+      for (const endpoint of endpoints) {
+        for (const authMethod of authMethods) {
           try {
-            data = responseText ? JSON.parse(responseText) : {};
-          } catch (parseError) {
-            console.error('Failed to parse Dodo Payment response as JSON:', {
-              error: parseError,
-              responseText: responseText.substring(0, 500)
-            });
-            lastError = { status: response.status, error: 'Invalid JSON response', endpoint };
+            console.log(`🔍 Trying: ${authMethod.name} on ${this.baseUrl}${endpoint}`);
+            
+            // Try different request body formats
+            const requestBodyVariations = [
+              // Format 1: Standard format
+              {
+                amount: params.amount,
+                currency: params.currency,
+                description: params.description,
+                customer: {
+                  email: params.customerEmail,
+                  name: params.customerName,
+                },
+                metadata: params.metadata || {},
+                success_url: params.successUrl,
+                cancel_url: params.cancelUrl,
+                mode: 'payment',
+                ...(authMethod.bodyExtra || {}),
+              },
+              // Format 2: Checkout session format
+              {
+                amount: params.amount,
+                currency: params.currency,
+                description: params.description,
+                customer_email: params.customerEmail,
+                customer_name: params.customerName,
+                metadata: params.metadata || {},
+                successUrl: params.successUrl,
+                cancelUrl: params.cancelUrl,
+                ...(authMethod.bodyExtra || {}),
+              },
+              // Format 3: Minimal format
+              {
+                amount: params.amount,
+                currency: params.currency,
+                description: params.description,
+                customerEmail: params.customerEmail,
+                customerName: params.customerName,
+                successUrl: params.successUrl,
+                cancelUrl: params.cancelUrl,
+                ...(authMethod.bodyExtra || {}),
+              },
+            ];
+            
+            for (let i = 0; i < requestBodyVariations.length; i++) {
+              const requestBody = requestBodyVariations[i];
+              const formatName = i === 0 ? 'standard' : i === 1 ? 'checkout-session' : 'minimal';
+              
+              console.log(`   📦 Trying body format: ${formatName}`);
+              
+              const response = await fetch(`${this.baseUrl}${endpoint}`, {
+                method: 'POST',
+                headers: authMethod.headers,
+                body: JSON.stringify(requestBody),
+              });
+
+              // Get response text first to handle non-JSON responses
+              const responseText = await response.text();
+              
+              // Log raw response for debugging
+              console.log(`   Response (${formatName}):`, {
+                status: response.status,
+                statusText: response.statusText,
+                responseLength: responseText.length,
+                responsePreview: responseText.substring(0, 200)
+              });
+
+              // If 404, try next endpoint/auth/format combination
+              if (response.status === 404) {
+                continue; // Try next format
+              }
+              
+              // If 405, endpoint exists but method/format wrong
+              if (response.status === 405) {
+                continue; // Try next format
+              }
+          
+              // 401/403 means auth failed but endpoint exists
+              if (response.status === 401 || response.status === 403) {
+                // If this is the first 401 for this endpoint, note it
+                if (!lastSuccessfulEndpoint || lastSuccessfulEndpoint !== endpoint) {
+                  console.log(`   ⚠️ ${endpoint} returned ${response.status} - endpoint exists but auth/format wrong`);
+                }
+                continue; // Try next format
+              }
+
+              // Try to parse JSON, but handle empty or invalid responses
+              let data;
+              try {
+                data = responseText ? JSON.parse(responseText) : {};
+              } catch (parseError) {
+                continue; // Try next format
+              }
+
+              if (!response.ok) {
+                continue; // Try next format
+              }
+
+              // SUCCESS! We found the right combination
+              lastSuccessfulEndpoint = endpoint;
+              console.log(`✅ SUCCESS! Found working combination:`);
+              console.log(`   Endpoint: ${endpoint}`);
+              console.log(`   Auth: ${authMethod.name}`);
+              console.log(`   Body format: ${formatName}`);
+              console.log(`   Payment ID: ${data.payment_id || data.id || 'N/A'}`);
+
+              return {
+                success: true,
+                paymentLink: data.payment_link_url || data.url || data.payment_link || data.checkout_url,
+                paymentId: data.payment_id || data.id || data.session_id,
+              };
+            } // End of requestBodyVariations loop
+          } catch (fetchError: any) {
+            console.error(`Error trying ${authMethod.name} on ${endpoint}:`, fetchError);
+            lastError = { error: fetchError.message, authMethod: authMethod.name, endpoint };
             continue;
           }
-
-          if (!response.ok) {
-            console.error('Dodo Payment API error response:', {
-              status: response.status,
-              statusText: response.statusText,
-              authMethod: authMethod.name,
-              data
-            });
-            // For other errors, continue trying other auth methods
-            lastError = { status: response.status, data, authMethod: authMethod.name };
-            continue;
-          }
-
-          // Log successful payment link creation for debugging
-          console.log(`✅ Dodo Payment link created using auth method: ${authMethod.name}`, {
-            paymentId: data.payment_id || data.id,
-            hasLink: !!(data.payment_link_url || data.url)
-          });
-
-          return {
-            success: true,
-            paymentLink: data.payment_link_url || data.url || data.payment_link,
-            paymentId: data.payment_id || data.id,
-          };
-        } catch (fetchError: any) {
-          console.error(`Error trying auth method ${authMethod.name}:`, fetchError);
-          lastError = { error: fetchError.message, authMethod: authMethod.name };
-          continue;
-        }
-      }
+        } // End of authMethods loop
+      } // End of endpoints loop
       
-      // If we get here, all auth methods failed
-      console.error('❌ All Dodo Payment authentication methods failed. Last error:', lastError);
-      console.error('💡 SOLUTION: Check Dodo Payment documentation for:');
-      console.error('   1. Correct authentication header format');
-      console.error('   2. Verify your API key is valid and active');
-      console.error('   3. Check if you need to enable API access in dashboard');
+      // If we get here, all combinations failed
+      console.error('❌ All endpoint/auth/format combinations failed.');
+      console.error('💡 Since you have Read/Write access, the issue is likely:');
+      console.error('   1. Wrong endpoint - Dodo might use a different path');
+      console.error('   2. Wrong request body format - field names might be different');
+      console.error('   3. API key might need to be activated/refreshed');
+      console.error('   4. Check Dodo Payment API docs for exact endpoint and format');
       return {
         success: false,
-        error: `Authentication failed with all methods. Please verify your Dodo Payment API key is correct and active. Last status: ${lastError?.status || 'unknown'}`,
+        error: `Could not find working endpoint/format combination. Please check Dodo Payment API documentation for the correct endpoint and request format. Last tried: ${lastError?.endpoint || 'unknown'}`,
       };
     } catch (error: any) {
       console.error('Dodo Payment API error:', error);
