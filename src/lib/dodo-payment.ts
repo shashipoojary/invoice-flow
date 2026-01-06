@@ -328,12 +328,13 @@ class DodoPaymentClient {
       const actualSignature = signature.trim();
       
       // Compute expected signature as base64 (Svix format)
+      // HMAC-SHA256 returns raw bytes, then we encode to base64
       const expectedSignatureBase64 = crypto
         .createHmac('sha256', secret)
         .update(payload)
         .digest('base64');
       
-      // Parse both as base64
+      // Both signatures are base64 strings, decode both to bytes for secure comparison
       let receivedSignatureBytes: Buffer;
       let expectedSignatureBytes: Buffer;
       
@@ -342,7 +343,8 @@ class DodoPaymentClient {
         expectedSignatureBytes = Buffer.from(expectedSignatureBase64, 'base64');
       } catch (parseError) {
         console.error('Failed to parse signature as base64:', {
-          signaturePrefix: actualSignature.substring(0, 30),
+          receivedSignature: actualSignature.substring(0, 30),
+          expectedSignature: expectedSignatureBase64.substring(0, 30),
           error: parseError,
         });
         return false;
@@ -360,7 +362,16 @@ class DodoPaymentClient {
       }
       
       // Now safe to use timing-safe comparison
-      return crypto.timingSafeEqual(receivedSignatureBytes, expectedSignatureBytes);
+      const isValid = crypto.timingSafeEqual(receivedSignatureBytes, expectedSignatureBytes);
+      
+      if (!isValid) {
+        console.warn('Webhook signature mismatch:', {
+          receivedBase64: actualSignature.substring(0, 50),
+          expectedBase64: expectedSignatureBase64.substring(0, 50),
+        });
+      }
+      
+      return isValid;
     } catch (error: any) {
       console.error('Webhook signature verification error:', {
         error: error.message,

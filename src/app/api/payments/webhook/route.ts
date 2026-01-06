@@ -85,7 +85,17 @@ export async function POST(request: NextRequest) {
             signaturesCount: signatures.length,
             bodyLength: body.length,
             secretLength: webhookSecret.length,
+            webhookTimestamp,
+            signedPayloadLength: webhookTimestamp ? `${webhookTimestamp}.${body}`.length : body.length,
           });
+          
+          // Log more details for debugging
+          if (signatures.length > 0) {
+            console.error('   Signature details:', {
+              receivedSignature: signatures[0].substring(0, 50),
+              signedPayload: webhookTimestamp ? `${webhookTimestamp}.${body.substring(0, 100)}...` : body.substring(0, 100),
+            });
+          }
           
           // For now, log but don't reject (to allow testing)
           // In production, you might want to reject invalid signatures
