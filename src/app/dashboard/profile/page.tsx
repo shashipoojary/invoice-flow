@@ -523,12 +523,17 @@ export default function ProfilePage() {
   const [isUpdatingSubscription, setIsUpdatingSubscription] = useState(false);
 
   const handleUpdateSubscription = async (plan: string) => {
-    // Skip payment for free plan
-    if (plan === 'free') {
-      // Direct update for downgrading to free
-      try {
-        setIsUpdatingSubscription(true);
-        const headers = await getAuthHeaders();
+    // If already on this plan, do nothing
+    if (profile?.subscription?.plan === plan) {
+      return;
+    }
+
+    try {
+      setIsUpdatingSubscription(true);
+      const headers = await getAuthHeaders();
+
+      // For free and pay_per_invoice plans, update directly without payment
+      if (plan === 'free' || plan === 'pay_per_invoice') {
         const response = await fetch('/api/subscription', {
           method: 'PUT',
           headers: { ...headers, 'Content-Type': 'application/json' },
@@ -540,23 +545,22 @@ export default function ProfilePage() {
           throw new Error(error.error || 'Failed to update subscription');
         }
 
-        showSuccess(`Subscription updated to Free plan`);
-        // Refresh page to show updated subscription
-        window.location.reload();
-      } catch (error: any) {
-        showError(error.message || 'Failed to update subscription');
-      } finally {
-        setIsUpdatingSubscription(false);
+        const result = await response.json();
+        if (result.success) {
+          showSuccess(`Subscription updated to ${plan === 'free' ? 'Free' : 'Pay Per Invoice'} plan`);
+          // Reload profile and subscription usage
+          await Promise.all([loadProfile(), loadSubscriptionUsage()]);
+          // Force a small delay to ensure state updates, then reload if needed
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
+        } else {
+          throw new Error('Failed to update subscription');
+        }
+        return;
       }
-      return;
-    }
 
-    // For paid plans, create payment checkout
-    try {
-      setIsUpdatingSubscription(true);
-      const headers = await getAuthHeaders();
-      
-      // Create payment checkout session
+      // For monthly plan, create payment checkout
       const checkoutResponse = await fetch('/api/payments/checkout', {
         method: 'POST',
         headers: {
@@ -577,7 +581,9 @@ export default function ProfilePage() {
       if (data.requiresPayment === false || plan === 'pay_per_invoice') {
         showSuccess(data.message || `Pay Per Invoice plan activated! You will be charged $0.50 per invoice when you create or send invoices.`);
         await Promise.all([loadProfile(), loadSubscriptionUsage()]);
-        setShowSubscriptionModal(false);
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
         return;
       }
 
@@ -591,6 +597,7 @@ export default function ProfilePage() {
     } catch (error: any) {
       console.error('Error updating subscription:', error);
       showError(error.message || 'Failed to update subscription');
+    } finally {
       setIsUpdatingSubscription(false);
     }
   };
@@ -1264,14 +1271,19 @@ export default function ProfilePage() {
                   </ul>
                   <button
                     onClick={() => handleUpdateSubscription('free')}
-                    disabled={profile?.subscription?.plan === 'free'}
-                    className={`w-full px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${
+                    disabled={isUpdatingSubscription || profile?.subscription?.plan === 'free'}
+                    className={`w-full px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
                       profile?.subscription?.plan === 'free'
                         ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer'
                     }`}
                   >
-                    {profile?.subscription?.plan === 'free' ? 'Current' : 'Select'}
+                    {isUpdatingSubscription ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Switching...</span>
+                      </>
+                    ) : profile?.subscription?.plan === 'free' ? 'Current' : 'Select'}
                   </button>
                 </div>
 
@@ -1323,14 +1335,19 @@ export default function ProfilePage() {
                   </ul>
                   <button
                     onClick={() => handleUpdateSubscription('monthly')}
-                    disabled={profile?.subscription?.plan === 'monthly'}
-                    className={`w-full px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${
+                    disabled={isUpdatingSubscription || profile?.subscription?.plan === 'monthly'}
+                    className={`w-full px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
                       profile?.subscription?.plan === 'monthly'
                         ? 'bg-indigo-200 text-indigo-700 cursor-not-allowed'
                         : 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
                     }`}
                   >
-                    {profile?.subscription?.plan === 'monthly' ? 'Current' : 'Upgrade'}
+                    {isUpdatingSubscription ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Processing...</span>
+                      </>
+                    ) : profile?.subscription?.plan === 'monthly' ? 'Current' : 'Upgrade'}
                   </button>
                 </div>
 
@@ -1363,14 +1380,19 @@ export default function ProfilePage() {
                   </ul>
                   <button
                     onClick={() => handleUpdateSubscription('pay_per_invoice')}
-                    disabled={profile?.subscription?.plan === 'pay_per_invoice'}
-                    className={`w-full px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${
+                    disabled={isUpdatingSubscription || profile?.subscription?.plan === 'pay_per_invoice'}
+                    className={`w-full px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
                       profile?.subscription?.plan === 'pay_per_invoice'
                         ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer'
                     }`}
                   >
-                    {profile?.subscription?.plan === 'pay_per_invoice' ? 'Current' : 'Select'}
+                    {isUpdatingSubscription ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Switching...</span>
+                      </>
+                    ) : profile?.subscription?.plan === 'pay_per_invoice' ? 'Current' : 'Select'}
                   </button>
                 </div>
               </div>
