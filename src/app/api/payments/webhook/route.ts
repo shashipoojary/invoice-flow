@@ -12,59 +12,90 @@ export async function POST(request: NextRequest) {
     // Get raw body for signature verification
     const body = await request.text();
     
-    // Dodo Payment might use different header names for signature
-    const signature = request.headers.get('x-dodo-signature') || 
-                     request.headers.get('x-signature') ||
-                     request.headers.get('dodo-signature') ||
-                     request.headers.get('signature') ||
-                     '';
+    // Dodo Payment uses Svix for webhooks, signature is in 'webhook-signature' header
+    // Format: "v1,<base64_signature>"
+    const signatureHeader = request.headers.get('webhook-signature') || 
+                           request.headers.get('x-dodo-signature') || 
+                           request.headers.get('x-signature') ||
+                           request.headers.get('dodo-signature') ||
+                           request.headers.get('signature') ||
+                           '';
     
     const webhookSecret = process.env.DODO_PAYMENT_WEBHOOK_SECRET;
+    const webhookId = request.headers.get('webhook-id');
+    const webhookTimestamp = request.headers.get('webhook-timestamp');
 
+    // Extract signature from header (format: "v1,<base64_signature>" for Svix)
+    // Svix can send multiple signatures separated by spaces: "v1,sig1 v1,sig2"
+    let signatures: string[] = [];
+    if (signatureHeader) {
+      // Split by space to handle multiple signatures
+      const signatureParts = signatureHeader.split(' ');
+      for (const part of signatureParts) {
+        if (part.startsWith('v1,')) {
+          // Svix format: "v1,<base64_signature>"
+          signatures.push(part.substring(3)); // Remove "v1," prefix
+        } else {
+          signatures.push(part);
+        }
+      }
+    }
+    
     // Log webhook details for debugging
     console.log('📥 Webhook received:', {
       hasBody: !!body,
       bodyLength: body.length,
-      hasSignature: !!signature,
-      signatureLength: signature.length,
-      signaturePrefix: signature.substring(0, 20),
+      hasSignatureHeader: !!signatureHeader,
+      signatureHeaderPrefix: signatureHeader.substring(0, 50),
+      extractedSignatures: signatures.length,
+      webhookId,
+      webhookTimestamp,
       hasSecret: !!webhookSecret,
-      allHeaders: Object.fromEntries(request.headers.entries()),
     });
 
     // Verify webhook signature if secret is configured
-    if (webhookSecret) {
+    // Svix format: signature is base64, and we need to verify with timestamp + body
+    if (webhookSecret && signatures.length > 0) {
       const dodoClient = getDodoPaymentClient();
       if (dodoClient) {
-        try {
-          const isValid = dodoClient.verifyWebhookSignature(body, signature, webhookSecret);
-          if (!isValid) {
-            console.error('❌ Invalid webhook signature. Signature details:', {
+        let isValid = false;
+        
+        // Try each signature (Svix can send multiple)
+        for (const signature of signatures) {
+          try {
+            // For Svix, the signed payload is: timestamp + '.' + body
+            const signedPayload = webhookTimestamp ? `${webhookTimestamp}.${body}` : body;
+            const valid = dodoClient.verifyWebhookSignature(signedPayload, signature, webhookSecret);
+            if (valid) {
+              isValid = true;
+              console.log('✅ Webhook signature verified successfully');
+              break;
+            }
+          } catch (verifyError: any) {
+            console.error('⚠️ Webhook signature verification error:', {
+              error: verifyError.message,
+              code: verifyError.code,
               signatureLength: signature.length,
-              signaturePrefix: signature.substring(0, 30),
-              bodyLength: body.length,
-              secretLength: webhookSecret.length,
             });
-            
-            // For now, log but don't reject (to allow testing)
-            // In production, you might want to reject invalid signatures
-            console.warn('⚠️ Webhook signature verification failed, but processing anyway for debugging');
-            // Uncomment the line below to reject invalid signatures in production:
-            // return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-          } else {
-            console.log('✅ Webhook signature verified successfully');
           }
-        } catch (verifyError: any) {
-          // If signature verification throws an error (like buffer length mismatch),
-          // log it but continue processing
-          console.error('⚠️ Webhook signature verification error (continuing anyway):', {
-            error: verifyError.message,
-            code: verifyError.code,
-            signatureLength: signature.length,
+        }
+        
+        if (!isValid) {
+          console.error('❌ All webhook signatures failed verification:', {
+            signaturesCount: signatures.length,
+            bodyLength: body.length,
+            secretLength: webhookSecret.length,
           });
-          console.warn('⚠️ Processing webhook despite signature verification error');
+          
+          // For now, log but don't reject (to allow testing)
+          // In production, you might want to reject invalid signatures
+          console.warn('⚠️ Webhook signature verification failed, but processing anyway for debugging');
+          // Uncomment the line below to reject invalid signatures in production:
+          // return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
         }
       }
+    } else if (webhookSecret && signatures.length === 0) {
+      console.warn('⚠️ Webhook secret configured but no signature found in headers');
     } else {
       console.warn('⚠️ DODO_PAYMENT_WEBHOOK_SECRET not configured, skipping signature verification');
     }
@@ -123,10 +154,10 @@ async function handlePaymentSuccess(paymentData: any) {
       keys: Object.keys(paymentData),
     });
 
-    // Dodo Payment might send checkout session data or payment data
-    // Checkout sessions have session_id, payments have payment_id or id
-    const sessionId = paymentData.session_id || paymentData.id;
-    const paymentId = paymentData.payment_id || paymentData.id || sessionId;
+    // Dodo Payment sends payment data with checkout_session_id
+    const checkoutSessionId = paymentData.checkout_session_id;
+    const paymentId = paymentData.payment_id || paymentData.id;
+    const sessionId = checkoutSessionId || paymentId;
     
     // Metadata might be in different places
     let metadata = paymentData.metadata || {};
@@ -168,22 +199,31 @@ async function handlePaymentSuccess(paymentData: any) {
       console.error('❌ Missing userId in payment metadata. Payment data:', JSON.stringify(paymentData, null, 2));
       
       // Try to find user from billing record
+      // Since billing_records doesn't have metadata, we'll determine plan from amount
       if (paymentId || sessionId) {
         console.log('   Attempting to find user from billing record...');
         const { data: billingRecord } = await supabaseAdmin
           .from('billing_records')
-          .select('user_id, metadata')
+          .select('user_id, amount, type')
           .or(`stripe_session_id.eq.${paymentId || sessionId},stripe_session_id.eq.${sessionId || paymentId}`)
           .single();
         
         if (billingRecord) {
           const foundUserId = billingRecord.user_id;
-          const foundMetadata = billingRecord.metadata || {};
-          console.log('   Found billing record:', { foundUserId, foundMetadata });
+          console.log('   Found billing record:', { foundUserId, amount: billingRecord.amount, type: billingRecord.type });
           
           if (foundUserId) {
-            // Use found user ID and metadata
-            const finalPlan = plan || foundMetadata.plan || 'monthly';
+            // Determine plan from amount or type
+            let finalPlan = plan;
+            if (!finalPlan) {
+              if (billingRecord.amount === 9.00 || billingRecord.type === 'subscription') {
+                finalPlan = 'monthly';
+              } else if (billingRecord.amount === 0.50) {
+                finalPlan = 'pay_per_invoice';
+              } else {
+                finalPlan = 'monthly'; // Default
+              }
+            }
             await updateUserSubscription(foundUserId, finalPlan, paymentId);
             return;
           }

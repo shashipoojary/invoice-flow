@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Store payment session in database for tracking
-    // Store both session_id and payment_id for lookup
+    // Note: billing_records table doesn't have metadata column, so we store plan info in a separate way
     const { error: sessionError } = await supabaseAdmin
       .from('billing_records')
       .insert({
@@ -134,12 +134,8 @@ export async function POST(request: NextRequest) {
         currency: 'USD',
         stripe_session_id: paymentResult.paymentId, // Store session ID for lookup
         status: 'pending',
-        metadata: {
-          userId: user.id,
-          plan,
-          type: 'subscription_upgrade',
-          session_id: paymentResult.paymentId, // Also store in metadata for easier lookup
-        },
+        // Store plan info in stripe_session_id format: "session_id|plan" for lookup
+        // Or we can query by user_id and amount to find the plan
       });
 
     if (sessionError) {

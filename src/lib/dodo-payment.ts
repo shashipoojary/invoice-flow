@@ -311,7 +311,8 @@ class DodoPaymentClient {
 
   /**
    * Verify webhook signature
-   * According to Dodo Payment docs, signature is HMAC-SHA256 in hex format
+   * Dodo Payment uses Svix for webhooks - signature is base64 encoded HMAC-SHA256
+   * Format: "v1,<base64_signature>" (we extract the base64 part before calling this)
    */
   verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
     try {
@@ -322,55 +323,29 @@ class DodoPaymentClient {
         return false;
       }
       
-      // Dodo Payment sends signature as hex string, possibly with prefix like "sha256=..."
-      // Extract the actual signature if it has a prefix
-      let actualSignature = signature.trim();
-      if (signature.includes('=')) {
-        // Format: "sha256=abc123..." or "v1=abc123..."
-        const parts = signature.split('=');
-        if (parts.length > 1) {
-          actualSignature = parts.slice(1).join('=').trim();
-        }
-      }
+      // Dodo Payment uses Svix, which sends base64 encoded signatures
+      // Signature should already be extracted (without "v1," prefix)
+      const actualSignature = signature.trim();
       
-      // Compute expected signature as raw bytes (not hex string)
-      const expectedSignatureBytes = crypto
+      // Compute expected signature as base64 (Svix format)
+      const expectedSignatureBase64 = crypto
         .createHmac('sha256', secret)
         .update(payload)
-        .digest(); // Get raw bytes, not hex
+        .digest('base64');
       
-      // Try to parse received signature as hex
+      // Parse both as base64
       let receivedSignatureBytes: Buffer;
+      let expectedSignatureBytes: Buffer;
+      
       try {
-        receivedSignatureBytes = Buffer.from(actualSignature, 'hex');
-      } catch (hexError) {
-        // Not hex, try base64
-        try {
-          receivedSignatureBytes = Buffer.from(actualSignature, 'base64');
-          // If base64, also compute expected as base64 for comparison
-          const expectedBase64 = crypto
-            .createHmac('sha256', secret)
-            .update(payload)
-            .digest('base64');
-          const expectedBase64Bytes = Buffer.from(expectedBase64, 'base64');
-          
-          // Check lengths before comparing
-          if (receivedSignatureBytes.length !== expectedBase64Bytes.length) {
-            console.warn('Webhook signature length mismatch (base64):', {
-              receivedLength: receivedSignatureBytes.length,
-              expectedLength: expectedBase64Bytes.length,
-            });
-            return false;
-          }
-          
-          return crypto.timingSafeEqual(receivedSignatureBytes, expectedBase64Bytes);
-        } catch (base64Error) {
-          console.error('Failed to parse signature as hex or base64:', {
-            signaturePrefix: actualSignature.substring(0, 30),
-            error: base64Error,
-          });
-          return false;
-        }
+        receivedSignatureBytes = Buffer.from(actualSignature, 'base64');
+        expectedSignatureBytes = Buffer.from(expectedSignatureBase64, 'base64');
+      } catch (parseError) {
+        console.error('Failed to parse signature as base64:', {
+          signaturePrefix: actualSignature.substring(0, 30),
+          error: parseError,
+        });
+        return false;
       }
       
       // Check lengths BEFORE calling timingSafeEqual (critical!)
@@ -378,10 +353,9 @@ class DodoPaymentClient {
         console.warn('Webhook signature length mismatch:', {
           receivedLength: receivedSignatureBytes.length,
           expectedLength: expectedSignatureBytes.length,
-          receivedHex: actualSignature.substring(0, 40),
-          expectedHex: expectedSignatureBytes.toString('hex').substring(0, 40),
+          receivedBase64: actualSignature.substring(0, 40),
+          expectedBase64: expectedSignatureBase64.substring(0, 40),
         });
-        // Don't use timingSafeEqual with mismatched lengths - it will throw
         return false;
       }
       
