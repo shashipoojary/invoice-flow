@@ -311,6 +311,7 @@ class DodoPaymentClient {
 
   /**
    * Verify webhook signature
+   * According to Dodo Payment docs, signature is HMAC-SHA256 in hex format
    */
   verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
     try {
@@ -321,81 +322,77 @@ class DodoPaymentClient {
         return false;
       }
       
-      // Dodo Payment might send signature in different formats:
-      // - Plain hex string: "abc123..."
-      // - With prefix: "sha256=abc123..." or "v1=abc123..."
-      // - Base64 encoded
-      
+      // Dodo Payment sends signature as hex string, possibly with prefix like "sha256=..."
       // Extract the actual signature if it has a prefix
       let actualSignature = signature.trim();
       if (signature.includes('=')) {
         // Format: "sha256=abc123..." or "v1=abc123..."
         const parts = signature.split('=');
         if (parts.length > 1) {
-          actualSignature = parts.slice(1).join('=').trim(); // Handle cases where signature itself contains '='
+          actualSignature = parts.slice(1).join('=').trim();
         }
       }
       
-      // Compute expected signature
-      const expectedSignature = crypto
+      // Compute expected signature as raw bytes (not hex string)
+      const expectedSignatureBytes = crypto
         .createHmac('sha256', secret)
         .update(payload)
-        .digest('hex');
+        .digest(); // Get raw bytes, not hex
       
-      // Try hex comparison first
+      // Try to parse received signature as hex
+      let receivedSignatureBytes: Buffer;
       try {
-        const receivedBuffer = Buffer.from(actualSignature, 'hex');
-        const expectedBuffer = Buffer.from(expectedSignature, 'hex');
-        
-        // Check lengths first - timingSafeEqual requires same length
-        if (receivedBuffer.length !== expectedBuffer.length) {
-          console.warn('Webhook signature length mismatch (hex):', {
-            receivedLength: receivedBuffer.length,
-            expectedLength: expectedBuffer.length,
-            receivedHex: actualSignature.substring(0, 20),
-            expectedHex: expectedSignature.substring(0, 20),
-          });
-          
-          // Try base64 comparison
-          try {
-            const receivedBase64 = Buffer.from(actualSignature, 'base64');
-            const expectedBase64 = Buffer.from(expectedSignature, 'base64');
-            if (receivedBase64.length === expectedBase64.length) {
-              return crypto.timingSafeEqual(receivedBase64, expectedBase64);
-            }
-          } catch (base64Error) {
-            // Not base64, continue
-          }
-          
-          // Fallback: simple string comparison (less secure but functional)
-          return actualSignature.toLowerCase() === expectedSignature.toLowerCase();
-        }
-        
-        // Use timing-safe comparison for hex
-        return crypto.timingSafeEqual(receivedBuffer, expectedBuffer);
+        receivedSignatureBytes = Buffer.from(actualSignature, 'hex');
       } catch (hexError) {
-        // Signature might not be hex, try base64
+        // Not hex, try base64
         try {
-          const receivedBuffer = Buffer.from(actualSignature, 'base64');
-          const expectedBase64 = Buffer.from(expectedSignature, 'base64');
+          receivedSignatureBytes = Buffer.from(actualSignature, 'base64');
+          // If base64, also compute expected as base64 for comparison
+          const expectedBase64 = crypto
+            .createHmac('sha256', secret)
+            .update(payload)
+            .digest('base64');
+          const expectedBase64Bytes = Buffer.from(expectedBase64, 'base64');
           
-          if (receivedBuffer.length === expectedBase64.length) {
-            return crypto.timingSafeEqual(receivedBuffer, expectedBase64);
+          // Check lengths before comparing
+          if (receivedSignatureBytes.length !== expectedBase64Bytes.length) {
+            console.warn('Webhook signature length mismatch (base64):', {
+              receivedLength: receivedSignatureBytes.length,
+              expectedLength: expectedBase64Bytes.length,
+            });
+            return false;
           }
+          
+          return crypto.timingSafeEqual(receivedSignatureBytes, expectedBase64Bytes);
         } catch (base64Error) {
-          // Not base64 either
+          console.error('Failed to parse signature as hex or base64:', {
+            signaturePrefix: actualSignature.substring(0, 30),
+            error: base64Error,
+          });
+          return false;
         }
-        
-        // Final fallback: simple string comparison
-        console.warn('Using fallback string comparison for webhook signature');
-        return actualSignature.toLowerCase() === expectedSignature.toLowerCase();
       }
+      
+      // Check lengths BEFORE calling timingSafeEqual (critical!)
+      if (receivedSignatureBytes.length !== expectedSignatureBytes.length) {
+        console.warn('Webhook signature length mismatch:', {
+          receivedLength: receivedSignatureBytes.length,
+          expectedLength: expectedSignatureBytes.length,
+          receivedHex: actualSignature.substring(0, 40),
+          expectedHex: expectedSignatureBytes.toString('hex').substring(0, 40),
+        });
+        // Don't use timingSafeEqual with mismatched lengths - it will throw
+        return false;
+      }
+      
+      // Now safe to use timing-safe comparison
+      return crypto.timingSafeEqual(receivedSignatureBytes, expectedSignatureBytes);
     } catch (error: any) {
       console.error('Webhook signature verification error:', {
         error: error.message,
         code: error.code,
         signatureLength: signature?.length,
-        signaturePrefix: signature?.substring(0, 20),
+        signaturePrefix: signature?.substring(0, 30),
         payloadLength: payload?.length,
       });
       return false;
