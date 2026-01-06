@@ -144,7 +144,7 @@ export default function EstimateConversionModal({
                 type="button"
                 onClick={() => setInvoiceType('detailed')}
                 disabled={isLoading}
-                className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                className={`p-4 border-2 transition-all cursor-pointer ${
                   invoiceType === 'detailed'
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 hover:border-gray-300'
@@ -190,7 +190,7 @@ export default function EstimateConversionModal({
                   <div className={`text-sm font-medium mb-1 ${selectedTemplate === 1 ? 'text-blue-700' : 'text-gray-700'}`}>
                     Minimal
                   </div>
-                  <div className="h-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded border border-gray-300"></div>
+                  <div className="h-12 bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300"></div>
                   <p className="text-[10px] text-gray-500 mt-1">Clean & simple</p>
                 </button>
 
@@ -207,7 +207,7 @@ export default function EstimateConversionModal({
                   <div className={`text-sm font-medium mb-1 ${selectedTemplate === 2 ? 'text-blue-700' : 'text-gray-700'}`}>
                     Modern
                   </div>
-                  <div className="h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded border border-blue-300"></div>
+                  <div className="h-12 bg-gradient-to-br from-blue-100 to-purple-100 border border-blue-300"></div>
                   <p className="text-[10px] text-gray-500 mt-1">Professional</p>
                 </button>
 
@@ -224,7 +224,7 @@ export default function EstimateConversionModal({
                   <div className={`text-sm font-medium mb-1 ${selectedTemplate === 3 ? 'text-blue-700' : 'text-gray-700'}`}>
                     Creative
                   </div>
-                  <div className="h-12 bg-gradient-to-br from-purple-100 to-pink-100 rounded border border-purple-300"></div>
+                  <div className="h-12 bg-gradient-to-br from-purple-100 to-pink-100 border border-purple-300"></div>
                   <p className="text-[10px] text-gray-500 mt-1">Bold & vibrant</p>
                 </button>
               </div>
