@@ -124,6 +124,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Store payment session in database for tracking
+    // Store both session_id and payment_id for lookup
     const { error: sessionError } = await supabaseAdmin
       .from('billing_records')
       .insert({
@@ -131,13 +132,25 @@ export async function POST(request: NextRequest) {
         type: 'subscription',
         amount: amount,
         currency: 'USD',
-        stripe_session_id: paymentResult.paymentId, // Reusing field name for Dodo payment ID
+        stripe_session_id: paymentResult.paymentId, // Store session ID for lookup
         status: 'pending',
+        metadata: {
+          userId: user.id,
+          plan,
+          type: 'subscription_upgrade',
+          session_id: paymentResult.paymentId, // Also store in metadata for easier lookup
+        },
       });
 
     if (sessionError) {
       console.error('Error storing payment session:', sessionError);
       // Don't fail the request, just log the error
+    } else {
+      console.log('✅ Payment session stored:', {
+        sessionId: paymentResult.paymentId,
+        userId: user.id,
+        plan,
+      });
     }
 
     return NextResponse.json({

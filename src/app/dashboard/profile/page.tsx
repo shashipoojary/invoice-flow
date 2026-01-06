@@ -314,6 +314,51 @@ export default function ProfilePage() {
     }
   }, [user, loading, getAuthHeaders, showError, loadSubscriptionUsage]);
 
+  // Handle payment success redirect from Dodo Payment
+  useEffect(() => {
+    const checkPaymentSuccess = async () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const paymentStatus = searchParams.get('payment');
+      const sessionId = searchParams.get('session_id');
+      
+      if (paymentStatus === 'success' && sessionId) {
+        try {
+          console.log('Verifying payment success for session:', sessionId);
+          const headers = await getAuthHeaders();
+          
+          // Verify payment and update subscription
+          const verifyResponse = await fetch(`/api/payments/verify?payment_id=${sessionId}`, {
+            headers
+          });
+          
+          if (verifyResponse.ok) {
+            const verifyData = await verifyResponse.json();
+            if (verifyData.success && verifyData.plan) {
+              showSuccess(`Subscription upgraded to ${verifyData.plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice'} plan!`);
+              // Reload profile and subscription usage
+              await Promise.all([loadProfile(), loadSubscriptionUsage()]);
+            }
+          }
+          
+          // Clean up URL
+          window.history.replaceState({}, '', '/dashboard/profile');
+        } catch (error) {
+          console.error('Error verifying payment:', error);
+          // Still reload profile in case webhook already processed it
+          await loadProfile();
+        }
+      } else if (paymentStatus === 'cancelled') {
+        showError('Payment was cancelled. Your subscription was not changed.');
+        // Clean up URL
+        window.history.replaceState({}, '', '/dashboard/profile');
+      }
+    };
+    
+    if (user && !loading) {
+      checkPaymentSuccess();
+    }
+  }, [user, loading, getAuthHeaders, showSuccess, showError, loadProfile, loadSubscriptionUsage]);
+
   // Load data on mount - prevent infinite loop with hasLoadedData flag
   useEffect(() => {
     if (user && !loading && !hasLoadedData) {

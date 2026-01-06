@@ -44,28 +44,37 @@ export async function GET(request: NextRequest) {
                      verification.status === 'paid';
 
     if (isSuccess) {
-      // Get billing record to find plan
+      // Get billing record to find plan (try both session_id and payment_id)
       const { data: billingRecord } = await supabaseAdmin
         .from('billing_records')
         .select('*')
-        .eq('stripe_session_id', paymentId) // Reusing field for Dodo payment ID
+        .or(`stripe_session_id.eq.${paymentId},metadata->>session_id.eq.${paymentId}`)
         .eq('user_id', user.id)
         .single();
 
-      if (billingRecord && billingRecord.status === 'pending') {
-        // Update billing record
-        await supabaseAdmin
-          .from('billing_records')
-          .update({
-            status: 'paid',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', billingRecord.id);
+      if (billingRecord) {
+        // Get plan from metadata or amount
+        const metadata = billingRecord.metadata || {};
+        let plan = metadata.plan || 'monthly';
+        
+        // Fallback: determine plan from amount if not in metadata
+        if (!metadata.plan) {
+          if (billingRecord.amount === 0.50) {
+            plan = 'pay_per_invoice';
+          } else if (billingRecord.amount === 9.00) {
+            plan = 'monthly';
+          }
+        }
 
-        // Determine plan from amount
-        let plan = 'monthly';
-        if (billingRecord.amount === 0.50) {
-          plan = 'pay_per_invoice';
+        // Update billing record if still pending
+        if (billingRecord.status === 'pending') {
+          await supabaseAdmin
+            .from('billing_records')
+            .update({
+              status: 'paid',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', billingRecord.id);
         }
 
         // Update subscription
@@ -76,7 +85,7 @@ export async function GET(request: NextRequest) {
           nextBillingDate = nextBilling.toISOString();
         }
 
-        await supabaseAdmin
+        const { error: subscriptionError, data: updatedUser } = await supabaseAdmin
           .from('users')
           .update({
             subscription_plan: plan,
@@ -84,12 +93,31 @@ export async function GET(request: NextRequest) {
             next_billing_date: nextBillingDate,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', user.id);
+          .eq('id', user.id)
+          .select();
+
+        if (subscriptionError) {
+          console.error('Error updating subscription:', subscriptionError);
+          return NextResponse.json({
+            success: false,
+            error: 'Failed to update subscription',
+          }, { status: 500 });
+        }
+
+        console.log(`✅ Subscription updated for user ${user.id} to ${plan} plan via verify endpoint`);
 
         return NextResponse.json({
           success: true,
           status: 'paid',
           plan,
+        });
+      } else {
+        console.log('No billing record found for payment:', paymentId);
+        // Still return success if payment is verified, webhook might handle it
+        return NextResponse.json({
+          success: true,
+          status: verification.status,
+          message: 'Payment verified. Subscription update may be processed by webhook.',
         });
       }
     }
