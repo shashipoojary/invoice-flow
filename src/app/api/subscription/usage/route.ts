@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     const usageStats = await getUsageStats(user.id);
     const plan = profile?.subscription_plan || 'free';
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       plan,
       // Invoice usage
       limit: usageStats.invoices.limit,
@@ -56,6 +56,13 @@ export async function GET(request: NextRequest) {
       templates: usageStats.templates,
       customization: usageStats.customization
     });
+    
+    // Don't cache subscription usage - it changes frequently
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    
+    return response;
   } catch (error) {
     console.error('Subscription usage API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

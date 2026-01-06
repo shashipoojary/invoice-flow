@@ -268,8 +268,10 @@ export default function ProfilePage() {
     
     try {
       const headers = await getAuthHeaders();
-      const response = await fetch('/api/subscription/usage', {
-        headers
+      // Add cache-busting timestamp to ensure fresh data
+      const response = await fetch(`/api/subscription/usage?t=${Date.now()}`, {
+        headers,
+        cache: 'no-store' // Ensure no caching
       });
       
       if (response.ok) {
@@ -288,8 +290,10 @@ export default function ProfilePage() {
     try {
       setIsLoading(true);
       const headers = await getAuthHeaders();
-      const response = await fetch('/api/profile', {
-        headers
+      // Add cache-busting timestamp to ensure fresh data
+      const response = await fetch(`/api/profile?t=${Date.now()}`, {
+        headers,
+        cache: 'no-store' // Ensure no caching
       });
       
       if (response.ok) {
@@ -546,16 +550,43 @@ export default function ProfilePage() {
         }
 
         const result = await response.json();
-        if (result.success) {
-          // Close the modal FIRST before showing success message
+        if (result.success && result.plan) {
+          // Optimistically update the profile state IMMEDIATELY
+          // This ensures the UI reflects the change even before reload
+          if (profile) {
+            setProfile({
+              ...profile,
+              subscription: {
+                plan: result.plan as 'free' | 'monthly' | 'pay_per_invoice',
+                status: result.status || 'active',
+                nextBilling: result.nextBilling || undefined
+              }
+            });
+          }
+          
+          // Update subscription usage state as well
+          if (subscriptionUsage) {
+            setSubscriptionUsage({
+              ...subscriptionUsage,
+              plan: result.plan
+            });
+          }
+          
+          // Close the modal FIRST
           setShowSubscriptionModal(false);
           
           // Show success message
           showSuccess(`Subscription updated to ${plan === 'free' ? 'Free' : 'Pay Per Invoice'} plan`);
           
-          // Reload the page immediately to fetch fresh data and update UI
-          // This ensures the UI reflects the new plan immediately
-          window.location.reload();
+          // Reload profile data from server to ensure consistency
+          // Use cache-busting timestamp to ensure fresh data
+          await loadProfile();
+          
+          // Small delay to let state update, then reload page to ensure everything is in sync
+          setTimeout(() => {
+            // Force a hard reload to bypass any browser cache
+            window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now();
+          }, 300);
         } else {
           throw new Error('Failed to update subscription');
         }

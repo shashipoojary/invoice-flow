@@ -46,8 +46,11 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Add caching headers for better performance
-    response.headers.set('Cache-Control', 'private, max-age=60, stale-while-revalidate=120');
+    // Don't cache subscription data - it changes frequently
+    // Use no-cache to ensure fresh data on every request
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
     
     return response;
   } catch (error) {
