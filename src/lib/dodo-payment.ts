@@ -59,48 +59,81 @@ class DodoPaymentClient {
         hasApiKey: !!this.apiKey,
         hasSecretKey: !!this.secretKey,
         apiKeyPrefix: this.apiKey ? `${this.apiKey.substring(0, 8)}...` : 'none',
-        environment: this.environment
+        secretKeyPrefix: this.secretKey ? `${this.secretKey.substring(0, 8)}...` : 'none',
+        environment: this.environment,
+        note: 'X-API-Key header format is correct (401 means recognized), trying secretKey variations'
       });
       
       // Try different endpoint and auth combinations
       const endpoint = '/payments/create'; // The one that returned 405
       
       // Try multiple authentication methods
+      // Since X-API-Key returned 401 (recognized but unauthorized), it's likely the correct format
+      // Let's try variations with secretKey and different combinations
       const authMethods: Array<{ name: string; headers: Record<string, string> }> = [
+        // Try secretKey in X-API-Key (maybe secretKey is the one to use)
         {
-          name: 'Bearer token only',
+          name: 'X-API-Key with secretKey',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`,
+            'X-API-Key': this.secretKey || this.apiKey,
           }
         },
+        // Try apiKey in X-API-Key (original - we know this returns 401, but let's keep it)
         {
-          name: 'X-API-Key only',
+          name: 'X-API-Key with apiKey',
           headers: {
             'Content-Type': 'application/json',
             'X-API-Key': this.apiKey,
           }
         },
+        // Try both keys together
         {
-          name: 'Both Bearer and X-API-Key',
+          name: 'X-API-Key and X-Secret-Key',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`,
             'X-API-Key': this.apiKey,
+            ...(this.secretKey ? { 'X-Secret-Key': this.secretKey } : {}),
           }
         },
+        // Try API key in Authorization header (some APIs use this)
         {
-          name: 'Dodo-Api-Key header',
-          headers: {
-            'Content-Type': 'application/json',
-            'Dodo-Api-Key': this.apiKey,
-          }
-        },
-        {
-          name: 'Authorization with API key',
+          name: 'Authorization with apiKey',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': this.apiKey,
+          }
+        },
+        // Try secretKey in Authorization header
+        {
+          name: 'Authorization with secretKey',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': this.secretKey || this.apiKey,
+          }
+        },
+        // Try Bearer with secretKey
+        {
+          name: 'Bearer with secretKey',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.secretKey || this.apiKey}`,
+          }
+        },
+        // Try API-Key header (different casing)
+        {
+          name: 'API-Key header',
+          headers: {
+            'Content-Type': 'application/json',
+            'API-Key': this.apiKey,
+          }
+        },
+        // Try api-key header (lowercase with dash)
+        {
+          name: 'api-key header',
+          headers: {
+            'Content-Type': 'application/json',
+            'api-key': this.apiKey,
           }
         },
       ];
@@ -156,8 +189,13 @@ class DodoPaymentClient {
           
           // 401/403 means auth failed but endpoint exists
           if (response.status === 401 || response.status === 403) {
-            console.log(`❌ Auth method "${authMethod.name}" returned ${response.status} (Unauthorized), trying next...`);
-            lastError = { status: response.status, authMethod: authMethod.name, hint: 'Check API key is valid' };
+            console.log(`❌ Auth method "${authMethod.name}" returned ${response.status} (Unauthorized)`);
+            console.log(`   Response: ${responseText.substring(0, 100)}`);
+            console.log(`   💡 This means the header format is correct, but:`);
+            console.log(`      - The key might be wrong/invalid`);
+            console.log(`      - The key might not have payment creation permissions`);
+            console.log(`      - The key might need to be activated in Dodo dashboard`);
+            lastError = { status: response.status, authMethod: authMethod.name, responseText, hint: 'Header format correct but key invalid or lacks permissions' };
             continue;
           }
 
