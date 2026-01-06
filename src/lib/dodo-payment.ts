@@ -54,78 +54,119 @@ class DodoPaymentClient {
       // Use secretKey if available, otherwise use apiKey for authorization
       const authToken = this.secretKey || this.apiKey;
       
-      const response = await fetch(`${this.baseUrl}/v1/payment-links`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`,
-          // Some providers use X-API-Key header, some don't - include both for compatibility
-          ...(this.apiKey && !this.secretKey ? { 'X-API-Key': this.apiKey } : {}),
-        },
-        body: JSON.stringify({
-          amount: params.amount,
-          currency: params.currency,
-          description: params.description,
-          customer: {
-            email: params.customerEmail,
-            name: params.customerName,
-          },
-          metadata: params.metadata || {},
-          success_url: params.successUrl,
-          cancel_url: params.cancelUrl,
-          mode: 'payment', // One-time payment
-        }),
-      });
-
-      // Get response text first to handle non-JSON responses
-      const responseText = await response.text();
+      // Try different endpoint paths - Dodo Payment might use different structures
+      const endpoints = [
+        '/api/v1/payment-links',
+        '/api/payment-links',
+        '/v1/payment-links',
+        '/v1/payments/links',
+        '/payments/create',
+        '/checkout/sessions',
+        '/payment-links'
+      ];
       
-      // Log raw response for debugging
-      console.log('Dodo Payment API response:', {
-        status: response.status,
-        statusText: response.statusText,
-        url: `${this.baseUrl}/v1/payment-links`,
-        responseLength: responseText.length,
-        responsePreview: responseText.substring(0, 200)
-      });
+      let lastError: any = null;
+      
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`🔍 Trying Dodo Payment endpoint: ${this.baseUrl}${endpoint}`);
+          
+          const response = await fetch(`${this.baseUrl}${endpoint}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`,
+              // Some providers use X-API-Key header, some don't - include both for compatibility
+              ...(this.apiKey && !this.secretKey ? { 'X-API-Key': this.apiKey } : {}),
+            },
+            body: JSON.stringify({
+              amount: params.amount,
+              currency: params.currency,
+              description: params.description,
+              customer: {
+                email: params.customerEmail,
+                name: params.customerName,
+              },
+              metadata: params.metadata || {},
+              success_url: params.successUrl,
+              cancel_url: params.cancelUrl,
+              mode: 'payment', // One-time payment
+            }),
+          });
 
-      // Try to parse JSON, but handle empty or invalid responses
-      let data;
-      try {
-        data = responseText ? JSON.parse(responseText) : {};
-      } catch (parseError) {
-        console.error('Failed to parse Dodo Payment response as JSON:', {
-          error: parseError,
-          responseText: responseText.substring(0, 500)
-        });
-        return {
-          success: false,
-          error: `Invalid response from payment service. Status: ${response.status}. ${responseText.substring(0, 100)}`,
-        };
+          // Get response text first to handle non-JSON responses
+          const responseText = await response.text();
+          
+          // Log raw response for debugging
+          console.log(`Dodo Payment API response (${endpoint}):`, {
+            status: response.status,
+            statusText: response.statusText,
+            url: `${this.baseUrl}${endpoint}`,
+            responseLength: responseText.length,
+            responsePreview: responseText.substring(0, 200)
+          });
+
+          // If 404, try next endpoint
+          if (response.status === 404) {
+            console.log(`❌ Endpoint ${endpoint} returned 404, trying next...`);
+            lastError = { status: 404, endpoint };
+            continue;
+          }
+
+          // Try to parse JSON, but handle empty or invalid responses
+          let data;
+          try {
+            data = responseText ? JSON.parse(responseText) : {};
+          } catch (parseError) {
+            console.error('Failed to parse Dodo Payment response as JSON:', {
+              error: parseError,
+              responseText: responseText.substring(0, 500)
+            });
+            lastError = { status: response.status, error: 'Invalid JSON response', endpoint };
+            continue;
+          }
+
+          if (!response.ok) {
+            console.error('Dodo Payment API error response:', {
+              status: response.status,
+              statusText: response.statusText,
+              endpoint,
+              data
+            });
+            // If it's not 404, this might be an auth error or other issue
+            if (response.status !== 404) {
+              return {
+                success: false,
+                error: data.message || data.error || `Failed to create payment link (${response.status})`,
+              };
+            }
+            lastError = { status: response.status, data, endpoint };
+            continue;
+          }
+
+          // Log successful payment link creation for debugging
+          console.log(`✅ Dodo Payment link created using endpoint: ${endpoint}`, {
+            paymentId: data.payment_id || data.id,
+            hasLink: !!(data.payment_link_url || data.url)
+          });
+
+          return {
+            success: true,
+            paymentLink: data.payment_link_url || data.url || data.payment_link,
+            paymentId: data.payment_id || data.id,
+          };
+        } catch (fetchError: any) {
+          console.error(`Error trying endpoint ${endpoint}:`, fetchError);
+          lastError = { error: fetchError.message, endpoint };
+          continue;
+        }
       }
-
-      if (!response.ok) {
-        console.error('Dodo Payment API error response:', {
-          status: response.status,
-          statusText: response.statusText,
-          data
-        });
-        return {
-          success: false,
-          error: data.message || data.error || `Failed to create payment link (${response.status})`,
-        };
-      }
-
-      // Log successful payment link creation for debugging
-      console.log('✅ Dodo Payment link created:', {
-        paymentId: data.payment_id || data.id,
-        hasLink: !!(data.payment_link_url || data.url)
-      });
-
+      
+      // If we get here, all endpoints failed
+      console.error('❌ All Dodo Payment endpoints failed. Last error:', lastError);
       return {
-        success: true,
-        paymentLink: data.payment_link_url || data.url || data.payment_link,
-        paymentId: data.payment_id || data.id,
+        success: false,
+        error: `Payment service endpoint not found. Please check Dodo Payment API documentation for the correct endpoint. Last tried: ${lastError?.endpoint || 'unknown'}`,
       };
     } catch (error: any) {
       console.error('Dodo Payment API error:', error);
