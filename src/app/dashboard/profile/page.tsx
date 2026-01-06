@@ -547,13 +547,15 @@ export default function ProfilePage() {
 
         const result = await response.json();
         if (result.success) {
+          // Close the modal FIRST before showing success message
+          setShowSubscriptionModal(false);
+          
+          // Show success message
           showSuccess(`Subscription updated to ${plan === 'free' ? 'Free' : 'Pay Per Invoice'} plan`);
-          // Reload profile and subscription usage
-          await Promise.all([loadProfile(), loadSubscriptionUsage()]);
-          // Force a small delay to ensure state updates, then reload if needed
-          setTimeout(() => {
-            window.location.reload();
-          }, 500);
+          
+          // Reload the page immediately to fetch fresh data and update UI
+          // This ensures the UI reflects the new plan immediately
+          window.location.reload();
         } else {
           throw new Error('Failed to update subscription');
         }
