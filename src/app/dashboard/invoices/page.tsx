@@ -1159,7 +1159,7 @@ function InvoicesContent(): React.JSX.Element {
                       setSelectedInvoice(null);
                       setShowCreateInvoice(true);
                     }}
-                    className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
+                    className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
                   >
                     <Plus className="h-4 w-4" />
                     <span>Add Invoice</span>
@@ -1167,7 +1167,7 @@ function InvoicesContent(): React.JSX.Element {
                 ) : (
                   <button
                     onClick={() => setShowCreateInvoice(true)}
-                    className="flex items-center space-x-1 sm:space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
+                    className="flex items-center space-x-1 sm:space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
                   >
                     <span>Sign In</span>
                   </button>
@@ -1175,7 +1175,7 @@ function InvoicesContent(): React.JSX.Element {
               </div>
 
               {/* Search and Filter Section */}
-              <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
+              <div className="bg-white border border-gray-200 p-4 sm:p-6">
                 <div className="flex flex-col lg:flex-row gap-4">
                   {/* Search Bar */}
                   <div className="flex-1">
@@ -1190,7 +1190,7 @@ function InvoicesContent(): React.JSX.Element {
                         placeholder="Search by client name, invoice number, type, or amount..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 text-sm transition-colors"
+                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 text-sm transition-colors"
                       />
                     </div>
                   </div>
@@ -1199,7 +1199,7 @@ function InvoicesContent(): React.JSX.Element {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setShowFilters(!showFilters)}
-                      className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium cursor-pointer"
+                      className="flex items-center gap-2 px-4 py-2 border border-gray-300 hover:bg-gray-50 transition-colors text-sm font-medium cursor-pointer"
                     >
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -1234,7 +1234,7 @@ function InvoicesContent(): React.JSX.Element {
                           setStatusFilter('');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                        className={`px-3 py-1.5 text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           !statusFilter 
                             ? 'bg-gray-900 text-white' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1247,7 +1247,7 @@ function InvoicesContent(): React.JSX.Element {
                           setStatusFilter('paid');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                        className={`px-3 py-1.5 text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'paid' 
                             ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1260,7 +1260,7 @@ function InvoicesContent(): React.JSX.Element {
                           setStatusFilter('pending');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                        className={`px-3 py-1.5 text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'pending' 
                             ? 'bg-orange-100 text-orange-800 border border-orange-200' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1273,7 +1273,7 @@ function InvoicesContent(): React.JSX.Element {
                           setStatusFilter('overdue');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                        className={`px-3 py-1.5 text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'overdue' 
                             ? 'bg-red-100 text-red-800 border border-red-200' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1286,7 +1286,7 @@ function InvoicesContent(): React.JSX.Element {
                           setStatusFilter('draft');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                        className={`px-3 py-1.5 text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'draft' 
                             ? 'bg-gray-100 text-gray-800 border border-gray-200' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1299,7 +1299,7 @@ function InvoicesContent(): React.JSX.Element {
                           setStatusFilter('partial');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                        className={`px-3 py-1.5 text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'partial' 
                             ? 'bg-blue-100 text-blue-800 border border-blue-300' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -1400,7 +1400,7 @@ function InvoicesContent(): React.JSX.Element {
                         <button
                           onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                           disabled={!hasPrevPage}
-                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                         >
                           Previous
                         </button>
@@ -1427,7 +1427,7 @@ function InvoicesContent(): React.JSX.Element {
                           </p>
                         </div>
                         <div>
-                          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                          <nav className="relative z-0 inline-flex shadow-sm -space-x-px" aria-label="Pagination">
                             <button
                               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                               disabled={!hasPrevPage}
@@ -1484,7 +1484,7 @@ function InvoicesContent(): React.JSX.Element {
                         setSelectedInvoice(null);
                         setShowFastInvoice(true);
                       }}
-                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium"
                     >
                       <Sparkles className="h-4 w-4" />
                       <span>Quick Invoice</span>
@@ -1494,7 +1494,7 @@ function InvoicesContent(): React.JSX.Element {
                         setSelectedInvoice(null);
                         setShowCreateInvoice(true);
                       }}
-                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors text-sm font-medium"
                     >
                       <FilePlus className="h-4 w-4" />
                       <span>Detailed Invoice</span>

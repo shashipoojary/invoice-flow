@@ -432,7 +432,7 @@ export default function EstimateModal({
                       }))}
                       placeholder="Choose a client..."
                       isDarkMode={isDarkMode}
-                      searchable={true}
+                      searchable={false}
                       error={!!errors.client}
                     />
                     {errors.client && (
@@ -443,115 +443,42 @@ export default function EstimateModal({
               </div>
 
               {/* Issue Date & Expiry Date */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className={`block text-sm font-medium mb-2 ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Issue Date
-                  </label>
-                  <input
-                    type="date"
-                    value={issueDate}
-                    onChange={(e) => setIssueDate(e.target.value)}
-                    className={`w-full px-4 py-2.5 border transition-colors ${
-                      isDarkMode
-                        ? 'bg-gray-800 border-gray-700 text-white focus:border-indigo-500 focus:ring-indigo-500'
-                        : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-500 focus:ring-indigo-500'
-                    } focus:ring-2 focus:outline-none`}
-                  />
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    <button
-                      type="button"
-                      onClick={() => setIssueDate(new Date().toISOString().split('T')[0])}
-                      className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
+              <div className="p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Issue Date
+                    </label>
+                    <input
+                      type="date"
+                      value={issueDate}
+                      onChange={(e) => setIssueDate(e.target.value)}
+                      className={`w-full px-4 py-2.5 border transition-colors ${
                         isDarkMode
-                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
-                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      Today
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const tomorrow = new Date();
-                        tomorrow.setDate(tomorrow.getDate() + 1);
-                        setIssueDate(tomorrow.toISOString().split('T')[0]);
-                      }}
-                      className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
-                        isDarkMode
-                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
-                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      Tomorrow
-                    </button>
+                          ? 'bg-gray-800 border-gray-700 text-white focus:border-indigo-500 focus:ring-indigo-500'
+                          : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-500 focus:ring-indigo-500'
+                      } focus:ring-2 focus:outline-none`}
+                    />
                   </div>
-                </div>
 
-                <div>
-                  <label className={`block text-sm font-medium mb-2 ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Valid Until (Expiry Date)
-                  </label>
-                  <input
-                    type="date"
-                    value={expiryDate}
-                    onChange={(e) => setExpiryDate(e.target.value)}
-                    className={`w-full px-4 py-2.5 border transition-colors ${
-                      isDarkMode
-                        ? 'bg-gray-800 border-gray-700 text-white focus:border-indigo-500 focus:ring-indigo-500'
-                        : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-500 focus:ring-indigo-500'
-                    } focus:ring-2 focus:outline-none`}
-                  />
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const date = new Date();
-                        date.setDate(date.getDate() + 7);
-                        setExpiryDate(date.toISOString().split('T')[0]);
-                      }}
-                      className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Valid Until (Expiry Date)
+                    </label>
+                    <input
+                      type="date"
+                      value={expiryDate}
+                      onChange={(e) => setExpiryDate(e.target.value)}
+                      className={`w-full px-4 py-2.5 border transition-colors ${
                         isDarkMode
-                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
-                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      +7 days
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const date = new Date();
-                        date.setDate(date.getDate() + 30);
-                        setExpiryDate(date.toISOString().split('T')[0]);
-                      }}
-                      className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
-                        isDarkMode
-                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
-                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      +30 days
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const date = new Date();
-                        date.setDate(date.getDate() + 60);
-                        setExpiryDate(date.toISOString().split('T')[0]);
-                      }}
-                      className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
-                        isDarkMode
-                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
-                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      +60 days
-                    </button>
+                          ? 'bg-gray-800 border-gray-700 text-white focus:border-indigo-500 focus:ring-indigo-500'
+                          : 'bg-white border-gray-300 text-gray-900 focus:border-indigo-500 focus:ring-indigo-500'
+                      } focus:ring-2 focus:outline-none`}
+                    />
                   </div>
                 </div>
               </div>

@@ -51,7 +51,7 @@ const ClientCard = memo(({ client, onView, onEdit, onDelete, isDeleting }: {
     <div className="bg-white border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
+          <div className="w-12 h-12 bg-indigo-100 flex items-center justify-center">
             <Users className="w-6 h-6 text-indigo-600" />
           </div>
           <div>
@@ -220,7 +220,7 @@ export default function ClientsPage() {
   }) => (
     <div className={`p-4 transition-all duration-300 hover:scale-[1.02] bg-white/70 border border-gray-200 backdrop-blur-sm ${isDeleting === client.id ? 'opacity-50 pointer-events-none' : ''}`}>
       <div className="flex items-start justify-between mb-4">
-        <div className="p-3 rounded-xl bg-indigo-50">
+        <div className="p-3 bg-indigo-50">
           <Building2 className="h-6 w-6 text-indigo-600" />
         </div>
         <div className="flex space-x-2">
@@ -363,7 +363,7 @@ export default function ClientsPage() {
                 <button
                   data-testid="add-client-button"
                   onClick={() => setShowCreateClient(true)}
-                  className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
+                  className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
                 >
                   <Plus className="h-4 w-4" />
                   <span>Add Client</span>
@@ -377,7 +377,7 @@ export default function ClientsPage() {
                     <div key={i} className="p-6 bg-white/70 border border-gray-200 backdrop-blur-sm">
                       <div className="animate-pulse">
                         <div className="flex items-center space-x-3 mb-4">
-                          <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
+                          <div className="w-12 h-12 bg-gray-300"></div>
                           <div>
                             <div className="h-4 bg-gray-300 rounded w-24 mb-2"></div>
                             <div className="h-3 bg-gray-300 rounded w-32"></div>
@@ -404,7 +404,7 @@ export default function ClientsPage() {
                 </div>
               ) : (
                 <div className="p-12 text-center bg-white/70 border border-gray-200 backdrop-blur-sm">
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl mb-6 bg-gray-100">
+                  <div className="inline-flex items-center justify-center w-20 h-20 mb-6 bg-gray-100">
                     <Users className="h-10 w-10 text-gray-500" />
                   </div>
                   
@@ -419,7 +419,7 @@ export default function ClientsPage() {
                   <button
                     data-testid="add-first-client-button"
                     onClick={() => setShowCreateClient(true)}
-                    className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium mx-auto cursor-pointer"
+                    className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium mx-auto cursor-pointer"
                   >
                     <UserPlus className="h-4 w-4" />
                     <span>Add Your First Client</span>
@@ -500,7 +500,7 @@ export default function ClientsPage() {
                     setShowViewClient(false);
                     setSelectedClient(null);
                   }}
-                  className="p-1.5 rounded-lg transition-colors hover:bg-gray-100 cursor-pointer"
+                  className="p-1.5 transition-colors hover:bg-gray-100 cursor-pointer"
                 >
                   <X className="h-5 w-5 text-gray-500" />
                 </button>
@@ -573,7 +573,7 @@ export default function ClientsPage() {
                       setSelectedClient(null);
                       handleCreateInvoice();
                     }}
-                    className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
+                    className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
                   >
                     <FilePlus className="h-4 w-4" />
                     <span>Create Invoice</span>
@@ -583,7 +583,7 @@ export default function ClientsPage() {
                       setShowViewClient(false);
                       handleEditClient(selectedClient);
                     }}
-                    className="flex items-center justify-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+                    className="flex items-center justify-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors cursor-pointer"
                   >
                     <Edit className="h-4 w-4" />
                     <span>Edit</span>
@@ -593,7 +593,7 @@ export default function ClientsPage() {
                       setShowViewClient(false);
                       handleDeleteClient(selectedClient);
                     }}
-                    className="flex items-center justify-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+                    className="flex items-center justify-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors cursor-pointer"
                   >
                     <Trash2 className="h-4 w-4" />
                     <span>Delete</span>
@@ -651,10 +651,10 @@ export default function ClientsPage() {
               {/* Fast Invoice Option */}
               <button
                 onClick={handleSelectFastInvoice}
-                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+                className="w-full p-4 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                  <div className="p-2 bg-indigo-100 group-hover:bg-indigo-200 transition-colors">
                     <Sparkles className="w-5 h-5 text-indigo-600" />
                   </div>
                   <div className="text-left flex-1">
@@ -672,10 +672,10 @@ export default function ClientsPage() {
               {/* Detailed Invoice Option */}
               <button
                 onClick={handleSelectDetailedInvoice}
-                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+                className="w-full p-4 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                  <div className="p-2 bg-indigo-100 group-hover:bg-indigo-200 transition-colors">
                     <FilePlus className="w-5 h-5 text-indigo-600" />
                   </div>
                   <div className="text-left flex-1">

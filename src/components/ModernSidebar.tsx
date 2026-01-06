@@ -225,7 +225,7 @@ const ModernSidebar = ({
         ) : (
           <button
             onClick={handleToggleCollapse}
-            className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-gray-100 transition-colors bg-transparent border-none outline-none overflow-hidden cursor-pointer"
+            className="flex items-center justify-center w-full p-2 hover:bg-gray-100 transition-colors bg-transparent border-none outline-none overflow-hidden cursor-pointer"
             style={{ backgroundColor: 'transparent' }}
           >
             <span className="text-lg font-bold tracking-tight">
@@ -239,7 +239,7 @@ const ModernSidebar = ({
         {!isCollapsed && (
           <button
             onClick={handleToggleCollapse}
-            className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg transition-colors cursor-pointer hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+            className="hidden lg:flex items-center justify-center w-8 h-8 transition-colors cursor-pointer hover:bg-gray-100 text-gray-500 hover:text-gray-700"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -256,7 +256,7 @@ const ModernSidebar = ({
               setIsMobileOpen(false);
             }
           }}
-          className={`w-full flex items-center justify-center rounded-lg transition-all duration-300 ease-in-out cursor-pointer bg-black text-white hover:bg-gray-800 overflow-hidden ${
+          className={`w-full flex items-center justify-center transition-all duration-300 ease-in-out cursor-pointer bg-black text-white hover:bg-gray-800 overflow-hidden ${
             isCollapsed 
               ? 'p-3' 
               : 'px-6 py-3 space-x-2'
@@ -294,7 +294,7 @@ const ModernSidebar = ({
                 data-route={item.route}
                 onClick={() => handleNavigation(item.route)}
                 disabled={isNavigating || isPending}
-                className={`w-full flex items-center h-14 ${isCollapsed ? 'justify-center px-3' : 'space-x-3 px-3'} rounded-lg group transition-colors duration-200 cursor-pointer relative overflow-hidden ${
+                className={`w-full flex items-center h-14 ${isCollapsed ? 'justify-center px-3' : 'space-x-3 px-3'} group transition-colors duration-200 cursor-pointer relative overflow-hidden ${
                   isActive
                     ? 'bg-gray-100 text-black'
                     : 'text-gray-800 hover:text-black hover:bg-gray-50'
@@ -303,7 +303,7 @@ const ModernSidebar = ({
               >
                 {/* Clean minimal loading - just subtle background and spinner */}
                 {(isNavigating || isPending) && (
-                  <div className="absolute inset-0 bg-gray-50/50 rounded-lg"></div>
+                  <div className="absolute inset-0 bg-gray-50/50"></div>
                 )}
                 <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center relative z-10">
                   {isNavigating ? (
@@ -342,7 +342,7 @@ const ModernSidebar = ({
             data-route="/dashboard/profile"
             onClick={() => handleNavigation('/dashboard/profile')}
             disabled={isPending}
-            className={`w-full flex items-center h-14 rounded-lg border transition-colors duration-200 cursor-pointer bg-white border-gray-200 hover:bg-gray-50 ${isCollapsed ? 'justify-center px-2.5' : 'space-x-3 px-3'}`}
+            className={`w-full flex items-center h-14 border transition-colors duration-200 cursor-pointer bg-white border-gray-200 hover:bg-gray-50 ${isCollapsed ? 'justify-center px-2.5' : 'space-x-3 px-3'}`}
             title={isCollapsed ? (user?.name || 'View Profile') : undefined}
           >
             <div className={`rounded-full flex items-center justify-center bg-indigo-600 flex-shrink-0 ${isCollapsed ? 'w-8 h-8' : 'w-10 h-10'}`}>
@@ -362,7 +362,7 @@ const ModernSidebar = ({
           <button
             onClick={handleSignOut}
             disabled={isLoggingOut}
-            className={`flex items-center justify-center rounded-lg border disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer text-red-600 bg-white border-red-200 hover:bg-red-50 ${isCollapsed ? 'w-full h-10 px-2.5' : 'w-full space-x-2 px-6 py-3'}`}
+            className={`flex items-center justify-center border disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 cursor-pointer text-red-600 bg-white border-red-200 hover:bg-red-50 ${isCollapsed ? 'w-full h-10 px-2.5' : 'w-full space-x-2 px-6 py-3'}`}
             title={isCollapsed ? 'Logout' : undefined}
           >
             {isLoggingOut ? (
@@ -392,7 +392,7 @@ const ModernSidebar = ({
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-3 rounded-xl shadow-lg border transition-all duration-150 ease-out hover:scale-105 active:scale-95 cursor-pointer bg-white border-gray-200 hover:bg-gray-50"
+        className="lg:hidden fixed top-4 left-4 z-50 p-3 shadow-lg border transition-all duration-150 ease-out hover:scale-105 active:scale-95 cursor-pointer bg-white border-gray-200 hover:bg-gray-50"
       >
         <Menu className="w-5 h-5 text-gray-700" />
       </button>
@@ -423,7 +423,7 @@ const ModernSidebar = ({
       {isMobileOpen && (
         <button
           onClick={() => setIsMobileOpen(false)}
-          className="lg:hidden fixed top-4 right-4 z-50 p-3 rounded-xl shadow-lg border transition-colors cursor-pointer bg-white border-gray-200 hover:bg-gray-50"
+          className="lg:hidden fixed top-4 right-4 z-50 p-3 shadow-lg border transition-colors cursor-pointer bg-white border-gray-200 hover:bg-gray-50"
         >
           <X className="w-5 h-5 text-gray-700" />
         </button>

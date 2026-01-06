@@ -47,7 +47,7 @@ const BusinessInfoSection = memo(({ settings, updateSettings, isLoadingSettings 
             type="text"
             value={settings.businessName}
             onChange={(e) => handleInputChange('businessName', e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black"
+            className="w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black"
             placeholder="Your Business Name"
           />
         </div>
@@ -59,7 +59,7 @@ const BusinessInfoSection = memo(({ settings, updateSettings, isLoadingSettings 
             type="email"
             value={settings.businessEmail}
             onChange={(e) => handleInputChange('businessEmail', e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black"
+            className="w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black"
             placeholder="business@example.com"
           />
         </div>
@@ -71,7 +71,7 @@ const BusinessInfoSection = memo(({ settings, updateSettings, isLoadingSettings 
             type="tel"
             value={settings.businessPhone}
             onChange={(e) => handleInputChange('businessPhone', e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black"
+            className="w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black"
             placeholder="+1 (555) 123-4567"
           />
         </div>
@@ -83,7 +83,7 @@ const BusinessInfoSection = memo(({ settings, updateSettings, isLoadingSettings 
             type="url"
             value={settings.website}
             onChange={(e) => handleInputChange('website', e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black"
+            className="w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black"
             placeholder="https://yourwebsite.com"
           />
         </div>
@@ -96,7 +96,7 @@ const BusinessInfoSection = memo(({ settings, updateSettings, isLoadingSettings 
           value={settings.address}
           onChange={(e) => handleInputChange('address', e.target.value)}
           rows={3}
-          className="w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors resize-none border-gray-300 bg-white text-black"
+          className="w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors resize-none border-gray-300 bg-white text-black"
           placeholder="123 Business St, City, State 12345"
         />
         <p className="mt-1.5 text-xs text-gray-500">
@@ -385,7 +385,7 @@ export default function SettingsPage() {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {saving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -398,10 +398,10 @@ export default function SettingsPage() {
 
               {/* Business Information */}
               {isLoadingSettings ? (
-                <div className={`rounded-lg p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
+                <div className={`p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
                   <div className="animate-pulse">
                     <div className="flex items-center space-x-3 mb-6">
-                      <div className="w-9 h-9 bg-gray-300 rounded-lg"></div>
+                      <div className="w-9 h-9 bg-gray-300"></div>
                       <div className="h-6 bg-gray-300 rounded w-48"></div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -415,9 +415,9 @@ export default function SettingsPage() {
                   </div>
                 </div>
               ) : (
-                <div className={`rounded-lg p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
+                <div className={`p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
                 <div className="flex items-center space-x-3 mb-6">
-                  <div className={`p-2 rounded-lg bg-blue-100`}>
+                  <div className={`p-2 bg-blue-100`}>
                     <Building2 className="h-5 w-5 text-blue-600" />
                   </div>
                   <h3 className="text-lg font-semibold" style={{color: '#1f2937'}}>
@@ -434,7 +434,7 @@ export default function SettingsPage() {
                       type="text"
                       value={settings.businessName}
                       onChange={(e) => updateSettings({ ...settings, businessName: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
+                      className={`w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="Your Business Name"
                     />
                   </div>
@@ -447,7 +447,7 @@ export default function SettingsPage() {
                       type="email"
                       value={settings.businessEmail}
                       onChange={(e) => updateSettings({ ...settings, businessEmail: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
+                      className={`w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="business@example.com"
                     />
                   </div>
@@ -461,7 +461,7 @@ export default function SettingsPage() {
                       type="tel"
                       value={settings.businessPhone}
                       onChange={(e) => updateSettings({ ...settings, businessPhone: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
+                      className={`w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="+1 (555) 123-4567"
                     />
                   </div>
@@ -474,7 +474,7 @@ export default function SettingsPage() {
                       type="url"
                       value={settings.website}
                       onChange={(e) => updateSettings({ ...settings, website: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
+                      className={`w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="https://yourwebsite.com"
                     />
                   </div>
@@ -487,7 +487,7 @@ export default function SettingsPage() {
                       value={settings.address}
                       onChange={(e) => updateSettings({ ...settings, address: e.target.value })}
                       rows={3}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors resize-none border-gray-300 bg-white text-black`}
+                      className={`w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors resize-none border-gray-300 bg-white text-black`}
                       placeholder="123 Business St, City, State 12345"
                     />
                     <p className="mt-1.5 text-xs text-gray-500">
@@ -503,9 +503,9 @@ export default function SettingsPage() {
                     {/* Minimal Logo Section */}
                     <div className="space-y-4">
                       {settings.logo && settings.logo.trim() !== '' ? (
-                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200">
                           <div className="flex items-center space-x-4">
-                            <div className="w-12 h-12 bg-white border border-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+                            <div className="w-12 h-12 bg-white border border-gray-200 flex items-center justify-center overflow-hidden">
                               <LazyLogo 
                                 src={settings.logo} 
                                 alt="Logo" 
@@ -531,7 +531,7 @@ export default function SettingsPage() {
                               htmlFor="logo-upload"
                               className={`cursor-pointer ${isUploadingLogo ? 'pointer-events-none opacity-50' : ''}`}
                             >
-                              <div className="w-9 h-9 bg-indigo-100 hover:bg-indigo-200 rounded-lg flex items-center justify-center transition-colors">
+                              <div className="w-9 h-9 bg-indigo-100 hover:bg-indigo-200 flex items-center justify-center transition-colors">
                                 {isUploadingLogo ? (
                                   <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
                                 ) : (
@@ -543,7 +543,7 @@ export default function SettingsPage() {
                               type="button"
                               onClick={handleRemoveLogo}
                               disabled={isRemovingLogo}
-                              className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
+                              className={`w-9 h-9 flex items-center justify-center transition-colors ${
                                 isRemovingLogo 
                                   ? 'opacity-50 cursor-not-allowed bg-gray-100'
                                   : 'bg-red-100 hover:bg-red-200 cursor-pointer'
@@ -558,9 +558,9 @@ export default function SettingsPage() {
                           </div>
                         </div>
                       ) : (
-                        <div className="border border-dashed border-gray-200 rounded-lg p-6 hover:border-gray-300 transition-colors">
+                        <div className="border border-dashed border-gray-200 p-6 hover:border-gray-300 transition-colors">
                           <div className="flex items-center justify-center space-x-4">
-                            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <div className="w-10 h-10 bg-gray-100 flex items-center justify-center">
                               <Upload className="h-5 w-5 text-gray-400" />
                             </div>
                             <div className="flex-1">
@@ -592,10 +592,10 @@ export default function SettingsPage() {
 
               {/* Payment Methods */}
               {isLoadingSettings ? (
-                <div className={`rounded-lg p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
+                <div className={`p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
                   <div className="animate-pulse">
                     <div className="flex items-center space-x-3 mb-6">
-                      <div className="w-9 h-9 bg-gray-300 rounded-lg"></div>
+                      <div className="w-9 h-9 bg-gray-300"></div>
                       <div className="h-6 bg-gray-300 rounded w-40"></div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -609,9 +609,9 @@ export default function SettingsPage() {
                   </div>
                 </div>
               ) : (
-              <div className={`rounded-lg p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
+              <div className={`p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
                 <div className="flex items-center space-x-3 mb-6">
-                  <div className={`p-2 rounded-lg bg-green-100`}>
+                  <div className={`p-2 bg-green-100`}>
                     <CreditCard className="h-5 w-5 text-green-600" />
                   </div>
                   <h3 className="text-lg font-semibold" style={{color: '#1f2937'}}>
@@ -628,7 +628,7 @@ export default function SettingsPage() {
                       type="email"
                       value={settings.paypalEmail}
                       onChange={(e) => updateSettings({ ...settings, paypalEmail: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
+                      className={`w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="paypal@example.com"
                     />
                   </div>
@@ -641,7 +641,7 @@ export default function SettingsPage() {
                       type="text"
                       value={settings.cashappId}
                       onChange={(e) => updateSettings({ ...settings, cashappId: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
+                      className={`w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="$yourcashappid"
                     />
                   </div>
@@ -654,7 +654,7 @@ export default function SettingsPage() {
                       type="text"
                       value={settings.venmoId}
                       onChange={(e) => updateSettings({ ...settings, venmoId: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
+                      className={`w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="@yourvenmoid"
                     />
                   </div>
@@ -667,7 +667,7 @@ export default function SettingsPage() {
                       type="text"
                       value={settings.googlePayUpi}
                       onChange={(e) => updateSettings({ ...settings, googlePayUpi: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
+                      className={`w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="yourname@paytm"
                     />
                   </div>
@@ -680,7 +680,7 @@ export default function SettingsPage() {
                       type="text"
                       value={settings.applePayId}
                       onChange={(e) => updateSettings({ ...settings, applePayId: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
+                      className={`w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="your-apple-pay-id"
                     />
                   </div>
@@ -693,7 +693,7 @@ export default function SettingsPage() {
                       type="text"
                       value={settings.stripeAccount}
                       onChange={(e) => updateSettings({ ...settings, stripeAccount: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
+                      className={`w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="acct_xxxxxxxxx"
                     />
                   </div>
@@ -706,7 +706,7 @@ export default function SettingsPage() {
                       type="text"
                       value={settings.bankAccount}
                       onChange={(e) => updateSettings({ ...settings, bankAccount: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
+                      className={`w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="Account Number"
                     />
                   </div>
@@ -719,7 +719,7 @@ export default function SettingsPage() {
                       type="text"
                       value={settings.bankIfscSwift}
                       onChange={(e) => updateSettings({ ...settings, bankIfscSwift: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
+                      className={`w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="IFSC/SWIFT Code"
                     />
                   </div>
@@ -732,7 +732,7 @@ export default function SettingsPage() {
                       type="text"
                       value={settings.bankIban}
                       onChange={(e) => updateSettings({ ...settings, bankIban: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
+                      className={`w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
                       placeholder="IBAN Number"
                     />
                   </div>
@@ -745,7 +745,7 @@ export default function SettingsPage() {
                       value={settings.paymentNotes}
                       onChange={(e) => updateSettings({ ...settings, paymentNotes: e.target.value })}
                       rows={3}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors resize-none border-gray-300 bg-white text-black`}
+                      className={`w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors resize-none border-gray-300 bg-white text-black`}
                       placeholder="Additional payment instructions or notes..."
                     />
                   </div>
@@ -766,7 +766,7 @@ export default function SettingsPage() {
       {/* Invoice Type Selection Modal */}
       {showInvoiceTypeSelection && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="text-center mb-6">
               <h3 className="font-heading text-xl font-semibold mb-2" style={{color: '#1f2937'}}>
                 Choose Invoice Type
@@ -780,10 +780,10 @@ export default function SettingsPage() {
               {/* Fast Invoice Option */}
               <button
                 onClick={handleSelectFastInvoice}
-                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+                className="w-full p-4 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                  <div className="p-2 bg-indigo-100 group-hover:bg-indigo-200 transition-colors">
                     <Sparkles className="w-5 h-5 text-indigo-600" />
                   </div>
                   <div className="text-left flex-1">
@@ -801,10 +801,10 @@ export default function SettingsPage() {
               {/* Detailed Invoice Option */}
               <button
                 onClick={handleSelectDetailedInvoice}
-                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+                className="w-full p-4 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                  <div className="p-2 bg-indigo-100 group-hover:bg-indigo-200 transition-colors">
                     <FilePlus className="w-5 h-5 text-indigo-600" />
                   </div>
                   <div className="text-left flex-1">

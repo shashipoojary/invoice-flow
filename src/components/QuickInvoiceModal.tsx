@@ -1195,7 +1195,7 @@ export default function QuickInvoiceModal({
               </div>
 
               {/* Client Selection */}
-              <div className="p-4">
+              <div className="p-4 w-full">
                 <h4 className={`text-sm font-semibold mb-3 flex items-center ${
                   isDarkMode ? 'text-white' : 'text-gray-900'
                 }`}>
@@ -1264,7 +1264,7 @@ export default function QuickInvoiceModal({
                         ]}
                         placeholder="Select existing client"
                         isDarkMode={isDarkMode}
-                        searchable={true}
+                        searchable={false}
                       />
                     )}
                     
@@ -1326,7 +1326,8 @@ export default function QuickInvoiceModal({
               </div>
 
                 {/* Invoice Details */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-4 w-full">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" style={{ maxWidth: '100%' }}>
                   <div>
                     <div className="relative">
                       <Hash className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
@@ -1379,34 +1380,6 @@ export default function QuickInvoiceModal({
                         }`} title="Auto-selected current date"></div>
                     </div>
                     </div>
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      <button
-                        type="button"
-                        onClick={() => setIssueDate(new Date().toISOString().split('T')[0])}
-                        className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
-                          isDarkMode
-                            ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
-                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        Today
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const tomorrow = new Date();
-                          tomorrow.setDate(tomorrow.getDate() + 1);
-                          setIssueDate(tomorrow.toISOString().split('T')[0]);
-                        }}
-                        className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
-                          isDarkMode
-                            ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
-                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        Tomorrow
-                      </button>
-                    </div>
                     <p className={`text-xs mt-1 ${
                       isDarkMode ? 'text-gray-400' : 'text-gray-500'
                     }`}>
@@ -1438,64 +1411,6 @@ export default function QuickInvoiceModal({
                   </div>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    <button
-                      type="button"
-                      onClick={() => setDueDate(new Date().toISOString().split('T')[0])}
-                      className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
-                        isDarkMode
-                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
-                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      Today
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const tomorrow = new Date();
-                        tomorrow.setDate(tomorrow.getDate() + 1);
-                        setDueDate(tomorrow.toISOString().split('T')[0]);
-                      }}
-                      className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
-                        isDarkMode
-                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
-                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      Tomorrow
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const date = new Date();
-                        date.setDate(date.getDate() + 7);
-                        setDueDate(date.toISOString().split('T')[0]);
-                      }}
-                      className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
-                        isDarkMode
-                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
-                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      +7 days
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const date = new Date();
-                        date.setDate(date.getDate() + 30);
-                        setDueDate(date.toISOString().split('T')[0]);
-                      }}
-                      className={`px-2 py-1 text-xs border transition-colors cursor-pointer ${
-                        isDarkMode
-                          ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
-                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      +30 days
-                    </button>
-                  </div>
                   <p className={`text-xs mt-1 ${
                     isDarkMode ? 'text-gray-400' : 'text-gray-500'
                   }`}>
@@ -1509,7 +1424,8 @@ export default function QuickInvoiceModal({
                     </p>
                   )}
                 </div>
-              </div>
+                  </div>
+                </div>
 
               {/* Mark as Paid Option */}
               <div className="p-4 border-t border-gray-200 dark:border-gray-700">

@@ -434,7 +434,7 @@ function EstimatesContent(): React.JSX.Element {
                 {user ? (
                   <button
                     onClick={() => setShowCreateEstimate(true)}
-                    className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
+                    className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
                   >
                     <Plus className="h-4 w-4" />
                     <span>Create Estimate</span>
@@ -442,7 +442,7 @@ function EstimatesContent(): React.JSX.Element {
                 ) : (
                   <button
                     onClick={() => setShowCreateEstimate(true)}
-                    className="flex items-center space-x-1 sm:space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
+                    className="flex items-center space-x-1 sm:space-x-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
                   >
                     <span>Sign In</span>
                   </button>
@@ -465,7 +465,7 @@ function EstimatesContent(): React.JSX.Element {
                         placeholder="Search by client name, estimate number, or amount..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 text-sm transition-colors"
+                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 text-sm transition-colors"
                       />
                     </div>
                   </div>
@@ -474,7 +474,7 @@ function EstimatesContent(): React.JSX.Element {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setShowFilters(!showFilters)}
-                      className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium cursor-pointer"
+                      className="flex items-center gap-2 px-4 py-2 border border-gray-300 hover:bg-gray-50 transition-colors text-sm font-medium cursor-pointer"
                     >
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -508,7 +508,7 @@ function EstimatesContent(): React.JSX.Element {
                           setStatusFilter('');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                        className={`px-3 py-1.5 text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           !statusFilter 
                             ? 'bg-gray-900 text-white' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -521,7 +521,7 @@ function EstimatesContent(): React.JSX.Element {
                           setStatusFilter('draft');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                        className={`px-3 py-1.5 text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'draft' 
                             ? 'bg-gray-100 text-gray-800 border border-gray-200' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -534,7 +534,7 @@ function EstimatesContent(): React.JSX.Element {
                           setStatusFilter('sent');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                        className={`px-3 py-1.5 text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'sent' 
                             ? 'bg-blue-100 text-blue-800 border border-blue-200' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -547,7 +547,7 @@ function EstimatesContent(): React.JSX.Element {
                           setStatusFilter('approved');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                        className={`px-3 py-1.5 text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'approved' 
                             ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -560,7 +560,7 @@ function EstimatesContent(): React.JSX.Element {
                           setStatusFilter('rejected');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                        className={`px-3 py-1.5 text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'rejected' 
                             ? 'bg-red-100 text-red-800 border border-red-200' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -573,7 +573,7 @@ function EstimatesContent(): React.JSX.Element {
                           setStatusFilter('converted');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                        className={`px-3 py-1.5 text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'converted' 
                             ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -586,7 +586,7 @@ function EstimatesContent(): React.JSX.Element {
                           setStatusFilter('expired');
                           setFilterAppliedManually(true);
                         }}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                        className={`px-3 py-1.5 text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'expired' 
                             ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' 
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -607,7 +607,7 @@ function EstimatesContent(): React.JSX.Element {
                       <div className="animate-pulse">
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gray-300 rounded-lg"></div>
+                            <div className="w-10 h-10 bg-gray-300"></div>
                             <div>
                               <div className="h-4 bg-gray-300 rounded w-32 mb-2"></div>
                               <div className="h-3 bg-gray-300 rounded w-24"></div>
@@ -630,7 +630,7 @@ function EstimatesContent(): React.JSX.Element {
                 </div>
               ) : filteredEstimates.length === 0 ? (
                 <div className="p-12 text-center bg-white/70 border border-gray-200 backdrop-blur-sm">
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl mb-6 bg-gray-100">
+                  <div className="inline-flex items-center justify-center w-20 h-20 mb-6 bg-gray-100">
                     <ClipboardCheck className="h-10 w-10 text-gray-500" />
                   </div>
                   
@@ -647,7 +647,7 @@ function EstimatesContent(): React.JSX.Element {
                   {estimates.length === 0 && (
                     <button
                       onClick={() => setShowCreateEstimate(true)}
-                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium mx-auto cursor-pointer"
+                      className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium mx-auto cursor-pointer"
                     >
                       <Plus className="h-4 w-4" />
                       <span>Create Estimate</span>
@@ -666,7 +666,7 @@ function EstimatesContent(): React.JSX.Element {
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
+                              <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
                                 <ClipboardCheck className="h-4 w-4 text-gray-700" />
                               </div>
                               <div>
@@ -696,7 +696,7 @@ function EstimatesContent(): React.JSX.Element {
                             <div className="flex items-center space-x-1">
                               <button 
                                 onClick={() => handleViewEstimate(estimate)} 
-                                className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
+                                className={`p-1.5 transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
                                 title="View"
                               >
                                 <Eye className="h-4 w-4 text-gray-600" />
@@ -705,7 +705,7 @@ function EstimatesContent(): React.JSX.Element {
                                 <>
                                   <button 
                                     onClick={() => setEditingEstimate(estimate)}
-                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
+                                    className={`p-1.5 transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
                                     title="Edit"
                                   >
                                     <Edit className="h-4 w-4 text-gray-600" />
@@ -713,7 +713,7 @@ function EstimatesContent(): React.JSX.Element {
                                   <button 
                                     onClick={() => handleSendEstimate(estimate)}
                                     disabled={loadingActions[`send-${estimate.id}`]}
-                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`send-${estimate.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                    className={`p-1.5 transition-colors ${'hover:bg-gray-100'} ${loadingActions[`send-${estimate.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                     title="Send"
                                   >
                                     {loadingActions[`send-${estimate.id}`] ? (
@@ -728,7 +728,7 @@ function EstimatesContent(): React.JSX.Element {
                                 <button 
                                   onClick={() => showConvertConfirmation(estimate)}
                                   disabled={loadingActions[`convert-${estimate.id}`]}
-                                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`convert-${estimate.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                  className={`p-1.5 transition-colors ${'hover:bg-gray-100'} ${loadingActions[`convert-${estimate.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                   title="Convert to Invoice"
                                 >
                                   {loadingActions[`convert-${estimate.id}`] ? (
@@ -748,7 +748,7 @@ function EstimatesContent(): React.JSX.Element {
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
+                              <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
                                 <ClipboardCheck className="h-4 w-4 text-gray-600" />
                               </div>
                               <div>
@@ -778,7 +778,7 @@ function EstimatesContent(): React.JSX.Element {
                             <div className="flex items-center space-x-1">
                               <button 
                                 onClick={() => handleViewEstimate(estimate)} 
-                                className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
+                                className={`p-1.5 transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
                                 title="View"
                               >
                                 <Eye className="h-4 w-4 text-gray-600" />
@@ -787,7 +787,7 @@ function EstimatesContent(): React.JSX.Element {
                                 <>
                                   <button 
                                     onClick={() => setEditingEstimate(estimate)}
-                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
+                                    className={`p-1.5 transition-colors ${'hover:bg-gray-100 cursor-pointer'}`}
                                     title="Edit"
                                   >
                                     <Edit className="h-4 w-4 text-gray-600" />
@@ -795,7 +795,7 @@ function EstimatesContent(): React.JSX.Element {
                                   <button 
                                     onClick={() => handleSendEstimate(estimate)}
                                     disabled={loadingActions[`send-${estimate.id}`]}
-                                    className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`send-${estimate.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                    className={`p-1.5 transition-colors ${'hover:bg-gray-100'} ${loadingActions[`send-${estimate.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                     title="Send"
                                   >
                                     {loadingActions[`send-${estimate.id}`] ? (
@@ -810,7 +810,7 @@ function EstimatesContent(): React.JSX.Element {
                                 <button 
                                   onClick={() => showConvertConfirmation(estimate)}
                                   disabled={loadingActions[`convert-${estimate.id}`]}
-                                  className={`p-1.5 rounded-md transition-colors ${'hover:bg-gray-100'} ${loadingActions[`convert-${estimate.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                  className={`p-1.5 transition-colors ${'hover:bg-gray-100'} ${loadingActions[`convert-${estimate.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                   title="Convert to Invoice"
                                 >
                                   {loadingActions[`convert-${estimate.id}`] ? (
@@ -852,7 +852,7 @@ function EstimatesContent(): React.JSX.Element {
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900">Estimate Details</h3>
                 <button
                   onClick={closeEstimateModal}
-                  className="p-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="p-2 hover:bg-gray-100 transition-colors cursor-pointer"
                 >
                   <X className="h-5 w-5 text-gray-500" />
                 </button>
@@ -878,7 +878,7 @@ function EstimatesContent(): React.JSX.Element {
                   {/* Client Info */}
                   <div>
                     <h4 className="text-sm font-medium text-gray-500 mb-2">Client</h4>
-                    <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="bg-gray-50 p-3">
                       <p className="font-medium text-gray-900">{selectedEstimate.client?.name || selectedEstimate.clientName || 'Unknown Client'}</p>
                       {selectedEstimate.client?.email && (
                         <p className="text-sm text-gray-600 mt-1">{selectedEstimate.client.email}</p>
@@ -924,7 +924,7 @@ function EstimatesContent(): React.JSX.Element {
                         const rate = item.rate || 0;
                         const amount = (item as any).amount || (rate * qty);
                         return (
-                          <div key={item.id || index} className="flex justify-between items-start p-3 bg-gray-50 rounded-lg">
+                          <div key={item.id || index} className="flex justify-between items-start p-3 bg-gray-50">
                             <div className="flex-1">
                               <p className="text-sm font-medium text-gray-900">{item.description}</p>
                               <p className="text-xs text-gray-500 mt-1">
@@ -968,7 +968,7 @@ function EstimatesContent(): React.JSX.Element {
                   {selectedEstimate.notes && (
                     <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-2">Notes</h4>
-                      <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">{selectedEstimate.notes}</p>
+                      <p className="text-sm text-gray-700 bg-gray-50 p-3">{selectedEstimate.notes}</p>
                     </div>
                   )}
 
@@ -977,7 +977,7 @@ function EstimatesContent(): React.JSX.Element {
                     {selectedEstimate.status !== 'approved' && (
                       <button
                         onClick={closeEstimateModal}
-                        className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
+                        className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
                       >
                         Close
                       </button>
@@ -989,7 +989,7 @@ function EstimatesContent(): React.JSX.Element {
                           // Add owner=true parameter so server can detect owner view (even in incognito)
                           window.open(`/estimate/${encodeURIComponent(token)}?owner=true&view=preview`, '_blank');
                         }}
-                        className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
+                        className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
                       >
                         View Public Page
                       </button>
@@ -1001,7 +1001,7 @@ function EstimatesContent(): React.JSX.Element {
                           showConvertConfirmation(selectedEstimate);
                         }}
                         disabled={loadingActions[`convert-${selectedEstimate.id}`]}
-                        className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-green-400 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                        className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent hover:bg-green-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-green-400 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                       >
                         {loadingActions[`convert-${selectedEstimate.id}`] ? (
                           <>

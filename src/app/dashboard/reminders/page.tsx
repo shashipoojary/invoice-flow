@@ -521,7 +521,7 @@ export default function ReminderHistoryPage() {
             {/* Top Row: Invoice Info + Amount */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
+                <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
                   <Mail className="h-4 w-4 text-gray-700" />
                 </div>
                 <div>
@@ -582,7 +582,7 @@ export default function ReminderHistoryPage() {
                   <button
                     onClick={() => sendManualReminder(reminder.invoice_id, reminder.reminder_type)}
                     disabled={sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`)}
-                    className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${
+                    className={`p-1.5 transition-colors hover:bg-gray-100 ${
                       sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                     }`}
                     title="Send again"
@@ -596,7 +596,7 @@ export default function ReminderHistoryPage() {
                 )}
                 <button
                   onClick={() => handleViewReminder(reminder)}
-                  className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
+                  className="p-1.5 transition-colors hover:bg-gray-100 cursor-pointer"
                   title="View reminder details"
                 >
                   <Eye className="h-4 w-4 text-gray-700" />
@@ -611,7 +611,7 @@ export default function ReminderHistoryPage() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
+                <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
                   <Mail className="h-4 w-4 text-gray-700" />
                 </div>
                 <div>
@@ -670,7 +670,7 @@ export default function ReminderHistoryPage() {
                   <button
                     onClick={() => sendManualReminder(reminder.invoice_id, reminder.reminder_type)}
                     disabled={sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`)}
-                    className={`p-1.5 rounded-md transition-colors hover:bg-gray-100 ${
+                    className={`p-1.5 transition-colors hover:bg-gray-100 ${
                       sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                     }`}
                     title="Send again"
@@ -684,7 +684,7 @@ export default function ReminderHistoryPage() {
                 )}
                 <button
                   onClick={() => handleViewReminder(reminder)}
-                  className="p-1.5 rounded-md transition-colors hover:bg-gray-100 cursor-pointer"
+                  className="p-1.5 transition-colors hover:bg-gray-100 cursor-pointer"
                   title="View reminder details"
                 >
                   <Eye className="h-4 w-4 text-gray-700" />
@@ -851,7 +851,7 @@ export default function ReminderHistoryPage() {
             </h2>
              <button
                onClick={fetchReminderHistory}
-               className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
+               className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
              >
                <RefreshCw className="h-4 w-4" />
                <span>Refresh</span>
@@ -870,7 +870,7 @@ export default function ReminderHistoryPage() {
                 placeholder="Search reminders..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg border text-sm border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                className="w-full pl-10 pr-4 py-2 border text-sm border-gray-300 bg-white text-gray-900 placeholder-gray-500 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
               />
             </div>
 
@@ -878,7 +878,7 @@ export default function ReminderHistoryPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium cursor-pointer"
+                className="flex items-center gap-2 px-3 py-2 border border-gray-300 hover:bg-gray-50 transition-colors text-sm font-medium cursor-pointer"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -913,7 +913,7 @@ export default function ReminderHistoryPage() {
                   <div className="flex flex-wrap gap-1.5">
                     <button
                       onClick={() => setStatusFilter('')}
-                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                      className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         !statusFilter 
                           ? 'bg-gray-900 text-white' 
                           : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
@@ -923,7 +923,7 @@ export default function ReminderHistoryPage() {
                     </button>
                     <button
                       onClick={() => setStatusFilter('sent')}
-                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                      className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         statusFilter === 'sent' 
                           ? 'bg-blue-100 text-blue-800 border border-blue-200' 
                           : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
@@ -933,7 +933,7 @@ export default function ReminderHistoryPage() {
                     </button>
                     <button
                       onClick={() => setStatusFilter('scheduled')}
-                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                      className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         statusFilter === 'scheduled' 
                           ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' 
                           : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
@@ -943,7 +943,7 @@ export default function ReminderHistoryPage() {
                     </button>
                     <button
                       onClick={() => setStatusFilter('delivered')}
-                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                      className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         statusFilter === 'delivered' 
                           ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
                           : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
@@ -953,7 +953,7 @@ export default function ReminderHistoryPage() {
                     </button>
                     <button
                       onClick={() => setStatusFilter('failed')}
-                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                      className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         statusFilter === 'failed' 
                           ? 'bg-red-100 text-red-800 border border-red-200' 
                           : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
@@ -963,7 +963,7 @@ export default function ReminderHistoryPage() {
                     </button>
                     <button
                       onClick={() => setStatusFilter('bounced')}
-                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                      className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         statusFilter === 'bounced' 
                           ? 'bg-orange-100 text-orange-800 border border-orange-200' 
                           : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
@@ -973,7 +973,7 @@ export default function ReminderHistoryPage() {
                     </button>
                     <button
                       onClick={() => setStatusFilter('cancelled')}
-                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                      className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         statusFilter === 'cancelled' 
                           ? 'bg-gray-100 text-gray-800 border border-gray-200' 
                           : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
@@ -990,7 +990,7 @@ export default function ReminderHistoryPage() {
                   <div className="flex flex-wrap gap-1.5">
                     <button
                       onClick={() => setTypeFilter('')}
-                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                      className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         !typeFilter 
                           ? 'bg-gray-900 text-white' 
                           : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
@@ -1000,7 +1000,7 @@ export default function ReminderHistoryPage() {
                     </button>
                     <button
                       onClick={() => setTypeFilter('friendly')}
-                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                      className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         typeFilter === 'friendly' 
                           ? 'bg-blue-100 text-blue-800 border border-blue-200' 
                           : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
@@ -1010,7 +1010,7 @@ export default function ReminderHistoryPage() {
                     </button>
                     <button
                       onClick={() => setTypeFilter('polite')}
-                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                      className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         typeFilter === 'polite' 
                           ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
                           : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
@@ -1020,7 +1020,7 @@ export default function ReminderHistoryPage() {
                     </button>
                     <button
                       onClick={() => setTypeFilter('firm')}
-                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                      className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         typeFilter === 'firm' 
                           ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' 
                           : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
@@ -1030,7 +1030,7 @@ export default function ReminderHistoryPage() {
                     </button>
                     <button
                       onClick={() => setTypeFilter('urgent')}
-                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                      className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         typeFilter === 'urgent' 
                           ? 'bg-red-100 text-red-800 border border-red-200' 
                           : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
@@ -1064,7 +1064,7 @@ export default function ReminderHistoryPage() {
                 <div className="animate-pulse">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gray-300 rounded-lg"></div>
+                            <div className="w-10 h-10 bg-gray-300"></div>
                       <div>
                         <div className="h-4 bg-gray-300 rounded w-32 mb-2"></div>
                         <div className="h-3 bg-gray-300 rounded w-24"></div>
@@ -1143,7 +1143,7 @@ export default function ReminderHistoryPage() {
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900">Reminder Details</h3>
                 <button
                   onClick={closeReminderModal}
-                  className="p-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="p-2 hover:bg-gray-100 transition-colors cursor-pointer"
                 >
                   <X className="h-5 w-5 text-gray-500" />
                 </button>
@@ -1155,7 +1155,7 @@ export default function ReminderHistoryPage() {
                   {/* Invoice Info */}
                   <div>
                     <h4 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Invoice Information</h4>
-                    <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2">
+                    <div className="bg-gray-50 p-3 sm:p-4 space-y-2">
                       <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
                         <span className="text-xs sm:text-sm text-gray-600">Invoice Number:</span>
                         <span className="text-xs sm:text-sm font-medium text-gray-900 break-words">{selectedReminder.invoice.invoice_number}</span>
@@ -1260,7 +1260,7 @@ export default function ReminderHistoryPage() {
                   {/* Client Info */}
                   <div>
                     <h4 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Client Information</h4>
-                    <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2">
+                    <div className="bg-gray-50 p-3 sm:p-4 space-y-2">
                       <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
                         <span className="text-xs sm:text-sm text-gray-600">Name:</span>
                         <span className="text-xs sm:text-sm font-medium text-gray-900 break-words">{selectedReminder.invoice.clients.name}</span>
@@ -1281,7 +1281,7 @@ export default function ReminderHistoryPage() {
                   {/* Reminder Info */}
                   <div>
                     <h4 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">Reminder Information</h4>
-                    <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2">
+                    <div className="bg-gray-50 p-3 sm:p-4 space-y-2">
                       <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
                         <span className="text-xs sm:text-sm text-gray-600">Type:</span>
                         <span className={`text-xs sm:text-sm font-medium capitalize break-words ${
@@ -1327,7 +1327,7 @@ export default function ReminderHistoryPage() {
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:space-x-0">
                   <button
                     onClick={closeReminderModal}
-                    className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
+                    className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
                   >
                     Close
                   </button>
@@ -1339,7 +1339,7 @@ export default function ReminderHistoryPage() {
                         closeReminderModal();
                       }}
                       disabled={sendingReminders.has(`${selectedReminder.invoice_id}-${selectedReminder.reminder_type}`)}
-                      className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                      className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                     >
                       {sendingReminders.has(`${selectedReminder.invoice_id}-${selectedReminder.reminder_type}`) ? (
                         <>
@@ -1375,10 +1375,10 @@ export default function ReminderHistoryPage() {
               {/* Fast Invoice Option */}
               <button
                 onClick={handleSelectFastInvoice}
-                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+                className="w-full p-4 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                  <div className="p-2 bg-indigo-100 group-hover:bg-indigo-200 transition-colors">
                     <Sparkles className="w-5 h-5 text-indigo-600" />
                   </div>
                   <div className="text-left flex-1">
@@ -1396,10 +1396,10 @@ export default function ReminderHistoryPage() {
               {/* Detailed Invoice Option */}
               <button
                 onClick={handleSelectDetailedInvoice}
-                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+                className="w-full p-4 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                  <div className="p-2 bg-indigo-100 group-hover:bg-indigo-200 transition-colors">
                     <FilePlus className="w-5 h-5 text-indigo-600" />
                   </div>
                   <div className="text-left flex-1">

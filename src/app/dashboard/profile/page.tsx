@@ -65,7 +65,7 @@ const ProfileInfoSection = memo(({ profile, isEditing, formData, onFormChange, o
   if (!profile) return null;
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="bg-white border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-gray-900">Profile Information</h2>
         {!isEditing ? (
@@ -80,7 +80,7 @@ const ProfileInfoSection = memo(({ profile, isEditing, formData, onFormChange, o
           <div className="flex space-x-3">
             <button
               onClick={onSave}
-              className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer"
+              className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors cursor-pointer"
             >
               <Save className="w-4 h-4" />
               <span>Save Changes</span>
@@ -104,7 +104,7 @@ const ProfileInfoSection = memo(({ profile, isEditing, formData, onFormChange, o
               type="text"
               value={formData.name}
               onChange={(e) => onFormChange('name', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+              className="w-full px-3 py-2 border border-gray-300 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
             />
           ) : (
             <p className="text-gray-900">{profile.name}</p>
@@ -118,7 +118,7 @@ const ProfileInfoSection = memo(({ profile, isEditing, formData, onFormChange, o
               type="email"
               value={formData.email}
               onChange={(e) => onFormChange('email', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+              className="w-full px-3 py-2 border border-gray-300 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
             />
           ) : (
             <p className="text-gray-900">{profile.email}</p>
@@ -132,7 +132,7 @@ const ProfileInfoSection = memo(({ profile, isEditing, formData, onFormChange, o
               type="tel"
               value={formData.phone}
               onChange={(e) => onFormChange('phone', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+              className="w-full px-3 py-2 border border-gray-300 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
             />
           ) : (
             <p className="text-gray-900">{profile.phone || 'Not provided'}</p>
@@ -146,7 +146,7 @@ const ProfileInfoSection = memo(({ profile, isEditing, formData, onFormChange, o
               type="text"
               value={formData.company}
               onChange={(e) => onFormChange('company', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+              className="w-full px-3 py-2 border border-gray-300 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
             />
           ) : (
             <p className="text-gray-900">{profile.company || 'Not provided'}</p>
@@ -160,7 +160,7 @@ const ProfileInfoSection = memo(({ profile, isEditing, formData, onFormChange, o
               value={formData.address}
               onChange={(e) => onFormChange('address', e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors resize-none"
+              className="w-full px-3 py-2 border border-gray-300 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors resize-none"
             />
           ) : (
             <p className="text-gray-900">{profile.address || 'Not provided'}</p>
@@ -588,7 +588,7 @@ export default function ProfilePage() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Profile Information */}
                 <div className="lg:col-span-2 space-y-6">
-                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="bg-white border border-gray-200 p-6">
                     <div className="flex items-center justify-between mb-6">
                       <h2 className="font-heading text-xl font-semibold" style={{color: '#1f2937'}}>
                         Personal Information
@@ -612,7 +612,7 @@ export default function ProfilePage() {
                           </button>
                           <button
                             onClick={handleUpdateProfile}
-                            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
+                            className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors cursor-pointer"
                           >
                             <Save className="w-4 h-4" />
                             <span>Save</span>
@@ -632,7 +632,7 @@ export default function ProfilePage() {
                               type="text"
                               value={formData.name}
                               onChange={(e) => setFormData({...formData, name: e.target.value})}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                              className="w-full px-3 py-2 border border-gray-300 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                             />
                           ) : (
                             <p className="text-gray-900">{profile?.name || 'Not provided'}</p>
@@ -648,7 +648,7 @@ export default function ProfilePage() {
                               type="email"
                               value={formData.email}
                               onChange={(e) => setFormData({...formData, email: e.target.value})}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                              className="w-full px-3 py-2 border border-gray-300 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                             />
                           ) : (
                             <p className="text-gray-900">{profile?.email || 'Not provided'}</p>
@@ -664,7 +664,7 @@ export default function ProfilePage() {
                               type="tel"
                               value={formData.phone}
                               onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                              className="w-full px-3 py-2 border border-gray-300 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                             />
                           ) : (
                             <p className="text-gray-900">{profile?.phone || 'Not provided'}</p>
@@ -680,7 +680,7 @@ export default function ProfilePage() {
                               type="text"
                               value={formData.company}
                               onChange={(e) => setFormData({...formData, company: e.target.value})}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                              className="w-full px-3 py-2 border border-gray-300 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                             />
                           ) : (
                             <p className="text-gray-900">{profile?.company || 'Not provided'}</p>
@@ -697,7 +697,7 @@ export default function ProfilePage() {
                             value={formData.address}
                             onChange={(e) => setFormData({...formData, address: e.target.value})}
                             rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                            className="w-full px-3 py-2 border border-gray-300 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                           />
                         ) : (
                           <p className="text-gray-900">{profile?.address || 'Not provided'}</p>
@@ -707,14 +707,14 @@ export default function ProfilePage() {
                   </div>
 
                   {/* Security - Moved from right column */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="bg-white border border-gray-200 p-6">
                     <h3 className="font-heading text-lg font-semibold mb-4" style={{color: '#1f2937'}}>
                       Security
                     </h3>
                     <div className="space-y-3">
                       <button
                         onClick={() => setShowPasswordModal(true)}
-                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-blue-50 rounded-lg transition-colors text-blue-600 cursor-pointer"
+                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-blue-50 transition-colors text-blue-600 cursor-pointer"
                       >
                         <Lock className="w-5 h-5" />
                         <div>
@@ -726,14 +726,14 @@ export default function ProfilePage() {
                   </div>
 
                   {/* Data Management - Moved from right column */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="bg-white border border-gray-200 p-6">
                     <h3 className="font-heading text-lg font-semibold mb-4" style={{color: '#1f2937'}}>
                       Data Management
                     </h3>
                     <div className="space-y-3">
                       <button
                         onClick={handleShowFormatSelection}
-                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-green-50 rounded-lg transition-colors text-green-600 cursor-pointer"
+                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-green-50 transition-colors text-green-600 cursor-pointer"
                       >
                         <Download className="w-5 h-5" />
                         <div>
@@ -748,7 +748,7 @@ export default function ProfilePage() {
                 {/* Account Actions */}
                 <div className="space-y-6">
                   {/* Subscription */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="bg-white border border-gray-200 p-6">
                     <h3 className="font-heading text-lg font-semibold mb-4" style={{color: '#1f2937'}}>
                       Subscription
                     </h3>
@@ -784,14 +784,14 @@ export default function ProfilePage() {
                   </div>
 
                   {/* Danger Zone */}
-                  <div className="bg-white rounded-lg border border-red-200 p-6">
+                  <div className="bg-white border border-red-200 p-6">
                     <h3 className="font-heading text-lg font-semibold mb-4" style={{color: '#dc2626'}}>
                       Danger Zone
                     </h3>
                     <div className="space-y-3">
                       <button
                         onClick={() => setShowDeleteProgressModal(true)}
-                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-orange-50 rounded-lg transition-colors text-orange-600 cursor-pointer"
+                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-orange-50 transition-colors text-orange-600 cursor-pointer"
                       >
                         <RotateCcw className="w-5 h-5" />
                         <div>
@@ -801,7 +801,7 @@ export default function ProfilePage() {
                       </button>
                       <button
                         onClick={() => setShowDeleteModal(true)}
-                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-red-50 rounded-lg transition-colors text-red-600 cursor-pointer"
+                        className="w-full flex items-center space-x-3 p-3 text-left hover:bg-red-50 transition-colors text-red-600 cursor-pointer"
                       >
                         <Trash2 className="w-5 h-5" />
                         <div>
@@ -821,7 +821,7 @@ export default function ProfilePage() {
       {/* Password Change Modal */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-heading text-lg font-semibold" style={{color: '#1f2937'}}>
                 Change Password
@@ -844,7 +844,7 @@ export default function ProfilePage() {
                     type={showPasswords.current ? 'text' : 'password'}
                     value={passwordData.current}
                     onChange={(e) => setPasswordData({...passwordData, current: e.target.value})}
-                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                   />
                   <button
                     type="button"
@@ -869,7 +869,7 @@ export default function ProfilePage() {
                     type={showPasswords.new ? 'text' : 'password'}
                     value={passwordData.new}
                     onChange={(e) => setPasswordData({...passwordData, new: e.target.value})}
-                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                   />
                   <button
                     type="button"
@@ -894,7 +894,7 @@ export default function ProfilePage() {
                     type={showPasswords.confirm ? 'text' : 'password'}
                     value={passwordData.confirm}
                     onChange={(e) => setPasswordData({...passwordData, confirm: e.target.value})}
-                    className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                   />
                   <button
                     type="button"
@@ -914,13 +914,13 @@ export default function ProfilePage() {
             <div className="flex items-center justify-end space-x-3 mt-6">
               <button
                 onClick={() => setShowPasswordModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleChangePassword}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors cursor-pointer"
               >
                 Change Password
               </button>
@@ -932,7 +932,7 @@ export default function ProfilePage() {
       {/* Delete Progress Modal */}
       {showDeleteProgressModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="flex items-center space-x-3 mb-4">
               <div className="flex-shrink-0">
                 <RotateCcw className="w-6 h-6 text-orange-600" />
@@ -960,7 +960,7 @@ export default function ProfilePage() {
                 value={deleteProgressConfirmation}
                 onChange={(e) => setDeleteProgressConfirmation(e.target.value)}
                 placeholder="Type DELETE to confirm"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-colors"
                 autoFocus
               />
             </div>
@@ -971,7 +971,7 @@ export default function ProfilePage() {
                   setShowDeleteProgressModal(false);
                   setDeleteProgressConfirmation('');
                 }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
                 disabled={isDeletingProgress}
               >
                 Cancel
@@ -979,7 +979,7 @@ export default function ProfilePage() {
               <button
                 onClick={handleDeleteProgress}
                 disabled={isDeletingProgress || deleteProgressConfirmation.toLowerCase() !== 'delete'}
-                className="px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isDeletingProgress ? 'Deleting...' : 'Delete Progress'}
               </button>
@@ -991,7 +991,7 @@ export default function ProfilePage() {
       {/* Delete Account Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="flex items-center space-x-3 mb-4">
               <div className="flex-shrink-0">
                 <AlertTriangle className="w-6 h-6 text-red-600" />
@@ -1019,7 +1019,7 @@ export default function ProfilePage() {
                 value={deleteAccountConfirmation}
                 onChange={(e) => setDeleteAccountConfirmation(e.target.value)}
                 placeholder="Type DELETE to confirm"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
                 autoFocus
               />
             </div>
@@ -1030,7 +1030,7 @@ export default function ProfilePage() {
                   setShowDeleteModal(false);
                   setDeleteAccountConfirmation('');
                 }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
                 disabled={isDeleting}
               >
                 Cancel
@@ -1038,7 +1038,7 @@ export default function ProfilePage() {
               <button
                 onClick={handleDeleteAccount}
                 disabled={isDeleting || deleteAccountConfirmation.toLowerCase() !== 'delete'}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isDeleting ? 'Deleting...' : 'Delete Account'}
               </button>
@@ -1050,7 +1050,7 @@ export default function ProfilePage() {
       {/* Subscription Modal */}
       {showSubscriptionModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-lg border border-gray-200 max-w-4xl w-full shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="bg-white border border-gray-200 max-w-4xl w-full shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">
               <div className="flex-1 min-w-0 pr-2">
@@ -1063,7 +1063,7 @@ export default function ProfilePage() {
               </div>
               <button
                 onClick={() => setShowSubscriptionModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer flex-shrink-0"
+                className="p-2 hover:bg-gray-100 transition-colors cursor-pointer flex-shrink-0"
               >
                 <X className="w-5 h-5 text-gray-500" />
               </button>
@@ -1094,9 +1094,9 @@ export default function ProfilePage() {
                             <span>Invoices this month</span>
                             <span className="font-medium">{subscriptionUsage.used} / {subscriptionUsage.limit}</span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-1.5">
+                          <div className="w-full bg-gray-200 h-1.5">
                             <div 
-                              className={`h-1.5 rounded-full transition-all ${
+                              className={`h-1.5 transition-all ${
                                 subscriptionUsage.used >= subscriptionUsage.limit 
                                   ? 'bg-red-500' 
                                   : subscriptionUsage.used >= subscriptionUsage.limit * 0.8
@@ -1117,7 +1117,7 @@ export default function ProfilePage() {
                         </p>
                       )}
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium self-start sm:self-auto flex-shrink-0 ${
+                    <span className={`px-3 py-1 text-xs font-medium self-start sm:self-auto flex-shrink-0 ${
                       profile.subscription.status === 'active' 
                         ? 'bg-green-100 text-green-700' 
                         : 'bg-gray-200 text-gray-600'
@@ -1132,7 +1132,7 @@ export default function ProfilePage() {
               <div className="p-4 sm:p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Free Plan */}
-                <div className={`border rounded-lg p-4 sm:p-5 transition-colors ${
+                <div className={`border p-4 sm:p-5 transition-colors ${
                   profile?.subscription?.plan === 'free' 
                     ? 'border-indigo-500 bg-indigo-50' 
                     : 'border-gray-200 hover:border-gray-300'
@@ -1170,7 +1170,7 @@ export default function ProfilePage() {
                   <button
                     onClick={() => handleUpdateSubscription('free')}
                     disabled={profile?.subscription?.plan === 'free'}
-                    className={`w-full px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors ${
+                    className={`w-full px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${
                       profile?.subscription?.plan === 'free'
                         ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer'
@@ -1181,7 +1181,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Monthly Plan */}
-                <div className={`border rounded-lg p-4 sm:p-5 transition-colors relative ${
+                <div className={`border p-4 sm:p-5 transition-colors relative ${
                   profile?.subscription?.plan === 'monthly' 
                     ? 'border-indigo-500 bg-indigo-50' 
                     : 'border-gray-200 hover:border-gray-300'
@@ -1230,7 +1230,7 @@ export default function ProfilePage() {
                   <button
                     onClick={() => handleUpdateSubscription('monthly')}
                     disabled={profile?.subscription?.plan === 'monthly'}
-                    className={`w-full px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors ${
+                    className={`w-full px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${
                       profile?.subscription?.plan === 'monthly'
                         ? 'bg-indigo-200 text-indigo-700 cursor-not-allowed'
                         : 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
@@ -1241,7 +1241,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Pay Per Invoice Plan */}
-                <div className={`border rounded-lg p-4 sm:p-5 transition-colors lg:col-span-1 ${
+                <div className={`border p-4 sm:p-5 transition-colors lg:col-span-1 ${
                   profile?.subscription?.plan === 'pay_per_invoice' 
                     ? 'border-indigo-500 bg-indigo-50' 
                     : 'border-gray-200 hover:border-gray-300'
@@ -1291,7 +1291,7 @@ export default function ProfilePage() {
                   <button
                     onClick={() => handleUpdateSubscription('pay_per_invoice')}
                     disabled={profile?.subscription?.plan === 'pay_per_invoice'}
-                    className={`w-full px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors ${
+                    className={`w-full px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors ${
                       profile?.subscription?.plan === 'pay_per_invoice'
                         ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer'
@@ -1322,7 +1322,7 @@ export default function ProfilePage() {
       {/* Format Selection Modal */}
       {showFormatModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-heading text-lg font-semibold" style={{color: '#1f2937'}}>
                 Choose Export Format
@@ -1340,7 +1340,7 @@ export default function ProfilePage() {
             </p>
             
             <div className="space-y-3 mb-6">
-              <label className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <label className="flex items-center space-x-3 p-4 border border-gray-200 hover:bg-gray-50 cursor-pointer">
                 <input
                   type="radio"
                   name="format"
@@ -1351,7 +1351,7 @@ export default function ProfilePage() {
                 />
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                    <div className="w-8 h-8 bg-green-100 flex items-center justify-center">
                       <span className="text-green-600 font-bold text-sm">CSV</span>
                     </div>
                     <div>
@@ -1363,7 +1363,7 @@ export default function ProfilePage() {
               </label>
 
 
-              <label className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <label className="flex items-center space-x-3 p-4 border border-gray-200 hover:bg-gray-50 cursor-pointer">
                 <input
                   type="radio"
                   name="format"
@@ -1374,7 +1374,7 @@ export default function ProfilePage() {
                 />
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                    <div className="w-8 h-8 bg-red-100 flex items-center justify-center">
                       <span className="text-red-600 font-bold text-xs">PDF</span>
                     </div>
                     <div>
@@ -1385,7 +1385,7 @@ export default function ProfilePage() {
                 </div>
               </label>
 
-              <label className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+              <label className="flex items-center space-x-3 p-4 border border-gray-200 hover:bg-gray-50 cursor-pointer">
                 <input
                   type="radio"
                   name="format"
@@ -1396,7 +1396,7 @@ export default function ProfilePage() {
                 />
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                    <div className="w-8 h-8 bg-yellow-100 flex items-center justify-center">
                       <span className="text-yellow-600 font-bold text-xs">JSON</span>
                     </div>
                     <div>
@@ -1411,14 +1411,14 @@ export default function ProfilePage() {
             <div className="flex items-center justify-end space-x-3">
               <button
                 onClick={() => setShowFormatModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleExportData}
                 disabled={isExporting}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors disabled:opacity-50 cursor-pointer"
               >
                 {isExporting ? 'Exporting...' : 'Export Data'}
               </button>
@@ -1430,7 +1430,7 @@ export default function ProfilePage() {
       {/* Export Data Modal */}
       {showExportModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-heading text-lg font-semibold" style={{color: '#1f2937'}}>
                 Export Data
@@ -1492,13 +1492,13 @@ export default function ProfilePage() {
             <div className="flex items-center justify-end space-x-3">
               <button
                 onClick={() => setShowExportModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleExportData}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors cursor-pointer"
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors cursor-pointer"
               >
                 Export Data
               </button>
@@ -1510,7 +1510,7 @@ export default function ProfilePage() {
       {/* Invoice Type Selection Modal */}
       {showInvoiceTypeSelection && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="text-center mb-6">
               <h3 className="font-heading text-xl font-semibold mb-2" style={{color: '#1f2937'}}>
                 Choose Invoice Type
@@ -1524,10 +1524,10 @@ export default function ProfilePage() {
               {/* Fast Invoice Option */}
               <button
                 onClick={handleSelectFastInvoice}
-                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+                className="w-full p-4 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                  <div className="p-2 bg-indigo-100 group-hover:bg-indigo-200 transition-colors">
                     <Sparkles className="w-5 h-5 text-indigo-600" />
                   </div>
                   <div className="text-left flex-1">
@@ -1545,10 +1545,10 @@ export default function ProfilePage() {
               {/* Detailed Invoice Option */}
               <button
                 onClick={handleSelectDetailedInvoice}
-                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+                className="w-full p-4 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                  <div className="p-2 bg-indigo-100 group-hover:bg-indigo-200 transition-colors">
                     <FileText className="w-5 h-5 text-indigo-600" />
                   </div>
                   <div className="text-left flex-1">
@@ -1568,7 +1568,7 @@ export default function ProfilePage() {
             <div className="mt-6 pt-4 border-t border-gray-200">
               <button
                 onClick={() => setShowInvoiceTypeSelection(false)}
-                className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+                className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 Cancel
               </button>

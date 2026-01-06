@@ -507,7 +507,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                           ]}
                           placeholder="Select existing client"
                           isDarkMode={isDarkMode}
-                          searchable={true}
+                          searchable={false}
                         />
                       </div>
                     )}
