@@ -64,212 +64,189 @@ class DodoPaymentClient {
         note: 'Dodo Payment uses single API key. 401 means key recognized but may lack write permissions.'
       });
       
-      // Try different endpoints - Dodo Payment might use checkout-sessions instead
-      const endpoints = [
-        '/checkout-sessions',
-        '/v1/checkout-sessions',
-        '/api/v1/checkout-sessions',
-        '/api/checkout-sessions',
-        '/payments/create',
-        '/v1/payments/create',
-        '/api/v1/payments/create',
-      ];
+      // According to Dodo Payment official docs:
+      // - Endpoint: POST /checkouts
+      // - Auth: Authorization: Bearer YOUR_API_KEY
+      // - Body: Requires product_cart array with product_id and quantity
+      const endpoint = '/checkouts';
       
-      // Try multiple authentication methods
-      // Since X-API-Key returned 401 (recognized but unauthorized), it's likely the correct format
-      // The 401 probably means: API key is correct format but endpoint or request format is wrong
-      const authMethods: Array<{ name: string; headers: Record<string, string>; bodyExtra?: Record<string, any> }> = [
-        // Primary: X-API-Key header (we know this format is recognized)
-        {
-          name: 'X-API-Key header',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': this.apiKey,
-          }
-        },
-        // Try API key in Authorization header
-        {
-          name: 'Authorization header with API key',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': this.apiKey,
-          }
-        },
-        // Try Bearer with API key
-        {
-          name: 'Bearer token with API key',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`,
-          }
-        },
-        // Try API-Key header (different casing)
-        {
-          name: 'API-Key header (no X prefix)',
-          headers: {
-            'Content-Type': 'application/json',
-            'API-Key': this.apiKey,
-          }
-        },
-        // Try api-key header (lowercase)
-        {
-          name: 'api-key header (lowercase)',
-          headers: {
-            'Content-Type': 'application/json',
-            'api-key': this.apiKey,
-          }
-        },
-        // Try with API key in body as well
-        {
-          name: 'X-API-Key header + api_key in body',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': this.apiKey,
-          },
-          bodyExtra: {
-            api_key: this.apiKey,
-          }
-        },
-      ];
+      // Use Bearer token authentication as per official docs
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`,
+      };
       
-      let lastError: any = null;
-      let lastSuccessfulEndpoint: string | null = null;
+      // According to Dodo Payment docs, checkout sessions require product_cart with product_id
+      // We need to either:
+      // 1. Create a product first (via Products API)
+      // 2. Use an existing product_id from environment variable
       
-      // Try each endpoint with each auth method
-      for (const endpoint of endpoints) {
-        for (const authMethod of authMethods) {
-          try {
-            console.log(`🔍 Trying: ${authMethod.name} on ${this.baseUrl}${endpoint}`);
-            
-            // Try different request body formats
-            const requestBodyVariations = [
-              // Format 1: Standard format
-              {
-                amount: params.amount,
-                currency: params.currency,
-                description: params.description,
-                customer: {
-                  email: params.customerEmail,
-                  name: params.customerName,
-                },
-                metadata: params.metadata || {},
-                success_url: params.successUrl,
-                cancel_url: params.cancelUrl,
-                mode: 'payment',
-                ...(authMethod.bodyExtra || {}),
-              },
-              // Format 2: Checkout session format
-              {
-                amount: params.amount,
-                currency: params.currency,
-                description: params.description,
-                customer_email: params.customerEmail,
-                customer_name: params.customerName,
-                metadata: params.metadata || {},
-                successUrl: params.successUrl,
-                cancelUrl: params.cancelUrl,
-                ...(authMethod.bodyExtra || {}),
-              },
-              // Format 3: Minimal format
-              {
-                amount: params.amount,
-                currency: params.currency,
-                description: params.description,
-                customerEmail: params.customerEmail,
-                customerName: params.customerName,
-                successUrl: params.successUrl,
-                cancelUrl: params.cancelUrl,
-                ...(authMethod.bodyExtra || {}),
-              },
-            ];
-            
-            for (let i = 0; i < requestBodyVariations.length; i++) {
-              const requestBody = requestBodyVariations[i];
-              const formatName = i === 0 ? 'standard' : i === 1 ? 'checkout-session' : 'minimal';
-              
-              console.log(`   📦 Trying body format: ${formatName}`);
-              
-              const response = await fetch(`${this.baseUrl}${endpoint}`, {
-                method: 'POST',
-                headers: authMethod.headers,
-                body: JSON.stringify(requestBody),
-              });
-
-              // Get response text first to handle non-JSON responses
-              const responseText = await response.text();
-              
-              // Log raw response for debugging
-              console.log(`   Response (${formatName}):`, {
-                status: response.status,
-                statusText: response.statusText,
-                responseLength: responseText.length,
-                responsePreview: responseText.substring(0, 200)
-              });
-
-              // If 404, try next endpoint/auth/format combination
-              if (response.status === 404) {
-                continue; // Try next format
-              }
-              
-              // If 405, endpoint exists but method/format wrong
-              if (response.status === 405) {
-                continue; // Try next format
-              }
-          
-              // 401/403 means auth failed but endpoint exists
-              if (response.status === 401 || response.status === 403) {
-                // If this is the first 401 for this endpoint, note it
-                if (!lastSuccessfulEndpoint || lastSuccessfulEndpoint !== endpoint) {
-                  console.log(`   ⚠️ ${endpoint} returned ${response.status} - endpoint exists but auth/format wrong`);
+      // Try to get product_id from environment or create one
+      const productId = process.env.DODO_PAYMENT_PRODUCT_ID;
+      
+      if (!productId) {
+        console.error('❌ DODO_PAYMENT_PRODUCT_ID not found in environment variables.');
+        console.error('💡 SOLUTION: Create a product in Dodo Payment dashboard first:');
+        console.error('   1. Go to Dodo Payment Dashboard → Products');
+        console.error('   2. Create a new product (e.g., "Monthly Subscription - $9")');
+        console.error('   3. Copy the product_id');
+        console.error('   4. Add to Vercel: DODO_PAYMENT_PRODUCT_ID=your-product-id');
+        console.error('');
+        console.error('   OR we can create a product programmatically first...');
+        
+        // Try to create a product first
+        try {
+          console.log('🔧 Attempting to create product first...');
+          const productResponse = await fetch(`${this.baseUrl}/products`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+              name: `Subscription - ${params.metadata?.plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice'}`,
+              description: params.description,
+              prices: [
+                {
+                  amount: Math.round(params.amount * 100), // Amount in cents
+                  currency: params.currency.toUpperCase(),
+                  billing_period: params.metadata?.plan === 'monthly' ? 'month' : undefined,
                 }
-                continue; // Try next format
-              }
-
-              // Try to parse JSON, but handle empty or invalid responses
-              let data;
-              try {
-                data = responseText ? JSON.parse(responseText) : {};
-              } catch (parseError) {
-                continue; // Try next format
-              }
-
-              if (!response.ok) {
-                continue; // Try next format
-              }
-
-              // SUCCESS! We found the right combination
-              lastSuccessfulEndpoint = endpoint;
-              console.log(`✅ SUCCESS! Found working combination:`);
-              console.log(`   Endpoint: ${endpoint}`);
-              console.log(`   Auth: ${authMethod.name}`);
-              console.log(`   Body format: ${formatName}`);
-              console.log(`   Payment ID: ${data.payment_id || data.id || 'N/A'}`);
-
+              ],
+            }),
+          });
+          
+          const productData = await productResponse.json();
+          if (productResponse.ok && productData.id) {
+            console.log(`✅ Product created: ${productData.id}`);
+            // Use the created product_id
+            const createdProductId = productData.id;
+            
+            // Now create checkout session with this product
+            const checkoutBody = {
+              product_cart: [
+                {
+                  product_id: createdProductId,
+                  quantity: 1,
+                }
+              ],
+              customer: {
+                email: params.customerEmail,
+                name: params.customerName,
+              },
+              metadata: params.metadata || {},
+              return_url: params.successUrl,
+            };
+            
+            const checkoutResponse = await fetch(`${this.baseUrl}${endpoint}`, {
+              method: 'POST',
+              headers: headers,
+              body: JSON.stringify(checkoutBody),
+            });
+            
+            const checkoutData = await checkoutResponse.json();
+            if (checkoutResponse.ok) {
               return {
                 success: true,
-                paymentLink: data.payment_link_url || data.url || data.payment_link || data.checkout_url,
-                paymentId: data.payment_id || data.id || data.session_id,
+                paymentLink: checkoutData.checkout_url,
+                paymentId: checkoutData.session_id,
               };
-            } // End of requestBodyVariations loop
-          } catch (fetchError: any) {
-            console.error(`Error trying ${authMethod.name} on ${endpoint}:`, fetchError);
-            lastError = { error: fetchError.message, authMethod: authMethod.name, endpoint };
-            continue;
+            }
           }
-        } // End of authMethods loop
-      } // End of endpoints loop
+        } catch (productError) {
+          console.error('Failed to create product:', productError);
+        }
+        
+        return {
+          success: false,
+          error: 'DODO_PAYMENT_PRODUCT_ID environment variable is required. Please create a product in Dodo Payment dashboard and set DODO_PAYMENT_PRODUCT_ID in your environment variables.',
+        };
+      }
       
-      // If we get here, all combinations failed
-      console.error('❌ All endpoint/auth/format combinations failed.');
-      console.error('💡 Since you have Read/Write access, the issue is likely:');
-      console.error('   1. Wrong endpoint - Dodo might use a different path');
-      console.error('   2. Wrong request body format - field names might be different');
-      console.error('   3. API key might need to be activated/refreshed');
-      console.error('   4. Check Dodo Payment API docs for exact endpoint and format');
-      return {
-        success: false,
-        error: `Could not find working endpoint/format combination. Please check Dodo Payment API documentation for the correct endpoint and request format. Last tried: ${lastError?.endpoint || 'unknown'}`,
+      // Use the product_id from environment
+      const requestBody = {
+        product_cart: [
+          {
+            product_id: productId,
+            quantity: 1,
+            // If product supports "pay what you want", we can set amount
+            ...(params.amount ? { amount: Math.round(params.amount * 100) } : {}),
+          }
+        ],
+        customer: {
+          email: params.customerEmail,
+          name: params.customerName,
+        },
+        metadata: params.metadata || {},
+        return_url: params.successUrl,
       };
+      
+      try {
+        console.log(`🔍 Creating checkout session with product_id: ${productId}`);
+        console.log(`   Using Authorization: Bearer (as per official docs)`);
+        console.log(`   Endpoint: POST ${this.baseUrl}${endpoint}`);
+        
+        const response = await fetch(`${this.baseUrl}${endpoint}`, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(requestBody),
+        });
+
+        // Get response text first to handle non-JSON responses
+        const responseText = await response.text();
+        
+        // Log raw response for debugging
+        console.log(`   Response:`, {
+          status: response.status,
+          statusText: response.statusText,
+          responseLength: responseText.length,
+          responsePreview: responseText.substring(0, 300)
+        });
+
+        // Try to parse JSON
+        let data;
+        try {
+          data = responseText ? JSON.parse(responseText) : {};
+        } catch (parseError) {
+          console.error(`   Failed to parse JSON:`, parseError);
+          return {
+            success: false,
+            error: `Invalid JSON response from Dodo Payment: ${responseText.substring(0, 200)}`,
+          };
+        }
+
+        if (!response.ok) {
+          console.error(`   Error response:`, data);
+          
+          // Provide helpful error messages
+          if (data.message?.toLowerCase().includes('product') || data.code?.toLowerCase().includes('product')) {
+            return {
+              success: false,
+              error: `Product not found. Please verify DODO_PAYMENT_PRODUCT_ID is correct. Error: ${data.message || data.code}`,
+            };
+          }
+          
+          return {
+            success: false,
+            error: data.message || data.error || `Dodo Payment API error: ${response.status} ${response.statusText}`,
+          };
+        }
+
+        // SUCCESS!
+        console.log(`✅ SUCCESS! Checkout session created:`);
+        console.log(`   Session ID: ${data.session_id || 'N/A'}`);
+        console.log(`   Checkout URL: ${data.checkout_url || 'N/A'}`);
+
+        return {
+          success: true,
+          paymentLink: data.checkout_url,
+          paymentId: data.session_id,
+        };
+      } catch (fetchError: any) {
+        console.error(`Error creating checkout session:`, fetchError);
+        return {
+          success: false,
+          error: fetchError.message || 'Failed to create checkout session',
+        };
+      }
+      
     } catch (error: any) {
       console.error('Dodo Payment API error:', error);
       return {
