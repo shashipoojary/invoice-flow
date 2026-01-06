@@ -39,10 +39,10 @@ class DodoPaymentClient {
     this.environment = config.environment;
     
     // Dodo Payment API endpoints
-    // Sandbox: https://api-sandbox.dodopayments.com
+    // Sandbox: https://test.dodopayments.com
     // Production: https://api.dodopayments.com
     this.baseUrl = config.environment === 'sandbox' 
-      ? 'https://api-sandbox.dodopayments.com'
+      ? 'https://test.dodopayments.com'
       : 'https://api.dodopayments.com';
   }
 
