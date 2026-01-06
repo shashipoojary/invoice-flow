@@ -54,31 +54,66 @@ class DodoPaymentClient {
       // Use secretKey if available, otherwise use apiKey for authorization
       const authToken = this.secretKey || this.apiKey;
       
-      // Try different endpoint paths - Dodo Payment might use different structures
-      const endpoints = [
-        '/api/v1/payment-links',
-        '/api/payment-links',
-        '/v1/payment-links',
-        '/v1/payments/links',
-        '/payments/create',
-        '/checkout/sessions',
-        '/payment-links'
+      // Log authentication info (first few chars only for security)
+      console.log('🔐 Authentication:', {
+        hasApiKey: !!this.apiKey,
+        hasSecretKey: !!this.secretKey,
+        apiKeyPrefix: this.apiKey ? `${this.apiKey.substring(0, 8)}...` : 'none',
+        environment: this.environment
+      });
+      
+      // Try different endpoint and auth combinations
+      const endpoint = '/payments/create'; // The one that returned 405
+      
+      // Try multiple authentication methods
+      const authMethods: Array<{ name: string; headers: Record<string, string> }> = [
+        {
+          name: 'Bearer token only',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          }
+        },
+        {
+          name: 'X-API-Key only',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': this.apiKey,
+          }
+        },
+        {
+          name: 'Both Bearer and X-API-Key',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+            'X-API-Key': this.apiKey,
+          }
+        },
+        {
+          name: 'Dodo-Api-Key header',
+          headers: {
+            'Content-Type': 'application/json',
+            'Dodo-Api-Key': this.apiKey,
+          }
+        },
+        {
+          name: 'Authorization with API key',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': this.apiKey,
+          }
+        },
       ];
       
       let lastError: any = null;
       
-      for (const endpoint of endpoints) {
+      for (const authMethod of authMethods) {
         try {
-          console.log(`🔍 Trying Dodo Payment endpoint: ${this.baseUrl}${endpoint}`);
+          console.log(`🔍 Trying auth method: ${authMethod.name} on ${this.baseUrl}${endpoint}`);
           
           const response = await fetch(`${this.baseUrl}${endpoint}`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${authToken}`,
-              // Some providers use X-API-Key header, some don't - include both for compatibility
-              ...(this.apiKey && !this.secretKey ? { 'X-API-Key': this.apiKey } : {}),
-            },
+            headers: authMethod.headers,
             body: JSON.stringify({
               amount: params.amount,
               currency: params.currency,
@@ -98,7 +133,7 @@ class DodoPaymentClient {
           const responseText = await response.text();
           
           // Log raw response for debugging
-          console.log(`Dodo Payment API response (${endpoint}):`, {
+          console.log(`Dodo Payment API response (${authMethod.name}):`, {
             status: response.status,
             statusText: response.statusText,
             url: `${this.baseUrl}${endpoint}`,
@@ -106,10 +141,23 @@ class DodoPaymentClient {
             responsePreview: responseText.substring(0, 200)
           });
 
-          // If 404, try next endpoint
+          // If 404 or 405, try next auth method
           if (response.status === 404) {
-            console.log(`❌ Endpoint ${endpoint} returned 404, trying next...`);
-            lastError = { status: 404, endpoint };
+            console.log(`❌ Auth method "${authMethod.name}" returned 404, trying next...`);
+            lastError = { status: 404, authMethod: authMethod.name };
+            continue;
+          }
+          
+          if (response.status === 405) {
+            console.log(`❌ Auth method "${authMethod.name}" returned 405 (Method Not Allowed), trying next...`);
+            lastError = { status: 405, authMethod: authMethod.name, hint: 'Endpoint exists but authentication failed' };
+            continue;
+          }
+          
+          // 401/403 means auth failed but endpoint exists
+          if (response.status === 401 || response.status === 403) {
+            console.log(`❌ Auth method "${authMethod.name}" returned ${response.status} (Unauthorized), trying next...`);
+            lastError = { status: response.status, authMethod: authMethod.name, hint: 'Check API key is valid' };
             continue;
           }
 
@@ -130,22 +178,16 @@ class DodoPaymentClient {
             console.error('Dodo Payment API error response:', {
               status: response.status,
               statusText: response.statusText,
-              endpoint,
+              authMethod: authMethod.name,
               data
             });
-            // If it's not 404, this might be an auth error or other issue
-            if (response.status !== 404) {
-              return {
-                success: false,
-                error: data.message || data.error || `Failed to create payment link (${response.status})`,
-              };
-            }
-            lastError = { status: response.status, data, endpoint };
+            // For other errors, continue trying other auth methods
+            lastError = { status: response.status, data, authMethod: authMethod.name };
             continue;
           }
 
           // Log successful payment link creation for debugging
-          console.log(`✅ Dodo Payment link created using endpoint: ${endpoint}`, {
+          console.log(`✅ Dodo Payment link created using auth method: ${authMethod.name}`, {
             paymentId: data.payment_id || data.id,
             hasLink: !!(data.payment_link_url || data.url)
           });
@@ -156,17 +198,21 @@ class DodoPaymentClient {
             paymentId: data.payment_id || data.id,
           };
         } catch (fetchError: any) {
-          console.error(`Error trying endpoint ${endpoint}:`, fetchError);
-          lastError = { error: fetchError.message, endpoint };
+          console.error(`Error trying auth method ${authMethod.name}:`, fetchError);
+          lastError = { error: fetchError.message, authMethod: authMethod.name };
           continue;
         }
       }
       
-      // If we get here, all endpoints failed
-      console.error('❌ All Dodo Payment endpoints failed. Last error:', lastError);
+      // If we get here, all auth methods failed
+      console.error('❌ All Dodo Payment authentication methods failed. Last error:', lastError);
+      console.error('💡 SOLUTION: Check Dodo Payment documentation for:');
+      console.error('   1. Correct authentication header format');
+      console.error('   2. Verify your API key is valid and active');
+      console.error('   3. Check if you need to enable API access in dashboard');
       return {
         success: false,
-        error: `Payment service endpoint not found. Please check Dodo Payment API documentation for the correct endpoint. Last tried: ${lastError?.endpoint || 'unknown'}`,
+        error: `Authentication failed with all methods. Please verify your Dodo Payment API key is correct and active. Last status: ${lastError?.status || 'unknown'}`,
       };
     } catch (error: any) {
       console.error('Dodo Payment API error:', error);
