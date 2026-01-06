@@ -551,42 +551,21 @@ export default function ProfilePage() {
 
         const result = await response.json();
         if (result.success && result.plan) {
-          // Optimistically update the profile state IMMEDIATELY
-          // This ensures the UI reflects the change even before reload
-          if (profile) {
-            setProfile({
-              ...profile,
-              subscription: {
-                plan: result.plan as 'free' | 'monthly' | 'pay_per_invoice',
-                status: result.status || 'active',
-                nextBilling: result.nextBilling || undefined
-              }
-            });
-          }
-          
-          // Update subscription usage state as well
-          if (subscriptionUsage) {
-            setSubscriptionUsage({
-              ...subscriptionUsage,
-              plan: result.plan
-            });
-          }
-          
-          // Close the modal FIRST
+          // Close the modal immediately
           setShowSubscriptionModal(false);
           
           // Show success message
           showSuccess(`Subscription updated to ${plan === 'free' ? 'Free' : 'Pay Per Invoice'} plan`);
           
-          // Reload profile data from server to ensure consistency
-          // Use cache-busting timestamp to ensure fresh data
-          await loadProfile();
+          // Reload profile and subscription usage data from server
+          // This ensures we have the latest data from the database
+          await Promise.all([
+            loadProfile(),
+            loadSubscriptionUsage()
+          ]);
           
-          // Small delay to let state update, then reload page to ensure everything is in sync
-          setTimeout(() => {
-            // Force a hard reload to bypass any browser cache
-            window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now();
-          }, 300);
+          // No hard reload needed - React state updates will handle UI refresh
+          // The loadProfile() call above will update the profile state, which triggers re-render
         } else {
           throw new Error('Failed to update subscription');
         }
