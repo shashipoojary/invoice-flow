@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getUsageStats } from '@/lib/subscription-validator';
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,50 +26,35 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
+    // Get comprehensive usage stats
+    const usageStats = await getUsageStats(user.id);
     const plan = profile?.subscription_plan || 'free';
-
-    // Get current month's invoice count
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-
-    const { count: invoiceCount } = await supabase
-      .from('invoices')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .gte('created_at', startOfMonth.toISOString())
-      .lte('created_at', endOfMonth.toISOString());
-
-    // Get total invoices sent (for pay_per_invoice tracking)
-    const { count: totalSentCount } = await supabase
-      .from('invoices')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('status', 'sent');
-
-    // Calculate limits based on plan
-    let limit = null;
-    let used = invoiceCount || 0;
-    let remaining = null;
-
-    if (plan === 'free') {
-      limit = 5;
-      remaining = Math.max(0, limit - used);
-    } else if (plan === 'monthly') {
-      limit = null; // Unlimited
-      remaining = null;
-    } else if (plan === 'pay_per_invoice') {
-      // For pay_per_invoice, we track sent invoices
-      used = totalSentCount || 0;
-      limit = null; // No limit, but charges per invoice
-    }
 
     return NextResponse.json({
       plan,
-      limit,
-      used,
-      remaining,
-      canCreateInvoice: plan === 'free' ? (limit !== null && used < limit) : true
+      // Invoice usage
+      limit: usageStats.invoices.limit,
+      used: usageStats.invoices.used,
+      remaining: usageStats.invoices.limit ? Math.max(0, usageStats.invoices.limit - usageStats.invoices.used) : null,
+      canCreateInvoice: plan === 'free' ? (usageStats.invoices.limit !== null && usageStats.invoices.used < usageStats.invoices.limit) : true,
+      // Additional usage stats
+      clients: {
+        limit: usageStats.clients.limit,
+        used: usageStats.clients.used,
+        remaining: usageStats.clients.limit ? Math.max(0, usageStats.clients.limit - usageStats.clients.used) : null
+      },
+      estimates: {
+        limit: usageStats.estimates.limit,
+        used: usageStats.estimates.used,
+        remaining: usageStats.estimates.limit ? Math.max(0, usageStats.estimates.limit - usageStats.estimates.used) : null
+      },
+      reminders: {
+        limit: usageStats.reminders.limit,
+        used: usageStats.reminders.used,
+        remaining: usageStats.reminders.limit ? Math.max(0, usageStats.reminders.limit - usageStats.reminders.used) : null
+      },
+      templates: usageStats.templates,
+      customization: usageStats.customization
     });
   } catch (error) {
     console.error('Subscription usage API error:', error);

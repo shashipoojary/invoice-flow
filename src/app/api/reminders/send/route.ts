@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { Resend } from 'resend';
 import { getReminderEmailTemplate } from '@/lib/reminder-email-templates';
+import { canEnableReminder } from '@/lib/subscription-validator';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -112,6 +113,17 @@ export async function POST(request: NextRequest) {
           details: `Invoice is fully paid via partial payments ($${totalPaid.toFixed(2)} of $${invoice.total.toFixed(2)}). Cannot send reminders for fully paid invoices.`
         }, { status: 400 });
       }
+    }
+
+    // CRITICAL: Check subscription reminder limit BEFORE sending
+    // Free plan users are limited to 4 reminders per month (global limit)
+    const reminderLimitCheck = await canEnableReminder(invoice.user_id);
+    if (!reminderLimitCheck.allowed) {
+      return NextResponse.json({ 
+        error: reminderLimitCheck.reason || 'Reminder limit reached',
+        limitReached: true,
+        limitType: reminderLimitCheck.limitType
+      }, { status: 403 });
     }
 
     // Check if invoice is overdue

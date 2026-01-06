@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/auth-middleware';
 import { createClient } from '@supabase/supabase-js';
+import { canCreateInvoice } from '@/lib/subscription-validator';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -64,6 +65,17 @@ export async function POST(
 
     if (estimate.status !== 'approved') {
       return NextResponse.json({ error: 'Only approved estimates can be converted to invoices' }, { status: 400 });
+    }
+
+    // CRITICAL: Check subscription limit BEFORE converting estimate to invoice
+    // Estimate conversion counts as invoice creation and must respect invoice limits
+    const limitCheck = await canCreateInvoice(user.id);
+    if (!limitCheck.allowed) {
+      return NextResponse.json({ 
+        error: limitCheck.reason || 'Subscription limit reached',
+        limitReached: true,
+        limitType: limitCheck.limitType
+      }, { status: 403 });
     }
 
     // Generate invoice number
@@ -154,7 +166,17 @@ export async function POST(
       .single();
 
     if (insertError) {
-      console.error('Error creating invoice:', insertError);
+      console.error('Invoice creation error:', insertError);
+      
+      // Check if error is from subscription limit trigger
+      if (insertError.message && insertError.message.includes('Subscription limit reached')) {
+        return NextResponse.json({ 
+          error: insertError.message || 'Subscription limit reached',
+          limitReached: true,
+          limitType: 'invoices'
+        }, { status: 403 });
+      }
+      
       return NextResponse.json({ error: 'Failed to create invoice' }, { status: 500 });
     }
 

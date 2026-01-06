@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/auth-middleware';
+import { canCreateEstimate } from '@/lib/subscription-validator';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -22,6 +23,16 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     if (!clientId || !items || items.length === 0) {
       return NextResponse.json({ error: 'Client and items are required' }, { status: 400 });
+    }
+
+    // Check subscription limits BEFORE creating estimate
+    const limitCheck = await canCreateEstimate(user.id);
+    if (!limitCheck.allowed) {
+      return NextResponse.json({ 
+        error: limitCheck.reason || 'Subscription limit reached',
+        limitReached: true,
+        limitType: limitCheck.limitType
+      }, { status: 403 });
     }
 
     // Verify client belongs to user
@@ -103,6 +114,16 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error('Estimate creation error:', insertError);
+      
+      // Check if error is from subscription limit trigger
+      if (insertError.message && insertError.message.includes('Subscription limit reached')) {
+        return NextResponse.json({ 
+          error: insertError.message || 'Subscription limit reached',
+          limitReached: true,
+          limitType: 'estimates'
+        }, { status: 403 });
+      }
+      
       return NextResponse.json({ error: 'Failed to create estimate' }, { status: 500 });
     }
 

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { 
   X, Plus, Minus, Send, User, Mail, 
   Calendar, FileText, DollarSign, 
@@ -14,6 +15,7 @@ import { useData } from '@/contexts/DataContext'
 import { useSettings } from '@/contexts/SettingsContext'
 import { useAuth } from '@/hooks/useAuth'
 import CustomDropdown from './CustomDropdown'
+import UpgradeModal from './UpgradeModal'
 
 interface EstimateModalProps {
   isOpen: boolean
@@ -49,7 +51,7 @@ export default function EstimateModal({
   const { showSuccess, showError } = useToast()
   const { clients } = useData()
   const { settings } = useSettings()
-  const { getAuthHeaders } = useAuth()
+  const { getAuthHeaders, user } = useAuth()
   
   // Dark mode not currently used in settings, default to false
   const isDarkMode = false
@@ -57,6 +59,48 @@ export default function EstimateModal({
   const isEditMode = !!estimate
   
   const [loading, setLoading] = useState(false)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [subscriptionUsage, setSubscriptionUsage] = useState<{ used: number; limit: number | null; remaining: number | null; plan: string } | null>(null)
+  const [showUpgradeContent, setShowUpgradeContent] = useState(false)
+  
+  // Use refs to store latest functions to prevent dependency issues
+  const showErrorRef = useRef(showError)
+  const getAuthHeadersRef = useRef(getAuthHeaders)
+  
+  // Update refs when values change
+  useEffect(() => {
+    showErrorRef.current = showError
+    getAuthHeadersRef.current = getAuthHeaders
+  }, [showError, getAuthHeaders])
+
+  // Track if we're currently fetching to prevent multiple simultaneous requests
+  const isFetchingRef = useRef(false)
+
+  // Memoize fetchSubscriptionUsage to prevent infinite loops
+  const fetchSubscriptionUsage = useCallback(async () => {
+    // Prevent multiple simultaneous fetches
+    if (isFetchingRef.current) {
+      return null
+    }
+    
+    isFetchingRef.current = true
+    try {
+      const headers = await getAuthHeadersRef.current()
+      const response = await fetch('/api/subscription/usage', {
+        headers
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setSubscriptionUsage(data)
+        return data
+      }
+    } catch (error) {
+      console.error('Error fetching subscription usage:', error)
+    } finally {
+      isFetchingRef.current = false
+    }
+    return null
+  }, []) // Empty deps - using refs instead
   const [step, setStep] = useState(1)
   const [selectedClientId, setSelectedClientId] = useState(estimate?.clientId || '')
   const [items, setItems] = useState<EstimateItem[]>(
@@ -135,6 +179,8 @@ export default function EstimateModal({
   }, [estimate])
 
   const handleClose = () => {
+    setShowUpgradeContent(false)
+    setShowUpgradeModal(false)
     setSelectedClientId('')
     setItems([{ id: '1', description: '', rate: 0, qty: 1 }])
     setDiscount(0)
@@ -207,7 +253,21 @@ export default function EstimateModal({
       return
     }
 
+    // Show loading state immediately for better UX
     setLoading(true)
+
+    // Check subscription limit BEFORE creating estimate (only for new estimates, not editing)
+    if (!isEditMode) {
+      const usageData = await fetchSubscriptionUsage()
+      if (usageData && usageData.plan === 'free' && usageData.limit && usageData.used >= usageData.limit) {
+        setLoading(false)
+        showError('Error', 'You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.')
+        // Show upgrade content instead of closing modal (better UX - no modal stacking)
+        setShowUpgradeContent(true)
+        setSubscriptionUsage(usageData)
+        return
+      }
+    }
     try {
       const headers = await getAuthHeaders()
       const subtotal = calculateSubtotal()
@@ -264,6 +324,200 @@ export default function EstimateModal({
   }
 
   if (!isOpen) return null
+
+  // Show upgrade content instead of estimate form when limit is reached
+  if (showUpgradeContent && subscriptionUsage) {
+    return (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="shadow-2xl max-w-2xl w-full overflow-hidden bg-white">
+          {/* Upgrade Modal Content - Inline to avoid double backdrop */}
+          <div className="bg-white border border-gray-200 max-w-2xl w-full shadow-xl">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+              <div>
+                <h3 className="font-heading text-lg sm:text-xl font-semibold" style={{color: '#1f2937'}}>
+                  Upgrade Your Plan
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">You've reached your monthly invoice limit. Upgrade to create unlimited invoices.</p>
+              </div>
+              <button
+                onClick={handleClose}
+                className="p-2 hover:bg-gray-100 transition-colors cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Usage Info for Free Plan */}
+            {subscriptionUsage.plan === 'free' && subscriptionUsage.limit && (
+              <div className="p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Invoices this month</span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {subscriptionUsage.used} / {subscriptionUsage.limit}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 h-2">
+                  <div 
+                    className={`h-2 transition-all ${
+                      subscriptionUsage.used >= subscriptionUsage.limit 
+                        ? 'bg-red-500' 
+                        : subscriptionUsage.used >= subscriptionUsage.limit * 0.8
+                        ? 'bg-amber-500'
+                        : 'bg-indigo-600'
+                    }`}
+                    style={{ width: `${Math.min(100, (subscriptionUsage.used / subscriptionUsage.limit) * 100)}%` }}
+                  />
+                </div>
+                {subscriptionUsage.used >= subscriptionUsage.limit && (
+                  <p className="text-xs text-red-600 mt-2">You've reached your monthly limit. Upgrade to create unlimited invoices.</p>
+                )}
+              </div>
+            )}
+
+            {/* Plans */}
+            <div className="p-4 sm:p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Monthly Plan */}
+                <div className="border border-gray-200 hover:border-gray-300 p-4 sm:p-5 transition-colors">
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-heading text-base font-semibold text-gray-900">Monthly</h4>
+                      <span className="bg-indigo-600 text-white text-xs font-medium px-2 py-0.5">Popular</span>
+                    </div>
+                    <div className="flex items-baseline gap-1 mb-2">
+                      <span className="font-heading text-2xl font-semibold text-gray-900">$9</span>
+                      <span className="text-sm text-gray-600">/month</span>
+                    </div>
+                    <p className="text-xs text-gray-500">Best for regular users</p>
+                  </div>
+                  <ul className="space-y-2 mb-4">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-600">Unlimited invoices</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-600">All premium features</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-600">Automated reminders</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-600">Priority support</span>
+                    </li>
+                  </ul>
+                  <button
+                    onClick={async () => {
+                      if (!user) return
+                      setLoading(true)
+                      try {
+                        const headers = await getAuthHeaders()
+                        const response = await fetch('/api/subscription', {
+                          method: 'PUT',
+                          headers: { ...headers, 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ plan: 'monthly' }),
+                        })
+                        if (!response.ok) {
+                          const error = await response.json()
+                          throw new Error(error.error || 'Failed to update subscription')
+                        }
+                        showSuccess('Successfully upgraded to Monthly plan!')
+                        handleClose()
+                        window.location.reload()
+                      } catch (error: any) {
+                        showError(error.message || 'Failed to upgrade. Please try again.')
+                      } finally {
+                        setLoading(false)
+                      }
+                    }}
+                    disabled={loading || subscriptionUsage.plan === 'monthly'}
+                    className={`w-full px-4 py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                      subscriptionUsage.plan === 'monthly'
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
+                    }`}
+                  >
+                    {loading ? 'Processing...' : subscriptionUsage.plan === 'monthly' ? 'Current Plan' : (
+                      <>Upgrade to Monthly<ArrowRight className="w-4 h-4" /></>
+                    )}
+                  </button>
+                </div>
+
+                {/* Pay Per Invoice Plan */}
+                <div className="border border-gray-200 hover:border-gray-300 p-4 sm:p-5 transition-colors">
+                  <div className="mb-4">
+                    <h4 className="font-heading text-base font-semibold text-gray-900 mb-2">Pay Per Invoice</h4>
+                    <div className="flex items-baseline gap-1 mb-2">
+                      <span className="font-heading text-2xl font-semibold text-gray-900">$0.50</span>
+                      <span className="text-sm text-gray-600">/invoice sent</span>
+                    </div>
+                    <p className="text-xs text-gray-500">Pay only for what you use</p>
+                  </div>
+                  <ul className="space-y-2 mb-4">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-600">No monthly fee</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-600">Unlimited invoices</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-600">All premium features</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-600">Only pay when you send</span>
+                    </li>
+                  </ul>
+                  <button
+                    onClick={async () => {
+                      if (!user) return
+                      setLoading(true)
+                      try {
+                        const headers = await getAuthHeaders()
+                        const response = await fetch('/api/subscription', {
+                          method: 'PUT',
+                          headers: { ...headers, 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ plan: 'pay_per_invoice' }),
+                        })
+                        if (!response.ok) {
+                          const error = await response.json()
+                          throw new Error(error.error || 'Failed to update subscription')
+                        }
+                        showSuccess('Successfully upgraded to Pay Per Invoice plan!')
+                        handleClose()
+                        window.location.reload()
+                      } catch (error: any) {
+                        showError(error.message || 'Failed to upgrade. Please try again.')
+                      } finally {
+                        setLoading(false)
+                      }
+                    }}
+                    disabled={loading || subscriptionUsage.plan === 'pay_per_invoice'}
+                    className={`w-full px-4 py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                      subscriptionUsage.plan === 'pay_per_invoice'
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
+                    }`}
+                  >
+                    {loading ? 'Processing...' : subscriptionUsage.plan === 'pay_per_invoice' ? 'Current Plan' : (
+                      <>Choose Pay Per Invoice<ArrowRight className="w-4 h-4" /></>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const subtotal = calculateSubtotal()
   const total = calculateTotal()
@@ -776,6 +1030,27 @@ export default function EstimateModal({
           )}
         </div>
       </div>
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && (
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => {
+            setShowUpgradeModal(false)
+            // Refresh usage after modal closes in case user upgraded
+            if (!isEditMode && user) {
+              fetchSubscriptionUsage()
+            }
+          }}
+          currentPlan={subscriptionUsage?.plan as 'free' | 'monthly' | 'pay_per_invoice' || 'free'}
+          usage={subscriptionUsage ? {
+            used: subscriptionUsage.used,
+            limit: subscriptionUsage.limit,
+            remaining: subscriptionUsage.remaining
+          } : undefined}
+          reason="You've reached your monthly invoice limit. Upgrade to create unlimited invoices."
+        />
+      )}
     </div>
   )
 }

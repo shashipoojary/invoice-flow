@@ -1,0 +1,123 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase';
+import { getDodoPaymentClient, getPlanAmount } from '@/lib/dodo-payment';
+import { getAuthenticatedUser } from '@/lib/auth-middleware';
+
+/**
+ * Create payment checkout session for subscription upgrade
+ * POST /api/payments/checkout
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { plan } = body;
+
+    // Validate plan
+    const validPlans = ['monthly', 'pay_per_invoice'];
+    if (!validPlans.includes(plan)) {
+      return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
+    }
+
+    // Get user details
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('users')
+      .select('email, name')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Get payment amount
+    const amount = getPlanAmount(plan as 'monthly' | 'pay_per_invoice');
+    if (amount <= 0) {
+      return NextResponse.json({ error: 'Invalid plan amount' }, { status: 400 });
+    }
+
+    // Get Dodo Payment client
+    const dodoClient = getDodoPaymentClient();
+    if (!dodoClient) {
+      return NextResponse.json({ 
+        error: 'Payment service not configured. Please contact support.' 
+      }, { status: 500 });
+    }
+
+    // Get base URL for redirects
+    let baseUrl: string = process.env.NEXT_PUBLIC_APP_URL || '';
+    if (!baseUrl && process.env.VERCEL_URL) {
+      baseUrl = `https://${process.env.VERCEL_URL}`;
+    }
+    if (!baseUrl) {
+      const origin = request.headers.get('origin');
+      if (origin) {
+        baseUrl = origin;
+      }
+    }
+    if (!baseUrl) {
+      const forwardedHost = request.headers.get('x-forwarded-host');
+      if (forwardedHost) {
+        baseUrl = `https://${forwardedHost}`;
+      }
+    }
+    if (!baseUrl) {
+      baseUrl = 'http://localhost:3000';
+    }
+
+    // Create payment link
+    const paymentResult = await dodoClient.createPaymentLink({
+      amount,
+      currency: 'USD',
+      description: `Upgrade to ${plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice'} plan`,
+      customerEmail: profile.email || user.email || '',
+      customerName: profile.name || 'User',
+      metadata: {
+        userId: user.id,
+        plan,
+        type: 'subscription_upgrade',
+      },
+      successUrl: `${baseUrl}/dashboard/profile?payment=success&session_id={PAYMENT_ID}`,
+      cancelUrl: `${baseUrl}/dashboard/profile?payment=cancelled`,
+    });
+
+    if (!paymentResult.success || !paymentResult.paymentLink) {
+      return NextResponse.json({ 
+        error: paymentResult.error || 'Failed to create payment link' 
+      }, { status: 500 });
+    }
+
+    // Store payment session in database for tracking
+    const { error: sessionError } = await supabaseAdmin
+      .from('billing_records')
+      .insert({
+        user_id: user.id,
+        type: 'subscription',
+        amount: amount,
+        currency: 'USD',
+        stripe_session_id: paymentResult.paymentId, // Reusing field name for Dodo payment ID
+        status: 'pending',
+      });
+
+    if (sessionError) {
+      console.error('Error storing payment session:', sessionError);
+      // Don't fail the request, just log the error
+    }
+
+    return NextResponse.json({
+      success: true,
+      paymentLink: paymentResult.paymentLink,
+      paymentId: paymentResult.paymentId,
+    });
+  } catch (error: any) {
+    console.error('Payment checkout error:', error);
+    return NextResponse.json({ 
+      error: error.message || 'Internal server error' 
+    }, { status: 500 });
+  }
+}
+

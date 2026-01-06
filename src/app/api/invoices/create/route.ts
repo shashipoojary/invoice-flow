@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@/lib/supabase';
+import { canCreateInvoice } from '@/lib/subscription-validator';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -246,44 +247,18 @@ async function createScheduledReminders(invoiceId: string, reminderSettings: any
 }
 
 // Check subscription limits before creating invoice
-async function checkSubscriptionLimit(userId: string): Promise<{ allowed: boolean; reason?: string }> {
+async function checkSubscriptionLimit(userId: string): Promise<{ allowed: boolean; reason?: string; limitType?: string }> {
   try {
-    // Get user subscription plan
-    const { data: profile } = await supabaseAdmin
-      .from('users')
-      .select('subscription_plan')
-      .eq('id', userId)
-      .single();
-
-    const plan = profile?.subscription_plan || 'free';
-
-    // Free plan: Check monthly invoice limit
-    if (plan === 'free') {
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-
-      const { count } = await supabaseAdmin
-        .from('invoices')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .gte('created_at', startOfMonth.toISOString())
-        .lte('created_at', endOfMonth.toISOString());
-
-      if ((count || 0) >= 5) {
-        return {
-          allowed: false,
-          reason: 'Free plan limit reached. You can create up to 5 invoices per month. Please upgrade to create more invoices.'
-        };
-      }
-    }
-
-    // Monthly and Pay Per Invoice plans have no limits
-    return { allowed: true };
+    const result = await canCreateInvoice(userId);
+    return result;
   } catch (error) {
     console.error('Error checking subscription limit:', error);
-    // Allow creation if check fails (fail open)
-    return { allowed: true };
+    // Fail closed - if we can't check, don't allow (database trigger will also catch it)
+    return { 
+      allowed: false, 
+      reason: 'Unable to verify subscription limit. Please try again.',
+      limitType: 'invoices'
+    };
   }
 }
 
@@ -627,6 +602,16 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error('Invoice creation error:', insertError);
+      
+      // Check if error is from subscription limit trigger
+      if (insertError.message && insertError.message.includes('Subscription limit reached')) {
+        return NextResponse.json({ 
+          error: insertError.message || 'Subscription limit reached',
+          limitReached: true,
+          limitType: 'invoices'
+        }, { status: 403 });
+      }
+      
       return NextResponse.json({ error: 'Failed to create invoice' }, { status: 500 });
     }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { getAuthenticatedUser } from '@/lib/auth-middleware'
+import { canCreateClient } from '@/lib/subscription-validator'
 
 export async function GET(request: NextRequest) {
   try {
@@ -50,6 +51,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name and email are required' }, { status: 400 })
     }
 
+    // Check subscription limits BEFORE creating client
+    const limitCheck = await canCreateClient(user.id)
+    if (!limitCheck.allowed) {
+      return NextResponse.json({ 
+        error: limitCheck.reason || 'Subscription limit reached',
+        limitReached: true,
+        limitType: limitCheck.limitType
+      }, { status: 403 })
+    }
+
     // Create client in Supabase
     const { data, error } = await supabaseAdmin
       .from('clients')
@@ -66,6 +77,16 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Error creating client:', error)
+      
+      // Check if error is from subscription limit trigger
+      if (error.message && error.message.includes('Subscription limit reached')) {
+        return NextResponse.json({ 
+          error: error.message || 'Subscription limit reached',
+          limitReached: true,
+          limitType: 'clients'
+        }, { status: 403 })
+      }
+      
       return NextResponse.json({ error: 'Failed to create client' }, { status: 500 })
     }
 

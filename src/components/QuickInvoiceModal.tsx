@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { 
   X, Plus, Minus, Send, User, Mail, 
   Calendar, FileText, DollarSign, Download, 
@@ -15,6 +16,8 @@ import { Invoice } from '@/types'
 import { useToast } from '@/hooks/useToast'
 import { useData } from '@/contexts/DataContext'
 import { useSettings } from '@/contexts/SettingsContext'
+import { useAuth } from '@/hooks/useAuth'
+import UpgradeModal from './UpgradeModal'
 
 interface QuickInvoiceModalProps {
   isOpen: boolean
@@ -107,6 +110,10 @@ export default function QuickInvoiceModal({
   showWarning: propShowWarning
 }: QuickInvoiceModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [subscriptionUsage, setSubscriptionUsage] = useState<{ used: number; limit: number | null; remaining: number | null; plan: string } | null>(null)
+  const [showUpgradeContent, setShowUpgradeContent] = useState(false)
+  const { user } = useAuth()
   const { showSuccess: localShowSuccess, showError: localShowError, showWarning: localShowWarning } = useToast()
   const { invoices, addInvoice, addClient, updateInvoice, refreshInvoices } = useData()
   const { settings, isLoadingSettings } = useSettings()
@@ -115,6 +122,46 @@ export default function QuickInvoiceModal({
   const showSuccess = propShowSuccess || localShowSuccess
   const showError = propShowError || localShowError
   const showWarning = propShowWarning || localShowWarning
+
+  // Use refs to store latest functions to prevent dependency issues
+  const showErrorRef = useRef(showError)
+  const getAuthHeadersRef = useRef(getAuthHeaders)
+  
+  // Update refs when values change
+  useEffect(() => {
+    showErrorRef.current = showError
+    getAuthHeadersRef.current = getAuthHeaders
+  }, [showError, getAuthHeaders])
+
+  // Track if we're currently fetching to prevent multiple simultaneous requests
+  const isFetchingRef = useRef(false)
+  const hasFetchedRef = useRef(false)
+
+  // Memoize fetchSubscriptionUsage to prevent infinite loops
+  const fetchSubscriptionUsage = useCallback(async () => {
+    // Prevent multiple simultaneous fetches
+    if (isFetchingRef.current) {
+      return null
+    }
+    
+    isFetchingRef.current = true
+    try {
+      const headers = await getAuthHeadersRef.current()
+      const response = await fetch('/api/subscription/usage', {
+        headers
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setSubscriptionUsage(data)
+        return data
+      }
+    } catch (error) {
+      console.error('Error fetching subscription usage:', error)
+    } finally {
+      isFetchingRef.current = false
+    }
+    return null
+  }, []) // Empty deps - using refs instead
   const [localClients, setLocalClients] = useState<Client[]>([])
   const { clients, isLoadingClients } = useData()
   
@@ -622,15 +669,36 @@ export default function QuickInvoiceModal({
   }
 
   const handleCreateDraft = async () => {
+    // Validate form FIRST before showing loading or checking subscription
+    if (!validateForm()) {
+      showError('Please fill in all required fields correctly')
+      // Scroll to first error field
+      setTimeout(() => {
+        const firstError = document.querySelector('.border-red-500')
+        if (firstError) {
+          firstError.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 100)
+      return
+    }
+
+    // Show loading state after validation passes
     setCreatingLoading(true)
 
-    try {
-      // Validate form before proceeding
-      if (!validateForm()) {
-        showError('Please fill in all required fields correctly')
+    // Check subscription limit BEFORE creating invoice (only for new invoices, not editing)
+    if (!editingInvoice) {
+      const usageData = await fetchSubscriptionUsage()
+      if (usageData && usageData.plan === 'free' && usageData.limit && usageData.used >= usageData.limit) {
         setCreatingLoading(false)
+        showError('You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.')
+        // Show upgrade content instead of closing modal (better UX - no modal stacking)
+        setShowUpgradeContent(true)
+        setSubscriptionUsage(usageData)
         return
       }
+    }
+
+    try {
       
       calculateTotals()
       // Calculate totals for validation
@@ -723,6 +791,14 @@ export default function QuickInvoiceModal({
         onSuccess()
         onClose()
       } else {
+        // Check if it's a subscription limit error
+        if (response.status === 403 && result.limitReached) {
+          showError(result.error || 'Subscription limit reached')
+          setShowUpgradeModal(true)
+          // Refresh usage
+          await fetchSubscriptionUsage()
+          throw new Error('LIMIT_REACHED')
+        }
         throw new Error(result.error || (isEditing ? 'Failed to update invoice' : 'Failed to create invoice'))
       }
 
@@ -736,15 +812,37 @@ export default function QuickInvoiceModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSendingLoading(true)
+    
+    // Validate form FIRST before showing loading or checking subscription
+    if (!validateForm()) {
+      showError('Please fill in all required fields correctly')
+      // Scroll to first error field
+      setTimeout(() => {
+        const firstError = document.querySelector('.border-red-500')
+        if (firstError) {
+          firstError.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 100)
+      return
+    }
 
-    try {
-      // Validate form before proceeding
-      if (!validateForm()) {
-        showError('Please fill in all required fields correctly')
+    // Show loading state after validation passes
+    setSendingLoading(true)
+    
+    // Check subscription limit BEFORE creating invoice (only for new invoices, not editing)
+    if (!editingInvoice) {
+      const usageData = await fetchSubscriptionUsage()
+      if (usageData && usageData.plan === 'free' && usageData.limit && usageData.used >= usageData.limit) {
         setSendingLoading(false)
+        showError('You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.')
+        // Show upgrade content instead of closing modal (better UX - no modal stacking)
+        setShowUpgradeContent(true)
+        setSubscriptionUsage(usageData)
         return
       }
+    }
+
+    try {
       
       calculateTotals()
       // Calculate totals for validation
@@ -922,6 +1020,8 @@ export default function QuickInvoiceModal({
   }
 
   const handleClose = () => {
+    setShowUpgradeContent(false)
+    setShowUpgradeModal(false)
     resetForm()
     onClose()
   }
@@ -1090,6 +1190,200 @@ export default function QuickInvoiceModal({
   }
 
   if (!isOpen) return null
+
+  // Show upgrade content instead of invoice form when limit is reached
+  if (showUpgradeContent && subscriptionUsage) {
+    return (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="shadow-2xl max-w-2xl w-full overflow-hidden bg-white">
+          {/* Upgrade Modal Content - Inline to avoid double backdrop */}
+          <div className="bg-white border border-gray-200 max-w-2xl w-full shadow-xl">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+              <div>
+                <h3 className="font-heading text-lg sm:text-xl font-semibold" style={{color: '#1f2937'}}>
+                  Upgrade Your Plan
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">You've reached your monthly invoice limit. Upgrade to create unlimited invoices.</p>
+              </div>
+              <button
+                onClick={handleClose}
+                className="p-2 hover:bg-gray-100 transition-colors cursor-pointer"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Usage Info for Free Plan */}
+            {subscriptionUsage.plan === 'free' && subscriptionUsage.limit && (
+              <div className="p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Invoices this month</span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {subscriptionUsage.used} / {subscriptionUsage.limit}
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 h-2">
+                  <div 
+                    className={`h-2 transition-all ${
+                      subscriptionUsage.used >= subscriptionUsage.limit 
+                        ? 'bg-red-500' 
+                        : subscriptionUsage.used >= subscriptionUsage.limit * 0.8
+                        ? 'bg-amber-500'
+                        : 'bg-indigo-600'
+                    }`}
+                    style={{ width: `${Math.min(100, (subscriptionUsage.used / subscriptionUsage.limit) * 100)}%` }}
+                  />
+                </div>
+                {subscriptionUsage.used >= subscriptionUsage.limit && (
+                  <p className="text-xs text-red-600 mt-2">You've reached your monthly limit. Upgrade to create unlimited invoices.</p>
+                )}
+              </div>
+            )}
+
+            {/* Plans */}
+            <div className="p-4 sm:p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Monthly Plan */}
+                <div className="border border-gray-200 hover:border-gray-300 p-4 sm:p-5 transition-colors">
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-heading text-base font-semibold text-gray-900">Monthly</h4>
+                      <span className="bg-indigo-600 text-white text-xs font-medium px-2 py-0.5">Popular</span>
+                    </div>
+                    <div className="flex items-baseline gap-1 mb-2">
+                      <span className="font-heading text-2xl font-semibold text-gray-900">$9</span>
+                      <span className="text-sm text-gray-600">/month</span>
+                    </div>
+                    <p className="text-xs text-gray-500">Best for regular users</p>
+                  </div>
+                  <ul className="space-y-2 mb-4">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-600">Unlimited invoices</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-600">All premium features</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-600">Automated reminders</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-600">Priority support</span>
+                    </li>
+                  </ul>
+                  <button
+                    onClick={async () => {
+                      if (!user) return
+                      setCreatingLoading(true)
+                      try {
+                        const headers = await getAuthHeaders()
+                        const response = await fetch('/api/subscription', {
+                          method: 'PUT',
+                          headers: { ...headers, 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ plan: 'monthly' }),
+                        })
+                        if (!response.ok) {
+                          const error = await response.json()
+                          throw new Error(error.error || 'Failed to update subscription')
+                        }
+                        showSuccess('Successfully upgraded to Monthly plan!')
+                        handleClose()
+                        window.location.reload()
+                      } catch (error: any) {
+                        showError(error.message || 'Failed to upgrade. Please try again.')
+                      } finally {
+                        setCreatingLoading(false)
+                      }
+                    }}
+                    disabled={creatingLoading || subscriptionUsage.plan === 'monthly'}
+                    className={`w-full px-4 py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                      subscriptionUsage.plan === 'monthly'
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
+                    }`}
+                  >
+                    {creatingLoading ? 'Processing...' : subscriptionUsage.plan === 'monthly' ? 'Current Plan' : (
+                      <>Upgrade to Monthly<ArrowRight className="w-4 h-4" /></>
+                    )}
+                  </button>
+                </div>
+
+                {/* Pay Per Invoice Plan */}
+                <div className="border border-gray-200 hover:border-gray-300 p-4 sm:p-5 transition-colors">
+                  <div className="mb-4">
+                    <h4 className="font-heading text-base font-semibold text-gray-900 mb-2">Pay Per Invoice</h4>
+                    <div className="flex items-baseline gap-1 mb-2">
+                      <span className="font-heading text-2xl font-semibold text-gray-900">$0.50</span>
+                      <span className="text-sm text-gray-600">/invoice sent</span>
+                    </div>
+                    <p className="text-xs text-gray-500">Pay only for what you use</p>
+                  </div>
+                  <ul className="space-y-2 mb-4">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-600">No monthly fee</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-600">Unlimited invoices</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-600">All premium features</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm text-gray-600">Only pay when you send</span>
+                    </li>
+                  </ul>
+                  <button
+                    onClick={async () => {
+                      if (!user) return
+                      setCreatingLoading(true)
+                      try {
+                        const headers = await getAuthHeaders()
+                        const response = await fetch('/api/subscription', {
+                          method: 'PUT',
+                          headers: { ...headers, 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ plan: 'pay_per_invoice' }),
+                        })
+                        if (!response.ok) {
+                          const error = await response.json()
+                          throw new Error(error.error || 'Failed to update subscription')
+                        }
+                        showSuccess('Successfully upgraded to Pay Per Invoice plan!')
+                        handleClose()
+                        window.location.reload()
+                      } catch (error: any) {
+                        showError(error.message || 'Failed to upgrade. Please try again.')
+                      } finally {
+                        setCreatingLoading(false)
+                      }
+                    }}
+                    disabled={creatingLoading || subscriptionUsage.plan === 'pay_per_invoice'}
+                    className={`w-full px-4 py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                      subscriptionUsage.plan === 'pay_per_invoice'
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
+                    }`}
+                  >
+                    {creatingLoading ? 'Processing...' : subscriptionUsage.plan === 'pay_per_invoice' ? 'Current Plan' : (
+                      <>Choose Pay Per Invoice<ArrowRight className="w-4 h-4" /></>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -1293,14 +1587,24 @@ export default function QuickInvoiceModal({
                           type="text"
                             placeholder="Client name"
                           value={newClient.name}
-                          onChange={(e) => setNewClient({...newClient, name: e.target.value})}
+                          onChange={(e) => {
+                            setNewClient({...newClient, name: e.target.value})
+                            if (errors.clientName) {
+                              setErrors(prev => ({ ...prev, clientName: undefined }))
+                            }
+                          }}
                             className={`w-full pl-10 pr-3 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                            isDarkMode 
-                              ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
-                              : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                              errors.clientName
+                                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                                : isDarkMode 
+                                  ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                                  : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                           }`}
                         />
                         </div>
+                        {errors.clientName && (
+                          <p className="mt-1 text-xs text-red-600">{errors.clientName}</p>
+                        )}
                       </div>
                       <div>
                         <div className="relative">
@@ -1311,14 +1615,24 @@ export default function QuickInvoiceModal({
                           type="email"
                           placeholder="client@example.com"
                           value={newClient.email}
-                          onChange={(e) => setNewClient({...newClient, email: e.target.value})}
+                          onChange={(e) => {
+                            setNewClient({...newClient, email: e.target.value})
+                            if (errors.clientEmail) {
+                              setErrors(prev => ({ ...prev, clientEmail: undefined }))
+                            }
+                          }}
                             className={`w-full pl-10 pr-3 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                            isDarkMode 
-                              ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
-                              : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                              errors.clientEmail
+                                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                                : isDarkMode 
+                                  ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                                  : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                           }`}
                         />
                         </div>
+                        {errors.clientEmail && (
+                          <p className="mt-1 text-xs text-red-600">{errors.clientEmail}</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1366,11 +1680,18 @@ export default function QuickInvoiceModal({
                       <input
                         type="date"
                         value={issueDate}
-                        onChange={(e) => setIssueDate(e.target.value)}
+                        onChange={(e) => {
+                          setIssueDate(e.target.value)
+                          if (errors.issueDate) {
+                            setErrors(prev => ({ ...prev, issueDate: undefined }))
+                          }
+                        }}
                         className={`w-full pl-10 pr-3 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                          isDarkMode 
-                            ? 'border-gray-700 bg-gray-800 text-white' 
-                            : 'border-gray-300 bg-white text-gray-900'
+                          errors.issueDate
+                            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                            : isDarkMode 
+                              ? 'border-gray-700 bg-gray-800 text-white' 
+                              : 'border-gray-300 bg-white text-gray-900'
                         }`}
                         required
                       />
@@ -1380,11 +1701,15 @@ export default function QuickInvoiceModal({
                         }`} title="Auto-selected current date"></div>
                     </div>
                     </div>
-                    <p className={`text-xs mt-1 ${
-                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                    }`}>
-                      Issue Date {!editingInvoice ? '(Auto-selected)' : ''}
-                    </p>
+                    {errors.issueDate ? (
+                      <p className="text-xs mt-1 text-red-600">{errors.issueDate}</p>
+                    ) : (
+                      <p className={`text-xs mt-1 ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        Issue Date {!editingInvoice ? '(Auto-selected)' : ''}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -1395,11 +1720,23 @@ export default function QuickInvoiceModal({
                     <input
                       type="date"
                       value={dueDate}
-                      onChange={(e) => setDueDate(e.target.value)}
+                      onChange={(e) => {
+                        if (!markAsPaid) {
+                          setDueDate(e.target.value)
+                          if (errors.dueDate) {
+                            setErrors(prev => ({ ...prev, dueDate: undefined }))
+                          }
+                        }
+                      }}
+                      disabled={markAsPaid}
                       className={`w-full pl-10 pr-3 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                        isDarkMode 
-                          ? 'border-gray-700 bg-gray-800 text-white' 
-                          : 'border-gray-300 bg-white text-gray-900'
+                        markAsPaid ? 'cursor-not-allowed opacity-60' : ''
+                      } ${
+                        errors.dueDate
+                          ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                          : isDarkMode 
+                            ? 'border-gray-700 bg-gray-800 text-white' 
+                            : 'border-gray-300 bg-white text-gray-900'
                       }`}
                       required
                     />
@@ -1411,17 +1748,23 @@ export default function QuickInvoiceModal({
                   </div>
                     )}
                   </div>
-                  <p className={`text-xs mt-1 ${
-                    isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                  }`}>
-                    Due Date
-                  </p>
-                  {paymentTerms.enabled && (
-                    <p className={`text-xs mt-1 ${
-                      isDarkMode ? 'text-orange-400' : 'text-orange-600'
-                    }`}>
-                      Auto-updated to match the payment terms
-                    </p>
+                  {errors.dueDate ? (
+                    <p className="text-xs mt-1 text-red-600">{errors.dueDate}</p>
+                  ) : (
+                    <>
+                      <p className={`text-xs mt-1 ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        Due Date {markAsPaid && <span className="text-orange-600">(Locked - Due on Receipt)</span>}
+                      </p>
+                      {paymentTerms.enabled && (
+                        <p className={`text-xs mt-1 ${
+                          isDarkMode ? 'text-orange-400' : 'text-orange-600'
+                        }`}>
+                          Auto-updated to match the payment terms
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
                   </div>
@@ -1518,13 +1861,32 @@ export default function QuickInvoiceModal({
                             type="text"
                             placeholder="e.g., Website Development, Consulting, Design"
                             value={item.description}
-                            onChange={(e) => updateItem(item.id, 'description', e.target.value)}
+                            onChange={(e) => {
+                              updateItem(item.id, 'description', e.target.value)
+                              if (errors.items?.[item.id]?.description) {
+                                setErrors(prev => {
+                                  const newItems = { ...prev.items }
+                                  if (newItems[item.id]) {
+                                    delete newItems[item.id].description
+                                    if (Object.keys(newItems[item.id]).length === 0) {
+                                      delete newItems[item.id]
+                                    }
+                                  }
+                                  return { ...prev, items: Object.keys(newItems).length > 0 ? newItems : undefined }
+                                })
+                              }
+                            }}
                             className={`w-full px-3 py-2 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                              isDarkMode 
-                                ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
-                                : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                              errors.items?.[item.id]?.description
+                                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                                : isDarkMode 
+                                  ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                                  : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                             }`}
                           />
+                          {errors.items?.[item.id]?.description && (
+                            <p className="mt-1 text-xs text-red-600">{errors.items[item.id].description}</p>
+                          )}
                         </div>
                         
                         <div className="flex items-end justify-between">
@@ -1538,13 +1900,32 @@ export default function QuickInvoiceModal({
                               type="number"
                               placeholder="0.00"
                               value={item.amount}
-                              onChange={(e) => updateItem(item.id, 'amount', e.target.value)}
+                              onChange={(e) => {
+                                updateItem(item.id, 'amount', e.target.value)
+                                if (errors.items?.[item.id]?.amount) {
+                                  setErrors(prev => {
+                                    const newItems = { ...prev.items }
+                                    if (newItems[item.id]) {
+                                      delete newItems[item.id].amount
+                                      if (Object.keys(newItems[item.id]).length === 0) {
+                                        delete newItems[item.id]
+                                      }
+                                    }
+                                    return { ...prev, items: Object.keys(newItems).length > 0 ? newItems : undefined }
+                                  })
+                                }
+                              }}
                               className={`w-full px-3 py-2 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                                isDarkMode 
-                                  ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
-                                  : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                                errors.items?.[item.id]?.amount
+                                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                                  : isDarkMode 
+                                    ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                                    : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                               }`}
                             />
+                            {errors.items?.[item.id]?.amount && (
+                              <p className="mt-1 text-xs text-red-600">{errors.items[item.id].amount}</p>
+                            )}
                           </div>
                           
                           {items.length > 1 && (
@@ -2566,6 +2947,27 @@ export default function QuickInvoiceModal({
           )}
         </form>
       </div>
+
+      {/* Upgrade Modal - Shown after invoice modal closes */}
+      {showUpgradeModal && (
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => {
+            setShowUpgradeModal(false)
+            // Refresh usage after modal closes in case user upgraded
+            if (!editingInvoice && user) {
+              fetchSubscriptionUsage()
+            }
+          }}
+          currentPlan={subscriptionUsage?.plan as 'free' | 'monthly' | 'pay_per_invoice' || 'free'}
+          usage={subscriptionUsage ? {
+            used: subscriptionUsage.used,
+            limit: subscriptionUsage.limit,
+            remaining: subscriptionUsage.remaining
+          } : undefined}
+          reason="You've reached your monthly invoice limit. Upgrade to create unlimited invoices."
+        />
+      )}
     </div>
   )
 }

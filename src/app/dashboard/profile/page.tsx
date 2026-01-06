@@ -6,7 +6,7 @@ import {
   User, Mail, Phone, Building, MapPin, Calendar, Shield, CreditCard, 
   Trash2, AlertTriangle, Eye, EyeOff, Save, X, CheckCircle, Settings,
   Bell, Lock, Key, Download, Upload, Edit, LogOut, RotateCcw, Loader2,
-  Sparkles, FileText
+  Sparkles, FileText, Star
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -475,31 +475,86 @@ export default function ProfilePage() {
   };
 
   // Update subscription
+  const [isUpdatingSubscription, setIsUpdatingSubscription] = useState(false);
+
   const handleUpdateSubscription = async (plan: string) => {
+    // Skip payment for free plan
+    if (plan === 'free') {
+      // Direct update for downgrading to free
+      try {
+        setIsUpdatingSubscription(true);
+        const headers = await getAuthHeaders();
+        const response = await fetch('/api/subscription', {
+          method: 'PUT',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to update subscription');
+        }
+
+        showSuccess(`Subscription updated to Free plan`);
+        // Refresh page to show updated subscription
+        window.location.reload();
+      } catch (error: any) {
+        showError(error.message || 'Failed to update subscription');
+      } finally {
+        setIsUpdatingSubscription(false);
+      }
+      return;
+    }
+
+    // For paid plans, create payment checkout
     try {
+      setIsUpdatingSubscription(true);
       const headers = await getAuthHeaders();
-      const response = await fetch('/api/subscription', {
-        method: 'PUT',
+      
+      // Create payment checkout session
+      const checkoutResponse = await fetch('/api/payments/checkout', {
+        method: 'POST',
         headers: {
           ...headers,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ plan })
+        body: JSON.stringify({ plan }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        showSuccess(`Subscription updated to ${plan === 'monthly' ? 'Monthly' : plan === 'pay_per_invoice' ? 'Pay Per Invoice' : 'Free'} plan`);
-        // Reload profile and usage to get updated info
+      if (!checkoutResponse.ok) {
+        const error = await checkoutResponse.json();
+        throw new Error(error.error || 'Failed to create payment session');
+      }
+
+      const { paymentLink } = await checkoutResponse.json();
+
+      if (paymentLink) {
+        // Redirect to Dodo Payment checkout
+        window.location.href = paymentLink;
+      } else {
+        // Fallback: Direct subscription update (for testing without payment)
+        const response = await fetch('/api/subscription', {
+          method: 'PUT',
+          headers: {
+            ...headers,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ plan })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update subscription');
+        }
+
+        showSuccess(`Subscription updated to ${plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice'} plan`);
         await Promise.all([loadProfile(), loadSubscriptionUsage()]);
         setShowSubscriptionModal(false);
-      } else {
-        const errorData = await response.json();
-        showError(errorData.error || 'Failed to update subscription');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating subscription:', error);
-      showError('Failed to update subscription');
+      showError(error.message || 'Failed to update subscription');
+      setIsUpdatingSubscription(false);
     }
   };
 
@@ -1143,28 +1198,31 @@ export default function ProfilePage() {
                       <span className="font-heading text-xl sm:text-2xl font-semibold text-gray-900">$0</span>
                       <span className="text-xs sm:text-sm text-gray-600">/forever</span>
                     </div>
-                    <p className="text-xs text-gray-500">Perfect for getting started</p>
                   </div>
                   <ul className="space-y-1.5 sm:space-y-2 mb-4">
                     <li className="flex items-start gap-2">
                       <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">Up to 5 invoices per month</span>
+                      <span className="text-xs text-gray-600">Up to 5 invoices / month</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">Basic templates</span>
+                      <span className="text-xs text-gray-600">1 client</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">Client management</span>
+                      <span className="text-xs text-gray-600">1 estimate (convert to invoice)</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">PDF generation</span>
+                      <span className="text-xs text-gray-600">4 auto reminders</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">Email reminders (limited)</span>
+                      <span className="text-xs text-gray-600">1 detailed template only</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Limited customization</span>
                     </li>
                   </ul>
                   <button
@@ -1187,7 +1245,10 @@ export default function ProfilePage() {
                     : 'border-gray-200 hover:border-gray-300'
                 }`}>
                   <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-indigo-600 text-white text-xs font-medium px-2 py-0.5 rounded">Popular</span>
+                    <span className="bg-indigo-600 text-white text-xs font-medium px-2 py-0.5 rounded flex items-center gap-1">
+                      <Star className="w-3 h-3 fill-current" />
+                      Popular
+                    </span>
                   </div>
                   <div className="mb-4 mt-1">
                     <h4 className="font-heading text-sm sm:text-base font-semibold text-gray-900 mb-1">Monthly</h4>
@@ -1199,32 +1260,28 @@ export default function ProfilePage() {
                   </div>
                   <ul className="space-y-1.5 sm:space-y-2 mb-4">
                     <li className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
                       <span className="text-xs text-gray-600">Unlimited invoices</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">All premium templates</span>
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Unlimited clients</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">Advanced client management</span>
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Unlimited estimates</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">Automated reminders</span>
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Unlimited auto reminders</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">Late fee management</span>
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">All templates & customization</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">Analytics dashboard</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">Priority support</span>
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Analytics & priority support</span>
                     </li>
                   </ul>
                   <button
@@ -1252,39 +1309,18 @@ export default function ProfilePage() {
                       <span className="font-heading text-xl sm:text-2xl font-semibold text-gray-900">$0.50</span>
                       <span className="text-xs sm:text-sm text-gray-600">/invoice</span>
                     </div>
-                    <p className="text-xs text-gray-500">Pay only for what you use</p>
                   </div>
                   <ul className="space-y-1.5 sm:space-y-2 mb-4">
                     <li className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">$0.50 per invoice sent</span>
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">Pay only when you send an invoice</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">All premium templates</span>
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs text-gray-600">All invoice features included</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">Advanced client management</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">Automated reminders</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">Late fee management</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">Analytics dashboard</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-xs text-gray-600">Priority support</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
                       <span className="text-xs text-gray-600">No monthly commitment</span>
                     </li>
                   </ul>

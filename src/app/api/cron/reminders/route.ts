@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { Resend } from 'resend';
 import { getReminderEmailTemplate } from '@/lib/reminder-email-templates';
+import { canEnableReminder } from '@/lib/subscription-validator';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -100,6 +101,22 @@ export async function POST(request: NextRequest) {
         }
         
         console.log(`📧 Processing scheduled reminder for ${invoice.invoice_number} (${reminder.reminder_type}) - User: ${invoice.user_id}`);
+        
+        // CRITICAL: Check subscription reminder limit BEFORE sending
+        // Free plan users are limited to 4 reminders per month (global limit)
+        const reminderLimitCheck = await canEnableReminder(invoice.user_id);
+        if (!reminderLimitCheck.allowed) {
+          console.log(`⏭️ Skipping reminder ${reminder.id} - subscription limit reached: ${reminderLimitCheck.reason}`);
+          await supabaseAdmin
+            .from('invoice_reminders')
+            .update({
+              reminder_status: 'failed',
+              failure_reason: reminderLimitCheck.reason || 'Subscription reminder limit reached'
+            })
+            .eq('id', reminder.id);
+          errors++;
+          continue;
+        }
         
         // Calculate overdue days for this specific invoice
         const overdueDays = Math.max(0, Math.floor((new Date().getTime() - new Date(invoice.due_date).getTime()) / (1000 * 60 * 60 * 24)));
