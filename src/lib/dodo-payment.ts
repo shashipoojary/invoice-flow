@@ -77,7 +77,32 @@ class DodoPaymentClient {
         }),
       });
 
-      const data = await response.json();
+      // Get response text first to handle non-JSON responses
+      const responseText = await response.text();
+      
+      // Log raw response for debugging
+      console.log('Dodo Payment API response:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: `${this.baseUrl}/v1/payment-links`,
+        responseLength: responseText.length,
+        responsePreview: responseText.substring(0, 200)
+      });
+
+      // Try to parse JSON, but handle empty or invalid responses
+      let data;
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch (parseError) {
+        console.error('Failed to parse Dodo Payment response as JSON:', {
+          error: parseError,
+          responseText: responseText.substring(0, 500)
+        });
+        return {
+          success: false,
+          error: `Invalid response from payment service. Status: ${response.status}. ${responseText.substring(0, 100)}`,
+        };
+      }
 
       if (!response.ok) {
         console.error('Dodo Payment API error response:', {
@@ -126,7 +151,23 @@ class DodoPaymentClient {
         },
       });
 
-      const data = await response.json();
+      // Get response text first to handle non-JSON responses
+      const responseText = await response.text();
+      
+      // Try to parse JSON, but handle empty or invalid responses
+      let data;
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch (parseError) {
+        console.error('Failed to parse Dodo Payment verification response as JSON:', {
+          error: parseError,
+          responseText: responseText.substring(0, 500)
+        });
+        return {
+          success: false,
+          error: `Invalid response from payment service. Status: ${response.status}`,
+        };
+      }
 
       if (!response.ok) {
         return {
