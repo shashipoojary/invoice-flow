@@ -56,15 +56,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid plan amount' }, { status: 400 });
     }
 
-    // Get user details
+    // Get user details - try to get from users table, but fallback to auth user data
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('users')
       .select('email, name')
       .eq('id', user.id)
       .single();
 
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    // If user doesn't exist in users table, use auth user data as fallback
+    const userEmail = profile?.email || user.email || '';
+    const userName = profile?.name || user.user_metadata?.full_name || user.user_metadata?.name || 'User';
+
+    if (!userEmail) {
+      console.error('No email found for user:', user.id);
+      return NextResponse.json({ error: 'User email not found' }, { status: 400 });
     }
 
     // Get Dodo Payment client
@@ -101,8 +106,8 @@ export async function POST(request: NextRequest) {
       amount,
       currency: 'USD',
       description: `Upgrade to ${plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice'} plan`,
-      customerEmail: profile.email || user.email || '',
-      customerName: profile.name || 'User',
+      customerEmail: userEmail,
+      customerName: userName,
       metadata: {
         userId: user.id,
         plan,
