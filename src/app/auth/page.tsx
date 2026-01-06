@@ -160,7 +160,7 @@ export default function AuthPage() {
           <div className="absolute top-6 left-6 z-10">
             <button
               onClick={() => router.push('/')}
-              className="w-10 h-10 bg-white/80 backdrop-blur-sm rounded-lg flex items-center justify-center hover:bg-white transition-all shadow-md cursor-pointer"
+              className="w-10 h-10 bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-all shadow-md cursor-pointer"
             >
               <ArrowLeft className="w-5 h-5 text-gray-700" />
             </button>
@@ -180,9 +180,9 @@ export default function AuthPage() {
                 {/* Main Illustration */}
                 <div className="relative z-10">
                   {/* Document/Invoice Illustration */}
-                  <div className="bg-white rounded-lg shadow-lg p-6 mb-6 transform rotate-2">
+                  <div className="bg-white shadow-lg p-6 mb-6 transform rotate-2">
                     <div className="flex items-center justify-between mb-4">
-                      <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                      <div className="w-8 h-8 bg-indigo-100 flex items-center justify-center">
                         <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
@@ -203,7 +203,7 @@ export default function AuthPage() {
                   </div>
 
                   {/* Payment Success */}
-                  <div className="bg-emerald-50 rounded-lg p-4 transform -rotate-1">
+                  <div className="bg-emerald-50 p-4 transform -rotate-1">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -273,7 +273,7 @@ export default function AuthPage() {
 
             {/* Session Expired Message */}
             {sessionExpired && (
-              <div className="bg-amber-50 text-amber-800 px-4 py-3 rounded-lg text-sm mb-6 flex items-center space-x-2">
+              <div className="bg-amber-50 text-amber-800 px-4 py-3 text-sm mb-6 flex items-center space-x-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>Your session has expired. Please sign in again to continue.</span>
               </div>
@@ -281,7 +281,7 @@ export default function AuthPage() {
 
             {/* Email Verification Message */}
             {showVerificationMessage && (
-              <div className="bg-blue-50 text-blue-800 px-4 py-3 rounded-lg text-sm mb-6">
+              <div className="bg-blue-50 text-blue-800 px-4 py-3 text-sm mb-6">
                 <div className="flex items-start space-x-2">
                   <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
@@ -305,7 +305,7 @@ export default function AuthPage() {
 
             {/* Success Message */}
             {successMessage && !showVerificationMessage && (
-              <div className="bg-emerald-50 text-emerald-800 px-4 py-3 rounded-lg text-sm mb-6 flex items-center space-x-2">
+              <div className="bg-emerald-50 text-emerald-800 px-4 py-3 text-sm mb-6 flex items-center space-x-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{successMessage}</span>
               </div>
@@ -313,7 +313,7 @@ export default function AuthPage() {
 
             <form onSubmit={handleSubmit} className="space-y-8">
             {error && (
-              <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-red-50 text-red-600 px-4 py-3 text-sm">
                 <div className="flex items-start space-x-2">
                   <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
@@ -349,7 +349,7 @@ export default function AuthPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   placeholder="my.account@email.com"
-                  className="w-full px-4 py-4 text-base bg-gray-50 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all"
+                  className="w-full px-4 py-4 text-base bg-gray-50  focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all"
                   required
                 />
                 {formData.email && (
@@ -378,7 +378,7 @@ export default function AuthPage() {
                   value={formData.password}
                   onChange={handleInputChange}
                     placeholder="Enter your password"
-                    className="w-full px-4 py-3 pr-12 text-base bg-gray-50 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all"
+                    className="w-full px-4 py-3 pr-12 text-base bg-gray-50  focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all"
                   required
                 />
                 <button
@@ -410,7 +410,7 @@ export default function AuthPage() {
                     value={formData.firstName}
                     onChange={handleInputChange}
                     placeholder="John"
-                    className="w-full px-4 py-4 text-base bg-gray-50 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all"
+                    className="w-full px-4 py-4 text-base bg-gray-50  focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all"
                     required={!isLogin}
                   />
                 </div>
@@ -425,7 +425,7 @@ export default function AuthPage() {
                     value={formData.lastName}
                     onChange={handleInputChange}
                     placeholder="Doe"
-                    className="w-full px-4 py-4 text-base bg-gray-50 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all"
+                    className="w-full px-4 py-4 text-base bg-gray-50  focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all"
                     required={!isLogin}
                   />
                 </div>
@@ -446,7 +446,7 @@ export default function AuthPage() {
                     value={formData.password}
                     onChange={handleInputChange}
                     placeholder="Create a password"
-                    className="w-full px-4 py-3 pr-12 text-base bg-gray-50 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all"
+                    className="w-full px-4 py-3 pr-12 text-base bg-gray-50  focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all"
                     required
                   />
                   <button
@@ -493,7 +493,7 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 text-white py-4 px-6 text-base rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full bg-indigo-600 text-white py-4 px-6 text-base font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />

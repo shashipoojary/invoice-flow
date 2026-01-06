@@ -38,7 +38,7 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden">
+      <div className="bg-white shadow-xl max-w-md w-full overflow-hidden">
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">
             {isSignUp ? 'Create Account' : 'Sign In'}
@@ -61,7 +61,7 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                 placeholder="Enter your full name"
                 required={isSignUp}
               />
@@ -102,14 +102,14 @@ export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps
           </div>
 
           {error && (
-            <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">
+            <div className="text-red-500 text-sm bg-red-50 p-3">
               {error}
             </div>
           )}
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+            className="w-full bg-blue-600 text-white py-3 px-6 hover:bg-blue-700 transition-colors text-sm font-medium"
           >
             {isSignUp ? 'Create Account' : 'Sign In'}
           </button>
