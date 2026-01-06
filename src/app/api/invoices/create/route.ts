@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@/lib/supabase';
 import { canCreateInvoice } from '@/lib/subscription-validator';
+import { chargeForInvoice } from '@/lib/invoice-billing';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -729,6 +730,19 @@ export async function POST(request: NextRequest) {
 
     // log created event
     try { await supabase.from('invoice_events').insert({ invoice_id: completeInvoice.id, type: 'created' }); } catch {}
+
+    // Charge for invoice if user is on "pay_per_invoice" plan
+    // Only charge if invoice is not a draft (draft invoices don't count)
+    if (completeInvoice.status !== 'draft' && !invoiceData.generate_pdf_only) {
+      try {
+        await chargeForInvoice(user.id, completeInvoice.id, completeInvoice.invoice_number);
+        // Don't fail invoice creation if billing fails - just log it
+      } catch (billingError) {
+        console.error('Error charging for invoice:', billingError);
+        // Invoice is still created, billing will be handled separately
+      }
+    }
+
     return NextResponse.json({ 
       success: true, 
       invoice: mappedInvoice,

@@ -5,6 +5,7 @@ import { getAuthenticatedUser } from '@/lib/auth-middleware';
 import { generateTemplatePDFBlob } from '@/lib/template-pdf-generator';
 import { getEmailTemplate } from '@/lib/email-templates';
 import { getBaseUrlFromRequest } from '@/lib/get-base-url';
+import { chargeForInvoice } from '@/lib/invoice-billing';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -569,6 +570,16 @@ export async function POST(request: NextRequest) {
       createdAt: latest.created_at,
       updatedAt: latest.updated_at,
     } : null;
+
+    // Charge for invoice if user is on "pay_per_invoice" plan
+    // Charge when invoice is sent (not when created as draft)
+    try {
+      await chargeForInvoice(user.id, invoiceId, invoice.invoice_number);
+      // Don't fail send if billing fails - just log it
+    } catch (billingError) {
+      console.error('Error charging for invoice:', billingError);
+      // Invoice is still sent, billing will be handled separately
+    }
 
     return NextResponse.json({ 
       success: true, 

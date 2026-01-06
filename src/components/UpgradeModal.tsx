@@ -50,30 +50,22 @@ export default function UpgradeModal({
         throw new Error(error.error || 'Failed to create payment session');
       }
 
-      const { paymentLink } = await checkoutResponse.json();
+      const data = await checkoutResponse.json();
 
-      if (paymentLink) {
-        // Redirect to Dodo Payment checkout
-        window.location.href = paymentLink;
-      } else {
-        // Fallback: Direct subscription update (for testing without payment)
-        const response = await fetch('/api/subscription', {
-          method: 'PUT',
-          headers: {
-            ...headers,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ plan }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || 'Failed to update subscription');
-        }
-
-        showSuccess(`Successfully upgraded to ${plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice'} plan!`);
+      // Pay Per Invoice doesn't require payment - it's activated directly
+      if (data.requiresPayment === false || plan === 'pay_per_invoice') {
+        showSuccess(data.message || `Successfully upgraded to Pay Per Invoice plan! You will be charged $0.50 per invoice when you create or send invoices.`);
         onClose();
         window.location.reload();
+        return;
+      }
+
+      // Monthly plan requires payment - redirect to Dodo Payment
+      if (data.paymentLink) {
+        // Redirect to Dodo Payment checkout
+        window.location.href = data.paymentLink;
+      } else {
+        throw new Error('Payment link not received. Please try again.');
       }
     } catch (error: any) {
       console.error('Upgrade error:', error);

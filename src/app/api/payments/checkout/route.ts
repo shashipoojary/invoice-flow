@@ -23,6 +23,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
     }
 
+    // Pay Per Invoice plan does NOT require upfront payment
+    // It charges $0.50 per invoice when invoices are created/sent
+    if (plan === 'pay_per_invoice') {
+      // Directly update subscription without payment
+      const { error: updateError } = await supabaseAdmin
+        .from('users')
+        .update({
+          subscription_plan: 'pay_per_invoice',
+          subscription_status: 'active',
+          next_billing_date: null, // No recurring billing
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (updateError) {
+        console.error('Error updating subscription:', updateError);
+        return NextResponse.json({ error: 'Failed to update subscription' }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        plan: 'pay_per_invoice',
+        message: 'Pay Per Invoice plan activated. You will be charged $0.50 per invoice when you create or send invoices.',
+        requiresPayment: false
+      });
+    }
+
+    // Monthly plan requires upfront payment of $9
+    const amount = getPlanAmount(plan as 'monthly');
+    if (amount <= 0) {
+      return NextResponse.json({ error: 'Invalid plan amount' }, { status: 400 });
+    }
+
     // Get user details
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('users')
@@ -32,12 +65,6 @@ export async function POST(request: NextRequest) {
 
     if (profileError || !profile) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    // Get payment amount
-    const amount = getPlanAmount(plan as 'monthly' | 'pay_per_invoice');
-    if (amount <= 0) {
-      return NextResponse.json({ error: 'Invalid plan amount' }, { status: 400 });
     }
 
     // Get Dodo Payment client

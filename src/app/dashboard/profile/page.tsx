@@ -526,30 +526,22 @@ export default function ProfilePage() {
         throw new Error(error.error || 'Failed to create payment session');
       }
 
-      const { paymentLink } = await checkoutResponse.json();
+      const data = await checkoutResponse.json();
 
-      if (paymentLink) {
-        // Redirect to Dodo Payment checkout
-        window.location.href = paymentLink;
-      } else {
-        // Fallback: Direct subscription update (for testing without payment)
-        const response = await fetch('/api/subscription', {
-          method: 'PUT',
-          headers: {
-            ...headers,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ plan })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to update subscription');
-        }
-
-        showSuccess(`Subscription updated to ${plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice'} plan`);
+      // Pay Per Invoice doesn't require payment - it's activated directly
+      if (data.requiresPayment === false || plan === 'pay_per_invoice') {
+        showSuccess(data.message || `Pay Per Invoice plan activated! You will be charged $0.50 per invoice when you create or send invoices.`);
         await Promise.all([loadProfile(), loadSubscriptionUsage()]);
         setShowSubscriptionModal(false);
+        return;
+      }
+
+      // Monthly plan requires payment - redirect to Dodo Payment
+      if (data.paymentLink) {
+        // Redirect to Dodo Payment checkout
+        window.location.href = data.paymentLink;
+      } else {
+        throw new Error('Payment link not received. Please try again.');
       }
     } catch (error: any) {
       console.error('Error updating subscription:', error);

@@ -80,15 +80,26 @@ class DodoPaymentClient {
       const data = await response.json();
 
       if (!response.ok) {
+        console.error('Dodo Payment API error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          data
+        });
         return {
           success: false,
-          error: data.message || data.error || 'Failed to create payment link',
+          error: data.message || data.error || `Failed to create payment link (${response.status})`,
         };
       }
 
+      // Log successful payment link creation for debugging
+      console.log('✅ Dodo Payment link created:', {
+        paymentId: data.payment_id || data.id,
+        hasLink: !!(data.payment_link_url || data.url)
+      });
+
       return {
         success: true,
-        paymentLink: data.payment_link_url || data.url,
+        paymentLink: data.payment_link_url || data.url || data.payment_link,
         paymentId: data.payment_id || data.id,
       };
     } catch (error: any) {

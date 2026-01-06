@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
 
       default:
         console.log('Unhandled webhook event type:', event.type);
+        break;
     }
 
     return NextResponse.json({ received: true });
@@ -61,9 +62,10 @@ async function handlePaymentSuccess(paymentData: any) {
     const metadata = paymentData.metadata || {};
     const userId = metadata.userId;
     const plan = metadata.plan;
+    const paymentType = metadata.type; // 'subscription_upgrade' or 'per_invoice_fee'
 
-    if (!userId || !plan) {
-      console.error('Missing userId or plan in payment metadata');
+    if (!userId) {
+      console.error('Missing userId in payment metadata');
       return;
     }
 
@@ -81,28 +83,36 @@ async function handlePaymentSuccess(paymentData: any) {
       console.error('Error updating billing record:', billingError);
     }
 
-    // Update user subscription
-    let nextBillingDate = null;
-    if (plan === 'monthly') {
-      const nextBilling = new Date();
-      nextBilling.setMonth(nextBilling.getMonth() + 1);
-      nextBillingDate = nextBilling.toISOString();
+    // Handle subscription upgrade payments
+    if (paymentType === 'subscription_upgrade' && plan) {
+      let nextBillingDate = null;
+      if (plan === 'monthly') {
+        const nextBilling = new Date();
+        nextBilling.setMonth(nextBilling.getMonth() + 1);
+        nextBillingDate = nextBilling.toISOString();
+      }
+
+      const { error: subscriptionError } = await supabaseAdmin
+        .from('users')
+        .update({
+          subscription_plan: plan,
+          subscription_status: 'active',
+          next_billing_date: nextBillingDate,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
+
+      if (subscriptionError) {
+        console.error('Error updating subscription:', subscriptionError);
+      } else {
+        console.log(`✅ Subscription updated for user ${userId} to ${plan} plan`);
+      }
     }
 
-    const { error: subscriptionError } = await supabaseAdmin
-      .from('users')
-      .update({
-        subscription_plan: plan,
-        subscription_status: 'active',
-        next_billing_date: nextBillingDate,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', userId);
-
-    if (subscriptionError) {
-      console.error('Error updating subscription:', subscriptionError);
-    } else {
-      console.log(`✅ Subscription updated for user ${userId} to ${plan} plan`);
+    // Handle per-invoice fee payments
+    if (paymentType === 'per_invoice_fee') {
+      console.log(`✅ Invoice fee paid for user ${userId}, invoice ${metadata.invoiceId}`);
+      // Invoice is already created, billing record is updated above
     }
   } catch (error) {
     console.error('Error handling payment success:', error);
