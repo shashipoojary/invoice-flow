@@ -1568,7 +1568,6 @@ export default function DashboardOverview() {
               </div>
             </div>
 
-
             {/* Quick Actions - Modern Design */}
             <div className="mt-6 sm:mt-8">
               <div className="flex items-center justify-between mb-4 sm:mb-6">

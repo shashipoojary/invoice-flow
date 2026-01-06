@@ -78,8 +78,8 @@ const ToastComponent: React.FC<ToastProps> = ({ toast, onRemove }) => {
   const styles = getToastStyles();
 
   return (
-    <div className={`relative flex items-start space-x-2 sm:space-x-3 p-3 sm:p-4 rounded-lg border shadow-xl transition-all duration-300 transform ${styles.bgColor} ${styles.borderColor} animate-in slide-in-from-top-full sm:slide-in-from-right-full`}>
-      <div className={`flex-shrink-0 p-1.5 sm:p-2 rounded-full ${styles.iconBg}`}>
+    <div className={`relative flex items-start space-x-2 sm:space-x-3 p-3 sm:p-4 shadow-lg transition-all duration-300 transform ${styles.bgColor} animate-slide-up sm:animate-slide-in-right`}>
+      <div className={`flex-shrink-0 p-1.5 sm:p-2 ${styles.iconBg}`}>
         {styles.icon}
       </div>
       
@@ -96,7 +96,7 @@ const ToastComponent: React.FC<ToastProps> = ({ toast, onRemove }) => {
       
       <button
         onClick={() => onRemove(toast.id)}
-        className="flex-shrink-0 p-1.5 sm:p-2 hover:bg-black/20 rounded-full transition-colors touch-manipulation min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center"
+        className="flex-shrink-0 p-1.5 sm:p-2 hover:bg-black/20 transition-colors touch-manipulation min-w-[28px] min-h-[28px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center"
         aria-label="Close notification"
       >
         <X className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white/80 hover:text-white" />
@@ -114,7 +114,7 @@ const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onRemove }) => 
   if (!toasts || toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-3 left-3 right-3 sm:top-4 sm:left-auto sm:right-4 sm:max-w-sm z-50 space-y-2 sm:space-y-3 pointer-events-none">
+    <div className="fixed bottom-4 left-4 right-4 sm:bottom-auto sm:top-4 sm:left-auto sm:right-4 sm:max-w-sm z-50 space-y-2 sm:space-y-3 pointer-events-none">
       <div className="space-y-2 sm:space-y-3 pointer-events-auto">
         {toasts.map((toast) => (
           <ToastComponent

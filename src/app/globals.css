@@ -36,6 +36,39 @@
   }
 }
 
+/* Toast notification animations */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+@media (min-width: 640px) {
+  .animate-slide-in-right {
+    animation: slide-in-right 0.3s ease-out;
+  }
+}
+
 /* Clean sidebar interactions - no scaling or blur effects */
 .sidebar-clean {
   transition: background-color 0.2s ease-out, color 0.2s ease-out;
@@ -333,6 +366,17 @@
     border-radius: 0 !important;
     -webkit-border-radius: 0 !important;
     -moz-border-radius: 0 !important;
+  }
+
+  /* Force square corners on chart tooltips and elements */
+  .recharts-tooltip-wrapper,
+  .recharts-tooltip-content,
+  .recharts-default-tooltip {
+    border-radius: 0 !important;
+  }
+
+  .recharts-active-dot {
+    border-radius: 0 !important;
   }
 
 }
