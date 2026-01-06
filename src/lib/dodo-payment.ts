@@ -58,82 +58,68 @@ class DodoPaymentClient {
       console.log('🔐 Authentication:', {
         hasApiKey: !!this.apiKey,
         hasSecretKey: !!this.secretKey,
-        apiKeyPrefix: this.apiKey ? `${this.apiKey.substring(0, 8)}...` : 'none',
-        secretKeyPrefix: this.secretKey ? `${this.secretKey.substring(0, 8)}...` : 'none',
+        apiKeyPrefix: this.apiKey ? `${this.apiKey.substring(0, 12)}...` : 'none',
+        apiKeyLength: this.apiKey?.length || 0,
         environment: this.environment,
-        note: 'X-API-Key header format is correct (401 means recognized), trying secretKey variations'
+        note: 'Dodo Payment uses single API key. 401 means key recognized but may lack write permissions.'
       });
       
       // Try different endpoint and auth combinations
-      const endpoint = '/payments/create'; // The one that returned 405
+      const endpoint = '/payments/create';
       
       // Try multiple authentication methods
       // Since X-API-Key returned 401 (recognized but unauthorized), it's likely the correct format
-      // Let's try variations with secretKey and different combinations
-      const authMethods: Array<{ name: string; headers: Record<string, string> }> = [
-        // Try secretKey in X-API-Key (maybe secretKey is the one to use)
+      // The 401 probably means: API key is correct format but lacks write permissions
+      const authMethods: Array<{ name: string; headers: Record<string, string>; bodyExtra?: Record<string, any> }> = [
+        // Primary: X-API-Key header (we know this format is recognized)
         {
-          name: 'X-API-Key with secretKey',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': this.secretKey || this.apiKey,
-          }
-        },
-        // Try apiKey in X-API-Key (original - we know this returns 401, but let's keep it)
-        {
-          name: 'X-API-Key with apiKey',
+          name: 'X-API-Key header',
           headers: {
             'Content-Type': 'application/json',
             'X-API-Key': this.apiKey,
           }
         },
-        // Try both keys together
+        // Try API key in Authorization header
         {
-          name: 'X-API-Key and X-Secret-Key',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': this.apiKey,
-            ...(this.secretKey ? { 'X-Secret-Key': this.secretKey } : {}),
-          }
-        },
-        // Try API key in Authorization header (some APIs use this)
-        {
-          name: 'Authorization with apiKey',
+          name: 'Authorization header with API key',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': this.apiKey,
           }
         },
-        // Try secretKey in Authorization header
+        // Try Bearer with API key
         {
-          name: 'Authorization with secretKey',
+          name: 'Bearer token with API key',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': this.secretKey || this.apiKey,
-          }
-        },
-        // Try Bearer with secretKey
-        {
-          name: 'Bearer with secretKey',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.secretKey || this.apiKey}`,
+            'Authorization': `Bearer ${this.apiKey}`,
           }
         },
         // Try API-Key header (different casing)
         {
-          name: 'API-Key header',
+          name: 'API-Key header (no X prefix)',
           headers: {
             'Content-Type': 'application/json',
             'API-Key': this.apiKey,
           }
         },
-        // Try api-key header (lowercase with dash)
+        // Try api-key header (lowercase)
         {
-          name: 'api-key header',
+          name: 'api-key header (lowercase)',
           headers: {
             'Content-Type': 'application/json',
             'api-key': this.apiKey,
+          }
+        },
+        // Try with API key in body as well
+        {
+          name: 'X-API-Key header + api_key in body',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': this.apiKey,
+          },
+          bodyExtra: {
+            api_key: this.apiKey,
           }
         },
       ];
@@ -144,22 +130,25 @@ class DodoPaymentClient {
         try {
           console.log(`🔍 Trying auth method: ${authMethod.name} on ${this.baseUrl}${endpoint}`);
           
+          const requestBody = {
+            amount: params.amount,
+            currency: params.currency,
+            description: params.description,
+            customer: {
+              email: params.customerEmail,
+              name: params.customerName,
+            },
+            metadata: params.metadata || {},
+            success_url: params.successUrl,
+            cancel_url: params.cancelUrl,
+            mode: 'payment', // One-time payment
+            ...(authMethod.bodyExtra || {}), // Add any extra body params for this auth method
+          };
+          
           const response = await fetch(`${this.baseUrl}${endpoint}`, {
             method: 'POST',
             headers: authMethod.headers,
-            body: JSON.stringify({
-              amount: params.amount,
-              currency: params.currency,
-              description: params.description,
-              customer: {
-                email: params.customerEmail,
-                name: params.customerName,
-              },
-              metadata: params.metadata || {},
-              success_url: params.successUrl,
-              cancel_url: params.cancelUrl,
-              mode: 'payment', // One-time payment
-            }),
+            body: JSON.stringify(requestBody),
           });
 
           // Get response text first to handle non-JSON responses
@@ -190,12 +179,17 @@ class DodoPaymentClient {
           // 401/403 means auth failed but endpoint exists
           if (response.status === 401 || response.status === 403) {
             console.log(`❌ Auth method "${authMethod.name}" returned ${response.status} (Unauthorized)`);
-            console.log(`   Response: ${responseText.substring(0, 100)}`);
-            console.log(`   💡 This means the header format is correct, but:`);
-            console.log(`      - The key might be wrong/invalid`);
-            console.log(`      - The key might not have payment creation permissions`);
-            console.log(`      - The key might need to be activated in Dodo dashboard`);
-            lastError = { status: response.status, authMethod: authMethod.name, responseText, hint: 'Header format correct but key invalid or lacks permissions' };
+            console.log(`   Response: ${responseText.substring(0, 200)}`);
+            console.log(`   💡 IMPORTANT: This means the header format is CORRECT!`);
+            console.log(`   🔧 The issue is likely:`);
+            console.log(`      1. API key doesn't have WRITE ACCESS enabled`);
+            console.log(`         → Go to Dodo Dashboard → Developer → API Keys`);
+            console.log(`         → Find your key and enable "Write Access"`);
+            console.log(`      2. API key is wrong/invalid`);
+            console.log(`         → Copy the key fresh from Dodo dashboard`);
+            console.log(`      3. API key is for wrong environment`);
+            console.log(`         → Make sure you're using sandbox key for sandbox`);
+            lastError = { status: response.status, authMethod: authMethod.name, responseText, hint: 'Header format correct - check API key has write access enabled' };
             continue;
           }
 
