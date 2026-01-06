@@ -324,6 +324,7 @@ export default function ProfilePage() {
       const searchParams = new URLSearchParams(window.location.search);
       const paymentStatus = searchParams.get('payment');
       const sessionId = searchParams.get('session_id');
+      const setupType = searchParams.get('setup'); // 'pay_per_invoice' for payment method setup
       
       if (paymentStatus === 'success' && sessionId) {
         try {
@@ -337,8 +338,13 @@ export default function ProfilePage() {
           
           if (verifyResponse.ok) {
             const verifyData = await verifyResponse.json();
-            if (verifyData.success && verifyData.plan) {
-              showSuccess(`Subscription upgraded to ${verifyData.plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice'} plan!`);
+            if (verifyData.success) {
+              if (setupType === 'pay_per_invoice') {
+                // Payment method setup completed
+                showSuccess('Payment method saved! Pay Per Invoice plan activated. You will be charged $0.50 per invoice automatically.');
+              } else if (verifyData.plan) {
+                showSuccess(`Subscription upgraded to ${verifyData.plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice'} plan!`);
+              }
               // Reload profile and subscription usage
               await Promise.all([loadProfile(), loadSubscriptionUsage()]);
             }

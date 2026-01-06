@@ -53,17 +53,15 @@ export async function GET(request: NextRequest) {
         .single();
 
       if (billingRecord) {
-        // Get plan from metadata or amount
-        const metadata = billingRecord.metadata || {};
-        let plan = metadata.plan || 'monthly';
-        
-        // Fallback: determine plan from amount if not in metadata
-        if (!metadata.plan) {
-          if (billingRecord.amount === 0.50) {
-            plan = 'pay_per_invoice';
-          } else if (billingRecord.amount === 9.00) {
-            plan = 'monthly';
-          }
+        // Determine plan from amount (since billing_records doesn't have metadata)
+        let plan = 'monthly'; // Default
+        if (billingRecord.amount === 0.01) {
+          // $0.01 = payment method setup for pay_per_invoice
+          plan = 'pay_per_invoice';
+        } else if (billingRecord.amount === 0.50) {
+          plan = 'pay_per_invoice';
+        } else if (billingRecord.amount === 9.00) {
+          plan = 'monthly';
         }
 
         // Update billing record if still pending
@@ -75,6 +73,43 @@ export async function GET(request: NextRequest) {
               updated_at: new Date().toISOString(),
             })
             .eq('id', billingRecord.id);
+        }
+
+        // For payment method setup ($0.01), try to extract customer ID from payment
+        if (billingRecord.amount === 0.01) {
+          // Try to get customer ID from Dodo Payment
+          const dodoClient = getDodoPaymentClient();
+          if (dodoClient) {
+            try {
+              // Try to get checkout session to extract customer ID
+              const sessionResponse = await fetch(
+                `${dodoClient['baseUrl']}/checkouts/${paymentId}`,
+                {
+                  headers: {
+                    'Authorization': `Bearer ${process.env.DODO_PAYMENT_API_KEY}`,
+                  },
+                }
+              );
+              
+              if (sessionResponse.ok) {
+                const sessionData = await sessionResponse.json();
+                const customerId = sessionData.customer_id || sessionData.customer?.id;
+                if (customerId) {
+                  await supabaseAdmin
+                    .from('users')
+                    .update({
+                      dodo_customer_id: customerId,
+                      payment_method_saved_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString()
+                    })
+                    .eq('id', user.id);
+                  console.log(`✅ Saved customer ID for automatic charging: ${customerId}`);
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching customer ID:', error);
+            }
+          }
         }
 
         // Update subscription

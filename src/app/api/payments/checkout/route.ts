@@ -23,30 +23,115 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
     }
 
-    // Pay Per Invoice plan does NOT require upfront payment
-    // It charges $0.50 per invoice when invoices are created/sent
+    // Pay Per Invoice plan: Collect payment method for automatic charging (Option 1)
+    // We charge $0.01 to collect and save payment method
     if (plan === 'pay_per_invoice') {
-      // Directly update subscription without payment
-      const { error: updateError } = await supabaseAdmin
+      // Check if user already has a saved payment method
+      const { data: userProfile } = await supabaseAdmin
         .from('users')
-        .update({
-          subscription_plan: 'pay_per_invoice',
-          subscription_status: 'active',
-          next_billing_date: null, // No recurring billing
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
+        .select('dodo_customer_id, dodo_payment_method_id')
+        .eq('id', user.id)
+        .single();
 
-      if (updateError) {
-        console.error('Error updating subscription:', updateError);
-        return NextResponse.json({ error: 'Failed to update subscription' }, { status: 500 });
+      // If payment method already saved, activate plan immediately
+      if (userProfile?.dodo_customer_id && userProfile?.dodo_payment_method_id) {
+        const { error: updateError } = await supabaseAdmin
+          .from('users')
+          .update({
+            subscription_plan: 'pay_per_invoice',
+            subscription_status: 'active',
+            next_billing_date: null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user.id);
+
+        if (updateError) {
+          console.error('Error updating subscription:', updateError);
+          return NextResponse.json({ error: 'Failed to update subscription' }, { status: 500 });
+        }
+
+        return NextResponse.json({
+          success: true,
+          plan: 'pay_per_invoice',
+          message: 'Pay Per Invoice plan activated. You will be charged $0.50 per invoice automatically.',
+          requiresPayment: false
+        });
       }
+
+      // No payment method saved - create checkout to collect it
+      // Charge $0.01 to collect payment method (this will be credited toward first invoice)
+      const setupAmount = 0.01;
+      
+      const dodoClient = getDodoPaymentClient();
+      if (!dodoClient) {
+        return NextResponse.json({ 
+          error: 'Payment service not configured. Please contact support.' 
+        }, { status: 500 });
+      }
+
+      // Get user details
+      const { data: profile } = await supabaseAdmin
+        .from('users')
+        .select('email, name')
+        .eq('id', user.id)
+        .single();
+
+      const userEmail = profile?.email || user.email || '';
+      const userName = profile?.name || user.user_metadata?.full_name || 'User';
+
+      if (!userEmail) {
+        return NextResponse.json({ error: 'User email not found' }, { status: 400 });
+      }
+
+      // Determine base URL
+      let baseUrl = request.headers.get('x-forwarded-proto') === 'https' ? 'https' : 'http';
+      baseUrl += `://${request.headers.get('x-forwarded-host')}`;
+      if (!baseUrl || baseUrl.includes('localhost')) {
+        baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      }
+
+      // Create checkout session to collect payment method
+      // The createPaymentLink function will use DODO_PAYMENT_PRODUCT_ID from environment
+      // or create a product automatically
+      const paymentResult = await dodoClient.createPaymentLink({
+        amount: setupAmount,
+        currency: 'USD',
+        description: 'Pay Per Invoice Setup - Payment Method Collection ($0.01 will be credited to your first invoice)',
+        customerEmail: userEmail,
+        customerName: userName,
+        metadata: {
+          userId: user.id,
+          plan: 'pay_per_invoice',
+          type: 'payment_method_setup', // Different from subscription_upgrade
+        },
+        successUrl: `${baseUrl}/dashboard/profile?payment=success&setup=pay_per_invoice&session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${baseUrl}/dashboard/profile?payment=cancelled`,
+      });
+
+      if (!paymentResult.success || !paymentResult.paymentLink) {
+        return NextResponse.json({
+          error: paymentResult.error || 'Failed to create payment setup session'
+        }, { status: 500 });
+      }
+
+      // Store setup session in billing_records
+      await supabaseAdmin
+        .from('billing_records')
+        .insert({
+          user_id: user.id,
+          type: 'subscription',
+          amount: setupAmount,
+          currency: 'USD',
+          stripe_session_id: paymentResult.paymentId,
+          status: 'pending',
+        });
 
       return NextResponse.json({
         success: true,
-        plan: 'pay_per_invoice',
-        message: 'Pay Per Invoice plan activated. You will be charged $0.50 per invoice when you create or send invoices.',
-        requiresPayment: false
+        paymentLink: paymentResult.paymentLink,
+        paymentId: paymentResult.paymentId,
+        requiresPayment: true,
+        message: 'Please complete payment method setup to activate Pay Per Invoice plan. The $0.01 charge will be credited to your first invoice.'
       });
     }
 

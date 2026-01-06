@@ -201,9 +201,82 @@ async function handlePaymentSuccess(paymentData: any) {
     
     const userId = metadata.userId || metadata.user_id;
     const plan = metadata.plan;
-    const paymentType = metadata.type || 'subscription_upgrade'; // Default to subscription upgrade
+    const paymentType = metadata.type || 'subscription_upgrade'; // subscription_upgrade | payment_method_setup | per_invoice_fee
 
     console.log('   Extracted data:', { userId, plan, paymentType, paymentId, sessionId });
+    
+    // For payment_method_setup, extract and save customer ID
+    if (paymentType === 'payment_method_setup' && userId) {
+      try {
+        // Try to get customer ID from payment data
+        // Dodo Payment might include customer_id in the payment response
+        const customerId = paymentData.customer_id || paymentData.customer?.id;
+        const paymentMethodId = paymentData.payment_method_id || paymentData.payment_method?.id;
+        
+        if (customerId) {
+          // Save customer ID and payment method ID to users table
+          const updateData: any = {
+            dodo_customer_id: customerId,
+            updated_at: new Date().toISOString()
+          };
+          
+          if (paymentMethodId) {
+            updateData.dodo_payment_method_id = paymentMethodId;
+            updateData.payment_method_saved_at = new Date().toISOString();
+          }
+          
+          const { error: updateError } = await supabaseAdmin
+            .from('users')
+            .update(updateData)
+            .eq('id', userId);
+          
+          if (updateError) {
+            console.error('   Error saving customer ID:', updateError);
+          } else {
+            console.log('   ✅ Saved customer ID and payment method:', { customerId, paymentMethodId });
+          }
+        } else {
+          // If customer_id not in payment data, try to fetch from checkout session
+          console.log('   Customer ID not in payment data, fetching from checkout session...');
+          const dodoClient = getDodoPaymentClient();
+          if (dodoClient && sessionId) {
+            try {
+              const sessionResponse = await fetch(
+                `${dodoClient['baseUrl']}/checkouts/${sessionId}`,
+                {
+                  headers: {
+                    'Authorization': `Bearer ${process.env.DODO_PAYMENT_API_KEY}`,
+                  },
+                }
+              );
+              
+              if (sessionResponse.ok) {
+                const sessionData = await sessionResponse.json();
+                const sessionCustomerId = sessionData.customer_id || sessionData.customer?.id;
+                if (sessionCustomerId) {
+                  const { error: updateError } = await supabaseAdmin
+                    .from('users')
+                    .update({
+                      dodo_customer_id: sessionCustomerId,
+                      payment_method_saved_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString()
+                    })
+                    .eq('id', userId);
+                  
+                  if (!updateError) {
+                    console.log('   ✅ Saved customer ID from checkout session:', sessionCustomerId);
+                  }
+                }
+              }
+            } catch (fetchError) {
+              console.error('   Error fetching checkout session for customer ID:', fetchError);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('   Error processing payment method setup:', error);
+      }
+    }
 
     if (!userId) {
       console.error('❌ Missing userId in payment metadata. Payment data:', JSON.stringify(paymentData, null, 2));
@@ -261,8 +334,17 @@ async function handlePaymentSuccess(paymentData: any) {
       }
     }
 
-    // Update user subscription
-    await updateUserSubscription(userId, plan || 'monthly', paymentId);
+    // Update user subscription (only for subscription upgrades, not per-invoice fees)
+    if (paymentType === 'subscription_upgrade' || paymentType === 'payment_method_setup') {
+      // For payment_method_setup, also activate the plan
+      if (paymentType === 'payment_method_setup') {
+        await updateUserSubscription(userId, 'pay_per_invoice', paymentId);
+      } else {
+        await updateUserSubscription(userId, plan || 'monthly', paymentId);
+      }
+    }
+    
+    // For per_invoice_fee, just update billing record (already done above)
   } catch (error) {
     console.error('Error handling payment success:', error);
   }

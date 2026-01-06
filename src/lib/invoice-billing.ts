@@ -14,7 +14,7 @@ export async function chargeForInvoice(
   userId: string,
   invoiceId: string,
   invoiceNumber: string
-): Promise<{ success: boolean; error?: string; paymentId?: string }> {
+): Promise<{ success: boolean; error?: string; paymentId?: string; paymentLink?: string; automatic?: boolean }> {
   try {
     // Get user's subscription plan
     const { data: user, error: userError } = await supabaseAdmin
@@ -51,7 +51,6 @@ export async function chargeForInvoice(
     const dodoClient = getDodoPaymentClient();
     if (!dodoClient) {
       // If payment service not configured, create a pending billing record
-      // Admin can process manually later
       await supabaseAdmin
         .from('billing_records')
         .insert({
@@ -69,35 +68,64 @@ export async function chargeForInvoice(
       };
     }
 
-    // Get user details for payment
-    const { data: profile } = await supabaseAdmin
+    // Get user details including saved payment method
+    const { data: userProfile } = await supabaseAdmin
       .from('users')
-      .select('email, name')
+      .select('email, name, dodo_customer_id, dodo_payment_method_id')
       .eq('id', userId)
       .single();
 
-    // Get base URL for redirects (not needed for automatic charge, but included for metadata)
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://invoice-flow-vert.vercel.app';
+    if (!userProfile) {
+      return {
+        success: false,
+        error: 'User profile not found',
+      };
+    }
 
-    // Create payment link for $0.50
-    const paymentResult = await dodoClient.createPaymentLink({
-      amount: 0.50,
-      currency: 'USD',
-      description: `Invoice fee for ${invoiceNumber}`,
-      customerEmail: profile?.email || '',
-      customerName: profile?.name || 'User',
-      metadata: {
-        userId,
-        invoiceId,
-        invoiceNumber,
-        type: 'per_invoice_fee',
-      },
-      successUrl: `${baseUrl}/dashboard/invoices?payment=success`,
-      cancelUrl: `${baseUrl}/dashboard/invoices?payment=cancelled`,
-    });
+    // Check if user has saved payment method (Option 1: Automatic charging)
+    if (userProfile.dodo_customer_id) {
+      // User has saved payment method - create automatic charge
+      // Use customer ID to create payment (Dodo Payment will use saved payment method)
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://invoice-flow-vert.vercel.app';
+      
+      // Create payment link with customer ID (Dodo will use saved payment method)
+      const paymentResult = await dodoClient.createPaymentLink({
+        amount: 0.50,
+        currency: 'USD',
+        description: `Invoice fee for ${invoiceNumber}`,
+        customerEmail: userProfile.email || '',
+        customerName: userProfile.name || 'User',
+        metadata: {
+          userId,
+          invoiceId,
+          invoiceNumber,
+          type: 'per_invoice_fee',
+          customerId: userProfile.dodo_customer_id, // Include customer ID for automatic charging
+        },
+        successUrl: `${baseUrl}/dashboard/invoices?payment=success&invoice_id=${invoiceId}`,
+        cancelUrl: `${baseUrl}/dashboard/invoices?payment=cancelled`,
+      });
 
-    if (!paymentResult.success || !paymentResult.paymentId) {
-      // Create pending billing record
+      if (!paymentResult.success || !paymentResult.paymentId) {
+        // Create pending billing record
+        await supabaseAdmin
+          .from('billing_records')
+          .insert({
+            user_id: userId,
+            invoice_id: invoiceId,
+            type: 'per_invoice_fee',
+            amount: 0.50,
+            currency: 'USD',
+            status: 'pending',
+          });
+
+        return {
+          success: false,
+          error: paymentResult.error || 'Failed to process automatic charge. Invoice sent but billing pending.',
+        };
+      }
+
+      // Create billing record
       await supabaseAdmin
         .from('billing_records')
         .insert({
@@ -106,36 +134,77 @@ export async function chargeForInvoice(
           type: 'per_invoice_fee',
           amount: 0.50,
           currency: 'USD',
+          stripe_session_id: paymentResult.paymentId,
+          status: 'pending', // Will be updated to 'paid' by webhook
+        });
+
+      // Note: Payment will be processed automatically by Dodo Payment
+      // Webhook will confirm payment and update billing record status
+      
+      return {
+        success: true,
+        paymentId: paymentResult.paymentId,
+        automatic: true, // Indicates automatic charge
+      };
+    } else {
+      // No saved payment method - create payment link (user needs to pay manually)
+      // This is fallback for users who haven't set up payment method yet
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://invoice-flow-vert.vercel.app';
+
+      const paymentResult = await dodoClient.createPaymentLink({
+        amount: 0.50,
+        currency: 'USD',
+        description: `Invoice fee for ${invoiceNumber}`,
+        customerEmail: userProfile.email || '',
+        customerName: userProfile.name || 'User',
+        metadata: {
+          userId,
+          invoiceId,
+          invoiceNumber,
+          type: 'per_invoice_fee',
+        },
+        successUrl: `${baseUrl}/dashboard/invoices?payment=success&invoice_id=${invoiceId}`,
+        cancelUrl: `${baseUrl}/dashboard/invoices?payment=cancelled`,
+      });
+
+      if (!paymentResult.success || !paymentResult.paymentId) {
+        await supabaseAdmin
+          .from('billing_records')
+          .insert({
+            user_id: userId,
+            invoice_id: invoiceId,
+            type: 'per_invoice_fee',
+            amount: 0.50,
+            currency: 'USD',
+            status: 'pending',
+          });
+
+        return {
+          success: false,
+          error: paymentResult.error || 'Failed to create payment link. Invoice sent but billing pending.',
+        };
+      }
+
+      // Create billing record
+      await supabaseAdmin
+        .from('billing_records')
+        .insert({
+          user_id: userId,
+          invoice_id: invoiceId,
+          type: 'per_invoice_fee',
+          amount: 0.50,
+          currency: 'USD',
+          stripe_session_id: paymentResult.paymentId,
           status: 'pending',
         });
 
       return {
-        success: false,
-        error: paymentResult.error || 'Failed to create payment. Invoice created but billing pending.',
+        success: true,
+        paymentId: paymentResult.paymentId,
+        paymentLink: paymentResult.paymentLink, // User needs to pay via this link
+        automatic: false, // Manual payment required
       };
     }
-
-    // Create billing record
-    await supabaseAdmin
-      .from('billing_records')
-      .insert({
-        user_id: userId,
-        invoice_id: invoiceId,
-        type: 'per_invoice_fee',
-        amount: 0.50,
-        currency: 'USD',
-        stripe_session_id: paymentResult.paymentId, // Reusing field for Dodo payment ID
-        status: 'pending',
-      });
-
-    // For automatic charging, we could process payment immediately
-    // But for now, we'll create a payment link and let webhook handle it
-    // In production, you might want to charge immediately via API
-
-    return {
-      success: true,
-      paymentId: paymentResult.paymentId,
-    };
   } catch (error: any) {
     console.error('Error charging for invoice:', error);
     return {
