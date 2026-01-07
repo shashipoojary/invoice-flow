@@ -111,7 +111,7 @@ export default function QuickInvoiceModal({
 }: QuickInvoiceModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
-  const [subscriptionUsage, setSubscriptionUsage] = useState<{ used: number; limit: number | null; remaining: number | null; plan: string } | null>(null)
+  const [subscriptionUsage, setSubscriptionUsage] = useState<{ used: number; limit: number | null; remaining: number | null; plan: string; reminders?: { used: number; limit: number | null; remaining: number | null } } | null>(null)
   const [showUpgradeContent, setShowUpgradeContent] = useState(false)
   const { user } = useAuth()
   const { showSuccess: localShowSuccess, showError: localShowError, showWarning: localShowWarning } = useToast()
@@ -1022,7 +1022,11 @@ export default function QuickInvoiceModal({
   const handleClose = () => {
     setShowUpgradeContent(false)
     setShowUpgradeModal(false)
-    resetForm()
+    // Only reset form if not editing and upgrade content not shown
+    // This preserves form state when user closes upgrade modal
+    if (!showUpgradeContent && !editingInvoice) {
+      resetForm()
+    }
     onClose()
   }
 
@@ -1153,7 +1157,19 @@ export default function QuickInvoiceModal({
   }
 
   // Helper functions for reminders
-  const addReminderRule = () => {
+  const addReminderRule = async () => {
+    // Check reminder limit for free plan (max 4 custom rules)
+    if (subscriptionUsage?.plan === 'free') {
+      // Free plan: Max 4 custom reminder rules
+      if (reminders.rules.length >= 4) {
+        showError('Free plan allows up to 4 reminder rules. Please upgrade for unlimited rules.');
+        setShowUpgradeModal(true);
+        // Refresh usage
+        await fetchSubscriptionUsage();
+        return;
+      }
+    }
+    
     const newRule: ReminderRule = {
       id: Date.now().toString(),
       type: 'before',
@@ -1182,7 +1198,32 @@ export default function QuickInvoiceModal({
     })
   }
 
-  const toggleSystemDefaults = () => {
+  const toggleSystemDefaults = async () => {
+    // If switching to smart reminders and user is on free plan, check reminder limit
+    // Note: Smart reminders will send 4 reminders, so we check if user has used all 4 this month
+    if (!reminders.useSystemDefaults && subscriptionUsage?.plan === 'free') {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await fetch(`/api/subscription/usage?t=${Date.now()}`, { 
+          headers,
+          cache: 'no-store' 
+        });
+        if (response.ok) {
+          const usageData = await response.json();
+          setSubscriptionUsage(usageData);
+          // Check reminder limit (4 for free plan)
+          // Smart reminders will send 4 reminders, so if user has used all 4, they can't enable
+          if (usageData.reminders && usageData.reminders.limit && usageData.reminders.used >= usageData.reminders.limit) {
+            showError('You\'ve reached your monthly reminder limit (4 reminders). Please upgrade for unlimited reminders.');
+            setShowUpgradeModal(true);
+            return; // Don't switch to smart reminders
+          }
+        }
+      } catch (error) {
+        console.error('Error checking reminder limit:', error);
+      }
+    }
+    
     setReminders({
       ...reminders,
       useSystemDefaults: !reminders.useSystemDefaults
@@ -2241,7 +2282,31 @@ export default function QuickInvoiceModal({
                     <input
                       type="checkbox"
                       checked={reminders.enabled}
-                      onChange={(e) => !markAsPaid && setReminders({...reminders, enabled: e.target.checked})}
+                      onChange={async (e) => {
+                        if (markAsPaid) return;
+                        
+                        // If enabling reminders, check subscription limit for free plan
+                        if (e.target.checked && subscriptionUsage?.plan === 'free') {
+                          try {
+                            const headers = await getAuthHeaders();
+                            const response = await fetch('/api/subscription/usage', { headers });
+                            if (response.ok) {
+                              const usageData = await response.json();
+                              // Check reminder limit (4 for free plan)
+                              if (usageData.reminders && usageData.reminders.limit && usageData.reminders.used >= usageData.reminders.limit) {
+                                showError('You\'ve reached your monthly reminder limit (4 reminders). Please upgrade for unlimited reminders.');
+                                setShowUpgradeModal(true);
+                                setSubscriptionUsage(usageData);
+                                return; // Don't enable reminders
+                              }
+                            }
+                          } catch (error) {
+                            console.error('Error checking reminder limit:', error);
+                          }
+                        }
+                        
+                        setReminders({...reminders, enabled: e.target.checked});
+                      }}
                       disabled={markAsPaid}
                       className="sr-only peer"
                     />
@@ -2954,6 +3019,7 @@ export default function QuickInvoiceModal({
           isOpen={showUpgradeModal}
           onClose={() => {
             setShowUpgradeModal(false)
+            // DO NOT reset form - preserve user's input
             // Refresh usage after modal closes in case user upgraded
             if (!editingInvoice && user) {
               fetchSubscriptionUsage()

@@ -224,9 +224,13 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   }
 
   const handleClose = () => {
-    resetForm()
     setShowUpgradeContent(false)
     setShowUpgradeModal(false)
+    // Only reset form if not editing and upgrade content not shown
+    // This preserves form state when user closes upgrade modal
+    if (!showUpgradeContent && !editingInvoice) {
+      resetForm()
+    }
     onClose()
   }
 
@@ -1145,6 +1149,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
           isOpen={showUpgradeModal}
           onClose={() => {
             setShowUpgradeModal(false)
+            // DO NOT reset form - preserve user's input
             // Refresh usage after modal closes in case user upgraded
             if (!editingInvoice && user) {
               fetchSubscriptionUsage()
