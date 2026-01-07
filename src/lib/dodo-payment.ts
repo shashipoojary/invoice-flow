@@ -257,6 +257,100 @@ class DodoPaymentClient {
   }
 
   /**
+   * Charge customer directly using saved payment method
+   * This attempts to charge a customer automatically without requiring a checkout link
+   */
+  async chargeCustomer(params: {
+    customerId: string;
+    amount: number;
+    currency: string;
+    description: string;
+    metadata?: Record<string, any>;
+  }): Promise<DodoPaymentResponse> {
+    try {
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`,
+      };
+
+      // Try different endpoints for direct charging
+      const endpoints = [
+        '/payments',
+        '/charges',
+        '/v1/payments',
+        '/v1/charges',
+        '/api/v1/payments',
+      ];
+
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`🔍 Trying to charge customer via: ${this.baseUrl}${endpoint}`);
+          
+          const requestBody = {
+            customer_id: params.customerId,
+            amount: Math.round(params.amount * 100), // Convert to cents
+            currency: params.currency.toUpperCase(),
+            description: params.description,
+            metadata: params.metadata || {},
+          };
+
+          const response = await fetch(`${this.baseUrl}${endpoint}`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(requestBody),
+          });
+
+          const responseText = await response.text();
+          let data;
+          try {
+            data = responseText ? JSON.parse(responseText) : {};
+          } catch (parseError) {
+            console.log(`   Endpoint ${endpoint} returned non-JSON, trying next...`);
+            continue;
+          }
+
+          if (response.ok) {
+            console.log(`✅ SUCCESS! Direct charge created via ${endpoint}`);
+            return {
+              success: true,
+              paymentId: data.id || data.payment_id || data.charge_id,
+              paymentLink: data.payment_url || data.checkout_url, // May not be needed for direct charge
+            };
+          } else {
+            console.log(`   Endpoint ${endpoint} returned ${response.status}, trying next...`);
+          }
+        } catch (error) {
+          console.log(`   Endpoint ${endpoint} failed, trying next...`);
+          continue;
+        }
+      }
+
+      // If direct charge not supported, fall back to checkout with customer ID
+      console.log('⚠️ Direct charge API not found, falling back to checkout with customer ID');
+      return this.createPaymentLink({
+        amount: params.amount,
+        currency: params.currency,
+        description: params.description,
+        customerEmail: '', // Will be fetched from customer
+        customerName: '',
+        metadata: {
+          ...params.metadata,
+          customerId: params.customerId,
+          automaticCharge: true,
+        },
+        successUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://invoice-flow-vert.vercel.app'}/dashboard/invoices?payment=success`,
+        cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://invoice-flow-vert.vercel.app'}/dashboard/invoices?payment=cancelled`,
+      });
+    } catch (error: any) {
+      console.error('Error charging customer:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to charge customer',
+      };
+    }
+  }
+
+  /**
    * Verify payment status
    */
   async verifyPayment(paymentId: string): Promise<{ success: boolean; status?: string; error?: string }> {

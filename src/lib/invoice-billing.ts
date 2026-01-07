@@ -84,26 +84,21 @@ export async function chargeForInvoice(
 
     // Check if user has saved payment method (Option 1: Automatic charging)
     if (userProfile.dodo_customer_id) {
-      // User has saved payment method - create automatic charge
-      // Use customer ID to create payment (Dodo Payment will use saved payment method)
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://invoice-flow-vert.vercel.app';
+      // User has saved payment method - charge directly using customer ID
+      console.log(`💳 Attempting automatic charge for customer: ${userProfile.dodo_customer_id}`);
       
-      // Create payment link with customer ID (Dodo will use saved payment method)
-      const paymentResult = await dodoClient.createPaymentLink({
+      // Try to charge customer directly (automatic, no user interaction)
+      const paymentResult = await dodoClient.chargeCustomer({
+        customerId: userProfile.dodo_customer_id,
         amount: 0.50,
         currency: 'USD',
         description: `Invoice fee for ${invoiceNumber}`,
-        customerEmail: userProfile.email || '',
-        customerName: userProfile.name || 'User',
         metadata: {
           userId,
           invoiceId,
           invoiceNumber,
           type: 'per_invoice_fee',
-          customerId: userProfile.dodo_customer_id, // Include customer ID for automatic charging
         },
-        successUrl: `${baseUrl}/dashboard/invoices?payment=success&invoice_id=${invoiceId}`,
-        cancelUrl: `${baseUrl}/dashboard/invoices?payment=cancelled`,
       });
 
       if (!paymentResult.success || !paymentResult.paymentId) {
