@@ -18,10 +18,10 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Delete all user data but keep the account
+    // Delete progress data only - keep business details and subscription
     const userId = user.id;
 
-    // First, get all invoice IDs for this user
+    // Get all invoice IDs for this user
     const { data: userInvoices } = await supabase
       .from('invoices')
       .select('id')
@@ -29,75 +29,67 @@ export async function DELETE(request: NextRequest) {
 
     const invoiceIds = userInvoices?.map(invoice => invoice.id) || [];
 
+    // Get all estimate IDs for this user
+    const { data: userEstimates } = await supabase
+      .from('estimates')
+      .select('id')
+      .eq('user_id', userId);
+
+    const estimateIds = userEstimates?.map(estimate => estimate.id) || [];
+
     // Delete in order to respect foreign key constraints
     const deleteOperations = [];
     
-    // Delete invoice items first (they reference invoices)
+    // Delete invoice-related data first
     if (invoiceIds.length > 0) {
       deleteOperations.push(
-        supabase.from('invoice_items').delete().in('invoice_id', invoiceIds)
-      );
-      
-      // Delete invoice reminders
-      deleteOperations.push(
-        supabase.from('invoice_reminders').delete().in('invoice_id', invoiceIds)
-      );
-      
-      // Delete reminder tracking
-      deleteOperations.push(
+        // Delete invoice items
+        supabase.from('invoice_items').delete().in('invoice_id', invoiceIds),
+        // Delete invoice reminders
+        supabase.from('invoice_reminders').delete().in('invoice_id', invoiceIds),
+        // Delete reminder tracking
         supabase.from('reminder_tracking').delete().in('invoice_id', invoiceIds)
       );
     }
     
-    // Delete other user data
+    // Delete estimate-related data
+    if (estimateIds.length > 0) {
+      deleteOperations.push(
+        // Delete estimate items
+        supabase.from('estimate_items').delete().in('estimate_id', estimateIds)
+      );
+    }
+    
+    // Delete main progress data (but keep business details and subscription)
     deleteOperations.push(
       // Delete payments
       supabase.from('payments').delete().eq('user_id', userId),
-      
       // Delete invoices
       supabase.from('invoices').delete().eq('user_id', userId),
-      
+      // Delete estimates
+      supabase.from('estimates').delete().eq('user_id', userId),
       // Delete clients
-      supabase.from('clients').delete().eq('user_id', userId),
-      
-      // Delete user settings (if exists)
-      supabase.from('user_settings').delete().eq('user_id', userId),
-      
-      // Update user profile to reset (but keep the account)
-      supabase.from('users').update({
-        name: null,
-        phone: null,
-        company: null,
-        address: null,
-        subscription_plan: 'free',
-        subscription_status: 'active',
-        next_billing_date: null,
-        updated_at: new Date().toISOString()
-      }).eq('id', userId)
+      supabase.from('clients').delete().eq('user_id', userId)
     );
 
     // Execute all delete operations
     const results = await Promise.all(deleteOperations);
     
-    // Check if critical operations failed (ignore non-critical errors)
-    const criticalOperations = results.slice(0, -1); // All except the last (user update)
-    const criticalErrors = criticalOperations.filter(result => result.error);
+    // Check for errors
+    const errors = results.filter(result => result.error);
     
-    // Log errors but don't fail if most operations succeeded
-    if (criticalErrors.length > 0) {
-      console.warn('Some delete operations failed (non-critical):', criticalErrors);
-    }
-    
-    // Only fail if the user update failed (this is critical)
-    const userUpdateResult = results[results.length - 1];
-    if (userUpdateResult.error) {
-      console.error('Failed to update user profile:', userUpdateResult.error);
-      return NextResponse.json({ error: 'Failed to reset user profile' }, { status: 500 });
+    if (errors.length > 0) {
+      console.error('Some delete operations failed:', errors);
+      // Still return success if most operations succeeded
+      const successCount = results.length - errors.length;
+      if (successCount < results.length / 2) {
+        return NextResponse.json({ error: 'Failed to delete progress data' }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ 
-      message: 'All data deleted successfully. Account preserved.',
-      deletedCount: results.length
+      message: 'Progress data deleted successfully. Business details and subscription preserved.',
+      success: true
     });
   } catch (error) {
     console.error('Delete progress error:', error);

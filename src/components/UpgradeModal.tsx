@@ -13,6 +13,13 @@ interface UpgradeModalProps {
     used: number;
     limit: number | null;
     remaining: number | null;
+    payPerInvoice?: {
+      totalInvoices: number;
+      freeInvoicesUsed: number;
+      freeInvoicesRemaining: number;
+      chargedInvoices: number;
+      totalCharged: string;
+    };
   };
   reason?: string;
 }
@@ -139,6 +146,45 @@ export default function UpgradeModal({
               </div>
               {usage.used >= usage.limit && (
                 <p className="text-xs text-red-600 mt-2">You've reached your monthly limit. Upgrade to create unlimited invoices.</p>
+              )}
+            </div>
+          )}
+
+          {/* Usage Info for Pay Per Invoice Plan */}
+          {currentPlan === 'pay_per_invoice' && usage && usage.payPerInvoice && (
+            <div className="p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs sm:text-sm font-medium text-gray-700">Invoices sent</span>
+                <span className="text-xs sm:text-sm font-semibold text-gray-900">
+                  {usage.payPerInvoice.totalInvoices} invoice{usage.payPerInvoice.totalInvoices !== 1 ? 's' : ''}
+                  {usage.payPerInvoice.chargedInvoices > 0 && (
+                    <span className="text-gray-600 ml-1">(${usage.payPerInvoice.totalCharged})</span>
+                  )}
+                </span>
+              </div>
+              {usage.payPerInvoice.freeInvoicesRemaining > 0 && (
+                <>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-600">Free invoices remaining</span>
+                    <span className="text-xs font-medium text-green-600">
+                      {usage.payPerInvoice.freeInvoicesRemaining} / 5
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                    <div 
+                      className="h-2 bg-green-500 transition-all"
+                      style={{ width: `${(usage.payPerInvoice.freeInvoicesUsed / 5) * 100}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-green-600 mt-2">
+                    🎁 First 5 invoices are free! {usage.payPerInvoice.freeInvoicesRemaining} free invoice{usage.payPerInvoice.freeInvoicesRemaining !== 1 ? 's' : ''} remaining.
+                  </p>
+                </>
+              )}
+              {usage.payPerInvoice.chargedInvoices > 0 && (
+                <p className="text-xs text-gray-600 mt-2">
+                  {usage.payPerInvoice.chargedInvoices} invoice{usage.payPerInvoice.chargedInvoices !== 1 ? 's' : ''} charged at $0.50 each.
+                </p>
               )}
             </div>
           )}

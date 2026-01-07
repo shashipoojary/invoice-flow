@@ -215,6 +215,13 @@ export default function ProfilePage() {
     used: number;
     remaining: number | null;
     canCreateInvoice: boolean;
+    payPerInvoice?: {
+      totalInvoices: number;
+      freeInvoicesUsed: number;
+      freeInvoicesRemaining: number;
+      chargedInvoices: number;
+      totalCharged: string;
+    };
   } | null>(null);
   
   // Invoice modal states
@@ -1234,10 +1241,26 @@ export default function ProfilePage() {
                           )}
                         </div>
                       )}
-                      {subscriptionUsage && subscriptionUsage.plan === 'pay_per_invoice' && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          {subscriptionUsage.used} invoice{subscriptionUsage.used !== 1 ? 's' : ''} sent (${(subscriptionUsage.used * 0.5).toFixed(2)})
-                        </p>
+                      {subscriptionUsage && subscriptionUsage.plan === 'pay_per_invoice' && subscriptionUsage.payPerInvoice && (
+                        <div className="mt-2">
+                          <p className="text-xs text-gray-600 mb-1">
+                            {subscriptionUsage.payPerInvoice.totalInvoices} invoice{subscriptionUsage.payPerInvoice.totalInvoices !== 1 ? 's' : ''} sent
+                            {subscriptionUsage.payPerInvoice.chargedInvoices > 0 && (
+                              <span className="text-gray-900 font-medium"> (${subscriptionUsage.payPerInvoice.totalCharged})</span>
+                            )}
+                            {subscriptionUsage.payPerInvoice.chargedInvoices === 0 && subscriptionUsage.payPerInvoice.freeInvoicesRemaining > 0 && (
+                              <span className="text-green-600 font-medium"> • {subscriptionUsage.payPerInvoice.freeInvoicesRemaining} free remaining</span>
+                            )}
+                          </p>
+                          {subscriptionUsage.payPerInvoice.freeInvoicesRemaining > 0 && (
+                            <div className="w-full bg-gray-200 h-1.5">
+                              <div 
+                                className="h-1.5 bg-green-500 transition-all"
+                                style={{ width: `${(subscriptionUsage.payPerInvoice.freeInvoicesUsed / 5) * 100}%` }}
+                              />
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                     <span className={`px-3 py-1 text-xs font-medium self-start sm:self-auto flex-shrink-0 ${

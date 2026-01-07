@@ -241,13 +241,44 @@ export async function getUsageStats(userId: string): Promise<SubscriptionLimits>
   const plan = await getUserPlan(userId);
   const { start, end } = getCurrentMonthBoundaries();
 
-  // Get invoice count for current month
-  const { count: invoiceCount } = await supabaseAdmin
-    .from('invoices')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .gte('created_at', start)
-    .lte('created_at', end);
+  // For Pay Per Invoice: Count invoices created after activation (not just current month)
+  let invoiceCount = 0;
+  if (plan === 'pay_per_invoice') {
+    // Get activation date
+    const { data: userData } = await supabaseAdmin
+      .from('users')
+      .select('pay_per_invoice_activated_at')
+      .eq('id', userId)
+      .single();
+    
+    if (userData?.pay_per_invoice_activated_at) {
+      // Count non-draft invoices created after activation
+      const { count } = await supabaseAdmin
+        .from('invoices')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .gte('created_at', userData.pay_per_invoice_activated_at)
+        .neq('status', 'draft'); // Only count non-draft invoices
+      invoiceCount = count || 0;
+    } else {
+      // If no activation date, count all non-draft invoices (fallback)
+      const { count } = await supabaseAdmin
+        .from('invoices')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .neq('status', 'draft');
+      invoiceCount = count || 0;
+    }
+  } else {
+    // For free plan: Count invoices for current month
+    const { count } = await supabaseAdmin
+      .from('invoices')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .gte('created_at', start)
+      .lte('created_at', end);
+    invoiceCount = count || 0;
+  }
 
   // Get total client count
   const { count: clientCount } = await supabaseAdmin

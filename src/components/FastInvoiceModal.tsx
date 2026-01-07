@@ -229,7 +229,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
     // Only reset form if not editing and upgrade content not shown
     // This preserves form state when user closes upgrade modal
     if (!showUpgradeContent && !editingInvoice) {
-      resetForm()
+    resetForm()
     }
     onClose()
   }
@@ -240,7 +240,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
       showError('Please fill in all required fields correctly')
       return
     }
-
+    
     // Show loading state immediately for better UX
     if (!isSending) {
       setLoading(true)
@@ -1145,8 +1145,8 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
 
       {/* Upgrade Modal - Fallback if no parent callback provided */}
       {typeof window !== 'undefined' && showUpgradeModal && createPortal(
-        <UpgradeModal
-          isOpen={showUpgradeModal}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
           onClose={() => {
             setShowUpgradeModal(false)
             // DO NOT reset form - preserve user's input
@@ -1155,13 +1155,13 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
               fetchSubscriptionUsage()
             }
           }}
-          currentPlan={subscriptionUsage?.plan as 'free' | 'monthly' | 'pay_per_invoice' || 'free'}
-          usage={subscriptionUsage ? {
-            used: subscriptionUsage.used,
-            limit: subscriptionUsage.limit,
-            remaining: subscriptionUsage.remaining
-          } : undefined}
-          reason="You've reached your monthly invoice limit. Upgrade to create unlimited invoices."
+        currentPlan={subscriptionUsage?.plan as 'free' | 'monthly' | 'pay_per_invoice' || 'free'}
+        usage={subscriptionUsage ? {
+          used: subscriptionUsage.used,
+          limit: subscriptionUsage.limit,
+          remaining: subscriptionUsage.remaining
+        } : undefined}
+        reason="You've reached your monthly invoice limit. Upgrade to create unlimited invoices."
         />,
         document.body
       )}

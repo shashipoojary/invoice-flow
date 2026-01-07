@@ -184,9 +184,9 @@ export default function EstimateModal({
     // Only reset form if not editing and upgrade content not shown
     // This preserves form state when user closes upgrade modal
     if (!showUpgradeContent && !estimate) {
-      setSelectedClientId('')
-      setItems([{ id: '1', description: '', rate: 0, qty: 1 }])
-      setDiscount(0)
+    setSelectedClientId('')
+    setItems([{ id: '1', description: '', rate: 0, qty: 1 }])
+    setDiscount(0)
       setTaxRate(0)
       setNotes('')
       setStep(1)

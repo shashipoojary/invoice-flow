@@ -30,6 +30,23 @@ export async function GET(request: NextRequest) {
     const usageStats = await getUsageStats(user.id);
     const plan = profile?.subscription_plan || 'free';
 
+    // For Pay Per Invoice: Calculate free vs charged invoices
+    let payPerInvoiceInfo = null;
+    if (plan === 'pay_per_invoice') {
+      const totalInvoices = usageStats.invoices.used;
+      const freeInvoicesUsed = Math.min(totalInvoices, 5); // First 5 are free
+      const chargedInvoices = Math.max(0, totalInvoices - 5); // Invoices after first 5
+      const totalCharged = chargedInvoices * 0.5; // $0.50 per invoice
+      
+      payPerInvoiceInfo = {
+        totalInvoices,
+        freeInvoicesUsed,
+        freeInvoicesRemaining: Math.max(0, 5 - totalInvoices),
+        chargedInvoices,
+        totalCharged: totalCharged.toFixed(2)
+      };
+    }
+
     const response = NextResponse.json({
       plan,
       // Invoice usage
@@ -37,6 +54,8 @@ export async function GET(request: NextRequest) {
       used: usageStats.invoices.used,
       remaining: usageStats.invoices.limit ? Math.max(0, usageStats.invoices.limit - usageStats.invoices.used) : null,
       canCreateInvoice: plan === 'free' ? (usageStats.invoices.limit !== null && usageStats.invoices.used < usageStats.invoices.limit) : true,
+      // Pay Per Invoice specific info
+      payPerInvoice: payPerInvoiceInfo,
       // Additional usage stats
       clients: {
         limit: usageStats.clients.limit,

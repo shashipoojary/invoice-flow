@@ -670,8 +670,8 @@ export default function QuickInvoiceModal({
 
   const handleCreateDraft = async () => {
     // Validate form FIRST before showing loading or checking subscription
-    if (!validateForm()) {
-      showError('Please fill in all required fields correctly')
+      if (!validateForm()) {
+        showError('Please fill in all required fields correctly')
       // Scroll to first error field
       setTimeout(() => {
         const firstError = document.querySelector('.border-red-500')
@@ -696,7 +696,7 @@ export default function QuickInvoiceModal({
         setSubscriptionUsage(usageData)
         return
       }
-    }
+      }
 
     try {
       
@@ -812,10 +812,10 @@ export default function QuickInvoiceModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Validate form FIRST before showing loading or checking subscription
-    if (!validateForm()) {
-      showError('Please fill in all required fields correctly')
+      if (!validateForm()) {
+        showError('Please fill in all required fields correctly')
       // Scroll to first error field
       setTimeout(() => {
         const firstError = document.querySelector('.border-red-500')
@@ -840,7 +840,7 @@ export default function QuickInvoiceModal({
         setSubscriptionUsage(usageData)
         return
       }
-    }
+      }
 
     try {
       
@@ -1025,7 +1025,7 @@ export default function QuickInvoiceModal({
     // Only reset form if not editing and upgrade content not shown
     // This preserves form state when user closes upgrade modal
     if (!showUpgradeContent && !editingInvoice) {
-      resetForm()
+    resetForm()
     }
     onClose()
   }
@@ -1638,8 +1638,8 @@ export default function QuickInvoiceModal({
                               errors.clientName
                                 ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                                 : isDarkMode 
-                                  ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
-                                  : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                              ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                              : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                           }`}
                         />
                         </div>
@@ -1666,8 +1666,8 @@ export default function QuickInvoiceModal({
                               errors.clientEmail
                                 ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                                 : isDarkMode 
-                                  ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
-                                  : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                              ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                              : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                           }`}
                         />
                         </div>
@@ -1731,8 +1731,8 @@ export default function QuickInvoiceModal({
                           errors.issueDate
                             ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                             : isDarkMode 
-                              ? 'border-gray-700 bg-gray-800 text-white' 
-                              : 'border-gray-300 bg-white text-gray-900'
+                            ? 'border-gray-700 bg-gray-800 text-white' 
+                            : 'border-gray-300 bg-white text-gray-900'
                         }`}
                         required
                       />
@@ -1745,11 +1745,11 @@ export default function QuickInvoiceModal({
                     {errors.issueDate ? (
                       <p className="text-xs mt-1 text-red-600">{errors.issueDate}</p>
                     ) : (
-                      <p className={`text-xs mt-1 ${
-                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                      }`}>
-                        Issue Date {!editingInvoice ? '(Auto-selected)' : ''}
-                      </p>
+                    <p className={`text-xs mt-1 ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      Issue Date {!editingInvoice ? '(Auto-selected)' : ''}
+                    </p>
                     )}
                   </div>
 
@@ -1776,8 +1776,8 @@ export default function QuickInvoiceModal({
                         errors.dueDate
                           ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                           : isDarkMode 
-                            ? 'border-gray-700 bg-gray-800 text-white' 
-                            : 'border-gray-300 bg-white text-gray-900'
+                          ? 'border-gray-700 bg-gray-800 text-white' 
+                          : 'border-gray-300 bg-white text-gray-900'
                       }`}
                       required
                     />
@@ -1793,17 +1793,17 @@ export default function QuickInvoiceModal({
                     <p className="text-xs mt-1 text-red-600">{errors.dueDate}</p>
                   ) : (
                     <>
-                      <p className={`text-xs mt-1 ${
-                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                      }`}>
+                  <p className={`text-xs mt-1 ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
                         Due Date {markAsPaid && <span className="text-orange-600">(Locked - Due on Receipt)</span>}
-                      </p>
-                      {paymentTerms.enabled && (
-                        <p className={`text-xs mt-1 ${
-                          isDarkMode ? 'text-orange-400' : 'text-orange-600'
-                        }`}>
-                          Auto-updated to match the payment terms
-                        </p>
+                  </p>
+                  {paymentTerms.enabled && (
+                    <p className={`text-xs mt-1 ${
+                      isDarkMode ? 'text-orange-400' : 'text-orange-600'
+                    }`}>
+                      Auto-updated to match the payment terms
+                    </p>
                       )}
                     </>
                   )}
@@ -1921,8 +1921,8 @@ export default function QuickInvoiceModal({
                               errors.items?.[item.id]?.description
                                 ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                                 : isDarkMode 
-                                  ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
-                                  : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                                ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                                : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                             }`}
                           />
                           {errors.items?.[item.id]?.description && (
@@ -1960,8 +1960,8 @@ export default function QuickInvoiceModal({
                                 errors.items?.[item.id]?.amount
                                   ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                                   : isDarkMode 
-                                    ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
-                                    : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                                  ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                                  : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                               }`}
                             />
                             {errors.items?.[item.id]?.amount && (
@@ -3015,8 +3015,8 @@ export default function QuickInvoiceModal({
 
       {/* Upgrade Modal - Shown after invoice modal closes */}
       {showUpgradeModal && (
-        <UpgradeModal
-          isOpen={showUpgradeModal}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
           onClose={() => {
             setShowUpgradeModal(false)
             // DO NOT reset form - preserve user's input
@@ -3025,14 +3025,14 @@ export default function QuickInvoiceModal({
               fetchSubscriptionUsage()
             }
           }}
-          currentPlan={subscriptionUsage?.plan as 'free' | 'monthly' | 'pay_per_invoice' || 'free'}
-          usage={subscriptionUsage ? {
-            used: subscriptionUsage.used,
-            limit: subscriptionUsage.limit,
-            remaining: subscriptionUsage.remaining
-          } : undefined}
-          reason="You've reached your monthly invoice limit. Upgrade to create unlimited invoices."
-        />
+        currentPlan={subscriptionUsage?.plan as 'free' | 'monthly' | 'pay_per_invoice' || 'free'}
+        usage={subscriptionUsage ? {
+          used: subscriptionUsage.used,
+          limit: subscriptionUsage.limit,
+          remaining: subscriptionUsage.remaining
+        } : undefined}
+        reason="You've reached your monthly invoice limit. Upgrade to create unlimited invoices."
+      />
       )}
     </div>
   )
