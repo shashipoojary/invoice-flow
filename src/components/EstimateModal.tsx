@@ -1044,8 +1044,9 @@ export default function EstimateModal({
           isOpen={showUpgradeModal}
           onClose={() => {
             setShowUpgradeModal(false)
+            // DO NOT reset form - preserve user's input
             // Refresh usage after modal closes in case user upgraded
-            if (!isEditMode && user) {
+            if (!estimate && user) {
               fetchSubscriptionUsage()
             }
           }}
