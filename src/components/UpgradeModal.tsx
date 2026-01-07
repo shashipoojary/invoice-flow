@@ -86,47 +86,46 @@ export default function UpgradeModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50">
-      {/* Backdrop with blur */}
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
       <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      {/* Modal content */}
-      <div className="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
-        <div 
-          className="bg-white border border-gray-200 max-w-2xl w-full shadow-xl pointer-events-auto relative z-10"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
-            <div>
-              <h3 className="font-heading text-lg sm:text-xl font-semibold" style={{color: '#1f2937'}}>
-                Upgrade Your Plan
-              </h3>
-              {reason && (
-                <p className="text-sm text-gray-600 mt-1">{reason}</p>
-              )}
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 transition-colors cursor-pointer"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
+        className="bg-white border border-gray-200 max-w-4xl w-full shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 flex-shrink-0">
+          <div className="flex-1 min-w-0 pr-2">
+            <h3 className="font-heading text-base sm:text-lg font-semibold text-gray-900">
+              Upgrade Your Plan
+            </h3>
+            {reason ? (
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">{reason}</p>
+            ) : (
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                Choose the plan that works best for your business
+              </p>
+            )}
           </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 transition-colors cursor-pointer flex-shrink-0"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
 
+        {/* Scrollable Content */}
+        <div className="overflow-y-auto flex-1">
           {/* Usage Info for Free Plan */}
           {currentPlan === 'free' && usage && usage.limit && (
             <div className="p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700">Invoices this month</span>
-                <span className="text-sm font-semibold text-gray-900">
+                <span className="text-xs sm:text-sm font-medium text-gray-700">Invoices this month</span>
+                <span className="text-xs sm:text-sm font-semibold text-gray-900">
                   {usage.used} / {usage.limit}
                 </span>
               </div>
-              <div className="w-full bg-gray-200 h-2">
+              <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                 <div 
                   className={`h-2 transition-all ${
                     usage.used >= usage.limit 
@@ -146,101 +145,101 @@ export default function UpgradeModal({
 
           {/* Plans */}
           <div className="p-4 sm:p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {/* Free Plan */}
-              <div className={`border p-4 sm:p-5 transition-colors ${
+              <div className={`border rounded-lg p-4 sm:p-5 transition-colors ${
                 currentPlan === 'free' 
                   ? 'border-indigo-500 bg-indigo-50' 
-                  : 'border-gray-200'
+                  : 'border-gray-200 hover:border-gray-300'
               }`}>
                 <div className="mb-4">
-                  <h4 className="font-heading text-base font-semibold text-gray-900 mb-2">Free</h4>
+                  <h4 className="font-heading text-sm sm:text-base font-semibold text-gray-900 mb-2">Free</h4>
                   <div className="flex items-baseline gap-1 mb-2">
-                    <span className="font-heading text-2xl font-semibold text-gray-900">$0</span>
-                    <span className="text-sm text-gray-600">/forever</span>
+                    <span className="font-heading text-xl sm:text-2xl font-semibold text-gray-900">$0</span>
+                    <span className="text-xs sm:text-sm text-gray-600">/forever</span>
                   </div>
                 </div>
-                <ul className="space-y-2 mb-4 text-xs text-gray-600">
+                <ul className="space-y-2 mb-4 text-xs sm:text-sm text-gray-600">
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                     <span>Up to 5 invoices / month</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                     <span>1 client</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                     <span>1 estimate (convert to invoice)</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                     <span>4 auto reminders</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                     <span>1 detailed template only</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                     <span>Limited customization</span>
                   </li>
                 </ul>
                 {currentPlan === 'free' && (
-                  <div className="w-full px-4 py-2.5 text-sm font-medium bg-gray-200 text-gray-500 text-center">
+                  <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium bg-gray-200 text-gray-500 text-center rounded">
                     Current Plan
                   </div>
                 )}
               </div>
               {/* Monthly Plan */}
-              <div className={`border p-4 sm:p-5 transition-colors ${
+              <div className={`border rounded-lg p-4 sm:p-5 transition-colors ${
                 currentPlan === 'monthly' 
                   ? 'border-indigo-500 bg-indigo-50' 
                   : 'border-gray-200 hover:border-gray-300'
               }`}>
                 <div className="mb-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-heading text-base font-semibold text-gray-900">Monthly</h4>
-                      <span className="bg-indigo-600 text-white text-xs font-medium px-2 py-0.5 flex items-center gap-1">
-                        <Star className="w-3 h-3 fill-current" />
-                        Popular
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <h4 className="font-heading text-sm sm:text-base font-semibold text-gray-900">Monthly</h4>
+                    <span className="bg-indigo-600 text-white text-xs font-medium px-2 py-0.5 rounded flex items-center gap-1">
+                      <Star className="w-3 h-3 fill-current" />
+                      Popular
+                    </span>
+                  </div>
                   <div className="flex items-baseline gap-1 mb-2">
-                    <span className="font-heading text-2xl font-semibold text-gray-900">$9</span>
-                    <span className="text-sm text-gray-600">/month</span>
+                    <span className="font-heading text-xl sm:text-2xl font-semibold text-gray-900">$9</span>
+                    <span className="text-xs sm:text-sm text-gray-600">/month</span>
                   </div>
                 </div>
                 <ul className="space-y-2 mb-4">
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-gray-600">Unlimited invoices</span>
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm text-gray-600">Unlimited invoices</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-gray-600">Unlimited clients</span>
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm text-gray-600">Unlimited clients</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-gray-600">Unlimited estimates</span>
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm text-gray-600">Unlimited estimates</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-gray-600">Unlimited auto reminders</span>
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm text-gray-600">Unlimited auto reminders</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-gray-600">All templates & customization</span>
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm text-gray-600">All templates & customization</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-gray-600">Analytics & priority support</span>
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm text-gray-600">Analytics & priority support</span>
                   </li>
                 </ul>
                 <button
                   onClick={() => handleUpgrade('monthly')}
                   disabled={loading || currentPlan === 'monthly'}
-                  className={`w-full px-4 py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                  className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-2 rounded ${
                     currentPlan === 'monthly'
                       ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       : 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
@@ -253,43 +252,43 @@ export default function UpgradeModal({
                   ) : (
                     <>
                       Upgrade to Monthly
-                      <ArrowRight className="w-4 h-4" />
+                      <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
                     </>
                   )}
                 </button>
               </div>
 
               {/* Pay Per Invoice Plan */}
-              <div className={`border p-4 sm:p-5 transition-colors ${
+              <div className={`border rounded-lg p-4 sm:p-5 transition-colors ${
                 currentPlan === 'pay_per_invoice' 
                   ? 'border-indigo-500 bg-indigo-50' 
                   : 'border-gray-200 hover:border-gray-300'
               }`}>
                 <div className="mb-4">
-                  <h4 className="font-heading text-base font-semibold text-gray-900 mb-2">Pay Per Invoice</h4>
+                  <h4 className="font-heading text-sm sm:text-base font-semibold text-gray-900 mb-2">Pay Per Invoice</h4>
                   <div className="flex items-baseline gap-1 mb-2">
-                    <span className="font-heading text-2xl font-semibold text-gray-900">$0.50</span>
-                    <span className="text-sm text-gray-600">/invoice</span>
+                    <span className="font-heading text-xl sm:text-2xl font-semibold text-gray-900">$0.50</span>
+                    <span className="text-xs sm:text-sm text-gray-600">/invoice</span>
                   </div>
                 </div>
                 <ul className="space-y-2 mb-4">
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-gray-600">Pay only when you send an invoice</span>
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm text-gray-600">Pay only when you send an invoice</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-gray-600">All invoice features included</span>
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm text-gray-600">All invoice features included</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-gray-600">No monthly commitment</span>
+                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                    <span className="text-xs sm:text-sm text-gray-600">No monthly commitment</span>
                   </li>
                 </ul>
                 <button
                   onClick={() => handleUpgrade('pay_per_invoice')}
                   disabled={loading || currentPlan === 'pay_per_invoice'}
-                  className={`w-full px-4 py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                  className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-2 rounded ${
                     currentPlan === 'pay_per_invoice'
                       ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       : 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
@@ -302,7 +301,7 @@ export default function UpgradeModal({
                   ) : (
                     <>
                       Choose Pay Per Invoice
-                      <ArrowRight className="w-4 h-4" />
+                      <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
                     </>
                   )}
                 </button>
