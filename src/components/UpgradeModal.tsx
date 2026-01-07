@@ -52,12 +52,21 @@ export default function UpgradeModal({
 
       const data = await checkoutResponse.json();
 
-      // Pay Per Invoice doesn't require payment - it's activated directly
-      if (data.requiresPayment === false || plan === 'pay_per_invoice') {
-        showSuccess(data.message || `Successfully upgraded to Pay Per Invoice plan! You will be charged $0.50 per invoice when you create or send invoices.`);
-        onClose();
-        window.location.reload();
-        return;
+      // Pay Per Invoice: Check if payment method setup is required
+      if (plan === 'pay_per_invoice') {
+        if (data.requiresPayment === false) {
+          // Payment method already saved, plan activated
+          showSuccess(data.message || `Pay Per Invoice plan activated! You will be charged $0.50 per invoice automatically.`);
+          onClose();
+          window.location.reload();
+          return;
+        } else if (data.paymentLink) {
+          // Payment method setup required - redirect to Dodo Payment
+          window.location.href = data.paymentLink;
+          return;
+        } else {
+          throw new Error('Payment setup link not received. Please try again.');
+        }
       }
 
       // Monthly plan requires payment - redirect to Dodo Payment
