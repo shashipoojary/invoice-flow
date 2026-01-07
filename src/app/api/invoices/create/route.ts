@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@/lib/supabase';
-import { canCreateInvoice } from '@/lib/subscription-validator';
+import { canCreateInvoice, canUseTemplate, canCustomize, getUserPlan } from '@/lib/subscription-validator';
 import { chargeForInvoice } from '@/lib/invoice-billing';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -281,12 +281,41 @@ export async function POST(request: NextRequest) {
     // Check subscription limits before proceeding (only for non-PDF generation)
     const invoiceData = await request.json();
     if (!invoiceData.generate_pdf_only) {
+      // Check invoice creation limit
       const limitCheck = await checkSubscriptionLimit(user.id);
       if (!limitCheck.allowed) {
         return NextResponse.json({ 
           error: limitCheck.reason || 'Subscription limit reached',
           limitReached: true
         }, { status: 403 });
+      }
+
+      // Check template restriction for free plan (only template 1 allowed)
+      if (invoiceData.theme && invoiceData.theme.template) {
+        const templateCheck = await canUseTemplate(user.id, invoiceData.theme.template);
+        if (!templateCheck.allowed) {
+          return NextResponse.json({ 
+            error: templateCheck.reason || 'Template not available on free plan',
+            limitReached: true,
+            limitType: templateCheck.limitType
+          }, { status: 403 });
+        }
+      }
+
+      // Check customization restriction for free plan (no customization allowed)
+      const userPlan = await getUserPlan(user.id);
+      if (userPlan === 'free') {
+        const customizationCheck = canCustomize(userPlan);
+        if (!customizationCheck.allowed) {
+          // If user tries to customize (has theme with colors), block it
+          if (invoiceData.theme && (invoiceData.theme.primary_color || invoiceData.theme.secondary_color || invoiceData.theme.accent_color)) {
+            return NextResponse.json({ 
+              error: customizationCheck.reason || 'Customization not available on free plan',
+              limitReached: true,
+              limitType: customizationCheck.limitType
+            }, { status: 403 });
+          }
+        }
       }
     }
 
@@ -544,6 +573,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to generate public token' }, { status: 500 });
     }
 
+    // Prepare theme with free plan restrictions
+    let invoiceTheme = null;
+    if (invoiceData.type !== 'fast' && invoiceData.theme) {
+      const userPlan = await getUserPlan(user.id);
+      if (userPlan === 'free') {
+        // Free plan: Only template 1, no customization
+        invoiceTheme = {
+          template: 1, // Force template 1
+          // No custom colors allowed
+        };
+      } else {
+        // Paid plans: Allow full customization
+        invoiceTheme = invoiceData.theme;
+      }
+    }
+
     // Prepare invoice data
     const invoice = {
       user_id: user.id,
@@ -581,7 +626,7 @@ export async function POST(request: NextRequest) {
         }
         return JSON.stringify(settings);
       })() : JSON.stringify({ enabled: false, useSystemDefaults: true, customRules: [] })),
-      theme: invoiceData.type === 'fast' ? null : (invoiceData.theme ? JSON.stringify(invoiceData.theme) : null),
+      theme: invoiceTheme ? JSON.stringify(invoiceTheme) : null,
     };
 
     // Insert invoice

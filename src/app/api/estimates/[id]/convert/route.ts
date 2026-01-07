@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/auth-middleware';
 import { createClient } from '@supabase/supabase-js';
-import { canCreateInvoice } from '@/lib/subscription-validator';
+import { canCreateInvoice, canUseTemplate, getUserPlan } from '@/lib/subscription-validator';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -78,6 +78,18 @@ export async function POST(
       }, { status: 403 });
     }
 
+    // Check template restriction for free plan (only template 1 allowed)
+    if (invoiceType === 'detailed' && template) {
+      const templateCheck = await canUseTemplate(user.id, template);
+      if (!templateCheck.allowed) {
+        return NextResponse.json({ 
+          error: templateCheck.reason || 'Template not available on free plan',
+          limitReached: true,
+          limitType: templateCheck.limitType
+        }, { status: 403 });
+      }
+    }
+
     // Generate invoice number
     const { data: invoiceNumberData, error: invoiceNumberError } = await supabase
       .rpc('generate_invoice_number', { user_uuid: user.id });
@@ -106,15 +118,25 @@ export async function POST(
     }
 
     // Prepare theme based on invoice type and template
+    // Enforce free plan restrictions (only template 1, no customization)
     let invoiceTheme = null;
     if (invoiceType === 'detailed' && template) {
-      // For detailed invoices, store template in theme
-      invoiceTheme = {
-        template: template, // PDF template number (4, 5, or 6)
-        primary_color: parsedEstimateTheme?.primary_color || '#5C2D91',
-        secondary_color: parsedEstimateTheme?.secondary_color || '#8B5CF6',
-        accent_color: parsedEstimateTheme?.accent_color || '#3B82F6'
-      };
+      const userPlan = await getUserPlan(user.id);
+      if (userPlan === 'free') {
+        // Free plan: Only template 1, no customization
+        invoiceTheme = {
+          template: 1, // Force template 1
+          // No custom colors allowed
+        };
+      } else {
+        // Paid plans: Allow selected template and customization
+        invoiceTheme = {
+          template: template, // PDF template number (4, 5, or 6)
+          primary_color: parsedEstimateTheme?.primary_color || '#5C2D91',
+          secondary_color: parsedEstimateTheme?.secondary_color || '#8B5CF6',
+          accent_color: parsedEstimateTheme?.accent_color || '#3B82F6'
+        };
+      }
     }
 
     // Parse payment_terms if it's a string

@@ -160,16 +160,32 @@ export async function canEnableReminder(userId: string): Promise<ValidationResul
   // Free plan: Check monthly reminder limit (global)
   const { start, end } = getCurrentMonthBoundaries();
   
-  // Count reminders sent this month using reminder_history view (which includes user_id from invoices)
-  const { count } = await supabaseAdmin
-    .from('reminder_history')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('reminder_status', 'sent')
-    .gte('sent_at', start)
-    .lte('sent_at', end);
+  // Count reminders sent this month
+  // Try reminder_history view first (if it exists)
+  let used = 0;
+  try {
+    const { count: historyCount } = await supabaseAdmin
+      .from('reminder_history')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('reminder_status', 'sent')
+      .gte('sent_at', start)
+      .lte('sent_at', end);
+    if (historyCount !== null) {
+      used = historyCount;
+    }
+  } catch (e) {
+    // reminder_history view might not exist, use invoice_reminders join
+    const { count } = await supabaseAdmin
+      .from('invoice_reminders')
+      .select('*, invoices!inner(user_id)', { count: 'exact', head: true })
+      .eq('invoices.user_id', userId)
+      .eq('reminder_status', 'sent')
+      .gte('sent_at', start)
+      .lte('sent_at', end);
+    used = count || 0;
+  }
 
-  const used = count || 0;
   const limit = 4;
 
   if (used >= limit) {
@@ -187,11 +203,19 @@ export async function canEnableReminder(userId: string): Promise<ValidationResul
  * Check if user can use a template
  * FREE PLAN: Only template 1 enabled, all others locked
  */
-export function canUseTemplate(userId: string, templateId: number): ValidationResult {
-  // This is a synchronous check based on plan
-  // For now, we'll check this in the frontend and API
-  // Database will enforce via business logic
-  return { allowed: true }; // Will be checked in frontend/API
+export async function canUseTemplate(userId: string, templateId: number): Promise<ValidationResult> {
+  const plan = await getUserPlan(userId);
+
+  // Free plan: Only template 1 is allowed
+  if (plan === 'free' && templateId !== 1) {
+    return {
+      allowed: false,
+      reason: 'Free plan users can only use template 1. Please upgrade to access all templates.',
+      limitType: 'templates'
+    };
+  }
+
+  return { allowed: true };
 }
 
 /**
