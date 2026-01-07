@@ -16,6 +16,8 @@ export async function chargeForInvoice(
   invoiceNumber: string
 ): Promise<{ success: boolean; error?: string; paymentId?: string; paymentLink?: string; automatic?: boolean }> {
   try {
+    console.log(`💳 chargeForInvoice called: userId=${userId}, invoiceId=${invoiceId}, invoiceNumber=${invoiceNumber}`);
+    
     // Get user's subscription plan
     const { data: user, error: userError } = await supabaseAdmin
       .from('users')
@@ -24,13 +26,19 @@ export async function chargeForInvoice(
       .single();
 
     if (userError || !user) {
+      console.error(`❌ User not found: ${userId}`, userError);
       return { success: false, error: 'User not found' };
     }
 
+    console.log(`📋 User subscription plan: ${user.subscription_plan}`);
+
     // Only charge if user is on "pay_per_invoice" plan
     if (user.subscription_plan !== 'pay_per_invoice') {
+      console.log(`ℹ️ User not on pay_per_invoice plan (${user.subscription_plan}), skipping charge`);
       return { success: true }; // No charge needed for other plans
     }
+    
+    console.log(`✅ User is on pay_per_invoice plan, proceeding with charge...`);
 
     // Check if this invoice has already been charged
     const { data: existingCharge } = await supabaseAdmin

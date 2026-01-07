@@ -573,11 +573,21 @@ export async function POST(request: NextRequest) {
 
     // Charge for invoice if user is on "pay_per_invoice" plan
     // Charge when invoice is sent (not when created as draft)
+    console.log(`💰 Attempting to charge for invoice: ${invoiceId} (${invoice.invoice_number})`);
     try {
-      await chargeForInvoice(user.id, invoiceId, invoice.invoice_number);
+      const chargeResult = await chargeForInvoice(user.id, invoiceId, invoice.invoice_number);
+      if (chargeResult.success) {
+        console.log(`✅ Charge initiated successfully:`, {
+          paymentId: chargeResult.paymentId,
+          automatic: chargeResult.automatic,
+          paymentLink: chargeResult.paymentLink ? 'Link created' : 'No link',
+        });
+      } else {
+        console.error(`❌ Charge failed:`, chargeResult.error);
+      }
       // Don't fail send if billing fails - just log it
     } catch (billingError) {
-      console.error('Error charging for invoice:', billingError);
+      console.error('❌ Error charging for invoice:', billingError);
       // Invoice is still sent, billing will be handled separately
     }
 
