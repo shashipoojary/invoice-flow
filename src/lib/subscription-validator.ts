@@ -161,29 +161,38 @@ export async function canEnableReminder(userId: string): Promise<ValidationResul
   const { start, end } = getCurrentMonthBoundaries();
   
   // Count reminders sent this month
-  // Try reminder_history view first (if it exists)
-  let used = 0;
-  try {
-    const { count: historyCount } = await supabaseAdmin
-      .from('reminder_history')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('reminder_status', 'sent')
-      .gte('sent_at', start)
-      .lte('sent_at', end);
-    if (historyCount !== null) {
-      used = historyCount;
-    }
-  } catch (e) {
-    // reminder_history view might not exist, use invoice_reminders join
-    const { count } = await supabaseAdmin
+  // Use proper join query to count reminders for this user
+  const { count, error } = await supabaseAdmin
+    .from('invoice_reminders')
+    .select('*, invoices!inner(user_id)', { count: 'exact', head: true })
+    .eq('invoices.user_id', userId)
+    .eq('reminder_status', 'sent')
+    .gte('sent_at', start)
+    .lte('sent_at', end);
+  
+  // If join query fails, use direct query with RPC or manual join
+  let used = count || 0;
+  if (error || count === null) {
+    // Fallback: Query invoice_reminders and filter by invoice user_id
+    const { data: reminders } = await supabaseAdmin
       .from('invoice_reminders')
-      .select('*, invoices!inner(user_id)', { count: 'exact', head: true })
-      .eq('invoices.user_id', userId)
+      .select('invoice_id, reminder_status, sent_at')
       .eq('reminder_status', 'sent')
       .gte('sent_at', start)
       .lte('sent_at', end);
-    used = count || 0;
+    
+    if (reminders && reminders.length > 0) {
+      // Get invoice IDs for this user
+      const { data: userInvoices } = await supabaseAdmin
+        .from('invoices')
+        .select('id')
+        .eq('user_id', userId);
+      
+      const userInvoiceIds = new Set((userInvoices || []).map(inv => inv.id));
+      used = reminders.filter(r => userInvoiceIds.has(r.invoice_id)).length;
+    } else {
+      used = 0;
+    }
   }
 
   const limit = 4;

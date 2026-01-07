@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { UserPlus, X, User, Mail, Phone, Building2, MapPin, Loader2 } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import { useToast } from '@/hooks/useToast';
+import UpgradeModal from './UpgradeModal';
 
 interface Client {
   id: string;
@@ -44,6 +45,28 @@ export default function ClientModal({
   });
   const [isCreatingClient, setIsCreatingClient] = useState(false);
   const [isUpdatingClient, setIsUpdatingClient] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [subscriptionUsage, setSubscriptionUsage] = useState<any>(null);
+  
+  // Fetch subscription usage (memoized to prevent loops)
+  const fetchUsageRef = useRef(false);
+  const fetchSubscriptionUsage = useCallback(async () => {
+    if (fetchUsageRef.current) return null;
+    fetchUsageRef.current = true;
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/subscription/usage', { headers });
+      if (response.ok) {
+        const data = await response.json();
+        return data;
+      }
+    } catch (error) {
+      console.error('Error fetching subscription usage:', error);
+    } finally {
+      fetchUsageRef.current = false;
+    }
+    return null;
+  }, [getAuthHeaders]);
 
   // Reset form when modal opens/closes or editing client changes
   useState(() => {
@@ -71,6 +94,20 @@ export default function ClientModal({
   const handleCreateClient = async () => {
     if (!newClient.name.trim() || !newClient.email.trim()) {
       return;
+    }
+
+    // Check subscription limit BEFORE creating client (only for new clients, not editing)
+    if (!editingClient) {
+      setIsCreatingClient(true);
+      const usageData = await fetchSubscriptionUsage();
+      if (usageData && usageData.plan === 'free' && usageData.clients && usageData.clients.used >= usageData.clients.limit) {
+        setIsCreatingClient(false);
+        showError('You\'ve reached your client limit. Free plan users can create up to 1 client. Please upgrade to create more clients.');
+        setShowUpgradeModal(true);
+        setSubscriptionUsage(usageData);
+        return;
+      }
+      setIsCreatingClient(false);
     }
 
     setIsCreatingClient(true);
@@ -103,7 +140,17 @@ export default function ClientModal({
         });
       } else {
         const errorData = await response.json();
-        showError(errorData.error || 'Failed to create client');
+        // Check if it's a limit error
+        if (errorData.limitReached) {
+          showError(errorData.error || 'Client limit reached');
+          setShowUpgradeModal(true);
+          const usageData = await fetchSubscriptionUsage();
+          if (usageData) {
+            setSubscriptionUsage(usageData);
+          }
+        } else {
+          showError(errorData.error || 'Failed to create client');
+        }
       }
     } catch (error) {
       console.error('Error creating client:', error);
@@ -172,7 +219,19 @@ export default function ClientModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+    <>
+      {showUpgradeModal && (
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => {
+            setShowUpgradeModal(false);
+            setSubscriptionUsage(null);
+          }}
+          currentPlan={subscriptionUsage?.plan || 'free'}
+          usage={subscriptionUsage}
+        />
+      )}
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
       <div className={`shadow-2xl max-w-lg w-full overflow-hidden ${
         isDarkMode 
           ? 'bg-gray-900' 
@@ -387,5 +446,6 @@ export default function ClientModal({
         </div>
       </div>
     </div>
+    </>
   );
 }
