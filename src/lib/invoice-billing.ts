@@ -77,18 +77,48 @@ export async function chargeForInvoice(
     }
 
     // Get user details including saved payment method
-    const { data: userProfile } = await supabaseAdmin
+    let { data: userProfile, error: profileError } = await supabaseAdmin
       .from('users')
-      .select('email, name, dodo_customer_id, dodo_payment_method_id')
+      .select('name, dodo_customer_id, dodo_payment_method_id')
       .eq('id', userId)
       .single();
 
-    if (!userProfile) {
-      return {
-        success: false,
-        error: 'User profile not found',
+    // Get email from auth.users (users table doesn't have email column)
+    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.getUserById(userId);
+    const userEmail = authUser?.user?.email || '';
+    const userName = authUser?.user?.user_metadata?.full_name || authUser?.user?.user_metadata?.name || '';
+
+    // If user profile doesn't exist in users table, use auth user data
+    if (!userProfile || profileError) {
+      console.warn(`⚠️ User profile not found in users table, using auth.users data: ${userId}`, profileError);
+      
+      if (authError || !authUser?.user) {
+        console.error(`❌ User not found in auth.users: ${userId}`, authError);
+        return {
+          success: false,
+          error: 'User not found',
+        };
+      }
+
+      // Create profile object from auth user data
+      userProfile = {
+        name: userName,
+        dodo_customer_id: null,
+        dodo_payment_method_id: null,
       };
+
+      console.log(`✅ Using auth user data:`, {
+        email: userEmail,
+        name: userName,
+      });
     }
+
+    // Add email to userProfile (for use in payment calls)
+    const userProfileWithEmail = {
+      ...userProfile,
+      email: userEmail,
+      name: userProfile.name || userName,
+    };
 
     // Check if user has saved payment method (Option 1: Automatic charging)
     if (userProfile.dodo_customer_id) {
@@ -158,8 +188,8 @@ export async function chargeForInvoice(
         amount: 0.50,
         currency: 'USD',
         description: `Invoice fee for ${invoiceNumber}`,
-        customerEmail: userProfile.email || '',
-        customerName: userProfile.name || 'User',
+        customerEmail: userProfileWithEmail.email || '',
+        customerName: userProfileWithEmail.name || 'User',
         metadata: {
           userId,
           invoiceId,
