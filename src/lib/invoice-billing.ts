@@ -55,6 +55,44 @@ export async function chargeForInvoice(
       return { success: true };
     }
 
+    // Check if user is eligible for free invoices (first 5 are free)
+    // Count invoices created after switching to Pay Per Invoice plan
+    const { data: userWithActivation } = await supabaseAdmin
+      .from('users')
+      .select('pay_per_invoice_activated_at')
+      .eq('id', userId)
+      .single();
+
+    if (userWithActivation?.pay_per_invoice_activated_at) {
+      // Count non-draft invoices created after switching to Pay Per Invoice
+      const { count: freeInvoiceCount } = await supabaseAdmin
+        .from('invoices')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .gte('created_at', userWithActivation.pay_per_invoice_activated_at)
+        .neq('status', 'draft'); // Only count non-draft invoices
+
+      const freeInvoiceLimit = 5;
+      
+      if ((freeInvoiceCount || 0) < freeInvoiceLimit) {
+        console.log(`🎁 Free invoice! User has ${freeInvoiceCount || 0}/${freeInvoiceLimit} free invoices. This invoice is free.`);
+        // This is one of the first 5 invoices - no charge
+        return { success: true }; // Success but no charge
+      }
+      
+      console.log(`💰 User has used ${freeInvoiceCount || 0} free invoices. Charging for this invoice.`);
+    } else {
+      // If activation date not set, set it to now and give first 5 free
+      console.log(`⚠️ Pay Per Invoice activation date not set. Setting it now and giving first 5 invoices free.`);
+      await supabaseAdmin
+        .from('users')
+        .update({ pay_per_invoice_activated_at: new Date().toISOString() })
+        .eq('id', userId);
+      
+      // This is the first invoice - free
+      return { success: true }; // Success but no charge
+    }
+
     // Get Dodo Payment client
     const dodoClient = getDodoPaymentClient();
     if (!dodoClient) {

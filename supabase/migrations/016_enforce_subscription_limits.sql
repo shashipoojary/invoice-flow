@@ -21,14 +21,17 @@ BEGIN
     start_of_month := date_trunc('month', CURRENT_DATE);
     end_of_month := (date_trunc('month', CURRENT_DATE) + interval '1 month' - interval '1 day')::date + interval '23 hours 59 minutes 59 seconds';
 
-    -- Count invoices created this month by this user
+    -- Count invoices created this month by this user (excluding the one being inserted)
+    -- This is a BEFORE INSERT trigger, so we count existing invoices only
     SELECT COUNT(*) INTO current_month_count
     FROM public.invoices
     WHERE user_id = NEW.user_id
       AND created_at >= start_of_month
-      AND created_at <= end_of_month;
+      AND created_at <= end_of_month
+      AND id != NEW.id; -- Exclude the invoice being inserted (in case of retry)
 
     -- Check if limit is reached (5 invoices per month for free plan)
+    -- If current_month_count is 5 or more, this would be the 6th invoice
     IF current_month_count >= 5 THEN
       RAISE EXCEPTION 'Subscription limit reached. Free plan users can create up to 5 invoices per month. Please upgrade to create more invoices.'
         USING ERRCODE = 'P0001';

@@ -75,15 +75,32 @@ export async function PUT(request: NextRequest) {
       nextBillingDate = nextBilling.toISOString();
     }
 
+    // Prepare update data
+    const updateData: any = {
+      subscription_plan: plan,
+      subscription_status: 'active',
+      next_billing_date: nextBillingDate,
+      updated_at: new Date().toISOString()
+    };
+
+    // If switching to Pay Per Invoice, set activation date (for tracking free invoices)
+    if (plan === 'pay_per_invoice') {
+      const { data: existingUser } = await supabaseAdmin
+        .from('users')
+        .select('pay_per_invoice_activated_at')
+        .eq('id', user.id)
+        .single();
+      
+      // Only set activation date if not already set (first time switching to Pay Per Invoice)
+      if (!existingUser?.pay_per_invoice_activated_at) {
+        updateData.pay_per_invoice_activated_at = new Date().toISOString();
+      }
+    }
+
     // Update subscription
     const { error: updateError } = await supabase
       .from('users')
-      .update({
-        subscription_plan: plan,
-        subscription_status: 'active',
-        next_billing_date: nextBillingDate,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', user.id);
 
     if (updateError) {

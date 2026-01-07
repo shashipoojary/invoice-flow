@@ -35,14 +35,28 @@ export async function POST(request: NextRequest) {
 
       // If payment method already saved, activate plan immediately
       if (userProfile?.dodo_customer_id && userProfile?.dodo_payment_method_id) {
+        // Prepare update data
+        const updateData: any = {
+          subscription_plan: 'pay_per_invoice',
+          subscription_status: 'active',
+          next_billing_date: null,
+          updated_at: new Date().toISOString()
+        };
+
+        // Set activation date for tracking free invoices (first time only)
+        const { data: existingUser } = await supabaseAdmin
+          .from('users')
+          .select('pay_per_invoice_activated_at')
+          .eq('id', user.id)
+          .single();
+        
+        if (!existingUser?.pay_per_invoice_activated_at) {
+          updateData.pay_per_invoice_activated_at = new Date().toISOString();
+        }
+
         const { error: updateError } = await supabaseAdmin
           .from('users')
-          .update({
-            subscription_plan: 'pay_per_invoice',
-            subscription_status: 'active',
-            next_billing_date: null,
-            updated_at: new Date().toISOString()
-          })
+          .update(updateData)
           .eq('id', user.id);
 
         if (updateError) {
