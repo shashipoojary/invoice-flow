@@ -140,14 +140,20 @@ export default function DashboardOverview() {
   // Handle invoice type selection
   const handleSelectFastInvoice = useCallback(() => {
     setShowInvoiceTypeSelection(false);
-    setSelectedInvoice(null); // Clear selected invoice for new invoice
-    setShowFastInvoice(true);
+    // Use requestAnimationFrame to ensure state update is applied
+    setSelectedInvoice(null);
+    requestAnimationFrame(() => {
+      setShowFastInvoice(true);
+    });
   }, []);
 
   const handleSelectDetailedInvoice = useCallback(() => {
     setShowInvoiceTypeSelection(false);
-    setSelectedInvoice(null); // Clear selected invoice for new invoice
-    setShowCreateInvoice(true);
+    // Use requestAnimationFrame to ensure state update is applied
+    setSelectedInvoice(null);
+    requestAnimationFrame(() => {
+      setShowCreateInvoice(true);
+    });
   }, []);
 
   // Status helper functions
@@ -1578,7 +1584,12 @@ export default function DashboardOverview() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
                 {/* 60-Second Invoice */}
                 <button
-                  onClick={() => setShowFastInvoice(true)}
+                  onClick={() => {
+                    setSelectedInvoice(null);
+                    requestAnimationFrame(() => {
+                      setShowFastInvoice(true);
+                    });
+                  }}
                   className="group relative p-2 sm:p-3 border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-green-200 hover:bg-green-50/30 cursor-pointer"
                 >
                   <div className="flex flex-col items-center space-y-1.5 sm:space-y-2">
@@ -1598,7 +1609,12 @@ export default function DashboardOverview() {
 
                 {/* Detailed Invoice */}
                 <button
-                  onClick={() => setShowCreateInvoice(true)}
+                  onClick={() => {
+                    setSelectedInvoice(null);
+                    requestAnimationFrame(() => {
+                      setShowCreateInvoice(true);
+                    });
+                  }}
                   className="group relative p-2 sm:p-3 border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-blue-200 hover:bg-blue-50/30 cursor-pointer"
                 >
                   <div className="flex flex-col items-center space-y-1.5 sm:space-y-2">

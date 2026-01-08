@@ -160,38 +160,31 @@ export async function canEnableReminder(userId: string): Promise<ValidationResul
   // Free plan: Check monthly reminder limit (global)
   const { start, end } = getCurrentMonthBoundaries();
   
-  // Count reminders sent this month
-  // Use proper join query to count reminders for this user
-  const { count, error } = await supabaseAdmin
-    .from('invoice_reminders')
-    .select('*, invoices!inner(user_id)', { count: 'exact', head: true })
-    .eq('invoices.user_id', userId)
-    .eq('reminder_status', 'sent')
-    .gte('sent_at', start)
-    .lte('sent_at', end);
+  // Count reminders sent this month using reliable method
+  // Get all invoice IDs for this user first
+  const { data: userInvoices } = await supabaseAdmin
+    .from('invoices')
+    .select('id')
+    .eq('user_id', userId);
   
-  // If join query fails, use direct query with RPC or manual join
-  let used = count || 0;
-  if (error || count === null) {
-    // Fallback: Query invoice_reminders and filter by invoice user_id
-    const { data: reminders } = await supabaseAdmin
+  let used = 0;
+  if (userInvoices && userInvoices.length > 0) {
+    const invoiceIds = userInvoices.map(inv => inv.id);
+    
+    // Count reminders for these invoices
+    const { count, error } = await supabaseAdmin
       .from('invoice_reminders')
-      .select('invoice_id, reminder_status, sent_at')
+      .select('*', { count: 'exact', head: true })
+      .in('invoice_id', invoiceIds)
       .eq('reminder_status', 'sent')
       .gte('sent_at', start)
       .lte('sent_at', end);
     
-    if (reminders && reminders.length > 0) {
-      // Get invoice IDs for this user
-      const { data: userInvoices } = await supabaseAdmin
-        .from('invoices')
-        .select('id')
-        .eq('user_id', userId);
-      
-      const userInvoiceIds = new Set((userInvoices || []).map(inv => inv.id));
-      used = reminders.filter(r => userInvoiceIds.has(r.invoice_id)).length;
-    } else {
+    if (error) {
+      console.error('Error counting reminders:', error);
       used = 0;
+    } else {
+      used = count || 0;
     }
   }
 
@@ -228,18 +221,18 @@ export async function canUseTemplate(userId: string, templateId: number): Promis
 }
 
 /**
- * Check if user can customize
- * FREE PLAN: Customization disabled
+ * Check if user can use a specific color preset
+ * FREE PLAN: Only first 4 color presets allowed
+ * PAID PLANS: All color presets allowed
  */
-export function canCustomize(plan: SubscriptionPlan): ValidationResult {
-  if (plan === 'free') {
+export function canUseColorPreset(plan: SubscriptionPlan, presetIndex: number): ValidationResult {
+  if (plan === 'free' && presetIndex >= 4) {
     return {
       allowed: false,
-      reason: 'Customization is only available on paid plans. Please upgrade to customize your invoices.',
+      reason: 'Free plan users can only use the first 4 color presets. Please upgrade to access all color options.',
       limitType: 'customization'
     };
   }
-
   return { allowed: true };
 }
 
@@ -301,13 +294,32 @@ export async function getUsageStats(userId: string): Promise<SubscriptionLimits>
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId);
 
-  // Get reminder count for current month
-  const { count: reminderCount } = await supabaseAdmin
-    .from('reminder_history')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .gte('sent_at', start)
-    .lte('sent_at', end);
+  // Get reminder count for current month (same method as canEnableReminder)
+  let reminderCount = 0;
+  if (plan === 'free') {
+    // Get all invoice IDs for this user first
+    const { data: userInvoices } = await supabaseAdmin
+      .from('invoices')
+      .select('id')
+      .eq('user_id', userId);
+    
+    if (userInvoices && userInvoices.length > 0) {
+      const invoiceIds = userInvoices.map(inv => inv.id);
+      
+      // Count reminders for these invoices
+      const { count, error } = await supabaseAdmin
+        .from('invoice_reminders')
+        .select('*', { count: 'exact', head: true })
+        .in('invoice_id', invoiceIds)
+        .eq('reminder_status', 'sent')
+        .gte('sent_at', start)
+        .lte('sent_at', end);
+      
+      if (!error && count !== null) {
+        reminderCount = count;
+      }
+    }
+  }
 
   return {
     invoices: {

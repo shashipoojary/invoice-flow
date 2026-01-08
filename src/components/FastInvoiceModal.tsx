@@ -131,6 +131,15 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         // CRITICAL: Only allow editing draft invoices
         if (editingInvoice.status !== 'draft') {
           console.error('Cannot edit non-draft invoice:', editingInvoice.status);
+          // Only show error if we're actually trying to edit (not a stale state issue)
+          // If the invoice was just created and is "sent", silently clear it and continue as new invoice
+          if (editingInvoice.status === 'sent' || editingInvoice.status === 'paid') {
+            // This is likely a stale state - clear it and continue as new invoice
+            console.log('Clearing stale editingInvoice with status:', editingInvoice.status);
+            // Reset form for new invoice instead of showing error
+            resetForm();
+            return;
+          }
           showError(`Cannot edit invoice: Only draft invoices can be edited. This invoice is "${editingInvoice.status}".`);
           onClose();
           return;
@@ -254,8 +263,9 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
           setLoading(false)
         }
         showError('You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.')
-        // Show upgrade content instead of closing modal (better UX - no modal stacking)
+        // Show upgrade modal
         setShowUpgradeContent(true)
+        setShowUpgradeModal(true)
         setSubscriptionUsage(usageData)
         return
       }
@@ -375,8 +385,9 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
       if (usageData && usageData.plan === 'free' && usageData.limit && usageData.used >= usageData.limit) {
         setSendLoading(false)
         showError('You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.')
-        // Show upgrade content instead of closing modal (better UX - no modal stacking)
+        // Show upgrade modal
         setShowUpgradeContent(true)
+        setShowUpgradeModal(true)
         setSubscriptionUsage(usageData)
         return
       }
@@ -462,7 +473,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   // Show upgrade content instead of invoice form when limit is reached
   if (showUpgradeContent && subscriptionUsage) {
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 ${showUpgradeModal ? 'hidden' : ''}`}>
         <div className="shadow-2xl max-w-2xl w-full overflow-hidden bg-white">
           {/* Upgrade Modal Content - Inline to avoid double backdrop */}
           <div className="bg-white border border-gray-200 max-w-2xl w-full shadow-xl">
@@ -654,7 +665,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 ${showUpgradeModal ? 'hidden' : ''}`}>
       <div className={`shadow-2xl max-w-md w-full overflow-hidden ${
         isDarkMode 
           ? 'bg-gray-900' 
@@ -1143,25 +1154,28 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         </form>
       </div>
 
-      {/* Upgrade Modal - Fallback if no parent callback provided */}
+      {/* Upgrade Modal - Hide parent modal when upgrade modal is shown */}
       {typeof window !== 'undefined' && showUpgradeModal && createPortal(
-      <UpgradeModal
-        isOpen={showUpgradeModal}
+        <UpgradeModal
+          isOpen={showUpgradeModal}
           onClose={() => {
             setShowUpgradeModal(false)
+            setShowUpgradeContent(false)
+            setSubscriptionUsage(null)
             // DO NOT reset form - preserve user's input
             // Refresh usage after modal closes in case user upgraded
             if (!editingInvoice && user) {
               fetchSubscriptionUsage()
             }
           }}
-        currentPlan={subscriptionUsage?.plan as 'free' | 'monthly' | 'pay_per_invoice' || 'free'}
-        usage={subscriptionUsage ? {
-          used: subscriptionUsage.used,
-          limit: subscriptionUsage.limit,
-          remaining: subscriptionUsage.remaining
-        } : undefined}
-        reason="You've reached your monthly invoice limit. Upgrade to create unlimited invoices."
+          currentPlan={subscriptionUsage?.plan as 'free' | 'monthly' | 'pay_per_invoice' || 'free'}
+          usage={subscriptionUsage ? {
+            used: subscriptionUsage.used,
+            limit: subscriptionUsage.limit,
+            remaining: subscriptionUsage.remaining
+          } : undefined}
+          reason="You've reached your monthly invoice limit. Upgrade to create unlimited invoices."
+          limitType="invoices"
         />,
         document.body
       )}

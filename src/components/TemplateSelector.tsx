@@ -11,6 +11,7 @@ interface TemplateSelectorProps {
   secondaryColor: string
   onSecondaryColorChange: (color: string) => void
   isDarkMode?: boolean
+  userPlan?: 'free' | 'monthly' | 'pay_per_invoice'
 }
 
 const templatePreviews = [
@@ -69,7 +70,8 @@ export default function TemplateSelector({
   onPrimaryColorChange,
   secondaryColor,
   onSecondaryColorChange,
-  isDarkMode = false
+  isDarkMode = false,
+  userPlan = 'free'
 }: TemplateSelectorProps) {
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null)
@@ -103,13 +105,18 @@ export default function TemplateSelector({
           {templatePreviews.map((template) => {
             const IconComponent = template.icon;
             const isSelected = selectedTemplate === template.id;
+            const isLocked = userPlan === 'free' && template.id !== 1;
             
             return (
               <div
                 key={template.id}
                 data-testid={`template-${template.id}`}
-                onClick={() => handleTemplateSelect(template.id)}
-                className={`relative cursor-pointer border p-3 transition-all duration-200 ${
+                onClick={() => !isLocked && handleTemplateSelect(template.id)}
+                className={`relative border p-3 transition-all duration-200 ${
+                  isLocked
+                    ? 'cursor-not-allowed opacity-50'
+                    : 'cursor-pointer'
+                } ${
                   isSelected
                     ? isDarkMode
                       ? 'border-indigo-500 bg-indigo-500/10'
@@ -122,6 +129,13 @@ export default function TemplateSelector({
                 {isSelected && (
                   <div className="absolute top-2 right-2 w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center">
                     <Check className="h-3 w-3 text-white" />
+                  </div>
+                )}
+                {isLocked && (
+                  <div className="absolute top-2 right-2 w-5 h-5 bg-gray-400 rounded-full flex items-center justify-center">
+                    <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                    </svg>
                   </div>
                 )}
                 
@@ -137,6 +151,9 @@ export default function TemplateSelector({
                       isDarkMode ? 'text-white' : 'text-gray-900'
                     }`}>
                       {template.name}
+                      {isLocked && (
+                        <span className="ml-1 text-xs text-orange-600">(Locked)</span>
+                      )}
                     </h4>
                     <p className={`text-xs mt-1 ${
                       isDarkMode ? 'text-gray-400' : 'text-gray-600'
@@ -187,16 +204,22 @@ export default function TemplateSelector({
                 Quick Presets
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
-                {colorPresets.map((preset) => {
+                {colorPresets.map((preset, index) => {
                   const isSelected = selectedPreset === preset.name || 
                     (primaryColor === preset.primary && secondaryColor === preset.secondary)
+                  const isLocked = userPlan === 'free' && index >= 4; // First 4 are free, rest locked
+                  
                   return (
                     <button
                       key={preset.name}
                       type="button"
                       data-testid={`color-preset-${preset.name.toLowerCase()}`}
-                      onClick={() => handleColorPreset(preset.primary, preset.secondary, preset.name)}
-                      className={`relative p-2 sm:p-2.5 border text-xs font-medium transition-colors min-h-[60px] flex flex-col items-center justify-center cursor-pointer ${
+                      onClick={() => !isLocked && handleColorPreset(preset.primary, preset.secondary, preset.name)}
+                      className={`relative p-2 sm:p-2.5 border text-xs font-medium transition-colors min-h-[60px] flex flex-col items-center justify-center ${
+                        isLocked
+                          ? 'cursor-not-allowed opacity-50'
+                          : 'cursor-pointer'
+                      } ${
                         isSelected
                           ? isDarkMode
                             ? 'border-indigo-500 bg-indigo-500/10'
@@ -211,6 +234,13 @@ export default function TemplateSelector({
                           <Check className="h-2.5 w-2.5 text-white" />
                         </div>
                       )}
+                      {isLocked && (
+                        <div className="absolute top-1 right-1 w-4 h-4 bg-gray-400 rounded-full flex items-center justify-center">
+                          <svg className="h-2.5 w-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      )}
                       <div className="flex items-center space-x-1.5 mb-1.5">
                         <div 
                           className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-500"
@@ -222,67 +252,15 @@ export default function TemplateSelector({
                         ></div>
                       </div>
                       {preset.name}
+                      {isLocked && (
+                        <span className="text-[10px] text-orange-600 mt-0.5">(Locked)</span>
+                      )}
                     </button>
                   )
                 })}
               </div>
             </div>
 
-            {/* Custom Color Inputs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className={`block text-xs font-medium mb-1 ${
-                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Primary Color
-                </label>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="color"
-                    value={primaryColor}
-                    onChange={(e) => onPrimaryColorChange(e.target.value)}
-                    className="w-8 h-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={primaryColor}
-                    onChange={(e) => onPrimaryColorChange(e.target.value)}
-                    className={`flex-1 px-2 py-1.5 text-xs border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors ${
-                      isDarkMode
-                        ? 'border-gray-600 bg-gray-800 text-white'
-                        : 'border-gray-300 bg-white text-gray-900'
-                    }`}
-                    placeholder="#5C2D91"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className={`block text-xs font-medium mb-1 ${
-                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Secondary Color
-                </label>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="color"
-                    value={secondaryColor}
-                    onChange={(e) => onSecondaryColorChange(e.target.value)}
-                    className="w-8 h-8 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={secondaryColor}
-                    onChange={(e) => onSecondaryColorChange(e.target.value)}
-                    className={`flex-1 px-2 py-1.5 text-xs border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors ${
-                      isDarkMode
-                        ? 'border-gray-600 bg-gray-800 text-white'
-                        : 'border-gray-300 bg-white text-gray-900'
-                    }`}
-                    placeholder="#8B5CF6"
-                  />
-                </div>
-              </div>
-            </div>
 
             {/* Preview */}
             <div className="mt-4">

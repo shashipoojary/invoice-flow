@@ -148,14 +148,22 @@ function InvoicesContent(): React.JSX.Element {
   // Handle invoice type selection
   const handleSelectFastInvoice = useCallback(() => {
     setShowInvoiceTypeSelection(false);
-    setSelectedInvoice(null); // Clear selected invoice for new invoice
-    setShowFastInvoice(true);
+    // Use setTimeout to ensure state is cleared before opening modal
+    setSelectedInvoice(null);
+    // Use requestAnimationFrame to ensure state update is applied
+    requestAnimationFrame(() => {
+      setShowFastInvoice(true);
+    });
   }, []);
 
   const handleSelectDetailedInvoice = useCallback(() => {
     setShowInvoiceTypeSelection(false);
-    setSelectedInvoice(null); // Clear selected invoice for new invoice
-    setShowCreateInvoice(true);
+    // Use setTimeout to ensure state is cleared before opening modal
+    setSelectedInvoice(null);
+    // Use requestAnimationFrame to ensure state update is applied
+    requestAnimationFrame(() => {
+      setShowCreateInvoice(true);
+    });
   }, []);
 
   // Status helper functions
@@ -1482,7 +1490,9 @@ function InvoicesContent(): React.JSX.Element {
                     <button
                       onClick={() => {
                         setSelectedInvoice(null);
-                        setShowFastInvoice(true);
+                        requestAnimationFrame(() => {
+                          setShowFastInvoice(true);
+                        });
                       }}
                       className="flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium"
                     >
@@ -1492,7 +1502,9 @@ function InvoicesContent(): React.JSX.Element {
                     <button
                       onClick={() => {
                         setSelectedInvoice(null);
-                        setShowCreateInvoice(true);
+                        requestAnimationFrame(() => {
+                          setShowCreateInvoice(true);
+                        });
                       }}
                       className="flex items-center justify-center space-x-2 px-6 py-3 bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors text-sm font-medium"
                     >

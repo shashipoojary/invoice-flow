@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { Resend } from 'resend';
 import { getReminderEmailTemplate } from '@/lib/reminder-email-templates';
+import { canEnableReminder } from '@/lib/subscription-validator';
 
 // Initialize Resend only if API key exists
 let resend: Resend | null = null;
@@ -228,6 +229,22 @@ async function processReminders(request: NextRequest) {
           })
           .eq('id', reminder.id);
         errorCount++;
+        continue;
+      }
+
+      // CRITICAL: Check subscription reminder limit BEFORE sending
+      // Free plan users are limited to 4 reminders per month (global limit)
+      const reminderLimitCheck = await canEnableReminder(invoice.user_id);
+      if (!reminderLimitCheck.allowed) {
+        console.log(`⏭️ Skipping reminder for invoice ${invoice.invoice_number} - subscription limit reached: ${reminderLimitCheck.reason}`);
+        await supabaseAdmin
+          .from('invoice_reminders')
+          .update({
+            reminder_status: 'cancelled',
+            failure_reason: reminderLimitCheck.reason || 'Free plan reminder limit reached (4 per month). Please upgrade for unlimited reminders.'
+          })
+          .eq('id', reminder.id);
+        skippedCount++;
         continue;
       }
 

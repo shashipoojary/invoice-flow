@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@/lib/supabase';
-import { canCreateInvoice, canUseTemplate, canCustomize, getUserPlan } from '@/lib/subscription-validator';
+import { canCreateInvoice, canUseTemplate, getUserPlan } from '@/lib/subscription-validator';
 import { chargeForInvoice } from '@/lib/invoice-billing';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -290,7 +290,7 @@ export async function POST(request: NextRequest) {
         }, { status: 403 });
       }
 
-      // Check template restriction for free plan (only template 1 allowed)
+      // Check template restriction for free plan (only template 1 allowed, templates 2 and 3 locked)
       if (invoiceData.theme && invoiceData.theme.template) {
         const templateCheck = await canUseTemplate(user.id, invoiceData.theme.template);
         if (!templateCheck.allowed) {
@@ -299,22 +299,6 @@ export async function POST(request: NextRequest) {
             limitReached: true,
             limitType: templateCheck.limitType
           }, { status: 403 });
-        }
-      }
-
-      // Check customization restriction for free plan (no customization allowed)
-      const userPlan = await getUserPlan(user.id);
-      if (userPlan === 'free') {
-        const customizationCheck = canCustomize(userPlan);
-        if (!customizationCheck.allowed) {
-          // If user tries to customize (has theme with colors), block it
-          if (invoiceData.theme && (invoiceData.theme.primary_color || invoiceData.theme.secondary_color || invoiceData.theme.accent_color)) {
-            return NextResponse.json({ 
-              error: customizationCheck.reason || 'Customization not available on free plan',
-              limitReached: true,
-              limitType: customizationCheck.limitType
-            }, { status: 403 });
-          }
         }
       }
     }
@@ -519,8 +503,17 @@ export async function POST(request: NextRequest) {
           
           // Extract template and colors from theme
           const invoiceTheme = invoiceData.theme as { template?: number; primary_color?: string; secondary_color?: string } | undefined;
-          // Use template 1 (FastInvoiceTemplate) for fast invoices, otherwise use theme template
-          const template = invoiceData.type === 'fast' ? 1 : (invoiceTheme?.template || 1);
+          // Map UI template (1, 2, 3) to PDF template (6, 4, 5)
+          const mapUiTemplateToPdf = (uiTemplate: number): number => {
+            switch (uiTemplate) {
+              case 1: return 6; // Minimal -> Template 6
+              case 2: return 4; // Modern -> Template 4
+              case 3: return 5; // Creative -> Template 5
+              default: return 6;
+            }
+          };
+          // Use template 1 (FastInvoiceTemplate) for fast invoices, otherwise map UI template to PDF template
+          const template = invoiceData.type === 'fast' ? 1 : (invoiceTheme?.template ? mapUiTemplateToPdf(invoiceTheme.template) : 1);
           const primaryColor = invoiceTheme?.primary_color || '#5C2D91';
           const secondaryColor = invoiceTheme?.secondary_color || '#8B5CF6';
           
@@ -573,15 +566,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to generate public token' }, { status: 500 });
     }
 
-    // Prepare theme with free plan restrictions
+    // Prepare theme - allow template 1 and some customization for free plan
     let invoiceTheme = null;
     if (invoiceData.type !== 'fast' && invoiceData.theme) {
       const userPlan = await getUserPlan(user.id);
       if (userPlan === 'free') {
-        // Free plan: Only template 1, no customization
+        // Free plan: Allow template 1, allow color presets (but not custom color picker)
+        // Only use colors if they match preset colors (allow preset customization)
         invoiceTheme = {
-          template: 1, // Force template 1
-          // No custom colors allowed
+          template: invoiceData.theme.template || 1, // Allow template 1 if selected
+          // Allow preset colors (colors that match color presets)
+          primary_color: invoiceData.theme.primary_color,
+          secondary_color: invoiceData.theme.secondary_color,
+          accent_color: invoiceData.theme.accent_color
         };
       } else {
         // Paid plans: Allow full customization

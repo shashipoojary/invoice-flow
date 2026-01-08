@@ -112,7 +112,9 @@ export default function QuickInvoiceModal({
   const [currentStep, setCurrentStep] = useState(1)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [subscriptionUsage, setSubscriptionUsage] = useState<{ used: number; limit: number | null; remaining: number | null; plan: string; reminders?: { used: number; limit: number | null; remaining: number | null } } | null>(null)
+  const [upgradeLimitType, setUpgradeLimitType] = useState<'invoices' | 'reminders'>('invoices')
   const [showUpgradeContent, setShowUpgradeContent] = useState(false)
+  
   const { user } = useAuth()
   const { showSuccess: localShowSuccess, showError: localShowError, showWarning: localShowWarning } = useToast()
   const { invoices, addInvoice, addClient, updateInvoice, refreshInvoices } = useData()
@@ -122,6 +124,15 @@ export default function QuickInvoiceModal({
   const showSuccess = propShowSuccess || localShowSuccess
   const showError = propShowError || localShowError
   const showWarning = propShowWarning || localShowWarning
+
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+  
+  const wrappedOnClose = useCallback(() => {
+    onCloseRef.current();
+  }, []);
 
   // Use refs to store latest functions to prevent dependency issues
   const showErrorRef = useRef(showError)
@@ -147,8 +158,9 @@ export default function QuickInvoiceModal({
     isFetchingRef.current = true
     try {
       const headers = await getAuthHeadersRef.current()
-      const response = await fetch('/api/subscription/usage', {
-        headers
+      const response = await fetch(`/api/subscription/usage?t=${Date.now()}`, {
+        headers,
+        cache: 'no-store'
       })
       if (response.ok) {
         const data = await response.json()
@@ -162,6 +174,13 @@ export default function QuickInvoiceModal({
     }
     return null
   }, []) // Empty deps - using refs instead
+
+  // Fetch subscription usage when modal opens
+  useEffect(() => {
+    if (isOpen && user && !subscriptionUsage) {
+      fetchSubscriptionUsage()
+    }
+  }, [isOpen, user, subscriptionUsage, fetchSubscriptionUsage])
   const [localClients, setLocalClients] = useState<Client[]>([])
   const { clients, isLoadingClients } = useData()
   
@@ -392,6 +411,15 @@ export default function QuickInvoiceModal({
         // CRITICAL: Only allow editing draft invoices
         if (editingInvoice.status !== 'draft') {
           console.error('Cannot edit non-draft invoice:', editingInvoice.status);
+          // Only show error if we're actually trying to edit (not a stale state issue)
+          // If the invoice was just created and is "sent", silently clear it and continue as new invoice
+          if (editingInvoice.status === 'sent' || editingInvoice.status === 'paid') {
+            // This is likely a stale state - clear it and continue as new invoice
+            console.log('Clearing stale editingInvoice with status:', editingInvoice.status);
+            // Reset form for new invoice instead of showing error
+            resetForm();
+            return;
+          }
           showError(`Cannot edit invoice: Only draft invoices can be edited. This invoice is "${editingInvoice.status}".`);
           onClose();
           return;
@@ -750,7 +778,7 @@ export default function QuickInvoiceModal({
           }))
         } : undefined,
         theme: {
-          template: getPdfTemplate(theme.template), // Map to correct PDF template
+          template: theme.template, // Send UI template number (1, 2, 3) - PDF mapping happens in API
           primary_color: theme.primaryColor,
           secondary_color: theme.secondaryColor,
           accent_color: theme.accentColor
@@ -835,12 +863,13 @@ export default function QuickInvoiceModal({
       if (usageData && usageData.plan === 'free' && usageData.limit && usageData.used >= usageData.limit) {
         setSendingLoading(false)
         showError('You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.')
-        // Show upgrade content instead of closing modal (better UX - no modal stacking)
+        // Show upgrade modal like EstimateModal
         setShowUpgradeContent(true)
+        setShowUpgradeModal(true)
         setSubscriptionUsage(usageData)
         return
       }
-      }
+    }
 
     try {
       
@@ -890,7 +919,7 @@ export default function QuickInvoiceModal({
           terms: paymentTerms.defaultOption
         } : { enabled: false },
         theme: {
-          template: getPdfTemplate(theme.template), // Map to correct PDF template
+          template: theme.template, // Send UI template number (1, 2, 3) - PDF mapping happens in API
           primary_color: theme.primaryColor,
           secondary_color: theme.secondaryColor,
           accent_color: theme.accentColor
@@ -1020,14 +1049,22 @@ export default function QuickInvoiceModal({
   }
 
   const handleClose = () => {
+    // Only close if upgrade modal is not showing
+    if (showUpgradeModal) {
+      // Don't close - just hide upgrade modal
+      setShowUpgradeModal(false)
+      setShowUpgradeContent(false)
+      return
+    }
+    
     setShowUpgradeContent(false)
     setShowUpgradeModal(false)
     // Only reset form if not editing and upgrade content not shown
     // This preserves form state when user closes upgrade modal
     if (!showUpgradeContent && !editingInvoice) {
-    resetForm()
+      resetForm()
     }
-    onClose()
+    wrappedOnClose()
   }
 
   // Helper function to map template selection to PDF template
@@ -1109,7 +1146,7 @@ export default function QuickInvoiceModal({
           terms: paymentTerms.defaultOption
         } : { enabled: false },
         theme: {
-          template: getPdfTemplate(theme.template), // Map to correct PDF template
+          template: theme.template, // Send UI template number (1, 2, 3) - PDF mapping happens in API
           primary_color: theme.primaryColor,
           secondary_color: theme.secondaryColor,
           accent_color: theme.accentColor
@@ -1157,15 +1194,83 @@ export default function QuickInvoiceModal({
   }
 
   // Helper functions for reminders
-  const addReminderRule = async () => {
-    // Check reminder limit for free plan (max 4 custom rules)
-    if (subscriptionUsage?.plan === 'free') {
-      // Free plan: Max 4 custom reminder rules
-      if (reminders.rules.length >= 4) {
-        showError('Free plan allows up to 4 reminder rules. Please upgrade for unlimited rules.');
-        setShowUpgradeModal(true);
-        // Refresh usage
-        await fetchSubscriptionUsage();
+  const addReminderRule = async (e?: React.MouseEvent) => {
+    // Prevent event propagation to avoid closing modals
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    // Scene 3: If user already has 4 or more rules, adding another one should immediately show warning
+    const currentRulesCount = reminders.rules.length;
+    
+    // Always fetch subscription usage to ensure we have the latest plan info
+    let usageData = subscriptionUsage;
+    if (!usageData) {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await fetch(`/api/subscription/usage?t=${Date.now()}`, { 
+          headers,
+          cache: 'no-store' 
+        });
+        if (response.ok) {
+          usageData = await response.json();
+          setSubscriptionUsage(usageData);
+        }
+      } catch (error) {
+        // If fetch fails, assume free plan for safety
+        usageData = { 
+          plan: 'free', 
+          used: 0, 
+          limit: 5, 
+          remaining: 5,
+          reminders: { used: 0, limit: 4, remaining: 4 } 
+        };
+      }
+    }
+    
+    // Scene 3: Check if user has 4 or more rules - show warning and prevent for free plan
+    if (currentRulesCount >= 4) {
+      // Only block for free plan users
+      if (!usageData || usageData.plan === 'free') {
+        showError('Free plan allows up to 4 reminder rules per invoice. Please upgrade to add more rules.');
+        return; // Don't add the rule
+      }
+    }
+    
+    // Scene 2: Check monthly reminder limit for free plan
+    // This handles: Custom reminders with 1 rule per invoice - can do for 4 invoices, 5th should trigger warning
+    if (usageData && usageData.plan === 'free') {
+      // Calculate how many reminders this invoice will send after adding the new rule
+      const enabledRulesCount = reminders.rules.filter(r => r.enabled).length;
+      const newRuleCount = enabledRulesCount + 1; // Adding one more enabled rule (new rule is enabled by default)
+      
+      // For editing invoices: Get old reminder count for this invoice
+      let oldRemindersForThisInvoice = 0;
+      if (editingInvoice) {
+        const reminderData = (editingInvoice as any).reminders || (editingInvoice as any).reminderSettings || (editingInvoice as any).reminder_settings;
+        if (reminderData) {
+          if (reminderData.useSystemDefaults) {
+            oldRemindersForThisInvoice = 4; // Smart reminders = 4
+          } else if (reminderData.rules) {
+            oldRemindersForThisInvoice = reminderData.rules.filter((r: any) => r.enabled).length;
+          } else if (reminderData.customRules) {
+            oldRemindersForThisInvoice = reminderData.customRules.filter((r: any) => r.enabled).length;
+          }
+        }
+      }
+      
+      // Check if adding this rule would exceed the 4 reminder limit for the month
+      // Total = (already used this month - old reminders for this invoice) + new reminders for this invoice
+      const alreadyUsed = usageData.reminders?.used || 0;
+      const usedExcludingThisInvoice = Math.max(0, alreadyUsed - oldRemindersForThisInvoice);
+      const totalAfterAdding = usedExcludingThisInvoice + newRuleCount;
+      
+      if (totalAfterAdding > 4) {
+        if (!subscriptionUsage && usageData) {
+          setSubscriptionUsage(usageData);
+        }
+        showError('Adding this reminder rule would exceed your monthly limit of 4 reminders. Please upgrade for unlimited reminders.');
         return;
       }
     }
@@ -1199,28 +1304,61 @@ export default function QuickInvoiceModal({
   }
 
   const toggleSystemDefaults = async () => {
-    // If switching to smart reminders and user is on free plan, check reminder limit
-    // Note: Smart reminders will send 4 reminders, so we check if user has used all 4 this month
-    if (!reminders.useSystemDefaults && subscriptionUsage?.plan === 'free') {
-      try {
-        const headers = await getAuthHeaders();
-        const response = await fetch(`/api/subscription/usage?t=${Date.now()}`, { 
-          headers,
-          cache: 'no-store' 
-        });
-        if (response.ok) {
-          const usageData = await response.json();
-          setSubscriptionUsage(usageData);
-          // Check reminder limit (4 for free plan)
-          // Smart reminders will send 4 reminders, so if user has used all 4, they can't enable
-          if (usageData.reminders && usageData.reminders.limit && usageData.reminders.used >= usageData.reminders.limit) {
-            showError('You\'ve reached your monthly reminder limit (4 reminders). Please upgrade for unlimited reminders.');
-            setShowUpgradeModal(true);
-            return; // Don't switch to smart reminders
+    // Scene 1: If switching to smart reminders and user is on free plan, check reminder limit
+    // Smart reminders = 4 reminders per invoice
+    if (!reminders.useSystemDefaults) {
+      let usageData = subscriptionUsage;
+      if (!usageData) {
+        try {
+          const headers = await getAuthHeaders();
+          const response = await fetch(`/api/subscription/usage?t=${Date.now()}`, { 
+            headers,
+            cache: 'no-store' 
+          });
+          if (response.ok) {
+            usageData = await response.json();
+            setSubscriptionUsage(usageData);
+          }
+        } catch (error) {
+          // If fetch fails, allow the switch
+          setReminders({
+            ...reminders,
+            useSystemDefaults: !reminders.useSystemDefaults
+          });
+          return;
+        }
+      }
+      
+      // Only check limit for free plan users
+      if (usageData && usageData.plan === 'free') {
+        // Smart reminders = 4 reminders per invoice
+        const remindersThisInvoice = 4;
+        
+        // For editing invoices: Get old reminder count for this invoice
+        let oldRemindersForThisInvoice = 0;
+        if (editingInvoice) {
+          const reminderData = (editingInvoice as any).reminders || (editingInvoice as any).reminderSettings || (editingInvoice as any).reminder_settings;
+          if (reminderData) {
+            if (reminderData.useSystemDefaults) {
+              oldRemindersForThisInvoice = 4; // Smart reminders = 4
+            } else if (reminderData.rules) {
+              oldRemindersForThisInvoice = reminderData.rules.filter((r: any) => r.enabled).length;
+            } else if (reminderData.customRules) {
+              oldRemindersForThisInvoice = reminderData.customRules.filter((r: any) => r.enabled).length;
+            }
           }
         }
-      } catch (error) {
-        console.error('Error checking reminder limit:', error);
+        
+        // Check if switching to smart reminders would exceed the 4 reminder limit
+        // Total = (already used this month - old reminders for this invoice) + 4 reminders for this invoice
+        const alreadyUsed = usageData.reminders?.used || 0;
+        const usedExcludingThisInvoice = Math.max(0, alreadyUsed - oldRemindersForThisInvoice);
+        const totalAfterSwitching = usedExcludingThisInvoice + remindersThisInvoice;
+        
+        if (totalAfterSwitching > 4) {
+          showError('Switching to smart reminders would exceed your monthly limit of 4 reminders. Please upgrade for unlimited reminders.');
+          return; // Don't switch to smart reminders
+        }
       }
     }
     
@@ -1230,12 +1368,14 @@ export default function QuickInvoiceModal({
     })
   }
 
-  if (!isOpen) return null
+  // IMPORTANT: Don't return null if upgrade modal is showing - we need to keep the modal mounted
+  // to preserve form state and show the upgrade modal
+  if (!isOpen && !showUpgradeModal) return null
 
   // Show upgrade content instead of invoice form when limit is reached
   if (showUpgradeContent && subscriptionUsage) {
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 ${showUpgradeModal ? 'hidden' : ''}`}>
         <div className="shadow-2xl max-w-2xl w-full overflow-hidden bg-white">
           {/* Upgrade Modal Content - Inline to avoid double backdrop */}
           <div className="bg-white border border-gray-200 max-w-2xl w-full shadow-xl">
@@ -1248,7 +1388,15 @@ export default function QuickInvoiceModal({
                 <p className="text-sm text-gray-600 mt-1">You've reached your monthly invoice limit. Upgrade to create unlimited invoices.</p>
               </div>
               <button
-                onClick={handleClose}
+                onClick={() => {
+                  // If upgrade modal is showing, just hide it, don't close parent
+                  if (showUpgradeModal) {
+                    setShowUpgradeModal(false)
+                    setShowUpgradeContent(false)
+                  } else {
+                    handleClose()
+                  }
+                }}
                 className="p-2 hover:bg-gray-100 transition-colors cursor-pointer"
                 aria-label="Close"
               >
@@ -1427,7 +1575,7 @@ export default function QuickInvoiceModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 ${showUpgradeModal ? 'hidden' : ''}`}>
       <div className={`shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden overflow-y-auto scroll-smooth ${
         isDarkMode 
           ? 'bg-gray-900' 
@@ -1465,7 +1613,15 @@ export default function QuickInvoiceModal({
             </div>
           </div>
           <button
-            onClick={handleClose}
+            onClick={() => {
+              // If upgrade modal is showing, just hide it, don't close parent
+              if (showUpgradeModal) {
+                setShowUpgradeModal(false)
+                setShowUpgradeContent(false)
+              } else {
+                handleClose()
+              }
+            }}
             className={`transition-colors p-1.5 cursor-pointer ${
               isDarkMode 
                 ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' 
@@ -2116,15 +2272,23 @@ export default function QuickInvoiceModal({
 
               {/* Template Selection */}
               <div className="p-5">
-                <TemplateSelector
-                  selectedTemplate={theme.template}
-                  onTemplateSelect={(template) => setTheme(prevTheme => ({...prevTheme, template}))}
-                  primaryColor={theme.primaryColor}
-                  onPrimaryColorChange={(color) => setTheme(prevTheme => ({...prevTheme, primaryColor: color}))}
-                  secondaryColor={theme.secondaryColor}
-                  onSecondaryColorChange={(color) => setTheme(prevTheme => ({...prevTheme, secondaryColor: color}))}
-                  isDarkMode={isDarkMode}
-                />
+                  <TemplateSelector
+                    selectedTemplate={theme.template}
+                    onTemplateSelect={(template) => {
+                      // Check if template is locked for free plan
+                      if (subscriptionUsage?.plan === 'free' && template !== 1) {
+                        showError('Free plan users can only use Template 1 (Minimal). Please upgrade to access all templates.');
+                        return;
+                      }
+                      setTheme(prevTheme => ({...prevTheme, template}))
+                    }}
+                    primaryColor={theme.primaryColor}
+                    onPrimaryColorChange={(color) => setTheme(prevTheme => ({...prevTheme, primaryColor: color}))}
+                    secondaryColor={theme.secondaryColor}
+                    onSecondaryColorChange={(color) => setTheme(prevTheme => ({...prevTheme, secondaryColor: color}))}
+                    isDarkMode={isDarkMode}
+                    userPlan={subscriptionUsage?.plan as 'free' | 'monthly' | 'pay_per_invoice' || 'free'}
+                  />
               </div>
 
               {/* Payment Terms */}
@@ -2285,27 +2449,72 @@ export default function QuickInvoiceModal({
                       onChange={async (e) => {
                         if (markAsPaid) return;
                         
+                        // If disabling reminders, just update state
+                        if (!e.target.checked) {
+                          setReminders({...reminders, enabled: false});
+                          return;
+                        }
+                        
                         // If enabling reminders, check subscription limit for free plan
-                        if (e.target.checked && subscriptionUsage?.plan === 'free') {
+                        // Always fetch subscription usage if not available
+                        let usageData = subscriptionUsage;
+                        if (!usageData) {
                           try {
                             const headers = await getAuthHeaders();
-                            const response = await fetch('/api/subscription/usage', { headers });
+                            const response = await fetch(`/api/subscription/usage?t=${Date.now()}`, { 
+                              headers,
+                              cache: 'no-store' 
+                            });
                             if (response.ok) {
-                              const usageData = await response.json();
-                              // Check reminder limit (4 for free plan)
-                              if (usageData.reminders && usageData.reminders.limit && usageData.reminders.used >= usageData.reminders.limit) {
-                                showError('You\'ve reached your monthly reminder limit (4 reminders). Please upgrade for unlimited reminders.');
-                                setShowUpgradeModal(true);
-                                setSubscriptionUsage(usageData);
-                                return; // Don't enable reminders
-                              }
+                              usageData = await response.json();
+                              setSubscriptionUsage(usageData);
                             }
                           } catch (error) {
-                            console.error('Error checking reminder limit:', error);
+                            console.error('Error fetching subscription usage:', error);
                           }
                         }
                         
-                        setReminders({...reminders, enabled: e.target.checked});
+                        // Scene 1 & 2: Check limit for free plan users when enabling reminders
+                        if (usageData && usageData.plan === 'free') {
+                          // Calculate how many reminders this invoice will send
+                          let remindersThisInvoice = 0;
+                          if (reminders.useSystemDefaults) {
+                            // Scene 1: Smart reminders = 4 reminders per invoice
+                            remindersThisInvoice = 4;
+                          } else {
+                            // Scene 2: Custom reminders = count of enabled rules
+                            remindersThisInvoice = reminders.rules.filter(r => r.enabled).length;
+                          }
+                          
+                          // For editing invoices: Get old reminder count for this invoice
+                          let oldRemindersForThisInvoice = 0;
+                          if (editingInvoice) {
+                            const reminderData = (editingInvoice as any).reminders || (editingInvoice as any).reminderSettings || (editingInvoice as any).reminder_settings;
+                            if (reminderData) {
+                              if (reminderData.useSystemDefaults) {
+                                oldRemindersForThisInvoice = 4; // Smart reminders = 4
+                              } else if (reminderData.rules) {
+                                oldRemindersForThisInvoice = reminderData.rules.filter((r: any) => r.enabled).length;
+                              } else if (reminderData.customRules) {
+                                oldRemindersForThisInvoice = reminderData.customRules.filter((r: any) => r.enabled).length;
+                              }
+                            }
+                          }
+                          
+                          // Check if enabling reminders would exceed the 4 reminder limit
+                          // Total = (already used this month - old reminders for this invoice) + new reminders for this invoice
+                          const alreadyUsed = usageData.reminders?.used || 0;
+                          const usedExcludingThisInvoice = Math.max(0, alreadyUsed - oldRemindersForThisInvoice);
+                          const totalAfterEnabling = usedExcludingThisInvoice + remindersThisInvoice;
+                          
+                          if (totalAfterEnabling > 4) {
+                            showError('Enabling reminders would exceed your monthly limit of 4 reminders. Please upgrade for unlimited reminders.');
+                            return; // Don't enable reminders
+                          }
+                        }
+                        
+                        // If we get here, it's safe to enable reminders
+                        setReminders({...reminders, enabled: true});
                       }}
                       disabled={markAsPaid}
                       className="sr-only peer"
@@ -2486,10 +2695,14 @@ export default function QuickInvoiceModal({
                           </span>
                           <button
                             type="button"
-                            onClick={addReminderRule}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              addReminderRule(e);
+                            }}
                             className={`text-sm font-medium px-4 py-2 transition-colors cursor-pointer ${
-                              isDarkMode 
-                                ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
+                              isDarkMode
+                                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
                                 : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
                             }`}
                           >
@@ -3013,26 +3226,37 @@ export default function QuickInvoiceModal({
         </form>
       </div>
 
-      {/* Upgrade Modal - Shown after invoice modal closes */}
-      {showUpgradeModal && (
-      <UpgradeModal
-        isOpen={showUpgradeModal}
+      {/* Upgrade Modal - Hide parent modal when upgrade modal is shown */}
+      {typeof window !== 'undefined' && showUpgradeModal && createPortal(
+        <UpgradeModal
+          isOpen={showUpgradeModal}
           onClose={() => {
             setShowUpgradeModal(false)
+            setShowUpgradeContent(false)
+            // DO NOT reset upgradeLimitType or subscriptionUsage - preserve them
             // DO NOT reset form - preserve user's input
+            // DO NOT call onClose() - keep the parent modal open
             // Refresh usage after modal closes in case user upgraded
             if (!editingInvoice && user) {
               fetchSubscriptionUsage()
             }
           }}
-        currentPlan={subscriptionUsage?.plan as 'free' | 'monthly' | 'pay_per_invoice' || 'free'}
-        usage={subscriptionUsage ? {
-          used: subscriptionUsage.used,
-          limit: subscriptionUsage.limit,
-          remaining: subscriptionUsage.remaining
-        } : undefined}
-        reason="You've reached your monthly invoice limit. Upgrade to create unlimited invoices."
-      />
+          currentPlan={subscriptionUsage?.plan as 'free' | 'monthly' | 'pay_per_invoice' || 'free'}
+          usage={upgradeLimitType === 'reminders' && subscriptionUsage?.reminders ? {
+            used: subscriptionUsage.reminders.used,
+            limit: subscriptionUsage.reminders.limit,
+            remaining: subscriptionUsage.reminders.remaining
+          } : subscriptionUsage ? {
+            used: subscriptionUsage.used,
+            limit: subscriptionUsage.limit,
+            remaining: subscriptionUsage.remaining
+          } : undefined}
+          reason={upgradeLimitType === 'reminders' 
+            ? "You've reached your monthly reminder limit. Upgrade for unlimited reminders."
+            : "You've reached your monthly invoice limit. Upgrade to create unlimited invoices."}
+          limitType={upgradeLimitType}
+        />,
+        document.body
       )}
     </div>
   )

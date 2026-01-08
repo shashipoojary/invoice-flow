@@ -22,6 +22,7 @@ interface UpgradeModalProps {
     };
   };
   reason?: string;
+  limitType?: 'invoices' | 'estimates' | 'clients' | 'reminders';
 }
 
 export default function UpgradeModal({ 
@@ -29,7 +30,8 @@ export default function UpgradeModal({
   onClose, 
   currentPlan = 'free',
   usage,
-  reason 
+  reason,
+  limitType = 'invoices' // Default to invoices for backward compatibility
 }: UpgradeModalProps) {
   const { user, getAuthHeaders } = useAuth();
   const { showSuccess, showError } = useToast();
@@ -64,8 +66,10 @@ export default function UpgradeModal({
         if (data.requiresPayment === false) {
           // Payment method already saved, plan activated
           showSuccess(data.message || `Pay Per Invoice plan activated! You will be charged $0.50 per invoice automatically.`);
+          // Close upgrade modal only - don't close parent modal
           onClose();
-          window.location.reload();
+          // Refresh page to update subscription status
+          setTimeout(() => window.location.reload(), 1000);
           return;
         } else if (data.paymentLink) {
           // Payment method setup required - redirect to Dodo Payment
@@ -93,7 +97,7 @@ export default function UpgradeModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-2 sm:p-4">
       <div 
         className="bg-white border border-gray-200 max-w-4xl w-full shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
@@ -127,12 +131,17 @@ export default function UpgradeModal({
           {currentPlan === 'free' && usage && usage.limit && (
             <div className="p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs sm:text-sm font-medium text-gray-700">Invoices this month</span>
+                <span className="text-xs sm:text-sm font-medium text-gray-700">
+                  {limitType === 'invoices' && 'Invoices this month'}
+                  {limitType === 'estimates' && 'Estimates this month'}
+                  {limitType === 'clients' && 'Clients created'}
+                  {limitType === 'reminders' && 'Reminders this month'}
+                </span>
                 <span className="text-xs sm:text-sm font-semibold text-gray-900">
                   {usage.used} / {usage.limit}
                 </span>
               </div>
-              <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+              <div className="w-full bg-gray-200 h-2 overflow-hidden">
                 <div 
                   className={`h-2 transition-all ${
                     usage.used >= usage.limit 
@@ -145,7 +154,12 @@ export default function UpgradeModal({
                 />
               </div>
               {usage.used >= usage.limit && (
-                <p className="text-xs text-red-600 mt-2">You've reached your monthly limit. Upgrade to create unlimited invoices.</p>
+                <p className="text-xs text-red-600 mt-2">
+                  {limitType === 'invoices' && "You've reached your monthly invoice limit. Upgrade to create unlimited invoices."}
+                  {limitType === 'estimates' && "You've reached your estimate limit. Upgrade to create unlimited estimates."}
+                  {limitType === 'clients' && "You've reached your client limit. Upgrade to create unlimited clients."}
+                  {limitType === 'reminders' && "You've reached your monthly reminder limit. Upgrade for unlimited reminders."}
+                </p>
               )}
             </div>
           )}
@@ -170,7 +184,7 @@ export default function UpgradeModal({
                       {usage.payPerInvoice.freeInvoicesRemaining} / 5
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                  <div className="w-full bg-gray-200 h-2 overflow-hidden">
                     <div 
                       className="h-2 bg-green-500 transition-all"
                       style={{ width: `${(usage.payPerInvoice.freeInvoicesUsed / 5) * 100}%` }}
@@ -193,7 +207,7 @@ export default function UpgradeModal({
           <div className="p-4 sm:p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {/* Free Plan */}
-              <div className={`border rounded-lg p-4 sm:p-5 transition-colors ${
+              <div className={`border p-4 sm:p-5 transition-colors ${
                 currentPlan === 'free' 
                   ? 'border-indigo-500 bg-indigo-50' 
                   : 'border-gray-200 hover:border-gray-300'
@@ -232,13 +246,13 @@ export default function UpgradeModal({
                   </li>
                 </ul>
                 {currentPlan === 'free' && (
-                  <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium bg-gray-200 text-gray-500 text-center rounded">
+                  <div className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium bg-gray-200 text-gray-500 text-center">
                     Current Plan
                   </div>
                 )}
               </div>
               {/* Monthly Plan */}
-              <div className={`border rounded-lg p-4 sm:p-5 transition-colors ${
+              <div className={`border p-4 sm:p-5 transition-colors ${
                 currentPlan === 'monthly' 
                   ? 'border-indigo-500 bg-indigo-50' 
                   : 'border-gray-200 hover:border-gray-300'
@@ -246,7 +260,7 @@ export default function UpgradeModal({
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <h4 className="font-heading text-sm sm:text-base font-semibold text-gray-900">Monthly</h4>
-                    <span className="bg-indigo-600 text-white text-xs font-medium px-2 py-0.5 rounded flex items-center gap-1">
+                    <span className="bg-indigo-600 text-white text-xs font-medium px-2 py-0.5 flex items-center gap-1">
                       <Star className="w-3 h-3 fill-current" />
                       Popular
                     </span>
@@ -285,7 +299,7 @@ export default function UpgradeModal({
                 <button
                   onClick={() => handleUpgrade('monthly')}
                   disabled={loading || currentPlan === 'monthly'}
-                  className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-2 rounded ${
+                  className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
                     currentPlan === 'monthly'
                       ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       : 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
@@ -305,7 +319,7 @@ export default function UpgradeModal({
               </div>
 
               {/* Pay Per Invoice Plan */}
-              <div className={`border rounded-lg p-4 sm:p-5 transition-colors ${
+              <div className={`border p-4 sm:p-5 transition-colors ${
                 currentPlan === 'pay_per_invoice' 
                   ? 'border-indigo-500 bg-indigo-50' 
                   : 'border-gray-200 hover:border-gray-300'
@@ -334,7 +348,7 @@ export default function UpgradeModal({
                 <button
                   onClick={() => handleUpgrade('pay_per_invoice')}
                   disabled={loading || currentPlan === 'pay_per_invoice'}
-                  className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-2 rounded ${
+                  className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
                     currentPlan === 'pay_per_invoice'
                       ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       : 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'

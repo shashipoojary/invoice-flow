@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { UserPlus, X, User, Mail, Phone, Building2, MapPin, Loader2 } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { UserPlus, X, User, Mail, Phone, Building2, MapPin, Loader2, CheckCircle, ArrowRight } from 'lucide-react';
 import { useData } from '@/contexts/DataContext';
 import { useToast } from '@/hooks/useToast';
+import { useAuth } from '@/hooks/useAuth';
 import UpgradeModal from './UpgradeModal';
 
 interface Client {
@@ -35,6 +37,8 @@ export default function ClientModal({
 }: ClientModalProps) {
   const { addClient, updateClient } = useData();
   const { showSuccess, showError } = useToast();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
   
   const [newClient, setNewClient] = useState({
     name: '',
@@ -45,6 +49,7 @@ export default function ClientModal({
   });
   const [isCreatingClient, setIsCreatingClient] = useState(false);
   const [isUpdatingClient, setIsUpdatingClient] = useState(false);
+  const [showUpgradeContent, setShowUpgradeContent] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [subscriptionUsage, setSubscriptionUsage] = useState<any>(null);
   
@@ -103,6 +108,7 @@ export default function ClientModal({
       if (usageData && usageData.plan === 'free' && usageData.clients && usageData.clients.used >= usageData.clients.limit) {
         setIsCreatingClient(false);
         showError('You\'ve reached your client limit. Free plan users can create up to 1 client. Please upgrade to create more clients.');
+        setShowUpgradeContent(true);
         setShowUpgradeModal(true);
         setSubscriptionUsage(usageData);
         return;
@@ -143,7 +149,7 @@ export default function ClientModal({
         // Check if it's a limit error
         if (errorData.limitReached) {
           showError(errorData.error || 'Client limit reached');
-          setShowUpgradeModal(true);
+          setShowUpgradeContent(true);
           const usageData = await fetchSubscriptionUsage();
           if (usageData) {
             setSubscriptionUsage(usageData);
@@ -206,32 +212,63 @@ export default function ClientModal({
   };
 
   const handleClose = () => {
-    setNewClient({
-      name: '',
-      email: '',
-      company: '',
-      phone: '',
-      address: ''
-    });
+    // Only reset form if upgrade content is not shown
+    // This preserves form state when user closes upgrade content
+    if (!showUpgradeContent) {
+      setNewClient({
+        name: '',
+        email: '',
+        company: '',
+        phone: '',
+        address: ''
+      });
+    }
+    // Reset upgrade content when closing
+    setShowUpgradeContent(false);
+    setSubscriptionUsage(null);
     onClose();
   };
 
   if (!isOpen) return null;
 
+  // Show upgrade modal when limit is reached - hide parent modal
+  if (showUpgradeContent && subscriptionUsage) {
+    return (
+      <>
+        {/* Hide parent modal when upgrade modal is shown */}
+        <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 ${showUpgradeModal ? 'hidden' : ''}`}>
+          <div className="shadow-2xl max-w-lg w-full overflow-hidden bg-white">
+            {/* Client form content - hidden when upgrade modal is shown */}
+          </div>
+        </div>
+        
+        {/* Upgrade Modal - Show via portal */}
+        {typeof window !== 'undefined' && showUpgradeModal && createPortal(
+          <UpgradeModal
+            isOpen={showUpgradeModal}
+            onClose={() => {
+              setShowUpgradeModal(false);
+              setShowUpgradeContent(false);
+              setShowUpgradeModal(false);
+              setSubscriptionUsage(null);
+            }}
+            currentPlan={subscriptionUsage?.plan || 'free'}
+            usage={subscriptionUsage?.clients ? {
+              used: subscriptionUsage.clients.used,
+              limit: subscriptionUsage.clients.limit,
+              remaining: subscriptionUsage.clients.remaining
+            } : undefined}
+            reason="You've reached your client limit. Upgrade to create unlimited clients."
+            limitType="clients"
+          />,
+          document.body
+        )}
+      </>
+    );
+  }
+
   return (
-    <>
-      {showUpgradeModal && (
-        <UpgradeModal
-          isOpen={showUpgradeModal}
-          onClose={() => {
-            setShowUpgradeModal(false);
-            setSubscriptionUsage(null);
-          }}
-          currentPlan={subscriptionUsage?.plan || 'free'}
-          usage={subscriptionUsage}
-        />
-      )}
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
       <div className={`shadow-2xl max-w-lg w-full overflow-hidden ${
         isDarkMode 
           ? 'bg-gray-900' 
@@ -446,6 +483,5 @@ export default function ClientModal({
         </div>
       </div>
     </div>
-    </>
   );
 }

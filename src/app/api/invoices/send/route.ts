@@ -412,8 +412,17 @@ export async function POST(request: NextRequest) {
       invoiceTheme = invoice.theme as { template?: number; primary_color?: string; secondary_color?: string } | undefined;
     }
     
-    // Use template 1 (FastInvoiceTemplate) for fast invoices, otherwise use theme template
-    const template = invoice.type === 'fast' ? 1 : (invoiceTheme?.template || 1);
+    // Map UI template (1, 2, 3) to PDF template (6, 4, 5) for PDF generation
+    const mapUiTemplateToPdf = (uiTemplate: number): number => {
+      switch (uiTemplate) {
+        case 1: return 6; // Minimal -> Template 6
+        case 2: return 4; // Modern -> Template 4
+        case 3: return 5; // Creative -> Template 5
+        default: return 6;
+      }
+    };
+    // Use template 1 (FastInvoiceTemplate) for fast invoices, otherwise map UI template to PDF template
+    const template = invoice.type === 'fast' ? 1 : (invoiceTheme?.template ? mapUiTemplateToPdf(invoiceTheme.template) : 1);
     const primaryColor = invoiceTheme?.primary_color || '#5C2D91';
     const secondaryColor = invoiceTheme?.secondary_color || '#8B5CF6';
     
