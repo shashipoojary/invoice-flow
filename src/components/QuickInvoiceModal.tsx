@@ -18,6 +18,7 @@ import { useData } from '@/contexts/DataContext'
 import { useSettings } from '@/contexts/SettingsContext'
 import { useAuth } from '@/hooks/useAuth'
 import UpgradeModal from './UpgradeModal'
+import ConfirmationModal from './ConfirmationModal'
 
 interface QuickInvoiceModalProps {
   isOpen: boolean
@@ -111,8 +112,12 @@ export default function QuickInvoiceModal({
 }: QuickInvoiceModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
-  const [subscriptionUsage, setSubscriptionUsage] = useState<{ used: number; limit: number | null; remaining: number | null; plan: string } | null>(null)
+  const [subscriptionUsage, setSubscriptionUsage] = useState<{ used: number; limit: number | null; remaining: number | null; plan: string; payPerInvoice?: { freeInvoicesRemaining: number } } | null>(null)
   const [showUpgradeContent, setShowUpgradeContent] = useState(false)
+  const [showPremiumFeatureConfirm, setShowPremiumFeatureConfirm] = useState(false)
+  const [premiumFeatureType, setPremiumFeatureType] = useState<'template' | 'reminder' | 'customization' | null>(null)
+  const [pendingTemplate, setPendingTemplate] = useState<number | null>(null)
+  const [pendingColors, setPendingColors] = useState<{ primary: string; secondary: string } | null>(null)
   
   const { user } = useAuth()
   const { showSuccess: localShowSuccess, showError: localShowError, showWarning: localShowWarning } = useToast()
@@ -163,8 +168,18 @@ export default function QuickInvoiceModal({
       })
       if (response.ok) {
         const data = await response.json()
-        setSubscriptionUsage(data)
-        return data
+        setSubscriptionUsage({
+          ...data,
+          payPerInvoice: data.payPerInvoice ? {
+            freeInvoicesRemaining: data.payPerInvoice.freeInvoicesRemaining || 0
+          } : undefined
+        })
+        return {
+          ...data,
+          payPerInvoice: data.payPerInvoice ? {
+            freeInvoicesRemaining: data.payPerInvoice.freeInvoicesRemaining || 0
+          } : undefined
+        }
       }
     } catch (error) {
       console.error('Error fetching subscription usage:', error)
@@ -1222,6 +1237,17 @@ export default function QuickInvoiceModal({
       return;
     }
     
+    // Check if Pay Per Invoice user with free invoices trying to add 5th reminder
+    if (usageData && usageData.plan === 'pay_per_invoice' && 
+        usageData.payPerInvoice?.freeInvoicesRemaining && 
+        usageData.payPerInvoice.freeInvoicesRemaining > 0 && 
+        currentRulesCount >= 4) {
+      // Show confirmation modal
+      setPremiumFeatureType('reminder');
+      setShowPremiumFeatureConfirm(true);
+      return;
+    }
+    
     const newRule: ReminderRule = {
       id: Date.now().toString(),
       type: 'before',
@@ -1968,14 +1994,124 @@ export default function QuickInvoiceModal({
                         showError('Free plan users can only use Template 1 (Minimal). Please upgrade to access all templates.');
                         return;
                       }
+                      
+                      // Check if Pay Per Invoice user with free invoices trying to use premium template
+                      if (subscriptionUsage?.plan === 'pay_per_invoice' && 
+                          subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining && 
+                          subscriptionUsage.payPerInvoice.freeInvoicesRemaining > 0 && 
+                          template !== 1) {
+                        // Show confirmation modal
+                        setPendingTemplate(template);
+                        setPremiumFeatureType('template');
+                        setShowPremiumFeatureConfirm(true);
+                        return;
+                      }
+                      
                       setTheme(prevTheme => ({...prevTheme, template}))
                     }}
                     primaryColor={theme.primaryColor}
-                    onPrimaryColorChange={(color) => setTheme(prevTheme => ({...prevTheme, primaryColor: color}))}
+                    onPrimaryColorChange={(color) => {
+                      // Check if Pay Per Invoice user with free invoices trying to use premium color
+                      if (subscriptionUsage?.plan === 'pay_per_invoice' && 
+                          subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining && 
+                          subscriptionUsage.payPerInvoice.freeInvoicesRemaining > 0) {
+                        // Check if this color is from a premium preset (beyond first 4)
+                        const colorPresets = [
+                          { name: 'Purple', primary: '#5C2D91', secondary: '#8B5CF6' },
+                          { name: 'Blue', primary: '#1E40AF', secondary: '#3B82F6' },
+                          { name: 'Green', primary: '#059669', secondary: '#10B981' },
+                          { name: 'Red', primary: '#DC2626', secondary: '#EF4444' },
+                          { name: 'Orange', primary: '#EA580C', secondary: '#F97316' },
+                          { name: 'Pink', primary: '#DB2777', secondary: '#EC4899' },
+                          { name: 'Indigo', primary: '#4338CA', secondary: '#6366F1' },
+                          { name: 'Teal', primary: '#0D9488', secondary: '#14B8A6' },
+                          { name: 'Black', primary: '#1F2937', secondary: '#374151' },
+                          { name: 'Dark Gray', primary: '#374151', secondary: '#6B7280' },
+                          { name: 'Navy', primary: '#1E3A8A', secondary: '#3B82F6' },
+                          { name: 'Emerald', primary: '#047857', secondary: '#10B981' },
+                          { name: 'Rose', primary: '#BE185D', secondary: '#F43F5E' },
+                          { name: 'Amber', primary: '#D97706', secondary: '#F59E0B' },
+                          { name: 'Cyan', primary: '#0891B2', secondary: '#06B6D4' },
+                          { name: 'Violet', primary: '#7C2D12', secondary: '#A855F7' }
+                        ];
+                        
+                        // Check if the new combination matches a premium preset (index 4+)
+                        const matchesPremiumPreset = colorPresets.slice(4).some(preset => 
+                          preset.primary === color && preset.secondary === theme.secondaryColor
+                        );
+                        
+                        // Check if it matches any of the first 4 presets (free)
+                        const matchesFirstFour = colorPresets.slice(0, 4).some(preset => 
+                          preset.primary === color && preset.secondary === theme.secondaryColor
+                        );
+                        
+                        if (matchesPremiumPreset && !matchesFirstFour) {
+                          // Show confirmation modal
+                          setPendingTemplate(null);
+                          setPremiumFeatureType('customization');
+                          setShowPremiumFeatureConfirm(true);
+                          return;
+                        }
+                      }
+                      setTheme(prevTheme => ({...prevTheme, primaryColor: color}))
+                    }}
                     secondaryColor={theme.secondaryColor}
-                    onSecondaryColorChange={(color) => setTheme(prevTheme => ({...prevTheme, secondaryColor: color}))}
+                    onSecondaryColorChange={(color) => {
+                      // Check if Pay Per Invoice user with free invoices trying to use premium color
+                      if (subscriptionUsage?.plan === 'pay_per_invoice' && 
+                          subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining && 
+                          subscriptionUsage.payPerInvoice.freeInvoicesRemaining > 0) {
+                        // Check if this color is from a premium preset (beyond first 4)
+                        const colorPresets = [
+                          { name: 'Purple', primary: '#5C2D91', secondary: '#8B5CF6' },
+                          { name: 'Blue', primary: '#1E40AF', secondary: '#3B82F6' },
+                          { name: 'Green', primary: '#059669', secondary: '#10B981' },
+                          { name: 'Red', primary: '#DC2626', secondary: '#EF4444' },
+                          { name: 'Orange', primary: '#EA580C', secondary: '#F97316' },
+                          { name: 'Pink', primary: '#DB2777', secondary: '#EC4899' },
+                          { name: 'Indigo', primary: '#4338CA', secondary: '#6366F1' },
+                          { name: 'Teal', primary: '#0D9488', secondary: '#14B8A6' },
+                          { name: 'Black', primary: '#1F2937', secondary: '#374151' },
+                          { name: 'Dark Gray', primary: '#374151', secondary: '#6B7280' },
+                          { name: 'Navy', primary: '#1E3A8A', secondary: '#3B82F6' },
+                          { name: 'Emerald', primary: '#047857', secondary: '#10B981' },
+                          { name: 'Rose', primary: '#BE185D', secondary: '#F43F5E' },
+                          { name: 'Amber', primary: '#D97706', secondary: '#F59E0B' },
+                          { name: 'Cyan', primary: '#0891B2', secondary: '#06B6D4' },
+                          { name: 'Violet', primary: '#7C2D12', secondary: '#A855F7' }
+                        ];
+                        
+                        // Check if the new combination matches a premium preset (index 4+)
+                        const matchesPremiumPreset = colorPresets.slice(4).some(preset => 
+                          preset.primary === theme.primaryColor && preset.secondary === color
+                        );
+                        
+                        // Check if it matches any of the first 4 presets (free)
+                        const matchesFirstFour = colorPresets.slice(0, 4).some(preset => 
+                          preset.primary === theme.primaryColor && preset.secondary === color
+                        );
+                        
+                        if (matchesPremiumPreset && !matchesFirstFour) {
+                          // Show confirmation modal
+                          setPendingTemplate(null);
+                          setPremiumFeatureType('customization');
+                          setShowPremiumFeatureConfirm(true);
+                          return;
+                        }
+                      }
+                      setTheme(prevTheme => ({...prevTheme, secondaryColor: color}))
+                    }}
                     isDarkMode={isDarkMode}
                     userPlan={subscriptionUsage?.plan as 'free' | 'monthly' | 'pay_per_invoice' || 'free'}
+                    freeInvoicesRemaining={subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining || 0}
+                    onPremiumColorSelect={(primary: string, secondary: string) => {
+                      // Store pending colors and show confirmation modal - return false to prevent color change
+                      setPendingColors({ primary, secondary })
+                      setPendingTemplate(null)
+                      setPremiumFeatureType('customization')
+                      setShowPremiumFeatureConfirm(true)
+                      return false // Prevent color change until user confirms
+                    }}
                   />
               </div>
 
@@ -2880,6 +3016,71 @@ export default function QuickInvoiceModal({
           } : undefined}
           reason="You've reached your monthly invoice limit. Upgrade to create unlimited invoices."
           limitType="invoices"
+        />,
+        document.body
+      )}
+      
+      {/* Premium Feature Confirmation Modal */}
+      {typeof window !== 'undefined' && showPremiumFeatureConfirm && createPortal(
+        <ConfirmationModal
+          isOpen={showPremiumFeatureConfirm}
+          onClose={() => {
+            setShowPremiumFeatureConfirm(false)
+            setPremiumFeatureType(null)
+            setPendingTemplate(null)
+            setPendingColors(null)
+          }}
+          onConfirm={() => {
+            if (premiumFeatureType === 'template' && pendingTemplate) {
+              // User confirmed - apply premium template
+              setTheme({ ...theme, template: pendingTemplate })
+              showWarning('Premium template selected. This invoice will be charged $0.50 when sent.')
+            } else if (premiumFeatureType === 'reminder') {
+              // User confirmed - add 5th reminder
+              const newRule: ReminderRule = {
+                id: Date.now().toString(),
+                type: 'before',
+                days: 1,
+                enabled: true
+              }
+              setReminders({
+                ...reminders,
+                rules: [...reminders.rules, newRule]
+              })
+              showWarning('Premium reminders enabled. This invoice will be charged $0.50 when sent.')
+            }
+            setShowPremiumFeatureConfirm(false)
+            setPremiumFeatureType(null)
+            setPendingTemplate(null)
+            setPendingColors(null)
+          }}
+          title={
+            premiumFeatureType === 'template' 
+              ? 'Premium Template Selected' 
+              : premiumFeatureType === 'reminder'
+              ? 'Premium Reminders Enabled'
+              : 'Premium Colors Selected'
+          }
+          message={
+            premiumFeatureType === 'template' 
+              ? `Using Template ${pendingTemplate} will charge $0.50 immediately when you send this invoice, even though you have ${subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining || 0} free invoices remaining. Free invoices only apply to basic features (Template 1, max 4 reminders, first 4 color presets).\n\nDo you want to continue with the $0.50 charge?`
+              : premiumFeatureType === 'reminder'
+              ? `Adding more than 4 reminders will charge $0.50 immediately when you send this invoice, even though you have ${subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining || 0} free invoices remaining. Free invoices only apply to basic features (Template 1, max 4 reminders, first 4 color presets).\n\nDo you want to continue with the $0.50 charge?`
+              : `Using premium colors (beyond the first 4 presets) will charge $0.50 immediately when you send this invoice, even though you have ${subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining || 0} free invoices remaining. Free invoices only apply to basic features (Template 1, max 4 reminders, first 4 color presets).\n\nDo you want to continue with the $0.50 charge?`
+          }
+          infoBanner={
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500 mb-1.5">
+                TIP
+              </p>
+              <p className="text-sm font-medium text-gray-900">
+                Subscribe to Monthly Plan ($9/month) to get unlimited access to all templates, colors, reminders, and features. No per-invoice charges!
+              </p>
+            </div>
+          }
+          confirmText="Yes, Charge $0.50"
+          cancelText="Cancel"
+          type="warning"
         />,
         document.body
       )}

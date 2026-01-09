@@ -33,15 +33,35 @@ export async function GET(request: NextRequest) {
     // For Pay Per Invoice: Calculate free vs charged invoices
     let payPerInvoiceInfo = null;
     if (plan === 'pay_per_invoice') {
+      // Get activation date to count invoices correctly
+      const { data: userData } = await supabase
+        .from('users')
+        .select('pay_per_invoice_activated_at')
+        .eq('id', user.id)
+        .single();
+      
+      let freeInvoicesRemaining = 5;
+      if (userData?.pay_per_invoice_activated_at) {
+        // Count non-draft invoices created after activation
+        const { count: freeInvoiceCount } = await supabase
+          .from('invoices')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .gte('created_at', userData.pay_per_invoice_activated_at)
+          .neq('status', 'draft');
+        
+        freeInvoicesRemaining = Math.max(0, 5 - (freeInvoiceCount || 0));
+      }
+      
       const totalInvoices = usageStats.invoices.used;
-      const freeInvoicesUsed = Math.min(totalInvoices, 5); // First 5 are free
-      const chargedInvoices = Math.max(0, totalInvoices - 5); // Invoices after first 5
-      const totalCharged = chargedInvoices * 0.5; // $0.50 per invoice
+      const freeInvoicesUsed = Math.min(totalInvoices, 5);
+      const chargedInvoices = Math.max(0, totalInvoices - 5);
+      const totalCharged = chargedInvoices * 0.5;
       
       payPerInvoiceInfo = {
         totalInvoices,
         freeInvoicesUsed,
-        freeInvoicesRemaining: Math.max(0, 5 - totalInvoices),
+        freeInvoicesRemaining,
         chargedInvoices,
         totalCharged: totalCharged.toFixed(2)
       };
@@ -55,7 +75,10 @@ export async function GET(request: NextRequest) {
       remaining: usageStats.invoices.limit ? Math.max(0, usageStats.invoices.limit - usageStats.invoices.used) : null,
       canCreateInvoice: plan === 'free' ? (usageStats.invoices.limit !== null && usageStats.invoices.used < usageStats.invoices.limit) : true,
       // Pay Per Invoice specific info
-      payPerInvoice: payPerInvoiceInfo,
+      payPerInvoice: payPerInvoiceInfo ? {
+        ...payPerInvoiceInfo,
+        freeInvoicesRemaining: payPerInvoiceInfo.freeInvoicesRemaining
+      } : null,
       // Additional usage stats
       clients: {
         limit: usageStats.clients.limit,

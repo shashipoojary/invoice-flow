@@ -777,7 +777,22 @@ export async function POST(request: NextRequest) {
     // Only charge if invoice is not a draft (draft invoices don't count)
     if (completeInvoice.status !== 'draft' && !invoiceData.generate_pdf_only) {
       try {
-        await chargeForInvoice(user.id, completeInvoice.id, completeInvoice.invoice_number);
+        // Get template, reminder count, and colors for premium feature detection
+        const invoiceTheme = completeInvoice.theme ? JSON.parse(completeInvoice.theme) : null;
+        const reminderSettings = completeInvoice.reminder_settings ? JSON.parse(completeInvoice.reminder_settings) : null;
+        const reminderCount = reminderSettings?.enabled ? (reminderSettings.useSystemDefaults ? 4 : (reminderSettings.rules?.length || 0)) : 0;
+        
+        await chargeForInvoice(
+          user.id, 
+          completeInvoice.id, 
+          completeInvoice.invoice_number,
+          {
+            template: invoiceTheme?.template || 1,
+            reminderCount: reminderCount,
+            primaryColor: invoiceTheme?.primary_color || invoiceTheme?.primaryColor,
+            secondaryColor: invoiceTheme?.secondary_color || invoiceTheme?.secondaryColor
+          }
+        );
         // Don't fail invoice creation if billing fails - just log it
       } catch (billingError) {
         console.error('Error charging for invoice:', billingError);

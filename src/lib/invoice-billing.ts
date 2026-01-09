@@ -13,7 +13,8 @@ import { getDodoPaymentClient } from './dodo-payment';
 export async function chargeForInvoice(
   userId: string,
   invoiceId: string,
-  invoiceNumber: string
+  invoiceNumber: string,
+  invoiceData?: { template?: number; reminderCount?: number; primaryColor?: string; secondaryColor?: string }
 ): Promise<{ success: boolean; error?: string; paymentId?: string; paymentLink?: string; automatic?: boolean }> {
   try {
     console.log(`💳 chargeForInvoice called: userId=${userId}, invoiceId=${invoiceId}, invoiceNumber=${invoiceNumber}`);
@@ -55,42 +56,107 @@ export async function chargeForInvoice(
       return { success: true };
     }
 
-    // Check if user is eligible for free invoices (first 5 are free)
-    // Count invoices created after switching to Pay Per Invoice plan
-    const { data: userWithActivation } = await supabaseAdmin
-      .from('users')
-      .select('pay_per_invoice_activated_at')
-      .eq('id', userId)
-      .single();
-
-    if (userWithActivation?.pay_per_invoice_activated_at) {
-      // Count non-draft invoices created after switching to Pay Per Invoice
-      const { count: freeInvoiceCount } = await supabaseAdmin
+    // Check if invoice uses premium features (template 2/3 OR more than 4 reminders OR premium colors)
+    const usesPremiumTemplate = invoiceData?.template && invoiceData.template !== 1;
+    const usesPremiumReminders = invoiceData?.reminderCount && invoiceData.reminderCount > 4;
+    
+    // Check for premium colors (beyond first 4 presets)
+    const colorPresets = [
+      { name: 'Purple', primary: '#5C2D91', secondary: '#8B5CF6' },
+      { name: 'Blue', primary: '#1E40AF', secondary: '#3B82F6' },
+      { name: 'Green', primary: '#059669', secondary: '#10B981' },
+      { name: 'Red', primary: '#DC2626', secondary: '#EF4444' },
+      { name: 'Orange', primary: '#EA580C', secondary: '#F97316' },
+      { name: 'Pink', primary: '#DB2777', secondary: '#EC4899' },
+      { name: 'Indigo', primary: '#4338CA', secondary: '#6366F1' },
+      { name: 'Teal', primary: '#0D9488', secondary: '#14B8A6' },
+      { name: 'Black', primary: '#1F2937', secondary: '#374151' },
+      { name: 'Dark Gray', primary: '#374151', secondary: '#6B7280' },
+      { name: 'Navy', primary: '#1E3A8A', secondary: '#3B82F6' },
+      { name: 'Emerald', primary: '#047857', secondary: '#10B981' },
+      { name: 'Rose', primary: '#BE185D', secondary: '#F43F5E' },
+      { name: 'Amber', primary: '#D97706', secondary: '#F59E0B' },
+      { name: 'Cyan', primary: '#0891B2', secondary: '#06B6D4' },
+      { name: 'Violet', primary: '#7C2D12', secondary: '#A855F7' }
+    ];
+    
+    // Get invoice theme colors from invoiceData or fetch from database
+    let primaryColor = invoiceData?.primaryColor;
+    let secondaryColor = invoiceData?.secondaryColor;
+    
+    if (!primaryColor || !secondaryColor) {
+      const { data: invoice } = await supabaseAdmin
         .from('invoices')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .gte('created_at', userWithActivation.pay_per_invoice_activated_at)
-        .neq('status', 'draft'); // Only count non-draft invoices
-
-      const freeInvoiceLimit = 5;
+        .select('theme')
+        .eq('id', invoiceId)
+        .single();
       
-      if ((freeInvoiceCount || 0) < freeInvoiceLimit) {
-        console.log(`🎁 Free invoice! User has ${freeInvoiceCount || 0}/${freeInvoiceLimit} free invoices. This invoice is free.`);
-        // This is one of the first 5 invoices - no charge
+      if (invoice?.theme) {
+        const theme = typeof invoice.theme === 'string' ? JSON.parse(invoice.theme) : invoice.theme;
+        primaryColor = theme.primary_color || theme.primaryColor;
+        secondaryColor = theme.secondary_color || theme.secondaryColor;
+      }
+    }
+    
+    // Check if colors match any of the first 4 presets
+    const matchesFirstFour = primaryColor && secondaryColor && colorPresets.slice(0, 4).some(preset => 
+      preset.primary === primaryColor && preset.secondary === secondaryColor
+    );
+    
+    // Check if colors match any premium preset (index 4+)
+    const matchesPremiumPreset = primaryColor && secondaryColor && colorPresets.slice(4).some(preset => 
+      preset.primary === primaryColor && preset.secondary === secondaryColor
+    );
+    
+    // Also check if individual colors are from premium presets
+    const usesPremiumColor = primaryColor && secondaryColor && !matchesFirstFour && (
+      matchesPremiumPreset ||
+      colorPresets.slice(4).some(p => p.primary === primaryColor || p.secondary === primaryColor) ||
+      colorPresets.slice(4).some(p => p.primary === secondaryColor || p.secondary === secondaryColor)
+    );
+    
+    const hasPremiumFeatures = usesPremiumTemplate || usesPremiumReminders || usesPremiumColor;
+    
+    if (hasPremiumFeatures) {
+      // Premium features = charge immediately, skip free invoice check
+      console.log(`💎 Premium features detected (template: ${invoiceData?.template}, reminders: ${invoiceData?.reminderCount}, colors: ${usesPremiumColor ? 'premium' : 'basic'}). Charging $0.50 immediately.`);
+    } else {
+      // Basic features = check free invoice count
+      const { data: userWithActivation } = await supabaseAdmin
+        .from('users')
+        .select('pay_per_invoice_activated_at')
+        .eq('id', userId)
+        .single();
+
+      if (userWithActivation?.pay_per_invoice_activated_at) {
+        // Count non-draft invoices created after switching to Pay Per Invoice
+        const { count: freeInvoiceCount } = await supabaseAdmin
+          .from('invoices')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .gte('created_at', userWithActivation.pay_per_invoice_activated_at)
+          .neq('status', 'draft'); // Only count non-draft invoices
+
+        const freeInvoiceLimit = 5;
+        
+        if ((freeInvoiceCount || 0) < freeInvoiceLimit) {
+          console.log(`🎁 Free invoice! User has ${freeInvoiceCount || 0}/${freeInvoiceLimit} free invoices. This invoice is free.`);
+          // This is one of the first 5 invoices - no charge
+          return { success: true }; // Success but no charge
+        }
+        
+        console.log(`💰 User has used ${freeInvoiceCount || 0} free invoices. Charging for this invoice.`);
+      } else {
+        // If activation date not set, set it to now and give first 5 free
+        console.log(`⚠️ Pay Per Invoice activation date not set. Setting it now and giving first 5 invoices free.`);
+        await supabaseAdmin
+          .from('users')
+          .update({ pay_per_invoice_activated_at: new Date().toISOString() })
+          .eq('id', userId);
+        
+        // This is the first invoice - free
         return { success: true }; // Success but no charge
       }
-      
-      console.log(`💰 User has used ${freeInvoiceCount || 0} free invoices. Charging for this invoice.`);
-    } else {
-      // If activation date not set, set it to now and give first 5 free
-      console.log(`⚠️ Pay Per Invoice activation date not set. Setting it now and giving first 5 invoices free.`);
-      await supabaseAdmin
-        .from('users')
-        .update({ pay_per_invoice_activated_at: new Date().toISOString() })
-        .eq('id', userId);
-      
-      // This is the first invoice - free
-      return { success: true }; // Success but no charge
     }
 
     // Get Dodo Payment client

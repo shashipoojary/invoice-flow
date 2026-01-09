@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Palette, Check, FileText, Layout, PenTool } from 'lucide-react'
+import { Palette, Check, FileText, Layout, PenTool, Star } from 'lucide-react'
 
 interface TemplateSelectorProps {
   selectedTemplate: number
@@ -12,6 +12,8 @@ interface TemplateSelectorProps {
   onSecondaryColorChange: (color: string) => void
   isDarkMode?: boolean
   userPlan?: 'free' | 'monthly' | 'pay_per_invoice'
+  freeInvoicesRemaining?: number // For Pay Per Invoice users
+  onPremiumColorSelect?: (primary: string, secondary: string) => boolean | void // Return false to prevent color change
 }
 
 const templatePreviews = [
@@ -71,7 +73,9 @@ export default function TemplateSelector({
   secondaryColor,
   onSecondaryColorChange,
   isDarkMode = false,
-  userPlan = 'free'
+  userPlan = 'free',
+  freeInvoicesRemaining = 0,
+  onPremiumColorSelect
 }: TemplateSelectorProps) {
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null)
@@ -86,6 +90,18 @@ export default function TemplateSelector({
   }
 
   const handleColorPreset = (primary: string, secondary: string, presetName: string) => {
+    // Check if this is a premium color and user has free invoices
+    if (onPremiumColorSelect && userPlan === 'pay_per_invoice' && freeInvoicesRemaining > 0) {
+      // Check if this preset is premium (index >= 4)
+      const presetIndex = colorPresets.findIndex(p => p.primary === primary && p.secondary === secondary)
+      if (presetIndex >= 4) {
+        // Call the premium handler - if it returns false, don't apply colors
+        const shouldApply = onPremiumColorSelect(primary, secondary)
+        if (!shouldApply) {
+          return // Don't apply colors if handler returns false
+        }
+      }
+    }
     onPrimaryColorChange(primary)
     onSecondaryColorChange(secondary)
     setSelectedPreset(presetName)
@@ -105,7 +121,10 @@ export default function TemplateSelector({
           {templatePreviews.map((template) => {
             const IconComponent = template.icon;
             const isSelected = selectedTemplate === template.id;
+            // For free plan: lock templates 2/3
+            // For Pay Per Invoice: show premium symbol if template 2/3 and has free invoices
             const isLocked = userPlan === 'free' && template.id !== 1;
+            const isPremium = userPlan === 'pay_per_invoice' && freeInvoicesRemaining > 0 && template.id !== 1;
             
             return (
               <div
@@ -138,6 +157,11 @@ export default function TemplateSelector({
                     </svg>
                   </div>
                 )}
+                {isPremium && !isSelected && (
+                  <div className="absolute top-2 right-2 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center">
+                    <Star className="h-3 w-3 text-white fill-white" />
+                  </div>
+                )}
                 
                 {/* Template Preview */}
                 <div className="flex flex-col items-center text-center space-y-3">
@@ -153,6 +177,11 @@ export default function TemplateSelector({
                       {template.name}
                       {isLocked && (
                         <span className="ml-1 text-xs text-orange-600">(Locked)</span>
+                      )}
+                      {isPremium && (
+                        <span className="ml-1 text-xs text-yellow-600">
+                          Premium
+                        </span>
                       )}
                     </h4>
                     <p className={`text-xs mt-1 ${
@@ -207,7 +236,10 @@ export default function TemplateSelector({
                 {colorPresets.map((preset, index) => {
                   const isSelected = selectedPreset === preset.name || 
                     (primaryColor === preset.primary && secondaryColor === preset.secondary)
-                  const isLocked = userPlan === 'free' && index >= 4; // First 4 are free, rest locked
+                  // For free plan: lock presets beyond first 4
+                  // For Pay Per Invoice: show premium symbol if preset beyond first 4 and has free invoices
+                  const isLocked = userPlan === 'free' && index >= 4;
+                  const isPremium = userPlan === 'pay_per_invoice' && freeInvoicesRemaining > 0 && index >= 4;
                   
                   return (
                     <button
@@ -241,6 +273,11 @@ export default function TemplateSelector({
                           </svg>
                         </div>
                       )}
+                      {isPremium && !isSelected && (
+                        <div className="absolute top-1 right-1 w-3 h-3 bg-yellow-500 rounded-full flex items-center justify-center">
+                          <Star className="h-2 w-2 text-white fill-white" />
+                        </div>
+                      )}
                       <div className="flex items-center space-x-1.5 mb-1.5">
                         <div 
                           className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-500"
@@ -254,6 +291,9 @@ export default function TemplateSelector({
                       {preset.name}
                       {isLocked && (
                         <span className="text-[10px] text-orange-600 mt-0.5">(Locked)</span>
+                      )}
+                      {isPremium && (
+                        <span className="text-[10px] text-yellow-600 mt-0.5">Premium</span>
                       )}
                     </button>
                   )

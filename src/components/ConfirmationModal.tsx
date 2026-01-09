@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, X, Check, XCircle } from 'lucide-react';
+import { AlertTriangle, X, Check, XCircle, Info } from 'lucide-react';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -11,6 +11,7 @@ interface ConfirmationModalProps {
   cancelText?: string;
   type?: 'danger' | 'warning' | 'info' | 'success';
   isLoading?: boolean;
+  infoBanner?: React.ReactNode; // Optional info banner/tip section
 }
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -22,7 +23,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   type = 'danger',
-  isLoading = false
+  isLoading = false,
+  infoBanner
 }) => {
   if (!isOpen) return null;
 
@@ -94,9 +96,18 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
         {/* Content */}
         <div className="p-6 bg-white">
-          <p className="text-gray-600 leading-relaxed">
+          <p className="text-gray-600 leading-relaxed whitespace-pre-line">
             {message}
           </p>
+          
+          {/* Info Banner */}
+          {infoBanner && (
+            <div className="mt-4">
+              <div className="bg-gray-50 border-l-4 border-indigo-600 p-4">
+                {infoBanner}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Actions */}

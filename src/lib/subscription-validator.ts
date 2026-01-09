@@ -51,6 +51,43 @@ function getCurrentMonthBoundaries() {
 }
 
 /**
+ * Check if Pay Per Invoice user has free invoices remaining
+ * Returns: { hasFreeInvoices: boolean, freeInvoicesRemaining: number }
+ */
+export async function getPayPerInvoiceFreeStatus(userId: string): Promise<{ hasFreeInvoices: boolean; freeInvoicesRemaining: number }> {
+  const plan = await getUserPlan(userId);
+  
+  if (plan !== 'pay_per_invoice') {
+    return { hasFreeInvoices: false, freeInvoicesRemaining: 0 };
+  }
+  
+  const { data: userData } = await supabaseAdmin
+    .from('users')
+    .select('pay_per_invoice_activated_at')
+    .eq('id', userId)
+    .single();
+  
+  if (!userData?.pay_per_invoice_activated_at) {
+    return { hasFreeInvoices: true, freeInvoicesRemaining: 5 };
+  }
+  
+  const { count } = await supabaseAdmin
+    .from('invoices')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .gte('created_at', userData.pay_per_invoice_activated_at)
+    .neq('status', 'draft');
+  
+  const used = count || 0;
+  const freeInvoicesRemaining = Math.max(0, 5 - used);
+  
+  return {
+    hasFreeInvoices: freeInvoicesRemaining > 0,
+    freeInvoicesRemaining
+  };
+}
+
+/**
  * Check if user can create an invoice
  * FREE PLAN: Max 5 invoices per month (includes fast, detailed, and estimate conversions)
  */
