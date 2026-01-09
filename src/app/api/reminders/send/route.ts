@@ -116,8 +116,8 @@ export async function POST(request: NextRequest) {
     }
 
     // CRITICAL: Check subscription reminder limit BEFORE sending
-    // Free plan users are limited to 4 reminders per month (global limit)
-    const reminderLimitCheck = await canEnableReminder(invoice.user_id);
+    // Free plan users are limited to 1 reminder per invoice
+    const reminderLimitCheck = await canEnableReminder(invoice.user_id, invoice.id);
     if (!reminderLimitCheck.allowed) {
       return NextResponse.json({ 
         error: reminderLimitCheck.reason || 'Reminder limit reached',
@@ -572,6 +572,28 @@ export async function POST(request: NextRequest) {
       } else {
         console.log(`✅ Verified reminder ${reminderId} is saved with 'sent' status`);
       }
+    }
+
+    // CRITICAL: Check limit one more time right before updating invoice count
+    // This prevents race conditions where multiple reminders are sent simultaneously
+    const finalLimitCheck = await canEnableReminder(invoice.user_id, invoice.id);
+    if (!finalLimitCheck.allowed) {
+      // Limit was reached by another reminder sent in parallel
+      // Mark reminder as cancelled (email was sent but we're not counting it)
+      if (reminderId) {
+        await supabaseAdmin
+          .from('invoice_reminders')
+          .update({
+            reminder_status: 'cancelled',
+            failure_reason: 'Limit reached - this invoice already has 1 reminder'
+          })
+          .eq('id', reminderId);
+      }
+      return NextResponse.json({ 
+        error: finalLimitCheck.reason || 'Reminder limit reached',
+        limitReached: true,
+        limitType: finalLimitCheck.limitType
+      }, { status: 403 });
     }
 
     // Update invoice reminder count

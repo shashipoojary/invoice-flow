@@ -147,55 +147,40 @@ export async function canCreateEstimate(userId: string): Promise<ValidationResul
 }
 
 /**
- * Check if user can enable a reminder
- * FREE PLAN: Max 4 auto reminders per month (global limit, not per invoice)
+ * Check if user can enable a reminder for a specific invoice
+ * FREE PLAN: Max 4 reminders per invoice (smart reminders = 4)
+ * Can use this for up to 5 invoices (5 × 4 = 20 total reminders)
  */
-export async function canEnableReminder(userId: string): Promise<ValidationResult> {
+export async function canEnableReminder(userId: string, invoiceId?: string): Promise<ValidationResult> {
   const plan = await getUserPlan(userId);
 
   if (plan === 'monthly' || plan === 'pay_per_invoice') {
     return { allowed: true };
   }
 
-  // Free plan: Check monthly reminder limit (global)
-  const { start, end } = getCurrentMonthBoundaries();
-  
-  // Count reminders sent this month using reliable method
-  // Get all invoice IDs for this user first
-  const { data: userInvoices } = await supabaseAdmin
-    .from('invoices')
-    .select('id')
-    .eq('user_id', userId);
-  
-  let used = 0;
-  if (userInvoices && userInvoices.length > 0) {
-    const invoiceIds = userInvoices.map(inv => inv.id);
-    
-    // Count reminders for these invoices
+  // Free plan: Check if invoice already has 4 reminders
+  // If invoiceId is provided, check that specific invoice
+  // If not provided, this is a general check (for UI purposes)
+  if (invoiceId) {
     const { count, error } = await supabaseAdmin
       .from('invoice_reminders')
       .select('*', { count: 'exact', head: true })
-      .in('invoice_id', invoiceIds)
-      .eq('reminder_status', 'sent')
-      .gte('sent_at', start)
-      .lte('sent_at', end);
+      .eq('invoice_id', invoiceId)
+      .eq('reminder_status', 'sent');
     
     if (error) {
-      console.error('Error counting reminders:', error);
-      used = 0;
-    } else {
-      used = count || 0;
+      console.error('Error counting reminders for invoice:', error);
+      return { allowed: true }; // Allow on error
     }
-  }
-
-  const limit = 4;
-
-  if (used >= limit) {
-    return {
-      allowed: false,
-      reason: 'Free plan limit reached. You can send up to 4 auto reminders per month. Please upgrade for unlimited reminders.',
-      limitType: 'reminders'
-    };
+    
+    const limit = 4; // 4 reminders per invoice for free plan
+    if ((count || 0) >= limit) {
+      return {
+        allowed: false,
+        reason: 'Free plan limit reached. You can send up to 4 reminders per invoice. Please upgrade for unlimited reminders.',
+        limitType: 'reminders'
+      };
+    }
   }
 
   return { allowed: true };
@@ -294,10 +279,10 @@ export async function getUsageStats(userId: string): Promise<SubscriptionLimits>
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId);
 
-  // Get reminder count for current month (same method as canEnableReminder)
+  // Get reminder count: For free plan, count total reminders sent (4 per invoice, up to 5 invoices = 20 total)
   let reminderCount = 0;
   if (plan === 'free') {
-    // Get all invoice IDs for this user first
+    // Get all invoice IDs for this user
     const { data: userInvoices } = await supabaseAdmin
       .from('invoices')
       .select('id')
@@ -306,14 +291,12 @@ export async function getUsageStats(userId: string): Promise<SubscriptionLimits>
     if (userInvoices && userInvoices.length > 0) {
       const invoiceIds = userInvoices.map(inv => inv.id);
       
-      // Count reminders for these invoices
+      // Count total reminders sent for all invoices
       const { count, error } = await supabaseAdmin
         .from('invoice_reminders')
         .select('*', { count: 'exact', head: true })
         .in('invoice_id', invoiceIds)
-        .eq('reminder_status', 'sent')
-        .gte('sent_at', start)
-        .lte('sent_at', end);
+        .eq('reminder_status', 'sent');
       
       if (!error && count !== null) {
         reminderCount = count;
@@ -335,7 +318,7 @@ export async function getUsageStats(userId: string): Promise<SubscriptionLimits>
       used: estimateCount || 0
     },
     reminders: {
-      limit: plan === 'free' ? 4 : null,
+      limit: plan === 'free' ? 20 : null, // 4 reminders per invoice × 5 invoices = 20 total for free plan
       used: reminderCount || 0
     },
     templates: {

@@ -232,22 +232,6 @@ async function processReminders(request: NextRequest) {
         continue;
       }
 
-      // CRITICAL: Check subscription reminder limit BEFORE sending
-      // Free plan users are limited to 4 reminders per month (global limit)
-      const reminderLimitCheck = await canEnableReminder(invoice.user_id);
-      if (!reminderLimitCheck.allowed) {
-        console.log(`⏭️ Skipping reminder for invoice ${invoice.invoice_number} - subscription limit reached: ${reminderLimitCheck.reason}`);
-        await supabaseAdmin
-          .from('invoice_reminders')
-          .update({
-            reminder_status: 'cancelled',
-            failure_reason: reminderLimitCheck.reason || 'Free plan reminder limit reached (4 per month). Please upgrade for unlimited reminders.'
-          })
-          .eq('id', reminder.id);
-        skippedCount++;
-        continue;
-      }
-
       try {
         // Double-check reminder is still scheduled before processing (prevent race conditions)
         const { data: currentReminder } = await supabaseAdmin
@@ -258,6 +242,23 @@ async function processReminders(request: NextRequest) {
         
         if (currentReminder?.reminder_status !== 'scheduled') {
           console.log(`⏭️ Skipping reminder ${reminder.id} - already processed (status: ${currentReminder?.reminder_status})`);
+          skippedCount++;
+          continue;
+        }
+        
+        // CRITICAL: Check subscription reminder limit BEFORE sending
+        // Free plan users are limited to 1 reminder per invoice
+        // Check AFTER verifying reminder is still scheduled to prevent race conditions
+        const reminderLimitCheck = await canEnableReminder(invoice.user_id, invoice.id);
+        if (!reminderLimitCheck.allowed) {
+          console.log(`⏭️ Skipping reminder for invoice ${invoice.invoice_number} - subscription limit reached: ${reminderLimitCheck.reason}`);
+          await supabaseAdmin
+            .from('invoice_reminders')
+            .update({
+              reminder_status: 'cancelled',
+              failure_reason: reminderLimitCheck.reason || 'Free plan reminder limit reached (1 per invoice). Please upgrade for unlimited reminders.'
+            })
+            .eq('id', reminder.id);
           skippedCount++;
           continue;
         }
@@ -283,6 +284,26 @@ async function processReminders(request: NextRequest) {
         console.log(`✅ Email sent successfully - ID: ${emailResult.id}`);
         
         const now = new Date().toISOString();
+        
+        // CRITICAL: Check limit AGAIN after sending but before marking as sent
+        // This prevents race conditions where multiple reminders check limit simultaneously
+        const finalLimitCheck = await canEnableReminder(invoice.user_id, invoice.id);
+        if (!finalLimitCheck.allowed) {
+          // Limit was reached by another reminder sent in parallel
+          // Mark this one as cancelled (email was sent but we're not counting it)
+          console.log(`⚠️ Limit reached after sending - marking reminder ${reminder.id} as cancelled`);
+          await supabaseAdmin
+            .from('invoice_reminders')
+            .update({
+              reminder_status: 'cancelled',
+              failure_reason: 'Limit reached - this invoice already has 1 reminder',
+              sent_at: now,
+              email_id: emailResult.id || null
+            })
+            .eq('id', reminder.id);
+          skippedCount++;
+          continue;
+        }
         
         // Update reminder status to sent with actual sent timestamp
         const { error: updateError } = await supabaseAdmin

@@ -114,7 +114,7 @@ const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onRemove }) => 
   if (!toasts || toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 sm:bottom-auto sm:top-4 sm:left-auto sm:right-4 sm:max-w-sm z-50 space-y-2 sm:space-y-3 pointer-events-none">
+    <div className="fixed bottom-4 left-4 right-4 sm:bottom-auto sm:top-4 sm:left-auto sm:right-4 sm:max-w-sm z-[70] space-y-2 sm:space-y-3 pointer-events-none">
       <div className="space-y-2 sm:space-y-3 pointer-events-auto">
         {toasts.map((toast) => (
           <ToastComponent
