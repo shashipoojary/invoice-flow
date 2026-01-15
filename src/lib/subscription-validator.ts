@@ -123,16 +123,19 @@ export async function canCreateInvoice(userId: string): Promise<ValidationResult
 
 /**
  * Check if user can create a client
- * FREE PLAN: Max 1 client
+ * FREE PLAN & PAY_PER_INVOICE: Max 1 client
+ * MONTHLY PLAN: Unlimited clients
  */
 export async function canCreateClient(userId: string): Promise<ValidationResult> {
   const plan = await getUserPlan(userId);
 
-  if (plan === 'monthly' || plan === 'pay_per_invoice') {
+  // Only monthly plan has unlimited clients
+  // pay_per_invoice has same limits as free plan (1 client)
+  if (plan === 'monthly') {
     return { allowed: true };
   }
 
-  // Free plan: Check client limit
+  // Free plan and pay_per_invoice: Check client limit (1 client)
   const { count } = await supabaseAdmin
     .from('clients')
     .select('*', { count: 'exact', head: true })
@@ -144,7 +147,9 @@ export async function canCreateClient(userId: string): Promise<ValidationResult>
   if (used >= limit) {
     return {
       allowed: false,
-      reason: 'Free plan limit reached. You can create up to 1 client. Please upgrade to create more clients.',
+      reason: plan === 'pay_per_invoice' 
+        ? 'Pay Per Invoice plan limit reached. You can create up to 1 client. Please upgrade to Monthly plan to create unlimited clients.'
+        : 'Free plan limit reached. You can create up to 1 client. Please upgrade to create more clients.',
       limitType: 'clients'
     };
   }
@@ -154,16 +159,19 @@ export async function canCreateClient(userId: string): Promise<ValidationResult>
 
 /**
  * Check if user can create an estimate
- * FREE PLAN: Max 1 estimate
+ * FREE PLAN & PAY_PER_INVOICE: Max 1 estimate
+ * MONTHLY PLAN: Unlimited estimates
  */
 export async function canCreateEstimate(userId: string): Promise<ValidationResult> {
   const plan = await getUserPlan(userId);
 
-  if (plan === 'monthly' || plan === 'pay_per_invoice') {
+  // Only monthly plan has unlimited estimates
+  // pay_per_invoice has same limits as free plan (1 estimate)
+  if (plan === 'monthly') {
     return { allowed: true };
   }
 
-  // Free plan: Check estimate limit
+  // Free plan and pay_per_invoice: Check estimate limit (1 estimate)
   const { count } = await supabaseAdmin
     .from('estimates')
     .select('*', { count: 'exact', head: true })
@@ -175,7 +183,9 @@ export async function canCreateEstimate(userId: string): Promise<ValidationResul
   if (used >= limit) {
     return {
       allowed: false,
-      reason: 'Free plan limit reached. You can create up to 1 estimate. Please upgrade to create more estimates.',
+      reason: plan === 'pay_per_invoice'
+        ? 'Pay Per Invoice plan limit reached. You can create up to 1 estimate. Please upgrade to Monthly plan to create unlimited estimates.'
+        : 'Free plan limit reached. You can create up to 1 estimate. Please upgrade to create more estimates.',
       limitType: 'estimates'
     };
   }
@@ -347,11 +357,13 @@ export async function getUsageStats(userId: string): Promise<SubscriptionLimits>
       used: invoiceCount || 0
     },
     clients: {
-      limit: plan === 'free' ? 1 : null,
+      // Free and pay_per_invoice: 1 client limit, Monthly: unlimited (null)
+      limit: (plan === 'free' || plan === 'pay_per_invoice') ? 1 : null,
       used: clientCount || 0
     },
     estimates: {
-      limit: plan === 'free' ? 1 : null,
+      // Free and pay_per_invoice: 1 estimate limit, Monthly: unlimited (null)
+      limit: (plan === 'free' || plan === 'pay_per_invoice') ? 1 : null,
       used: estimateCount || 0
     },
     reminders: {

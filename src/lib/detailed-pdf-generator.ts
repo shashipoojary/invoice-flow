@@ -1158,21 +1158,23 @@ async function generateTemplate3PDF(
 ): Promise<Uint8Array> {
   const { width, height } = page.getSize();
 
-  // Business information with creative styling (header removed)
+  // Business information with creative styling - moved up significantly to prevent overlap
+  // Reference: Modern template uses height - 50 for business name and height - 60 for contact info WITH a header
+  // Creative template has no header, so we need to move business details much higher from top
   page.drawText(businessSettings.businessName || 'Your Business', {
     x: 50,
-    y: height - 60,
+    y: height - 30, // Moved up significantly (10px more than previous, 20px more than Modern) to prevent overlap
     size: 20,
     font: boldFont,
     color: rgb(0, 0, 0),
   });
 
-  // Business contact information with consistent spacing
+  // Business contact information with consistent spacing - moved up significantly to prevent overlap
   // Max width: 250px (from x: 50 to x: 300, leaving 100px buffer for invoice details at x: 400)
   // Reduced from 300px to prevent overlap with invoice details card
   const maxContactWidth = 250;
   
-  let contactY = height - 75;
+  let contactY = height - 40; // Moved up significantly (10px more than previous, 20px more than Modern) to prevent overlap
   if (businessSettings.address) {
     const addressLines = formatAddressForPDF(businessSettings.address, businessSettings);
     let currentY = contactY;

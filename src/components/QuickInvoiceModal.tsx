@@ -628,13 +628,36 @@ export default function QuickInvoiceModal({
       
       // Set theme
       if (editingInvoice.theme) {
-        const invoiceTheme = editingInvoice.theme as { template?: number; primaryColor: string; secondaryColor: string; accentColor: string };
+        const invoiceTheme = editingInvoice.theme as { template?: number; primaryColor?: string; primary_color?: string; secondaryColor?: string; secondary_color?: string; accentColor?: string; accent_color?: string };
+        // CRITICAL: Template in database is already in UI format (1, 2, 3), not PDF format
+        // Only use getUiTemplate if template is > 3 (PDF format), otherwise use as-is
+        let templateId = invoiceTheme.template || 1;
+        if (templateId > 3) {
+          // If template is in PDF format (4, 5, 6), convert to UI format
+          templateId = getUiTemplate(templateId);
+        }
+        
         setTheme({
-          template: invoiceTheme.template ? getUiTemplate(invoiceTheme.template) : 1,
-          primaryColor: invoiceTheme.primaryColor,
-          secondaryColor: invoiceTheme.secondaryColor,
-          accentColor: invoiceTheme.accentColor
-        })
+          template: templateId,
+          primaryColor: invoiceTheme.primaryColor || invoiceTheme.primary_color || '#5C2D91',
+          secondaryColor: invoiceTheme.secondaryColor || invoiceTheme.secondary_color || '#8B5CF6',
+          accentColor: invoiceTheme.accentColor || invoiceTheme.accent_color || '#8B5CF6'
+        });
+        
+        // CRITICAL FIX: If invoice has premium template (2 or 3) and is draft,
+        // check if user is on pay_per_invoice and unlock optimistically
+        // This ensures the template stays unlocked when editing drafts
+        if (editingInvoice.status === 'draft' && (templateId === 2 || templateId === 3)) {
+          fetchSubscriptionUsage().then(usageData => {
+            if (usageData && usageData.plan === 'pay_per_invoice') {
+              console.log(`🔓 Draft invoice has premium template ${templateId}. Setting premium unlock optimistically.`);
+              setIsPremiumUnlocked(true);
+              setUnlockedTemplate(templateId);
+            }
+          }).catch(err => {
+            console.error('Error checking subscription for draft premium unlock:', err);
+          });
+        }
       }
     }
   }, [isOpen, editingInvoice])
@@ -649,18 +672,30 @@ export default function QuickInvoiceModal({
             headers,
             cache: 'no-store' 
           });
+          let isUnlocked = false;
           if (response.ok) {
             const data = await response.json();
-            const isUnlocked = data.isPremiumUnlocked || false;
-            console.log(`🔓 Premium unlock status for invoice ${editingInvoice.id}:`, isUnlocked);
+            isUnlocked = data.isPremiumUnlocked || false;
+            const unlockedTemplateFromApi = data.unlockedTemplate || null;
+            console.log(`🔓 Premium unlock status for invoice ${editingInvoice.id}:`, isUnlocked, 'unlockedTemplate:', unlockedTemplateFromApi);
+            
             setIsPremiumUnlocked(isUnlocked);
-            // If premium is unlocked, check which template was used (from invoice theme)
-            if (isUnlocked && editingInvoice.theme) {
+            
+            // CRITICAL: Set unlockedTemplate from API response
+            if (unlockedTemplateFromApi) {
+              setUnlockedTemplate(unlockedTemplateFromApi);
+            } else if (isUnlocked && editingInvoice.theme) {
+              // Fallback: get template from invoice theme if API didn't return it
               try {
                 const invoiceTheme = typeof editingInvoice.theme === 'string' 
                   ? JSON.parse(editingInvoice.theme) 
                   : editingInvoice.theme;
-                const templateId = invoiceTheme.template ? getUiTemplate(invoiceTheme.template) : null;
+                // Template in database is already in UI format (1, 2, 3)
+                let templateId = invoiceTheme.template || null;
+                if (templateId && templateId > 3) {
+                  // If template is in PDF format, convert to UI format
+                  templateId = getUiTemplate(templateId);
+                }
                 if (templateId && (templateId === 2 || templateId === 3)) {
                   setUnlockedTemplate(templateId);
                 }
@@ -671,6 +706,7 @@ export default function QuickInvoiceModal({
           } else {
             console.error('Failed to fetch premium status:', response.status);
             setIsPremiumUnlocked(false);
+            setUnlockedTemplate(null);
           }
         } catch (error) {
           console.error('Error fetching premium status:', error);
@@ -683,7 +719,7 @@ export default function QuickInvoiceModal({
       setIsPremiumUnlocked(false);
       setUnlockedTemplate(null);
     }
-  }, [isOpen, editingInvoice?.id, getAuthHeaders])
+  }, [isOpen, editingInvoice?.id, editingInvoice?.theme, editingInvoice?.status, getAuthHeaders, fetchSubscriptionUsage])
 
   const addItem = () => {
     setItems([...items, { 
@@ -1015,7 +1051,11 @@ export default function QuickInvoiceModal({
           primary_color: theme.primaryColor,
           secondary_color: theme.secondaryColor,
           accent_color: theme.accentColor
-        }
+        },
+        // CRITICAL: Save premium unlock status to metadata for draft invoices
+        // This ensures the unlock persists when editing drafts
+        premium_unlocked: isPremiumUnlocked,
+        unlocked_template: unlockedTemplate
       }
 
       const headers = await getAuthHeaders()
@@ -1262,6 +1302,10 @@ export default function QuickInvoiceModal({
           secondary_color: theme.secondaryColor,
           accent_color: theme.accentColor
         },
+        // CRITICAL: Save premium unlock status to metadata for draft invoices
+        // This ensures the unlock persists when editing drafts
+        premium_unlocked: isPremiumUnlocked,
+        unlocked_template: unlockedTemplate,
         // PDF generation flag
         generate_pdf_only: true
       }
@@ -2107,18 +2151,27 @@ export default function QuickInvoiceModal({
                   <TemplateSelector
                     selectedTemplate={theme.template}
                     onTemplateSelect={(template) => {
-                      // If premium unlocked, only allow the unlocked template (not both 2 & 3)
+                      // CRITICAL: If premium unlocked, only allow the unlocked template (not both 2 & 3)
                       if (isPremiumUnlocked && unlockedTemplate) {
-                        // Only allow switching to the template that was unlocked
+                        // Only allow switching to the template that was unlocked OR template 1 (free)
                         if (template === unlockedTemplate || template === 1) {
                           setTheme(prevTheme => ({...prevTheme, template}))
                           return
                         } else {
-                          showError(`Only Template ${unlockedTemplate} is unlocked for this invoice. You can switch to Template 1 (free) or keep Template ${unlockedTemplate}.`);
+                          // Block switching to the other premium template
+                          showError(`Only Template ${unlockedTemplate} is unlocked for this invoice. You can switch to Template 1 (free) or keep Template ${unlockedTemplate}. To use Template ${template}, you would need to purchase it separately.`);
                           return
                         }
                       } else if (isPremiumUnlocked && !unlockedTemplate) {
-                        // Fallback: if premium is unlocked but no specific template tracked, allow all
+                        // Fallback: if premium is unlocked but no specific template tracked, check current theme
+                        // If current theme has premium template, lock the other one
+                        if (theme.template === 2 && template === 3) {
+                          showError('Only Template 2 is unlocked for this invoice. You can switch to Template 1 (free) or keep Template 2.');
+                          return
+                        } else if (theme.template === 3 && template === 2) {
+                          showError('Only Template 3 is unlocked for this invoice. You can switch to Template 1 (free) or keep Template 3.');
+                          return
+                        }
                         setTheme(prevTheme => ({...prevTheme, template}))
                         return
                       }

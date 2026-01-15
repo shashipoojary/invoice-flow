@@ -222,7 +222,9 @@ export async function PUT(request: NextRequest) {
       reminderSettings,
       late_fees,
       payment_terms,
-      theme
+      theme,
+      premium_unlocked,
+      unlocked_template
     } = body
 
     if (!invoiceId) {
@@ -278,6 +280,13 @@ export async function PUT(request: NextRequest) {
         late_fees: late_fees ? JSON.stringify(late_fees) : null,
         payment_terms: payment_terms ? JSON.stringify(payment_terms) : null,
         theme: theme ? JSON.stringify(theme) : null,
+        // CRITICAL: Save premium unlock status to metadata for draft invoices
+        // This ensures the unlock persists when editing drafts
+        metadata: (premium_unlocked || unlocked_template) ? JSON.stringify({
+          premium_unlocked: premium_unlocked || false,
+          unlocked_template: unlocked_template || null,
+          premium_unlocked_at: premium_unlocked ? new Date().toISOString() : null
+        }) : null,
         updated_at: new Date().toISOString()
       })
       .eq('id', invoiceId)

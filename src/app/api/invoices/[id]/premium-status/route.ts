@@ -17,12 +17,13 @@ export async function GET(
     // First, check invoice metadata for premium_unlocked flag
     const { data: invoice } = await supabaseAdmin
       .from('invoices')
-      .select('metadata')
+      .select('metadata, status, theme')
       .eq('id', id)
       .eq('user_id', user.id)
       .single()
 
     let metadataUnlocked = false;
+    let unlockedTemplate = null;
     if (invoice?.metadata) {
       try {
         const metadata = typeof invoice.metadata === 'string' 
@@ -30,8 +31,29 @@ export async function GET(
           : invoice.metadata;
         
         metadataUnlocked = metadata.premium_unlocked === true;
+        unlockedTemplate = metadata.unlocked_template || null;
       } catch (error) {
         console.error('Error parsing invoice metadata:', error)
+      }
+    }
+    
+    // CRITICAL FIX: For draft invoices, also check if theme has premium template
+    // This handles cases where premium unlock was set but metadata wasn't saved yet
+    // Template in database is stored in UI format (1, 2, 3), not PDF format
+    if (!metadataUnlocked && invoice?.status === 'draft' && invoice?.theme) {
+      try {
+        const invoiceTheme = typeof invoice.theme === 'string' 
+          ? JSON.parse(invoice.theme) 
+          : invoice.theme;
+        const templateId = invoiceTheme?.template;
+        // If draft has premium template (2 or 3), unlock optimistically
+        // Template is already in UI format (1, 2, 3), so check directly
+        if (templateId === 2 || templateId === 3) {
+          metadataUnlocked = true;
+          unlockedTemplate = templateId;
+        }
+      } catch (error) {
+        console.error('Error parsing invoice theme for draft unlock:', error)
       }
     }
     
@@ -49,7 +71,8 @@ export async function GET(
     const isUnlocked = metadataUnlocked || !!billingRecord;
 
     return NextResponse.json({
-      isPremiumUnlocked: isUnlocked
+      isPremiumUnlocked: isUnlocked,
+      unlockedTemplate: unlockedTemplate || null
     })
   } catch (error) {
     console.error('Error checking premium status:', error)

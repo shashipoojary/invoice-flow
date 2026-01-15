@@ -624,6 +624,13 @@ export async function POST(request: NextRequest) {
         return JSON.stringify(settings);
       })() : JSON.stringify({ enabled: false, useSystemDefaults: true, customRules: [] })),
       theme: invoiceTheme ? JSON.stringify(invoiceTheme) : null,
+      // CRITICAL: Save premium unlock status to metadata for draft invoices
+      // This ensures the unlock persists when editing drafts
+      metadata: (invoiceData.premium_unlocked || invoiceData.unlocked_template) ? JSON.stringify({
+        premium_unlocked: invoiceData.premium_unlocked || false,
+        unlocked_template: invoiceData.unlocked_template || null,
+        premium_unlocked_at: invoiceData.premium_unlocked ? new Date().toISOString() : null
+      }) : null,
     };
 
     // Insert invoice

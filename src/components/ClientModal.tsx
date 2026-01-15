@@ -105,9 +105,13 @@ export default function ClientModal({
     if (!editingClient) {
       setIsCreatingClient(true);
       const usageData = await fetchSubscriptionUsage();
-      if (usageData && usageData.plan === 'free' && usageData.clients && usageData.clients.used >= usageData.clients.limit) {
+      // Check limit for both free and pay_per_invoice plans (both have 1 client limit)
+      if (usageData && (usageData.plan === 'free' || usageData.plan === 'pay_per_invoice') && usageData.clients && usageData.clients.used >= usageData.clients.limit) {
         setIsCreatingClient(false);
-        showError('You\'ve reached your client limit. Free plan users can create up to 1 client. Please upgrade to create more clients.');
+        const errorMessage = usageData.plan === 'pay_per_invoice'
+          ? 'You\'ve reached your client limit. Pay Per Invoice plan users can create up to 1 client. Please upgrade to Monthly plan to create unlimited clients.'
+          : 'You\'ve reached your client limit. Free plan users can create up to 1 client. Please upgrade to create more clients.';
+        showError(errorMessage);
         setShowUpgradeContent(true);
         setShowUpgradeModal(true);
         setSubscriptionUsage(usageData);

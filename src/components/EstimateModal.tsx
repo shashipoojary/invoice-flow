@@ -266,10 +266,13 @@ export default function EstimateModal({
     // Check subscription limit BEFORE creating estimate (only for new estimates, not editing)
     if (!isEditMode) {
       const usageData = await fetchSubscriptionUsage()
-      // Check estimate limit specifically
-      if (usageData && usageData.plan === 'free' && usageData.estimates && usageData.estimates.limit && usageData.estimates.used >= usageData.estimates.limit) {
+      // Check estimate limit for both free and pay_per_invoice plans (both have 1 estimate limit)
+      if (usageData && (usageData.plan === 'free' || usageData.plan === 'pay_per_invoice') && usageData.estimates && usageData.estimates.limit && usageData.estimates.used >= usageData.estimates.limit) {
         setLoading(false)
-        showError('Error', 'You\'ve reached your estimate limit. Please upgrade to create more estimates.')
+        const errorMessage = usageData.plan === 'pay_per_invoice'
+          ? 'You\'ve reached your estimate limit. Pay Per Invoice plan users can create up to 1 estimate. Please upgrade to Monthly plan to create unlimited estimates.'
+          : 'You\'ve reached your estimate limit. Please upgrade to create more estimates.';
+        showError('Error', errorMessage)
         // Show upgrade modal
         setShowUpgradeContent(true)
         setShowUpgradeModal(true)
