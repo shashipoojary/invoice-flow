@@ -459,15 +459,21 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
           } else {
             try { updateInvoice && updateInvoice({ ...invoice, status: 'sent' as const }) } catch {}
           }
-          try { await refreshInvoices?.() } catch {}
-          showSuccess('Invoice created and sent successfully!')
+          showSuccess(isEditing ? 'Invoice updated and sent successfully!' : 'Invoice created and sent successfully!')
+          // Close modal immediately after successful send (don't wait for refresh)
+          onSuccess()
+          onClose()
+          resetForm()
+          // Refresh invoices in background (non-blocking)
+          refreshInvoices?.().catch(() => {})
+          return // Exit early to prevent further execution
         } else {
           let errorMsg = 'Invoice created but failed to send. You can send it later from the invoice list.'
           try { const err = await sendResponse.json(); if (err?.error) errorMsg = err.error } catch {}
           showWarning(errorMsg)
         }
         
-        // update global invoices cache
+        // update global invoices cache (only if send failed)
         if (isEditing) {
           // Preserve 'sent' status when we just sent the invoice
           const updated = sendLoading ? { ...invoice, status: 'sent' as const } : invoice

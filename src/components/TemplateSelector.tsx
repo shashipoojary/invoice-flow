@@ -14,6 +14,7 @@ interface TemplateSelectorProps {
   userPlan?: 'free' | 'monthly' | 'pay_per_invoice'
   freeInvoicesRemaining?: number // For Pay Per Invoice users
   isPremiumUnlocked?: boolean // Premium features unlocked for this invoice
+  unlockedTemplate?: number | null // Which specific template was unlocked (2 or 3)
   onPremiumColorSelect?: (primary: string, secondary: string) => boolean | void // Return false to prevent color change
 }
 
@@ -77,6 +78,7 @@ export default function TemplateSelector({
   userPlan = 'free',
   freeInvoicesRemaining = 0,
   isPremiumUnlocked = false,
+  unlockedTemplate = null,
   onPremiumColorSelect
 }: TemplateSelectorProps) {
   const [showColorPicker, setShowColorPicker] = useState(false)
@@ -133,17 +135,19 @@ export default function TemplateSelector({
             const isSelected = selectedTemplate === template.id;
             // For free plan: lock templates 2/3
             // For Pay Per Invoice: show premium symbol if template 2/3 and has free invoices
-            // If premium unlocked, no locks
+            // If premium unlocked, only the unlocked template is available (not both 2 & 3)
             const isLocked = !isPremiumUnlocked && userPlan === 'free' && template.id !== 1;
+            // Show premium lock if: not premium unlocked, OR premium unlocked but this is not the unlocked template
             const isPremium = !isPremiumUnlocked && userPlan === 'pay_per_invoice' && freeInvoicesRemaining > 0 && template.id !== 1;
+            const isLockedEvenWithPremium = isPremiumUnlocked && unlockedTemplate && template.id !== 1 && template.id !== unlockedTemplate && template.id !== 1;
             
             return (
               <div
                 key={template.id}
                 data-testid={`template-${template.id}`}
-                onClick={() => !isLocked && handleTemplateSelect(template.id)}
+                onClick={() => !isLocked && !isLockedEvenWithPremium && handleTemplateSelect(template.id)}
                 className={`relative border p-3 transition-all duration-200 ${
-                  isLocked
+                  isLocked || isLockedEvenWithPremium
                     ? 'cursor-not-allowed opacity-50'
                     : 'cursor-pointer'
                 } ${
@@ -161,14 +165,14 @@ export default function TemplateSelector({
                     <Check className="h-3 w-3 text-white" />
                   </div>
                 )}
-                {isLocked && (
+                {(isLocked || isLockedEvenWithPremium) && (
                   <div className="absolute top-2 right-2 w-5 h-5 bg-gray-400 rounded-full flex items-center justify-center">
                     <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                     </svg>
                   </div>
                 )}
-                {isPremium && !isSelected && (
+                {isPremium && !isSelected && !isLockedEvenWithPremium && (
                   <div className="absolute top-2 right-2 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center">
                     <Star className="h-3 w-3 text-white fill-white" />
                   </div>
@@ -186,10 +190,10 @@ export default function TemplateSelector({
                       isDarkMode ? 'text-white' : 'text-gray-900'
                     }`}>
                       {template.name}
-                      {isLocked && (
+                      {(isLocked || isLockedEvenWithPremium) && (
                         <span className="ml-1 text-xs text-orange-600">(Locked)</span>
                       )}
-                      {isPremium && (
+                      {isPremium && !isLockedEvenWithPremium && (
                         <span className="ml-1 text-xs text-yellow-600">
                           Premium
                         </span>

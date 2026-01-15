@@ -576,13 +576,13 @@ export default function ReminderHistoryPage() {
                 )}
               </div>
               
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-0.5 sm:space-x-1 flex-shrink-0">
                 {/* Only show manual send button for failed reminders (not cancelled) */}
                 {reminder.reminder_status === 'failed' && !reminder.failure_reason?.includes('Invoice already paid') && !reminder.failure_reason?.includes('Invoice fully paid') && !reminder.failure_reason?.includes('reminders cancelled') && (
                   <button
                     onClick={() => sendManualReminder(reminder.invoice_id, reminder.reminder_type)}
                     disabled={sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`)}
-                    className={`p-1.5 transition-colors hover:bg-gray-100 ${
+                    className={`p-1.5 sm:p-1.5 transition-colors hover:bg-gray-100 flex-shrink-0 ${
                       sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                     }`}
                     title="Send again"
@@ -596,7 +596,7 @@ export default function ReminderHistoryPage() {
                 )}
                 <button
                   onClick={() => handleViewReminder(reminder)}
-                  className="p-1.5 transition-colors hover:bg-gray-100 cursor-pointer"
+                  className="p-1.5 sm:p-1.5 transition-colors hover:bg-gray-100 cursor-pointer flex-shrink-0"
                   title="View reminder details"
                 >
                   <Eye className="h-4 w-4 text-gray-700" />
@@ -664,13 +664,13 @@ export default function ReminderHistoryPage() {
                   </span>
                 )}
               </div>
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-0.5 sm:space-x-1 flex-shrink-0">
                 {/* Only show manual send button for failed reminders (not cancelled) */}
                 {reminder.reminder_status === 'failed' && !reminder.failure_reason?.includes('Invoice already paid') && !reminder.failure_reason?.includes('Invoice fully paid') && !reminder.failure_reason?.includes('reminders cancelled') && (
                   <button
                     onClick={() => sendManualReminder(reminder.invoice_id, reminder.reminder_type)}
                     disabled={sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`)}
-                    className={`p-1.5 transition-colors hover:bg-gray-100 ${
+                    className={`p-1.5 sm:p-1.5 transition-colors hover:bg-gray-100 flex-shrink-0 ${
                       sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                     }`}
                     title="Send again"
@@ -684,7 +684,7 @@ export default function ReminderHistoryPage() {
                 )}
                 <button
                   onClick={() => handleViewReminder(reminder)}
-                  className="p-1.5 transition-colors hover:bg-gray-100 cursor-pointer"
+                  className="p-1.5 sm:p-1.5 transition-colors hover:bg-gray-100 cursor-pointer flex-shrink-0"
                   title="View reminder details"
                 >
                   <Eye className="h-4 w-4 text-gray-700" />

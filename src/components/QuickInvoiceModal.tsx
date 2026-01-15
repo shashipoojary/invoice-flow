@@ -122,6 +122,7 @@ export default function QuickInvoiceModal({
   const [pendingTemplate, setPendingTemplate] = useState<number | null>(null)
   const [pendingColors, setPendingColors] = useState<{ primary: string; secondary: string } | null>(null)
   const [isPremiumUnlocked, setIsPremiumUnlocked] = useState(false)
+  const [unlockedTemplate, setUnlockedTemplate] = useState<number | null>(null) // Track which specific template was unlocked
   
   const router = useRouter()
   const { user } = useAuth()
@@ -653,6 +654,20 @@ export default function QuickInvoiceModal({
             const isUnlocked = data.isPremiumUnlocked || false;
             console.log(`🔓 Premium unlock status for invoice ${editingInvoice.id}:`, isUnlocked);
             setIsPremiumUnlocked(isUnlocked);
+            // If premium is unlocked, check which template was used (from invoice theme)
+            if (isUnlocked && editingInvoice.theme) {
+              try {
+                const invoiceTheme = typeof editingInvoice.theme === 'string' 
+                  ? JSON.parse(editingInvoice.theme) 
+                  : editingInvoice.theme;
+                const templateId = invoiceTheme.template ? getUiTemplate(invoiceTheme.template) : null;
+                if (templateId && (templateId === 2 || templateId === 3)) {
+                  setUnlockedTemplate(templateId);
+                }
+              } catch (error) {
+                console.error('Error parsing invoice theme:', error);
+              }
+            }
           } else {
             console.error('Failed to fetch premium status:', response.status);
             setIsPremiumUnlocked(false);
@@ -666,6 +681,7 @@ export default function QuickInvoiceModal({
     } else if (isOpen && !editingInvoice) {
       // Reset premium unlock when creating new invoice
       setIsPremiumUnlocked(false);
+      setUnlockedTemplate(null);
     }
   }, [isOpen, editingInvoice?.id, getAuthHeaders])
 
@@ -1079,8 +1095,15 @@ export default function QuickInvoiceModal({
             } else {
               try { updateInvoice && updateInvoice({ ...result.invoice, status: 'sent' as const }) } catch {}
             }
-            try { await refreshInvoices?.() } catch {}
-            showSuccess('Invoice created and sent successfully!')
+            showSuccess(isEditing ? 'Invoice updated and sent successfully!' : 'Invoice created and sent successfully!')
+            // Close modal immediately after successful send (don't wait for refresh)
+            onSuccess()
+            onClose()
+            setShouldSend(false)
+            shouldSendRef.current = false
+            // Refresh invoices in background (non-blocking)
+            refreshInvoices?.().catch(() => {})
+            return // Exit early to prevent further execution
           } else {
             let errorMsg = 'Invoice created but failed to send. You can send it later from the invoice list.'
             try { const err = await sendResponse.json(); if (err?.error) errorMsg = err.error } catch {}
@@ -2084,8 +2107,18 @@ export default function QuickInvoiceModal({
                   <TemplateSelector
                     selectedTemplate={theme.template}
                     onTemplateSelect={(template) => {
-                      // If premium unlocked, allow all templates
-                      if (isPremiumUnlocked) {
+                      // If premium unlocked, only allow the unlocked template (not both 2 & 3)
+                      if (isPremiumUnlocked && unlockedTemplate) {
+                        // Only allow switching to the template that was unlocked
+                        if (template === unlockedTemplate || template === 1) {
+                          setTheme(prevTheme => ({...prevTheme, template}))
+                          return
+                        } else {
+                          showError(`Only Template ${unlockedTemplate} is unlocked for this invoice. You can switch to Template 1 (free) or keep Template ${unlockedTemplate}.`);
+                          return
+                        }
+                      } else if (isPremiumUnlocked && !unlockedTemplate) {
+                        // Fallback: if premium is unlocked but no specific template tracked, allow all
                         setTheme(prevTheme => ({...prevTheme, template}))
                         return
                       }
@@ -2097,12 +2130,12 @@ export default function QuickInvoiceModal({
                       }
                       
                       // Check if Pay Per Invoice user with free invoices trying to use premium template (2 or 3)
-                      // Note: Paying for ANY premium template unlocks BOTH templates 2 & 3
+                      // Note: Paying for a premium template unlocks only that specific template, plus all colors and unlimited reminders
                       if (subscriptionUsage?.plan === 'pay_per_invoice' && 
                           subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining && 
                           subscriptionUsage.payPerInvoice.freeInvoicesRemaining > 0 && 
                           template !== 1) {
-                        // Show confirmation modal - paying for ANY premium template unlocks BOTH
+                        // Show confirmation modal - paying for this template unlocks only this template, plus all colors and reminders
                         setPendingTemplate(template);
                         setPremiumFeatureType('template');
                         setShowPremiumFeatureConfirm(true);
@@ -2219,6 +2252,7 @@ export default function QuickInvoiceModal({
                     userPlan={subscriptionUsage?.plan as 'free' | 'monthly' | 'pay_per_invoice' || 'free'}
                     freeInvoicesRemaining={subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining || 0}
                     isPremiumUnlocked={isPremiumUnlocked}
+                    unlockedTemplate={unlockedTemplate}
                     onPremiumColorSelect={(primary: string, secondary: string) => {
                       // Store pending colors and show confirmation modal - return false to prevent color change
                       setPendingColors({ primary, secondary })
@@ -3216,10 +3250,12 @@ export default function QuickInvoiceModal({
           }}
           onConfirm={() => {
             if (premiumFeatureType === 'template' && pendingTemplate) {
-              // User confirmed - unlock ALL premium features (both templates 2 & 3, all colors, unlimited reminders)
+              // User confirmed - unlock premium features for this invoice (selected template, all colors, unlimited reminders)
+              // Note: Only the selected template is unlocked, not both templates 2 & 3
               setIsPremiumUnlocked(true)
+              setUnlockedTemplate(pendingTemplate) // Track which template was unlocked
               setTheme({ ...theme, template: pendingTemplate })
-              showWarning('Premium template selected. All premium features (both templates 2 & 3, all color presets, unlimited reminders) unlocked for this invoice. This invoice will be charged $0.50 when sent.')
+              showWarning(`Premium template selected (Template ${pendingTemplate}). All premium features (Template ${pendingTemplate}, all color presets, unlimited reminders) unlocked for this invoice. This invoice will be charged $0.50 when sent.`)
             } else if (premiumFeatureType === 'reminder') {
               // User confirmed - unlock all features for this invoice
               setIsPremiumUnlocked(true)
@@ -3254,7 +3290,7 @@ export default function QuickInvoiceModal({
           }
           message={
             premiumFeatureType === 'template' 
-              ? `Selecting Template ${pendingTemplate} will unlock ALL premium features for this invoice only (both Templates 2 & 3, all color presets, unlimited reminders). This will charge $0.50 when you send this invoice, even though you have ${subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining || 0} free invoices remaining.\n\nFree invoices only apply to basic features (Template 1, max 4 reminders, first 4 color presets).\n\nDo you want to unlock premium features for this invoice?`
+              ? `Selecting Template ${pendingTemplate} will unlock premium features for this invoice only (Template ${pendingTemplate}, all color presets, unlimited reminders). This will charge $0.50 when you send this invoice, even though you have ${subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining || 0} free invoices remaining.\n\nFree invoices only apply to basic features (Template 1, max 4 reminders, first 4 color presets).\n\nDo you want to unlock premium features for this invoice?`
               : premiumFeatureType === 'reminder'
               ? `Adding more than 4 reminders will unlock premium features for this invoice only (all color presets, unlimited reminders). This will charge $0.50 when you send this invoice, even though you have ${subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining || 0} free invoices remaining.\n\nFree invoices only apply to basic features (Template 1, max 4 reminders, first 4 color presets).\n\nDo you want to unlock premium features for this invoice?`
               : `Selecting premium colors will unlock premium features for this invoice only (all color presets, unlimited reminders). This will charge $0.50 when you send this invoice, even though you have ${subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining || 0} free invoices remaining.\n\nFree invoices only apply to basic features (Template 1, max 4 reminders, first 4 color presets).\n\nDo you want to unlock premium features for this invoice?`
