@@ -389,10 +389,10 @@
   button[type="reset"] {
     /* Prevent double-tap zoom delay on mobile (removes 300ms delay) */
     touch-action: manipulation;
-    /* Smooth transitions for all feedback states */
-    transition: background-color 0.15s ease, opacity 0.15s ease, transform 0.1s ease, filter 0.15s ease, box-shadow 0.15s ease;
-    /* Custom tap highlight for better visibility */
-    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.15);
+    /* Instant transitions - no transition by default to prevent shadow flash when modals open */
+    transition: none;
+    /* Remove native tap highlight to prevent shadow flash */
+    -webkit-tap-highlight-color: transparent;
     /* Prevent text selection on buttons */
     user-select: none;
     -webkit-user-select: none;
@@ -400,35 +400,40 @@
     -webkit-touch-callout: none;
   }
 
-  /* Active state for touch feedback - provides immediate visual feedback */
+  /* Active state for touch feedback - instant transition to prevent shadow flash */
   button:not(:disabled):active,
   a[role="button"]:active,
   [role="button"]:active,
   button[type="button"]:not(:disabled):active,
   button[type="submit"]:not(:disabled):active,
   button[type="reset"]:not(:disabled):active {
-    opacity: 0.85;
-    transform: scale(0.97);
+    opacity: 0.9;
+    transform: scale(0.98);
+    /* Instant transition only when active - clears immediately when released */
+    transition: opacity 0.01s ease-out, transform 0.01s ease-out;
   }
 
   /* For small icon buttons, use lighter scale effect */
   button[class*="p-1"]:not(:disabled):active,
   button[class*="p-1.5"]:not(:disabled):active,
   button[class*="p-2"]:not(:disabled):active {
-    transform: scale(0.94);
-    opacity: 0.8;
+    transform: scale(0.96);
+    opacity: 0.85;
+    transition: opacity 0.01s ease-out, transform 0.01s ease-out;
   }
 
   /* For buttons with background colors, add brightness filter on active */
   button[class*="bg-"]:not(:disabled):active {
-    filter: brightness(0.9);
+    filter: brightness(0.95);
+    transition: filter 0.01s ease-out, transform 0.01s ease-out, opacity 0.01s ease-out;
   }
 
   /* For white/light background buttons, add subtle darkening */
   button[class*="bg-white"]:not(:disabled):active,
   button[class*="bg-gray-50"]:not(:disabled):active,
   button[class*="bg-gray-100"]:not(:disabled):active {
-    background-color: rgba(0, 0, 0, 0.05) !important;
+    background-color: rgba(0, 0, 0, 0.03) !important;
+    transition: background-color 0.01s ease-out, transform 0.01s ease-out, opacity 0.01s ease-out;
   }
 
   /* For colored buttons (indigo, blue, etc.), maintain color but add feedback */
