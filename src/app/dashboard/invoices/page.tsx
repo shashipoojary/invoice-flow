@@ -2241,26 +2241,26 @@ function InvoicesContent(): React.JSX.Element {
                 </button>
               ) : (
                 <>
-                  <button
-                    onClick={() => {
-                      setShowViewInvoice(false);
-                      setShowReminderDates(false);
+              <button
+                onClick={() => {
+                  setShowViewInvoice(false);
+                  setShowReminderDates(false);
                       setShowPaymentForm(false);
-                    }}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                  >
-                    Close
-                  </button>
-                  {(selectedInvoice.status === 'sent' || selectedInvoice.status === 'pending') && (
-                    <button
-                      onClick={() => {
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+              {(selectedInvoice.status === 'sent' || selectedInvoice.status === 'pending') && (
+                <button
+                  onClick={() => {
                         setShowPaymentForm(true);
-                      }}
-                      className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer flex items-center gap-2"
-                    >
-                      <DollarSign className="h-4 w-4" />
-                      Record Payment
-                    </button>
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer flex items-center gap-2"
+                >
+                  <DollarSign className="h-4 w-4" />
+                  Record Payment
+                </button>
                   )}
                 </>
               )}

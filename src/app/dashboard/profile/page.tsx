@@ -1254,7 +1254,7 @@ export default function ProfilePage() {
                               )}
                             </span>
                           </div>
-                          {subscriptionUsage.payPerInvoice.chargedInvoices > 0 && (
+                            {subscriptionUsage.payPerInvoice.chargedInvoices > 0 && (
                             <div className="flex items-center justify-between">
                               <span className="text-sm text-gray-600">Paid Invoices:</span>
                               <span className="text-sm font-medium text-gray-900">

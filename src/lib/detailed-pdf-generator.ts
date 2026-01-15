@@ -1180,14 +1180,14 @@ async function generateTemplate3PDF(
       const wrappedLines = wrapTextToWidth(line, font, 9, maxContactWidth);
       wrappedLines.forEach((wrappedLine) => {
         page.drawText(wrappedLine, {
-          x: 50,
+        x: 50,
           y: currentY,
-          size: 9,
-          font: font,
-          color: rgb(0.3, 0.3, 0.3),
-        });
-        currentY -= 12; // 12px spacing between address lines
+        size: 9,
+        font: font,
+        color: rgb(0.3, 0.3, 0.3),
       });
+        currentY -= 12; // 12px spacing between address lines
+    });
     });
     contactY = currentY;
   }
@@ -1199,12 +1199,12 @@ async function generateTemplate3PDF(
     const phoneLines = wrapTextToWidth(businessSettings.businessPhone, font, 9, maxContactWidth);
     phoneLines.forEach((line, index) => {
       page.drawText(line, {
-        x: 50,
+      x: 50,
         y: contactY - (index * 12),
-        size: 9,
-        font: font,
-        color: rgb(0.3, 0.3, 0.3),
-      });
+      size: 9,
+      font: font,
+      color: rgb(0.3, 0.3, 0.3),
+    });
     });
     contactY -= (phoneLines.length - 1) * 12;
   }
@@ -1214,12 +1214,12 @@ async function generateTemplate3PDF(
     const emailLines = wrapTextToWidth(businessSettings.businessEmail, font, 9, maxContactWidth);
     emailLines.forEach((line, index) => {
       page.drawText(line, {
-        x: 50,
+      x: 50,
         y: contactY - (index * 12),
-        size: 9,
-        font: font,
-        color: rgb(0.3, 0.3, 0.3),
-      });
+      size: 9,
+      font: font,
+      color: rgb(0.3, 0.3, 0.3),
+    });
     });
     contactY -= (emailLines.length - 1) * 12;
   }
@@ -1658,14 +1658,14 @@ async function generateModernTemplatePDF(
       const wrappedLines = wrapTextToWidth(line, font, 8, maxContactWidth);
       wrappedLines.forEach((wrappedLine) => {
         page.drawText(wrappedLine, {
-          x: 60,
+        x: 60,
           y: currentY,
-          size: 8,
-          font: font,
-          color: rgb(1, 1, 1), // White text on purple background
-        });
-        currentY -= 10; // 10px spacing between address lines
+        size: 8,
+        font: font,
+        color: rgb(1, 1, 1), // White text on purple background
       });
+        currentY -= 10; // 10px spacing between address lines
+    });
     });
     contactY = currentY;
   }
@@ -1677,12 +1677,12 @@ async function generateModernTemplatePDF(
     const phoneLines = wrapTextToWidth(businessSettings.businessPhone, font, 8, maxContactWidth);
     phoneLines.forEach((line, index) => {
       page.drawText(line, {
-        x: 60,
+      x: 60,
         y: contactY - (index * 10),
-        size: 8,
-        font: font,
-        color: rgb(1, 1, 1), // White text on purple background
-      });
+      size: 8,
+      font: font,
+      color: rgb(1, 1, 1), // White text on purple background
+    });
     });
     contactY -= (phoneLines.length - 1) * 10;
   }
@@ -1692,12 +1692,12 @@ async function generateModernTemplatePDF(
     const emailLines = wrapTextToWidth(businessSettings.businessEmail, font, 8, maxContactWidth);
     emailLines.forEach((line, index) => {
       page.drawText(line, {
-        x: 60,
+      x: 60,
         y: contactY - (index * 10),
-        size: 8,
-        font: font,
-        color: rgb(1, 1, 1), // White text on purple background
-      });
+      size: 8,
+      font: font,
+      color: rgb(1, 1, 1), // White text on purple background
+    });
     });
     contactY -= (emailLines.length - 1) * 10;
   }

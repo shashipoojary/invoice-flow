@@ -1113,7 +1113,7 @@ export default function QuickInvoiceModal({
           // Show success message for non-send actions (only if not sending)
           const wantsToSend = shouldSendRef.current || shouldSend
           if (!wantsToSend) {
-            showSuccess(isEditing ? 'Invoice updated successfully!' : 'Invoice created successfully!')
+          showSuccess(isEditing ? 'Invoice updated successfully!' : 'Invoice created successfully!')
           }
         }
         

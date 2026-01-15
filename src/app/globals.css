@@ -482,7 +482,8 @@
 
   /* Ensure minimum touch target size for mobile (44x44px recommended by Apple/Google) */
   @media (max-width: 768px) {
-    button:not([class*="min-h"]):not([class*="min-w"]):not([class*="w-"]):not([class*="h-"]),
+    /* Exclude p-1.5 buttons from general min-size rules to maintain compact spacing in invoice/reminder cards */
+    button:not([class*="min-h"]):not([class*="min-w"]):not([class*="w-"]):not([class*="h-"]):not([class*="p-1.5"]),
     a[role="button"]:not([class*="min-h"]):not([class*="min-w"]):not([class*="w-"]):not([class*="h-"]),
     a[class*="cursor-pointer"]:not([class*="min-h"]):not([class*="min-w"]):not([class*="w-"]):not([class*="h-"]),
     div[onClick]:not([class*="min-h"]):not([class*="min-w"]):not([class*="w-"]):not([class*="h-"]),
@@ -492,9 +493,17 @@
     }
     
     /* For icon-only buttons, ensure they're at least 44x44px */
-    button[class*="p-"]:not([class*="px-"]):not([class*="py-"]):not([class*="w-"]):not([class*="h-"]) {
+    /* Exclude p-1.5 buttons used in invoice/reminder cards */
+    button[class*="p-"]:not([class*="px-"]):not([class*="py-"]):not([class*="w-"]):not([class*="h-"]):not([class*="p-1.5"]) {
       min-height: 44px;
       min-width: 44px;
+    }
+    
+    /* Explicitly override: Remove min-size constraint for compact icon buttons (p-1.5) used in invoice/reminder cards */
+    /* This maintains the original tight spacing from commit 362a453 - buttons should be ~28px (p-1.5 = 6px padding + 16px icon) */
+    button[class*="p-1.5"] {
+      min-height: auto !important;
+      min-width: auto !important;
     }
   }
 

@@ -170,7 +170,7 @@ export function UnifiedInvoiceCard({
   const rotationState = useSynchronizedRotation(maxItems, isVisible);
 
   return (
-    <div ref={cardRef} className="border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50 overflow-hidden">
+    <div ref={cardRef} className="border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
       {/* Mobile */}
       <div className="block sm:hidden p-4">
         <div className="space-y-3">

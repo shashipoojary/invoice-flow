@@ -328,7 +328,7 @@ async function sendReminderEmail(invoice: any, reminderType: string, overdueDays
 
     // Get base URL for email links using utility function
     const baseUrl = getBaseUrl();
-    
+
     // Get reminder email template
     const reminderTemplate = getReminderEmailTemplate(
       templateInvoice,
