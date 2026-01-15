@@ -172,8 +172,8 @@ export function UnifiedInvoiceCard({
   return (
     <div ref={cardRef} className="border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50 overflow-hidden">
       {/* Mobile */}
-      <div className="block sm:hidden p-3">
-        <div className="space-y-2.5">
+      <div className="block sm:hidden p-4">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
@@ -184,7 +184,7 @@ export function UnifiedInvoiceCard({
                 <div className="text-xs" style={{ color: '#6b7280' }}>{invoice.client?.name || 'Unknown Client'}</div>
               </div>
             </div>
-            <div className="text-right flex flex-col items-end">
+            <div className="text-right min-h-[56px] flex flex-col items-end">
               <div
                 className={`font-semibold text-base ${
                   invoice.status === 'paid'
@@ -210,8 +210,8 @@ export function UnifiedInvoiceCard({
             </div>
             </div>
 
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center space-x-2 flex-shrink-0 min-w-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
               <span
                 className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
                   invoice.status === 'paid'
@@ -232,17 +232,17 @@ export function UnifiedInvoiceCard({
               />
             </div>
 
-            <div className="flex items-center gap-0 flex-shrink-0">
-              <button onClick={() => { onView(invoice); logEvent('viewed_by_owner'); }} className="p-1.5 rounded-md transition-colors hover:bg-gray-100 flex-shrink-0" title="View">
+            <div className="flex items-center space-x-1">
+              <button onClick={() => { onView(invoice); logEvent('viewed_by_owner'); }} className="p-1.5 rounded-md transition-colors hover:bg-gray-100" title="View">
                 <Eye className="h-4 w-4 text-gray-700" />
               </button>
-              <button onClick={() => setShowActivity(true)} className="p-1.5 rounded-md transition-colors hover:bg-gray-100 flex-shrink-0" title="Activity">
+              <button onClick={() => setShowActivity(true)} className="p-1.5 rounded-md transition-colors hover:bg-gray-100" title="Activity">
                 <Info className="h-4 w-4 text-gray-700" />
               </button>
               <button
                 onClick={() => { onPdf(invoice); logEvent('downloaded_pdf'); }}
                 disabled={loadingActions[`pdf-${invoice.id}`]}
-                className={`p-1.5 transition-colors hover:bg-gray-100 flex-shrink-0 ${
+                className={`p-1.5 transition-colors hover:bg-gray-100 ${
                   loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                 }`}
                 title="PDF"
@@ -257,7 +257,7 @@ export function UnifiedInvoiceCard({
                 <button
                   onClick={() => onDuplicate(invoice)}
                   disabled={loadingActions[`duplicate-${invoice.id}`]}
-                  className={`p-1.5 transition-colors hover:bg-gray-100 flex-shrink-0 ${
+                  className={`p-1.5 transition-colors hover:bg-gray-100 ${
                     loadingActions[`duplicate-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                   }`}
                   title="Duplicate"
@@ -273,7 +273,7 @@ export function UnifiedInvoiceCard({
                 <button
                   onClick={() => { onSend(invoice); logEvent('sent'); }}
                   disabled={loadingActions[`send-${invoice.id}`]}
-                  className={`p-1.5 transition-colors hover:bg-gray-100 flex-shrink-0 ${
+                  className={`p-1.5 transition-colors hover:bg-gray-100 ${
                     loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                   }`}
                   title="Send"
@@ -288,7 +288,7 @@ export function UnifiedInvoiceCard({
               {invoice.status === 'draft' && onEdit && (
                 <button
                   onClick={() => onEdit(invoice)}
-                  className="p-1.5 transition-colors hover:bg-gray-100 flex-shrink-0"
+                  className="p-1.5 transition-colors hover:bg-gray-100"
                   title="Edit"
                 >
                   <Edit className="h-4 w-4 text-gray-700" />
@@ -297,7 +297,7 @@ export function UnifiedInvoiceCard({
               {invoice.status === 'draft' && onDelete && (
                 <button
                   onClick={() => onDelete(invoice)}
-                  className="p-1.5 transition-colors hover:bg-gray-100 flex-shrink-0"
+                  className="p-1.5 transition-colors hover:bg-gray-100"
                   title="Delete"
                 >
                   <Trash2 className="h-4 w-4 text-gray-700" />
@@ -307,7 +307,7 @@ export function UnifiedInvoiceCard({
                 <button
                   onClick={() => { onMarkPaid(invoice); logEvent('paid'); }}
                   disabled={loadingActions[`paid-${invoice.id}`]}
-                  className={`p-1.5 transition-colors hover:bg-gray-100 flex-shrink-0 ${
+                  className={`p-1.5 transition-colors hover:bg-gray-100 ${
                     loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                   }`}
                   title="Mark Paid"
@@ -363,8 +363,8 @@ export function UnifiedInvoiceCard({
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center space-x-2 flex-shrink-0 min-w-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
               <span
                 className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
                   invoice.status === 'paid'
@@ -384,17 +384,17 @@ export function UnifiedInvoiceCard({
                 rotationState={rotationState}
               />
             </div>
-            <div className="flex items-center space-x-0.5 sm:space-x-1 flex-shrink-0">
-              <button onClick={() => onView(invoice)} className="p-1.5 sm:p-1.5 rounded-md transition-colors hover:bg-gray-100 flex-shrink-0" title="View">
+            <div className="flex items-center space-x-1">
+              <button onClick={() => onView(invoice)} className="p-1.5 rounded-md transition-colors hover:bg-gray-100" title="View">
                 <Eye className="h-4 w-4 text-gray-700" />
               </button>
-              <button onClick={() => setShowActivity(true)} className="p-1.5 sm:p-1.5 rounded-md transition-colors hover:bg-gray-100 flex-shrink-0" title="Activity">
+              <button onClick={() => setShowActivity(true)} className="p-1.5 rounded-md transition-colors hover:bg-gray-100" title="Activity">
                 <Info className="h-4 w-4 text-gray-700" />
               </button>
               <button
                 onClick={() => onPdf(invoice)}
                 disabled={loadingActions[`pdf-${invoice.id}`]}
-                className={`p-1.5 sm:p-1.5 transition-colors hover:bg-gray-100 flex-shrink-0 ${
+                className={`p-1.5 transition-colors hover:bg-gray-100 ${
                   loadingActions[`pdf-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                 }`}
                 title="PDF"
@@ -409,7 +409,7 @@ export function UnifiedInvoiceCard({
                 <button
                   onClick={() => onDuplicate(invoice)}
                   disabled={loadingActions[`duplicate-${invoice.id}`]}
-                  className={`p-1.5 sm:p-1.5 transition-colors hover:bg-gray-100 flex-shrink-0 ${
+                  className={`p-1.5 transition-colors hover:bg-gray-100 ${
                     loadingActions[`duplicate-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                   }`}
                   title="Duplicate"
@@ -425,7 +425,7 @@ export function UnifiedInvoiceCard({
                 <button
                   onClick={() => onSend(invoice)}
                   disabled={loadingActions[`send-${invoice.id}`]}
-                  className={`p-1.5 sm:p-1.5 transition-colors hover:bg-gray-100 flex-shrink-0 ${
+                  className={`p-1.5 transition-colors hover:bg-gray-100 ${
                     loadingActions[`send-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                   }`}
                   title="Send"
@@ -440,7 +440,7 @@ export function UnifiedInvoiceCard({
               {invoice.status === 'draft' && onEdit && (
                 <button
                   onClick={() => onEdit(invoice)}
-                  className="p-1.5 sm:p-1.5 transition-colors hover:bg-gray-100 flex-shrink-0"
+                  className="p-1.5 transition-colors hover:bg-gray-100"
                   title="Edit"
                 >
                   <Edit className="h-4 w-4 text-gray-700" />
@@ -449,7 +449,7 @@ export function UnifiedInvoiceCard({
               {invoice.status === 'draft' && onDelete && (
                 <button
                   onClick={() => onDelete(invoice)}
-                  className="p-1.5 sm:p-1.5 transition-colors hover:bg-gray-100 flex-shrink-0"
+                  className="p-1.5 transition-colors hover:bg-gray-100"
                   title="Delete"
                 >
                   <Trash2 className="h-4 w-4 text-gray-700" />
@@ -459,7 +459,7 @@ export function UnifiedInvoiceCard({
                 <button
                   onClick={() => onMarkPaid(invoice)}
                   disabled={loadingActions[`paid-${invoice.id}`]}
-                  className={`p-1.5 sm:p-1.5 transition-colors hover:bg-gray-100 flex-shrink-0 ${
+                  className={`p-1.5 transition-colors hover:bg-gray-100 ${
                     loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                   }`}
                   title="Mark Paid"

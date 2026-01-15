@@ -516,8 +516,8 @@ export default function ReminderHistoryPage() {
     return (
       <div ref={cardRef} className="border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
         {/* Mobile Layout */}
-        <div className="block sm:hidden p-3">
-          <div className="space-y-2.5">
+        <div className="block sm:hidden p-4">
+          <div className="space-y-3">
             {/* Top Row: Invoice Info + Amount */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
@@ -533,7 +533,7 @@ export default function ReminderHistoryPage() {
                   </div>
                 </div>
               </div>
-              <div className="text-right flex flex-col items-end">
+              <div className="text-right min-h-[56px] flex flex-col items-end">
                 <div className={`font-semibold text-base ${
                   reminder.invoice.status === 'paid' ? 'text-emerald-600' :
                   totals.hasLateFees ? 'text-red-600' :
@@ -576,13 +576,13 @@ export default function ReminderHistoryPage() {
                 )}
               </div>
               
-              <div className="flex items-center gap-0 flex-shrink-0">
+              <div className="flex items-center space-x-1">
                 {/* Only show manual send button for failed reminders (not cancelled) */}
                 {reminder.reminder_status === 'failed' && !reminder.failure_reason?.includes('Invoice already paid') && !reminder.failure_reason?.includes('Invoice fully paid') && !reminder.failure_reason?.includes('reminders cancelled') && (
                   <button
                     onClick={() => sendManualReminder(reminder.invoice_id, reminder.reminder_type)}
                     disabled={sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`)}
-                    className={`p-1.5 transition-colors hover:bg-gray-100 flex-shrink-0 ${
+                    className={`p-1.5 transition-colors hover:bg-gray-100 ${
                       sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                     }`}
                     title="Send again"
@@ -596,7 +596,7 @@ export default function ReminderHistoryPage() {
                 )}
                 <button
                   onClick={() => handleViewReminder(reminder)}
-                  className="p-1.5 transition-colors hover:bg-gray-100 cursor-pointer flex-shrink-0"
+                  className="p-1.5 transition-colors hover:bg-gray-100 cursor-pointer"
                   title="View reminder details"
                 >
                   <Eye className="h-4 w-4 text-gray-700" />
@@ -623,7 +623,7 @@ export default function ReminderHistoryPage() {
                   </div>
                 </div>
               </div>
-              <div className="text-right flex flex-col items-end">
+              <div className="text-right min-h-[56px] flex flex-col items-end">
                 <div className={`font-semibold text-base ${
                   reminder.invoice.status === 'paid' ? 'text-emerald-600' :
                   totals.hasLateFees ? 'text-red-600' :
@@ -664,13 +664,13 @@ export default function ReminderHistoryPage() {
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-0 flex-shrink-0">
+              <div className="flex items-center space-x-1">
                 {/* Only show manual send button for failed reminders (not cancelled) */}
                 {reminder.reminder_status === 'failed' && !reminder.failure_reason?.includes('Invoice already paid') && !reminder.failure_reason?.includes('Invoice fully paid') && !reminder.failure_reason?.includes('reminders cancelled') && (
                   <button
                     onClick={() => sendManualReminder(reminder.invoice_id, reminder.reminder_type)}
                     disabled={sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`)}
-                    className={`p-1.5 transition-colors hover:bg-gray-100 flex-shrink-0 ${
+                    className={`p-1.5 transition-colors hover:bg-gray-100 ${
                       sendingReminders.has(`${reminder.invoice_id}-${reminder.reminder_type}`) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                     }`}
                     title="Send again"
@@ -684,7 +684,7 @@ export default function ReminderHistoryPage() {
                 )}
                 <button
                   onClick={() => handleViewReminder(reminder)}
-                  className="p-1.5 transition-colors hover:bg-gray-100 cursor-pointer flex-shrink-0"
+                  className="p-1.5 transition-colors hover:bg-gray-100 cursor-pointer"
                   title="View reminder details"
                 >
                   <Eye className="h-4 w-4 text-gray-700" />
