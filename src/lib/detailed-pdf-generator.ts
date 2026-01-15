@@ -1168,8 +1168,9 @@ async function generateTemplate3PDF(
   });
 
   // Business contact information with consistent spacing
-  // Max width: 300px (from x: 50 to x: 350, leaving 50px buffer for invoice details at x: 400)
-  const maxContactWidth = 300;
+  // Max width: 250px (from x: 50 to x: 300, leaving 100px buffer for invoice details at x: 400)
+  // Reduced from 300px to prevent overlap with invoice details card
+  const maxContactWidth = 250;
   
   let contactY = height - 75;
   if (businessSettings.address) {
