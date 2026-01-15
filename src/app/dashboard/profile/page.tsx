@@ -1242,16 +1242,29 @@ export default function ProfilePage() {
                         </div>
                       )}
                       {subscriptionUsage && subscriptionUsage.plan === 'pay_per_invoice' && subscriptionUsage.payPerInvoice && (
-                        <div className="mt-2">
-                          <p className="text-xs text-gray-600 mb-1">
-                            {subscriptionUsage.payPerInvoice.totalInvoices} invoice{subscriptionUsage.payPerInvoice.totalInvoices !== 1 ? 's' : ''} sent
-                            {subscriptionUsage.payPerInvoice.chargedInvoices > 0 && (
-                              <span className="text-gray-900 font-medium"> (${subscriptionUsage.payPerInvoice.totalCharged})</span>
-                            )}
-                            {subscriptionUsage.payPerInvoice.chargedInvoices === 0 && subscriptionUsage.payPerInvoice.freeInvoicesRemaining > 0 && (
-                              <span className="text-green-600 font-medium"> • {subscriptionUsage.payPerInvoice.freeInvoicesRemaining} free remaining</span>
-                            )}
-                          </p>
+                        <div className="mt-2 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">Free Invoices:</span>
+                            <span className="text-sm font-medium text-gray-900">
+                              {subscriptionUsage.payPerInvoice.freeInvoicesUsed}/5 used
+                              {subscriptionUsage.payPerInvoice.freeInvoicesRemaining > 0 && (
+                                <span className="text-green-600 ml-1">
+                                  ({subscriptionUsage.payPerInvoice.freeInvoicesRemaining} remaining)
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                          {subscriptionUsage.payPerInvoice.chargedInvoices > 0 && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-600">Paid Invoices:</span>
+                              <span className="text-sm font-medium text-gray-900">
+                                {subscriptionUsage.payPerInvoice.chargedInvoices} invoice{subscriptionUsage.payPerInvoice.chargedInvoices !== 1 ? 's' : ''} 
+                                <span className="text-indigo-600 ml-1">
+                                  (${subscriptionUsage.payPerInvoice.totalCharged})
+                                </span>
+                              </span>
+                            </div>
+                          )}
                           {subscriptionUsage.payPerInvoice.freeInvoicesRemaining > 0 && (
                             <div className="w-full bg-gray-200 h-1.5">
                               <div 

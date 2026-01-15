@@ -318,19 +318,62 @@ async function handlePaymentSuccess(paymentData: any) {
 
     // Update billing record (try both paymentId and sessionId)
     const billingUpdateIds = [paymentId, sessionId].filter(Boolean);
+    let updatedInvoiceId: string | null = null;
     for (const id of billingUpdateIds) {
-      const { error: billingError } = await supabaseAdmin
+      const { data: billingRecord, error: billingError } = await supabaseAdmin
         .from('billing_records')
-        .update({
-          status: 'paid',
-          updated_at: new Date().toISOString(),
-        })
+        .select('invoice_id')
         .eq('stripe_session_id', id) // Reusing field for Dodo payment ID
-        .eq('status', 'pending');
+        .eq('status', 'pending')
+        .single();
 
-      if (!billingError) {
-        console.log(`✅ Billing record updated for ${id}`);
-        break;
+      if (!billingError && billingRecord) {
+        updatedInvoiceId = billingRecord.invoice_id;
+        const { error: updateError } = await supabaseAdmin
+          .from('billing_records')
+          .update({
+            status: 'paid',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('stripe_session_id', id)
+          .eq('status', 'pending');
+
+        if (!updateError) {
+          console.log(`✅ Billing record updated for ${id}`);
+          
+          // If this is a per_invoice_fee payment, mark invoice as premium unlocked
+          if (paymentType === 'per_invoice_fee' && updatedInvoiceId) {
+            try {
+              // Get current invoice metadata
+              const { data: invoice } = await supabaseAdmin
+                .from('invoices')
+                .select('metadata')
+                .eq('id', updatedInvoiceId)
+                .single();
+              
+              const invoiceMetadata = invoice?.metadata ? JSON.parse(invoice.metadata) : {};
+              
+              // Update invoice metadata to mark premium unlock
+              await supabaseAdmin
+                .from('invoices')
+                .update({
+                  metadata: JSON.stringify({
+                    ...invoiceMetadata,
+                    premium_unlocked: true,
+                    premium_unlocked_at: new Date().toISOString()
+                  })
+                })
+                .eq('id', updatedInvoiceId);
+              
+              console.log(`✅ Premium unlock marked for invoice ${updatedInvoiceId}`);
+            } catch (error) {
+              console.error('Error marking premium unlock:', error);
+              // Don't fail the payment if metadata update fails
+            }
+          }
+          
+          break;
+        }
       }
     }
 
@@ -344,7 +387,7 @@ async function handlePaymentSuccess(paymentData: any) {
       }
     }
     
-    // For per_invoice_fee, just update billing record (already done above)
+    // For per_invoice_fee, billing record and premium unlock already handled above
   } catch (error) {
     console.error('Error handling payment success:', error);
   }

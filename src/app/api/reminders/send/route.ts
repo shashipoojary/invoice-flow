@@ -197,16 +197,22 @@ export async function POST(request: NextRequest) {
     } = userSettings || {};
 
     // Fetch partial payments to calculate remaining balance for late fee calculations
+    // IMPORTANT: For "sent" invoices, do NOT use partial payments - use original total
+    // Only "pending" or "scheduled" invoices should consider partial payments
     let totalPaid = 0;
     let remainingBalance = invoice.total;
-    const { data: paymentRecords } = await supabaseAdmin
-      .from('invoice_payments')
-      .select('amount')
-      .eq('invoice_id', invoice.id);
     
-    if (paymentRecords && paymentRecords.length > 0) {
-      totalPaid = paymentRecords.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
-      remainingBalance = Math.max(0, invoice.total - totalPaid);
+    // Only consider partial payments if invoice is NOT "sent" (i.e., it's pending/scheduled)
+    if (invoice.status !== 'sent' && invoice.status !== 'cancelled') {
+      const { data: paymentRecords } = await supabaseAdmin
+        .from('invoice_payments')
+        .select('amount')
+        .eq('invoice_id', invoice.id);
+      
+      if (paymentRecords && paymentRecords.length > 0) {
+        totalPaid = paymentRecords.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+        remainingBalance = Math.max(0, invoice.total - totalPaid);
+      }
     }
     
     // Calculate current total including late fees (same logic as public invoice page)
@@ -224,8 +230,10 @@ export async function POST(request: NextRequest) {
       daysOverdue = 0;
     }
     
-    // Calculate base amount (considering partial payments)
-    const baseAmount = remainingBalance;
+    // Calculate base amount
+    // For "sent" invoices: use original total (ignore partial payments)
+    // For "pending"/"scheduled" invoices: use remaining balance (consider partial payments)
+    const baseAmount = (invoice.status === 'sent' || invoice.status === 'cancelled') ? invoice.total : remainingBalance;
     
     let lateFeesAmount = 0;
     let totalPayable = baseAmount;

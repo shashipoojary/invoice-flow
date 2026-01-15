@@ -12,6 +12,69 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
 }
 
 /**
+ * Wraps text to fit within a maximum width
+ * @param text - The text to wrap
+ * @param font - The PDF font
+ * @param fontSize - The font size
+ * @param maxWidth - Maximum width in points
+ * @returns Array of text lines that fit within maxWidth
+ */
+function wrapTextToWidth(text: string, font: PDFFont, fontSize: number, maxWidth: number): string[] {
+  if (!text) return [];
+  
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+  
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    const width = font.widthOfTextAtSize(testLine, fontSize);
+    
+    if (width <= maxWidth) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        // Word is too long, split it
+        let remainingWord = word;
+        while (remainingWord) {
+          let charIndex = 1;
+          while (charIndex <= remainingWord.length) {
+            const testChar = remainingWord.substring(0, charIndex);
+            const charWidth = font.widthOfTextAtSize(testChar, fontSize);
+            if (charWidth > maxWidth) {
+              if (charIndex > 1) {
+                lines.push(remainingWord.substring(0, charIndex - 1));
+                remainingWord = remainingWord.substring(charIndex - 1);
+              } else {
+                // Single character is too wide, just add it
+                lines.push(remainingWord.substring(0, 1));
+                remainingWord = remainingWord.substring(1);
+              }
+              break;
+            }
+            charIndex++;
+          }
+          if (charIndex > remainingWord.length) {
+            lines.push(remainingWord);
+            remainingWord = '';
+          }
+        }
+        currentLine = '';
+      }
+    }
+  }
+  
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+  
+  return lines;
+}
+
+/**
  * Formats a multi-line address into 2-3 longer lines for better PDF display
  * Filters out email and phone if they exist in dedicated fields
  * @param address - The address string that may contain newlines
@@ -1105,43 +1168,60 @@ async function generateTemplate3PDF(
   });
 
   // Business contact information with consistent spacing
+  // Max width: 300px (from x: 50 to x: 350, leaving 50px buffer for invoice details at x: 400)
+  const maxContactWidth = 300;
+  
   let contactY = height - 75;
   if (businessSettings.address) {
     const addressLines = formatAddressForPDF(businessSettings.address, businessSettings);
-    addressLines.forEach((line, index) => {
+    let currentY = contactY;
+    addressLines.forEach((line) => {
+      // Wrap each address line to prevent overlap
+      const wrappedLines = wrapTextToWidth(line, font, 9, maxContactWidth);
+      wrappedLines.forEach((wrappedLine) => {
+        page.drawText(wrappedLine, {
+          x: 50,
+          y: currentY,
+          size: 9,
+          font: font,
+          color: rgb(0.3, 0.3, 0.3),
+        });
+        currentY -= 12; // 12px spacing between address lines
+      });
+    });
+    contactY = currentY;
+  }
+  
+  // Consistent 12px spacing between all contact fields
+  
+  if (businessSettings.businessPhone) {
+    contactY -= 12;
+    const phoneLines = wrapTextToWidth(businessSettings.businessPhone, font, 9, maxContactWidth);
+    phoneLines.forEach((line, index) => {
       page.drawText(line, {
         x: 50,
-        y: contactY - (index * 12), // 12px spacing between address lines
+        y: contactY - (index * 12),
         size: 9,
         font: font,
         color: rgb(0.3, 0.3, 0.3),
       });
     });
-    // Calculate final Y position after all address lines
-    contactY = contactY - (addressLines.length * 12);
-  }
-  
-  // Consistent 12px spacing between all contact fields
-  if (businessSettings.businessPhone) {
-    contactY -= 12;
-    page.drawText(businessSettings.businessPhone, {
-      x: 50,
-      y: contactY,
-      size: 9,
-      font: font,
-      color: rgb(0.3, 0.3, 0.3),
-    });
+    contactY -= (phoneLines.length - 1) * 12;
   }
 
   if (businessSettings.businessEmail) {
     contactY -= 12;
-    page.drawText(businessSettings.businessEmail, {
-      x: 50,
-      y: contactY,
-      size: 9,
-      font: font,
-      color: rgb(0.3, 0.3, 0.3),
+    const emailLines = wrapTextToWidth(businessSettings.businessEmail, font, 9, maxContactWidth);
+    emailLines.forEach((line, index) => {
+      page.drawText(line, {
+        x: 50,
+        y: contactY - (index * 12),
+        size: 9,
+        font: font,
+        color: rgb(0.3, 0.3, 0.3),
+      });
     });
+    contactY -= (emailLines.length - 1) * 12;
   }
 
   // Creative invoice details section with artistic elements
@@ -1537,70 +1617,89 @@ async function generateModernTemplatePDF(
     color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
   });
 
-  // Diagonal accent line
+  // Diagonal accent line - moved higher to avoid overlapping with business name
   page.drawLine({
-    start: { x: 0, y: height - 40 },
-    end: { x: 200, y: height - 40 },
+    start: { x: 0, y: height - 30 }, // Moved up from height - 40 to avoid overlap
+    end: { x: 200, y: height - 30 },
     thickness: 3,
     color: rgb(1, 1, 1),
   });
 
-  // Modern invoice title on the right side
+  // Modern invoice title on the right side - moved lower to align with business name
   page.drawText('INVOICE', {
     x: 400,
-    y: height - 60,
+    y: height - 50, // Moved down from height - 45 to align with business name
     size: 32,
     font: boldFont,
     color: rgb(1, 1, 1),
   });
 
-  // Business information directly on purple background (no box) - moved slightly down
+  // Business information directly on purple background (no box) - kept at same position
   page.drawText(businessSettings.businessName || 'Your Business', {
     x: 60,
-    y: height - 60, // Moved down slightly
+    y: height - 50, // Aligned with INVOICE text
     size: 18,
     font: boldFont,
     color: rgb(1, 1, 1), // White text on purple background
   });
 
-  // Business contact information with consistent spacing
-  let contactY = height - 75;
+  // Business contact information with consistent spacing - moved up to align higher
+  // Max width: 220px (from x: 60 to x: 280, leaving 120px buffer for large "INVOICE" text at x: 400)
+  // The "INVOICE" text is size 32 (approximately 150-180px wide) and starts at x: 400
+  // So it can extend back to around x: 220-250, so we stop at x: 280 to ensure no overlap
+  const maxContactWidth = 220;
+  
+  let contactY = height - 60; // Moved up from height - 75 to align higher
   if (businessSettings.address) {
     const addressLines = formatAddressForPDF(businessSettings.address, businessSettings);
-    addressLines.forEach((line, index) => {
+    let currentY = contactY;
+    addressLines.forEach((line) => {
+      // Wrap each address line to prevent overlap
+      const wrappedLines = wrapTextToWidth(line, font, 8, maxContactWidth);
+      wrappedLines.forEach((wrappedLine) => {
+        page.drawText(wrappedLine, {
+          x: 60,
+          y: currentY,
+          size: 8,
+          font: font,
+          color: rgb(1, 1, 1), // White text on purple background
+        });
+        currentY -= 10; // 10px spacing between address lines
+      });
+    });
+    contactY = currentY;
+  }
+  
+  // Consistent 10px spacing between all contact fields
+  
+  if (businessSettings.businessPhone) {
+    contactY -= 10;
+    const phoneLines = wrapTextToWidth(businessSettings.businessPhone, font, 8, maxContactWidth);
+    phoneLines.forEach((line, index) => {
       page.drawText(line, {
         x: 60,
-        y: contactY - (index * 10), // 10px spacing between address lines
+        y: contactY - (index * 10),
         size: 8,
         font: font,
         color: rgb(1, 1, 1), // White text on purple background
       });
     });
-    // Calculate final Y position after all address lines
-    contactY = contactY - (addressLines.length * 10);
-  }
-  
-  // Consistent 10px spacing between all contact fields
-  if (businessSettings.businessPhone) {
-    contactY -= 10;
-    page.drawText(businessSettings.businessPhone, {
-      x: 60,
-      y: contactY,
-      size: 8,
-      font: font,
-      color: rgb(1, 1, 1), // White text on purple background
-    });
+    contactY -= (phoneLines.length - 1) * 10;
   }
 
   if (businessSettings.businessEmail) {
     contactY -= 10;
-    page.drawText(businessSettings.businessEmail, {
-      x: 60,
-      y: contactY,
-      size: 8,
-      font: font,
-      color: rgb(1, 1, 1), // White text on purple background
+    const emailLines = wrapTextToWidth(businessSettings.businessEmail, font, 8, maxContactWidth);
+    emailLines.forEach((line, index) => {
+      page.drawText(line, {
+        x: 60,
+        y: contactY - (index * 10),
+        size: 8,
+        font: font,
+        color: rgb(1, 1, 1), // White text on purple background
+      });
     });
+    contactY -= (emailLines.length - 1) * 10;
   }
 
   // Modern invoice details card

@@ -281,24 +281,14 @@ export default function AuthPage() {
 
             {/* Email Verification Message */}
             {showVerificationMessage && (
-              <div className="bg-blue-50 text-blue-800 px-4 py-3 text-sm mb-6">
-                <div className="flex items-start space-x-2">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="font-medium mb-2">Check your email to verify your account</p>
-                    <p className="text-blue-700 mb-2">
-                      We&apos;ve sent a verification link to <strong>{formData.email || 'your email address'}</strong>. 
-                      Please click the link in the email to verify your account before signing in.
-                    </p>
-                    <div className="mt-3 pt-3">
-                      <p className="text-xs text-blue-600 mb-1">Didn&apos;t receive the email?</p>
-                      <ul className="text-xs text-blue-600 space-y-1 ml-4">
-                        <li>• Check your spam/junk folder</li>
-                        <li>• Make sure you entered the correct email address</li>
-                        <li>• Wait a few minutes and check again</li>
-                      </ul>
-                    </div>
-                  </div>
+              <div className="mb-6">
+                <div className="bg-gray-50 border-l-4 border-indigo-600 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-500 mb-1.5">
+                    EMAIL VERIFICATION
+                  </p>
+                  <p className="text-sm font-medium text-gray-900">
+                    Verification link sent to <span className="text-indigo-600 font-semibold">{formData.email || 'your email'}</span>. Check your inbox to continue.
+                  </p>
                 </div>
               </div>
             )}

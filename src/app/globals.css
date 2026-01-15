@@ -379,6 +379,125 @@
     border-radius: 0 !important;
   }
 
+  /* Mobile Touch Feedback for Buttons - Enhanced UX */
+  /* Ensure all interactive elements have proper touch feedback on mobile */
+  button:not(:disabled),
+  a[role="button"],
+  [role="button"],
+  button[type="button"],
+  button[type="submit"],
+  button[type="reset"] {
+    /* Prevent double-tap zoom delay on mobile (removes 300ms delay) */
+    touch-action: manipulation;
+    /* Smooth transitions for all feedback states */
+    transition: background-color 0.15s ease, opacity 0.15s ease, transform 0.1s ease, filter 0.15s ease, box-shadow 0.15s ease;
+    /* Custom tap highlight for better visibility */
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.15);
+    /* Prevent text selection on buttons */
+    user-select: none;
+    -webkit-user-select: none;
+    /* Ensure buttons are responsive to touch */
+    -webkit-touch-callout: none;
+  }
+
+  /* Active state for touch feedback - provides immediate visual feedback */
+  button:not(:disabled):active,
+  a[role="button"]:active,
+  [role="button"]:active,
+  button[type="button"]:not(:disabled):active,
+  button[type="submit"]:not(:disabled):active,
+  button[type="reset"]:not(:disabled):active {
+    opacity: 0.85;
+    transform: scale(0.97);
+  }
+
+  /* For small icon buttons, use lighter scale effect */
+  button[class*="p-1"]:not(:disabled):active,
+  button[class*="p-1.5"]:not(:disabled):active,
+  button[class*="p-2"]:not(:disabled):active {
+    transform: scale(0.94);
+    opacity: 0.8;
+  }
+
+  /* For buttons with background colors, add brightness filter on active */
+  button[class*="bg-"]:not(:disabled):active {
+    filter: brightness(0.9);
+  }
+
+  /* For white/light background buttons, add subtle darkening */
+  button[class*="bg-white"]:not(:disabled):active,
+  button[class*="bg-gray-50"]:not(:disabled):active,
+  button[class*="bg-gray-100"]:not(:disabled):active {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+  }
+
+  /* For colored buttons (indigo, blue, etc.), maintain color but add feedback */
+  button[class*="bg-indigo"]:not(:disabled):active,
+  button[class*="bg-blue"]:not(:disabled):active,
+  button[class*="bg-green"]:not(:disabled):active,
+  button[class*="bg-red"]:not(:disabled):active,
+  button[class*="bg-emerald"]:not(:disabled):active {
+    filter: brightness(0.85);
+  }
+
+  /* Ensure hover and active work together smoothly */
+  button:hover:active:not(:disabled),
+  a[role="button"]:hover:active {
+    opacity: 0.75;
+  }
+
+  /* Disabled buttons should not have active feedback */
+  button:disabled:active,
+  button:disabled:hover:active {
+    opacity: 0.5;
+    transform: none;
+    filter: none;
+    cursor: not-allowed;
+  }
+
+  /* Override for buttons that explicitly don't want touch feedback */
+  button.no-touch-feedback:active,
+  .no-touch-feedback:active {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+
+  /* Touch feedback for links that act as buttons */
+  a[class*="cursor-pointer"]:active,
+  a[onClick]:active {
+    opacity: 0.8;
+    transform: scale(0.98);
+  }
+
+  /* Touch feedback for divs and other elements with onClick */
+  div[onClick]:active,
+  div[class*="cursor-pointer"]:active,
+  span[onClick]:active,
+  span[class*="cursor-pointer"]:active {
+    opacity: 0.8;
+    transform: scale(0.98);
+    transition: opacity 0.15s ease, transform 0.1s ease;
+  }
+
+  /* Ensure minimum touch target size for mobile (44x44px recommended by Apple/Google) */
+  @media (max-width: 768px) {
+    button:not([class*="min-h"]):not([class*="min-w"]):not([class*="w-"]):not([class*="h-"]),
+    a[role="button"]:not([class*="min-h"]):not([class*="min-w"]):not([class*="w-"]):not([class*="h-"]),
+    a[class*="cursor-pointer"]:not([class*="min-h"]):not([class*="min-w"]):not([class*="w-"]):not([class*="h-"]),
+    div[onClick]:not([class*="min-h"]):not([class*="min-w"]):not([class*="w-"]):not([class*="h-"]),
+    div[class*="cursor-pointer"]:not([class*="min-h"]):not([class*="min-w"]):not([class*="w-"]):not([class*="h-"]) {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    /* For icon-only buttons, ensure they're at least 44x44px */
+    button[class*="p-"]:not([class*="px-"]):not([class*="py-"]):not([class*="w-"]):not([class*="h-"]) {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+
 }
 
 @layer components {

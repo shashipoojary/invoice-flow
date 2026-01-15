@@ -144,16 +144,18 @@ export async function POST(
         });
       } catch {}
 
-      // Cancel scheduled reminders
+      // Cancel ONLY scheduled reminders (not sent, cancelled, or other statuses)
+      // Sent reminders should remain unchanged as they were already sent
+      // Cancelled reminders should remain unchanged
       try {
         await supabaseAdmin
           .from('invoice_reminders')
           .update({
             reminder_status: 'cancelled',
-            failure_reason: 'Invoice fully paid via partial payments - reminders cancelled'
+            failure_reason: 'Invoice fully paid via partial payments - scheduled reminders cancelled'
           })
           .eq('invoice_id', invoiceId)
-          .eq('reminder_status', 'scheduled');
+          .eq('reminder_status', 'scheduled'); // Only update scheduled reminders, not sent/cancelled
       } catch {}
     }
 

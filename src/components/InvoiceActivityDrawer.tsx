@@ -200,14 +200,18 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                   continue;
                 }
                 
+                // CRITICAL: Use stored calculatedTimestamp from metadata if available,
+                // otherwise use created_at to maintain exact position in timeline
+                // This ensures activities never change position once recorded
+                const displayTimestamp = ev.metadata?.calculatedTimestamp || ev.created_at;
                 const overdueItem = {
                   id: `overdue-${ev.id}`,
                   type: 'status',
                   title: `${days} day${days !== 1 ? 's' : ''} overdue`,
-                  at: overdueDate.toISOString(), // Use calculated timestamp for consistency
+                  at: displayTimestamp, // Use stored timestamp to preserve position
                   icon: 'overdue' as const
                 };
-                const eventKey = `overdue-${days}-${overdueDate.getTime()}`;
+                const eventKey = `overdue-${ev.id}`;
                 if (!eventMap.has(eventKey)) {
                   eventMap.set(eventKey, overdueItem);
                   items.push(overdueItem);
@@ -236,8 +240,9 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                   : (lf.amount || 0);
               }
               
-              // Use metadata appliedDate if available (more accurate), otherwise use created_at
-              const displayDate = ev.metadata?.appliedDate || ev.created_at;
+              // CRITICAL: Use original created_at timestamp to maintain exact position in timeline
+              // This ensures activities never change position once recorded
+              const displayDate = ev.created_at;
               const lateFeeDate = new Date(displayDate);
               
               // CRITICAL: Only show late fee events that have actually occurred (today or past)
@@ -271,7 +276,7 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                 id: `latefee-${ev.id}`,
                 type: 'status',
                 title: `Late fee applied: $${correctAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-                at: displayDate,
+                at: displayDate, // Use original database timestamp to preserve position
                 icon: 'overdue' as const
               };
               const eventKey = `latefee-${new Date(displayDate).getTime()}`;
@@ -486,33 +491,42 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                 }
                 
                 if (!existingDays.has(day)) {
+                  // Store calculated timestamp in metadata to ensure consistent position
+                  const calculatedTimestamp = overdueDate.toISOString();
                   eventsToCreate.push({
                     invoice_id: invoice.id,
                     type: 'overdue',
-                    metadata: { days: day }
+                    metadata: { 
+                      days: day,
+                      calculatedTimestamp: calculatedTimestamp // Store for consistent positioning
+                    }
                   });
                   
-                  // Add to items immediately for display
+                  // Add to items immediately for display using calculated timestamp
                   items.push({
                     id: `overdue-${invoice.id}-${day}`,
                     type: 'status',
                     title: `${day} day${day !== 1 ? 's' : ''} overdue`,
-                    at: overdueDate.toISOString(),
+                    at: calculatedTimestamp, // Use calculated timestamp for new events
                     icon: 'overdue'
                   });
                 } else {
-                  // Event exists, add it to items from database with calculated timestamp
+                  // Event exists, use the stored timestamp to maintain exact position
                   if (existingOverdueEvents) {
                     const existingEvent = existingOverdueEvents.find((ev: any) => {
                       const evDays = ev.metadata?.days || parseInt(ev.metadata?.title?.match(/(\d+)/)?.[1] || '0');
                       return evDays === day;
                     });
                     if (existingEvent) {
+                      // CRITICAL: Use stored calculatedTimestamp from metadata if available,
+                      // otherwise use created_at to maintain exact position in timeline
+                      // This ensures the activity position never changes once it's been recorded
+                      const displayTimestamp = existingEvent.metadata?.calculatedTimestamp || existingEvent.created_at;
                       items.push({
                         id: `overdue-${existingEvent.id}`,
                         type: 'status',
                         title: `${day} day${day !== 1 ? 's' : ''} overdue`,
-                        at: overdueDate.toISOString(), // Use calculated timestamp for consistency
+                        at: displayTimestamp, // Use stored timestamp to preserve position
                         icon: 'overdue'
                       });
                     }
@@ -620,9 +634,10 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                       ? (baseAmount * (lf.amount || 0)) / 100 
                       : (lf.amount || 0);
                     
-                    // Use existing late fee event - prefer metadata date if available
+                    // CRITICAL: Use original created_at timestamp to maintain exact position in timeline
+                    // This ensures activities never change position once recorded
                     const lateFeeEvent = lateFeeEvents[0];
-                    const displayDate = lateFeeEvent.metadata?.appliedDate || lateFeeEvent.created_at;
+                    const displayDate = lateFeeEvent.created_at; // Use original database timestamp to preserve position
                     const storedAmount = lateFeeEvent.metadata?.amount || 0;
                     
                     // Use the correct calculated amount (not the stored one, which might be wrong)
@@ -653,7 +668,7 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                       id: `latefee-${lateFeeEvent.id}`,
                       type: 'status',
                       title: `Late fee applied: $${amountToDisplay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-                      at: displayDate,
+                      at: displayDate, // Use original database timestamp to preserve position
                       icon: 'overdue'
                     });
                   }
@@ -775,7 +790,19 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                     {/* Content */}
                     <div className="py-0.5">
                       <div className="text-sm text-gray-900 leading-5">{a.title}</div>
-                      <div className="text-xs text-gray-500 leading-4">{new Date(a.at).toLocaleString()}</div>
+                      <div className="text-xs text-gray-500 leading-4">
+                        {(() => {
+                          const date = new Date(a.at);
+                          // Format date to show correct date regardless of timezone
+                          // Use UTC date components to avoid timezone conversion issues
+                          const year = date.getUTCFullYear();
+                          const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+                          const day = String(date.getUTCDate()).padStart(2, '0');
+                          const hours = String(date.getUTCHours()).padStart(2, '0');
+                          const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+                          return `${year}-${month}-${day} ${hours}:${minutes} UTC`;
+                        })()}
+                      </div>
                       {a.details && <div className="text-xs text-gray-500 mt-0.5">{a.details}</div>}
                     </div>
                   </li>

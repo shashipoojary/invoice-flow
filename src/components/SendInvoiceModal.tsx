@@ -1,6 +1,8 @@
-import React, { useMemo } from 'react';
-import { Send, Edit, X, FileText, AlertCircle } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Send, Edit, X, FileText, AlertCircle, Settings } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import type { Invoice } from '@/types';
+import { checkMissingBusinessDetails, type BusinessSettings } from '@/lib/utils';
 
 interface SendInvoiceModalProps {
   isOpen: boolean;
@@ -10,6 +12,7 @@ interface SendInvoiceModalProps {
   invoiceNumber: string;
   invoice?: Invoice | null;
   isLoading?: boolean;
+  settings?: BusinessSettings | null;
 }
 
 const SendInvoiceModal: React.FC<SendInvoiceModalProps> = ({
@@ -19,8 +22,11 @@ const SendInvoiceModal: React.FC<SendInvoiceModalProps> = ({
   onSend,
   invoiceNumber,
   invoice,
-  isLoading = false
+  isLoading = false,
+  settings
 }) => {
+  const router = useRouter();
+  const [showSendAnyway, setShowSendAnyway] = useState(false);
   // Calculate warnings for overdue and passed reminder dates
   const warnings = useMemo(() => {
     const defaultWarnings = {
@@ -163,6 +169,31 @@ const SendInvoiceModal: React.FC<SendInvoiceModalProps> = ({
     return warnings;
   }, [invoice]);
 
+  // Check for missing business details
+  const missingDetails = useMemo(() => {
+    return checkMissingBusinessDetails(settings);
+  }, [settings]);
+
+  const hasMissingDetails = missingDetails.missing.length > 0;
+
+  const handleUpdateSettings = () => {
+    onClose();
+    router.push('/dashboard/settings');
+  };
+
+  const handleSendAnyway = () => {
+    setShowSendAnyway(true);
+    onSend();
+  };
+
+  const handleSend = () => {
+    if (hasMissingDetails && !showSendAnyway) {
+      // Don't send if there are missing details and user hasn't confirmed
+      return;
+    }
+    onSend();
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -207,6 +238,21 @@ const SendInvoiceModal: React.FC<SendInvoiceModalProps> = ({
               </>
             )}
           </p>
+
+          {/* Missing Business Details Warning - Blocks sending */}
+          {hasMissingDetails && (
+            <div className="bg-gray-50 border-l-4 border-indigo-600 p-4">
+              <p className="text-xs uppercase tracking-wide text-gray-500 mb-1.5">
+                MISSING DETAILS
+              </p>
+              <p className="text-sm font-medium text-gray-900 mb-3">
+                {missingDetails.missing.length === 1 
+                  ? `Missing: ${missingDetails.missing[0]}. Please update before sending.`
+                  : `Missing: ${missingDetails.missing.slice(0, 2).join(', ')}${missingDetails.missing.length > 2 ? ` +${missingDetails.missing.length - 2} more` : ''}. Please update before sending.`
+                }
+              </p>
+            </div>
+          )}
 
           {/* Warnings */}
           {(warnings.isOverdue || warnings.passedReminders.length > 0) && (
@@ -253,8 +299,29 @@ const SendInvoiceModal: React.FC<SendInvoiceModalProps> = ({
             disabled={isLoading}
             className="px-6 py-3 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
-            Cancel
+            Close
           </button>
+          {hasMissingDetails ? (
+            <>
+              <button
+                onClick={handleUpdateSettings}
+                disabled={isLoading}
+                className="px-6 py-3 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center space-x-2"
+              >
+                <Settings className="h-4 w-4" />
+                <span>Update</span>
+              </button>
+              <button
+                onClick={handleSendAnyway}
+                disabled={isLoading}
+                className="px-6 py-3 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center space-x-2"
+              >
+                <Send className="h-4 w-4" />
+                <span>Send Anyway</span>
+              </button>
+            </>
+          ) : (
+            <>
           {invoice?.status !== 'paid' && (
             <button
               onClick={onEdit}
@@ -266,7 +333,7 @@ const SendInvoiceModal: React.FC<SendInvoiceModalProps> = ({
             </button>
           )}
           <button
-            onClick={onSend}
+                onClick={handleSend}
             disabled={isLoading}
             className="px-6 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center space-x-2"
           >
@@ -282,6 +349,8 @@ const SendInvoiceModal: React.FC<SendInvoiceModalProps> = ({
               </>
             )}
           </button>
+            </>
+          )}
         </div>
       </div>
     </div>

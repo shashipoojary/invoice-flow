@@ -23,6 +23,7 @@ interface UpgradeModalProps {
   };
   reason?: string;
   limitType?: 'invoices' | 'estimates' | 'clients' | 'reminders';
+  hidePayPerInvoice?: boolean;
 }
 
 export default function UpgradeModal({ 
@@ -31,7 +32,8 @@ export default function UpgradeModal({
   currentPlan = 'free',
   usage,
   reason,
-  limitType = 'invoices' // Default to invoices for backward compatibility
+  limitType = 'invoices', // Default to invoices for backward compatibility
+  hidePayPerInvoice = false
 }: UpgradeModalProps) {
   const { user, getAuthHeaders } = useAuth();
   const { showSuccess, showError } = useToast();
@@ -205,7 +207,7 @@ export default function UpgradeModal({
 
           {/* Plans */}
           <div className="p-4 sm:p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${hidePayPerInvoice ? 'lg:grid-cols-2' : 'lg:grid-cols-3'} gap-4 sm:gap-6`}>
               {/* Free Plan */}
               <div className={`border p-4 sm:p-5 transition-colors ${
                 currentPlan === 'free' 
@@ -318,54 +320,56 @@ export default function UpgradeModal({
                 </button>
               </div>
 
-              {/* Pay Per Invoice Plan */}
-              <div className={`border p-4 sm:p-5 transition-colors ${
-                currentPlan === 'pay_per_invoice' 
-                  ? 'border-indigo-500 bg-indigo-50' 
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}>
-                <div className="mb-4">
-                  <h4 className="font-heading text-sm sm:text-base font-semibold text-gray-900 mb-2">Pay Per Invoice</h4>
-                  <div className="flex items-baseline gap-1 mb-2">
-                    <span className="font-heading text-xl sm:text-2xl font-semibold text-gray-900">$0.50</span>
-                    <span className="text-xs sm:text-sm text-gray-600">/invoice</span>
+              {/* Pay Per Invoice Plan - Only show for invoice-related limits */}
+              {!hidePayPerInvoice && (
+                <div className={`border p-4 sm:p-5 transition-colors ${
+                  currentPlan === 'pay_per_invoice' 
+                    ? 'border-indigo-500 bg-indigo-50' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}>
+                  <div className="mb-4">
+                    <h4 className="font-heading text-sm sm:text-base font-semibold text-gray-900 mb-2">Pay Per Invoice</h4>
+                    <div className="flex items-baseline gap-1 mb-2">
+                      <span className="font-heading text-xl sm:text-2xl font-semibold text-gray-900">$0.50</span>
+                      <span className="text-xs sm:text-sm text-gray-600">/invoice</span>
+                    </div>
                   </div>
+                  <ul className="space-y-2 mb-4">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm text-gray-600">Pay only when you send an invoice</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm text-gray-600">All invoice features included</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+                      <span className="text-xs sm:text-sm text-gray-600">No monthly commitment</span>
+                    </li>
+                  </ul>
+                  <button
+                    onClick={() => handleUpgrade('pay_per_invoice')}
+                    disabled={loading || currentPlan === 'pay_per_invoice'}
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                      currentPlan === 'pay_per_invoice'
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
+                    }`}
+                  >
+                    {loading ? (
+                      'Processing...'
+                    ) : currentPlan === 'pay_per_invoice' ? (
+                      'Current Plan'
+                    ) : (
+                      <>
+                        Choose Pay Per Invoice
+                        <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
+                      </>
+                    )}
+                  </button>
                 </div>
-                <ul className="space-y-2 mb-4">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm text-gray-600">Pay only when you send an invoice</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm text-gray-600">All invoice features included</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs sm:text-sm text-gray-600">No monthly commitment</span>
-                  </li>
-                </ul>
-                <button
-                  onClick={() => handleUpgrade('pay_per_invoice')}
-                  disabled={loading || currentPlan === 'pay_per_invoice'}
-                  className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
-                    currentPlan === 'pay_per_invoice'
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                      : 'bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer'
-                  }`}
-                >
-                  {loading ? (
-                    'Processing...'
-                  ) : currentPlan === 'pay_per_invoice' ? (
-                    'Current Plan'
-                  ) : (
-                    <>
-                      Choose Pay Per Invoice
-                      <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
-                    </>
-                  )}
-                </button>
-              </div>
+              )}
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { 
   X, Plus, Minus, Send, User, Mail, 
@@ -13,12 +13,15 @@ import {
 import TemplateSelector from './TemplateSelector'
 import CustomDropdown from './CustomDropdown'
 import { Invoice } from '@/types'
+import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/useToast'
 import { useData } from '@/contexts/DataContext'
 import { useSettings } from '@/contexts/SettingsContext'
 import { useAuth } from '@/hooks/useAuth'
+import { checkMissingBusinessDetails } from '@/lib/utils'
 import UpgradeModal from './UpgradeModal'
 import ConfirmationModal from './ConfirmationModal'
+import ToastContainer from './Toast'
 
 interface QuickInvoiceModalProps {
   isOpen: boolean
@@ -118,9 +121,11 @@ export default function QuickInvoiceModal({
   const [premiumFeatureType, setPremiumFeatureType] = useState<'template' | 'reminder' | 'customization' | null>(null)
   const [pendingTemplate, setPendingTemplate] = useState<number | null>(null)
   const [pendingColors, setPendingColors] = useState<{ primary: string; secondary: string } | null>(null)
+  const [isPremiumUnlocked, setIsPremiumUnlocked] = useState(false)
   
+  const router = useRouter()
   const { user } = useAuth()
-  const { showSuccess: localShowSuccess, showError: localShowError, showWarning: localShowWarning } = useToast()
+  const { toasts: localToasts, removeToast: localRemoveToast, showSuccess: localShowSuccess, showError: localShowError, showWarning: localShowWarning } = useToast()
   const { invoices, addInvoice, addClient, updateInvoice, refreshInvoices } = useData()
   const { settings, isLoadingSettings } = useSettings()
   
@@ -128,6 +133,16 @@ export default function QuickInvoiceModal({
   const showSuccess = propShowSuccess || localShowSuccess
   const showError = propShowError || localShowError
   const showWarning = propShowWarning || localShowWarning
+  
+  // Always use localShowWarning for toast notifications (supports title + message)
+  // propShowWarning only supports message string
+
+  // Check for missing business details
+  const missingDetails = useMemo(() => {
+    return checkMissingBusinessDetails(settings);
+  }, [settings]);
+  const hasMissingDetails = missingDetails.missing.length > 0;
+  const [showMissingDetailsWarning, setShowMissingDetailsWarning] = useState(false);
 
   const onCloseRef = useRef(onClose);
   useEffect(() => {
@@ -308,6 +323,7 @@ export default function QuickInvoiceModal({
   const [creatingLoading, setCreatingLoading] = useState(false)
   const [sendingLoading, setSendingLoading] = useState(false)
   const [shouldSend, setShouldSend] = useState(false)
+  const shouldSendRef = useRef(false) // Use ref to track send intent immediately
   const [pdfLoading, setPdfLoading] = useState(false)
   const [discount, setDiscount] = useState('')
   const [markAsPaid, setMarkAsPaid] = useState(false)
@@ -622,6 +638,37 @@ export default function QuickInvoiceModal({
     }
   }, [isOpen, editingInvoice])
 
+  // Fetch premium unlock status when editing an invoice
+  useEffect(() => {
+    if (isOpen && editingInvoice?.id) {
+      const fetchPremiumStatus = async () => {
+        try {
+          const headers = await getAuthHeaders();
+          const response = await fetch(`/api/invoices/${editingInvoice.id}/premium-status?t=${Date.now()}`, { 
+            headers,
+            cache: 'no-store' 
+          });
+          if (response.ok) {
+            const data = await response.json();
+            const isUnlocked = data.isPremiumUnlocked || false;
+            console.log(`🔓 Premium unlock status for invoice ${editingInvoice.id}:`, isUnlocked);
+            setIsPremiumUnlocked(isUnlocked);
+          } else {
+            console.error('Failed to fetch premium status:', response.status);
+            setIsPremiumUnlocked(false);
+          }
+        } catch (error) {
+          console.error('Error fetching premium status:', error);
+          setIsPremiumUnlocked(false);
+        }
+      };
+      fetchPremiumStatus();
+    } else if (isOpen && !editingInvoice) {
+      // Reset premium unlock when creating new invoice
+      setIsPremiumUnlocked(false);
+    }
+  }, [isOpen, editingInvoice?.id, getAuthHeaders])
+
   const addItem = () => {
     setItems([...items, { 
       id: Date.now().toString(), 
@@ -856,6 +903,20 @@ export default function QuickInvoiceModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // Check send intent from ref (immediate) or state (for async cases)
+    const wantsToSend = shouldSendRef.current || shouldSend
+
+    // Check for missing business details if trying to send
+    if (wantsToSend && hasMissingDetails && !showMissingDetailsWarning) {
+      setShowMissingDetailsWarning(true);
+      // Show toast notification using localShowWarning (supports title + message)
+      const missingText = missingDetails.missing.length === 1 
+        ? missingDetails.missing[0]
+        : `${missingDetails.missing.slice(0, 2).join(', ')}${missingDetails.missing.length > 2 ? ` +${missingDetails.missing.length - 2} more` : ''}`;
+      localShowWarning('Missing Business Details', `Please update: ${missingText} before sending.`);
+      return;
+    }
+
     // Validate form FIRST before showing loading or checking subscription
       if (!validateForm()) {
         showError('Please fill in all required fields correctly')
@@ -967,8 +1028,9 @@ export default function QuickInvoiceModal({
       const result = await response.json()
 
       if (response.ok && (result.invoice || result.success)) {
-        // If user clicked Create & Send, send regardless of create vs update
-        if (result.invoice && (shouldSend || !isEditing)) {
+        // If user clicked Send button, send the invoice (works for both create and edit)
+        const wantsToSend = shouldSendRef.current || shouldSend
+        if (result.invoice && wantsToSend) {
           // Resolve client email/name safely
           const selectedClient = selectedClientId ? clients.find(c => c.id === selectedClientId) : undefined;
           const finalClientEmail = (selectedClient?.email || newClient.email || '').trim();
@@ -981,6 +1043,17 @@ export default function QuickInvoiceModal({
             setSendingLoading(false)
             onSuccess();
             onClose();
+            return;
+          }
+
+          // Check for missing business details (should already be checked in UI, but double-check)
+          const { checkMissingBusinessDetails } = await import('@/lib/utils');
+          const missingDetailsCheck = checkMissingBusinessDetails(settings);
+          if (missingDetailsCheck.missing.length > 0 && !showMissingDetailsWarning) {
+            // This shouldn't happen if UI is working correctly, but handle it
+            setShowMissingDetailsWarning(true);
+            setSendingLoading(false);
+            try { addInvoice && addInvoice(result.invoice) } catch {}
             return;
           }
 
@@ -1014,8 +1087,11 @@ export default function QuickInvoiceModal({
             showWarning(errorMsg)
           }
         } else {
-          // Show success message for non-send actions
-          showSuccess(isEditing ? 'Invoice updated successfully!' : 'Invoice created successfully!')
+          // Show success message for non-send actions (only if not sending)
+          const wantsToSend = shouldSendRef.current || shouldSend
+          if (!wantsToSend) {
+            showSuccess(isEditing ? 'Invoice updated successfully!' : 'Invoice created successfully!')
+          }
         }
         
         // Update global state immediately
@@ -1043,6 +1119,7 @@ export default function QuickInvoiceModal({
       onSuccess()
       onClose()
       setShouldSend(false)
+      shouldSendRef.current = false // Reset ref
 
     } catch (error) {
       console.error('Error creating invoice:', error)
@@ -1057,6 +1134,7 @@ export default function QuickInvoiceModal({
   const resetForm = () => {
     setCurrentStep(1)
     setSelectedClientId('')
+    shouldSendRef.current = false // Reset ref
     setNewClient({ name: '', email: '', company: '', address: '' })
     setItems([{ id: '1', description: '', amount: '' }])
     setNotes('Thank you for your business!')
@@ -1072,6 +1150,8 @@ export default function QuickInvoiceModal({
     setShowUpgradeContent(false)
     setShowUpgradeModal(false)
     setSubscriptionUsage(null)
+    shouldSendRef.current = false // Reset ref when closing
+    setShouldSend(false)
     wrappedOnClose()
   }
 
@@ -1209,6 +1289,21 @@ export default function QuickInvoiceModal({
       e.stopPropagation();
     }
     
+    // If premium unlocked, allow unlimited reminders
+    if (isPremiumUnlocked) {
+      const newRule: ReminderRule = {
+        id: Date.now().toString(),
+        type: 'before',
+        days: 1,
+        enabled: true
+      }
+      setReminders({
+        ...reminders,
+        rules: [...reminders.rules, newRule]
+      })
+      return
+    }
+    
     // Simple check: For free plan, only allow 4 reminder rules per invoice
     // Check if user is trying to add a 5th rule
     const currentRulesCount = reminders.rules.length;
@@ -1289,7 +1384,7 @@ export default function QuickInvoiceModal({
   return (
     <>
       {/* Main Invoice Modal - Hide when upgrade modal is shown */}
-      <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 ${showUpgradeModal ? 'hidden' : ''}`}>
+      <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 ${showUpgradeModal ? 'hidden' : ''}`}>
       <div className={`shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden overflow-y-auto scroll-smooth ${
         isDarkMode 
           ? 'bg-gray-900' 
@@ -1989,18 +2084,25 @@ export default function QuickInvoiceModal({
                   <TemplateSelector
                     selectedTemplate={theme.template}
                     onTemplateSelect={(template) => {
+                      // If premium unlocked, allow all templates
+                      if (isPremiumUnlocked) {
+                        setTheme(prevTheme => ({...prevTheme, template}))
+                        return
+                      }
+                      
                       // Check if template is locked for free plan
                       if (subscriptionUsage?.plan === 'free' && template !== 1) {
                         showError('Free plan users can only use Template 1 (Minimal). Please upgrade to access all templates.');
                         return;
                       }
                       
-                      // Check if Pay Per Invoice user with free invoices trying to use premium template
+                      // Check if Pay Per Invoice user with free invoices trying to use premium template (2 or 3)
+                      // Note: Paying for ANY premium template unlocks BOTH templates 2 & 3
                       if (subscriptionUsage?.plan === 'pay_per_invoice' && 
                           subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining && 
                           subscriptionUsage.payPerInvoice.freeInvoicesRemaining > 0 && 
                           template !== 1) {
-                        // Show confirmation modal
+                        // Show confirmation modal - paying for ANY premium template unlocks BOTH
                         setPendingTemplate(template);
                         setPremiumFeatureType('template');
                         setShowPremiumFeatureConfirm(true);
@@ -2011,6 +2113,12 @@ export default function QuickInvoiceModal({
                     }}
                     primaryColor={theme.primaryColor}
                     onPrimaryColorChange={(color) => {
+                      // If premium unlocked, allow all colors
+                      if (isPremiumUnlocked) {
+                        setTheme(prevTheme => ({...prevTheme, primaryColor: color}))
+                        return
+                      }
+                      
                       // Check if Pay Per Invoice user with free invoices trying to use premium color
                       if (subscriptionUsage?.plan === 'pay_per_invoice' && 
                           subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining && 
@@ -2057,6 +2165,12 @@ export default function QuickInvoiceModal({
                     }}
                     secondaryColor={theme.secondaryColor}
                     onSecondaryColorChange={(color) => {
+                      // If premium unlocked, allow all colors
+                      if (isPremiumUnlocked) {
+                        setTheme(prevTheme => ({...prevTheme, secondaryColor: color}))
+                        return
+                      }
+                      
                       // Check if Pay Per Invoice user with free invoices trying to use premium color
                       if (subscriptionUsage?.plan === 'pay_per_invoice' && 
                           subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining && 
@@ -2104,6 +2218,7 @@ export default function QuickInvoiceModal({
                     isDarkMode={isDarkMode}
                     userPlan={subscriptionUsage?.plan as 'free' | 'monthly' | 'pay_per_invoice' || 'free'}
                     freeInvoicesRemaining={subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining || 0}
+                    isPremiumUnlocked={isPremiumUnlocked}
                     onPremiumColorSelect={(primary: string, secondary: string) => {
                       // Store pending colors and show confirmation modal - return false to prevent color change
                       setPendingColors({ primary, secondary })
@@ -2898,11 +3013,11 @@ export default function QuickInvoiceModal({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className={`flex flex-col sm:flex-row ${hasMissingDetails && showMissingDetailsWarning ? 'gap-3' : 'gap-3'}`}>
                 <button
                   type="button"
                   onClick={prevStep}
-                  className={`flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
+                  className={`flex-shrink-0 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
                     isDarkMode 
                       ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -2912,8 +3027,8 @@ export default function QuickInvoiceModal({
                   <span>Back</span>
                 </button>
                 
-                {/* Hide Generate PDF and Create Draft buttons when markAsPaid is true */}
-                {!markAsPaid && (
+                {/* Hide Generate PDF and Create Draft buttons when markAsPaid is true OR when showing missing details warning */}
+                {!markAsPaid && !showMissingDetailsWarning && (
                   <>
                     <button
                       type="button"
@@ -2964,10 +3079,78 @@ export default function QuickInvoiceModal({
                   </>
                 )}
                 
+                {/* Show Update/Send Anyway buttons if missing details and user clicked Create & Send */}
+                {hasMissingDetails && showMissingDetailsWarning ? (
+                  <>
                 <button
-                  type="submit"
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        router.push('/dashboard/settings');
+                      }}
+                      className={`flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
+                        isDarkMode 
+                          ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
+                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      }`}
+                    >
+                      <Settings className="h-4 w-4" />
+                      <span>Update Settings</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setShowMissingDetailsWarning(false);
+                        shouldSendRef.current = true; // Set ref immediately
+                        setShouldSend(true);
+                        // Trigger form submit
+                        const form = document.querySelector('form');
+                        if (form) {
+                          form.requestSubmit();
+                        }
+                      }}
+                      disabled={creatingLoading || sendingLoading}
+                      className={`flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
+                        isDarkMode 
+                          ? 'bg-gray-600 text-white hover:bg-gray-700' 
+                          : 'bg-gray-500 text-white hover:bg-gray-600'
+                      }`}
+                    >
+                      {sendingLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Sending...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4" />
+                          <span>Send Anyway</span>
+                        </>
+                      )}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
                   data-testid="quick-invoice-create-and-send"
-                  onClick={() => setShouldSend(true)}
+                    onClick={() => {
+                      if (hasMissingDetails) {
+                        setShowMissingDetailsWarning(true);
+                        // Show toast notification immediately using localShowWarning (supports title + message)
+                        const missingText = missingDetails.missing.length === 1 
+                          ? missingDetails.missing[0]
+                          : `${missingDetails.missing.slice(0, 2).join(', ')}${missingDetails.missing.length > 2 ? ` +${missingDetails.missing.length - 2} more` : ''}`;
+                        localShowWarning('Missing Business Details', `Please update: ${missingText} before sending.`);
+                        return;
+                      }
+                      shouldSendRef.current = true; // Set ref immediately
+                      setShouldSend(true);
+                      // Trigger form submit
+                      const form = document.querySelector('form');
+                      if (form) {
+                        form.requestSubmit();
+                      }
+                    }}
                   disabled={creatingLoading || sendingLoading}
                   className={`flex-1 ${markAsPaid ? 'sm:flex-1' : ''} py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
                     isDarkMode 
@@ -2983,10 +3166,11 @@ export default function QuickInvoiceModal({
                   ) : (
                     <>
                       <Send className="h-4 w-4" />
-                      <span>{markAsPaid ? 'Create & Send Receipt' : 'Create & Send'}</span>
+                        <span>{markAsPaid ? 'Send Receipt' : 'Send'}</span>
                     </>
                   )}
                 </button>
+                )}
               </div>
             </div>
           )}
@@ -3032,11 +3216,13 @@ export default function QuickInvoiceModal({
           }}
           onConfirm={() => {
             if (premiumFeatureType === 'template' && pendingTemplate) {
-              // User confirmed - apply premium template
+              // User confirmed - unlock ALL premium features (both templates 2 & 3, all colors, unlimited reminders)
+              setIsPremiumUnlocked(true)
               setTheme({ ...theme, template: pendingTemplate })
-              showWarning('Premium template selected. This invoice will be charged $0.50 when sent.')
+              showWarning('Premium template selected. All premium features (both templates 2 & 3, all color presets, unlimited reminders) unlocked for this invoice. This invoice will be charged $0.50 when sent.')
             } else if (premiumFeatureType === 'reminder') {
-              // User confirmed - add 5th reminder
+              // User confirmed - unlock all features for this invoice
+              setIsPremiumUnlocked(true)
               const newRule: ReminderRule = {
                 id: Date.now().toString(),
                 type: 'before',
@@ -3047,7 +3233,12 @@ export default function QuickInvoiceModal({
                 ...reminders,
                 rules: [...reminders.rules, newRule]
               })
-              showWarning('Premium reminders enabled. This invoice will be charged $0.50 when sent.')
+              showWarning('Premium reminders enabled. All features (templates, colors, reminders) unlocked for this invoice. This invoice will be charged $0.50 when sent.')
+            } else if (premiumFeatureType === 'customization' && pendingColors) {
+              // User confirmed - unlock all features for this invoice
+              setIsPremiumUnlocked(true)
+              setTheme({ ...theme, primaryColor: pendingColors.primary, secondaryColor: pendingColors.secondary })
+              showWarning('Premium colors selected. All features (templates, colors, reminders) unlocked for this invoice. This invoice will be charged $0.50 when sent.')
             }
             setShowPremiumFeatureConfirm(false)
             setPremiumFeatureType(null)
@@ -3063,10 +3254,10 @@ export default function QuickInvoiceModal({
           }
           message={
             premiumFeatureType === 'template' 
-              ? `Using Template ${pendingTemplate} will charge $0.50 immediately when you send this invoice, even though you have ${subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining || 0} free invoices remaining. Free invoices only apply to basic features (Template 1, max 4 reminders, first 4 color presets).\n\nDo you want to continue with the $0.50 charge?`
+              ? `Selecting Template ${pendingTemplate} will unlock ALL premium features for this invoice only (both Templates 2 & 3, all color presets, unlimited reminders). This will charge $0.50 when you send this invoice, even though you have ${subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining || 0} free invoices remaining.\n\nFree invoices only apply to basic features (Template 1, max 4 reminders, first 4 color presets).\n\nDo you want to unlock premium features for this invoice?`
               : premiumFeatureType === 'reminder'
-              ? `Adding more than 4 reminders will charge $0.50 immediately when you send this invoice, even though you have ${subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining || 0} free invoices remaining. Free invoices only apply to basic features (Template 1, max 4 reminders, first 4 color presets).\n\nDo you want to continue with the $0.50 charge?`
-              : `Using premium colors (beyond the first 4 presets) will charge $0.50 immediately when you send this invoice, even though you have ${subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining || 0} free invoices remaining. Free invoices only apply to basic features (Template 1, max 4 reminders, first 4 color presets).\n\nDo you want to continue with the $0.50 charge?`
+              ? `Adding more than 4 reminders will unlock premium features for this invoice only (all color presets, unlimited reminders). This will charge $0.50 when you send this invoice, even though you have ${subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining || 0} free invoices remaining.\n\nFree invoices only apply to basic features (Template 1, max 4 reminders, first 4 color presets).\n\nDo you want to unlock premium features for this invoice?`
+              : `Selecting premium colors will unlock premium features for this invoice only (all color presets, unlimited reminders). This will charge $0.50 when you send this invoice, even though you have ${subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining || 0} free invoices remaining.\n\nFree invoices only apply to basic features (Template 1, max 4 reminders, first 4 color presets).\n\nDo you want to unlock premium features for this invoice?`
           }
           infoBanner={
             <div>
@@ -3078,12 +3269,15 @@ export default function QuickInvoiceModal({
               </p>
             </div>
           }
-          confirmText="Yes, Charge $0.50"
+          confirmText="Yes, Unlock Premium Features"
           cancelText="Cancel"
           type="warning"
         />,
         document.body
       )}
+
+      {/* Toast Container for local toasts */}
+      <ToastContainer toasts={localToasts} onRemove={localRemoveToast} />
     </>
   )
 }

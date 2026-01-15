@@ -45,7 +45,7 @@ import { Client, Invoice } from '@/types';
 
 function InvoicesContent(): React.JSX.Element {
   const { user, loading, getAuthHeaders } = useAuth();
-  const { toasts, removeToast, showSuccess, showError } = useToast();
+  const { toasts, removeToast, showSuccess, showError, showWarning } = useToast();
   const { settings } = useSettings();
   const { invoices, clients, isLoadingInvoices, hasInitiallyLoaded, addInvoice, updateInvoice, deleteInvoice, refreshInvoices } = useData();
   const searchParams = useSearchParams();
@@ -60,6 +60,19 @@ function InvoicesContent(): React.JSX.Element {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [showReminderDates, setShowReminderDates] = useState(false);
   const [showPartialPayment, setShowPartialPayment] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  
+  // Payment form state
+  const [payments, setPayments] = useState<any[]>([]);
+  const [totalPaid, setTotalPaid] = useState(0);
+  const [remainingBalance, setRemainingBalance] = useState(0);
+  const [loadingPayments, setLoadingPayments] = useState(false);
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+  const [deletingPayment, setDeletingPayment] = useState<string | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [paymentNotes, setPaymentNotes] = useState('');
   
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -88,7 +101,9 @@ function InvoicesContent(): React.JSX.Element {
     type: 'danger' as 'danger' | 'warning' | 'info' | 'success',
     onConfirm: () => {},
     isLoading: false,
-    confirmText: 'Confirm' as string | undefined
+    confirmText: 'Confirm' as string | undefined,
+    cancelText: 'Cancel' as string | undefined,
+    infoBanner: undefined as React.ReactNode | undefined
   });
 
   // Send invoice modal state
@@ -387,7 +402,7 @@ function InvoicesContent(): React.JSX.Element {
         overdueDays: 0,
         totalPaid: paymentData?.totalPaid || 0,
         remainingBalance: paymentData?.remainingBalance || invoice.total,
-        isPartiallyPaid: (paymentData?.totalPaid || 0) > 0 && (paymentData?.remainingBalance || invoice.total) > 0
+        isPartiallyPaid: (paymentData?.totalPaid || 0) > 0 && (paymentData?.remainingBalance || 0) > 0
       };
     }
 
@@ -442,14 +457,173 @@ function InvoicesContent(): React.JSX.Element {
       overdueDays: 0,
       totalPaid: paymentData?.totalPaid || 0,
       remainingBalance: baseAmount,
-      isPartiallyPaid: (paymentData?.totalPaid || 0) > 0 && baseAmount > 0 && baseAmount < invoice.total
+      isPartiallyPaid: (paymentData?.totalPaid || 0) > 0 && (paymentData?.remainingBalance || 0) > 0
     };
   }, [parseDateOnly]);
+
+  // Fetch payments for selected invoice
+  const fetchPayments = useCallback(async () => {
+    if (!selectedInvoice?.id) return;
+    
+    setLoadingPayments(true);
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/invoices/${selectedInvoice.id}/payments`, {
+        headers
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPayments(data.payments || []);
+        setTotalPaid(data.totalPaid || 0);
+        setRemainingBalance(data.remainingBalance || selectedInvoice.total);
+      }
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+    } finally {
+      setLoadingPayments(false);
+    }
+  }, [selectedInvoice?.id, getAuthHeaders, selectedInvoice?.total]);
+
+  // Fetch payments when showing payment form
+  useEffect(() => {
+    if (showPaymentForm && selectedInvoice?.id) {
+      fetchPayments();
+    }
+  }, [showPaymentForm, selectedInvoice?.id, fetchPayments]);
+
+  // Handle payment submission
+  const handlePaymentSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!paymentAmount || parseFloat(paymentAmount) <= 0 || !selectedInvoice?.id) {
+      return;
+    }
+
+    if (parseFloat(paymentAmount) > remainingBalance) {
+      showError(`Payment amount cannot exceed remaining balance of $${remainingBalance.toFixed(2)}`);
+      return;
+    }
+
+    setSubmittingPayment(true);
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/invoices/${selectedInvoice.id}/payments`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: parseFloat(paymentAmount),
+          paymentDate,
+          paymentMethod: paymentMethod || null,
+          notes: paymentNotes || null
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Reset form
+        setPaymentAmount('');
+        setPaymentMethod('');
+        setPaymentNotes('');
+        setPaymentDate(new Date().toISOString().split('T')[0]);
+        
+        // Refresh payments
+        await fetchPayments();
+        
+        // Refresh invoices
+        await refreshInvoices();
+        
+        showSuccess('Payment recorded successfully');
+        
+        // If fully paid, go back to invoice view
+        if (data.isFullyPaid) {
+          setShowPaymentForm(false);
+        }
+      } else {
+        const error = await response.json();
+        showError(error.error || 'Failed to record payment');
+      }
+    } catch (error) {
+      console.error('Error adding payment:', error);
+      showError('Failed to record payment. Please try again.');
+    } finally {
+      setSubmittingPayment(false);
+    }
+  }, [paymentAmount, remainingBalance, selectedInvoice?.id, paymentDate, paymentMethod, paymentNotes, getAuthHeaders, fetchPayments, refreshInvoices, showSuccess, showError]);
+
+  // Handle payment deletion
+  const handleDeletePayment = useCallback((paymentId: string) => {
+    if (!selectedInvoice?.id) return;
+
+    // Find the payment to get its details for the confirmation message
+    const payment = payments.find(p => p.id === paymentId);
+    const paymentAmount = payment ? `$${parseFloat(payment.amount.toString()).toFixed(2)}` : 'this payment';
+
+    // Calculate what will happen after deletion
+    const remainingAfterDelete = totalPaid - (payment ? parseFloat(payment.amount.toString()) : 0);
+    const invoiceTotal = selectedInvoice.total || 0;
+    const willBecomeUnpaid = remainingAfterDelete < invoiceTotal && selectedInvoice.status === 'paid';
+    
+    setConfirmationModal({
+      isOpen: true,
+      title: 'Delete Payment',
+      message: `Are you sure you want to delete ${paymentAmount}? This action cannot be undone.${willBecomeUnpaid ? '\n\nNote: This invoice will be marked as unpaid if it was previously fully paid.' : ''}`,
+      type: 'danger',
+      confirmText: 'Delete Payment',
+      cancelText: 'Cancel',
+      isLoading: false,
+      infoBanner: (
+        <div>
+          <p className="text-xs uppercase tracking-wide text-gray-500 mb-1.5">IMPORTANT</p>
+          <p className="text-sm font-medium text-gray-900">
+            Deleting this payment will update the invoice balance and may change the invoice status.
+          </p>
+        </div>
+      ),
+      onConfirm: async () => {
+        setConfirmationModal(prev => ({ ...prev, isLoading: true }));
+        setDeletingPayment(paymentId);
+        
+        try {
+          const headers = await getAuthHeaders();
+          const response = await fetch(`/api/invoices/${selectedInvoice.id}/payments?paymentId=${paymentId}`, {
+            method: 'DELETE',
+            headers
+          });
+
+          if (response.ok) {
+            await fetchPayments();
+            await refreshInvoices();
+            showSuccess('Payment deleted successfully');
+            setConfirmationModal({ isOpen: false, title: '', message: '', type: 'danger', onConfirm: () => {}, isLoading: false, confirmText: 'Confirm', cancelText: 'Cancel', infoBanner: undefined });
+          } else {
+            showError('Failed to delete payment');
+            setConfirmationModal(prev => ({ ...prev, isLoading: false }));
+          }
+        } catch (error) {
+          console.error('Error deleting payment:', error);
+          showError('Failed to delete payment. Please try again.');
+          setConfirmationModal(prev => ({ ...prev, isLoading: false }));
+        } finally {
+          setDeletingPayment(null);
+        }
+      }
+    });
+  }, [selectedInvoice?.id, payments, getAuthHeaders, fetchPayments, refreshInvoices, showSuccess, showError]);
 
   // Invoice handler functions
   const handleViewInvoice = useCallback((invoice: Invoice) => {
     setSelectedInvoice(invoice);
     setShowViewInvoice(true);
+    setShowPaymentForm(false);
+    // Reset payment form
+    setPaymentAmount('');
+    setPaymentMethod('');
+    setPaymentNotes('');
+    setPaymentDate(new Date().toISOString().split('T')[0]);
   }, []);
 
   const handleDownloadPDF = useCallback(async (invoice: Invoice) => {
@@ -457,7 +631,20 @@ function InvoicesContent(): React.JSX.Element {
     setLoadingActions(prev => ({ ...prev, [actionKey]: true }));
     
     try {
-      // Debug: Log current settings
+      // Fetch complete invoice data from API to ensure all fields are present
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/invoices/${invoice.id}`, { headers });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch invoice data');
+      }
+      
+      const data = await response.json();
+      const completeInvoice = data.invoice;
+      
+      if (!completeInvoice || !completeInvoice.client || !completeInvoice.items) {
+        throw new Error('Invoice data is incomplete');
+      }
       
       // Prepare business settings for PDF
       const businessSettings = {
@@ -477,19 +664,27 @@ function InvoicesContent(): React.JSX.Element {
         stripeAccount: settings.stripeAccount || '',
         paymentNotes: settings.paymentNotes || ''
       };
-      
-      // Debug: Log business settings being passed to PDF
 
       const { generateTemplatePDFBlob } = await import('@/lib/template-pdf-generator');
       
       // Extract template and colors from invoice theme if available
-      const invoiceTheme = invoice.theme as { template?: number; primary_color?: string; secondary_color?: string } | undefined;
-      const template = invoiceTheme?.template || 1;
+      const invoiceTheme = completeInvoice.theme as { template?: number; primary_color?: string; secondary_color?: string } | undefined;
+      // Map UI template (1, 2, 3) to PDF template (6, 4, 5)
+      const mapUiTemplateToPdf = (uiTemplate: number): number => {
+        switch (uiTemplate) {
+          case 1: return 6; // Minimal -> Template 6
+          case 2: return 4; // Modern -> Template 4
+          case 3: return 5; // Creative -> Template 5
+          default: return 6;
+        }
+      };
+      // Use template 1 (FastInvoiceTemplate) for fast invoices, otherwise map UI template to PDF template
+      const template = completeInvoice.type === 'fast' ? 1 : (invoiceTheme?.template ? mapUiTemplateToPdf(invoiceTheme.template) : 1);
       const primaryColor = invoiceTheme?.primary_color || '#5C2D91';
       const secondaryColor = invoiceTheme?.secondary_color || '#8B5CF6';
       
       const pdfBlob = await generateTemplatePDFBlob(
-        invoice, 
+        completeInvoice, 
         businessSettings, 
         template, 
         primaryColor, 
@@ -500,20 +695,20 @@ function InvoicesContent(): React.JSX.Element {
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `invoice-${invoice.invoiceNumber}.pdf`;
+      link.download = `invoice-${completeInvoice.invoiceNumber || completeInvoice.invoice_number}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      showSuccess('PDF Downloaded', `Invoice ${invoice.invoiceNumber} has been downloaded.`);
+      showSuccess('PDF Downloaded', `Invoice ${completeInvoice.invoiceNumber || completeInvoice.invoice_number} has been downloaded.`);
     } catch (error) {
       console.error('PDF download error:', error);
       showError('Download Failed', 'Failed to download PDF. Please try again.');
     } finally {
       setLoadingActions(prev => ({ ...prev, [actionKey]: false }));
     }
-  }, [settings, showSuccess, showError]);
+  }, [settings, showSuccess, showError, getAuthHeaders]);
 
   const handleSendInvoice = useCallback((invoice: Invoice) => {
     // Show modal for draft and paid invoices
@@ -533,6 +728,19 @@ function InvoicesContent(): React.JSX.Element {
     const actionKey = `send-${invoice.id}`;
     setLoadingActions(prev => ({ ...prev, [actionKey]: true }));
     setSendInvoiceModal(prev => ({ ...prev, isLoading: true }));
+    
+    // Check for missing business details - SendInvoiceModal handles blocking for draft/paid invoices
+    // This check is for sent/pending invoices that bypass the modal
+    const { checkMissingBusinessDetails } = await import('@/lib/utils');
+    const missingDetails = checkMissingBusinessDetails(settings);
+    if (missingDetails.missing.length > 0) {
+      // For direct calls (sent/pending invoices), just inform but don't block
+      // The SendInvoiceModal already blocks for draft/paid invoices
+      const missingText = missingDetails.missing.length === 1 
+        ? missingDetails.missing[0]
+        : `${missingDetails.missing.slice(0, 2).join(', ')}${missingDetails.missing.length > 2 ? ` +${missingDetails.missing.length - 2} more` : ''}`;
+      showWarning('Missing Details', `Missing: ${missingText}. Update in Settings.`);
+    }
     
     try {
       const headers = await getAuthHeaders();
@@ -570,7 +778,7 @@ function InvoicesContent(): React.JSX.Element {
     } finally {
       setLoadingActions(prev => ({ ...prev, [actionKey]: false }));
     }
-  }, [getAuthHeaders, showSuccess, showError, updateInvoice, refreshInvoices]);
+  }, [getAuthHeaders, showSuccess, showError, showWarning, updateInvoice, refreshInvoices, settings]);
 
   const handleEditInvoice = useCallback((invoice: Invoice) => {
     setSelectedInvoice(invoice);
@@ -589,7 +797,9 @@ function InvoicesContent(): React.JSX.Element {
       type: 'success',
       onConfirm: () => performMarkAsPaid(invoice),
       isLoading: false,
-      confirmText: 'Mark as Paid'
+      confirmText: 'Mark as Paid',
+      cancelText: 'Cancel',
+      infoBanner: undefined
     });
   }, []);
 
@@ -635,7 +845,9 @@ function InvoicesContent(): React.JSX.Element {
       type: 'danger',
       onConfirm: () => performDeleteInvoice(invoice),
       isLoading: false,
-      confirmText: 'Delete Invoice'
+      confirmText: 'Delete Invoice',
+      cancelText: 'Cancel',
+      infoBanner: undefined
     });
   }, []);
 
@@ -673,7 +885,9 @@ function InvoicesContent(): React.JSX.Element {
       type: 'info',
       onConfirm: () => performDuplicateInvoice(invoice),
       isLoading: false,
-      confirmText: 'Create Duplicate'
+      confirmText: 'Create Duplicate',
+      cancelText: 'Cancel',
+      infoBanner: undefined
     });
   }, []);
 
@@ -1474,7 +1688,7 @@ function InvoicesContent(): React.JSX.Element {
                 </>
               ) : (
                 <div className="p-12 text-center bg-white/70 border border-gray-200 backdrop-blur-sm">
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl mb-6 bg-gray-100">
+                  <div className="inline-flex items-center justify-center w-20 h-20 mb-6 bg-gray-100">
                     <FileText className="h-10 w-10 text-gray-500" />
                   </div>
                   
@@ -1600,13 +1814,16 @@ function InvoicesContent(): React.JSX.Element {
           <div className="rounded-lg sm:rounded-lg p-2 sm:p-4 max-w-6xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-hidden bg-white border-gray-200 flex flex-col">
             <div className="flex items-center justify-between mb-3 sm:mb-4 flex-shrink-0">
               <div className="flex items-center gap-3">
-                <h2 className="text-base sm:text-xl font-bold" style={{color: '#1f2937'}}>Invoice Details</h2>
-                <span className="text-xs text-gray-400 font-normal">(View only)</span>
+                <h2 className="text-base sm:text-xl font-bold" style={{color: '#1f2937'}}>
+                  {showPaymentForm ? 'Record Payment' : 'Invoice Details'}
+                </h2>
+                {!showPaymentForm && <span className="text-xs text-gray-400 font-normal">(View only)</span>}
               </div>
               <button
                 onClick={() => {
                   setShowViewInvoice(false);
-                  setShowReminderDates(false); // Reset reminder dates visibility when closing modal
+                  setShowReminderDates(false);
+                  setShowPaymentForm(false);
                 }}
                 className="p-1 sm:p-2 rounded-lg transition-colors hover:bg-gray-100 cursor-pointer"
               >
@@ -1615,7 +1832,153 @@ function InvoicesContent(): React.JSX.Element {
             </div>
             <div className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar">
             
-            {/* Responsive Invoice View */}
+            {showPaymentForm ? (
+              /* Payment Form View */
+              <div className="space-y-6">
+                {/* Summary */}
+                <div className="bg-gray-50 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700">Invoice Total</span>
+                    <span className="text-lg font-semibold text-gray-900">${selectedInvoice.total.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700">Total Paid</span>
+                    <span className="text-lg font-semibold text-emerald-600">${totalPaid.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-700">Remaining Balance</span>
+                    <span className={`text-lg font-semibold ${remainingBalance > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
+                      ${remainingBalance.toFixed(2)}
+                    </span>
+                  </div>
+                  {/* Progress bar */}
+                  <div className="w-full bg-gray-200 h-2">
+                    <div
+                      className="bg-emerald-600 h-2 transition-all duration-300"
+                      style={{ width: `${Math.min((totalPaid / selectedInvoice.total) * 100, 100)}%` }}
+                    />
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1 text-center">
+                    {((totalPaid / selectedInvoice.total) * 100).toFixed(1)}% paid
+                  </div>
+                </div>
+
+                {/* Payment Form */}
+                <form onSubmit={handlePaymentSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <DollarSign className="h-4 w-4 inline mr-1" />
+                        Amount *
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        max={remainingBalance}
+                        value={paymentAmount}
+                        onChange={(e) => setPaymentAmount(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        placeholder="0.00"
+                        required
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Max: ${remainingBalance.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <Calendar className="h-4 w-4 inline mr-1" />
+                        Payment Date *
+                      </label>
+                      <input
+                        type="date"
+                        value={paymentDate}
+                        onChange={(e) => setPaymentDate(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <CreditCard className="h-4 w-4 inline mr-1" />
+                      Payment Method
+                    </label>
+                    <input
+                      type="text"
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      placeholder="e.g., Bank Transfer, PayPal, Cash"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <FileText className="h-4 w-4 inline mr-1" />
+                      Notes
+                    </label>
+                    <textarea
+                      value={paymentNotes}
+                      onChange={(e) => setPaymentNotes(e.target.value)}
+                      rows={2}
+                      className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      placeholder="Optional notes about this payment"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={submittingPayment || !paymentAmount || parseFloat(paymentAmount) <= 0}
+                    className="w-full bg-indigo-600 text-white py-2.5 px-4 hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+                  >
+                    {submittingPayment ? 'Recording...' : 'Record Payment'}
+                  </button>
+                </form>
+
+                {/* Payment History */}
+                <div className="mt-6">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Payment History</h3>
+                  {loadingPayments ? (
+                    <div className="text-center py-8 text-gray-500">Loading payments...</div>
+                  ) : payments.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">No payments recorded yet</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {payments.map((payment) => (
+                        <div
+                          key={payment.id}
+                          className="flex items-center justify-between p-3 bg-white border border-gray-200 hover:bg-gray-50"
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-900">${parseFloat(payment.amount.toString()).toFixed(2)}</span>
+                              {payment.payment_method && (
+                                <span className="text-xs text-gray-500">• {payment.payment_method}</span>
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {new Date(payment.payment_date).toLocaleDateString()}
+                              {payment.notes && ` • ${payment.notes}`}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleDeletePayment(payment.id)}
+                            disabled={deletingPayment === payment.id}
+                            className="p-1.5 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                            title="Delete payment"
+                          >
+                            {deletingPayment === payment.id ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* Responsive Invoice View */
             <div className="w-full bg-white rounded-lg border border-gray-200 overflow-hidden">
               {/* Header */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 sm:p-6 border-b border-gray-200">
@@ -1862,29 +2225,44 @@ function InvoicesContent(): React.JSX.Element {
                 </div>
               )}
             </div>
+            )}
             </div>
             
             {/* Footer with Actions */}
             <div className="flex-shrink-0 border-t border-gray-200 px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
-              <button
-                onClick={() => {
-                  setShowViewInvoice(false);
-                  setShowReminderDates(false);
-                }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-              >
-                Close
-              </button>
-              {(selectedInvoice.status === 'sent' || selectedInvoice.status === 'pending') && (
+              {showPaymentForm ? (
                 <button
                   onClick={() => {
-                    setShowPartialPayment(true);
+                    setShowPaymentForm(false);
                   }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer flex items-center gap-2"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
                 >
-                  <DollarSign className="h-4 w-4" />
-                  Record Payment
+                  Back to Invoice
                 </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => {
+                      setShowViewInvoice(false);
+                      setShowReminderDates(false);
+                      setShowPaymentForm(false);
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    Close
+                  </button>
+                  {(selectedInvoice.status === 'sent' || selectedInvoice.status === 'pending') && (
+                    <button
+                      onClick={() => {
+                        setShowPaymentForm(true);
+                      }}
+                      className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer flex items-center gap-2"
+                    >
+                      <DollarSign className="h-4 w-4" />
+                      Record Payment
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -1994,6 +2372,7 @@ function InvoicesContent(): React.JSX.Element {
         invoiceNumber={sendInvoiceModal.invoice?.invoiceNumber || ''}
         invoice={sendInvoiceModal.invoice}
         isLoading={sendInvoiceModal.isLoading}
+        settings={settings}
       />
 
       {/* Partial Payment Modal */}

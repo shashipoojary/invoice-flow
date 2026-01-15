@@ -260,6 +260,7 @@ export default function ClientModal({
             } : undefined}
             reason="You've reached your client limit. Upgrade to create unlimited clients."
             limitType="clients"
+            hidePayPerInvoice={true}
           />,
           document.body
         )}

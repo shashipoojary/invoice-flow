@@ -125,7 +125,7 @@ export function generateMinimalEmailTemplate(
             .detail-label,
             .payment-methods h3,
             .payment-method-name {
-              color: ${primaryColor} !important;
+              color: #000000 !important;
             }
             .invoice-number,
             .bill-to-content {
@@ -173,7 +173,7 @@ export function generateMinimalEmailTemplate(
           .business-name {
             font-size: 20px;
             font-weight: 400;
-            color: ${primaryColor} !important;
+            color: #000000 !important;
             margin: 0;
             padding: 0;
             letter-spacing: 0;
@@ -194,7 +194,7 @@ export function generateMinimalEmailTemplate(
           .invoice-title {
             font-size: 20px;
             font-weight: 400;
-            color: ${primaryColor} !important;
+            color: #000000 !important;
             margin: 0 0 12px 0;
             padding: 0;
             letter-spacing: 0;
@@ -240,7 +240,7 @@ export function generateMinimalEmailTemplate(
           .bill-to-label {
             font-size: 14px !important;
             font-weight: 400 !important;
-            color: ${primaryColor} !important;
+            color: #000000 !important;
             margin: 0 0 16px 0 !important;
           }
           .bill-to-content {
@@ -267,7 +267,7 @@ export function generateMinimalEmailTemplate(
           }
           .detail-label {
             font-size: 14px;
-            color: ${primaryColor} !important;
+            color: #000000 !important;
             font-weight: 400;
             display: table-cell;
             padding-right: 16px;
@@ -300,7 +300,7 @@ export function generateMinimalEmailTemplate(
           }
           .cta-button {
             display: inline-block;
-            background: ${primaryColor};
+            background: #000000 !important;
             color: #ffffff !important;
             padding: 10px 20px;
             text-decoration: none;
@@ -320,7 +320,7 @@ export function generateMinimalEmailTemplate(
           .payment-methods h3 {
             font-size: 14px;
             font-weight: 400;
-            color: ${primaryColor} !important;
+            color: #000000 !important;
             margin-bottom: 16px;
             text-align: left;
             text-transform: uppercase;
@@ -331,7 +331,7 @@ export function generateMinimalEmailTemplate(
             padding: 16px;
             margin-bottom: 24px;
             border: 1px solid #e5e5e5;
-            border-radius: 4px;
+            border-radius: 0;
             width: 100%;
             box-sizing: border-box;
             text-align: left;
@@ -365,7 +365,7 @@ export function generateMinimalEmailTemplate(
           .payment-method-name {
             font-size: 12px;
             font-weight: 400;
-            color: ${primaryColor} !important;
+            color: #000000 !important;
             margin-bottom: 4px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -381,7 +381,7 @@ export function generateMinimalEmailTemplate(
             text-align: left;
             margin-top: 20px;
             border: 1px solid #e5e5e5;
-            border-radius: 4px;
+            border-radius: 0;
           }
           .payment-security p {
             margin: 0;
@@ -524,7 +524,7 @@ export function generateMinimalEmailTemplate(
               padding: 16px !important;
               margin-bottom: 24px !important;
               border: 1px solid #e5e5e5 !important;
-              border-radius: 4px !important;
+              border-radius: 0 !important;
               text-align: left !important;
             }
             .payment-notice p {
@@ -538,7 +538,7 @@ export function generateMinimalEmailTemplate(
               text-align: left !important;
               margin-top: 20px !important;
               border: 1px solid #e5e5e5 !important;
-              border-radius: 4px !important;
+              border-radius: 0 !important;
             }
             .payment-method-name {
               font-size: 12px !important;
@@ -603,10 +603,10 @@ export function generateMinimalEmailTemplate(
           <div class="header">
             <div class="header-content">
               <div class="business-info">
-                <div class="business-name" style="color: ${primaryColor} !important; font-size: 20px; font-weight: 400; letter-spacing: 0; margin: 0; padding: 0;">${businessSettings.businessName}</div>
+                <div class="business-name" style="color: #000000 !important; font-size: 20px; font-weight: 400; letter-spacing: 0; margin: 0; padding: 0;">${businessSettings.businessName}</div>
               </div>
               <div class="invoice-info">
-                <div class="invoice-title" style="color: ${primaryColor} !important; font-size: 20px; font-weight: 400; letter-spacing: 0; margin: 0 0 12px 0; padding: 0;">INVOICE</div>
+                <div class="invoice-title" style="color: #000000 !important; font-size: 20px; font-weight: 400; letter-spacing: 0; margin: 0 0 12px 0; padding: 0;">INVOICE</div>
                 <div class="invoice-number" style="color: #000000 !important; font-size: 10px; font-weight: 700; margin: 0 0 8px 0;">#${invoice.invoice_number}</div>
                 <div class="invoice-date-label" style="color: #808080 !important; font-size: 8px; margin: 0 0 4px 0;">Issue: ${formatDate(invoice.issue_date)}</div>
                 <div class="invoice-due-label" style="color: #808080 !important; font-size: 8px; margin: 8px 0 0 0;">Due: ${formatDate(invoice.due_date)}</div>
@@ -618,7 +618,7 @@ export function generateMinimalEmailTemplate(
           <div class="content">
             <div class="bill-to-section">
               <div class="bill-to-line" style="height: 1px; background: ${subtleLineColor}; margin-bottom: 20px; width: 280px;"></div>
-              <div class="bill-to-label" style="color: ${primaryColor} !important; font-size: 14px !important; font-weight: 400 !important; margin: 0 0 16px 0 !important;">Bill To</div>
+              <div class="bill-to-label" style="color: #000000 !important; font-size: 14px !important; font-weight: 400 !important; margin: 0 0 16px 0 !important;">Bill To</div>
               <div class="bill-to-content" style="color: #000000 !important; font-size: 14px !important; line-height: 1.6 !important; margin: 4px 0 !important;">${invoice.clients.name}</div>
               ${invoice.clients.company ? `<div class="bill-to-detail" style="color: #666666 !important; font-size: 14px !important; line-height: 1.6 !important; margin: 4px 0 !important;">${invoice.clients.company}</div>` : ''}
               ${invoice.clients.email ? `<div class="bill-to-detail" style="color: #666666 !important; font-size: 14px !important; line-height: 1.6 !important; margin: 4px 0 !important;">${invoice.clients.email}</div>` : ''}
@@ -631,7 +631,7 @@ export function generateMinimalEmailTemplate(
             </div>
 
             <div class="cta-section">
-              <a href="${publicUrl}" class="cta-button" style="background: ${primaryColor} !important; color: #ffffff !important; padding: 10px 20px; text-decoration: none; border-radius: 0; font-weight: 400; font-size: 10px; letter-spacing: 0.5px;">
+              <a href="${publicUrl}" class="cta-button" style="background: #000000 !important; color: #ffffff !important; padding: 10px 20px; text-decoration: none; border-radius: 0; font-weight: 400; font-size: 10px; letter-spacing: 0.5px;">
                 View Invoice Online
               </a>
             </div>
@@ -793,7 +793,7 @@ export function generateModernEmailTemplate(
           .business-name {
             font-size: 20px;
             font-weight: 400;
-            color: ${primaryColor} !important;
+            color: #000000 !important;
             letter-spacing: 0;
             margin: 0;
             padding: 0;
@@ -813,7 +813,7 @@ export function generateModernEmailTemplate(
           .invoice-title {
             font-size: 20px;
             font-weight: 400;
-            color: ${primaryColor} !important;
+            color: #000000 !important;
             letter-spacing: 0;
             margin: 0 0 12px 0;
             padding: 0;
@@ -837,7 +837,7 @@ export function generateModernEmailTemplate(
           .amount {
             font-size: 32px;
             font-weight: 700;
-            color: #FF6B35;
+            color: #FF6B35 !important;
             letter-spacing: -0.5px;
             margin: 16px 0 0 0;
           }
@@ -880,7 +880,7 @@ export function generateModernEmailTemplate(
             background: #f8f9fa;
             padding: 32px;
             margin-bottom: 48px;
-            border-radius: 6px;
+            border-radius: 0;
           }
           .message-section p {
             margin: 0 0 16px 0;
@@ -904,7 +904,7 @@ export function generateModernEmailTemplate(
             text-decoration: none;
             font-weight: 600;
             font-size: 14px;
-            border-radius: 6px;
+            border-radius: 0;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             letter-spacing: -0.01em;
           }
@@ -1138,10 +1138,10 @@ export function generateModernEmailTemplate(
           <div class="header">
             <div class="header-content">
               <div class="business-info">
-                <div class="business-name" style="color: ${primaryColor} !important; font-size: 20px; font-weight: 400; letter-spacing: 0; margin: 0; padding: 0;">${businessSettings.businessName}</div>
+                <div class="business-name" style="color: #000000 !important; font-size: 20px; font-weight: 400; letter-spacing: 0; margin: 0; padding: 0;">${businessSettings.businessName}</div>
               </div>
               <div class="invoice-info">
-                <div class="invoice-title" style="color: ${primaryColor} !important; font-size: 20px; font-weight: 400; letter-spacing: 0; margin: 0 0 12px 0; padding: 0;">INVOICE</div>
+                <div class="invoice-title" style="color: #000000 !important; font-size: 20px; font-weight: 400; letter-spacing: 0; margin: 0 0 12px 0; padding: 0;">INVOICE</div>
                 <div class="invoice-number" style="color: #000000 !important; font-size: 10px; font-weight: 700; margin: 0 0 8px 0;">#${invoice.invoice_number}</div>
                 <div class="invoice-date-label" style="color: #808080 !important; font-size: 8px; margin: 0 0 4px 0;">Issue: ${formatDate(invoice.issue_date)}</div>
                 <div class="invoice-due-label" style="color: #808080 !important; font-size: 8px; margin: 8px 0 0 0;">Due: ${formatDate(invoice.due_date)}</div>
@@ -1326,7 +1326,7 @@ export function generateCreativeEmailTemplate(
           .business-name {
             font-size: 20px;
             font-weight: 400;
-            color: ${primaryColor} !important;
+            color: #000000 !important;
             letter-spacing: 0;
             margin: 0;
             padding: 0;
@@ -1346,7 +1346,7 @@ export function generateCreativeEmailTemplate(
           .invoice-title {
             font-size: 20px;
             font-weight: 400;
-            color: ${primaryColor} !important;
+            color: #000000 !important;
             letter-spacing: 0;
             margin: 0 0 12px 0;
             padding: 0;
@@ -1370,7 +1370,7 @@ export function generateCreativeEmailTemplate(
           .amount {
             font-size: 32px;
             font-weight: 700;
-            color: #FF6B35;
+            color: #FF6B35 !important;
             letter-spacing: -0.5px;
             margin: 16px 0 0 0;
           }
@@ -1387,7 +1387,7 @@ export function generateCreativeEmailTemplate(
           .detail-section h3 {
             font-size: 14px;
             font-weight: 600;
-            color: ${primaryColor} !important;
+            color: #000000 !important;
             text-transform: uppercase;
             letter-spacing: 0.1em;
             margin: 0 0 16px 0;
@@ -1413,7 +1413,7 @@ export function generateCreativeEmailTemplate(
             background: #f8f9fa;
             padding: 32px;
             margin-bottom: 48px;
-            border-radius: 6px;
+            border-radius: 0;
           }
           .message-section p {
             margin: 0 0 16px 0;
@@ -1431,13 +1431,13 @@ export function generateCreativeEmailTemplate(
           }
           .cta-button {
             display: inline-block;
-            background: ${primaryColor} !important;
+            background: #000000 !important;
             color: #ffffff !important;
             padding: 16px 32px;
             text-decoration: none;
             font-weight: 600;
             font-size: 14px;
-            border-radius: 6px;
+            border-radius: 0;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             letter-spacing: -0.01em;
           }
@@ -1451,7 +1451,7 @@ export function generateCreativeEmailTemplate(
           .payment-methods h3 {
             font-size: 10px;
             font-weight: 600;
-            color: ${primaryColor} !important;
+            color: #000000 !important;
             margin-bottom: 16px;
             text-align: center;
           }
@@ -1479,7 +1479,7 @@ export function generateCreativeEmailTemplate(
           .payment-method-name {
             font-size: 12px;
             font-weight: 600;
-            color: ${primaryColor} !important;
+            color: #000000 !important;
             margin-bottom: 4px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -1672,10 +1672,10 @@ export function generateCreativeEmailTemplate(
           <div class="header">
             <div class="header-content">
               <div class="business-info">
-                <div class="business-name" style="color: ${primaryColor} !important; font-size: 20px; font-weight: 400; letter-spacing: 0; margin: 0; padding: 0;">${businessSettings.businessName}</div>
+                <div class="business-name" style="color: #000000 !important; font-size: 20px; font-weight: 400; letter-spacing: 0; margin: 0; padding: 0;">${businessSettings.businessName}</div>
               </div>
               <div class="invoice-info">
-                <div class="invoice-title" style="color: ${primaryColor} !important; font-size: 20px; font-weight: 400; letter-spacing: 0; margin: 0 0 12px 0; padding: 0;">INVOICE</div>
+                <div class="invoice-title" style="color: #000000 !important; font-size: 20px; font-weight: 400; letter-spacing: 0; margin: 0 0 12px 0; padding: 0;">INVOICE</div>
                 <div class="invoice-number" style="color: #000000 !important; font-size: 10px; font-weight: 700; margin: 0 0 8px 0;">#${invoice.invoice_number}</div>
                 <div class="invoice-date-label" style="color: #808080 !important; font-size: 8px; margin: 0 0 4px 0;">Issue: ${formatDate(invoice.issue_date)}</div>
                 <div class="invoice-due-label" style="color: #808080 !important; font-size: 8px; margin: 8px 0 0 0;">Due: ${formatDate(invoice.due_date)}</div>
@@ -1710,51 +1710,51 @@ export function generateCreativeEmailTemplate(
                         </div>
 
             <div class="cta-section">
-              <a href="${publicUrl}" class="cta-button" style="background: ${primaryColor} !important; color: #ffffff !important; padding: 16px 32px; text-decoration: none; font-weight: 600; font-size: 14px; border-radius: 6px; display: inline-block;">
+              <a href="${publicUrl}" class="cta-button" style="background: #000000 !important; color: #ffffff !important; padding: 16px 32px; text-decoration: none; font-weight: 600; font-size: 14px; border-radius: 0; display: inline-block;">
                 View Full Invoice
               </a>
             </div>
 
                   ${!hidePaymentMethods && (businessSettings.paypalEmail || businessSettings.cashappId || businessSettings.venmoId || businessSettings.googlePayUpi || businessSettings.applePayId || businessSettings.bankAccount || businessSettings.stripeAccount || businessSettings.paymentNotes) ? `
             <div class="payment-methods">
-              <h3 style="color: ${primaryColor} !important;">Payment Methods</h3>
+              <h3 style="color: #000000 !important;">Payment Methods</h3>
               <div class="payment-notice">
                 <p>Please use one of the following payment methods to settle this invoice. All payments are processed securely.</p>
                     </div>
                     <div class="payment-list">
                       ${businessSettings.paypalEmail ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name" style="color: ${primaryColor} !important;">PAYPAL</div>
+                    <div class="payment-method-name" style="color: #000000 !important;">PAYPAL</div>
                     <div class="payment-method-details">Send payment to: ${businessSettings.paypalEmail}</div>
                         </div>
                       ` : ''}
                       ${businessSettings.cashappId ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name" style="color: ${primaryColor} !important;">CASH APP</div>
+                    <div class="payment-method-name" style="color: #000000 !important;">CASH APP</div>
                     <div class="payment-method-details">Send to: ${businessSettings.cashappId.startsWith('$') ? businessSettings.cashappId : '$' + businessSettings.cashappId}</div>
                         </div>
                       ` : ''}
                       ${businessSettings.venmoId ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name" style="color: ${primaryColor} !important;">VENMO</div>
+                    <div class="payment-method-name" style="color: #000000 !important;">VENMO</div>
                     <div class="payment-method-details">Send to: ${businessSettings.venmoId.startsWith('@') ? businessSettings.venmoId : '@' + businessSettings.venmoId}</div>
                         </div>
                       ` : ''}
                       ${businessSettings.googlePayUpi ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name" style="color: ${primaryColor} !important;">GOOGLE PAY</div>
+                    <div class="payment-method-name" style="color: #000000 !important;">GOOGLE PAY</div>
                     <div class="payment-method-details">UPI ID: ${businessSettings.googlePayUpi}</div>
                         </div>
                       ` : ''}
                       ${businessSettings.applePayId ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name" style="color: ${primaryColor} !important;">APPLE PAY</div>
+                    <div class="payment-method-name" style="color: #000000 !important;">APPLE PAY</div>
                     <div class="payment-method-details">Send to: ${businessSettings.applePayId}</div>
                         </div>
                       ` : ''}
                       ${businessSettings.bankAccount ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name" style="color: ${primaryColor} !important;">BANK TRANSFER</div>
+                    <div class="payment-method-name" style="color: #000000 !important;">BANK TRANSFER</div>
                     <div class="payment-method-details">
                       Bank: ${businessSettings.bankAccount}
                       ${businessSettings.bankIfscSwift ? `<br>IFSC/SWIFT: ${businessSettings.bankIfscSwift}` : ''}
@@ -1764,13 +1764,13 @@ export function generateCreativeEmailTemplate(
                       ` : ''}
                       ${businessSettings.stripeAccount ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name" style="color: ${primaryColor} !important;">CREDIT/DEBIT CARD</div>
+                    <div class="payment-method-name" style="color: #000000 !important;">CREDIT/DEBIT CARD</div>
                     <div class="payment-method-details">${businessSettings.stripeAccount}</div>
                         </div>
                       ` : ''}
                       ${businessSettings.paymentNotes ? `
                   <div class="payment-method-item">
-                    <div class="payment-method-name" style="color: ${primaryColor} !important;">OTHER</div>
+                    <div class="payment-method-name" style="color: #000000 !important;">OTHER</div>
                     <div class="payment-method-details">${businessSettings.paymentNotes}</div>
                         </div>
                       ` : ''}
@@ -1875,7 +1875,7 @@ export function generateOriginalFastInvoiceEmailTemplate(
             background: #f8f9fa;
             padding: 20px;
             margin: 24px 0;
-            border-radius: 4px;
+            border-radius: 0;
           }
           .detail-item {
             font-size: 14px;
@@ -1896,11 +1896,11 @@ export function generateOriginalFastInvoiceEmailTemplate(
           }
           .cta-button {
             display: inline-block;
-            background: #8B5CF6;
+            background: #000000 !important;
             color: #ffffff !important;
             padding: 14px 32px;
             text-decoration: none;
-            border-radius: 6px;
+            border-radius: 0;
             font-weight: 600;
             font-size: 15px;
           }
@@ -2001,7 +2001,7 @@ export function generateOriginalFastInvoiceEmailTemplate(
                 <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:600;">View Invoice</center>
                 </v:roundrect>
                 <![endif]-->
-                <a href="${publicUrl}" class="cta-button" style="display: inline-block; background: #8B5CF6; color: #ffffff !important; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 15px;">View Invoice</a>
+                <a href="${publicUrl}" class="cta-button" style="display: inline-block; background: #000000 !important; color: #ffffff !important; padding: 14px 32px; text-decoration: none; border-radius: 0; font-weight: 600; font-size: 15px;">View Invoice</a>
               </div>
             </div>
 
@@ -2389,7 +2389,7 @@ export function generateEstimateEmailTemplate(
             .estimate-title,
             .bill-to-label,
             .detail-label {
-              color: ${primaryColor} !important;
+              color: #000000 !important;
             }
             .estimate-number,
             .bill-to-content {
@@ -2430,7 +2430,7 @@ export function generateEstimateEmailTemplate(
             .business-name {
             font-size: 20px;
             font-weight: 400;
-            color: ${primaryColor} !important;
+            color: #000000 !important;
             margin: 0;
             padding: 0;
             letter-spacing: 0;
@@ -2451,7 +2451,7 @@ export function generateEstimateEmailTemplate(
           .estimate-title {
             font-size: 20px;
             font-weight: 400;
-            color: ${primaryColor} !important;
+            color: #000000 !important;
             margin: 0 0 12px 0;
             padding: 0;
             letter-spacing: 0;
@@ -2486,7 +2486,7 @@ export function generateEstimateEmailTemplate(
           .bill-to-label {
             font-size: 14px !important;
             font-weight: 400 !important;
-            color: ${primaryColor} !important;
+            color: #000000 !important;
             margin: 0 0 16px 0 !important;
           }
           .bill-to-content {
@@ -2513,7 +2513,7 @@ export function generateEstimateEmailTemplate(
           }
           .detail-label {
             font-size: 14px;
-            color: ${primaryColor} !important;
+            color: #000000 !important;
             font-weight: 400;
             display: table-cell;
             padding-right: 16px;
@@ -2535,7 +2535,7 @@ export function generateEstimateEmailTemplate(
           }
           .items-label {
             font-size: 14px;
-            color: ${primaryColor} !important;
+            color: #000000 !important;
             font-weight: 400;
             margin-bottom: 12px;
           }
@@ -2564,7 +2564,7 @@ export function generateEstimateEmailTemplate(
           }
           .cta-button {
             display: inline-block;
-            background: ${primaryColor};
+            background: #000000 !important;
             color: #ffffff !important;
             padding: 12px 32px;
             text-decoration: none;

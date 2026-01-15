@@ -1,14 +1,18 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { X, DollarSign, Calendar, FileText, User, Mail, ArrowRight, ArrowLeft, Clock, CheckCircle, Send } from 'lucide-react'
+import { X, DollarSign, Calendar, FileText, User, Mail, ArrowRight, ArrowLeft, Clock, CheckCircle, Send, Settings } from 'lucide-react'
 import { Invoice } from '@/types'
+import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/useToast'
 import { useData } from '@/contexts/DataContext'
 import { useAuth } from '@/hooks/useAuth'
+import { useSettings } from '@/contexts/SettingsContext'
 import CustomDropdown from './CustomDropdown'
 import UpgradeModal from './UpgradeModal'
+import ConfirmationModal from './ConfirmationModal'
+import { checkMissingBusinessDetails } from '@/lib/utils'
 
 interface Client {
   id: string
@@ -41,9 +45,19 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [subscriptionUsage, setSubscriptionUsage] = useState<{ used: number; limit: number | null; remaining: number | null; plan: string } | null>(null)
   const [showUpgradeContent, setShowUpgradeContent] = useState(false)
+  const [showMissingDetailsWarning, setShowMissingDetailsWarning] = useState(false)
+  
+  const router = useRouter()
   const { user } = useAuth()
   const { showSuccess: localShowSuccess, showError: localShowError, showWarning: localShowWarning } = useToast()
   const { invoices, addInvoice, addClient, updateInvoice, refreshInvoices, clients: globalClients } = useData()
+  const { settings } = useSettings()
+
+  // Check for missing business details
+  const missingDetails = useMemo(() => {
+    return checkMissingBusinessDetails(settings);
+  }, [settings]);
+  const hasMissingDetails = missingDetails.missing.length > 0;
   
   // Use passed toast functions if available, otherwise use local ones
   const showSuccess = propShowSuccess || localShowSuccess
@@ -415,6 +429,17 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
           return
         }
 
+        // Check for missing business details (should already be checked in UI, but double-check)
+        const { checkMissingBusinessDetails } = await import('@/lib/utils');
+        const missingDetailsCheck = checkMissingBusinessDetails(settings);
+        if (missingDetailsCheck.missing.length > 0 && !showMissingDetailsWarning) {
+          // This shouldn't happen if UI is working correctly, but handle it
+          setShowMissingDetailsWarning(true);
+          setSendLoading(false);
+          try { addInvoice && addInvoice(invoice) } catch {}
+          return;
+        }
+
         const sendResponse = await fetch('/api/invoices/send', {
           method: 'POST',
           headers: { ...headers, 'Content-Type': 'application/json' },
@@ -474,7 +499,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   return (
     <>
       {/* Main Invoice Modal - Hide when upgrade modal is shown */}
-      <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 ${showUpgradeModal ? 'hidden' : ''}`}>
+      <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 ${showUpgradeModal ? 'hidden' : ''}`}>
       <div className={`shadow-2xl max-w-md w-full overflow-hidden ${
         isDarkMode 
           ? 'bg-gray-900' 
@@ -903,12 +928,12 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                 </div>
               </div>
 
-              <div className="flex space-x-3">
+              <div className={`flex flex-col sm:flex-row ${hasMissingDetails && showMissingDetailsWarning ? 'gap-3' : 'gap-3'}`}>
                 <button
                   type="button"
                   data-testid="fast-invoice-back-step"
                   onClick={() => setStep(1)}
-                  className={`flex-1 py-3 px-6 rounded-none transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
+                  className={`flex-shrink-0 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
                     isDarkMode 
                       ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -917,45 +942,114 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                   <ArrowLeft className="h-4 w-4" />
                   <span>Back</span>
                 </button>
-                {/* Hide "Create" button when markAsPaid is true */}
-                {!markAsPaid && (
+                
+                {/* Hide "Create" button when markAsPaid is true OR when showing missing details warning */}
+                {!markAsPaid && !showMissingDetailsWarning && (
                   <button
                     type="button"
                     data-testid="fast-invoice-create-and-send"
                     onClick={() => handleCreateInvoice(true)}
                     disabled={loading || sendLoading}
-                    className={`flex-1 px-3 py-2 rounded-none transition-colors font-medium flex items-center justify-center space-x-2 text-xs disabled:opacity-50 cursor-pointer ${
+                    className={`flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
                       isDarkMode 
-                        ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
-                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                        ? 'bg-gray-600 text-white hover:bg-gray-700' 
+                        : 'bg-gray-500 text-white hover:bg-gray-600'
                     }`}
                   >
                     {loading ? (
-                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Creating...</span>
+                      </>
                     ) : (
-                      <CheckCircle className="h-3 w-3" />
+                      <>
+                        <CheckCircle className="h-4 w-4" />
+                        <span>Create</span>
+                      </>
                     )}
-                    <span>{loading ? 'Creating...' : 'Create'}</span>
                   </button>
                 )}
+                
+                {/* Show Update/Send Anyway buttons if missing details and user clicked Create & Send */}
+                {hasMissingDetails && showMissingDetailsWarning ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        router.push('/dashboard/settings');
+                      }}
+                      className={`flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
+                        isDarkMode 
+                          ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
+                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      }`}
+                    >
+                      <Settings className="h-4 w-4" />
+                      <span>Update Settings</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMissingDetailsWarning(false);
+                        handleCreateAndSend();
+                      }}
+                      disabled={loading || sendLoading}
+                      className={`flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
+                        isDarkMode 
+                          ? 'bg-gray-600 text-white hover:bg-gray-700' 
+                          : 'bg-gray-500 text-white hover:bg-gray-600'
+                      }`}
+                    >
+                      {sendLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Sending...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4" />
+                          <span>Send Anyway</span>
+                        </>
+                      )}
+                    </button>
+                  </>
+                ) : (
                 <button
                   type="button"
                   data-testid="fast-invoice-create-draft"
-                  onClick={handleCreateAndSend}
+                    onClick={() => {
+                      if (hasMissingDetails) {
+                        setShowMissingDetailsWarning(true);
+                        // Show toast notification
+                        const missingText = missingDetails.missing.length === 1 
+                          ? missingDetails.missing[0]
+                          : `${missingDetails.missing.slice(0, 2).join(', ')}${missingDetails.missing.length > 2 ? ` +${missingDetails.missing.length - 2} more` : ''}`;
+                        showWarning('Missing Business Details', `Please update: ${missingText} before sending.`);
+                        return;
+                      }
+                      handleCreateAndSend();
+                    }}
                   disabled={loading || sendLoading}
-                  className={`flex-1 ${markAsPaid ? 'sm:flex-1' : ''} px-3 py-2 transition-colors font-medium flex items-center justify-center space-x-2 text-xs disabled:opacity-50 cursor-pointer ${
+                    className={`flex-1 ${markAsPaid ? 'sm:flex-1' : ''} py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
                     isDarkMode 
                       ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
                       : 'bg-indigo-600 text-white hover:bg-indigo-700'
                   }`}
                 >
                   {sendLoading ? (
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Sending...</span>
+                      </>
                   ) : (
-                    <Send className="h-3 w-3" />
+                      <>
+                        <Send className="h-4 w-4" />
+                        <span>{markAsPaid ? 'Send Receipt' : 'Send'}</span>
+                      </>
                   )}
-                  <span>{sendLoading ? 'Sending...' : (markAsPaid ? 'Create & Send Receipt' : 'Create & Send')}</span>
                 </button>
+                )}
               </div>
             </div>
           )}
@@ -990,6 +1084,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         />,
         document.body
       )}
+
     </>
   )
 }

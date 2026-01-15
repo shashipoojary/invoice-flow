@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { Resend } from 'resend';
 import { getReminderEmailTemplate } from '@/lib/reminder-email-templates';
 import { canEnableReminder } from '@/lib/subscription-validator';
+import { getBaseUrl } from '@/lib/get-base-url';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -325,12 +326,16 @@ async function sendReminderEmail(invoice: any, reminderType: string, overdueDays
       paymentNotes: businessSettings.payment_notes || ''
     };
 
+    // Get base URL for email links using utility function
+    const baseUrl = getBaseUrl();
+    
     // Get reminder email template
     const reminderTemplate = getReminderEmailTemplate(
       templateInvoice,
       templateBusinessSettings,
       reminderType as 'friendly' | 'polite' | 'firm' | 'urgent',
-      overdueDays
+      overdueDays,
+      baseUrl
     );
 
     // Determine the from address: use email_from_address if available, otherwise use default

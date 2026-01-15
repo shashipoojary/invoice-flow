@@ -92,45 +92,50 @@ async function processReminders(request: NextRequest) {
       .lte('sent_at', now);
 
     // Filter out reminders for invoices that are fully paid via partial payments
+    // IMPORTANT: Only check partial payments for "pending"/"scheduled" invoices
+    // "Sent" invoices should NOT be affected by partial payments
     const validReminders = [];
     for (const reminder of (scheduledReminders || [])) {
       const invoice = reminder.invoices;
       
-      // Check if invoice has partial payments that fully cover the amount
-      const { data: payments } = await supabaseAdmin
-        .from('invoice_payments')
-        .select('amount')
-        .eq('invoice_id', invoice.id);
-      
-      if (payments && payments.length > 0) {
-        const totalPaid = payments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
-        // If fully paid via partial payments, skip this reminder
-        if (totalPaid >= invoice.total) {
-          // Mark reminder as cancelled (not failed) since invoice is fully paid
-          await supabaseAdmin
-            .from('invoice_reminders')
-            .update({
-              reminder_status: 'cancelled',
-              failure_reason: 'Invoice fully paid via partial payments - reminders cancelled'
-            })
-            .eq('id', reminder.id);
-          
-          // Update invoice status to paid if not already
-          if (invoice.status !== 'paid') {
+      // Only check partial payments if invoice is NOT "sent" (i.e., it's pending/scheduled)
+      // "Sent" invoices should use original total regardless of partial payments
+      if (invoice.status !== 'sent' && invoice.status !== 'cancelled') {
+        const { data: payments } = await supabaseAdmin
+          .from('invoice_payments')
+          .select('amount')
+          .eq('invoice_id', invoice.id);
+        
+        if (payments && payments.length > 0) {
+          const totalPaid = payments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+          // If fully paid via partial payments, skip this reminder
+          if (totalPaid >= invoice.total) {
+            // Mark reminder as cancelled (not failed) since invoice is fully paid
             await supabaseAdmin
-              .from('invoices')
-              .update({ status: 'paid', updated_at: new Date().toISOString() })
-              .eq('id', invoice.id);
+              .from('invoice_reminders')
+              .update({
+                reminder_status: 'cancelled',
+                failure_reason: 'Invoice fully paid via partial payments - reminders cancelled'
+              })
+              .eq('id', reminder.id);
             
-            // Log paid event
-            try {
-              await supabaseAdmin.from('invoice_events').insert({ 
-                invoice_id: invoice.id, 
-                type: 'paid' 
-              });
-            } catch {}
+            // Update invoice status to paid if not already
+            if (invoice.status !== 'paid') {
+              await supabaseAdmin
+                .from('invoices')
+                .update({ status: 'paid', updated_at: new Date().toISOString() })
+                .eq('id', invoice.id);
+              
+              // Log paid event
+              try {
+                await supabaseAdmin.from('invoice_events').insert({ 
+                  invoice_id: invoice.id, 
+                  type: 'paid' 
+                });
+              } catch {}
+            }
+            continue; // Skip this reminder
           }
-          continue; // Skip this reminder
         }
       }
       
@@ -458,23 +463,34 @@ async function sendReminderEmail(invoice: any, reminderType: string, overdueDays
   const dueDate = invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A';
   
   // Fetch partial payments if not provided
+  // IMPORTANT: For "sent" invoices, do NOT use partial payments - use original total
+  // Only "pending" or "scheduled" invoices should consider partial payments
   let totalPaid = paymentData?.totalPaid || 0;
   let remainingBalance = paymentData?.remainingBalance || (invoice.total || 0);
   
-  if (!paymentData) {
-    const { data: payments } = await supabaseAdmin
-      .from('invoice_payments')
-      .select('amount')
-      .eq('invoice_id', invoice.id);
-    
-    if (payments && payments.length > 0) {
-      totalPaid = payments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
-      remainingBalance = Math.max(0, (invoice.total || 0) - totalPaid);
+  // Only consider partial payments if invoice is NOT "sent" (i.e., it's pending/scheduled)
+  if (invoice.status !== 'sent' && invoice.status !== 'cancelled') {
+    if (!paymentData) {
+      const { data: payments } = await supabaseAdmin
+        .from('invoice_payments')
+        .select('amount')
+        .eq('invoice_id', invoice.id);
+      
+      if (payments && payments.length > 0) {
+        totalPaid = payments.reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+        remainingBalance = Math.max(0, (invoice.total || 0) - totalPaid);
+      }
     }
+  } else {
+    // For "sent" invoices, ignore partial payments and use original total
+    totalPaid = 0;
+    remainingBalance = invoice.total || 0;
   }
   
-  // Calculate base amount (considering partial payments)
-  const baseAmount = remainingBalance;
+  // Calculate base amount
+  // For "sent" invoices: use original total (ignore partial payments)
+  // For "pending"/"scheduled" invoices: use remaining balance (consider partial payments)
+  const baseAmount = (invoice.status === 'sent' || invoice.status === 'cancelled') ? (invoice.total || 0) : remainingBalance;
   
   // Calculate late fees if invoice is overdue (same logic as manual send route and public page)
   let lateFeesAmount = 0;

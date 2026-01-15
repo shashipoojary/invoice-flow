@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Palette, Check, FileText, Layout, PenTool, Star } from 'lucide-react'
+import { Palette, Check, FileText, Layout, PenTool, Star, Lock } from 'lucide-react'
 
 interface TemplateSelectorProps {
   selectedTemplate: number
@@ -13,6 +13,7 @@ interface TemplateSelectorProps {
   isDarkMode?: boolean
   userPlan?: 'free' | 'monthly' | 'pay_per_invoice'
   freeInvoicesRemaining?: number // For Pay Per Invoice users
+  isPremiumUnlocked?: boolean // Premium features unlocked for this invoice
   onPremiumColorSelect?: (primary: string, secondary: string) => boolean | void // Return false to prevent color change
 }
 
@@ -75,6 +76,7 @@ export default function TemplateSelector({
   isDarkMode = false,
   userPlan = 'free',
   freeInvoicesRemaining = 0,
+  isPremiumUnlocked = false,
   onPremiumColorSelect
 }: TemplateSelectorProps) {
   const [showColorPicker, setShowColorPicker] = useState(false)
@@ -90,6 +92,14 @@ export default function TemplateSelector({
   }
 
   const handleColorPreset = (primary: string, secondary: string, presetName: string) => {
+    // If premium is already unlocked, allow all colors without confirmation
+    if (isPremiumUnlocked) {
+      onPrimaryColorChange(primary)
+      onSecondaryColorChange(secondary)
+      setSelectedPreset(presetName)
+      return
+    }
+    
     // Check if this is a premium color and user has free invoices
     if (onPremiumColorSelect && userPlan === 'pay_per_invoice' && freeInvoicesRemaining > 0) {
       // Check if this preset is premium (index >= 4)
@@ -123,8 +133,9 @@ export default function TemplateSelector({
             const isSelected = selectedTemplate === template.id;
             // For free plan: lock templates 2/3
             // For Pay Per Invoice: show premium symbol if template 2/3 and has free invoices
-            const isLocked = userPlan === 'free' && template.id !== 1;
-            const isPremium = userPlan === 'pay_per_invoice' && freeInvoicesRemaining > 0 && template.id !== 1;
+            // If premium unlocked, no locks
+            const isLocked = !isPremiumUnlocked && userPlan === 'free' && template.id !== 1;
+            const isPremium = !isPremiumUnlocked && userPlan === 'pay_per_invoice' && freeInvoicesRemaining > 0 && template.id !== 1;
             
             return (
               <div
@@ -238,8 +249,9 @@ export default function TemplateSelector({
                     (primaryColor === preset.primary && secondaryColor === preset.secondary)
                   // For free plan: lock presets beyond first 4
                   // For Pay Per Invoice: show premium symbol if preset beyond first 4 and has free invoices
-                  const isLocked = userPlan === 'free' && index >= 4;
-                  const isPremium = userPlan === 'pay_per_invoice' && freeInvoicesRemaining > 0 && index >= 4;
+                  // If premium unlocked, no locks
+                  const isLocked = !isPremiumUnlocked && userPlan === 'free' && index >= 4;
+                  const isPremium = !isPremiumUnlocked && userPlan === 'pay_per_invoice' && freeInvoicesRemaining > 0 && index >= 4;
                   
                   return (
                     <button
@@ -274,8 +286,8 @@ export default function TemplateSelector({
                         </div>
                       )}
                       {isPremium && !isSelected && (
-                        <div className="absolute top-1 right-1 w-3 h-3 bg-yellow-500 rounded-full flex items-center justify-center">
-                          <Star className="h-2 w-2 text-white fill-white" />
+                        <div className="absolute top-1 right-1 w-3 h-3 bg-gray-400 rounded-full flex items-center justify-center">
+                          <Lock className="h-2 w-2 text-white" />
                         </div>
                       )}
                       <div className="flex items-center space-x-1.5 mb-1.5">
@@ -293,7 +305,7 @@ export default function TemplateSelector({
                         <span className="text-[10px] text-orange-600 mt-0.5">(Locked)</span>
                       )}
                       {isPremium && (
-                        <span className="text-[10px] text-yellow-600 mt-0.5">Premium</span>
+                        <span className="text-[10px] text-gray-600 mt-0.5">(Locked)</span>
                       )}
                     </button>
                   )

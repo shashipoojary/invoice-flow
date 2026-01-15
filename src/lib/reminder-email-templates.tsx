@@ -230,7 +230,7 @@ export const getReminderEmailTemplate = (
               color: #000000 !important;
             }
             .amount {
-              color: ${toneColor} !important;
+              color: #FF6B35 !important;
             }
             .business-details,
             .invoice-date-label {
@@ -486,13 +486,13 @@ export const getReminderEmailTemplate = (
 
             <div class="button-container">
               <!--[if mso]>
-              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${appBaseUrl}/invoice/${invoice.publicToken}" style="height:44px;v-text-anchor:middle;width:200px;" arcsize="0%" stroke="f" fillcolor="${toneColor}">
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${appBaseUrl}/invoice/${encodeURIComponent(invoice.publicToken || '')}" style="height:44px;v-text-anchor:middle;width:200px;" arcsize="0%" stroke="f" fillcolor="${toneColor}">
                 <w:anchorlock/>
                 <center style="color:#ffffff;font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;font-size:14px;font-weight:500;">View &amp; Pay Invoice</center>
               </v:roundrect>
               <![endif]-->
               <!--[if !mso]><!-- -->
-              <a href="${appBaseUrl}/invoice/${invoice.publicToken}" class="payment-button" style="display: inline-block; background-color: ${toneColor} !important; color: #ffffff !important; text-decoration: none !important; padding: 14px 32px !important; font-weight: 500 !important; text-align: center !important; font-size: 14px !important; border: none !important; border-radius: 0 !important; mso-hide: all;">
+              <a href="${appBaseUrl}/invoice/${encodeURIComponent(invoice.publicToken || '')}" class="payment-button" style="display: inline-block; background-color: ${toneColor} !important; color: #ffffff !important; text-decoration: none !important; padding: 14px 32px !important; font-weight: 500 !important; text-align: center !important; font-size: 14px !important; border: none !important; border-radius: 0 !important; mso-hide: all;">
                 <span style="color: #ffffff !important;">View &amp; Pay Invoice</span>
               </a>
               <!--<![endif]-->

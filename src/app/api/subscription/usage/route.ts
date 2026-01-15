@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     const usageStats = await getUsageStats(user.id);
     const plan = profile?.subscription_plan || 'free';
 
-    // For Pay Per Invoice: Calculate free vs charged invoices
+    // For Pay Per Invoice: Calculate free vs charged invoices based on actual billing records
     let payPerInvoiceInfo = null;
     if (plan === 'pay_per_invoice') {
       // Get activation date to count invoices correctly
@@ -40,23 +40,59 @@ export async function GET(request: NextRequest) {
         .eq('id', user.id)
         .single();
       
-      let freeInvoicesRemaining = 5;
+      // Get all non-draft invoices created after activation
+      const { data: allInvoices } = await supabase
+        .from('invoices')
+        .select('id')
+        .eq('user_id', user.id)
+        .neq('status', 'draft');
+      
+      // Filter by activation date if set
+      let invoicesToCount = allInvoices || [];
       if (userData?.pay_per_invoice_activated_at) {
-        // Count non-draft invoices created after activation
-        const { count: freeInvoiceCount } = await supabase
+        invoicesToCount = invoicesToCount.filter(inv => {
+          // We need to check created_at, but we only have id
+          // So we'll fetch the invoices with created_at
+          return true; // Will filter below
+        });
+        
+        // Re-fetch with date filter
+        const { data: filteredInvoices } = await supabase
           .from('invoices')
-          .select('*', { count: 'exact', head: true })
+          .select('id, created_at')
           .eq('user_id', user.id)
           .gte('created_at', userData.pay_per_invoice_activated_at)
           .neq('status', 'draft');
         
-        freeInvoicesRemaining = Math.max(0, 5 - (freeInvoiceCount || 0));
+        invoicesToCount = filteredInvoices || [];
       }
       
-      const totalInvoices = usageStats.invoices.used;
-      const freeInvoicesUsed = Math.min(totalInvoices, 5);
-      const chargedInvoices = Math.max(0, totalInvoices - 5);
-      const totalCharged = chargedInvoices * 0.5;
+      const totalInvoices = invoicesToCount.length;
+      
+      // Get all billing records (pending OR paid) for these invoices
+      // If a billing record exists, it means the invoice was charged (even if payment is still pending)
+      const invoiceIds = invoicesToCount.map(inv => inv.id);
+      let chargedInvoices = 0;
+      let totalCharged = 0;
+      
+      if (invoiceIds.length > 0) {
+        const { data: billingRecords } = await supabase
+          .from('billing_records')
+          .select('invoice_id, amount, status')
+          .eq('user_id', user.id)
+          .eq('type', 'per_invoice_fee')
+          .in('status', ['pending', 'paid']) // Count both pending and paid
+          .in('invoice_id', invoiceIds);
+        
+        chargedInvoices = billingRecords?.length || 0;
+        // Count amount for both pending and paid records (pending will become paid)
+        totalCharged = (billingRecords || [])
+          .reduce((sum, record) => sum + parseFloat(record.amount.toString()), 0);
+      }
+      
+      // Free invoices = total invoices - charged invoices (but max 5 free)
+      const freeInvoicesUsed = Math.min(totalInvoices - chargedInvoices, 5);
+      const freeInvoicesRemaining = Math.max(0, 5 - freeInvoicesUsed);
       
       payPerInvoiceInfo = {
         totalInvoices,

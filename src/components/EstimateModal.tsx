@@ -362,6 +362,7 @@ export default function EstimateModal({
             } : undefined}
             reason="You've reached your estimate limit. Upgrade to create unlimited estimates."
             limitType="estimates"
+            hidePayPerInvoice={true}
           />,
           document.body
         )}

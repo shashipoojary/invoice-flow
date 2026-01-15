@@ -700,8 +700,24 @@ export default function ReminderHistoryPage() {
   ReminderCard.displayName = 'ReminderCard';
 
   // Helper function to calculate total with late fees and partial payments
+  // IMPORTANT: For auto reminders, only consider partial payments if:
+  // - Reminder is scheduled (not yet sent) AND invoice is pending
+  // - For sent reminders or sent/cancelled invoices, ignore partial payments
   const calculateReminderTotal = (reminder: ReminderHistory) => {
-    const baseAmount = reminder.paymentData?.remainingBalance || reminder.invoice.total;
+    // Check if we should ignore partial payments:
+    // 1. Reminder has already been sent
+    // 2. Invoice status is 'sent' or 'cancelled' (already sent to client, can't modify)
+    const shouldIgnorePartialPayments = 
+      reminder.reminder_status === 'sent' || 
+      reminder.reminder_status === 'delivered' ||
+      reminder.invoice.status === 'sent' || 
+      reminder.invoice.status === 'cancelled';
+    
+    // Only use partial payments for scheduled reminders on pending invoices
+    const baseAmount = (shouldIgnorePartialPayments || reminder.reminder_status !== 'scheduled' || reminder.invoice.status !== 'pending')
+      ? reminder.invoice.total  // Use original total if reminder sent or invoice sent/cancelled
+      : (reminder.paymentData?.remainingBalance || reminder.invoice.total); // Use remaining balance only for scheduled reminders on pending invoices
+    
     let lateFeesAmount = 0;
     let totalPayable = baseAmount;
     
@@ -724,7 +740,7 @@ export default function ReminderHistoryPage() {
       
       if (chargeableDays > 0) {
         if (lateFeesSettings.type === 'percentage') {
-          // Calculate late fee on remaining balance (after partial payments)
+          // Calculate late fee on base amount
           lateFeesAmount = baseAmount * ((lateFeesSettings.amount || 0) / 100);
         } else if (lateFeesSettings.type === 'fixed') {
           lateFeesAmount = lateFeesSettings.amount || 0;
@@ -733,13 +749,20 @@ export default function ReminderHistoryPage() {
       }
     }
     
+    // Only show partial payment if reminder is scheduled and invoice is pending
+    const isPartiallyPaid = !shouldIgnorePartialPayments && 
+      reminder.reminder_status === 'scheduled' && 
+      reminder.invoice.status === 'pending' &&
+      (reminder.paymentData?.totalPaid || 0) > 0 && 
+      (reminder.paymentData?.remainingBalance || 0) > 0;
+    
     return {
       baseAmount,
       lateFeesAmount,
       totalPayable,
       hasLateFees: lateFeesAmount > 0,
-      totalPaid: reminder.paymentData?.totalPaid || 0,
-      isPartiallyPaid: (reminder.paymentData?.totalPaid || 0) > 0 && (reminder.paymentData?.remainingBalance || 0) > 0
+      totalPaid: isPartiallyPaid ? (reminder.paymentData?.totalPaid || 0) : 0,
+      isPartiallyPaid
     };
   };
 
@@ -1161,13 +1184,32 @@ export default function ReminderHistoryPage() {
                         <span className="text-xs sm:text-sm font-medium text-gray-900 break-words">{selectedReminder.invoice.invoice_number}</span>
                       </div>
                       {(() => {
-                        // Base Amount: Actual invoice total (not remaining balance)
-                        const baseAmount = selectedReminder.invoice.total || 0;
+                        // Check if we should ignore partial payments for this reminder:
+                        // 1. Reminder has already been sent
+                        // 2. Invoice status is 'sent' or 'cancelled' (already sent to client, can't modify)
+                        const shouldIgnorePartialPayments = 
+                          selectedReminder.reminder_status === 'sent' || 
+                          selectedReminder.reminder_status === 'delivered' ||
+                          selectedReminder.invoice.status === 'sent' || 
+                          selectedReminder.invoice.status === 'cancelled';
+                        
+                        // Only use partial payments for scheduled reminders on pending invoices
+                        const baseAmount = (shouldIgnorePartialPayments || selectedReminder.reminder_status !== 'scheduled' || selectedReminder.invoice.status !== 'pending')
+                          ? selectedReminder.invoice.total || 0  // Use original total if reminder sent or invoice sent/cancelled
+                          : (selectedReminder.paymentData?.remainingBalance || selectedReminder.invoice.total || 0); // Use remaining balance only for scheduled reminders on pending invoices
+                        
                         const totalPaid = selectedReminder.paymentData?.totalPaid || 0;
-                        const remainingBalance = selectedReminder.paymentData?.remainingBalance || baseAmount;
-                        const isPartiallyPaid = totalPaid > 0 && remainingBalance > 0;
+                        const remainingBalance = selectedReminder.paymentData?.remainingBalance || selectedReminder.invoice.total || 0;
+                        
+                        // Only show partial payment if reminder is scheduled and invoice is pending
+                        const isPartiallyPaid = !shouldIgnorePartialPayments && 
+                          selectedReminder.reminder_status === 'scheduled' && 
+                          selectedReminder.invoice.status === 'pending' &&
+                          totalPaid > 0 && 
+                          remainingBalance > 0;
+                        
                         let lateFeesAmount = 0;
-                        let totalPayable = remainingBalance;
+                        let totalPayable = baseAmount;
                         
                         // Parse late fees settings
                         let lateFeesSettings = null;
@@ -1183,7 +1225,6 @@ export default function ReminderHistoryPage() {
                         }
                         
                         // Calculate late fees if invoice is overdue and late fees are enabled
-                        // CRITICAL: Calculate late fees on remaining balance (after partial payments)
                         const currentDate = new Date();
                         const dueDate = new Date(selectedReminder.invoice.due_date);
                         const todayStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
@@ -1197,12 +1238,12 @@ export default function ReminderHistoryPage() {
                           
                           if (chargeableDays > 0) {
                             if (lateFeesSettings.type === 'percentage') {
-                              // Calculate late fee on remaining balance (after partial payments)
-                              lateFeesAmount = remainingBalance * ((lateFeesSettings.amount || 0) / 100);
+                              // Calculate late fee on base amount
+                              lateFeesAmount = baseAmount * ((lateFeesSettings.amount || 0) / 100);
                             } else if (lateFeesSettings.type === 'fixed') {
                               lateFeesAmount = lateFeesSettings.amount || 0;
                             }
-                            totalPayable = remainingBalance + lateFeesAmount;
+                            totalPayable = baseAmount + lateFeesAmount;
                           }
                         }
                         

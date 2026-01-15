@@ -205,9 +205,9 @@ export default function PartialPaymentModal({
               </span>
             </div>
             {/* Progress bar */}
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 h-2">
               <div
-                className="bg-emerald-600 h-2 rounded-full transition-all duration-300"
+                className="bg-emerald-600 h-2 transition-all duration-300"
                 style={{ width: `${Math.min(progressPercentage, 100)}%` }}
               />
             </div>
@@ -260,7 +260,7 @@ export default function PartialPaymentModal({
                 type="text"
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="e.g., Bank Transfer, PayPal, Cash"
               />
             </div>
@@ -273,7 +273,7 @@ export default function PartialPaymentModal({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Optional notes about this payment"
               />
             </div>

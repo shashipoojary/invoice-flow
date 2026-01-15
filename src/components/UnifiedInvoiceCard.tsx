@@ -105,13 +105,15 @@ export function UnifiedInvoiceCard({
   const breakdowns = React.useMemo(() => {
     const items: React.ReactNode[] = [];
     
+    const shouldShowPartialPayment = dueCharges.isPartiallyPaid;
+    
     // Calculate base amount (before late fees are added)
     // When hasLateFees is true, remainingBalance includes late fees, so we need to subtract them
     const baseAmount = dueCharges.hasLateFees 
       ? dueCharges.remainingBalance - dueCharges.lateFeeAmount
       : dueCharges.remainingBalance;
     
-    if (dueCharges.isPartiallyPaid) {
+    if (shouldShowPartialPayment) {
       // Pre-compute all values before creating string to ensure atomic rendering
       // Use baseAmount (not remainingBalance) to show correct remaining balance before late fees
       const totalPaidStr = dueCharges.totalPaid.toFixed(2);
@@ -132,12 +134,12 @@ export function UnifiedInvoiceCard({
       items.push(<div key="latefees" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>{lateFeesText}</div>);
     }
     
-    if (!dueCharges.isPartiallyPaid && !dueCharges.hasLateFees) {
+    if (!shouldShowPartialPayment && !dueCharges.hasLateFees) {
       items.push(<div key="empty" className="min-h-[14px] sm:min-h-[16px]"></div>);
     }
     
     return items;
-  }, [dueCharges.isPartiallyPaid, dueCharges.hasLateFees, dueCharges.totalPaid, dueCharges.remainingBalance, dueCharges.lateFeeAmount]);
+  }, [dueCharges.isPartiallyPaid, dueCharges.hasLateFees, dueCharges.totalPaid, dueCharges.remainingBalance, dueCharges.lateFeeAmount, invoice.status]);
 
   // Use Intersection Observer to only enable rotation when card is visible
   const [isVisible, setIsVisible] = React.useState(false);

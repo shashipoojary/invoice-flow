@@ -178,18 +178,19 @@ export async function PUT(
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
     }
 
-    // CRITICAL: If invoice is being marked as paid, cancel all scheduled reminders
+    // CRITICAL: If invoice is being marked as paid, cancel ONLY scheduled reminders
     // This prevents reminders from being sent after payment is received
+    // Sent and cancelled reminders should NOT be affected
     if (status === 'paid' && currentInvoice.status !== 'paid') {
       try {
         const { error: reminderError } = await supabaseAdmin
           .from('invoice_reminders')
           .update({
             reminder_status: 'cancelled',
-            failure_reason: 'Invoice marked as paid - reminders cancelled'
+            failure_reason: 'Invoice marked as paid - scheduled reminders cancelled'
           })
           .eq('invoice_id', invoiceId)
-          .eq('reminder_status', 'scheduled')
+          .eq('reminder_status', 'scheduled') // Only update scheduled reminders, not sent/cancelled
 
         if (reminderError) {
           console.error('Error cancelling scheduled reminders:', reminderError)
