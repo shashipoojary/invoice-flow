@@ -231,12 +231,6 @@ export function generateMinimalEmailTemplate(
             padding-bottom: 24px;
             border-bottom: 1px solid #e0e0e0;
           }
-          .bill-to-line {
-            height: 1px;
-            background: ${subtleLineColor};
-            margin-bottom: 20px;
-            width: 280px;
-          }
           .bill-to-label {
             font-size: 14px !important;
             font-weight: 400 !important;
@@ -479,9 +473,6 @@ export function generateMinimalEmailTemplate(
             .content {
               padding: 0 20px 32px 20px !important;
             }
-            .bill-to-line {
-              width: 240px !important;
-            }
             .business-details {
               font-size: 14px !important;
             }
@@ -588,9 +579,6 @@ export function generateMinimalEmailTemplate(
             .amount {
               font-size: 24px !important;
             }
-            .bill-to-line {
-              width: 200px !important;
-            }
             .cta-button {
               padding: 8px 14px !important;
               font-size: 14px !important;
@@ -617,7 +605,6 @@ export function generateMinimalEmailTemplate(
 
           <div class="content">
             <div class="bill-to-section">
-              <div class="bill-to-line" style="height: 1px; background: ${subtleLineColor}; margin-bottom: 20px; width: 280px;"></div>
               <div class="bill-to-label" style="color: #000000 !important; font-size: 14px !important; font-weight: 400 !important; margin: 0 0 16px 0 !important;">Bill To</div>
               <div class="bill-to-content" style="color: #000000 !important; font-size: 14px !important; line-height: 1.6 !important; margin: 4px 0 !important;">${invoice.clients.name}</div>
               ${invoice.clients.company ? `<div class="bill-to-detail" style="color: #666666 !important; font-size: 14px !important; line-height: 1.6 !important; margin: 4px 0 !important;">${invoice.clients.company}</div>` : ''}
@@ -1996,7 +1983,7 @@ export function generateOriginalFastInvoiceEmailTemplate(
 
               <div class="cta-section">
                 <!--[if mso]>
-                <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${publicUrl}" style="height:48px;v-text-anchor:middle;width:200px;" arcsize="8%" stroke="f" fillcolor="#8B5CF6">
+                <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${publicUrl}" style="height:48px;v-text-anchor:middle;width:200px;" arcsize="0%" stroke="f" fillcolor="#000000">
                 <w:anchorlock/>
                 <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:600;">View Invoice</center>
                 </v:roundrect>
