@@ -584,7 +584,21 @@ export async function POST(request: NextRequest) {
     // Charge when invoice is sent (not when created as draft)
     console.log(`💰 Attempting to charge for invoice: ${invoiceId} (${invoice.invoice_number})`);
     try {
-      const chargeResult = await chargeForInvoice(user.id, invoiceId, invoice.invoice_number);
+      // Get template, reminder count, and colors for premium feature detection
+      // invoiceTheme and reminders are already parsed above
+      const reminderCount = reminders?.enabled ? (reminders.useSystemDefaults ? 4 : (reminders.rules?.length || 0)) : 0;
+      
+      const chargeResult = await chargeForInvoice(
+        user.id, 
+        invoiceId, 
+        invoice.invoice_number,
+        {
+          template: invoiceTheme?.template || 1,
+          reminderCount: reminderCount,
+          primaryColor: invoiceTheme?.primary_color,
+          secondaryColor: invoiceTheme?.secondary_color
+        }
+      );
       if (chargeResult.success) {
         console.log(`✅ Charge initiated successfully:`, {
           paymentId: chargeResult.paymentId,

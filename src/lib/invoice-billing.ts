@@ -162,6 +162,7 @@ export async function chargeForInvoice(
     // Get Dodo Payment client
     const dodoClient = getDodoPaymentClient();
     if (!dodoClient) {
+      console.error(`❌ Dodo Payment client not available. Check DODO_PAYMENT_API_KEY environment variable.`);
       // If payment service not configured, create a pending billing record
       await supabaseAdmin
         .from('billing_records')
@@ -176,7 +177,7 @@ export async function chargeForInvoice(
 
       return {
         success: false,
-        error: 'Payment service not configured. Invoice created but billing pending.',
+        error: 'Payment service not configured. Invoice created but billing pending. Please configure DODO_PAYMENT_API_KEY.',
       };
     }
 

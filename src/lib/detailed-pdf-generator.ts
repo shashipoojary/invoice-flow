@@ -593,6 +593,9 @@ async function generateTemplate1DetailedPDF(
   });
 
   // Totals section
+  const discountAmount = parseFloat(invoice.discount?.toString() || '0');
+  const taxAmount = parseFloat(invoice.taxAmount?.toString() || '0');
+  
   page.drawText('Subtotal:', {
     x: 400,
     y: currentY - 20,
@@ -609,8 +612,8 @@ async function generateTemplate1DetailedPDF(
     color: rgb(0, 0, 0),
   });
 
-  // Tax (always shown)
-  page.drawText('Tax:', {
+  // Discount (always shown)
+  page.drawText('Discount:', {
     x: 400,
     y: currentY - 35,
     size: 10,
@@ -618,7 +621,7 @@ async function generateTemplate1DetailedPDF(
     color: rgb(0, 0, 0),
   });
 
-  page.drawText(formatCurrency(invoice.taxAmount || 0), {
+  page.drawText(`-${formatCurrency(discountAmount)}`, {
     x: 480,
     y: currentY - 35,
     size: 10,
@@ -626,11 +629,29 @@ async function generateTemplate1DetailedPDF(
     color: rgb(0, 0, 0),
   });
 
+  // Tax (always shown)
+  page.drawText('Tax:', {
+    x: 400,
+    y: currentY - 50,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
+
+  page.drawText(formatCurrency(taxAmount), {
+    x: 480,
+    y: currentY - 50,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
+
   // Late fees (if applicable)
+  let lateFeeY = currentY - 65;
   if (invoice.lateFees && invoice.lateFees.enabled && invoice.lateFees.amount > 0) {
     page.drawText('Late Fees:', {
       x: 400,
-      y: currentY - 50,
+      y: lateFeeY,
       size: 10,
       font: font,
       color: rgb(0.8, 0.2, 0.2),
@@ -638,24 +659,28 @@ async function generateTemplate1DetailedPDF(
 
     page.drawText(formatCurrency(invoice.lateFees.amount), {
       x: 480,
-      y: currentY - 50,
+      y: lateFeeY,
       size: 10,
       font: font,
       color: rgb(0.8, 0.2, 0.2),
     });
+    lateFeeY -= 15;
   }
 
   page.drawText('Total:', {
     x: 400,
-    y: currentY - 70,
+    y: lateFeeY,
     size: 12,
     font: boldFont,
     color: rgb(0, 0, 0),
   });
 
-  page.drawText(formatCurrency(total + (invoice.taxAmount || 0) + (invoice.lateFees?.amount || 0)), {
+  const invoiceTotal = total - discountAmount + taxAmount;
+  const finalTotal = invoiceTotal + (invoice.lateFees?.amount || 0);
+  
+  page.drawText(formatCurrency(finalTotal), {
     x: 480,
-    y: currentY - 70,
+    y: lateFeeY,
     size: 12,
     font: boldFont,
     color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
@@ -1020,6 +1045,9 @@ async function generateTemplate2PDF(
   });
 
   // Totals section
+  const discountAmount = parseFloat(invoice.discount?.toString() || '0');
+  const taxAmount = parseFloat(invoice.taxAmount?.toString() || '0');
+  
   page.drawText('Subtotal:', {
     x: 400,
     y: currentY - 20,
@@ -1036,8 +1064,8 @@ async function generateTemplate2PDF(
     color: rgb(0, 0, 0),
   });
 
-  // Tax (always shown)
-  page.drawText('Tax:', {
+  // Discount (always shown)
+  page.drawText('Discount:', {
     x: 400,
     y: currentY - 35,
     size: 10,
@@ -1045,7 +1073,7 @@ async function generateTemplate2PDF(
     color: rgb(0, 0, 0),
   });
 
-  page.drawText(formatCurrency(invoice.taxAmount || 0), {
+  page.drawText(`-${formatCurrency(discountAmount)}`, {
     x: 480,
     y: currentY - 35,
     size: 10,
@@ -1053,11 +1081,29 @@ async function generateTemplate2PDF(
     color: rgb(0, 0, 0),
   });
 
+  // Tax (always shown)
+  page.drawText('Tax:', {
+    x: 400,
+    y: currentY - 50,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
+
+  page.drawText(formatCurrency(taxAmount), {
+    x: 480,
+    y: currentY - 50,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
+
   // Late fees (if applicable)
+  let lateFeeY = currentY - 65;
   if (invoice.lateFees && invoice.lateFees.enabled && invoice.lateFees.amount > 0) {
     page.drawText('Late Fees:', {
       x: 400,
-      y: currentY - 50,
+      y: lateFeeY,
       size: 10,
       font: font,
       color: rgb(0.8, 0.2, 0.2),
@@ -1065,24 +1111,28 @@ async function generateTemplate2PDF(
 
     page.drawText(formatCurrency(invoice.lateFees.amount), {
       x: 480,
-      y: currentY - 50,
+      y: lateFeeY,
       size: 10,
       font: font,
       color: rgb(0.8, 0.2, 0.2),
     });
+    lateFeeY -= 15;
   }
 
   page.drawText('Total:', {
     x: 400,
-    y: currentY - 70,
+    y: lateFeeY,
     size: 12,
     font: boldFont,
     color: rgb(0, 0, 0),
   });
 
-  page.drawText(formatCurrency(total + (invoice.taxAmount || 0) + (invoice.lateFees?.amount || 0)), {
+  const invoiceTotal = total - discountAmount + taxAmount;
+  const finalTotal = invoiceTotal + (invoice.lateFees?.amount || 0);
+  
+  page.drawText(formatCurrency(finalTotal), {
     x: 480,
-    y: currentY - 70,
+    y: lateFeeY,
     size: 12,
     font: boldFont,
     color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
@@ -1504,6 +1554,9 @@ async function generateTemplate3PDF(
     color: rgb(secondaryRgb.r, secondaryRgb.g, secondaryRgb.b),
   });
 
+  const discountAmount = parseFloat(invoice.discount?.toString() || '0');
+  const taxAmount = parseFloat(invoice.taxAmount?.toString() || '0');
+  
   page.drawText('SUBTOTAL', {
     x: 360,
     y: totalsY - 30,
@@ -1520,8 +1573,8 @@ async function generateTemplate3PDF(
     color: rgb(0, 0, 0),
   });
 
-  // Tax (always shown)
-  page.drawText('TAX', {
+  // Discount (always shown)
+  page.drawText('DISCOUNT', {
     x: 360,
     y: totalsY - 45,
     size: 9,
@@ -1529,9 +1582,26 @@ async function generateTemplate3PDF(
     color: rgb(0, 0, 0),
   });
 
-  page.drawText(formatCurrency(invoice.taxAmount || 0), {
+  page.drawText(`-${formatCurrency(discountAmount)}`, {
     x: 480,
     y: totalsY - 45,
+    size: 9,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
+
+  // Tax (always shown)
+  page.drawText('TAX', {
+    x: 360,
+    y: totalsY - 60,
+    size: 9,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
+
+  page.drawText(formatCurrency(taxAmount), {
+    x: 480,
+    y: totalsY - 60,
     size: 9,
     font: font,
     color: rgb(0, 0, 0),
@@ -1540,15 +1610,17 @@ async function generateTemplate3PDF(
   // Total with creative emphasis
   page.drawText('TOTAL', {
     x: 360,
-    y: totalsY - 70,
+    y: totalsY - 85,
     size: 12,
     font: boldFont,
     color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
   });
 
-  page.drawText(formatCurrency(total + (invoice.taxAmount || 0)), {
+  const invoiceTotal = total - discountAmount + taxAmount;
+  
+  page.drawText(formatCurrency(invoiceTotal), {
     x: 480,
-    y: totalsY - 70,
+    y: totalsY - 85,
     size: 12,
     font: boldFont,
     color: rgb(primaryRgb.r, primaryRgb.g, primaryRgb.b),
