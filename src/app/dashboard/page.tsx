@@ -422,12 +422,12 @@ export default function DashboardOverview() {
     }
   }, [selectedInvoice?.id, getAuthHeaders, selectedInvoice?.total]);
 
-  // Fetch payments when showing payment form
+  // Fetch payments when showing payment form or viewing invoice
   useEffect(() => {
-    if (showPaymentForm && selectedInvoice?.id) {
+    if ((showPaymentForm || showViewInvoice) && selectedInvoice?.id) {
       fetchPayments();
     }
-  }, [showPaymentForm, selectedInvoice?.id, fetchPayments]);
+  }, [showPaymentForm, showViewInvoice, selectedInvoice?.id, fetchPayments]);
 
   // Handle payment submission
   const handlePaymentSubmit = useCallback(async (e: React.FormEvent) => {
@@ -1568,36 +1568,71 @@ export default function DashboardOverview() {
   // Calculate total clients (simple, no need to include in complex calculation)
   const totalClients = clients.length;
 
-  // Calculate upcoming due dates (invoices due in next 7 days)
-  const upcomingDueDates = useMemo(() => {
-    if (!invoices || invoices.length === 0) return [];
+  // Calculate overdue, due today, and upcoming invoices
+  const dueInvoices = useMemo(() => {
+    if (!invoices || invoices.length === 0) {
+      return { overdue: [], dueToday: [], upcoming: [] };
+    }
     
     const today = new Date();
+    const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
     const nextWeek = new Date(today);
     nextWeek.setDate(nextWeek.getDate() + 7);
+    const nextWeekStart = new Date(Date.UTC(nextWeek.getFullYear(), nextWeek.getMonth(), nextWeek.getDate()));
     
-    return invoices
-      .filter(invoice => {
-        const status = invoice.status;
-        if (status === 'paid' || status === 'draft') return false;
-        
-          const parseFn = parseDateOnlyRef.current || parseDateOnly;
-          const dueDate = parseFn(invoice.dueDate);
-        const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
-        const dueDateStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
-        const nextWeekStart = new Date(Date.UTC(nextWeek.getFullYear(), nextWeek.getMonth(), nextWeek.getDate()));
-        
-        const diffTime = dueDateStart.getTime() - todayStart.getTime();
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        
-        return diffDays >= 0 && diffDays <= 7 && dueDateStart <= nextWeekStart;
-      })
-      .sort((a, b) => {
-        const dateA = parseDateOnly(a.dueDate);
-        const dateB = parseDateOnly(b.dueDate);
-        return dateA.getTime() - dateB.getTime();
-      })
-      .slice(0, 5);
+    const parseFn = parseDateOnlyRef.current || parseDateOnly;
+    
+    const overdue: Invoice[] = [];
+    const dueToday: Invoice[] = [];
+    const upcoming: Invoice[] = [];
+    
+    invoices.forEach(invoice => {
+      const status = invoice.status;
+      if (status === 'paid' || status === 'draft') return;
+      
+      const dueDate = parseFn(invoice.dueDate);
+      const dueDateStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
+      
+      const diffTime = dueDateStart.getTime() - todayStart.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays < 0) {
+        // Overdue
+        overdue.push(invoice);
+      } else if (diffDays === 0) {
+        // Due today
+        dueToday.push(invoice);
+      } else if (diffDays > 0 && diffDays <= 7) {
+        // Upcoming (next 7 days)
+        upcoming.push(invoice);
+      }
+    });
+    
+    // Sort overdue by days overdue (most overdue first)
+    overdue.sort((a, b) => {
+      const dateA = parseDateOnly(a.dueDate);
+      const dateB = parseDateOnly(b.dueDate);
+      return dateA.getTime() - dateB.getTime();
+    });
+    
+    // Sort due today and upcoming by due date (earliest first)
+    dueToday.sort((a, b) => {
+      const dateA = parseDateOnly(a.dueDate);
+      const dateB = parseDateOnly(b.dueDate);
+      return dateA.getTime() - dateB.getTime();
+    });
+    
+    upcoming.sort((a, b) => {
+      const dateA = parseDateOnly(a.dueDate);
+      const dateB = parseDateOnly(b.dueDate);
+      return dateA.getTime() - dateB.getTime();
+    });
+    
+    return {
+      overdue: overdue.slice(0, 5),
+      dueToday: dueToday.slice(0, 5),
+      upcoming: upcoming.slice(0, 5)
+    };
   }, [invoices, parseDateOnly]);
 
   // Helper function to get time ago
@@ -2488,8 +2523,200 @@ export default function DashboardOverview() {
                 </div>
               ) : recentInvoices.length > 0 ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:items-start">
-                  {/* Recent Invoices - Left Side */}
-                  <div className="space-y-3 sm:space-y-4">
+                  {/* Due Invoices - First on Mobile, Right Side on Desktop */}
+                  <div className="space-y-3 sm:space-y-4 order-1 lg:order-2">
+                    <div className="flex items-center justify-between mb-4 sm:mb-6">
+                      <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
+                        Due Invoices
+                      </h2>
+                      <button
+                        onClick={() => router.push('/dashboard/invoices?filter=overdue')}
+                        className="group flex items-center gap-1.5 text-xs sm:text-sm font-medium px-2.5 sm:px-3 py-1.5 sm:py-2 transition-colors text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 cursor-pointer"
+                      >
+                        <span>View all</span>
+                        <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                      </button>
+                    </div>
+                    
+                    {dueInvoices.overdue.length === 0 && dueInvoices.dueToday.length === 0 && dueInvoices.upcoming.length === 0 ? (
+                      <div className="bg-white border border-gray-200 p-8 text-center">
+                        <Calendar className="h-8 w-8 mx-auto mb-2" style={{color: '#9ca3af'}} />
+                        <p className="text-sm" style={{color: '#6b7280'}}>No invoices due</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {/* Overdue Section */}
+                        {dueInvoices.overdue.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <AlertCircle className="h-4 w-4 text-red-500" />
+                              <h3 className="text-sm font-semibold text-red-600">Overdue</h3>
+                              <span className="text-xs text-gray-500">({dueInvoices.overdue.length})</span>
+                            </div>
+                            <div className="bg-white border border-gray-200 divide-y divide-gray-100">
+                              {dueInvoices.overdue.map((invoice) => {
+                                const paymentData = paymentDataMap[invoice.id] || null;
+                                const dueCharges = calculateDueCharges(invoice, paymentData);
+                                const dueDate = parseDateOnly(invoice.dueDate);
+                                const today = new Date();
+                                const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+                                const dueDateStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
+                                const daysOverdue = Math.floor((todayStart.getTime() - dueDateStart.getTime()) / (1000 * 60 * 60 * 24));
+                                
+                                return (
+                                  <div
+                                    key={invoice.id}
+                                    onClick={() => handleViewInvoice(invoice)}
+                                    className="p-3 sm:p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <span className="text-sm font-medium text-gray-900 truncate">
+                                            {invoice.invoiceNumber}
+                                          </span>
+                                          <span className="text-xs text-gray-500 truncate">
+                                            {invoice.client?.name || 'Unknown Client'}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-3 text-xs text-gray-500">
+                                          <span>{daysOverdue} day{daysOverdue !== 1 ? 's' : ''} overdue</span>
+                                          <span>•</span>
+                                          <span>{new Date(invoice.dueDate).toLocaleDateString()}</span>
+                                        </div>
+                                      </div>
+                                      <div className="ml-4 text-right">
+                                        <div className="text-sm font-semibold text-red-600">
+                                          ${dueCharges.totalPayable.toFixed(2)}
+                                        </div>
+                                        {dueCharges.isPartiallyPaid && (
+                                          <div className="text-xs text-gray-500">
+                                            ${dueCharges.totalPaid.toFixed(2)} paid
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Due Today Section */}
+                        {dueInvoices.dueToday.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <Clock className="h-4 w-4 text-amber-500" />
+                              <h3 className="text-sm font-semibold text-amber-600">Due Today</h3>
+                              <span className="text-xs text-gray-500">({dueInvoices.dueToday.length})</span>
+                            </div>
+                            <div className="bg-white border border-gray-200 divide-y divide-gray-100">
+                              {dueInvoices.dueToday.map((invoice) => {
+                                const paymentData = paymentDataMap[invoice.id] || null;
+                                const dueCharges = calculateDueCharges(invoice, paymentData);
+                                
+                                return (
+                                  <div
+                                    key={invoice.id}
+                                    onClick={() => handleViewInvoice(invoice)}
+                                    className="p-3 sm:p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <span className="text-sm font-medium text-gray-900 truncate">
+                                            {invoice.invoiceNumber}
+                                          </span>
+                                          <span className="text-xs text-gray-500 truncate">
+                                            {invoice.client?.name || 'Unknown Client'}
+                                          </span>
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          Due today
+                                        </div>
+                                      </div>
+                                      <div className="ml-4 text-right">
+                                        <div className="text-sm font-semibold text-amber-600">
+                                          ${dueCharges.totalPayable.toFixed(2)}
+                                        </div>
+                                        {dueCharges.isPartiallyPaid && (
+                                          <div className="text-xs text-gray-500">
+                                            ${dueCharges.totalPaid.toFixed(2)} paid
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Upcoming Section */}
+                        {dueInvoices.upcoming.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <Calendar className="h-4 w-4 text-blue-500" />
+                              <h3 className="text-sm font-semibold text-blue-600">Upcoming</h3>
+                              <span className="text-xs text-gray-500">({dueInvoices.upcoming.length})</span>
+                            </div>
+                            <div className="bg-white border border-gray-200 divide-y divide-gray-100">
+                              {dueInvoices.upcoming.map((invoice) => {
+                                const paymentData = paymentDataMap[invoice.id] || null;
+                                const dueCharges = calculateDueCharges(invoice, paymentData);
+                                const dueDate = parseDateOnly(invoice.dueDate);
+                                const today = new Date();
+                                const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+                                const dueDateStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
+                                const daysUntilDue = Math.floor((dueDateStart.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24));
+                                
+                                return (
+                                  <div
+                                    key={invoice.id}
+                                    onClick={() => handleViewInvoice(invoice)}
+                                    className="p-3 sm:p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <span className="text-sm font-medium text-gray-900 truncate">
+                                            {invoice.invoiceNumber}
+                                          </span>
+                                          <span className="text-xs text-gray-500 truncate">
+                                            {invoice.client?.name || 'Unknown Client'}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-3 text-xs text-gray-500">
+                                          <span>Due in {daysUntilDue} day{daysUntilDue !== 1 ? 's' : ''}</span>
+                                          <span>•</span>
+                                          <span>{new Date(invoice.dueDate).toLocaleDateString()}</span>
+                                        </div>
+                                      </div>
+                                      <div className="ml-4 text-right">
+                                        <div className="text-sm font-semibold text-gray-900">
+                                          ${dueCharges.totalPayable.toFixed(2)}
+                                        </div>
+                                        {dueCharges.isPartiallyPaid && (
+                                          <div className="text-xs text-gray-500">
+                                            ${dueCharges.totalPaid.toFixed(2)} paid
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Recent Invoices - Second on Mobile, Left Side on Desktop */}
+                  <div className="space-y-3 sm:space-y-4 order-2 lg:order-1">
                     <div className="flex items-center justify-between mb-4 sm:mb-6">
                       <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
                         Recent Invoices
@@ -2520,44 +2747,6 @@ export default function DashboardOverview() {
                         paymentData={paymentDataMap[invoice.id] || null}
                       />
                     ))}
-                  </div>
-                  
-                  {/* Upcoming Due Dates - Right Side */}
-                  <div className="space-y-3 sm:space-y-4">
-                    <div className="flex items-center justify-between mb-4 sm:mb-6">
-                      <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
-                        Upcoming Due Dates
-                      </h2>
-                      <div className="flex items-center space-x-2 text-sm font-medium px-4 py-2 opacity-0 pointer-events-none">
-                        <span>View all</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </div>
-                    </div>
-                    {upcomingDueDates.length === 0 ? (
-                      <div className="bg-white border border-gray-200 p-8 text-center">
-                        <Calendar className="h-8 w-8 mx-auto mb-2" style={{color: '#9ca3af'}} />
-                        <p className="text-sm" style={{color: '#6b7280'}}>No upcoming due dates</p>
-                      </div>
-                    ) : (
-                      upcomingDueDates.map((invoice) => (
-                        <UnifiedInvoiceCard
-                          key={invoice.id}
-                          invoice={invoice}
-                          getStatusIcon={getStatusIcon}
-                          getDueDateStatus={getDueDateStatus}
-                          calculateDueCharges={calculateDueCharges}
-                          loadingActions={loadingActions}
-                          onView={handleViewInvoice}
-                          onPdf={handleDownloadPDF}
-                          onSend={handleSendInvoice}
-                          onMarkPaid={handleMarkAsPaid}
-                          onEdit={handleEditInvoice}
-                          onDelete={handleDeleteInvoice}
-                          onDuplicate={handleDuplicateInvoice}
-                          paymentData={paymentDataMap[invoice.id] || null}
-                        />
-                      ))
-                    )}
                   </div>
                 </div>
               ) : null}
@@ -3086,6 +3275,7 @@ export default function DashboardOverview() {
                      {(() => {
                        const paymentData = paymentDataMap[selectedInvoice.id] || null;
                        const dueCharges = calculateDueCharges(selectedInvoice, paymentData);
+                       const hasPartialPayments = totalPaid > 0 && remainingBalance > 0;
                        return (
                          <div className="space-y-1">
                            <div className="flex justify-between text-xs sm:text-sm">
@@ -3106,6 +3296,18 @@ export default function DashboardOverview() {
                                  <span className="text-gray-700">Total:</span>
                                  <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
                                </div>
+                               {hasPartialPayments && (
+                                 <>
+                                   <div className="flex justify-between text-xs sm:text-sm">
+                                     <span className="text-emerald-700">Total Paid:</span>
+                                     <span className="text-emerald-700 font-semibold">${totalPaid.toFixed(2)}</span>
+                                   </div>
+                                   <div className="flex justify-between text-xs sm:text-sm">
+                                     <span className="text-orange-700">Remaining Balance:</span>
+                                     <span className="text-orange-700 font-semibold">${remainingBalance.toFixed(2)}</span>
+                                   </div>
+                                 </>
+                               )}
                                <div className="flex justify-between text-xs sm:text-sm">
                                  <span className="text-red-700">Late Fees:</span>
                                  <span className="text-red-700 font-semibold">${dueCharges.lateFeeAmount.toFixed(2)}</span>
@@ -3116,10 +3318,24 @@ export default function DashboardOverview() {
                                </div>
                              </>
                            ) : (
-                             <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1 border-gray-200">
-                               <span className="text-gray-900">Total:</span>
-                               <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
-                             </div>
+                             <>
+                               <div className="flex justify-between text-xs sm:text-sm border-t pt-1 border-gray-200">
+                                 <span className="text-gray-700">Total:</span>
+                                 <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
+                               </div>
+                               {hasPartialPayments && (
+                                 <>
+                                   <div className="flex justify-between text-xs sm:text-sm">
+                                     <span className="text-emerald-700">Total Paid:</span>
+                                     <span className="text-emerald-700 font-semibold">${totalPaid.toFixed(2)}</span>
+                                   </div>
+                                   <div className="flex justify-between text-xs sm:text-sm font-bold">
+                                     <span className="text-orange-700">Remaining Balance:</span>
+                                     <span className="text-orange-700">${remainingBalance.toFixed(2)}</span>
+                                   </div>
+                                 </>
+                               )}
+                             </>
                            )}
                          </div>
                        );
@@ -3133,6 +3349,40 @@ export default function DashboardOverview() {
                  <div className="p-3 sm:p-6 border-t border-gray-200">
                    <h3 className="text-sm sm:text-base font-semibold mb-2 text-gray-900">Notes</h3>
                    <p className="text-xs sm:text-sm text-gray-700">{selectedInvoice.notes}</p>
+                 </div>
+               )}
+
+               {/* Payment History - Show if there are partial payments */}
+               {totalPaid > 0 && (
+                 <div className="p-3 sm:p-6 border-t border-gray-200">
+                   <h3 className="text-sm sm:text-base font-semibold mb-3 text-gray-900">Payment History</h3>
+                   {loadingPayments ? (
+                     <div className="text-center py-4 text-gray-500 text-xs sm:text-sm">Loading payments...</div>
+                   ) : payments.length === 0 ? (
+                     <div className="text-center py-4 text-gray-500 text-xs sm:text-sm">No payments recorded</div>
+                   ) : (
+                     <div className="space-y-2">
+                       {payments.map((payment) => (
+                         <div
+                           key={payment.id}
+                           className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 border border-gray-200"
+                         >
+                           <div className="flex-1">
+                             <div className="flex items-center gap-2">
+                               <span className="font-semibold text-gray-900 text-xs sm:text-sm">${parseFloat(payment.amount.toString()).toFixed(2)}</span>
+                               {payment.payment_method && (
+                                 <span className="text-xs text-gray-500">• {payment.payment_method}</span>
+                               )}
+                             </div>
+                             <div className="text-xs text-gray-500 mt-1">
+                               {new Date(payment.payment_date).toLocaleDateString()}
+                               {payment.notes && ` • ${payment.notes}`}
+                             </div>
+                           </div>
+                         </div>
+                       ))}
+                     </div>
+                   )}
                  </div>
                )}
 

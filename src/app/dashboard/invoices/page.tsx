@@ -485,12 +485,12 @@ function InvoicesContent(): React.JSX.Element {
     }
   }, [selectedInvoice?.id, getAuthHeaders, selectedInvoice?.total]);
 
-  // Fetch payments when showing payment form
+  // Fetch payments when showing payment form or viewing invoice
   useEffect(() => {
-    if (showPaymentForm && selectedInvoice?.id) {
+    if ((showPaymentForm || showViewInvoice) && selectedInvoice?.id) {
       fetchPayments();
     }
-  }, [showPaymentForm, selectedInvoice?.id, fetchPayments]);
+  }, [showPaymentForm, showViewInvoice, selectedInvoice?.id, fetchPayments]);
 
   // Handle payment submission
   const handlePaymentSubmit = useCallback(async (e: React.FormEvent) => {
@@ -1819,7 +1819,7 @@ function InvoicesContent(): React.JSX.Element {
         
         return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
-          <div className="rounded-lg sm:rounded-lg p-2 sm:p-4 max-w-6xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-hidden bg-white border-gray-200 flex flex-col">
+          <div className="p-2 sm:p-4 max-w-6xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-hidden bg-white border-gray-200 flex flex-col">
             <div className="flex items-center justify-between mb-3 sm:mb-4 flex-shrink-0">
               <div className="flex items-center gap-3">
                 <h2 className="text-base sm:text-xl font-bold" style={{color: '#1f2937'}}>
@@ -1987,7 +1987,7 @@ function InvoicesContent(): React.JSX.Element {
               </div>
             ) : (
               /* Responsive Invoice View */
-            <div className="w-full bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div className="w-full bg-white border border-gray-200 overflow-hidden">
               {/* Header */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 sm:p-6 border-b border-gray-200">
                 <div className="w-full sm:w-auto mb-3 sm:mb-0">
@@ -2146,6 +2146,7 @@ function InvoicesContent(): React.JSX.Element {
                     {(() => {
                       const paymentData = paymentDataMap[selectedInvoice.id] || null;
                       const dueCharges = calculateDueCharges(selectedInvoice, paymentData);
+                      const hasPartialPayments = totalPaid > 0 && remainingBalance > 0;
                       return (
                         <div className="space-y-1">
                           <div className="flex justify-between text-xs sm:text-sm">
@@ -2166,6 +2167,18 @@ function InvoicesContent(): React.JSX.Element {
                                 <span className="text-gray-700">Total:</span>
                                 <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
                               </div>
+                              {hasPartialPayments && (
+                                <>
+                                  <div className="flex justify-between text-xs sm:text-sm">
+                                    <span className="text-emerald-700">Total Paid:</span>
+                                    <span className="text-emerald-700 font-semibold">${totalPaid.toFixed(2)}</span>
+                                  </div>
+                                  <div className="flex justify-between text-xs sm:text-sm">
+                                    <span className="text-orange-700">Remaining Balance:</span>
+                                    <span className="text-orange-700 font-semibold">${remainingBalance.toFixed(2)}</span>
+                                  </div>
+                                </>
+                              )}
                               <div className="flex justify-between text-xs sm:text-sm">
                                 <span className="text-red-700">Late Fees:</span>
                                 <span className="text-red-700 font-semibold">${dueCharges.lateFeeAmount.toFixed(2)}</span>
@@ -2176,10 +2189,24 @@ function InvoicesContent(): React.JSX.Element {
                               </div>
                             </>
                           ) : (
-                            <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1 border-gray-200">
-                              <span className="text-gray-900">Total:</span>
-                              <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
-                            </div>
+                            <>
+                              <div className="flex justify-between text-xs sm:text-sm border-t pt-1 border-gray-200">
+                                <span className="text-gray-700">Total:</span>
+                                <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
+                              </div>
+                              {hasPartialPayments && (
+                                <>
+                                  <div className="flex justify-between text-xs sm:text-sm">
+                                    <span className="text-emerald-700">Total Paid:</span>
+                                    <span className="text-emerald-700 font-semibold">${totalPaid.toFixed(2)}</span>
+                                  </div>
+                                  <div className="flex justify-between text-xs sm:text-sm font-bold">
+                                    <span className="text-orange-700">Remaining Balance:</span>
+                                    <span className="text-orange-700">${remainingBalance.toFixed(2)}</span>
+                                  </div>
+                                </>
+                              )}
+                            </>
                           )}
                         </div>
                       );
@@ -2193,6 +2220,40 @@ function InvoicesContent(): React.JSX.Element {
                 <div className={`p-3 sm:p-6 border-t ${'border-gray-200'}`}>
                   <h3 className={`text-sm sm:text-base font-semibold mb-2 ${'text-gray-900'}`}>Notes</h3>
                   <p className={`text-xs sm:text-sm ${'text-gray-600'}`}>{selectedInvoice.notes}</p>
+                </div>
+              )}
+
+              {/* Payment History - Show if there are partial payments */}
+              {totalPaid > 0 && (
+                <div className={`p-3 sm:p-6 border-t ${'border-gray-200'}`}>
+                  <h3 className={`text-sm sm:text-base font-semibold mb-3 ${'text-gray-900'}`}>Payment History</h3>
+                  {loadingPayments ? (
+                    <div className="text-center py-4 text-gray-500 text-xs sm:text-sm">Loading payments...</div>
+                  ) : payments.length === 0 ? (
+                    <div className="text-center py-4 text-gray-500 text-xs sm:text-sm">No payments recorded</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {payments.map((payment) => (
+                        <div
+                          key={payment.id}
+                          className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 border border-gray-200"
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-900 text-xs sm:text-sm">${parseFloat(payment.amount.toString()).toFixed(2)}</span>
+                              {payment.payment_method && (
+                                <span className="text-xs text-gray-500">• {payment.payment_method}</span>
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {new Date(payment.payment_date).toLocaleDateString()}
+                              {payment.notes && ` • ${payment.notes}`}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -2313,7 +2374,7 @@ function InvoicesContent(): React.JSX.Element {
                   onClick={() => {
                     setShowPaymentForm(false);
                   }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors cursor-pointer"
                 >
                   Back to Invoice
                 </button>
@@ -2325,7 +2386,7 @@ function InvoicesContent(): React.JSX.Element {
                   setShowReminderDates(false);
                       setShowPaymentForm(false);
                 }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 Close
               </button>
@@ -2334,7 +2395,7 @@ function InvoicesContent(): React.JSX.Element {
                   onClick={() => {
                         setShowPaymentForm(true);
                   }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer flex items-center gap-2"
+                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors cursor-pointer flex items-center gap-2"
                 >
                   <DollarSign className="h-4 w-4" />
                   Record Payment
