@@ -296,6 +296,7 @@ export async function sendSubscriptionConfirmationEmail(userId: string, plan: st
               margin-bottom: 32px;
               padding-bottom: 24px;
               border-bottom: 1px solid #e0e0e0;
+              margin-top: 0;
             }
             .status-row {
               display: table;
@@ -440,10 +441,13 @@ export async function sendSubscriptionConfirmationEmail(userId: string, plan: st
                 margin: 0 !important;
               }
               .header {
-                padding: 32px 20px !important;
+                padding: 32px 20px 24px 20px !important;
               }
               .content {
-                padding: 0 20px 32px 20px !important;
+                padding: 24px 20px 32px 20px !important;
+              }
+              .status-section {
+                margin-top: 0 !important;
               }
               .title {
                 font-size: 20px !important;
@@ -481,10 +485,13 @@ export async function sendSubscriptionConfirmationEmail(userId: string, plan: st
             }
             @media only screen and (max-width: 480px) {
               .header {
-                padding: 24px 16px !important;
+                padding: 24px 16px 20px 16px !important;
               }
               .content {
-                padding: 0 16px 24px 16px !important;
+                padding: 20px 16px 24px 16px !important;
+              }
+              .status-section {
+                margin-top: 0 !important;
               }
               .footer {
                 padding: 20px 16px !important;
