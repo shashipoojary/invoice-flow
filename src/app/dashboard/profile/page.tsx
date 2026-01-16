@@ -383,26 +383,41 @@ export default function ProfilePage() {
       // This can happen if Dodo Payment redirects to return_url with status=failed
       if (paymentStatus === 'success' && (dodoStatus === 'failed' || dodoStatus === 'failure' || dodoStatus === 'error')) {
         // Treat as failure
-        const planName = plan === 'monthly' ? 'Monthly' : plan === 'pay_per_invoice' ? 'Pay Per Invoice' : 'subscription';
         const errorMsg = errorMessage || 'Payment failed. Please check your payment method and try again.';
-        showError(`${planName} subscription payment failed. ${errorMsg}`);
+        if (plan === 'pay_per_invoice') {
+          showError(`Pay Per Invoice payment failed. ${errorMsg}`);
+        } else if (plan === 'monthly') {
+          showError(`Monthly subscription payment failed. ${errorMsg}`);
+        } else {
+          showError(`Subscription payment failed. ${errorMsg}`);
+        }
         isProcessingRef.current = false;
         return;
       }
       
       // Handle cancelled first
       if (paymentStatus === 'cancelled') {
-        const planName = plan === 'monthly' ? 'Monthly' : plan === 'pay_per_invoice' ? 'Pay Per Invoice' : 'subscription';
-        showError(`${planName} subscription payment was cancelled. Your subscription was not changed. Please try again if you want to upgrade.`);
+        if (plan === 'pay_per_invoice') {
+          showError('Pay Per Invoice payment was cancelled. Your plan was not changed. Please try again if you want to activate Pay Per Invoice.');
+        } else if (plan === 'monthly') {
+          showError('Monthly subscription payment was cancelled. Your subscription was not changed. Please try again if you want to upgrade.');
+        } else {
+          showError('Subscription payment was cancelled. Your subscription was not changed. Please try again if you want to upgrade.');
+        }
         isProcessingRef.current = false;
         return;
       }
       
       // Handle failed
       if (paymentStatus === 'failed') {
-        const planName = plan === 'monthly' ? 'Monthly' : plan === 'pay_per_invoice' ? 'Pay Per Invoice' : 'subscription';
         const errorMsg = errorMessage || 'Payment failed. Please check your payment method and try again.';
-        showError(`${planName} subscription payment failed. ${errorMsg}`);
+        if (plan === 'pay_per_invoice') {
+          showError(`Pay Per Invoice payment failed. ${errorMsg}`);
+        } else if (plan === 'monthly') {
+          showError(`Monthly subscription payment failed. ${errorMsg}`);
+        } else {
+          showError(`Subscription payment failed. ${errorMsg}`);
+        }
         isProcessingRef.current = false;
         return;
       }
@@ -420,9 +435,10 @@ export default function ProfilePage() {
             console.log('Payment successful but no payment ID available - webhook will handle subscription update');
             if (setupType === 'pay_per_invoice') {
               showSuccess('Payment successful. Pay Per Invoice plan is being activated. You will receive a confirmation email shortly.');
+            } else if (plan === 'monthly') {
+              showSuccess('Payment successful. Monthly subscription is being activated. You will receive a confirmation email shortly.');
             } else {
-              const planName = plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice';
-              showSuccess(`Payment successful. Your ${planName} subscription is being activated. You will receive a confirmation email shortly.`);
+              showSuccess('Payment successful. Subscription is being activated. You will receive a confirmation email shortly.');
             }
             await Promise.all([loadProfile(), loadSubscriptionUsage()]);
             return;
@@ -437,9 +453,10 @@ export default function ProfilePage() {
           console.log('Payment successful but no valid payment ID - webhook will handle subscription update');
           if (setupType === 'pay_per_invoice') {
             showSuccess('Payment successful. Pay Per Invoice plan is being activated. You will receive a confirmation email shortly.');
+          } else if (plan === 'monthly') {
+            showSuccess('Payment successful. Monthly subscription is being activated. You will receive a confirmation email shortly.');
           } else {
-            const planName = plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice';
-            showSuccess(`Payment successful. Your ${planName} subscription is being activated. You will receive a confirmation email shortly.`);
+            showSuccess('Payment successful. Subscription is being activated. You will receive a confirmation email shortly.');
           }
           await Promise.all([loadProfile(), loadSubscriptionUsage()]);
           return;
@@ -463,10 +480,15 @@ export default function ProfilePage() {
             if (verifyData.success) {
               if (setupType === 'pay_per_invoice') {
                 // Payment method setup completed
-                showSuccess('Subscription confirmed. Pay Per Invoice plan activated. You will be charged $0.50 per invoice automatically. A confirmation email has been sent to your registered email address.');
+                showSuccess('Pay Per Invoice plan activated. You will be charged $0.50 per invoice automatically. A confirmation email has been sent to your registered email address.');
               } else if (verifyData.plan) {
-                const planName = verifyData.plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice';
-                showSuccess(`Subscription confirmed. Your ${planName} subscription has been successfully activated. A confirmation email has been sent to your registered email address.`);
+                if (verifyData.plan === 'pay_per_invoice') {
+                  showSuccess('Pay Per Invoice plan activated. You will be charged $0.50 per invoice automatically. A confirmation email has been sent to your registered email address.');
+                } else if (verifyData.plan === 'monthly') {
+                  showSuccess('Monthly subscription activated. A confirmation email has been sent to your registered email address.');
+                } else {
+                  showSuccess('Subscription activated. A confirmation email has been sent to your registered email address.');
+                }
               }
               // Reload profile and subscription usage
               await Promise.all([loadProfile(), loadSubscriptionUsage()]);
@@ -488,9 +510,10 @@ export default function ProfilePage() {
               console.log('Verify endpoint failed but payment status is succeeded/active - webhook will handle subscription update');
               if (setupType === 'pay_per_invoice') {
                 showSuccess('Payment successful. Pay Per Invoice plan is being activated. You will receive a confirmation email shortly.');
+              } else if (plan === 'monthly') {
+                showSuccess('Payment successful. Monthly subscription is being activated. You will receive a confirmation email shortly.');
               } else {
-                const planName = plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice';
-                showSuccess(`Payment successful. Your ${planName} subscription is being activated. You will receive a confirmation email shortly.`);
+                showSuccess('Payment successful. Subscription is being activated. You will receive a confirmation email shortly.');
               }
               // Reload profile and subscription usage
               await Promise.all([loadProfile(), loadSubscriptionUsage()]);
@@ -506,9 +529,10 @@ export default function ProfilePage() {
           if (isSuccessStatus) {
             if (setupType === 'pay_per_invoice') {
               showSuccess('Payment successful. Pay Per Invoice plan is being activated. You will receive a confirmation email shortly.');
+            } else if (plan === 'monthly') {
+              showSuccess('Payment successful. Monthly subscription is being activated. You will receive a confirmation email shortly.');
             } else {
-              const planName = plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice';
-              showSuccess(`Payment successful. Your ${planName} subscription is being activated. You will receive a confirmation email shortly.`);
+              showSuccess('Payment successful. Subscription is being activated. You will receive a confirmation email shortly.');
             }
             await Promise.all([loadProfile(), loadSubscriptionUsage()]);
           } else {
