@@ -19,7 +19,15 @@ export async function GET(request: NextRequest) {
     const paymentId = searchParams.get('payment_id');
     const statusFromUrl = searchParams.get('status'); // Dodo Payment adds this to redirect URL
 
+    console.log('🔍 VERIFY ENDPOINT CALLED:', {
+      paymentId,
+      statusFromUrl,
+      userId: user.id,
+      timestamp: new Date().toISOString()
+    });
+
     if (!paymentId) {
+      console.log('❌ VERIFY: No payment_id provided');
       return NextResponse.json({ error: 'Payment ID is required' }, { status: 400 });
     }
     
