@@ -262,7 +262,7 @@ export default function OnboardingPage() {
     <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6">
       <div className="flex flex-col lg:flex-row w-full max-w-6xl bg-white overflow-hidden">
         {/* Left Panel - Desktop Only */}
-        <div className="flex-1 relative overflow-hidden lg:block hidden bg-gray-50">
+        <div className="flex-1 relative overflow-hidden lg:block hidden bg-gray-50 lg:sticky lg:top-0 lg:h-screen">
           <div className="absolute top-6 left-6 z-10">
             <button
               onClick={() => router.push('/')}
@@ -272,7 +272,7 @@ export default function OnboardingPage() {
             </button>
           </div>
 
-          <div className="flex items-center justify-center h-full p-8">
+          <div className="flex items-center justify-center min-h-full p-8">
             <div className="w-full max-w-lg">
               {/* Modern Illustration */}
               <div className="relative">
@@ -347,7 +347,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Right Panel */}
-        <div className="flex-1 p-6 lg:p-16 flex flex-col justify-center max-w-lg mx-auto w-full">
+        <div className="flex-1 p-6 lg:p-16 flex flex-col max-w-lg mx-auto w-full lg:justify-start lg:py-16">
           {/* Back Button - Mobile Only */}
           <div className="mb-6 lg:hidden">
             <button
