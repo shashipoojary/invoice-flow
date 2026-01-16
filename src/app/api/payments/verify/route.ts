@@ -71,13 +71,101 @@ export async function GET(request: NextRequest) {
     }
 
     if (isSuccess) {
-      // Get billing record to find plan (try both session_id and payment_id)
-      const { data: billingRecord } = await supabaseAdmin
+      // Get billing record to find plan
+      // Try multiple approaches:
+      // 1. Direct match with payment_id
+      // 2. Match with checkout session ID (if payment_id is actually a checkout session ID)
+      // 3. Also try to get checkout session ID from Dodo Payment API if payment_id is a payment ID
+      let billingRecord = null;
+      
+      // First, try direct match
+      const { data: directMatch } = await supabaseAdmin
         .from('billing_records')
         .select('*')
-        .or(`stripe_session_id.eq.${paymentId},metadata->>session_id.eq.${paymentId}`)
+        .eq('stripe_session_id', paymentId)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
+      
+      if (directMatch) {
+        billingRecord = directMatch;
+      } else {
+        // If not found, try to get checkout session ID from payment
+        // Dodo Payment might return payment_id in URL, but billing record was created with checkout session ID
+        try {
+          const dodoClient = getDodoPaymentClient();
+          if (dodoClient) {
+            // Try to get payment details to find checkout session ID
+            const paymentResponse = await fetch(
+              `${dodoClient['baseUrl']}/payments/${paymentId}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${process.env.DODO_PAYMENT_API_KEY}`,
+                },
+              }
+            );
+            
+            if (paymentResponse.ok) {
+              const paymentData = await paymentResponse.json();
+              const checkoutSessionId = paymentData.checkout_session_id || paymentData.session_id;
+              
+              if (checkoutSessionId) {
+                // Try to find billing record with checkout session ID
+                const { data: sessionMatch } = await supabaseAdmin
+                  .from('billing_records')
+                  .select('*')
+                  .eq('stripe_session_id', checkoutSessionId)
+                  .eq('user_id', user.id)
+                  .maybeSingle();
+                
+                if (sessionMatch) {
+                  billingRecord = sessionMatch;
+                  // Update billing record to also include payment_id for future lookups
+                  // Store both IDs in stripe_session_id (format: "payment_id|session_id")
+                  await supabaseAdmin
+                    .from('billing_records')
+                    .update({
+                      stripe_session_id: `${paymentId}|${checkoutSessionId}`,
+                      updated_at: new Date().toISOString(),
+                    })
+                    .eq('id', billingRecord.id);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.log('Could not fetch payment details to find checkout session ID:', error);
+        }
+        
+        // If still not found, try to find by user_id and amount (for recent payments)
+        // This handles cases where webhook already processed but billing record wasn't found by ID
+        if (!billingRecord) {
+          const { data: recentMatch } = await supabaseAdmin
+            .from('billing_records')
+            .select('*')
+            .eq('user_id', user.id)
+            .in('status', ['pending', 'paid']) // Check both pending and paid (webhook might have already updated)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          
+          if (recentMatch) {
+            billingRecord = recentMatch;
+            // Update with payment_id for future lookups (store both IDs)
+            const existingSessionId = recentMatch.stripe_session_id || '';
+            const updatedSessionId = existingSessionId.includes('|') 
+              ? `${paymentId}|${existingSessionId.split('|')[1]}` // Keep original session ID, add payment ID
+              : `${paymentId}|${existingSessionId}`; // Add both IDs
+              
+            await supabaseAdmin
+              .from('billing_records')
+              .update({
+                stripe_session_id: updatedSessionId,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', recentMatch.id);
+          }
+        }
+      }
 
       if (billingRecord) {
         // Determine plan from amount (since billing_records doesn't have metadata)
