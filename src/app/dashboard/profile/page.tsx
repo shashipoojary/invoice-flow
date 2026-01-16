@@ -42,6 +42,7 @@ interface UserProfile {
     plan: 'free' | 'monthly' | 'pay_per_invoice';
     status: 'active' | 'cancelled' | 'expired';
     nextBilling?: string;
+    cancelsAtPeriodEnd?: boolean;
   };
 }
 
@@ -203,6 +204,7 @@ export default function ProfilePage() {
   const [deleteAccountConfirmation, setDeleteAccountConfirmation] = useState('');
   const [deleteProgressConfirmation, setDeleteProgressConfirmation] = useState('');
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showCancelSubscriptionModal, setShowCancelSubscriptionModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showFormatModal, setShowFormatModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -614,8 +616,29 @@ export default function ProfilePage() {
 
   // Change password
   const handleChangePassword = async () => {
+    // Validation
+    if (!passwordData.current) {
+      showError('Current password is required');
+      return;
+    }
+
+    if (!passwordData.new) {
+      showError('New password is required');
+      return;
+    }
+
+    if (passwordData.new.length < 6) {
+      showError('New password must be at least 6 characters long');
+      return;
+    }
+
     if (passwordData.new !== passwordData.confirm) {
       showError('New passwords do not match');
+      return;
+    }
+
+    if (passwordData.current === passwordData.new) {
+      showError('New password must be different from current password');
       return;
     }
 
@@ -637,6 +660,7 @@ export default function ProfilePage() {
         showSuccess('Password updated successfully');
         setShowPasswordModal(false);
         setPasswordData({ current: '', new: '', confirm: '' });
+        setShowPasswords({ current: false, new: false, confirm: false });
       } else {
         const data = await response.json();
         showError(data.error || 'Failed to update password');
@@ -720,6 +744,45 @@ export default function ProfilePage() {
   // Update subscription
   const [isUpdatingSubscription, setIsUpdatingSubscription] = useState(false);
 
+  const handleCancelSubscription = async () => {
+    try {
+      setIsUpdatingSubscription(true);
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/subscription', {
+        method: 'PUT',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: 'free' }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to cancel subscription');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        const planName = profile?.subscription?.plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice';
+        if (result.cancelsAtPeriodEnd && result.nextBilling) {
+          const endDate = new Date(result.nextBilling).toLocaleDateString();
+          showSuccess(`${planName} subscription will cancel on ${endDate}. You can continue using all features until then. No refunds will be issued for the current period.`);
+        } else {
+          showSuccess(`${planName} subscription cancelled.`);
+        }
+        // Close confirmation modal and reopen subscription modal
+        setShowCancelSubscriptionModal(false);
+        await Promise.all([loadProfile(), loadSubscriptionUsage()]);
+        // Reopen subscription modal after a brief delay to ensure data is loaded
+        setTimeout(() => {
+          setShowSubscriptionModal(true);
+        }, 100);
+      }
+    } catch (error: any) {
+      showError(error.message || 'Failed to cancel subscription');
+    } finally {
+      setIsUpdatingSubscription(false);
+    }
+  };
+
   const handleUpdateSubscription = async (plan: string) => {
     // If already on this plan, do nothing
     if (profile?.subscription?.plan === plan) {
@@ -748,8 +811,18 @@ export default function ProfilePage() {
           // Close the modal immediately
           setShowSubscriptionModal(false);
           
-          // Show success message
-          showSuccess(`Subscription updated to Free plan`);
+          // Show success message based on cancellation
+          if (result.cancelled) {
+            const previousPlan = profile?.subscription?.plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice';
+            if (result.cancelsAtPeriodEnd && result.nextBilling) {
+              const endDate = new Date(result.nextBilling).toLocaleDateString();
+              showSuccess(`${previousPlan} subscription will cancel on ${endDate}. You can continue using all features until then. No refunds will be issued for the current period.`);
+            } else {
+              showSuccess(`${previousPlan} subscription cancelled. You have been switched to the Free plan.`);
+            }
+          } else {
+            showSuccess(`Subscription updated to Free plan`);
+          }
           
           // Reload profile and subscription usage data from server
           await Promise.all([
@@ -1078,17 +1151,24 @@ export default function ProfilePage() {
                               Next billing: {new Date(profile.subscription.nextBilling).toLocaleDateString()}
                             </p>
                           )}
+                          {profile?.subscription?.cancelsAtPeriodEnd && (
+                            <p className="text-xs text-orange-600 mt-1 font-medium">
+                              Cancels on: {profile?.subscription?.nextBilling ? new Date(profile.subscription.nextBilling).toLocaleDateString() : 'End of period'}
+                            </p>
+                          )}
                         </div>
-                        <button
-                          onClick={async () => {
-                            setShowSubscriptionModal(true);
-                            // Load usage data when modal opens
-                            await loadSubscriptionUsage();
-                          }}
-                          className="text-indigo-600 hover:text-indigo-700 text-sm font-medium cursor-pointer"
-                        >
-                          Manage
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={async () => {
+                              setShowSubscriptionModal(true);
+                              // Load usage data when modal opens
+                              await loadSubscriptionUsage();
+                            }}
+                            className="text-indigo-600 hover:text-indigo-700 text-sm font-medium transition-colors cursor-pointer"
+                          >
+                            Manage
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1357,6 +1437,34 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {/* Cancel Subscription Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showCancelSubscriptionModal}
+        onClose={() => {
+          setShowCancelSubscriptionModal(false);
+          // Reopen subscription modal when closing confirmation
+          setShowSubscriptionModal(true);
+        }}
+        onConfirm={handleCancelSubscription}
+        title="Cancel Subscription"
+        message={`Are you sure you want to cancel your ${profile?.subscription?.plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice'} subscription?`}
+        confirmText="Yes, Cancel Subscription"
+        cancelText="Keep Subscription"
+        type="warning"
+        isLoading={isUpdatingSubscription}
+        infoBanner={
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-gray-900">What happens when you cancel:</p>
+            <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
+              <li>You can continue using all features until {profile?.subscription?.nextBilling ? new Date(profile.subscription.nextBilling).toLocaleDateString() : 'the end of your billing period'}</li>
+              <li>No refunds will be issued for the current billing period</li>
+              <li>Your subscription will automatically switch to the Free plan after the billing period ends</li>
+              <li>You can reactivate your subscription anytime</li>
+            </ul>
+          </div>
+        }
+      />
+
       {/* Subscription Modal */}
       {showSubscriptionModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
@@ -1464,6 +1572,29 @@ export default function ProfilePage() {
                       {profile.subscription.status === 'active' ? 'Active' : 'Inactive'}
                     </span>
                   </div>
+                  {/* Cancel Subscription Button */}
+                  {(profile.subscription.plan === 'monthly' || profile.subscription.plan === 'pay_per_invoice') && !profile.subscription.cancelsAtPeriodEnd && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <button
+                        onClick={() => {
+                          // Keep subscription modal open, show confirmation modal on top
+                          setShowCancelSubscriptionModal(true);
+                        }}
+                        className="w-full px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer border border-red-200 rounded"
+                      >
+                        Cancel Subscription
+                      </button>
+                    </div>
+                  )}
+                  {profile.subscription.cancelsAtPeriodEnd && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <div className="bg-orange-50 border border-orange-200 rounded p-3">
+                        <p className="text-xs text-orange-800 font-medium">
+                          Your subscription will cancel on {profile.subscription.nextBilling ? new Date(profile.subscription.nextBilling).toLocaleDateString() : 'the end of your billing period'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

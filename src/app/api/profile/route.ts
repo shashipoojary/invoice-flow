@@ -42,7 +42,8 @@ export async function GET(request: NextRequest) {
       subscription: {
         plan: profile?.subscription_plan || 'free',
         status: profile?.subscription_status || 'active',
-        nextBilling: profile?.next_billing_date || null
+        nextBilling: profile?.next_billing_date || null,
+        cancelsAtPeriodEnd: profile?.subscription_cancels_at_period_end || false
       }
     });
 

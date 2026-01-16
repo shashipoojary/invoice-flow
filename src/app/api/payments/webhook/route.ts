@@ -131,6 +131,12 @@ export async function POST(request: NextRequest) {
         await handlePaymentFailure(event.data || event);
         break;
 
+      case 'subscription.cancelled':
+      case 'subscription.ended':
+      case 'subscription.deleted':
+        await handleSubscriptionCancellation(event.data || event);
+        break;
+
       default:
         console.log('⚠️ Unhandled webhook event type:', event.type);
         // Try to handle it anyway if it looks like a payment event
@@ -919,6 +925,70 @@ async function updateUserSubscription(userId: string, plan: string, paymentId?: 
     }
   } catch (error) {
     console.error('Error in updateUserSubscription:', error);
+  }
+}
+
+/**
+ * Handle subscription cancellation from webhook
+ */
+async function handleSubscriptionCancellation(eventData: any) {
+  try {
+    console.log('🛑 Handling subscription cancellation webhook:', {
+      subscriptionId: eventData.subscription_id || eventData.id,
+      userId: eventData.metadata?.userId,
+      timestamp: new Date().toISOString(),
+    });
+
+    const subscriptionId = eventData.subscription_id || eventData.id;
+    const userId = eventData.metadata?.userId;
+
+    if (!subscriptionId && !userId) {
+      console.log('⚠️ No subscription ID or user ID in cancellation event');
+      return;
+    }
+
+    // Find user by subscription ID or metadata
+    let userToUpdate = null;
+    if (userId) {
+      userToUpdate = userId;
+    } else if (subscriptionId) {
+      // Find user by subscription ID
+      const { data: userData } = await supabaseAdmin
+        .from('users')
+        .select('id')
+        .eq('dodo_subscription_id', subscriptionId)
+        .single();
+      
+      if (userData) {
+        userToUpdate = userData.id;
+      }
+    }
+
+    if (!userToUpdate) {
+      console.log('⚠️ Could not find user for subscription cancellation');
+      return;
+    }
+
+    // Update user subscription to cancelled
+    const { error: updateError } = await supabaseAdmin
+      .from('users')
+      .update({
+        subscription_plan: 'free',
+        subscription_status: 'cancelled',
+        subscription_cancelled_at: new Date().toISOString(),
+        dodo_subscription_id: null, // Clear subscription ID
+        next_billing_date: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', userToUpdate);
+
+    if (updateError) {
+      console.error('❌ Error updating subscription on cancellation:', updateError);
+    } else {
+      console.log(`✅ Subscription cancelled for user ${userToUpdate} via webhook`);
+    }
+  } catch (error) {
+    console.error('Error handling subscription cancellation:', error);
   }
 }
 
