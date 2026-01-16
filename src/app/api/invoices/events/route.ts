@@ -1,5 +1,62 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getAuthenticatedUser } from '@/lib/auth-middleware';
+
+export async function GET(req: NextRequest) {
+  try {
+    // Authenticate user
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    const searchParams = req.nextUrl.searchParams;
+    const type = searchParams.get('type');
+    const days = parseInt(searchParams.get('days') || '7');
+    
+    const sinceDate = new Date();
+    sinceDate.setDate(sinceDate.getDate() - days);
+    
+    // First, get all invoice IDs belonging to the authenticated user
+    const { data: userInvoices, error: invoicesError } = await supabaseAdmin
+      .from('invoices')
+      .select('id')
+      .eq('user_id', user.id);
+    
+    if (invoicesError) {
+      return NextResponse.json({ error: 'Failed to fetch user invoices' }, { status: 500 });
+    }
+    
+    // If user has no invoices, return empty array
+    if (!userInvoices || userInvoices.length === 0) {
+      return NextResponse.json({ events: [] }, { status: 200 });
+    }
+    
+    const invoiceIds = userInvoices.map(inv => inv.id);
+    
+    // Now fetch events only for the user's invoices
+    let query = supabaseAdmin
+      .from('invoice_events')
+      .select('*, invoices(id, invoice_number, status, client_id, clients(name))')
+      .in('invoice_id', invoiceIds) // CRITICAL: Only get events for user's invoices
+      .gte('created_at', sinceDate.toISOString())
+      .order('created_at', { ascending: false });
+    
+    if (type) {
+      query = query.eq('type', type);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    
+    return NextResponse.json({ events: data || [] }, { status: 200 });
+  } catch (e: any) {
+    return NextResponse.json({ error: e?.message || 'Unknown error' }, { status: 500 });
+  }
+}
 
 export async function POST(req: Request) {
   try {

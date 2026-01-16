@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   FileText, Users, 
   Clock, CheckCircle, AlertCircle, AlertTriangle, UserPlus, FilePlus, Sparkles, Receipt, Timer,
   Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2, ArrowRight, ChevronDown, ChevronUp,
-  ArrowUp, ArrowDown, ClipboardCheck, Copy, Calendar
+  ArrowUp, ArrowDown, ClipboardCheck, Copy, Calendar, Ban, FileCheck, FileX
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -69,6 +69,34 @@ export default function DashboardOverview() {
   const [showCreateEstimate, setShowCreateEstimate] = useState(false);
   const [showPartialPayment, setShowPartialPayment] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(() => {
+    // Load read notifications from localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('readNotificationIds');
+        return stored ? new Set(JSON.parse(stored)) : new Set();
+      } catch {
+        return new Set();
+      }
+    }
+    return new Set();
+  });
+  const notificationRef = useRef<HTMLDivElement>(null);
+  const invoicesRef = useRef<Invoice[]>([]);
+  const notificationsFetchedRef = useRef(false);
+  const lastFetchKeyRef = useRef<string>('');
+  const getAuthHeadersRef = useRef<typeof getAuthHeaders | null>(null);
+  const parseDateOnlyRef = useRef<((input: string) => Date) | null>(null);
+  const [notifications, setNotifications] = useState<Array<{
+    id: string;
+    type: 'viewed' | 'due_today' | 'overdue' | 'paid' | 'partial_paid' | 'draft_created' | 'downloaded' | 'payment_copied' | 'reminder_scheduled' | 'sent' | 'failed' | 'cancelled' | 'estimate_sent' | 'estimate_approved' | 'estimate_rejected';
+    invoiceId: string;
+    invoiceNumber: string;
+    clientName: string;
+    message: string;
+    timestamp: string;
+  }>>([]);
   
   // Payment form state
   const [payments, setPayments] = useState<any[]>([]);
@@ -112,6 +140,11 @@ export default function DashboardOverview() {
   });
   
   // Business settings are now managed by SettingsContext
+
+  // Keep invoices ref updated
+  useEffect(() => {
+    invoicesRef.current = invoices || [];
+  }, [invoices]);
 
   // Extract payment data from invoices immediately - now instant since it's direct properties
   useEffect(() => {
@@ -216,6 +249,12 @@ export default function DashboardOverview() {
     }
     return new Date(input);
   }, []);
+
+  // Keep refs updated - set after functions are defined
+  useEffect(() => {
+    getAuthHeadersRef.current = getAuthHeaders;
+    parseDateOnlyRef.current = parseDateOnly;
+  }, [getAuthHeaders, parseDateOnly]);
 
   const getDueDateStatus = useCallback((dueDate: string, invoiceStatus: string, paymentTerms?: { enabled: boolean; terms: string }, updatedAt?: string) => {
     const today = new Date();
@@ -1529,6 +1568,371 @@ export default function DashboardOverview() {
   // Calculate total clients (simple, no need to include in complex calculation)
   const totalClients = clients.length;
 
+  // Calculate upcoming due dates (invoices due in next 7 days)
+  const upcomingDueDates = useMemo(() => {
+    if (!invoices || invoices.length === 0) return [];
+    
+    const today = new Date();
+    const nextWeek = new Date(today);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    
+    return invoices
+      .filter(invoice => {
+        const status = invoice.status;
+        if (status === 'paid' || status === 'draft') return false;
+        
+          const parseFn = parseDateOnlyRef.current || parseDateOnly;
+          const dueDate = parseFn(invoice.dueDate);
+        const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+        const dueDateStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
+        const nextWeekStart = new Date(Date.UTC(nextWeek.getFullYear(), nextWeek.getMonth(), nextWeek.getDate()));
+        
+        const diffTime = dueDateStart.getTime() - todayStart.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        
+        return diffDays >= 0 && diffDays <= 7 && dueDateStart <= nextWeekStart;
+      })
+      .sort((a, b) => {
+        const dateA = parseDateOnly(a.dueDate);
+        const dateB = parseDateOnly(b.dueDate);
+        return dateA.getTime() - dateB.getTime();
+      })
+      .slice(0, 5);
+  }, [invoices, parseDateOnly]);
+
+  // Helper function to get time ago
+  const getTimeAgo = useCallback((date: Date): string => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+  }, []);
+
+  // Fetch and calculate notifications - only once when data is ready
+  useEffect(() => {
+    if (!user || !hasInitiallyLoaded || isLoadingInvoices) {
+      notificationsFetchedRef.current = false;
+      lastFetchKeyRef.current = '';
+      return;
+    }
+    
+    // Create a unique key for this fetch attempt
+    const fetchKey = `${user?.id || ''}-${hasInitiallyLoaded}-${isLoadingInvoices}`;
+    
+    // Prevent multiple fetches with the same key
+    if (lastFetchKeyRef.current === fetchKey && notificationsFetchedRef.current) {
+      return;
+    }
+    
+    lastFetchKeyRef.current = fetchKey;
+    notificationsFetchedRef.current = true;
+    
+    const fetchNotifications = async () => {
+      const currentInvoices = invoicesRef.current;
+      const notificationList: Array<{
+        id: string;
+        type: 'viewed' | 'due_today' | 'overdue';
+        invoiceId: string;
+        invoiceNumber: string;
+        clientName: string;
+        message: string;
+        timestamp: string;
+      }> = [];
+      
+      const today = new Date();
+      const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+      
+      // Get all invoice events (last 7 days)
+      try {
+        const headers = await (getAuthHeadersRef.current || getAuthHeaders)();
+        const response = await fetch('/api/invoices/events?days=7', {
+          headers
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.events && Array.isArray(data.events)) {
+            // Process events and validate against current invoice status
+            for (const event of data.events) {
+              const invoice = currentInvoices.find(inv => inv.id === event.invoice_id);
+              if (!invoice) continue;
+              
+              // CRITICAL: Validate event type matches current invoice status
+              // This prevents showing stale notifications (e.g., "created" when invoice is actually "sent")
+              const eventStatusMap: { [key: string]: string[] } = {
+                'created': ['draft'], // Created events only valid for draft invoices
+                'sent': ['sent', 'pending'], // Sent events only valid for sent/pending invoices
+                'paid': ['paid'], // Paid events only valid for paid invoices
+                'cancelled': ['draft', 'sent', 'pending', 'overdue', 'due today'], // Cancelled events can appear for various statuses
+                'partial_payment': ['sent', 'pending', 'overdue', 'due today'], // Partial payments valid for unpaid invoices
+                'viewed_by_customer': ['sent', 'pending', 'overdue', 'due today'], // Views only for sent invoices
+                'downloaded_by_customer': ['sent', 'pending', 'overdue', 'due today'], // Downloads only for sent invoices
+                'payment_method_copied': ['sent', 'pending', 'overdue', 'due today'], // Payment method copied only for sent invoices
+                'reminder_scheduled': ['sent', 'pending', 'overdue', 'due today'], // Reminders only for sent invoices
+                'reminder_failed': ['sent', 'pending', 'overdue', 'due today'] // Failed reminders only for sent invoices
+              };
+              
+              // Check if event type is valid for current invoice status
+              const validStatuses = eventStatusMap[event.type];
+              if (validStatuses && !validStatuses.includes(invoice.status)) {
+                // Event type doesn't match current invoice status - skip this notification
+                // This handles cases like: event is "created" but invoice is now "sent"
+                continue;
+              }
+              
+              const eventDate = new Date(event.created_at);
+              const now = new Date();
+              const diffMs = now.getTime() - eventDate.getTime();
+              const diffMins = Math.floor(diffMs / 60000);
+              const diffHours = Math.floor(diffMs / 3600000);
+              const diffDays = Math.floor(diffMs / 86400000);
+              let timeAgo = 'Just now';
+              if (diffMins >= 1 && diffMins < 60) timeAgo = `${diffMins}m ago`;
+              else if (diffHours < 24) timeAgo = `${diffHours}h ago`;
+              else if (diffDays === 1) timeAgo = 'Yesterday';
+              else if (diffDays < 7) timeAgo = `${diffDays}d ago`;
+              else timeAgo = eventDate.toLocaleDateString();
+              
+              const invoiceNumber = invoice.invoiceNumber || invoice.invoice_number || 'N/A';
+              const clientName = invoice.clientName || invoice.client?.name || 'Unknown';
+              
+              // Skip notifications for cancelled invoices (except cancellation notification itself)
+              // Note: 'cancelled' is not in Invoice status type, but we check event type
+              if (event.type === 'cancelled') {
+                // Only show cancelled notifications if invoice status allows it
+                // For now, we'll show cancelled events regardless of status
+              }
+              
+              // Verify paid status before showing paid notification
+              if (event.type === 'paid') {
+                // Only show paid notification if invoice is actually paid
+                if (invoice.status !== 'paid') {
+                  continue; // Skip this notification - invoice is not actually paid
+                }
+                // Also verify it's fully paid (not just partial)
+                const total = typeof invoice.total === 'number' ? invoice.total : parseFloat(String(invoice.total || '0'));
+                const totalPaid = invoice.totalPaid || 0;
+                // Calculate remaining balance if not provided
+                const remainingBalance = invoice.remainingBalance !== undefined 
+                  ? invoice.remainingBalance 
+                  : (total - totalPaid);
+                if (remainingBalance > 0.01) { // Allow small rounding differences
+                  continue; // Invoice has remaining balance, not fully paid
+                }
+              }
+              
+              // Verify partial payment status before showing partial payment notification
+              if (event.type === 'partial_payment') {
+                // Only show if invoice has partial payments and is not fully paid
+                const total = typeof invoice.total === 'number' ? invoice.total : parseFloat(String(invoice.total || '0'));
+                const totalPaid = invoice.totalPaid || 0;
+                // Calculate remaining balance if not provided
+                const remainingBalance = invoice.remainingBalance !== undefined 
+                  ? invoice.remainingBalance 
+                  : (total - totalPaid);
+                // Skip if fully paid or no payments
+                if (totalPaid === 0 || remainingBalance <= 0.01) {
+                  continue; // Skip - either no payments or fully paid
+                }
+              }
+              
+              // Map event types to notification types
+              const eventTypeMap: { [key: string]: { type: any; message: string } } = {
+                'viewed_by_customer': { type: 'viewed', message: `Invoice #${invoiceNumber} viewed by customer` },
+                'downloaded_by_customer': { type: 'downloaded', message: `Invoice #${invoiceNumber} downloaded by customer` },
+                'payment_method_copied': { type: 'payment_copied', message: `Payment method copied from customer for Invoice #${invoiceNumber}` },
+                'paid': { type: 'paid', message: `Invoice #${invoiceNumber} paid` },
+                'partial_payment': { type: 'partial_paid', message: `Invoice #${invoiceNumber} partially paid` },
+                'created': { type: 'draft_created', message: `Invoice #${invoiceNumber} created as draft` },
+                'sent': { type: 'sent', message: `Invoice #${invoiceNumber} sent` },
+                'reminder_scheduled': { type: 'reminder_scheduled', message: `Auto reminder scheduled for Invoice #${invoiceNumber}` },
+                'reminder_failed': { type: 'failed', message: `Reminder failed for Invoice #${invoiceNumber}` },
+                'cancelled': { type: 'cancelled', message: `Invoice #${invoiceNumber} cancelled` }
+              };
+              
+              const mapped = eventTypeMap[event.type];
+              if (mapped) {
+                notificationList.push({
+                  id: `${event.type}-${event.id}`,
+                  type: mapped.type,
+                  invoiceId: invoice.id,
+                  invoiceNumber,
+                  clientName,
+                  message: mapped.message,
+                  timestamp: timeAgo
+                });
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching invoice events:', error);
+      }
+      
+      // Check for due today and overdue invoices (only if invoices are loaded)
+      if (currentInvoices && currentInvoices.length > 0) {
+        currentInvoices.forEach(invoice => {
+          if (invoice.status === 'paid' || invoice.status === 'draft') return;
+          
+          const parseFn = parseDateOnlyRef.current || parseDateOnly;
+          const dueDate = parseFn(invoice.dueDate);
+          const dueDateStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
+          
+          // Due today
+          if (dueDateStart.getTime() === todayStart.getTime()) {
+            notificationList.push({
+              id: `due-today-${invoice.id}`,
+              type: 'due_today',
+              invoiceId: invoice.id,
+              invoiceNumber: invoice.invoiceNumber || invoice.invoice_number || 'N/A',
+              clientName: invoice.clientName || invoice.client?.name || 'Unknown',
+              message: `Invoice #${invoice.invoiceNumber || invoice.invoice_number || 'N/A'} is due today`,
+              timestamp: 'Today'
+            });
+          }
+          
+          // Overdue
+          if (dueDateStart < todayStart) {
+            const diffTime = todayStart.getTime() - dueDateStart.getTime();
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            notificationList.push({
+              id: `overdue-${invoice.id}`,
+              type: 'overdue',
+              invoiceId: invoice.id,
+              invoiceNumber: invoice.invoiceNumber || invoice.invoice_number || 'N/A',
+              clientName: invoice.clientName || invoice.client?.name || 'Unknown',
+              message: `Invoice #${invoice.invoiceNumber || invoice.invoice_number || 'N/A'} is ${diffDays} day${diffDays > 1 ? 's' : ''} overdue`,
+              timestamp: `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
+            });
+          }
+        });
+      }
+      
+      // Fetch estimate events (if estimates API exists)
+      // Note: This would need to be implemented if estimate events are tracked separately
+      // For now, we'll check invoice status changes that might indicate estimate conversions
+      
+      // Sort by priority: overdue > due today > paid > partial_paid > failed > cancelled > sent > reminder_scheduled > viewed > downloaded > payment_copied > draft_created > estimate_approved > estimate_rejected > estimate_sent
+      notificationList.sort((a, b) => {
+        const priority: { [key: string]: number } = { 
+          overdue: 10, 
+          due_today: 9, 
+          paid: 8,
+          partial_paid: 7,
+          failed: 6,
+          cancelled: 5,
+          sent: 4,
+          reminder_scheduled: 3,
+          viewed: 2,
+          downloaded: 2,
+          payment_copied: 2,
+          draft_created: 1,
+          estimate_approved: 2,
+          estimate_rejected: 2,
+          estimate_sent: 2
+        };
+        return (priority[b.type] || 0) - (priority[a.type] || 0);
+      });
+      
+      setNotifications(notificationList);
+    };
+    
+    fetchNotifications();
+    
+    // Set up real-time subscriptions for notifications
+    if (!user?.id) return;
+    
+    // Subscribe to invoice_events changes (listen to all events, filter in callback)
+    const eventsChannel = supabase
+      .channel(`invoice-events-${user.id}-${Date.now()}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'invoice_events'
+        },
+        (payload) => {
+          // Check if this event is for one of the user's invoices
+          const invoiceIds = invoicesRef.current.map(inv => inv.id);
+          const newData = payload.new as any;
+          const oldData = payload.old as any;
+          if (newData && newData.invoice_id && invoiceIds.includes(newData.invoice_id)) {
+            // Refresh notifications when events change for user's invoices
+            fetchNotifications();
+          } else if (oldData && oldData.invoice_id && invoiceIds.includes(oldData.invoice_id)) {
+            // Also handle updates/deletes
+            fetchNotifications();
+          }
+        }
+      )
+      .subscribe();
+    
+    // Subscribe to invoices table changes (status updates)
+    const invoicesChannel = supabase
+      .channel(`invoices-status-${user.id}-${Date.now()}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'invoices',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          // Refresh notifications when invoice status changes
+          fetchNotifications();
+        }
+      )
+      .subscribe();
+    
+    // Cleanup subscriptions on unmount
+    return () => {
+      eventsChannel.unsubscribe();
+      invoicesChannel.unsubscribe();
+    };
+    // Only depend on stable values - use user.id instead of user object
+  }, [user?.id, hasInitiallyLoaded, isLoadingInvoices]);
+
+  // Clean up read notification IDs for notifications that no longer exist
+  useEffect(() => {
+    if (readNotificationIds.size > 0 && notifications.length > 0) {
+      const currentNotificationIds = new Set(notifications.map(n => n.id));
+      const validReadIds = new Set([...readNotificationIds].filter(id => currentNotificationIds.has(id)));
+      if (validReadIds.size !== readNotificationIds.size) {
+        setReadNotificationIds(validReadIds);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('readNotificationIds', JSON.stringify([...validReadIds]));
+        }
+      }
+    }
+  }, [notifications, readNotificationIds]);
+
+  // Close notification dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+
+    if (showNotifications) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showNotifications]);
+
   // Navigation functions for dashboard cards
   const handlePaidInvoicesClick = useCallback(() => {
     router.push('/dashboard/invoices?status=paid');
@@ -1582,13 +1986,199 @@ export default function DashboardOverview() {
         />
         
         <main className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar">
-          <div className="pt-16 lg:pt-4 p-4 sm:p-6 lg:p-8">
+          <div className="pt-16 lg:pt-4 p-4 sm:p-5 lg:p-6 xl:p-8">
             {/* Dashboard Overview */}
             <div>
-              <h2 className="font-heading text-xl sm:text-2xl font-semibold mb-3 sm:mb-4 lg:mb-6" style={{color: '#1f2937'}}>
-                Dashboard Overview
-              </h2>
-              <p className="mb-4 sm:mb-5 lg:mb-6 text-sm sm:text-base" style={{color: '#374151'}}>
+              <div className="flex items-center justify-between mb-1">
+                <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
+                  Dashboard Overview
+                </h2>
+                {/* Notification Icon */}
+                <div className="relative" ref={notificationRef}>
+                  <button
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className="relative p-2 hover:bg-gray-100 transition-colors cursor-pointer"
+                  >
+                    <div className="relative inline-block">
+                      <Bell className="h-5 w-5" style={{color: '#6b7280'}} />
+                      {notifications.length > 0 && notifications.some(n => !readNotificationIds.has(n.id)) && (
+                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-600 rounded-full border-2 border-white"></span>
+                      )}
+                    </div>
+                  </button>
+                  {/* Notification Dropdown */}
+                  {showNotifications && (
+                    <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 lg:w-[28rem] xl:w-[32rem] bg-white border border-gray-200 shadow-lg z-50 flex flex-col max-h-96 lg:max-h-[32rem]">
+                      <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0 bg-white">
+                        <h3 className="font-semibold text-sm" style={{color: '#1f2937'}}>Notifications</h3>
+                        <div className="flex items-center gap-2">
+                          {notifications.length > 0 && notifications.some(n => !readNotificationIds.has(n.id)) && (
+                            <button
+                              onClick={() => {
+                                const allIds = new Set(notifications.map(n => n.id));
+                                setReadNotificationIds(allIds);
+                                // Persist to localStorage
+                                if (typeof window !== 'undefined') {
+                                  localStorage.setItem('readNotificationIds', JSON.stringify([...allIds]));
+                                }
+                              }}
+                              className="text-xs text-indigo-600 hover:text-indigo-700 font-medium px-2 py-1 hover:bg-indigo-50 transition-colors"
+                            >
+                              Mark all as read
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setShowNotifications(false)}
+                            className="p-1 hover:bg-gray-100 transition-colors"
+                          >
+                            <X className="h-4 w-4" style={{color: '#6b7280'}} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="overflow-y-auto flex-1">
+                        {notifications.length === 0 ? (
+                          <div className="p-8 text-center">
+                            <Bell className="h-8 w-8 mx-auto mb-2" style={{color: '#9ca3af'}} />
+                            <p className="text-sm" style={{color: '#6b7280'}}>No notifications</p>
+                          </div>
+                        ) : (
+                          <div className="p-2">
+                            {notifications.map((notification) => {
+                              const invoice = invoices.find(inv => inv.id === notification.invoiceId);
+                              const formatDate = (dateString: string | Date | null | undefined) => {
+                                if (!dateString) return 'N/A';
+                                try {
+                                  const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+                                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                                } catch {
+                                  return 'N/A';
+                                }
+                              };
+                              const displayDate = invoice 
+                                ? (invoice.dueDate || (invoice as any).due_date 
+                                  ? formatDate(invoice.dueDate || (invoice as any).due_date) 
+                                  : (invoice.issueDate || (invoice as any).issue_date 
+                                    ? formatDate(invoice.issueDate || (invoice as any).issue_date) 
+                                    : 'N/A'))
+                                : 'N/A';
+                              
+                              const isRead = readNotificationIds.has(notification.id);
+                              
+                              return (
+                                <div
+                                  key={notification.id}
+                                  className={`flex gap-3 p-3 transition-colors cursor-pointer ${
+                                    isRead 
+                                      ? 'hover:bg-gray-50' 
+                                      : 'bg-gray-50 hover:bg-gray-100'
+                                  }`}
+                                  onClick={() => {
+                                    // Mark as read when clicked
+                                    if (!isRead) {
+                                      const newReadIds = new Set([...readNotificationIds, notification.id]);
+                                      setReadNotificationIds(newReadIds);
+                                      // Persist to localStorage
+                                      if (typeof window !== 'undefined') {
+                                        localStorage.setItem('readNotificationIds', JSON.stringify([...newReadIds]));
+                                      }
+                                    }
+                                    if (invoice) {
+                                      setSelectedInvoice(invoice);
+                                      setShowViewInvoice(true);
+                                      setShowNotifications(false);
+                                    }
+                                  }}
+                                >
+                                  <div className="flex-shrink-0 mt-0.5">
+                                    {notification.type === 'viewed' && (
+                                      <Eye className="h-5 w-5 text-blue-600" />
+                                    )}
+                                    {notification.type === 'due_today' && (
+                                      <Clock className="h-5 w-5 text-amber-600" />
+                                    )}
+                                    {notification.type === 'overdue' && (
+                                      <AlertCircle className="h-5 w-5 text-red-600" />
+                                    )}
+                                    {notification.type === 'paid' && (
+                                      <CheckCircle className="h-5 w-5 text-emerald-600" />
+                                    )}
+                                    {notification.type === 'partial_paid' && (
+                                      <DollarSign className="h-5 w-5 text-blue-600" />
+                                    )}
+                                    {notification.type === 'draft_created' && (
+                                      <FileText className="h-5 w-5 text-gray-600" />
+                                    )}
+                                    {notification.type === 'downloaded' && (
+                                      <Download className="h-5 w-5 text-indigo-600" />
+                                    )}
+                                    {notification.type === 'payment_copied' && (
+                                      <Copy className="h-5 w-5 text-purple-600" />
+                                    )}
+                                    {notification.type === 'reminder_scheduled' && (
+                                      <Timer className="h-5 w-5 text-teal-600" />
+                                    )}
+                                    {notification.type === 'sent' && (
+                                      <Send className="h-5 w-5 text-green-600" />
+                                    )}
+                                    {notification.type === 'failed' && (
+                                      <AlertTriangle className="h-5 w-5 text-red-600" />
+                                    )}
+                                    {notification.type === 'cancelled' && (
+                                      <Ban className="h-5 w-5 text-gray-600" />
+                                    )}
+                                    {notification.type === 'estimate_sent' && (
+                                      <Send className="h-5 w-5 text-blue-600" />
+                                    )}
+                                    {notification.type === 'estimate_approved' && (
+                                      <FileCheck className="h-5 w-5 text-emerald-600" />
+                                    )}
+                                    {notification.type === 'estimate_rejected' && (
+                                      <FileX className="h-5 w-5 text-red-600" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium" style={{color: '#1f2937'}}>
+                                      {notification.message}
+                                    </p>
+                                    <p className="text-xs mt-0.5" style={{color: '#6b7280'}}>
+                                      {displayDate} • {notification.clientName}
+                                    </p>
+                                    <div className="flex items-center justify-between mt-1">
+                                      <p className="text-xs" style={{color: '#9ca3af'}}>
+                                        {notification.timestamp}
+                                      </p>
+                                      {invoice && (
+                                        <p className="text-xs font-semibold" style={{color: '#1f2937'}}>
+                                          ${(() => {
+                                            // Show remaining balance if available and invoice is not fully paid
+                                            if (invoice.remainingBalance && invoice.remainingBalance > 0) {
+                                              return typeof invoice.remainingBalance === 'number' 
+                                                ? invoice.remainingBalance.toFixed(2) 
+                                                : parseFloat(String(invoice.remainingBalance || '0')).toFixed(2);
+                                            }
+                                            // Otherwise show total
+                                            const total = invoice.total || 0;
+                                            return typeof total === 'number' 
+                                              ? total.toFixed(2) 
+                                              : (typeof total === 'string' 
+                                                ? parseFloat(total).toFixed(2) 
+                                                : '0.00');
+                                          })()}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <p className="mb-2 sm:mb-3 text-sm sm:text-base" style={{color: '#374151'}}>
                 The fastest way for freelancers & contractors to get paid
               </p>
               
@@ -1638,16 +2228,16 @@ export default function DashboardOverview() {
                 {/* Total Revenue */}
                 <button 
                   onClick={handlePaidInvoicesClick}
-                  className="group relative overflow-hidden p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-emerald-500 backdrop-blur-sm h-full"
+                  className="group relative overflow-hidden p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border border-gray-200 hover:border-emerald-500 h-full"
                 >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
                       <div className="space-y-1 sm:space-y-1.5">
-                        <p className="text-sm sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Revenue</p>
+                        <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Revenue</p>
                         <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
                           <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-emerald-600 text-left break-words" style={{ display: 'block' }}>
                             {isLoadingStats ? (
-                              <div className="animate-pulse bg-gray-300 h-5 sm:h-6 lg:h-8 w-16 sm:w-20 lg:w-24 rounded"></div>
+                              <div className="animate-pulse bg-gray-300 h-5 sm:h-6 lg:h-8 w-16 sm:w-20 lg:w-24"></div>
                             ) : (
                               <div>{formatMoney(totalRevenue)}</div>
                             )}
@@ -1675,16 +2265,16 @@ export default function DashboardOverview() {
                 {/* Outstanding Amount */}
                 <button 
                   onClick={handlePendingInvoicesClick}
-                  className="group relative overflow-hidden p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-amber-500 backdrop-blur-sm h-full"
+                  className="group relative overflow-hidden p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border border-gray-200 hover:border-amber-500 h-full"
                 >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
                       <div className="space-y-1 sm:space-y-1.5">
-                        <p className="text-sm sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Payable</p>
+                        <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Payable</p>
                         <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
                           <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-orange-500 text-left break-words" style={{ display: 'block' }}>
                             {isLoadingStats ? (
-                              <div className="animate-pulse bg-gray-300 h-5 sm:h-6 lg:h-8 w-16 sm:w-20 lg:w-24 rounded"></div>
+                              <div className="animate-pulse bg-gray-300 h-5 sm:h-6 lg:h-8 w-16 sm:w-20 lg:w-24"></div>
                             ) : (
                               <div>{formatMoney(totalPayableAmount)}</div>
                             )}
@@ -1715,12 +2305,12 @@ export default function DashboardOverview() {
                 {/* Overdue Invoices */}
                 <button 
                   onClick={handleOverdueInvoicesClick}
-                  className="group relative overflow-hidden p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-red-500 backdrop-blur-sm h-full"
+                  className="group relative overflow-hidden p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border border-gray-200 hover:border-red-500 h-full"
                 >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
                       <div className="space-y-1 sm:space-y-1.5">
-                        <p className="text-sm sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Overdue</p>
+                        <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Overdue</p>
                         <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
                           <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-red-600 text-left" style={{ display: 'block' }}>
                             {isLoadingStats ? (
@@ -1752,12 +2342,12 @@ export default function DashboardOverview() {
                 {/* Total Clients */}
                 <button 
                   onClick={handleClientsClick}
-                  className="group relative overflow-hidden p-2 sm:p-3 lg:p-4 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white/70 border border-gray-200 hover:border-indigo-500 backdrop-blur-sm h-full"
+                  className="group relative overflow-hidden p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border border-gray-200 hover:border-indigo-500 h-full"
                 >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
                       <div className="space-y-1 sm:space-y-1.5">
-                        <p className="text-sm sm:text-xs lg:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Clients</p>
+                        <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Clients</p>
                         <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
                           <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-indigo-600 text-left" style={{ display: 'block' }}>
                             {isLoadingStats ? (
@@ -1795,7 +2385,7 @@ export default function DashboardOverview() {
                 Quick Actions
               </h2>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
                 {/* 60-Second Invoice */}
                 <button
                   onClick={() => {
@@ -1804,21 +2394,10 @@ export default function DashboardOverview() {
                       setShowFastInvoice(true);
                     });
                   }}
-                  className="group relative p-2 sm:p-3 border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-green-200 hover:bg-green-50/30 cursor-pointer"
+                  className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 transition-colors text-sm font-medium cursor-pointer active:opacity-90"
                 >
-                  <div className="flex flex-col items-center space-y-1.5 sm:space-y-2">
-                    <div className="p-1.5 bg-green-50">
-                      <Sparkles className="h-4 w-4 text-green-700" />
-                    </div>
-                    <div className="text-center w-full">
-                      <h3 className="font-medium text-xs" style={{color: '#1f2937'}}>
-                        Quick Invoice
-                      </h3>
-                      <p className="text-[10px] leading-tight" style={{color: '#6b7280'}}>
-                        60-second invoicing
-                      </p>
-                    </div>
-                  </div>
+                  <Sparkles className="h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">Quick Invoice</span>
                 </button>
 
                 {/* Detailed Invoice */}
@@ -1829,61 +2408,28 @@ export default function DashboardOverview() {
                       setShowCreateInvoice(true);
                     });
                   }}
-                  className="group relative p-2 sm:p-3 border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-blue-200 hover:bg-blue-50/30 cursor-pointer"
+                  className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition-colors text-sm font-medium cursor-pointer active:opacity-90"
                 >
-                  <div className="flex flex-col items-center space-y-1.5 sm:space-y-2">
-                    <div className="p-1.5 bg-blue-50">
-                      <FilePlus className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <div className="text-center w-full">
-                      <h3 className="font-medium text-xs" style={{color: '#1f2937'}}>
-                        Detailed Invoice
-                      </h3>
-                      <p className="text-[10px] leading-tight" style={{color: '#6b7280'}}>
-                        Full customization
-                      </p>
-                    </div>
-                  </div>
+                  <FilePlus className="h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">Detailed Invoice</span>
                 </button>
 
                 {/* Create Estimate */}
                 <button
                   onClick={() => setShowCreateEstimate(true)}
-                  className="group relative p-2 sm:p-3 border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-teal-200 hover:bg-teal-50/30 cursor-pointer"
+                  className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 transition-colors text-sm font-medium cursor-pointer active:opacity-90"
                 >
-                  <div className="flex flex-col items-center space-y-1.5 sm:space-y-2">
-                    <div className="p-1.5 bg-teal-50">
-                      <ClipboardCheck className="h-4 w-4 text-teal-600" />
-                    </div>
-                    <div className="text-center w-full">
-                      <h3 className="font-medium text-xs" style={{color: '#1f2937'}}>
-                        Create Estimate
-                      </h3>
-                      <p className="text-[10px] leading-tight" style={{color: '#6b7280'}}>
-                        Get client approval
-                      </p>
-                    </div>
-                  </div>
+                  <ClipboardCheck className="h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">Create Estimate</span>
                 </button>
 
                 {/* Add Client */}
                 <button
                   onClick={() => setShowCreateClient(true)}
-                  className="group relative p-2 sm:p-3 border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:border-purple-200 hover:bg-purple-50/30 cursor-pointer"
+                  className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 transition-colors text-sm font-medium cursor-pointer active:opacity-90"
                 >
-                  <div className="flex flex-col items-center space-y-1.5 sm:space-y-2">
-                    <div className="p-1.5 bg-purple-50">
-                      <UserPlus className="h-4 w-4 text-purple-600" />
-                    </div>
-                    <div className="text-center w-full">
-                      <h3 className="font-medium text-xs" style={{color: '#1f2937'}}>
-                        Add Client
-                      </h3>
-                      <p className="text-[10px] leading-tight" style={{color: '#6b7280'}}>
-                        Manage clients
-                      </p>
-                    </div>
-                  </div>
+                  <UserPlus className="h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">Add Client</span>
                 </button>
 
               </div>
@@ -1891,19 +2437,6 @@ export default function DashboardOverview() {
 
             {/* Recent Invoices - Modern Design */}
             <div className="mt-6 sm:mt-8">
-              <div className="flex items-center justify-between mb-4 sm:mb-6">
-                <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
-                Recent Invoices
-              </h2>
-                <button
-                  onClick={() => router.push('/dashboard/invoices')}
-                  className="group flex items-center space-x-2 text-sm font-medium px-4 py-2 transition-all duration-200 hover:scale-105 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 hover:border-indigo-300 cursor-pointer"
-                >
-                  <span>View all</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </div>
-              
               {(isLoadingInvoices || !hasInitiallyLoaded) ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {[1, 2, 3, 4].map((i) => (
@@ -1954,25 +2487,78 @@ export default function DashboardOverview() {
                   </button>
                 </div>
               ) : recentInvoices.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {recentInvoices.map((invoice) => (
-                    <UnifiedInvoiceCard
-                      key={invoice.id}
-                      invoice={invoice}
-                      getStatusIcon={getStatusIcon}
-                      getDueDateStatus={getDueDateStatus}
-                      calculateDueCharges={calculateDueCharges}
-                      loadingActions={loadingActions}
-                      onView={handleViewInvoice}
-                      onPdf={handleDownloadPDF}
-                      onSend={handleSendInvoice}
-                      onMarkPaid={handleMarkAsPaid}
-                      onEdit={handleEditInvoice}
-                      onDelete={handleDeleteInvoice}
-                      onDuplicate={handleDuplicateInvoice}
-                      paymentData={paymentDataMap[invoice.id] || null}
-                    />
-                  ))}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:items-start">
+                  {/* Recent Invoices - Left Side */}
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="flex items-center justify-between mb-4 sm:mb-6">
+                      <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
+                        Recent Invoices
+                      </h2>
+                      <button
+                        onClick={() => router.push('/dashboard/invoices')}
+                        className="group flex items-center gap-1.5 text-xs sm:text-sm font-medium px-2.5 sm:px-3 py-1.5 sm:py-2 transition-colors text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 cursor-pointer"
+                      >
+                        <span>View all</span>
+                        <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                      </button>
+                    </div>
+                    {recentInvoices.slice(0, 4).map((invoice) => (
+                      <UnifiedInvoiceCard
+                        key={invoice.id}
+                        invoice={invoice}
+                        getStatusIcon={getStatusIcon}
+                        getDueDateStatus={getDueDateStatus}
+                        calculateDueCharges={calculateDueCharges}
+                        loadingActions={loadingActions}
+                        onView={handleViewInvoice}
+                        onPdf={handleDownloadPDF}
+                        onSend={handleSendInvoice}
+                        onMarkPaid={handleMarkAsPaid}
+                        onEdit={handleEditInvoice}
+                        onDelete={handleDeleteInvoice}
+                        onDuplicate={handleDuplicateInvoice}
+                        paymentData={paymentDataMap[invoice.id] || null}
+                      />
+                    ))}
+                  </div>
+                  
+                  {/* Upcoming Due Dates - Right Side */}
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="flex items-center justify-between mb-4 sm:mb-6">
+                      <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
+                        Upcoming Due Dates
+                      </h2>
+                      <div className="flex items-center space-x-2 text-sm font-medium px-4 py-2 opacity-0 pointer-events-none">
+                        <span>View all</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </div>
+                    </div>
+                    {upcomingDueDates.length === 0 ? (
+                      <div className="bg-white border border-gray-200 p-8 text-center">
+                        <Calendar className="h-8 w-8 mx-auto mb-2" style={{color: '#9ca3af'}} />
+                        <p className="text-sm" style={{color: '#6b7280'}}>No upcoming due dates</p>
+                      </div>
+                    ) : (
+                      upcomingDueDates.map((invoice) => (
+                        <UnifiedInvoiceCard
+                          key={invoice.id}
+                          invoice={invoice}
+                          getStatusIcon={getStatusIcon}
+                          getDueDateStatus={getDueDateStatus}
+                          calculateDueCharges={calculateDueCharges}
+                          loadingActions={loadingActions}
+                          onView={handleViewInvoice}
+                          onPdf={handleDownloadPDF}
+                          onSend={handleSendInvoice}
+                          onMarkPaid={handleMarkAsPaid}
+                          onEdit={handleEditInvoice}
+                          onDelete={handleDeleteInvoice}
+                          onDuplicate={handleDuplicateInvoice}
+                          paymentData={paymentDataMap[invoice.id] || null}
+                        />
+                      ))
+                    )}
+                  </div>
                 </div>
               ) : null}
             </div>
@@ -2356,7 +2942,7 @@ export default function DashboardOverview() {
                  </div>
                  <div className="flex items-center space-x-2">
         <div 
-          className={`px-3 py-1 text-xs font-medium rounded-full border`}
+          className={`px-3 py-1 text-xs font-medium border`}
           style={((selectedInvoice.type || 'detailed') === 'fast' 
             ? { backgroundColor: '#dbeafe', color: '#1d4ed8', borderColor: '#93c5fd' }
             : { backgroundColor: '#e0e7ff', color: '#3730a3', borderColor: '#a5b4fc' }
@@ -2364,7 +2950,7 @@ export default function DashboardOverview() {
         >
                      {selectedInvoice.type === 'fast' ? 'Fast Invoice' : 'Detailed Invoice'}
                    </div>
-                   <div className="bg-orange-500 text-white px-3 py-2 rounded text-sm sm:text-base font-bold">
+                   <div className="bg-orange-500 text-white px-3 py-2 text-sm sm:text-base font-bold border border-orange-600">
                      Invoice
                    </div>
                  </div>
@@ -2373,10 +2959,57 @@ export default function DashboardOverview() {
                {/* Invoice Details */}
                <div className="p-3 sm:p-6 border-b border-gray-200">
                  <h3 className="text-sm sm:text-base font-semibold mb-2 text-gray-900">Invoice Details</h3>
-                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 text-xs sm:text-sm">
                    <div>
                      <span className="font-medium text-gray-700">Invoice Number:</span>
                      <p className="text-gray-700">#{selectedInvoice.invoiceNumber || 'N/A'}</p>
+                   </div>
+                   <div>
+                     <span className="font-medium text-gray-700">Status:</span>
+                     <p className="text-gray-700">
+                       {(() => {
+                         // Calculate actual status based on due date
+                         const dueDateStatus = getDueDateStatus(
+                           selectedInvoice.dueDate || '', 
+                           selectedInvoice.status, 
+                           selectedInvoice.paymentTerms,
+                           (selectedInvoice as any).updatedAt
+                         );
+                         
+                         // Determine display status: prioritize due date status over invoice status for sent/pending invoices
+                         let displayStatus: string = selectedInvoice.status;
+                         let statusClass = '';
+                         
+                         if (selectedInvoice.status === 'paid') {
+                           displayStatus = 'Paid';
+                           statusClass = 'bg-green-100 text-green-800 border-green-300';
+                         } else if (selectedInvoice.status === 'draft') {
+                           displayStatus = 'Draft';
+                           statusClass = 'bg-gray-100 text-gray-800 border-gray-300';
+                         } else {
+                           // For sent/pending invoices, use due date status
+                           if (dueDateStatus.status === 'overdue') {
+                             displayStatus = 'Overdue';
+                             statusClass = 'bg-red-100 text-red-800 border-red-300';
+                           } else if (dueDateStatus.status === 'due-today') {
+                             displayStatus = 'Due Today';
+                             statusClass = 'bg-amber-100 text-amber-800 border-amber-300';
+                           } else if (selectedInvoice.status === 'sent') {
+                             displayStatus = 'Sent';
+                             statusClass = 'bg-blue-100 text-blue-800 border-blue-300';
+                           } else {
+                             displayStatus = selectedInvoice.status ? selectedInvoice.status.charAt(0).toUpperCase() + selectedInvoice.status.slice(1) : 'Pending';
+                             statusClass = 'bg-yellow-100 text-yellow-800 border-yellow-300';
+                           }
+                         }
+                         
+                         return (
+                           <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium border ${statusClass}`}>
+                             {displayStatus}
+                           </span>
+                         );
+                       })()}
+                     </p>
                    </div>
                    <div>
                      <span className="font-medium text-gray-700">Date:</span>
@@ -2450,24 +3083,47 @@ export default function DashboardOverview() {
                      <p className="text-xs sm:text-sm text-gray-700">Thank you for your business!</p>
                    </div>
                    <div className="w-full sm:w-64">
-                     <div className="space-y-1">
-                       <div className="flex justify-between text-xs sm:text-sm">
-                         <span className="text-gray-700">Subtotal:</span>
-                         <span className="text-gray-900">${(selectedInvoice.subtotal || 0).toFixed(2)}</span>
-                       </div>
-                       <div className="flex justify-between text-xs sm:text-sm">
-                         <span className="text-gray-700">Discount:</span>
-                         <span className="text-gray-900">${(selectedInvoice.discount || 0).toFixed(2)}</span>
-                       </div>
-                       <div className="flex justify-between text-xs sm:text-sm">
-                         <span className="text-gray-700">Tax ({(selectedInvoice.taxRate || 0) * 100}%):</span>
-                         <span className="text-gray-900">${(selectedInvoice.taxAmount || 0).toFixed(2)}</span>
-                       </div>
-                       <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1 border-gray-200">
-                         <span className="text-gray-900">Total:</span>
-                         <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
-                       </div>
-                     </div>
+                     {(() => {
+                       const paymentData = paymentDataMap[selectedInvoice.id] || null;
+                       const dueCharges = calculateDueCharges(selectedInvoice, paymentData);
+                       return (
+                         <div className="space-y-1">
+                           <div className="flex justify-between text-xs sm:text-sm">
+                             <span className="text-gray-700">Subtotal:</span>
+                             <span className="text-gray-900">${(selectedInvoice.subtotal || 0).toFixed(2)}</span>
+                           </div>
+                           <div className="flex justify-between text-xs sm:text-sm">
+                             <span className="text-gray-700">Discount:</span>
+                             <span className="text-gray-900">${(selectedInvoice.discount || 0).toFixed(2)}</span>
+                           </div>
+                           <div className="flex justify-between text-xs sm:text-sm">
+                             <span className="text-gray-700">Tax ({(selectedInvoice.taxRate || 0) * 100}%):</span>
+                             <span className="text-gray-900">${(selectedInvoice.taxAmount || 0).toFixed(2)}</span>
+                           </div>
+                           {dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 ? (
+                             <>
+                               <div className="flex justify-between text-xs sm:text-sm border-t pt-1 border-gray-200">
+                                 <span className="text-gray-700">Total:</span>
+                                 <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
+                               </div>
+                               <div className="flex justify-between text-xs sm:text-sm">
+                                 <span className="text-red-700">Late Fees:</span>
+                                 <span className="text-red-700 font-semibold">${dueCharges.lateFeeAmount.toFixed(2)}</span>
+                               </div>
+                               <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1 border-gray-200">
+                                 <span className="text-red-900">Total Payable:</span>
+                                 <span className="text-red-900">${dueCharges.totalPayable.toFixed(2)}</span>
+                               </div>
+                             </>
+                           ) : (
+                             <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1 border-gray-200">
+                               <span className="text-gray-900">Total:</span>
+                               <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
+                             </div>
+                           )}
+                         </div>
+                       );
+                     })()}
                    </div>
                  </div>
                </div>

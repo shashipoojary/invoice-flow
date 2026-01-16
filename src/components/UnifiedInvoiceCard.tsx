@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FileText, AlertTriangle, Eye, Download, Send, CheckCircle, Edit, Trash2, Info, Copy, DollarSign } from 'lucide-react';
+import { FileText, AlertTriangle, Eye, Download, Send, CheckCircle, Edit, Trash2, Info, Copy, DollarSign, Clock } from 'lucide-react';
 import InvoiceActivityDrawer from '@/components/InvoiceActivityDrawer';
 import type { Invoice } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
@@ -82,6 +82,7 @@ export function UnifiedInvoiceCard({
   // Prepare badges and breakdowns arrays for synchronized rotation
   // Order matters: Partial Payment badge must match Paid/Remaining breakdown
   // Overdue badge must match Base/Late fee breakdown
+  // Due today badge must match Base/Late fee breakdown (if applicable)
   // Memoize to prevent recreation on every render
   const badges = React.useMemo(() => [
     ...(dueCharges.isPartiallyPaid ? [
@@ -94,6 +95,12 @@ export function UnifiedInvoiceCard({
       <span key="overdue" className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600">
         <AlertTriangle className="h-3 w-3" />
         <span>{dueDateStatus.days}d overdue</span>
+      </span>
+    ] : []),
+    ...(dueDateStatus.status === 'due-today' && invoice.status !== 'paid' ? [
+      <span key="due-today" className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-orange-600">
+        <Clock className="h-3 w-3" />
+        <span>Due today</span>
       </span>
     ] : [])
   ], [dueCharges.isPartiallyPaid, dueDateStatus.status, dueDateStatus.days, invoice.status]);
