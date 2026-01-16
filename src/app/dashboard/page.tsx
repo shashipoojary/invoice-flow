@@ -1202,7 +1202,7 @@ export default function DashboardOverview() {
               {dueCharges.isPartiallyPaid && (
                 <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
                   <DollarSign className="h-3 w-3" />
-                  <span>Partial Payment</span>
+                  <span>Partial Paid</span>
                 </span>
               )}
               {(invoice.status === 'pending' || invoice.status === 'sent') && dueDateStatus.status === 'overdue' && (
@@ -1278,7 +1278,7 @@ export default function DashboardOverview() {
               {dueCharges.isPartiallyPaid && (
                 <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
                   <DollarSign className="h-3 w-3" />
-                  <span>Partial Payment</span>
+                  <span>Partial Paid</span>
                 </span>
               )}
                 <span className={`px-2 py-0.5 text-xs font-medium rounded-full border`}

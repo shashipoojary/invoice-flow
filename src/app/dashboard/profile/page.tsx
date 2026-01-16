@@ -538,9 +538,9 @@ export default function ProfilePage() {
             }
             await Promise.all([loadProfile(), loadSubscriptionUsage()]);
           } else {
-            // Still reload profile in case webhook already processed it
-            await loadProfile();
-          }
+          // Still reload profile in case webhook already processed it
+          await loadProfile();
+        }
         } finally {
           // Reset processing flag
           isProcessingRef.current = false;
@@ -1158,16 +1158,16 @@ export default function ProfilePage() {
                           )}
                         </div>
                         <div className="flex items-center gap-3">
-                          <button
-                            onClick={async () => {
-                              setShowSubscriptionModal(true);
-                              // Load usage data when modal opens
-                              await loadSubscriptionUsage();
-                            }}
+                        <button
+                          onClick={async () => {
+                            setShowSubscriptionModal(true);
+                            // Load usage data when modal opens
+                            await loadSubscriptionUsage();
+                          }}
                             className="text-indigo-600 hover:text-indigo-700 text-sm font-medium transition-colors cursor-pointer"
-                          >
-                            Manage
-                          </button>
+                        >
+                          Manage
+                        </button>
                         </div>
                       </div>
                     </div>

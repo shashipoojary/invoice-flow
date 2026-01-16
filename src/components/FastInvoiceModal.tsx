@@ -12,6 +12,7 @@ import { useSettings } from '@/contexts/SettingsContext'
 import CustomDropdown from './CustomDropdown'
 import UpgradeModal from './UpgradeModal'
 import ConfirmationModal from './ConfirmationModal'
+import ToastContainer from './Toast'
 import { checkMissingBusinessDetails } from '@/lib/utils'
 
 interface Client {
@@ -43,13 +44,13 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   const [loading, setLoading] = useState(false)
   const [sendLoading, setSendLoading] = useState(false)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
-  const [subscriptionUsage, setSubscriptionUsage] = useState<{ used: number; limit: number | null; remaining: number | null; plan: string } | null>(null)
+  const [subscriptionUsage, setSubscriptionUsage] = useState<{ used: number; limit: number | null; remaining: number | null; plan: string; clients?: { used: number; limit: number | null; remaining: number | null } } | null>(null)
   const [showUpgradeContent, setShowUpgradeContent] = useState(false)
   const [showMissingDetailsWarning, setShowMissingDetailsWarning] = useState(false)
   
   const router = useRouter()
   const { user } = useAuth()
-  const { showSuccess: localShowSuccess, showError: localShowError, showWarning: localShowWarning } = useToast()
+  const { toasts: localToasts, removeToast: localRemoveToast, showSuccess: localShowSuccess, showError: localShowError, showWarning: localShowWarning } = useToast()
   const { invoices, addInvoice, addClient, updateInvoice, refreshInvoices, clients: globalClients } = useData()
   const { settings } = useSettings()
 
@@ -60,8 +61,18 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   const hasMissingDetails = missingDetails.missing.length > 0;
   
   // Use passed toast functions if available, otherwise use local ones
+  // Wrap showError to handle both prop signature (message only) and hook signature (title, message)
+  const showError = useCallback((title: string, message?: string) => {
+    if (propShowError) {
+      // Prop expects just message, so combine title and message
+      propShowError(message ? `${title}: ${message}` : title)
+    } else {
+      // Hook expects (title, message)
+      localShowError(title, message)
+    }
+  }, [propShowError, localShowError])
+  
   const showSuccess = propShowSuccess || localShowSuccess
-  const showError = propShowError || localShowError
   const showWarning = propShowWarning || localShowWarning
 
   // Use refs to store latest functions to prevent dependency issues
@@ -154,7 +165,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
             resetForm();
             return;
           }
-          showError(`Cannot edit invoice: Only draft invoices can be edited. This invoice is "${editingInvoice.status}".`);
+          showError('Cannot Edit Invoice', `Only draft invoices can be edited. This invoice is "${editingInvoice.status}".`);
           onClose();
           return;
         }
@@ -334,7 +345,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   const handleCreateInvoice = async (showToast = true, isSending = false) => {
     // Validate form before proceeding
     if (!validateForm()) {
-      showError('Please fill in all required fields correctly')
+      showError('Validation Error', 'Please fill in all required fields correctly')
       return
     }
     
@@ -350,7 +361,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         if (!isSending) {
           setLoading(false)
         }
-        showError('You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.')
+        showError('Invoice Limit Reached', 'You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.')
         // Show upgrade modal
         setShowUpgradeContent(true)
         setShowUpgradeModal(true)
@@ -369,19 +380,68 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
       if (selectedClientId) {
         clientId = selectedClientId
       } else if (clientName && clientEmail) {
-        const headers = await getAuthHeaders()
-        const clientResponse = await fetch('/api/clients', {
-          method: 'POST',
-          headers: { ...headers, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: clientName,
-            email: clientEmail
+        try {
+          const headers = await getAuthHeaders()
+          const clientResponse = await fetch('/api/clients', {
+            method: 'POST',
+            headers: { ...headers, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: clientName,
+              email: clientEmail
+            })
           })
-        })
-        const clientData = await clientResponse.json()
-        clientId = clientData.client.id
-        // update global clients cache
-        try { addClient && addClient(clientData.client) } catch {}
+          
+          if (!clientResponse.ok) {
+            let errorMessage = 'Failed to create client'
+            let limitReached = false
+            let limitType = 'clients'
+            
+            try {
+              const errorData = await clientResponse.json()
+              errorMessage = errorData.error || errorMessage
+              limitReached = errorData.limitReached || false
+              limitType = errorData.limitType || 'clients'
+            } catch (parseError) {
+              // If JSON parsing fails, use status text
+              errorMessage = `Failed to create client: ${clientResponse.statusText || 'Unknown error'}`
+            }
+            
+            // If client limit reached, show error toast
+            if (clientResponse.status === 403 && limitReached) {
+              if (!isSending) {
+                setLoading(false)
+              }
+              showError('Client Limit Reached', errorMessage)
+              return
+            }
+            
+            // Other errors
+            if (!isSending) {
+              setLoading(false)
+            }
+            showError('Error', errorMessage)
+            return
+          }
+          
+          const clientData = await clientResponse.json()
+          if (clientData.client && clientData.client.id) {
+            clientId = clientData.client.id
+            // update global clients cache
+            try { addClient && addClient(clientData.client) } catch {}
+          } else {
+            if (!isSending) {
+              setLoading(false)
+            }
+            showError('Error', 'Failed to create client: Invalid response from server')
+            return
+          }
+        } catch (fetchError: any) {
+          if (!isSending) {
+            setLoading(false)
+          }
+          showError('Error', `Failed to create client: ${fetchError.message || 'Network error'}`)
+          return
+        }
       }
 
       // Create or update invoice
@@ -439,7 +499,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         const errorData = await invoiceResponse.json().catch(() => ({}))
         // Check if it's a subscription limit error
         if (invoiceResponse.status === 403 && errorData.limitReached) {
-          showError(errorData.error || 'Subscription limit reached')
+          showError('Limit Reached', errorData.error || 'Subscription limit reached')
           setShowUpgradeModal(true)
           // Refresh usage
           await fetchSubscriptionUsage()
@@ -449,7 +509,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
       }
     } catch (error) {
       console.error('Error creating invoice:', error)
-      showError(editingInvoice ? 'Failed to update invoice. Please try again.' : 'Failed to create invoice. Please try again.')
+      showError('Error', editingInvoice ? 'Failed to update invoice. Please try again.' : 'Failed to create invoice. Please try again.')
     } finally {
       if (!isSending) {
         setLoading(false)
@@ -460,7 +520,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   const handleCreateAndSend = async () => {
     // Validate form before proceeding
     if (!validateForm()) {
-      showError('Please fill in all required fields correctly')
+      showError('Validation Error', 'Please fill in all required fields correctly')
       return
     }
 
@@ -472,7 +532,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
       const usageData = await fetchSubscriptionUsage()
       if (usageData && usageData.plan === 'free' && usageData.limit && usageData.used >= usageData.limit) {
         setSendLoading(false)
-        showError('You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.')
+        showError('Invoice Limit Reached', 'You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.')
         // Show upgrade modal
         setShowUpgradeContent(true)
         setShowUpgradeModal(true)
@@ -561,7 +621,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
       }
     } catch (error) {
       console.error('Error creating and sending invoice:', error)
-      showError('Failed to create and send invoice. Please try again.')
+      showError('Error', 'Failed to create and send invoice. Please try again.')
     } finally {
       setSendLoading(false)
     }
@@ -1165,6 +1225,8 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         document.body
       )}
 
+      {/* Toast Container for local toasts */}
+      <ToastContainer toasts={localToasts} onRemove={localRemoveToast} />
     </>
   )
 }

@@ -87,7 +87,7 @@ export function UnifiedInvoiceCard({
     ...(dueCharges.isPartiallyPaid ? [
       <span key="partial" className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
         <DollarSign className="h-3 w-3" />
-        <span>Partial Payment</span>
+        <span>Partial Paid</span>
       </span>
     ] : []),
     ...(dueDateStatus.status === 'overdue' && invoice.status !== 'paid' ? [

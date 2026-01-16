@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@/lib/supabase';
-import { canCreateInvoice, canUseTemplate, getUserPlan } from '@/lib/subscription-validator';
+import { canCreateInvoice, canUseTemplate, getUserPlan, canCreateClient } from '@/lib/subscription-validator';
 import { chargeForInvoice } from '@/lib/invoice-billing';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -336,6 +336,16 @@ export async function POST(request: NextRequest) {
         // Use existing client
         clientId = existingClient.id;
       } else {
+        // Check client limit BEFORE creating client
+        const clientLimitCheck = await canCreateClient(user.id);
+        if (!clientLimitCheck.allowed) {
+          return NextResponse.json({ 
+            error: clientLimitCheck.reason || 'Client limit reached',
+            limitReached: true,
+            limitType: 'clients'
+          }, { status: 403 });
+        }
+        
         // Create new client
         const { data: newClient, error: clientError } = await supabase
           .from('clients')
@@ -352,6 +362,16 @@ export async function POST(request: NextRequest) {
 
         if (clientError) {
           console.error('Client creation error:', clientError);
+          
+          // Check if error is from subscription limit trigger
+          if (clientError.message && clientError.message.includes('Subscription limit reached')) {
+            return NextResponse.json({ 
+              error: clientError.message || 'Client limit reached',
+              limitReached: true,
+              limitType: 'clients'
+            }, { status: 403 });
+          }
+          
           return NextResponse.json({ error: 'Failed to create client' }, { status: 500 });
         }
 

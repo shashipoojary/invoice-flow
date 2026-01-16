@@ -357,7 +357,7 @@ function InvoicesContent(): React.JSX.Element {
       } else {
         filtered = filtered.filter(invoice => {
           switch (statusFilter) {
-            case 'paid': return invoice.status === 'paid';
+            case 'paid': return invoice.status === 'paid' || invoicesWithPartialPayments.has(invoice.id);
             case 'pending': return invoice.status === 'pending' || invoice.status === 'sent';
             case 'draft': return invoice.status === 'draft';
             default: return true;
@@ -1073,7 +1073,7 @@ function InvoicesContent(): React.JSX.Element {
                 {dueCharges.isPartiallyPaid && (
                   <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
                     <DollarSign className="h-3 w-3" />
-                    <span>Partial Payment</span>
+                    <span>Partial Paid</span>
                   </span>
                 )}
                 {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
@@ -1203,7 +1203,7 @@ function InvoicesContent(): React.JSX.Element {
                 {dueCharges.isPartiallyPaid && (
                   <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
                     <DollarSign className="h-3 w-3" />
-                    <span>Partial Payment</span>
+                    <span>Partial Paid</span>
                   </span>
                 )}
                 {dueDateStatus.status === 'overdue' && (invoice.status === 'pending' || invoice.status === 'sent') && (
@@ -1527,7 +1527,7 @@ function InvoicesContent(): React.JSX.Element {
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
-                        Partial Payment
+                        Partial Paid
                       </button>
                     </div>
                   </div>

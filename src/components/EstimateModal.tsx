@@ -16,6 +16,7 @@ import { useSettings } from '@/contexts/SettingsContext'
 import { useAuth } from '@/hooks/useAuth'
 import CustomDropdown from './CustomDropdown'
 import UpgradeModal from './UpgradeModal'
+import ToastContainer from './Toast'
 
 interface EstimateModalProps {
   isOpen: boolean
@@ -48,8 +49,8 @@ export default function EstimateModal({
   onSuccess,
   estimate = null
 }: EstimateModalProps) {
-  const { showSuccess, showError } = useToast()
-  const { clients } = useData()
+  const { toasts, removeToast, showSuccess, showError } = useToast()
+  const { clients, addClient } = useData()
   const { settings } = useSettings()
   const { getAuthHeaders, user } = useAuth()
   
@@ -103,6 +104,8 @@ export default function EstimateModal({
   }, []) // Empty deps - using refs instead
   const [step, setStep] = useState(1)
   const [selectedClientId, setSelectedClientId] = useState(estimate?.clientId || '')
+  const [clientName, setClientName] = useState('')
+  const [clientEmail, setClientEmail] = useState('')
   const [items, setItems] = useState<EstimateItem[]>(
     estimate?.items && estimate.items.length > 0
       ? estimate.items.map((item, idx) => ({
@@ -129,7 +132,8 @@ export default function EstimateModal({
   
   // Validation errors
   const [errors, setErrors] = useState<{
-    client?: string
+    clientName?: string
+    clientEmail?: string
     items?: { [key: string]: { description?: string; rate?: string } }
   }>({})
   
@@ -167,6 +171,8 @@ export default function EstimateModal({
     } else {
       // Reset to defaults for new estimate
       setSelectedClientId('')
+      setClientName('')
+      setClientEmail('')
       setItems([{ id: '1', description: '', rate: 0, qty: 1 }])
       setDiscount(0)
       setTaxRate(0)
@@ -184,9 +190,11 @@ export default function EstimateModal({
     // Only reset form if not editing and upgrade content not shown
     // This preserves form state when user closes upgrade modal
     if (!showUpgradeContent && !estimate) {
-    setSelectedClientId('')
-    setItems([{ id: '1', description: '', rate: 0, qty: 1 }])
-    setDiscount(0)
+      setSelectedClientId('')
+      setClientName('')
+      setClientEmail('')
+      setItems([{ id: '1', description: '', rate: 0, qty: 1 }])
+      setDiscount(0)
       setTaxRate(0)
       setNotes('')
       setStep(1)
@@ -230,7 +238,18 @@ export default function EstimateModal({
     
     // Client validation
     if (!selectedClientId) {
-      newErrors.client = 'Please select a client'
+      if (!clientName || !clientName.trim()) {
+        newErrors.clientName = 'Client name is required'
+      }
+      if (!clientEmail || !clientEmail.trim()) {
+        newErrors.clientEmail = 'Client email is required'
+      } else {
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(clientEmail.trim())) {
+          newErrors.clientEmail = 'Please enter a valid email address'
+        }
+      }
     }
     
     // Items validation
@@ -284,8 +303,79 @@ export default function EstimateModal({
       const headers = await getAuthHeaders()
       const subtotal = calculateSubtotal()
       
+      // Handle client - either selected or new
+      let clientId = null
+      if (selectedClientId) {
+        clientId = selectedClientId
+      } else if (clientName && clientEmail) {
+        try {
+          const clientResponse = await fetch('/api/clients', {
+            method: 'POST',
+            headers: { ...headers, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: clientName,
+              email: clientEmail
+            })
+          })
+          
+          if (!clientResponse.ok) {
+            let errorMessage = 'Failed to create client'
+            let limitReached = false
+            let limitType = 'clients'
+            
+            try {
+              const errorData = await clientResponse.json()
+              errorMessage = errorData.error || errorMessage
+              limitReached = errorData.limitReached || false
+              limitType = errorData.limitType || 'clients'
+            } catch (parseError) {
+              // If JSON parsing fails, use status text
+              errorMessage = `Failed to create client: ${clientResponse.statusText || 'Unknown error'}`
+            }
+            
+            // If client limit reached, show error toast
+            if (clientResponse.status === 403 && limitReached) {
+              setLoading(false)
+              showError('Error', errorMessage)
+              return
+            }
+            
+            // Other errors
+            setLoading(false)
+            showError('Error', errorMessage)
+            return
+          }
+          
+          const clientData = await clientResponse.json()
+          if (clientData.client && clientData.client.id) {
+            clientId = clientData.client.id
+            // update global clients cache
+            try { addClient && addClient(clientData.client) } catch {}
+          } else {
+            setLoading(false)
+            showError('Error', 'Failed to create client: Invalid response from server')
+            return
+          }
+        } catch (fetchError: any) {
+          setLoading(false)
+          showError('Error', `Failed to create client: ${fetchError.message || 'Network error'}`)
+          return
+        }
+      } else {
+        // No client selected and no client name/email provided
+        setLoading(false)
+        showError('Error', 'Please select a client or enter client details')
+        return
+      }
+      
+      if (!clientId) {
+        setLoading(false)
+        showError('Error', 'Client information is required to create an estimate')
+        return
+      }
+      
       const requestBody = {
-        clientId: selectedClientId,
+        clientId: clientId,
         items: items.map(item => ({
           description: item.description,
           rate: item.rate,
@@ -324,12 +414,22 @@ export default function EstimateModal({
         onSuccess()
         handleClose()
       } else {
-        const error = await response.json()
-        showError('Error', error.error || (isEditMode ? 'Failed to update estimate' : 'Failed to create estimate'))
+        let errorMessage = isEditMode ? 'Failed to update estimate' : 'Failed to create estimate'
+        try {
+          const error = await response.json()
+          errorMessage = error.error || errorMessage
+        } catch (parseError) {
+          // If JSON parsing fails, use status text
+          errorMessage = `${errorMessage}: ${response.statusText || 'Unknown error'}`
+        }
+        setLoading(false)
+        showError('Error', errorMessage)
       }
     } catch (error: any) {
       console.error(`Error ${isEditMode ? 'updating' : 'creating'} estimate:`, error)
-      showError('Error', isEditMode ? 'Failed to update estimate' : 'Failed to create estimate')
+      setLoading(false)
+      const errorMessage = error?.message || 'Network error'
+      showError('Error', `Failed to ${isEditMode ? 'update' : 'create'} estimate: ${errorMessage}`)
     } finally {
       setLoading(false)
     }
@@ -525,28 +625,103 @@ export default function EstimateModal({
                     </button>
                   </div>
                 ) : (
-                  <>
-                    <CustomDropdown
-                      value={selectedClientId}
-                      onChange={(value) => {
-                        setSelectedClientId(value)
-                        if (errors.client) {
-                          setErrors(prev => ({ ...prev, client: undefined }))
-                        }
-                      }}
-                      options={clients.map((client) => ({
-                        value: client.id,
-                        label: `${client.name}${client.company ? ` (${client.company})` : ''}`
-                      }))}
-                      placeholder="Choose a client..."
-                      isDarkMode={isDarkMode}
-                      searchable={false}
-                      error={!!errors.client}
-                    />
-                    {errors.client && (
-                      <p className="mt-1 text-xs text-red-600">{errors.client}</p>
+                  <div className="space-y-3">
+                    {clients.length > 0 && (
+                      <CustomDropdown
+                        value={selectedClientId}
+                        onChange={(value) => {
+                          setSelectedClientId(value)
+                          if (errors.clientName || errors.clientEmail) {
+                            setErrors(prev => ({ ...prev, clientName: undefined, clientEmail: undefined }))
+                          }
+                        }}
+                        options={clients.map((client) => ({
+                          value: client.id,
+                          label: `${client.name}${client.company ? ` (${client.company})` : ''}`
+                        }))}
+                        placeholder="Select existing client"
+                        isDarkMode={isDarkMode}
+                        searchable={false}
+                      />
                     )}
-                  </>
+
+                    {clients.length > 0 && (
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className={`w-full border-t ${
+                            isDarkMode ? 'border-gray-600' : 'border-gray-200'
+                          }`} />
+                        </div>
+                        <div className="relative flex justify-center text-xs">
+                          <span className={`px-2 ${
+                            isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'
+                          }`}>or add new</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 gap-3">
+                      <div>
+                        <div className="relative">
+                          <User className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+                            isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                          }`} />
+                          <input
+                            type="text"
+                            value={clientName}
+                            onChange={(e) => {
+                              setClientName(e.target.value)
+                              if (errors.clientName) {
+                                setErrors(prev => ({ ...prev, clientName: undefined }))
+                              }
+                            }}
+                            className={`w-full pl-10 pr-3 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                              errors.clientName
+                                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                                : isDarkMode 
+                                  ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                                  : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                            }`}
+                            placeholder="Client name"
+                            required={!selectedClientId}
+                          />
+                        </div>
+                        {errors.clientName && (
+                          <p className="mt-1 text-xs text-red-600">{errors.clientName}</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <div className="relative">
+                          <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+                            isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                          }`} />
+                          <input
+                            type="email"
+                            value={clientEmail}
+                            onChange={(e) => {
+                              setClientEmail(e.target.value)
+                              if (errors.clientEmail) {
+                                setErrors(prev => ({ ...prev, clientEmail: undefined }))
+                              }
+                            }}
+                            className={`w-full pl-10 pr-3 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                              errors.clientEmail
+                                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                                : isDarkMode 
+                                  ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                                  : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                            }`}
+                            placeholder="client@example.com"
+                            required={!selectedClientId}
+                          />
+                        </div>
+                        {errors.clientEmail && (
+                          <p className="mt-1 text-xs text-red-600">{errors.clientEmail}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -728,9 +903,9 @@ export default function EstimateModal({
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  disabled={!selectedClientId || items.some(item => !item.description || item.rate <= 0)}
+                  disabled={(!selectedClientId && (!clientName || !clientEmail)) || items.some(item => !item.description || item.rate <= 0)}
                   className={`w-full sm:w-auto bg-indigo-600 text-white py-3 px-6 hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-                    !selectedClientId || items.some(item => !item.description || item.rate <= 0)
+                    (!selectedClientId && (!clientName || !clientEmail)) || items.some(item => !item.description || item.rate <= 0)
                       ? 'opacity-50 cursor-not-allowed'
                       : ''
                   }`}
@@ -914,6 +1089,9 @@ export default function EstimateModal({
         />,
         document.body
       )}
+
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   )
 }

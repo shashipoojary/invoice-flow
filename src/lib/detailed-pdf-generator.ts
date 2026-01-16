@@ -614,20 +614,20 @@ async function generateTemplate1DetailedPDF(
 
   // Discount (always shown)
   page.drawText('Discount:', {
-    x: 400,
-    y: currentY - 35,
-    size: 10,
-    font: font,
-    color: rgb(0, 0, 0),
-  });
+      x: 400,
+      y: currentY - 35,
+      size: 10,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
 
   page.drawText(`-${formatCurrency(discountAmount)}`, {
-    x: 480,
-    y: currentY - 35,
-    size: 10,
-    font: font,
-    color: rgb(0, 0, 0),
-  });
+      x: 480,
+      y: currentY - 35,
+      size: 10,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
 
   // Tax (always shown)
   page.drawText('Tax:', {
@@ -1066,20 +1066,20 @@ async function generateTemplate2PDF(
 
   // Discount (always shown)
   page.drawText('Discount:', {
-    x: 400,
-    y: currentY - 35,
-    size: 10,
-    font: font,
-    color: rgb(0, 0, 0),
-  });
+      x: 400,
+      y: currentY - 35,
+      size: 10,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
 
   page.drawText(`-${formatCurrency(discountAmount)}`, {
-    x: 480,
-    y: currentY - 35,
-    size: 10,
-    font: font,
-    color: rgb(0, 0, 0),
-  });
+      x: 480,
+      y: currentY - 35,
+      size: 10,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
 
   // Tax (always shown)
   page.drawText('Tax:', {
@@ -1556,7 +1556,7 @@ async function generateTemplate3PDF(
 
   const discountAmount = parseFloat(invoice.discount?.toString() || '0');
   const taxAmount = parseFloat(invoice.taxAmount?.toString() || '0');
-  
+
   page.drawText('SUBTOTAL', {
     x: 360,
     y: totalsY - 30,
@@ -1575,20 +1575,20 @@ async function generateTemplate3PDF(
 
   // Discount (always shown)
   page.drawText('DISCOUNT', {
-    x: 360,
-    y: totalsY - 45,
-    size: 9,
-    font: font,
-    color: rgb(0, 0, 0),
-  });
+      x: 360,
+      y: totalsY - 45,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
 
   page.drawText(`-${formatCurrency(discountAmount)}`, {
-    x: 480,
-    y: totalsY - 45,
-    size: 9,
-    font: font,
-    color: rgb(0, 0, 0),
-  });
+      x: 480,
+      y: totalsY - 45,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
 
   // Tax (always shown)
   page.drawText('TAX', {
@@ -2093,42 +2093,42 @@ async function generateModernTemplatePDF(
   lineY -= 20;
 
   // Discount (always shown)
-  page.drawText('DISCOUNT', {
-    x: 360,
-    y: lineY,
-    size: 9,
-    font: font,
-    color: rgb(0, 0, 0),
-  });
+    page.drawText('DISCOUNT', {
+      x: 360,
+      y: lineY,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
 
-  page.drawText(`-${formatCurrency(discountAmount)}`, {
-    x: 480,
-    y: lineY,
-    size: 9,
-    font: font,
-    color: rgb(0, 0, 0),
-  });
+    page.drawText(`-${formatCurrency(discountAmount)}`, {
+      x: 480,
+      y: lineY,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
 
-  lineY -= 20;
+    lineY -= 20;
 
   // Tax (always shown)
-  page.drawText('TAX', {
-    x: 360,
-    y: lineY,
-    size: 9,
-    font: font,
-    color: rgb(0, 0, 0),
-  });
+    page.drawText('TAX', {
+      x: 360,
+      y: lineY,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
 
-  page.drawText(formatCurrency(taxAmount), {
-    x: 480,
-    y: lineY,
-    size: 9,
-    font: font,
-    color: rgb(0, 0, 0),
-  });
+    page.drawText(formatCurrency(taxAmount), {
+      x: 480,
+      y: lineY,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
 
-  lineY -= 20;
+    lineY -= 20;
 
   // Total with modern emphasis (late fees are separate and only added after due date)
   const invoiceTotal = total - discountAmount + taxAmount;
@@ -2636,42 +2636,42 @@ async function generateSimpleCleanTemplatePDF(
   lineY -= 18;
 
   // Discount (always shown)
-  page.drawText('Discount', {
-    x: 360,
-    y: lineY,
-    size: 9,
-    font: font,
-    color: rgb(0.4, 0.4, 0.4),
-  });
+    page.drawText('Discount', {
+      x: 360,
+      y: lineY,
+      size: 9,
+      font: font,
+      color: rgb(0.4, 0.4, 0.4),
+    });
 
-  page.drawText(`-${formatCurrency(discountAmount)}`, {
-    x: 480,
-    y: lineY,
-    size: 9,
-    font: font,
-    color: rgb(0.5, 0.5, 0.5),
-  });
+    page.drawText(`-${formatCurrency(discountAmount)}`, {
+      x: 480,
+      y: lineY,
+      size: 9,
+      font: font,
+      color: rgb(0.5, 0.5, 0.5),
+    });
 
-  lineY -= 18;
+    lineY -= 18;
 
   // Tax (always shown)
-  page.drawText('Tax', {
-    x: 360,
-    y: lineY,
-    size: 9,
-    font: font,
-    color: rgb(0.4, 0.4, 0.4),
-  });
+    page.drawText('Tax', {
+      x: 360,
+      y: lineY,
+      size: 9,
+      font: font,
+      color: rgb(0.4, 0.4, 0.4),
+    });
 
-  page.drawText(formatCurrency(taxAmount), {
-    x: 480,
-    y: lineY,
-    size: 9,
-    font: font,
-    color: rgb(0, 0, 0),
-  });
+    page.drawText(formatCurrency(taxAmount), {
+      x: 480,
+      y: lineY,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
 
-  lineY -= 18;
+    lineY -= 18;
 
   // Total - clean separator and emphasis
   const invoiceTotal = subtotal - discountAmount + taxAmount;
@@ -3123,42 +3123,42 @@ async function generateMinimalTemplatePDF(
   totalY -= 18;
 
   // Discount (always shown)
-  page.drawText('Discount:', {
-    x: 400,
-    y: totalY,
-    size: 9,
-    font: font,
-    color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7),
-  });
+    page.drawText('Discount:', {
+      x: 400,
+      y: totalY,
+      size: 9,
+      font: font,
+      color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7),
+    });
 
-  page.drawText(`-${formatCurrency(discountAmount)}`, {
-    x: 480,
-    y: totalY,
-    size: 9,
-    font: font,
-    color: rgb(0.5, 0.5, 0.5),
-  });
+    page.drawText(`-${formatCurrency(discountAmount)}`, {
+      x: 480,
+      y: totalY,
+      size: 9,
+      font: font,
+      color: rgb(0.5, 0.5, 0.5),
+    });
 
-  totalY -= 18;
+    totalY -= 18;
 
   // Tax (always shown)
-  page.drawText('Tax:', {
-    x: 400,
-    y: totalY,
-    size: 9,
-    font: font,
-    color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7),
-  });
+    page.drawText('Tax:', {
+      x: 400,
+      y: totalY,
+      size: 9,
+      font: font,
+      color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7),
+    });
 
-  page.drawText(formatCurrency(taxAmount), {
-    x: 480,
-    y: totalY,
-    size: 9,
-    font: font,
-    color: rgb(0, 0, 0),
-  });
+    page.drawText(formatCurrency(taxAmount), {
+      x: 480,
+      y: totalY,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
 
-  totalY -= 18;
+    totalY -= 18;
 
   // Late Fees (only show if invoice is actually overdue - not in total calculation)
   const invoiceTotal = subtotal - discountAmount + taxAmount;

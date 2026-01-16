@@ -352,18 +352,18 @@ export default function OnboardingPage() {
         <div className="flex-1 p-6 lg:p-16 flex flex-col max-w-lg mx-auto w-full lg:justify-start lg:py-16 lg:min-h-screen">
           {/* Back Button - Mobile Only */}
           <div className="mb-6 lg:hidden">
-            <button
-              onClick={() => router.push('/')}
+          <button
+            onClick={() => router.push('/')}
               className="flex items-center text-gray-600 hover:text-gray-900 active:scale-95 transition-all cursor-pointer touch-manipulation"
-            >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              <span className="text-sm font-medium">Back</span>
-            </button>
-          </div>
+          >
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            <span className="text-sm font-medium">Back</span>
+          </button>
+        </div>
 
-          {/* Main Content */}
+        {/* Main Content */}
           <div className="w-full">
-            {/* Welcome Message */}
+          {/* Welcome Message */}
             <div className="text-center mb-10">
               <div className="text-sm text-indigo-600 font-medium mb-3">Welcome to FlowInvoicer</div>
               <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-900 mb-4 tracking-tight">
@@ -374,37 +374,37 @@ export default function OnboardingPage() {
               </p>
             </div>
 
-            {/* Progress Indicator */}
+          {/* Progress Indicator */}
             <div className="mb-8">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700">Step {step} of {totalSteps}</span>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">Step {step} of {totalSteps}</span>
                 <span className="text-sm text-gray-500">{Math.round((step / totalSteps) * 100)}%</span>
-              </div>
-              <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
-                <div
-                  className="bg-indigo-600 h-2 transition-all duration-300 rounded-full"
-                  style={{ width: `${(step / totalSteps) * 100}%` }}
-                ></div>
-              </div>
             </div>
+              <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+              <div
+                  className="bg-indigo-600 h-2 transition-all duration-300 rounded-full"
+                style={{ width: `${(step / totalSteps) * 100}%` }}
+              ></div>
+            </div>
+          </div>
 
-            {/* Disclaimer Banner */}
+          {/* Disclaimer Banner */}
             <div className="mb-6 bg-gray-50 border-l-4 border-indigo-600 p-4">
               <p className="text-xs uppercase tracking-wide text-gray-500 mb-1.5">
                 IMPORTANT INFORMATION
               </p>
               <p className="text-sm font-medium text-gray-900">
-                All information you provide here will be saved to your account settings and can be updated anytime from the Settings page.
+                All information you provide here will be saved to your account settings and can be updated anytime from the Settings page. 
                 {step === 3 && ' Payment methods are optional - add as many as you accept. This information will appear on your invoices.'}
               </p>
-            </div>
+          </div>
 
-            {error && (
-              <div className="bg-red-50 text-red-600 px-4 py-3 text-sm mb-6 flex items-start space-x-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <span>{error}</span>
-              </div>
-            )}
+          {error && (
+            <div className="bg-red-50 text-red-600 px-4 py-3 text-sm mb-6 flex items-start space-x-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
 
             <form onSubmit={step < totalSteps ? (e) => { e.preventDefault(); handleNext(); } : handleSubmit} className="space-y-8">
               {/* Step 1: Business Information */}
@@ -593,9 +593,9 @@ export default function OnboardingPage() {
                       PAYMENT METHODS
                     </p>
                     <p className="text-sm font-medium text-gray-900">
-                      All payment methods are optional. Add the ones you accept. This information will appear on your invoices to help clients pay you faster. 
-                      You can always update these later in Settings.
-                    </p>
+                          All payment methods are optional. Add the ones you accept. This information will appear on your invoices to help clients pay you faster. 
+                          You can always update these later in Settings.
+                        </p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -760,88 +760,88 @@ export default function OnboardingPage() {
 
             {/* Navigation Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
-              {step > 1 && (
-                <button
-                  type="button"
-                  onClick={handleBack}
+                {step > 1 && (
+                  <button
+                    type="button"
+                    onClick={handleBack}
                   className="flex-1 bg-gray-100 text-gray-700 py-4 px-6 text-base font-medium hover:bg-gray-200 active:bg-gray-300 active:scale-[0.98] transition-all cursor-pointer touch-manipulation"
-                >
-                  Back
-                </button>
-              )}
-              <button
-                type="submit"
-                disabled={loading}
-                className={`${step > 1 ? 'flex-1' : 'w-full'} bg-indigo-600 text-white py-4 px-6 text-base font-medium hover:bg-indigo-700 active:bg-indigo-800 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex items-center justify-center touch-manipulation`}
-              >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  step < totalSteps ? 'Continue' : 'Complete Setup'
+                  >
+                    Back
+                  </button>
                 )}
-              </button>
-            </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                className={`${step > 1 ? 'flex-1' : 'w-full'} bg-indigo-600 text-white py-4 px-6 text-base font-medium hover:bg-indigo-700 active:bg-indigo-800 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex items-center justify-center touch-manipulation`}
+                >
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    step < totalSteps ? 'Continue' : 'Complete Setup'
+                  )}
+                </button>
+              </div>
 
             {/* Skip Option - Only on last step */}
             {step === totalSteps && (
               <div className="text-center mt-6">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setLoading(true);
-                    setError('');
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setLoading(true);
+                      setError('');
 
-                    try {
-                      // Get current session
-                      const { data: { session } } = await supabase.auth.getSession();
-                      if (!session) {
-                        throw new Error('Not authenticated');
+                      try {
+                        // Get current session
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (!session) {
+                          throw new Error('Not authenticated');
+                        }
+
+                        // Save all data (even if some fields are empty)
+                        const response = await fetch('/api/settings', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${session.access_token}`,
+                          },
+                          body: JSON.stringify({
+                            businessName: formData.businessName || 'My Business',
+                            businessEmail: formData.businessEmail || session.user.email || '',
+                            businessPhone: formData.businessPhone,
+                            address: formData.businessAddress,
+                            website: formData.website,
+                            logo: logoUrl || '',
+                            paypalEmail: formData.paypalEmail,
+                            cashappId: formData.cashappId,
+                            venmoId: formData.venmoId,
+                            googlePayUpi: formData.googlePayUpi,
+                            applePayId: formData.applePayId,
+                            stripeAccount: formData.stripeAccount,
+                            bankAccount: formData.bankAccount,
+                            bankIfscSwift: formData.bankIfscSwift,
+                            bankIban: formData.bankIban,
+                            paymentNotes: formData.paymentNotes,
+                          }),
+                        });
+
+                        if (!response.ok) {
+                          const errorData = await response.json();
+                          throw new Error(errorData.error || 'Failed to save settings');
+                        }
+
+                        // Redirect to dashboard
+                        router.push('/dashboard');
+                      } catch (error: any) {
+                        setError(error.message || 'Something went wrong. Please try again.');
+                        setLoading(false);
                       }
-
-                      // Save all data (even if some fields are empty)
-                      const response = await fetch('/api/settings', {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': `Bearer ${session.access_token}`,
-                        },
-                        body: JSON.stringify({
-                          businessName: formData.businessName || 'My Business',
-                          businessEmail: formData.businessEmail || session.user.email || '',
-                          businessPhone: formData.businessPhone,
-                          address: formData.businessAddress,
-                          website: formData.website,
-                          logo: logoUrl || '',
-                          paypalEmail: formData.paypalEmail,
-                          cashappId: formData.cashappId,
-                          venmoId: formData.venmoId,
-                          googlePayUpi: formData.googlePayUpi,
-                          applePayId: formData.applePayId,
-                          stripeAccount: formData.stripeAccount,
-                          bankAccount: formData.bankAccount,
-                          bankIfscSwift: formData.bankIfscSwift,
-                          bankIban: formData.bankIban,
-                          paymentNotes: formData.paymentNotes,
-                        }),
-                      });
-
-                      if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error || 'Failed to save settings');
-                      }
-
-                      // Redirect to dashboard
-                      router.push('/dashboard');
-                    } catch (error: any) {
-                      setError(error.message || 'Something went wrong. Please try again.');
-                      setLoading(false);
-                    }
-                  }}
-                  disabled={loading}
+                    }}
+                    disabled={loading}
                   className="text-indigo-600 hover:text-indigo-700 active:text-indigo-800 active:scale-95 font-medium text-sm cursor-pointer disabled:opacity-50 disabled:active:scale-100 transition-all touch-manipulation"
-                >
-                  Skip payment methods for now
-                </button>
+                  >
+                    Skip payment methods for now
+                  </button>
               </div>
             )}
           </form>

@@ -521,11 +521,11 @@ export default function QuickInvoiceModal({
             }
           } else {
             // For sent/paid invoices, use the stored client data (don't update)
-            if (editingInvoice.clientName) {
-              setNewClient(prev => ({ ...prev, name: editingInvoice.clientName || '' }))
-            }
-            if (editingInvoice.clientEmail) {
-              setNewClient(prev => ({ ...prev, email: editingInvoice.clientEmail || '' }))
+        if (editingInvoice.clientName) {
+          setNewClient(prev => ({ ...prev, name: editingInvoice.clientName || '' }))
+        }
+        if (editingInvoice.clientEmail) {
+          setNewClient(prev => ({ ...prev, email: editingInvoice.clientEmail || '' }))
             }
           }
         }
@@ -981,12 +981,23 @@ export default function QuickInvoiceModal({
       } else {
         // Check if it's a subscription limit error
         if (response.status === 403 && result.limitReached) {
-          showError(result.error || 'Subscription limit reached')
-          setShowUpgradeModal(true)
-          // Refresh usage
-          await fetchSubscriptionUsage()
+          const errorMessage = result.error || 'Subscription limit reached'
+          // Check if it's a client limit error
+          if (result.limitType === 'clients') {
+            showError('Client Limit Reached', errorMessage)
+          } else {
+            showError('Limit Reached', errorMessage)
+          }
           throw new Error('LIMIT_REACHED')
         }
+        
+        // Check if error message indicates client limit (from database trigger)
+        if (result.error && (result.error.includes('client') && result.error.includes('limit'))) {
+          const errorMessage = result.error || 'Client limit reached'
+          showError('Client Limit Reached', errorMessage)
+          throw new Error('CLIENT_LIMIT_REACHED')
+        }
+        
         throw new Error(result.error || (isEditing ? 'Failed to update invoice' : 'Failed to create invoice'))
       }
 

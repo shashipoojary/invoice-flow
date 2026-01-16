@@ -140,25 +140,25 @@ export async function POST(
 
       const invoiceStatus = invoiceData?.status;
 
-      // Check if invoice is now fully paid
-      if (newTotalPaid >= invoice.total) {
-        // Auto-mark invoice as paid if fully paid
-        await supabaseAdmin
-          .from('invoices')
-          .update({ status: 'paid', updated_at: new Date().toISOString() })
-          .eq('id', invoiceId);
+    // Check if invoice is now fully paid
+    if (newTotalPaid >= invoice.total) {
+      // Auto-mark invoice as paid if fully paid
+      await supabaseAdmin
+        .from('invoices')
+        .update({ status: 'paid', updated_at: new Date().toISOString() })
+        .eq('id', invoiceId);
 
-        // Log paid event
-        try {
-          await supabaseAdmin.from('invoice_events').insert({ 
-            invoice_id: invoiceId, 
-            type: 'paid' 
-          });
-        } catch {}
+      // Log paid event
+      try {
+        await supabaseAdmin.from('invoice_events').insert({ 
+          invoice_id: invoiceId, 
+          type: 'paid' 
+        });
+      } catch {}
 
-        // Cancel ONLY scheduled reminders (not sent, cancelled, or other statuses)
-        // Sent reminders should remain unchanged as they were already sent
-        // Cancelled reminders should remain unchanged
+      // Cancel ONLY scheduled reminders (not sent, cancelled, or other statuses)
+      // Sent reminders should remain unchanged as they were already sent
+      // Cancelled reminders should remain unchanged
         await supabaseAdmin
           .from('invoice_reminders')
           .update({
