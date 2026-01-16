@@ -454,18 +454,14 @@ export default function Template1({ invoice, businessSettings, primaryColor = '#
                 <Text style={styles.totalLabel}>Subtotal:</Text>
                 <Text style={styles.totalValue}>{formatCurrency(calculateSubtotal())}</Text>
               </View>
-              {invoice.discount && invoice.discount > 0 && (
-                <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>Discount:</Text>
-                  <Text style={styles.totalValue}>-{formatCurrency(invoice.discount)}</Text>
-                </View>
-              )}
-              {invoice.taxRate && invoice.taxRate > 0 && (
-                <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>Tax ({invoice.taxRate}%):</Text>
-                  <Text style={styles.totalValue}>{formatCurrency(calculateTax())}</Text>
-                </View>
-              )}
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Discount:</Text>
+                <Text style={styles.totalValue}>-{formatCurrency(invoice.discount || 0)}</Text>
+              </View>
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Tax ({invoice.taxRate || 0}%):</Text>
+                <Text style={styles.totalValue}>{formatCurrency(calculateTax())}</Text>
+              </View>
             </View>
             <Text style={styles.finalTotalLabel}>TOTAL</Text>
             <Text style={[styles.finalTotalValue, { color: secondaryColor }]}>{formatCurrency(calculateTotal())}</Text>

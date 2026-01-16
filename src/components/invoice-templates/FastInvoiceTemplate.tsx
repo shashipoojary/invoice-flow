@@ -345,18 +345,14 @@ export default function Template1({ invoice, businessSettings }: Template1Props)
             <Text style={styles.totalLabel}>Subtotal:</Text>
             <Text style={styles.totalValue}>{formatCurrency(calculateSubtotal())}</Text>
           </View>
-          {invoice.discount && invoice.discount > 0 && (
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Discount:</Text>
-              <Text style={styles.totalValue}>-{formatCurrency(invoice.discount)}</Text>
-            </View>
-          )}
-          {invoice.taxRate && invoice.taxRate > 0 && (
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Tax ({invoice.taxRate}%):</Text>
-              <Text style={styles.totalValue}>{formatCurrency(calculateTax())}</Text>
-            </View>
-          )}
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Discount:</Text>
+            <Text style={styles.totalValue}>-{formatCurrency(invoice.discount || 0)}</Text>
+          </View>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>Tax ({invoice.taxRate || 0}%):</Text>
+            <Text style={styles.totalValue}>{formatCurrency(calculateTax())}</Text>
+          </View>
           <View style={styles.finalTotalContainer}>
             <View style={styles.separatorLineContainer}>
               <View style={styles.separatorLine} />

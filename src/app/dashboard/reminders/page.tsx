@@ -700,23 +700,25 @@ export default function ReminderHistoryPage() {
   ReminderCard.displayName = 'ReminderCard';
 
   // Helper function to calculate total with late fees and partial payments
-  // IMPORTANT: For auto reminders, only consider partial payments if:
-  // - Reminder is scheduled (not yet sent) AND invoice is pending
-  // - For sent reminders or sent/cancelled invoices, ignore partial payments
+  // IMPORTANT: Partial payments should affect scheduled reminders (except sent/cancelled reminders)
+  // - Scheduled reminders should use remaining balance (after partial payments)
+  // - Sent/delivered reminders should use original total (already sent, can't modify)
+  // - Cancelled invoices should use original total
   const calculateReminderTotal = (reminder: ReminderHistory) => {
     // Check if we should ignore partial payments:
-    // 1. Reminder has already been sent
-    // 2. Invoice status is 'sent' or 'cancelled' (already sent to client, can't modify)
+    // 1. Reminder has already been sent/delivered (already sent to client, can't modify)
+    // 2. Invoice status is 'cancelled' (invoice is cancelled, use original total)
+    // NOTE: Invoice status 'sent' should NOT prevent scheduled reminders from using partial payments
     const shouldIgnorePartialPayments = 
       reminder.reminder_status === 'sent' || 
       reminder.reminder_status === 'delivered' ||
-      reminder.invoice.status === 'sent' || 
       reminder.invoice.status === 'cancelled';
     
-    // Only use partial payments for scheduled reminders on pending invoices
-    const baseAmount = (shouldIgnorePartialPayments || reminder.reminder_status !== 'scheduled' || reminder.invoice.status !== 'pending')
-      ? reminder.invoice.total  // Use original total if reminder sent or invoice sent/cancelled
-      : (reminder.paymentData?.remainingBalance || reminder.invoice.total); // Use remaining balance only for scheduled reminders on pending invoices
+    // Use partial payments for scheduled reminders (regardless of invoice status being 'sent' or 'pending')
+    // Only sent/delivered reminders or cancelled invoices should ignore partial payments
+    const baseAmount = (shouldIgnorePartialPayments || reminder.reminder_status !== 'scheduled')
+      ? reminder.invoice.total  // Use original total if reminder sent/delivered or invoice cancelled
+      : (reminder.paymentData?.remainingBalance || reminder.invoice.total); // Use remaining balance for scheduled reminders
     
     let lateFeesAmount = 0;
     let totalPayable = baseAmount;
@@ -749,10 +751,10 @@ export default function ReminderHistoryPage() {
       }
     }
     
-    // Only show partial payment if reminder is scheduled and invoice is pending
+    // Show partial payment if reminder is scheduled (regardless of invoice status being 'sent' or 'pending')
+    // Only sent/delivered reminders or cancelled invoices should not show partial payments
     const isPartiallyPaid = !shouldIgnorePartialPayments && 
       reminder.reminder_status === 'scheduled' && 
-      reminder.invoice.status === 'pending' &&
       (reminder.paymentData?.totalPaid || 0) > 0 && 
       (reminder.paymentData?.remainingBalance || 0) > 0;
     
@@ -1185,26 +1187,27 @@ export default function ReminderHistoryPage() {
                       </div>
                       {(() => {
                         // Check if we should ignore partial payments for this reminder:
-                        // 1. Reminder has already been sent
-                        // 2. Invoice status is 'sent' or 'cancelled' (already sent to client, can't modify)
+                        // 1. Reminder has already been sent/delivered (already sent to client, can't modify)
+                        // 2. Invoice status is 'cancelled' (invoice is cancelled, use original total)
+                        // NOTE: Invoice status 'sent' should NOT prevent scheduled reminders from using partial payments
                         const shouldIgnorePartialPayments = 
                           selectedReminder.reminder_status === 'sent' || 
                           selectedReminder.reminder_status === 'delivered' ||
-                          selectedReminder.invoice.status === 'sent' || 
                           selectedReminder.invoice.status === 'cancelled';
                         
-                        // Only use partial payments for scheduled reminders on pending invoices
-                        const baseAmount = (shouldIgnorePartialPayments || selectedReminder.reminder_status !== 'scheduled' || selectedReminder.invoice.status !== 'pending')
-                          ? selectedReminder.invoice.total || 0  // Use original total if reminder sent or invoice sent/cancelled
-                          : (selectedReminder.paymentData?.remainingBalance || selectedReminder.invoice.total || 0); // Use remaining balance only for scheduled reminders on pending invoices
+                        // Use partial payments for scheduled reminders (regardless of invoice status being 'sent' or 'pending')
+                        // Only sent/delivered reminders or cancelled invoices should ignore partial payments
+                        const baseAmount = (shouldIgnorePartialPayments || selectedReminder.reminder_status !== 'scheduled')
+                          ? selectedReminder.invoice.total || 0  // Use original total if reminder sent/delivered or invoice cancelled
+                          : (selectedReminder.paymentData?.remainingBalance || selectedReminder.invoice.total || 0); // Use remaining balance for scheduled reminders
                         
                         const totalPaid = selectedReminder.paymentData?.totalPaid || 0;
                         const remainingBalance = selectedReminder.paymentData?.remainingBalance || selectedReminder.invoice.total || 0;
                         
-                        // Only show partial payment if reminder is scheduled and invoice is pending
+                        // Show partial payment if reminder is scheduled (regardless of invoice status being 'sent' or 'pending')
+                        // Only sent/delivered reminders or cancelled invoices should not show partial payments
                         const isPartiallyPaid = !shouldIgnorePartialPayments && 
                           selectedReminder.reminder_status === 'scheduled' && 
-                          selectedReminder.invoice.status === 'pending' &&
                           totalPaid > 0 && 
                           remainingBalance > 0;
                         

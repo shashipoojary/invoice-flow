@@ -609,23 +609,22 @@ async function generateTemplate1DetailedPDF(
     color: rgb(0, 0, 0),
   });
 
-  if (invoice.taxAmount && invoice.taxAmount > 0) {
-    page.drawText('Tax:', {
-      x: 400,
-      y: currentY - 35,
-      size: 10,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
+  // Tax (always shown)
+  page.drawText('Tax:', {
+    x: 400,
+    y: currentY - 35,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
 
-    page.drawText(formatCurrency(invoice.taxAmount), {
-      x: 480,
-      y: currentY - 35,
-      size: 10,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
-  }
+  page.drawText(formatCurrency(invoice.taxAmount || 0), {
+    x: 480,
+    y: currentY - 35,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
 
   // Late fees (if applicable)
   if (invoice.lateFees && invoice.lateFees.enabled && invoice.lateFees.amount > 0) {
@@ -1037,23 +1036,22 @@ async function generateTemplate2PDF(
     color: rgb(0, 0, 0),
   });
 
-  if (invoice.taxAmount && invoice.taxAmount > 0) {
-    page.drawText('Tax:', {
-      x: 400,
-      y: currentY - 35,
-      size: 10,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
+  // Tax (always shown)
+  page.drawText('Tax:', {
+    x: 400,
+    y: currentY - 35,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
 
-    page.drawText(formatCurrency(invoice.taxAmount), {
-      x: 480,
-      y: currentY - 35,
-      size: 10,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
-  }
+  page.drawText(formatCurrency(invoice.taxAmount || 0), {
+    x: 480,
+    y: currentY - 35,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
 
   // Late fees (if applicable)
   if (invoice.lateFees && invoice.lateFees.enabled && invoice.lateFees.amount > 0) {
@@ -1158,23 +1156,26 @@ async function generateTemplate3PDF(
 ): Promise<Uint8Array> {
   const { width, height } = page.getSize();
 
-  // Business information with creative styling - moved up significantly to prevent overlap
-  // Reference: Modern template uses height - 50 for business name and height - 60 for contact info WITH a header
-  // Creative template has no header, so we need to move business details much higher from top
+  // Business information with creative styling - proper spacing to prevent overlap
+  // Business name with size 20 needs adequate spacing from top and from contact info
+  // Font size 20 has actual height ~16-18px, so we need at least 25-30px gap below baseline
+  const businessNameY = height - 50; // Moved higher to provide top margin (Creative has no header)
   page.drawText(businessSettings.businessName || 'Your Business', {
     x: 50,
-    y: height - 30, // Moved up significantly (10px more than previous, 20px more than Modern) to prevent overlap
+    y: businessNameY,
     size: 20,
     font: boldFont,
     color: rgb(0, 0, 0),
   });
 
-  // Business contact information with consistent spacing - moved up significantly to prevent overlap
+  // Business contact information with proper spacing - ensure no overlap with business name
+  // Business name (size 20) occupies ~18px height, so contact info needs to start at least 30px below business name baseline
   // Max width: 250px (from x: 50 to x: 300, leaving 100px buffer for invoice details at x: 400)
   // Reduced from 300px to prevent overlap with invoice details card
   const maxContactWidth = 250;
   
-  let contactY = height - 40; // Moved up significantly (10px more than previous, 20px more than Modern) to prevent overlap
+  // Start contact info 30px below business name baseline to ensure no overlap regardless of content size
+  let contactY = businessNameY - 30;
   if (businessSettings.address) {
     const addressLines = formatAddressForPDF(businessSettings.address, businessSettings);
     let currentY = contactY;
@@ -1519,24 +1520,22 @@ async function generateTemplate3PDF(
     color: rgb(0, 0, 0),
   });
 
-  // Tax (if applicable)
-  if (invoice.taxAmount && invoice.taxAmount > 0) {
-    page.drawText('TAX', {
-      x: 360,
-      y: totalsY - 45,
-      size: 9,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
+  // Tax (always shown)
+  page.drawText('TAX', {
+    x: 360,
+    y: totalsY - 45,
+    size: 9,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
 
-    page.drawText(formatCurrency(invoice.taxAmount), {
-      x: 480,
-      y: totalsY - 45,
-      size: 9,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
-  }
+  page.drawText(formatCurrency(invoice.taxAmount || 0), {
+    x: 480,
+    y: totalsY - 45,
+    size: 9,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
 
   // Total with creative emphasis
   page.drawText('TOTAL', {
@@ -1970,9 +1969,10 @@ async function generateModernTemplatePDF(
   const lateFeeAmount = parseFloat(invoice.lateFees?.amount?.toString() || '0');
   
   // Determine how many lines we need for totals (late fees not included in base total)
+  // Always show discount and tax columns (even if 0)
   let totalLines = 1; // Subtotal
-  if (discountAmount > 0) totalLines++;
-  if (taxAmount > 0) totalLines++;
+  totalLines++; // Discount (always shown)
+  totalLines++; // Tax (always shown)
   // Late fees are not included in the base invoice total
   totalLines++; // Total line
   
@@ -2020,47 +2020,43 @@ async function generateModernTemplatePDF(
 
   lineY -= 20;
 
-  // Discount (if applicable)
-  if (discountAmount > 0) {
-    page.drawText('DISCOUNT', {
-      x: 360,
-      y: lineY,
-      size: 9,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
+  // Discount (always shown)
+  page.drawText('DISCOUNT', {
+    x: 360,
+    y: lineY,
+    size: 9,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
 
-    page.drawText(`-${formatCurrency(discountAmount)}`, {
-      x: 480,
-      y: lineY,
-      size: 9,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
+  page.drawText(`-${formatCurrency(discountAmount)}`, {
+    x: 480,
+    y: lineY,
+    size: 9,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
 
-    lineY -= 20;
-  }
+  lineY -= 20;
 
-  // Tax (if applicable)
-  if (taxAmount > 0) {
-    page.drawText('TAX', {
-      x: 360,
-      y: lineY,
-      size: 9,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
+  // Tax (always shown)
+  page.drawText('TAX', {
+    x: 360,
+    y: lineY,
+    size: 9,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
 
-    page.drawText(formatCurrency(taxAmount), {
-      x: 480,
-      y: lineY,
-      size: 9,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
+  page.drawText(formatCurrency(taxAmount), {
+    x: 480,
+    y: lineY,
+    size: 9,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
 
-    lineY -= 20;
-  }
+  lineY -= 20;
 
   // Total with modern emphasis (late fees are separate and only added after due date)
   const invoiceTotal = total - discountAmount + taxAmount;
@@ -2171,16 +2167,19 @@ async function generateSimpleCleanTemplatePDF(
   });
 
   // Business information on colored background (white text)
+  // Matching Modern template spacing: business name at height - 50, contact info at height - 60
+  const businessNameY = height - 50; // Same as Modern template
   page.drawText(businessSettings.businessName || 'Your Business', {
     x: 50,
-    y: height - 60,
+    y: businessNameY,
     size: 20,
     font: boldFont,
     color: rgb(1, 1, 1),
   });
 
-  // Business contact information with consistent spacing
-  let contactY = height - 75;
+  // Business contact information - matching Modern template spacing (10px gap below business name)
+  // Modern template uses height - 60 for contact info (10px below business name at height - 50)
+  let contactY = height - 60; // Same as Modern template - 10px below business name
   if (businessSettings.address) {
     const addressLines = formatAddressForPDF(businessSettings.address, businessSettings);
     addressLines.forEach((line, index) => {
@@ -2517,9 +2516,10 @@ async function generateSimpleCleanTemplatePDF(
   const taxAmount = parseFloat(invoice.taxAmount?.toString() || '0');
   
   // Clean card with subtle border
+  // Always show discount and tax columns (even if 0)
   let totalLines = 1; // Subtotal
-  if (discountAmount > 0) totalLines++;
-  if (taxAmount > 0) totalLines++;
+  totalLines++; // Discount (always shown)
+  totalLines++; // Tax (always shown)
   totalLines++; // Total line
   
   const totalsHeight = Math.max(80, totalLines * 18 + 25);
@@ -2563,47 +2563,43 @@ async function generateSimpleCleanTemplatePDF(
 
   lineY -= 18;
 
-  // Discount (if applicable)
-  if (discountAmount > 0) {
-    page.drawText('Discount', {
-      x: 360,
-      y: lineY,
-      size: 9,
-      font: font,
-      color: rgb(0.4, 0.4, 0.4),
-    });
+  // Discount (always shown)
+  page.drawText('Discount', {
+    x: 360,
+    y: lineY,
+    size: 9,
+    font: font,
+    color: rgb(0.4, 0.4, 0.4),
+  });
 
-    page.drawText(`-${formatCurrency(discountAmount)}`, {
-      x: 480,
-      y: lineY,
-      size: 9,
-      font: font,
-      color: rgb(0.5, 0.5, 0.5),
-    });
+  page.drawText(`-${formatCurrency(discountAmount)}`, {
+    x: 480,
+    y: lineY,
+    size: 9,
+    font: font,
+    color: rgb(0.5, 0.5, 0.5),
+  });
 
-    lineY -= 18;
-  }
+  lineY -= 18;
 
-  // Tax (if applicable)
-  if (taxAmount > 0) {
-    page.drawText('Tax', {
-      x: 360,
-      y: lineY,
-      size: 9,
-      font: font,
-      color: rgb(0.4, 0.4, 0.4),
-    });
+  // Tax (always shown)
+  page.drawText('Tax', {
+    x: 360,
+    y: lineY,
+    size: 9,
+    font: font,
+    color: rgb(0.4, 0.4, 0.4),
+  });
 
-    page.drawText(formatCurrency(taxAmount), {
-      x: 480,
-      y: lineY,
-      size: 9,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
+  page.drawText(formatCurrency(taxAmount), {
+    x: 480,
+    y: lineY,
+    size: 9,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
 
-    lineY -= 18;
-  }
+  lineY -= 18;
 
   // Total - clean separator and emphasis
   const invoiceTotal = subtotal - discountAmount + taxAmount;
@@ -3054,47 +3050,43 @@ async function generateMinimalTemplatePDF(
 
   totalY -= 18;
 
-  // Discount (if applicable)
-  if (discountAmount > 0) {
-    page.drawText('Discount:', {
-      x: 400,
-      y: totalY,
-      size: 9,
-      font: font,
-      color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7),
-    });
+  // Discount (always shown)
+  page.drawText('Discount:', {
+    x: 400,
+    y: totalY,
+    size: 9,
+    font: font,
+    color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7),
+  });
 
-    page.drawText(`-${formatCurrency(discountAmount)}`, {
-      x: 480,
-      y: totalY,
-      size: 9,
-      font: font,
-      color: rgb(0.5, 0.5, 0.5),
-    });
+  page.drawText(`-${formatCurrency(discountAmount)}`, {
+    x: 480,
+    y: totalY,
+    size: 9,
+    font: font,
+    color: rgb(0.5, 0.5, 0.5),
+  });
 
-    totalY -= 18;
-  }
+  totalY -= 18;
 
-  // Tax (if applicable)
-  if (taxAmount > 0) {
-    page.drawText('Tax:', {
-      x: 400,
-      y: totalY,
-      size: 9,
-      font: font,
-      color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7),
-    });
+  // Tax (always shown)
+  page.drawText('Tax:', {
+    x: 400,
+    y: totalY,
+    size: 9,
+    font: font,
+    color: rgb(primaryRgb.r * 0.7, primaryRgb.g * 0.7, primaryRgb.b * 0.7),
+  });
 
-    page.drawText(formatCurrency(taxAmount), {
-      x: 480,
-      y: totalY,
-      size: 9,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
+  page.drawText(formatCurrency(taxAmount), {
+    x: 480,
+    y: totalY,
+    size: 9,
+    font: font,
+    color: rgb(0, 0, 0),
+  });
 
-    totalY -= 18;
-  }
+  totalY -= 18;
 
   // Late Fees (only show if invoice is actually overdue - not in total calculation)
   const invoiceTotal = subtotal - discountAmount + taxAmount;

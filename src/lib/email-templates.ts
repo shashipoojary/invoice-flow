@@ -2222,16 +2222,9 @@ export function generateEstimateRejectionEmailTemplate(
                       <tr>
                         <td class="status-banner" style="width: 100%; padding: 16px 20px; box-sizing: border-box;">
                           <div class="status-banner-label" style="font-size: 12px; color: #666666; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px; word-wrap: break-word;">Estimate Number</div>
-                          <div class="status-banner-value" style="font-size: 16px; font-weight: 700; color: #000000; margin: 0; word-wrap: break-word;">${estimateNumber}</div>
-                        </td>
-                      </tr>
-                    </table>
-                    
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" class="comment-box" style="width: 100%; margin: 24px 0; box-sizing: border-box;">
-                      <tr>
-                        <td class="comment-box" style="width: 100%; padding: 16px; background: #f9fafb; border-radius: 4px; box-sizing: border-box;">
-                          <div class="comment-label" style="font-size: 12px; color: #666666; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.5px; word-wrap: break-word;">Rejection Reason</div>
-                          <div class="comment-text" style="font-size: 14px; color: #000000; line-height: 1.6; margin: 0; word-wrap: break-word;">${reason}</div>
+                          <div class="status-banner-value" style="font-size: 16px; font-weight: 700; color: #000000; margin: 0 0 16px 0; word-wrap: break-word;">${estimateNumber}</div>
+                          <div class="status-banner-label" style="font-size: 12px; color: #666666; margin: 16px 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px; word-wrap: break-word;">Rejection Reason</div>
+                          <div class="status-banner-value" style="font-size: 14px; font-weight: 400; color: #000000; margin: 0; line-height: 1.6; word-wrap: break-word;">${reason}</div>
                         </td>
                       </tr>
                     </table>

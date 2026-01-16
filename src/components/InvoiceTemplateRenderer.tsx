@@ -215,8 +215,11 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
   }
 
   const calculateTotal = () => {
-    // Fast Invoice: No tax, discount, or late fees - just subtotal
-    return invoice.subtotal || calculateSubtotal()
+    // Calculate total with discount and tax
+    const subtotal = invoice.subtotal || calculateSubtotal()
+    const discount = invoice.discount || 0
+    const taxAmount = invoice.taxAmount || 0
+    return subtotal - discount + taxAmount
   }
 
   return (
@@ -353,11 +356,23 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
             </div>
           )}
 
-          {/* Summary - Fast Invoice: No discount, tax, or late fees - Right-aligned for professional invoice layout */}
+          {/* Summary - Right-aligned for professional invoice layout */}
           <div className="mb-8 pb-6 border-b border-gray-200">
             <div className="flex justify-end">
               <div className="w-full sm:w-1/2 lg:w-2/5 max-w-md">
                 <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Subtotal</span>
+                  <span className="text-black">${(invoice.subtotal || calculateSubtotal()).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
+                  <span className="text-black">-${(invoice.discount || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
+                  <span className="text-black">${(invoice.taxAmount || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                   <span className="font-bold text-black">Total</span>
                   <span className="font-bold text-black" style={{ color: primaryColor }}>
                     ${calculateTotal().toFixed(2)}
@@ -954,18 +969,14 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
                   <span className="text-gray-900" style={{ color: '#1F2937' }}>Subtotal</span>
                   <span className="text-black">${invoice.subtotal.toFixed(2)}</span>
                 </div>
-                {invoice.discount > 0 && (
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
-                    <span className="text-black">-${invoice.discount.toFixed(2)}</span>
-                  </div>
-                )}
-                {invoice.taxAmount > 0 && (
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
-                    <span className="text-black">${invoice.taxAmount.toFixed(2)}</span>
-                  </div>
-                )}
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
+                  <span className="text-black">-${(invoice.discount || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
+                  <span className="text-black">${(invoice.taxAmount || 0).toFixed(2)}</span>
+                </div>
                 <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                   <span className="font-bold text-black">Total</span>
                   <span className="font-bold text-black">${invoice.total.toFixed(2)}</span>
@@ -1562,18 +1573,14 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
                   <span className="text-gray-900" style={{ color: '#1F2937' }}>Subtotal</span>
                   <span className="text-black">${invoice.subtotal.toFixed(2)}</span>
                 </div>
-                {invoice.discount > 0 && (
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
-                    <span className="text-black">-${invoice.discount.toFixed(2)}</span>
-                  </div>
-                )}
-                {invoice.taxAmount > 0 && (
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
-                    <span className="text-black">${invoice.taxAmount.toFixed(2)}</span>
-                  </div>
-                )}
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
+                  <span className="text-black">-${(invoice.discount || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
+                  <span className="text-black">${(invoice.taxAmount || 0).toFixed(2)}</span>
+                </div>
                 <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                   <span className="font-bold text-black">Total</span>
                   <span className="font-bold text-black">${invoice.total.toFixed(2)}</span>
@@ -2170,18 +2177,14 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
                   <span className="text-gray-900" style={{ color: '#1F2937' }}>Subtotal</span>
                   <span className="text-black">${invoice.subtotal.toFixed(2)}</span>
                 </div>
-                {invoice.discount > 0 && (
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
-                    <span className="text-black">-${invoice.discount.toFixed(2)}</span>
-                  </div>
-                )}
-                {invoice.taxAmount > 0 && (
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
-                    <span className="text-black">${invoice.taxAmount.toFixed(2)}</span>
-                  </div>
-                )}
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
+                  <span className="text-black">-${(invoice.discount || 0).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
+                  <span className="text-black">${(invoice.taxAmount || 0).toFixed(2)}</span>
+                </div>
                 <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                   <span className="font-bold text-black">Total</span>
                   <span className="font-bold text-black">${invoice.total.toFixed(2)}</span>

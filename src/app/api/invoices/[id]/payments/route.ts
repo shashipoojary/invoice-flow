@@ -128,26 +128,37 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to record payment' }, { status: 500 });
     }
 
-    // Check if invoice is now fully paid
-    if (newTotalPaid >= invoice.total) {
-      // Auto-mark invoice as paid if fully paid
-      await supabaseAdmin
+    // Handle scheduled reminders based on payment status
+    // Partial payments should affect scheduled reminders (but NOT sent or cancelled reminders)
+    try {
+      // Get invoice status to check if it's sent/cancelled (these should NOT be affected)
+      const { data: invoiceData } = await supabaseAdmin
         .from('invoices')
-        .update({ status: 'paid', updated_at: new Date().toISOString() })
-        .eq('id', invoiceId);
+        .select('status')
+        .eq('id', invoiceId)
+        .single();
 
-      // Log paid event
-      try {
-        await supabaseAdmin.from('invoice_events').insert({ 
-          invoice_id: invoiceId, 
-          type: 'paid' 
-        });
-      } catch {}
+      const invoiceStatus = invoiceData?.status;
 
-      // Cancel ONLY scheduled reminders (not sent, cancelled, or other statuses)
-      // Sent reminders should remain unchanged as they were already sent
-      // Cancelled reminders should remain unchanged
-      try {
+      // Check if invoice is now fully paid
+      if (newTotalPaid >= invoice.total) {
+        // Auto-mark invoice as paid if fully paid
+        await supabaseAdmin
+          .from('invoices')
+          .update({ status: 'paid', updated_at: new Date().toISOString() })
+          .eq('id', invoiceId);
+
+        // Log paid event
+        try {
+          await supabaseAdmin.from('invoice_events').insert({ 
+            invoice_id: invoiceId, 
+            type: 'paid' 
+          });
+        } catch {}
+
+        // Cancel ONLY scheduled reminders (not sent, cancelled, or other statuses)
+        // Sent reminders should remain unchanged as they were already sent
+        // Cancelled reminders should remain unchanged
         await supabaseAdmin
           .from('invoice_reminders')
           .update({
@@ -156,7 +167,28 @@ export async function POST(
           })
           .eq('invoice_id', invoiceId)
           .eq('reminder_status', 'scheduled'); // Only update scheduled reminders, not sent/cancelled
-      } catch {}
+      } else {
+        // Partial payment added but invoice not fully paid
+        // Update scheduled reminders to reflect partial payment (they will use remaining balance when sent)
+        // IMPORTANT: Only affect scheduled reminders, NOT sent or cancelled reminders
+        // Also, only affect if invoice is NOT "sent" or "cancelled" status
+        if (invoiceStatus !== 'sent' && invoiceStatus !== 'cancelled') {
+          // Scheduled reminders will automatically use the updated remaining balance when sent
+          // (the auto-send route fetches payments dynamically)
+          // We don't need to update the reminder records themselves, but we ensure they exist
+          // and will use the correct remaining balance when processed
+          // The reminder history page also fetches payments dynamically, so it will show correct amounts
+          
+          // Note: Scheduled reminders don't need to be updated in the database because:
+          // 1. Auto-send route fetches payments dynamically when sending
+          // 2. Reminder history page fetches payments dynamically when displaying
+          // 3. The remaining balance is calculated from invoice.total - totalPaid
+          // So scheduled reminders will automatically reflect partial payments
+        }
+      }
+    } catch (reminderError) {
+      console.error('Error updating reminders after payment:', reminderError);
+      // Don't fail the payment if reminder update fails
     }
 
     return NextResponse.json({
