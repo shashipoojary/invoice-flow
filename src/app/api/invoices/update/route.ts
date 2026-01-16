@@ -461,6 +461,9 @@ export async function PUT(request: NextRequest) {
       clientId: completeInvoice.client_id,
       clientName: completeInvoice.clients?.name,
       clientEmail: completeInvoice.clients?.email,
+      clientCompany: completeInvoice.clients?.company,
+      clientPhone: completeInvoice.clients?.phone,
+      clientAddress: completeInvoice.clients?.address,
       discount: completeInvoice.discount || 0,
       // Map invoice items to expected format
       items: completeInvoice.invoice_items?.map((item: any) => ({

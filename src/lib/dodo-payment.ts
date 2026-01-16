@@ -18,6 +18,8 @@ export interface CreatePaymentLinkParams {
   metadata?: Record<string, any>;
   successUrl: string;
   cancelUrl: string;
+  failureUrl?: string; // Optional: URL to redirect on payment failure
+  productId?: string; // Optional: Override product ID for specific use cases
 }
 
 export interface DodoPaymentResponse {
@@ -80,9 +82,20 @@ class DodoPaymentClient {
       // We need to either:
       // 1. Create a product first (via Products API)
       // 2. Use an existing product_id from environment variable
+      // 3. Use provided productId parameter (for specific use cases like Pay Per Invoice setup)
       
-      // Try to get product_id from environment or create one
-      const productId = process.env.DODO_PAYMENT_PRODUCT_ID;
+      // Use provided productId, or try to get from environment, or create one
+      let productId = params.productId;
+      
+      // For Pay Per Invoice setup ($0.06 minimum), use separate product ID if available
+      if (!productId && (params.amount === 0.06 || params.amount === 0.01) && params.metadata?.type === 'payment_method_setup') {
+        productId = process.env.DODO_PAYMENT_PAY_PER_INVOICE_SETUP_PRODUCT_ID;
+      }
+      
+      // Fallback to main product ID for monthly subscriptions
+      if (!productId) {
+        productId = process.env.DODO_PAYMENT_PRODUCT_ID;
+      }
       
       if (!productId) {
         console.error('❌ DODO_PAYMENT_PRODUCT_ID not found in environment variables.');
@@ -97,11 +110,21 @@ class DodoPaymentClient {
         // Try to create a product first
         try {
           console.log('🔧 Attempting to create product first...');
+          // Determine product name based on amount and metadata
+          let productName = 'Subscription';
+          if (params.amount === 0.01 && params.metadata?.type === 'payment_method_setup') {
+            productName = 'Pay Per Invoice Setup - Payment Method Collection';
+          } else if (params.metadata?.plan === 'monthly') {
+            productName = 'Monthly Subscription';
+          } else if (params.metadata?.plan === 'pay_per_invoice') {
+            productName = 'Pay Per Invoice';
+          }
+          
           const productResponse = await fetch(`${this.baseUrl}/products`, {
             method: 'POST',
             headers: headers,
             body: JSON.stringify({
-              name: `Subscription - ${params.metadata?.plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice'}`,
+              name: productName,
               description: params.description,
               prices: [
                 {
@@ -120,7 +143,7 @@ class DodoPaymentClient {
             const createdProductId = productData.id;
             
             // Now create checkout session with this product
-            const checkoutBody = {
+            const checkoutBody: any = {
               product_cart: [
                 {
                   product_id: createdProductId,
@@ -134,6 +157,14 @@ class DodoPaymentClient {
               metadata: params.metadata || {},
               return_url: params.successUrl,
             };
+            
+            // Add cancel and failure URLs if provided
+            if (params.cancelUrl) {
+              checkoutBody.cancel_url = params.cancelUrl;
+            }
+            if (params.failureUrl) {
+              checkoutBody.failure_url = params.failureUrl;
+            }
             
             const checkoutResponse = await fetch(`${this.baseUrl}${endpoint}`, {
               method: 'POST',
@@ -161,7 +192,7 @@ class DodoPaymentClient {
       }
       
       // Use the product_id from environment
-      const requestBody = {
+      const requestBody: any = {
         product_cart: [
           {
             product_id: productId,
@@ -177,6 +208,15 @@ class DodoPaymentClient {
         metadata: params.metadata || {},
         return_url: params.successUrl,
       };
+      
+      // Add cancel and failure URLs if provided
+      // Dodo Payment may redirect to return_url even on failure, but we'll set these too
+      if (params.cancelUrl) {
+        requestBody.cancel_url = params.cancelUrl;
+      }
+      if (params.failureUrl) {
+        requestBody.failure_url = params.failureUrl;
+      }
       
       try {
         console.log(`🔍 Creating checkout session with product_id: ${productId}`);

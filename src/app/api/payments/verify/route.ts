@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getDodoPaymentClient } from '@/lib/dodo-payment';
 import { getAuthenticatedUser } from '@/lib/auth-middleware';
+import { sendSubscriptionConfirmationEmail } from '../webhook/route';
 
 /**
  * Verify payment status and update subscription
@@ -16,9 +17,19 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const paymentId = searchParams.get('payment_id');
+    const statusFromUrl = searchParams.get('status'); // Dodo Payment adds this to redirect URL
 
     if (!paymentId) {
       return NextResponse.json({ error: 'Payment ID is required' }, { status: 400 });
+    }
+    
+    // Check if payment_id is still a placeholder (not replaced by Dodo Payment)
+    if (paymentId.includes('{') || paymentId.includes('PAYMENT_ID') || paymentId.includes('CHECKOUT_SESSION_ID')) {
+      console.error('Payment ID is still a placeholder:', paymentId);
+      return NextResponse.json({ 
+        error: 'Invalid payment ID. Payment may not have been processed correctly.',
+        message: 'Please check your subscription status. The webhook will process the payment automatically.'
+      }, { status: 400 });
     }
 
     // Get Dodo Payment client
@@ -29,19 +40,35 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Verify payment status
-    const verification = await dodoClient.verifyPayment(paymentId);
+    // If status is already provided in URL (from Dodo Payment redirect), trust it
+    // Otherwise, verify with API
+    let verificationStatus: string | null = statusFromUrl || null;
+    let isSuccess = false;
 
-    if (!verification.success) {
-      return NextResponse.json({ 
-        error: verification.error || 'Failed to verify payment' 
-      }, { status: 500 });
+    // Handle "active" status as success (for subscriptions)
+    if (statusFromUrl === 'succeeded' || statusFromUrl === 'completed' || statusFromUrl === 'paid' || statusFromUrl === 'active') {
+      // Trust the status from URL
+      verificationStatus = statusFromUrl;
+      isSuccess = true;
+      console.log(`Payment status from URL: ${statusFromUrl} - trusting it`);
+    } else {
+      // Verify payment status via API
+      const verification = await dodoClient.verifyPayment(paymentId);
+
+      if (!verification.success) {
+        console.error('Payment verification failed:', verification.error);
+        return NextResponse.json({ 
+          error: verification.error || 'Failed to verify payment' 
+        }, { status: 500 });
+      }
+
+      verificationStatus = verification.status || null;
+      // Check if payment is successful (including "active" for subscriptions)
+      isSuccess = verificationStatus === 'succeeded' || 
+                   verificationStatus === 'completed' ||
+                   verificationStatus === 'paid' ||
+                   verificationStatus === 'active';
     }
-
-    // Check if payment is successful
-    const isSuccess = verification.status === 'succeeded' || 
-                     verification.status === 'completed' ||
-                     verification.status === 'paid';
 
     if (isSuccess) {
       // Get billing record to find plan (try both session_id and payment_id)
@@ -55,8 +82,8 @@ export async function GET(request: NextRequest) {
       if (billingRecord) {
         // Determine plan from amount (since billing_records doesn't have metadata)
         let plan = 'monthly'; // Default
-        if (billingRecord.amount === 0.01) {
-          // $0.01 = payment method setup for pay_per_invoice
+        if (billingRecord.amount === 0.06 || billingRecord.amount === 0.01) {
+          // $0.06 (or $0.01) = payment method setup for pay_per_invoice
           plan = 'pay_per_invoice';
         } else if (billingRecord.amount === 0.50) {
           plan = 'pay_per_invoice';
@@ -75,8 +102,9 @@ export async function GET(request: NextRequest) {
             .eq('id', billingRecord.id);
         }
 
-        // For payment method setup ($0.01), try to extract customer ID from payment
-        if (billingRecord.amount === 0.01) {
+        // For payment method setup ($0.06 or $0.01), try to extract customer ID from payment
+        const amount = parseFloat(billingRecord.amount.toString());
+        if (amount === 0.06 || amount === 0.01) {
           // Try to get customer ID from Dodo Payment
           const dodoClient = getDodoPaymentClient();
           if (dodoClient) {
@@ -140,6 +168,27 @@ export async function GET(request: NextRequest) {
         }
 
         console.log(`✅ Subscription updated for user ${user.id} to ${plan} plan via verify endpoint`);
+        
+        // Send subscription confirmation email (only on success)
+        console.log('='.repeat(80));
+        console.log('📧 VERIFY ENDPOINT: Preparing to send subscription confirmation email');
+        console.log('   userId:', user.id);
+        console.log('   plan:', plan);
+        console.log('   paymentId:', paymentId || 'N/A');
+        console.log('='.repeat(80));
+        
+        try {
+          await sendSubscriptionConfirmationEmail(user.id, plan, paymentId);
+          console.log('✅ VERIFY ENDPOINT: Email sending process completed');
+        } catch (emailError) {
+          console.error('='.repeat(80));
+          console.error('❌ VERIFY ENDPOINT: Error sending subscription confirmation email');
+          console.error('   Error:', emailError);
+          console.error('   Error type:', emailError instanceof Error ? emailError.constructor.name : typeof emailError);
+          console.error('   Error message:', emailError instanceof Error ? emailError.message : String(emailError));
+          console.log('='.repeat(80));
+          // Don't fail the request if email fails - webhook will also try to send it
+        }
 
         return NextResponse.json({
           success: true,
@@ -151,7 +200,7 @@ export async function GET(request: NextRequest) {
         // Still return success if payment is verified, webhook might handle it
         return NextResponse.json({
           success: true,
-          status: verification.status,
+          status: verificationStatus || 'unknown',
           message: 'Payment verified. Subscription update may be processed by webhook.',
         });
       }
@@ -159,7 +208,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      status: verification.status,
+      status: verificationStatus || 'unknown',
     });
   } catch (error: any) {
     console.error('Payment verification error:', error);

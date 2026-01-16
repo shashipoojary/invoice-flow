@@ -299,7 +299,7 @@ export async function chargeForInvoice(
       console.log(`⚠️ No customer ID found - User needs to set up payment method first`);
       console.log(`💡 To enable automatic charging, user must:`);
       console.log(`   1. Select "Pay Per Invoice" plan`);
-      console.log(`   2. Complete the $0.01 payment setup`);
+      console.log(`   2. Complete the $0.06 payment setup`);
       console.log(`   3. This saves their payment method for future automatic charges`);
       
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://invoice-flow-vert.vercel.app';

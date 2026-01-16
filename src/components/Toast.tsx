@@ -23,7 +23,8 @@ const ToastComponent: React.FC<ToastProps> = ({ toast, onRemove }) => {
     }, duration);
 
     return () => clearTimeout(timer);
-  }, [toast.id, duration, onRemove]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast.id, duration]); // Removed onRemove from deps to prevent loop
 
   const getToastStyles = () => {
     switch (toast.type) {

@@ -160,7 +160,7 @@ export default function AuthPage() {
           <div className="absolute top-6 left-6 z-10">
             <button
               onClick={() => router.push('/')}
-              className="w-10 h-10 bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-all shadow-md cursor-pointer"
+              className="w-10 h-10 bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white active:scale-95 transition-all shadow-md cursor-pointer touch-manipulation"
             >
               <ArrowLeft className="w-5 h-5 text-gray-700" />
             </button>
@@ -248,7 +248,7 @@ export default function AuthPage() {
           <div className="mb-6 lg:hidden">
             <button
               onClick={() => router.push('/')}
-              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+              className="flex items-center text-gray-600 hover:text-gray-900 active:scale-95 transition-all cursor-pointer touch-manipulation"
             >
               <ArrowLeft className="w-5 h-5 mr-2" />
               <span className="text-sm font-medium">Back</span>
@@ -316,7 +316,7 @@ export default function AuthPage() {
                           setError('');
                           setFormData(prev => ({ ...prev, password: '' }));
                         }}
-                        className="mt-2 text-red-700 font-medium hover:underline text-sm"
+                        className="mt-2 text-red-700 font-medium hover:underline active:text-red-800 active:scale-95 text-sm transition-all touch-manipulation"
                       >
                         Click here to sign in →
                       </button>
@@ -339,14 +339,14 @@ export default function AuthPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   placeholder="my.account@email.com"
-                  className="w-full px-4 py-4 text-base bg-gray-50  focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all"
+                  className="w-full px-4 py-4 text-base bg-gray-50 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
                   required
                 />
                 {formData.email && (
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, email: '' }))}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center cursor-pointer"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center cursor-pointer active:scale-90 active:bg-gray-900 transition-all touch-manipulation"
                   >
                     <X className="w-3 h-3 text-white" />
                   </button>
@@ -374,7 +374,7 @@ export default function AuthPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 active:scale-90 active:bg-gray-200 rounded-full transition-all cursor-pointer touch-manipulation"
                   >
                     {showPassword ? (
                       <EyeOff className="w-5 h-5 text-gray-500" />
@@ -400,7 +400,7 @@ export default function AuthPage() {
                     value={formData.firstName}
                     onChange={handleInputChange}
                     placeholder="John"
-                    className="w-full px-4 py-4 text-base bg-gray-50  focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all"
+                    className="w-full px-4 py-4 text-base bg-gray-50 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
                     required={!isLogin}
                   />
                 </div>
@@ -415,7 +415,7 @@ export default function AuthPage() {
                     value={formData.lastName}
                     onChange={handleInputChange}
                     placeholder="Doe"
-                    className="w-full px-4 py-4 text-base bg-gray-50  focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all"
+                    className="w-full px-4 py-4 text-base bg-gray-50 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
                     required={!isLogin}
                   />
                 </div>
@@ -442,7 +442,7 @@ export default function AuthPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 active:scale-90 active:bg-gray-200 rounded-full transition-all cursor-pointer touch-manipulation"
                   >
                     {showPassword ? (
                       <EyeOff className="w-5 h-5 text-gray-500" />
@@ -468,11 +468,11 @@ export default function AuthPage() {
                 />
                 <label htmlFor="agreeToTerms" className="text-sm text-gray-600">
                   By creating an account, I agree to{' '}
-                  <button type="button" className="text-indigo-600 font-medium hover:underline">
+                  <button type="button" className="text-indigo-600 font-medium hover:underline active:text-indigo-800 active:scale-95 transition-all touch-manipulation">
                     Terms of Service
                   </button>
                   {' '}and{' '}
-                  <button type="button" className="text-indigo-600 font-medium hover:underline">
+                  <button type="button" className="text-indigo-600 font-medium hover:underline active:text-indigo-800 active:scale-95 transition-all touch-manipulation">
                     Privacy Policy
                   </button>
                 </label>
@@ -483,7 +483,7 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 text-white py-4 px-6 text-base font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full bg-indigo-600 text-white py-4 px-6 text-base font-medium hover:bg-indigo-700 active:bg-indigo-800 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex items-center justify-center touch-manipulation"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -498,7 +498,7 @@ export default function AuthPage() {
                 <button
                   type="button"
                   onClick={() => router.push('/auth/forgot-password')}
-                  className="text-indigo-600 hover:text-indigo-700 font-medium text-sm cursor-pointer"
+                  className="text-indigo-600 hover:text-indigo-700 active:text-indigo-800 active:scale-95 font-medium text-sm cursor-pointer transition-all touch-manipulation"
                 >
                   Forgot your password?
                 </button>

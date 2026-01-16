@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
           name,
           email,
           company,
+          phone,
           address
         )
       `)
@@ -92,6 +93,7 @@ export async function GET(request: NextRequest) {
         clientName: invoice.clients?.name || '',
         clientEmail: invoice.clients?.email || '',
         clientCompany: invoice.clients?.company || '',
+        clientPhone: invoice.clients?.phone || '',
         clientAddress: invoice.clients?.address || '',
         discount: invoice.discount || 0,
         items: itemsData.map(item => ({

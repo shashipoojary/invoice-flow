@@ -189,6 +189,79 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
     }
   }, [isOpen, editingInvoice, addClient, globalClients])
 
+  // Save form state to localStorage before redirecting to payment
+  const saveFormState = () => {
+    const formState = {
+      selectedClientId,
+      clientName,
+      clientEmail,
+      clientCompany,
+      clientPhone,
+      clientAddress,
+      invoiceNumber,
+      issueDate,
+      description,
+      amount,
+      dueDate,
+      notes,
+      markAsPaid,
+      step,
+      timestamp: Date.now()
+    }
+    localStorage.setItem('pending_invoice_form', JSON.stringify(formState))
+    console.log('💾 Form state saved to localStorage')
+  }
+
+  // Restore form state from localStorage
+  const restoreFormState = () => {
+    try {
+      const savedState = localStorage.getItem('pending_invoice_form')
+      if (savedState) {
+        const formState = JSON.parse(savedState)
+        // Only restore if saved within last 30 minutes
+        if (Date.now() - formState.timestamp < 30 * 60 * 1000) {
+          setSelectedClientId(formState.selectedClientId || '')
+          setClientName(formState.clientName || '')
+          setClientEmail(formState.clientEmail || '')
+          setClientCompany(formState.clientCompany || '')
+          setClientPhone(formState.clientPhone || '')
+          setClientAddress(formState.clientAddress || '')
+          setInvoiceNumber(formState.invoiceNumber || '')
+          setIssueDate(formState.issueDate || '')
+          setDescription(formState.description || '')
+          setAmount(formState.amount || '')
+          setDueDate(formState.dueDate || '')
+          setNotes(formState.notes || '')
+          setMarkAsPaid(formState.markAsPaid || false)
+          setStep(formState.step || 1)
+          console.log('✅ Form state restored from localStorage')
+          return true
+        } else {
+          // Clear expired state
+          localStorage.removeItem('pending_invoice_form')
+        }
+      }
+    } catch (error) {
+      console.error('Error restoring form state:', error)
+    }
+    return false
+  }
+
+  // Check for pending form state on mount
+  useEffect(() => {
+    if (isOpen && !editingInvoice) {
+      const urlParams = new URLSearchParams(window.location.search)
+      if (urlParams.get('restore_invoice') === 'true') {
+        const restored = restoreFormState()
+        if (restored) {
+          showSuccess('Welcome back! Your invoice form has been restored. You can now continue creating your invoice.')
+          // Clean up URL
+          window.history.replaceState({}, '', window.location.pathname)
+        }
+      }
+    }
+  }, [isOpen, editingInvoice])
+
   const resetForm = () => {
     setStep(1)
     setSelectedClientId('')
@@ -1079,6 +1152,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
               fetchSubscriptionUsage()
             }
           }}
+          onBeforeRedirect={saveFormState}
           currentPlan={subscriptionUsage?.plan as 'free' | 'monthly' | 'pay_per_invoice' || 'free'}
           usage={subscriptionUsage ? {
             used: subscriptionUsage.used,

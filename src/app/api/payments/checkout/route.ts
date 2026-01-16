@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Pay Per Invoice plan: Collect payment method for automatic charging (Option 1)
-    // We charge $0.01 to collect and save payment method
+    // We charge $0.06 (minimum ₹5 required by Dodo Payments) to collect and save payment method
     if (plan === 'pay_per_invoice') {
       // Check if user already has a saved payment method
       const { data: userProfile } = await supabaseAdmin
@@ -73,8 +73,9 @@ export async function POST(request: NextRequest) {
       }
 
       // No payment method saved - create checkout to collect it
-      // Charge $0.01 to collect payment method (this will be credited toward first invoice)
-      const setupAmount = 0.01;
+      // Charge minimum required amount to collect payment method (Dodo Payments requires minimum ₹5 ≈ $0.06)
+      // This will be credited toward first invoice
+      const setupAmount = 0.06; // Minimum $0.06 (₹5) required by Dodo Payments
       
       const dodoClient = getDodoPaymentClient();
       if (!dodoClient) {
@@ -105,12 +106,14 @@ export async function POST(request: NextRequest) {
       }
 
       // Create checkout session to collect payment method
-      // The createPaymentLink function will use DODO_PAYMENT_PRODUCT_ID from environment
-      // or create a product automatically
+      // Use separate product ID for Pay Per Invoice setup if available
+      // Otherwise, createPaymentLink will create a product dynamically
+      const payPerInvoiceSetupProductId = process.env.DODO_PAYMENT_PAY_PER_INVOICE_SETUP_PRODUCT_ID;
+      
       const paymentResult = await dodoClient.createPaymentLink({
         amount: setupAmount,
         currency: 'USD',
-        description: 'Pay Per Invoice Setup - Payment Method Collection ($0.01 will be credited to your first invoice)',
+        description: 'Pay Per Invoice Setup - Payment Method Collection ($0.06 will be credited toward your first invoice)',
         customerEmail: userEmail,
         customerName: userName,
         metadata: {
@@ -120,6 +123,8 @@ export async function POST(request: NextRequest) {
         },
         successUrl: `${baseUrl}/dashboard/profile?payment=success&setup=pay_per_invoice&session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${baseUrl}/dashboard/profile?payment=cancelled`,
+        failureUrl: `${baseUrl}/dashboard/profile?payment=failed&setup=pay_per_invoice&error=Payment failed. Please try again.`,
+        productId: payPerInvoiceSetupProductId, // Use separate product for Pay Per Invoice setup
       });
 
       if (!paymentResult.success || !paymentResult.paymentLink) {
@@ -145,7 +150,7 @@ export async function POST(request: NextRequest) {
         paymentLink: paymentResult.paymentLink,
         paymentId: paymentResult.paymentId,
         requiresPayment: true,
-        message: 'Please complete payment method setup to activate Pay Per Invoice plan. The $0.01 charge will be credited to your first invoice.'
+        message: 'Please complete payment method setup to activate Pay Per Invoice plan. The $0.06 charge will be credited toward your first invoice.'
       });
     }
 
@@ -201,6 +206,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create payment link
+    // Note: Dodo Payment may redirect to return_url (successUrl) even on failure with status parameter
+    // So we'll handle both success and failure in the same URL and check the status
     const paymentResult = await dodoClient.createPaymentLink({
       amount,
       currency: 'USD',
@@ -212,8 +219,11 @@ export async function POST(request: NextRequest) {
         plan,
         type: 'subscription_upgrade',
       },
-      successUrl: `${baseUrl}/dashboard/profile?payment=success&session_id={PAYMENT_ID}`,
-      cancelUrl: `${baseUrl}/dashboard/profile?payment=cancelled`,
+      // Use return_url that handles both success and failure via status parameter
+      successUrl: `${baseUrl}/dashboard/profile?payment=success&session_id={PAYMENT_ID}&plan=${plan}&status={STATUS}`,
+      cancelUrl: `${baseUrl}/dashboard/profile?payment=cancelled&plan=${plan}`,
+      // Also set failure_url in case Dodo Payment supports it
+      failureUrl: `${baseUrl}/dashboard/profile?payment=failed&plan=${plan}&error=Payment failed. Please try again.&status=failed`,
     });
 
     if (!paymentResult.success || !paymentResult.paymentLink) {

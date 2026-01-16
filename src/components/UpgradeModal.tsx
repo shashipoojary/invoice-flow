@@ -24,6 +24,7 @@ interface UpgradeModalProps {
   reason?: string;
   limitType?: 'invoices' | 'estimates' | 'clients' | 'reminders';
   hidePayPerInvoice?: boolean;
+  onBeforeRedirect?: () => void; // Callback to save form state before redirecting
 }
 
 export default function UpgradeModal({ 
@@ -33,7 +34,8 @@ export default function UpgradeModal({
   usage,
   reason,
   limitType = 'invoices', // Default to invoices for backward compatibility
-  hidePayPerInvoice = false
+  hidePayPerInvoice = false,
+  onBeforeRedirect
 }: UpgradeModalProps) {
   const { user, getAuthHeaders } = useAuth();
   const { showSuccess, showError } = useToast();
@@ -74,7 +76,11 @@ export default function UpgradeModal({
           setTimeout(() => window.location.reload(), 1000);
           return;
         } else if (data.paymentLink) {
-          // Payment method setup required - redirect to Dodo Payment
+          // Payment method setup required - save form state before redirecting
+          if (onBeforeRedirect) {
+            onBeforeRedirect();
+          }
+          // Redirect to Dodo Payment
           window.location.href = data.paymentLink;
           return;
         } else {
@@ -84,6 +90,10 @@ export default function UpgradeModal({
 
       // Monthly plan requires payment - redirect to Dodo Payment
       if (data.paymentLink) {
+        // Save form state before redirecting
+        if (onBeforeRedirect) {
+          onBeforeRedirect();
+        }
         // Redirect to Dodo Payment checkout
         window.location.href = data.paymentLink;
       } else {

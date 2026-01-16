@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, memo, useMemo } from 'react';
+import { useState, useEffect, useCallback, memo, useMemo, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
   User, Mail, Phone, Building, MapPin, Calendar, Shield, CreditCard, 
@@ -325,21 +325,136 @@ export default function ProfilePage() {
     }
   }, [user, loading, getAuthHeaders, showError, loadSubscriptionUsage]);
 
-  // Handle payment success redirect from Dodo Payment
+  // Track if payment status has been processed to prevent duplicate processing
+  const paymentProcessedRef = useRef<string | null>(null);
+  const isProcessingRef = useRef(false);
+  const lastUrlRef = useRef<string>('');
+
+  // Handle payment success/failure redirect from Dodo Payment
   useEffect(() => {
-    const checkPaymentSuccess = async () => {
+    // Don't run if user is not loaded yet
+    if (!user || loading) {
+      return;
+    }
+
+    const checkPaymentStatus = async () => {
+      // Get current URL to detect changes
+      const currentUrl = window.location.href;
+      
+      // Prevent concurrent processing
+      if (isProcessingRef.current) {
+        console.log('Payment processing already in progress, skipping');
+        return;
+      }
+
       const searchParams = new URLSearchParams(window.location.search);
       const paymentStatus = searchParams.get('payment');
       const sessionId = searchParams.get('session_id');
+      const paymentId = searchParams.get('payment_id'); // Dodo Payment adds this to the URL
       const setupType = searchParams.get('setup'); // 'pay_per_invoice' for payment method setup
+      const plan = searchParams.get('plan'); // 'monthly' or 'pay_per_invoice'
+      const errorMessage = searchParams.get('error'); // Error message from payment gateway
+      const dodoStatus = searchParams.get('status'); // Payment status from Dodo Payment (can be 'failed', 'succeeded', 'active', etc.)
       
-      if (paymentStatus === 'success' && sessionId) {
+      // If no payment status, nothing to process
+      if (!paymentStatus) {
+        lastUrlRef.current = currentUrl;
+        return;
+      }
+      
+      // Create a unique key for this payment attempt (without timestamp to allow same payment to be processed once)
+      const paymentKey = `${paymentStatus}-${paymentId || sessionId || 'unknown'}`;
+      
+      // Check if we've already processed this payment (but allow if URL changed)
+      if (paymentProcessedRef.current === paymentKey && lastUrlRef.current === currentUrl) {
+        console.log('Payment already processed for this URL, skipping');
+        return;
+      }
+      
+      // Mark as processing and processed immediately BEFORE any async operations
+      isProcessingRef.current = true;
+      paymentProcessedRef.current = paymentKey;
+      lastUrlRef.current = currentUrl;
+      
+      // Clean up URL immediately to prevent re-processing
+      window.history.replaceState({}, '', '/dashboard/profile');
+      
+      // Check if Dodo Payment redirected with a failed status even though payment=success
+      // This can happen if Dodo Payment redirects to return_url with status=failed
+      if (paymentStatus === 'success' && (dodoStatus === 'failed' || dodoStatus === 'failure' || dodoStatus === 'error')) {
+        // Treat as failure
+        const planName = plan === 'monthly' ? 'Monthly' : plan === 'pay_per_invoice' ? 'Pay Per Invoice' : 'subscription';
+        const errorMsg = errorMessage || 'Payment failed. Please check your payment method and try again.';
+        showError(`${planName} subscription payment failed. ${errorMsg}`);
+        isProcessingRef.current = false;
+        return;
+      }
+      
+      // Handle cancelled first
+      if (paymentStatus === 'cancelled') {
+        const planName = plan === 'monthly' ? 'Monthly' : plan === 'pay_per_invoice' ? 'Pay Per Invoice' : 'subscription';
+        showError(`${planName} subscription payment was cancelled. Your subscription was not changed. Please try again if you want to upgrade.`);
+        isProcessingRef.current = false;
+        return;
+      }
+      
+      // Handle failed
+      if (paymentStatus === 'failed') {
+        const planName = plan === 'monthly' ? 'Monthly' : plan === 'pay_per_invoice' ? 'Pay Per Invoice' : 'subscription';
+        const errorMsg = errorMessage || 'Payment failed. Please check your payment method and try again.';
+        showError(`${planName} subscription payment failed. ${errorMsg}`);
+        isProcessingRef.current = false;
+        return;
+      }
+      
+      // Handle success - check if session_id is a placeholder
+      if (paymentStatus === 'success') {
+        // Check if session_id is still a placeholder (not replaced by Dodo Payment)
+        if (sessionId && (sessionId.includes('{PAYMENT_ID}') || sessionId.includes('{CHECKOUT_SESSION_ID}'))) {
+          // Placeholder not replaced - Dodo Payment should have added payment_id to URL
+          if (paymentId) {
+            // Use payment_id instead
+            console.log('Using payment_id from URL since session_id is placeholder');
+          } else {
+            // No payment_id either - wait for webhook or show generic success
+            console.log('Payment successful but no payment ID available - webhook will handle subscription update');
+            if (setupType === 'pay_per_invoice') {
+              showSuccess('Payment successful. Pay Per Invoice plan is being activated. You will receive a confirmation email shortly.');
+            } else {
+              const planName = plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice';
+              showSuccess(`Payment successful. Your ${planName} subscription is being activated. You will receive a confirmation email shortly.`);
+            }
+            await Promise.all([loadProfile(), loadSubscriptionUsage()]);
+            return;
+          }
+        }
+        
+        // Use payment_id if available (from Dodo Payment redirect), otherwise fall back to session_id
+        const idToVerify = paymentId || (sessionId && !sessionId.includes('{') ? sessionId : null);
+        
+        // If no valid ID, just show success and let webhook handle it
+        if (!idToVerify) {
+          console.log('Payment successful but no valid payment ID - webhook will handle subscription update');
+          if (setupType === 'pay_per_invoice') {
+            showSuccess('Payment successful. Pay Per Invoice plan is being activated. You will receive a confirmation email shortly.');
+          } else {
+            const planName = plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice';
+            showSuccess(`Payment successful. Your ${planName} subscription is being activated. You will receive a confirmation email shortly.`);
+          }
+          await Promise.all([loadProfile(), loadSubscriptionUsage()]);
+          return;
+        }
+        
+        // Handle "active" status as success (for subscriptions)
+        const isSuccessStatus = dodoStatus === 'succeeded' || dodoStatus === 'completed' || dodoStatus === 'paid' || dodoStatus === 'active';
+        
         try {
-          console.log('Verifying payment success for session:', sessionId);
+          console.log('Verifying payment success:', { paymentId, sessionId, dodoStatus });
           const headers = await getAuthHeaders();
           
-          // Verify payment and update subscription
-          const verifyResponse = await fetch(`/api/payments/verify?payment_id=${sessionId}`, {
+          // If status is already succeeded/active from Dodo Payment, we can proceed
+          // But still call verify to update subscription in backend
+          const verifyResponse = await fetch(`/api/payments/verify?payment_id=${idToVerify}&status=${dodoStatus || 'succeeded'}`, {
             headers
           });
           
@@ -348,33 +463,75 @@ export default function ProfilePage() {
             if (verifyData.success) {
               if (setupType === 'pay_per_invoice') {
                 // Payment method setup completed
-                showSuccess('Payment method saved! Pay Per Invoice plan activated. You will be charged $0.50 per invoice automatically.');
+                showSuccess('Subscription confirmed. Pay Per Invoice plan activated. You will be charged $0.50 per invoice automatically. A confirmation email has been sent to your registered email address.');
               } else if (verifyData.plan) {
-                showSuccess(`Subscription upgraded to ${verifyData.plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice'} plan!`);
+                const planName = verifyData.plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice';
+                showSuccess(`Subscription confirmed. Your ${planName} subscription has been successfully activated. A confirmation email has been sent to your registered email address.`);
               }
               // Reload profile and subscription usage
               await Promise.all([loadProfile(), loadSubscriptionUsage()]);
+              
+              // Check if there's pending invoice form data to restore
+              const pendingInvoiceData = localStorage.getItem('pending_invoice_form');
+              if (pendingInvoiceData) {
+                // Clear the stored data
+                localStorage.removeItem('pending_invoice_form');
+                // Redirect to invoices page with flag to restore form
+                setTimeout(() => {
+                  window.location.href = '/dashboard/invoices?restore_invoice=true';
+                }, 1500);
+              }
+            }
+          } else {
+            // If verify fails but status is succeeded/active, still show success (webhook will handle it)
+            if (isSuccessStatus) {
+              console.log('Verify endpoint failed but payment status is succeeded/active - webhook will handle subscription update');
+              if (setupType === 'pay_per_invoice') {
+                showSuccess('Payment successful. Pay Per Invoice plan is being activated. You will receive a confirmation email shortly.');
+              } else {
+                const planName = plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice';
+                showSuccess(`Payment successful. Your ${planName} subscription is being activated. You will receive a confirmation email shortly.`);
+              }
+              // Reload profile and subscription usage
+              await Promise.all([loadProfile(), loadSubscriptionUsage()]);
+            } else {
+              const errorData = await verifyResponse.json().catch(() => ({}));
+              console.error('Payment verification failed:', errorData);
+              showError(errorData.error || 'Failed to verify payment. Please check your subscription status.');
             }
           }
-          
-          // Clean up URL
-          window.history.replaceState({}, '', '/dashboard/profile');
         } catch (error) {
           console.error('Error verifying payment:', error);
-          // Still reload profile in case webhook already processed it
-          await loadProfile();
+          // If status is succeeded/active, still show success
+          if (isSuccessStatus) {
+            if (setupType === 'pay_per_invoice') {
+              showSuccess('Payment successful. Pay Per Invoice plan is being activated. You will receive a confirmation email shortly.');
+            } else {
+              const planName = plan === 'monthly' ? 'Monthly' : 'Pay Per Invoice';
+              showSuccess(`Payment successful. Your ${planName} subscription is being activated. You will receive a confirmation email shortly.`);
+            }
+            await Promise.all([loadProfile(), loadSubscriptionUsage()]);
+          } else {
+            // Still reload profile in case webhook already processed it
+            await loadProfile();
+          }
+        } finally {
+          // Reset processing flag
+          isProcessingRef.current = false;
         }
-      } else if (paymentStatus === 'cancelled') {
-        showError('Payment was cancelled. Your subscription was not changed.');
-        // Clean up URL
-        window.history.replaceState({}, '', '/dashboard/profile');
+        return;
       }
+      
+      // No payment status in URL - nothing to process
+      isProcessingRef.current = false;
     };
     
-    if (user && !loading) {
-      checkPaymentSuccess();
-    }
-  }, [user, loading, getAuthHeaders, showSuccess, showError, loadProfile, loadSubscriptionUsage]);
+    // Run when user loads or URL changes
+    // Check payment status from URL parameters
+    // Guards inside prevent loops (paymentProcessedRef, isProcessingRef, lastUrlRef)
+    checkPaymentStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, loading]); // Run when user/loading changes, but guards inside prevent loops
 
   // Load data on mount - prevent infinite loop with hasLoadedData flag
   useEffect(() => {
@@ -549,8 +706,8 @@ export default function ProfilePage() {
       setIsUpdatingSubscription(true);
       const headers = await getAuthHeaders();
 
-      // For free and pay_per_invoice plans, update directly without payment
-      if (plan === 'free' || plan === 'pay_per_invoice') {
+      // For free plan, update directly without payment
+      if (plan === 'free') {
         const response = await fetch('/api/subscription', {
           method: 'PUT',
           headers: { ...headers, 'Content-Type': 'application/json' },
@@ -568,24 +725,21 @@ export default function ProfilePage() {
           setShowSubscriptionModal(false);
           
           // Show success message
-          showSuccess(`Subscription updated to ${plan === 'free' ? 'Free' : 'Pay Per Invoice'} plan`);
+          showSuccess(`Subscription updated to Free plan`);
           
           // Reload profile and subscription usage data from server
-          // This ensures we have the latest data from the database
           await Promise.all([
             loadProfile(),
             loadSubscriptionUsage()
           ]);
-          
-          // No hard reload needed - React state updates will handle UI refresh
-          // The loadProfile() call above will update the profile state, which triggers re-render
         } else {
           throw new Error('Failed to update subscription');
         }
         return;
       }
 
-      // For monthly plan, create payment checkout
+      // For pay_per_invoice and monthly plans, use checkout API
+      // This ensures payment method is collected for pay_per_invoice (production-grade flow)
       const checkoutResponse = await fetch('/api/payments/checkout', {
         method: 'POST',
         headers: {
@@ -605,12 +759,14 @@ export default function ProfilePage() {
       // Pay Per Invoice: Check if payment method setup is required
       if (plan === 'pay_per_invoice') {
         if (data.requiresPayment === false) {
-          // Payment method already saved, plan activated
+          // Payment method already saved, plan activated immediately
+          setShowSubscriptionModal(false);
           showSuccess(data.message || `Pay Per Invoice plan activated! You will be charged $0.50 per invoice automatically.`);
           await Promise.all([loadProfile(), loadSubscriptionUsage()]);
           return;
         } else if (data.paymentLink) {
           // Payment method setup required - redirect to Dodo Payment
+          // User will pay $0.06 to set up payment method, then return to profile page
           window.location.href = data.paymentLink;
           return;
         } else {

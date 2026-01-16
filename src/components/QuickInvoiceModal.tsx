@@ -496,13 +496,38 @@ export default function QuickInvoiceModal({
               console.error('QuickInvoiceModal: Error adding client:', e) 
             }
           }
-        }
-        // Set new client data for manual entry if needed
-        if (editingInvoice.clientName) {
-          setNewClient(prev => ({ ...prev, name: editingInvoice.clientName || '' }))
-        }
-        if (editingInvoice.clientEmail) {
-          setNewClient(prev => ({ ...prev, email: editingInvoice.clientEmail || '' }))
+          
+          // CRITICAL: For draft invoices, use the latest client data from the clients list
+          // This ensures that when a client is updated, draft invoices reflect those changes
+          if (editingInvoice.status === 'draft') {
+            // Find the latest client data from the clients list
+            const latestClient = clients.find(c => c.id === clientId);
+            if (latestClient) {
+              // Use the latest client data instead of the invoice's stored client data
+              setNewClient({
+                name: latestClient.name || '',
+                email: latestClient.email || '',
+                company: latestClient.company || '',
+                address: latestClient.address || ''
+              });
+            } else if (editingInvoice.client) {
+              // Fallback to invoice's client data if not in clients list yet
+              setNewClient({
+                name: editingInvoice.client.name || editingInvoice.clientName || '',
+                email: editingInvoice.client.email || editingInvoice.clientEmail || '',
+                company: editingInvoice.client.company || '',
+                address: editingInvoice.client.address || ''
+              });
+            }
+          } else {
+            // For sent/paid invoices, use the stored client data (don't update)
+            if (editingInvoice.clientName) {
+              setNewClient(prev => ({ ...prev, name: editingInvoice.clientName || '' }))
+            }
+            if (editingInvoice.clientEmail) {
+              setNewClient(prev => ({ ...prev, email: editingInvoice.clientEmail || '' }))
+            }
+          }
         }
         
         // Set invoice items (always do this regardless of clients)
@@ -661,6 +686,27 @@ export default function QuickInvoiceModal({
       }
     }
   }, [isOpen, editingInvoice])
+
+  // CRITICAL: Sync client data from clients list when editing draft invoices
+  // This ensures that when a client is updated, draft invoices reflect the latest data
+  useEffect(() => {
+    if (isOpen && editingInvoice && editingInvoice.status === 'draft' && selectedClientId) {
+      // Find the latest client data from the clients list
+      const latestClient = effectiveClients.find(c => c.id === selectedClientId);
+      
+      if (latestClient) {
+        // Update the form with the latest client data
+        // This ensures draft invoices always show the most up-to-date client information
+        setNewClient(prev => ({
+          ...prev,
+          name: latestClient.name || prev.name,
+          email: latestClient.email || prev.email,
+          company: latestClient.company || prev.company,
+          address: latestClient.address || prev.address
+        }));
+      }
+    }
+  }, [isOpen, editingInvoice, selectedClientId, effectiveClients])
 
   // Fetch premium unlock status when editing an invoice
   useEffect(() => {
@@ -1844,13 +1890,19 @@ export default function QuickInvoiceModal({
                 </div>
 
               {/* Mark as Paid Option */}
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-                <label className="flex items-center space-x-3 cursor-pointer">
+              <div className={`p-4 border ${
+                isDarkMode 
+                  ? 'border-gray-700 bg-gray-800/50' 
+                  : 'border-gray-200 bg-gray-50'
+              }`}>
+                <label className="flex items-start space-x-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={markAsPaid}
                     onChange={(e) => setMarkAsPaid(e.target.checked)}
-                    className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 cursor-pointer"
+                    className={`mt-0.5 w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 cursor-pointer ${
+                      isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white'
+                    }`}
                   />
                   <div className="flex-1">
                     <span className={`text-sm font-medium ${
@@ -3278,6 +3330,39 @@ export default function QuickInvoiceModal({
             if (!editingInvoice && user) {
               fetchSubscriptionUsage()
             }
+          }}
+          onBeforeRedirect={() => {
+            // Save form state before redirecting to payment
+            const formState = {
+              items: items.map(item => ({
+                description: item.description,
+                amount: item.amount
+              })),
+              selectedClientId,
+              newClient: {
+                name: newClient.name,
+                email: newClient.email,
+                company: newClient.company,
+                address: newClient.address
+              },
+              invoiceNumber,
+              issueDate,
+              dueDate,
+              notes,
+              discount: discount,
+              taxRate: '',
+              theme: {
+                template: theme.template,
+                primaryColor: theme.primaryColor,
+                secondaryColor: theme.secondaryColor,
+                accentColor: theme.accentColor
+              },
+              reminderSettings: reminders,
+              currentStep,
+              timestamp: Date.now()
+            }
+            localStorage.setItem('pending_invoice_form', JSON.stringify(formState))
+            console.log('💾 Form state saved to localStorage (QuickInvoiceModal)')
           }}
           currentPlan={subscriptionUsage?.plan as 'free' | 'monthly' | 'pay_per_invoice' || 'free'}
           usage={subscriptionUsage ? {

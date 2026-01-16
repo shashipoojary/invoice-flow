@@ -25,9 +25,12 @@ export async function GET(
       .select(`
         *,
         clients (
+          id,
           name,
           email,
-          company
+          company,
+          phone,
+          address
         )
       `)
       .eq('id', invoiceId)

@@ -1809,7 +1809,15 @@ function InvoicesContent(): React.JSX.Element {
       )}
 
       {/* View Invoice Modal */}
-      {showViewInvoice && selectedInvoice && (
+      {showViewInvoice && selectedInvoice && (() => {
+        // CRITICAL: For draft invoices, use the latest client data from the clients list
+        // For sent/paid invoices, use the stored client data (as it was when sent)
+        const isDraft = selectedInvoice.status === 'draft';
+        const clientId = selectedInvoice.clientId || selectedInvoice.client_id;
+        const latestClient = isDraft && clientId ? clients.find(c => c.id === clientId) : null;
+        const displayClient = latestClient || selectedInvoice.client || null;
+        
+        return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
           <div className="rounded-lg sm:rounded-lg p-2 sm:p-4 max-w-6xl w-full shadow-2xl border max-h-[95vh] sm:max-h-[90vh] overflow-hidden bg-white border-gray-200 flex flex-col">
             <div className="flex items-center justify-between mb-3 sm:mb-4 flex-shrink-0">
@@ -2037,10 +2045,10 @@ function InvoicesContent(): React.JSX.Element {
               <div className={`p-3 sm:p-6 border-b ${'border-gray-200'}`}>
                 <h3 className={`text-sm sm:text-base font-semibold mb-2 ${'text-gray-900'}`}>Bill To</h3>
                 <div className="text-xs sm:text-sm">
-                  <p className={`font-medium ${'text-gray-900'}`}>{selectedInvoice.client?.name || 'N/A'}</p>
-                  <p className={'text-gray-600'}>{selectedInvoice.client?.email || 'N/A'}</p>
-                  {selectedInvoice.client?.phone && <p className={'text-gray-600'}>{selectedInvoice.client.phone}</p>}
-                  {selectedInvoice.client?.address && <p className={'text-gray-600'}>{selectedInvoice.client.address}</p>}
+                  <p className={`font-medium ${'text-gray-900'}`}>{displayClient?.name || 'N/A'}</p>
+                  <p className={'text-gray-600'}>{displayClient?.email || 'N/A'}</p>
+                  {displayClient?.phone && <p className={'text-gray-600'}>{displayClient.phone}</p>}
+                  {displayClient?.address && <p className={'text-gray-600'}>{displayClient.address}</p>}
                 </div>
               </div>
               
@@ -2267,7 +2275,8 @@ function InvoicesContent(): React.JSX.Element {
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
 
 
 

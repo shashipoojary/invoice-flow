@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getDodoPaymentClient } from '@/lib/dodo-payment';
+import { Resend } from 'resend';
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 /**
  * Dodo Payment Webhook Handler
@@ -150,6 +153,227 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       error: error.message || 'Webhook processing failed' 
     }, { status: 500 });
+  }
+}
+
+/**
+ * Send subscription confirmation email
+ * Exported so it can be called from verify endpoint if needed
+ */
+export async function sendSubscriptionConfirmationEmail(userId: string, plan: string, paymentId?: string) {
+  console.log('='.repeat(80));
+  console.log('📧 sendSubscriptionConfirmationEmail CALLED');
+  console.log('   userId:', userId);
+  console.log('   plan:', plan);
+  console.log('   paymentId:', paymentId || 'N/A');
+  console.log('   timestamp:', new Date().toISOString());
+  console.log('='.repeat(80));
+  
+  if (!resend) {
+    console.error('❌ RESEND NOT CONFIGURED');
+    console.error('   RESEND_API_KEY is missing or invalid');
+    console.error('   Check your environment variables (.env.local or Vercel)');
+    console.error('   RESEND_API_KEY is required to send emails');
+    console.log('='.repeat(80));
+    return;
+  }
+  
+  console.log('✅ Resend client initialized successfully');
+  console.log('   RESEND_API_KEY exists:', !!process.env.RESEND_API_KEY);
+  console.log('   RESEND_API_KEY length:', process.env.RESEND_API_KEY?.length || 0);
+
+  try {
+    // Get user email
+    let userEmail = '';
+    let userName = 'User';
+    
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('email, name')
+      .eq('id', userId)
+      .single();
+
+    if (userError || !userData?.email) {
+      // Try to get from auth
+      try {
+        const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId);
+        if (!authUser?.user?.email) {
+          console.error('Could not find user email for subscription confirmation');
+          return;
+        }
+        userEmail = authUser.user.email;
+        userName = authUser.user.user_metadata?.name || authUser.user.user_metadata?.full_name || 'User';
+      } catch (authError) {
+        console.error('Error fetching user from auth:', authError);
+        return;
+      }
+    } else {
+      userEmail = userData.email;
+      userName = userData.name || 'User';
+    }
+    const planName = plan === 'monthly' ? 'Monthly Subscription' : plan === 'pay_per_invoice' ? 'Pay Per Invoice Setup' : plan;
+    const planAmount = plan === 'monthly' ? '$9.00' : plan === 'pay_per_invoice' ? '$0.06' : '';
+    
+    // Get base URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://invoiceflow.com';
+    const currentDate = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: '2-digit' });
+
+    // Create email template matching Dodo Payment success page design (square corners, clean design)
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Payment Successful</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+          </style>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
+            <tr>
+              <td align="center">
+                <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; border-radius: 0;">
+                  <!-- Header with Brand -->
+                  <tr>
+                    <td style="padding: 24px 32px 20px 32px; border-bottom: 1px dashed #e0e0e0;">
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td>
+                            <div style="display: inline-block; background-color: #FF6B9D; padding: 6px 12px; border-radius: 4px; margin-bottom: 16px;">
+                              <span style="color: #ffffff; font-weight: 600; font-size: 14px;">F</span>
+                              <span style="color: #ffffff; font-weight: 500; font-size: 14px; margin-left: 4px;">Flowinvoicer</span>
+                            </div>
+                            <h1 style="margin: 0; color: #000000; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">Payment Successful</h1>
+                            <p style="margin: 12px 0 0 0; color: #666666; font-size: 14px; line-height: 1.5;">
+                              Thank you for your order. We've sent an email with the receipt to your inbox!
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  
+                  <!-- Status and Date -->
+                  <tr>
+                    <td style="padding: 20px 32px; border-bottom: 1px dashed #e0e0e0;">
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="width: 50%;">
+                            <span style="color: #666666; font-size: 14px;">Status:</span>
+                            <span style="color: #22c55e; font-size: 16px; font-weight: 600; margin-left: 8px;">✓ Successful</span>
+                          </td>
+                          <td align="right" style="width: 50%;">
+                            <span style="color: #666666; font-size: 14px;">Date:</span>
+                            <span style="color: #000000; font-size: 14px; font-weight: 500; margin-left: 8px;">${currentDate}</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  
+                  <!-- Payment Details -->
+                  <tr>
+                    <td style="padding: 20px 32px; border-bottom: 1px dashed #e0e0e0;">
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="width: 60px; vertical-align: top;">
+                            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%); border-radius: 8px; display: inline-block;"></div>
+                          </td>
+                          <td style="padding-left: 16px; vertical-align: top;">
+                            <div style="color: #000000; font-size: 16px; font-weight: 600; margin-bottom: 4px;">${planName}</div>
+                            <div style="color: #666666; font-size: 14px;">Subscription activation</div>
+                          </td>
+                          <td align="right" style="vertical-align: top;">
+                            <div style="color: #000000; font-size: 16px; font-weight: 600;">${planAmount}</div>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  
+                  <!-- Summary -->
+                  <tr>
+                    <td style="padding: 20px 32px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" style="border-top: 1px solid #e0e0e0; padding-top: 16px;">
+                        <tr>
+                          <td style="padding: 8px 0;">
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                              <tr>
+                                <td style="color: #666666; font-size: 14px;">Subtotal</td>
+                                <td align="right" style="color: #000000; font-size: 14px; font-weight: 500;">${planAmount}</td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 8px 0; border-top: 1px solid #e0e0e0; padding-top: 16px;">
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                              <tr>
+                                <td style="color: #000000; font-size: 16px; font-weight: 700;">Total</td>
+                                <td align="right" style="color: #000000; font-size: 18px; font-weight: 700;">${planAmount}</td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  
+                  <!-- CTA Button -->
+                  <tr>
+                    <td style="padding: 0 32px 32px 32px;">
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td align="center">
+                            <a href="${baseUrl}/dashboard" 
+                               style="display: inline-block; background-color: #000000; color: #ffffff; text-decoration: none; padding: 14px 32px; font-weight: 600; font-size: 14px; border-radius: 0; letter-spacing: 0.5px;">
+                              Go to Dashboard
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td style="padding: 24px 32px; background-color: #fafafa; border-top: 1px solid #e0e0e0;">
+                      <p style="margin: 0 0 8px 0; color: #666666; font-size: 12px; line-height: 1.5;">
+                        If you have any questions, feel free to reach out to our support team.
+                      </p>
+                      <p style="margin: 0; color: #999999; font-size: 11px;">
+                        This is an automated confirmation email. Please do not reply to this email.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `;
+
+    // Send email
+    console.log(`📧 Attempting to send subscription confirmation email to ${userEmail} for ${planName} plan`);
+    const { data: emailData, error: emailError } = await resend.emails.send({
+      from: 'FlowInvoicer <onboarding@resend.dev>',
+      to: userEmail,
+      subject: `Payment Successful - ${planName}`,
+      html: emailHtml,
+    });
+
+    if (emailError) {
+      console.error('❌ Error sending subscription confirmation email:', emailError);
+      console.error('Email error details:', JSON.stringify(emailError, null, 2));
+    } else {
+      console.log(`✅ Subscription confirmation email sent successfully to ${userEmail}`);
+      console.log('Email ID:', emailData?.id || 'N/A');
+    }
+  } catch (error) {
+    console.error('Error in sendSubscriptionConfirmationEmail:', error);
   }
 }
 
@@ -379,11 +603,36 @@ async function handlePaymentSuccess(paymentData: any) {
 
     // Update user subscription (only for subscription upgrades, not per-invoice fees)
     if (paymentType === 'subscription_upgrade' || paymentType === 'payment_method_setup') {
+      const finalPlan = paymentType === 'payment_method_setup' ? 'pay_per_invoice' : (plan || 'monthly');
+      
       // For payment_method_setup, also activate the plan
       if (paymentType === 'payment_method_setup') {
         await updateUserSubscription(userId, 'pay_per_invoice', paymentId);
       } else {
         await updateUserSubscription(userId, plan || 'monthly', paymentId);
+      }
+      
+      // Send subscription confirmation email
+      console.log('='.repeat(80));
+      console.log('📧 WEBHOOK: Preparing to send subscription confirmation email');
+      console.log('   userId:', userId);
+      console.log('   finalPlan:', finalPlan);
+      console.log('   paymentId:', paymentId || 'N/A');
+      console.log('   paymentType:', paymentType);
+      console.log('='.repeat(80));
+      
+      try {
+        await sendSubscriptionConfirmationEmail(userId, finalPlan, paymentId);
+        console.log('✅ WEBHOOK: Email sending process completed');
+      } catch (emailError) {
+        console.error('='.repeat(80));
+        console.error('❌ WEBHOOK: Error in subscription confirmation email process');
+        console.error('   Error:', emailError);
+        console.error('   Error type:', emailError instanceof Error ? emailError.constructor.name : typeof emailError);
+        console.error('   Error message:', emailError instanceof Error ? emailError.message : String(emailError));
+        console.error('   Error stack:', emailError instanceof Error ? emailError.stack : 'No stack trace');
+        console.log('='.repeat(80));
+        // Don't fail the webhook if email fails
       }
     }
     
