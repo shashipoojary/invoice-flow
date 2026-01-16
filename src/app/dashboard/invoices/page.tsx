@@ -2002,7 +2002,7 @@ function InvoicesContent(): React.JSX.Element {
                 </div>
                 <div className="flex items-center space-x-2">
         <div 
-          className={`px-3 py-1 text-xs font-medium rounded-full border`}
+          className={`px-3 py-1 text-xs font-medium border`}
           style={((selectedInvoice.type || 'detailed') === 'fast' 
             ? { backgroundColor: '#dbeafe', color: '#1d4ed8', borderColor: '#93c5fd' }
             : { backgroundColor: '#e0e7ff', color: '#3730a3', borderColor: '#a5b4fc' }
@@ -2010,31 +2010,78 @@ function InvoicesContent(): React.JSX.Element {
         >
                     {selectedInvoice.type === 'fast' ? 'Fast Invoice' : 'Detailed Invoice'}
                   </div>
-                  <div className="bg-orange-500 text-white px-3 py-2 rounded text-sm sm:text-base font-bold">
-                    Invoice
-                  </div>
-                </div>
+                  <div className="bg-orange-500 text-white px-3 py-2 text-sm sm:text-base font-bold border border-orange-600">
+                     Invoice
+                   </div>
+                 </div>
               </div>
               
               {/* Invoice Details */}
               <div className={`p-3 sm:p-6 border-b ${'border-gray-200'}`}>
                 <h3 className={`text-sm sm:text-base font-semibold mb-2 ${'text-gray-900'}`}>Invoice Details</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 text-xs sm:text-sm">
                   <div>
-                    <span className={`font-medium ${'text-gray-600'}`}>Invoice Number:</span>
-                    <p className={'text-gray-600'}>#{selectedInvoice.invoiceNumber || 'N/A'}</p>
+                    <span className={`font-medium ${'text-gray-700'}`}>Invoice Number:</span>
+                    <p className={'text-gray-700'}>#{selectedInvoice.invoiceNumber || 'N/A'}</p>
                   </div>
                   <div>
-                    <span className={`font-medium ${'text-gray-600'}`}>Date:</span>
-                    <p className={'text-gray-600'}>
+                    <span className={`font-medium ${'text-gray-700'}`}>Status:</span>
+                    <p className={'text-gray-700'}>
+                      {(() => {
+                        // Calculate actual status based on due date
+                        const dueDateStatus = getDueDateStatus(
+                          selectedInvoice.dueDate || '', 
+                          selectedInvoice.status, 
+                          selectedInvoice.paymentTerms,
+                          (selectedInvoice as any).updatedAt
+                        );
+                        
+                        // Determine display status: prioritize due date status over invoice status for sent/pending invoices
+                        let displayStatus: string = selectedInvoice.status;
+                        let statusClass = '';
+                        
+                        if (selectedInvoice.status === 'paid') {
+                          displayStatus = 'Paid';
+                          statusClass = 'bg-green-100 text-green-800 border-green-300';
+                        } else if (selectedInvoice.status === 'draft') {
+                          displayStatus = 'Draft';
+                          statusClass = 'bg-gray-100 text-gray-800 border-gray-300';
+                        } else {
+                          // For sent/pending invoices, use due date status
+                          if (dueDateStatus.status === 'overdue') {
+                            displayStatus = 'Overdue';
+                            statusClass = 'bg-red-100 text-red-800 border-red-300';
+                          } else if (dueDateStatus.status === 'due-today') {
+                            displayStatus = 'Due Today';
+                            statusClass = 'bg-amber-100 text-amber-800 border-amber-300';
+                          } else if (selectedInvoice.status === 'sent') {
+                            displayStatus = 'Sent';
+                            statusClass = 'bg-blue-100 text-blue-800 border-blue-300';
+                          } else {
+                            displayStatus = selectedInvoice.status ? selectedInvoice.status.charAt(0).toUpperCase() + selectedInvoice.status.slice(1) : 'Pending';
+                            statusClass = 'bg-yellow-100 text-yellow-800 border-yellow-300';
+                          }
+                        }
+                        
+                        return (
+                          <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium border ${statusClass}`}>
+                            {displayStatus}
+                          </span>
+                        );
+                      })()}
+                    </p>
+                  </div>
+                  <div>
+                    <span className={`font-medium ${'text-gray-700'}`}>Date:</span>
+                    <p className={'text-gray-700'}>
                       {(selectedInvoice.issueDate || selectedInvoice.issue_date) 
                         ? new Date(selectedInvoice.issueDate || selectedInvoice.issue_date || '').toLocaleDateString() 
                         : (selectedInvoice.createdAt ? new Date(selectedInvoice.createdAt).toLocaleDateString() : 'N/A')}
                     </p>
                   </div>
                   <div>
-                    <span className={`font-medium ${'text-gray-600'}`}>Due Date:</span>
-                    <p className={'text-gray-600'}>
+                    <span className={`font-medium ${'text-gray-700'}`}>Due Date:</span>
+                    <p className={'text-gray-700'}>
                       {selectedInvoice.dueDate ? new Date(selectedInvoice.dueDate).toLocaleDateString() : 'N/A'}
                     </p>
                   </div>
@@ -2093,27 +2140,50 @@ function InvoicesContent(): React.JSX.Element {
               <div className="p-3 sm:p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                   <div className="w-full sm:w-auto">
-                    <p className={`text-xs sm:text-sm ${'text-gray-600'}`}>Thank you for your business!</p>
+                    <p className={`text-xs sm:text-sm ${'text-gray-700'}`}>Thank you for your business!</p>
                   </div>
                   <div className="w-full sm:w-64">
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs sm:text-sm">
-                        <span className={'text-gray-600'}>Subtotal:</span>
-                        <span className={'text-gray-900'}>${(selectedInvoice.subtotal || 0).toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-xs sm:text-sm">
-                        <span className={'text-gray-600'}>Discount:</span>
-                        <span className={'text-gray-900'}>${(selectedInvoice.discount || 0).toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-xs sm:text-sm">
-                        <span className={'text-gray-600'}>Tax ({(selectedInvoice.taxRate || 0) * 100}%):</span>
-                        <span className={'text-gray-900'}>${(selectedInvoice.taxAmount || 0).toFixed(2)}</span>
-                      </div>
-                      <div className={`flex justify-between text-xs sm:text-sm font-bold border-t pt-1 ${'border-gray-200'}`}>
-                        <span className={'text-gray-900'}>Total:</span>
-                        <span className={'text-gray-900'}>${(selectedInvoice.total || 0).toFixed(2)}</span>
-                      </div>
-                    </div>
+                    {(() => {
+                      const paymentData = paymentDataMap[selectedInvoice.id] || null;
+                      const dueCharges = calculateDueCharges(selectedInvoice, paymentData);
+                      return (
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-xs sm:text-sm">
+                            <span className="text-gray-700">Subtotal:</span>
+                            <span className="text-gray-900">${(selectedInvoice.subtotal || 0).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-xs sm:text-sm">
+                            <span className="text-gray-700">Discount:</span>
+                            <span className="text-gray-900">${(selectedInvoice.discount || 0).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-xs sm:text-sm">
+                            <span className="text-gray-700">Tax ({(selectedInvoice.taxRate || 0) * 100}%):</span>
+                            <span className="text-gray-900">${(selectedInvoice.taxAmount || 0).toFixed(2)}</span>
+                          </div>
+                          {dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 ? (
+                            <>
+                              <div className="flex justify-between text-xs sm:text-sm border-t pt-1 border-gray-200">
+                                <span className="text-gray-700">Total:</span>
+                                <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between text-xs sm:text-sm">
+                                <span className="text-red-700">Late Fees:</span>
+                                <span className="text-red-700 font-semibold">${dueCharges.lateFeeAmount.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1 border-gray-200">
+                                <span className="text-red-900">Total Payable:</span>
+                                <span className="text-red-900">${dueCharges.totalPayable.toFixed(2)}</span>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1 border-gray-200">
+                              <span className="text-gray-900">Total:</span>
+                              <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
