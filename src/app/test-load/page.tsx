@@ -11,6 +11,7 @@ export default function LoadTestPage() {
   const [count, setCount] = useState(50);
   const [email, setEmail] = useState('');
   const [sendImmediately, setSendImmediately] = useState(true);
+  const [invoiceType, setInvoiceType] = useState<'fast' | 'detailed'>('fast');
   const [stopped, setStopped] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -60,6 +61,7 @@ export default function LoadTestPage() {
           email,
           sendImmediately,
           bypassLimits: true, // For testing
+          invoiceType, // 'fast' or 'detailed'
         }),
         signal: abortControllerRef.current.signal, // Add abort signal
       });
@@ -132,6 +134,36 @@ export default function LoadTestPage() {
                 placeholder="test@example.com"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Invoice Type
+              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="invoiceType"
+                    value="fast"
+                    checked={invoiceType === 'fast'}
+                    onChange={(e) => setInvoiceType('fast')}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Fast Invoice (1 item, simple)</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="invoiceType"
+                    value="detailed"
+                    checked={invoiceType === 'detailed'}
+                    onChange={(e) => setInvoiceType('detailed')}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Detailed Invoice (3-5 items, payment terms, late fees)</span>
+                </label>
+              </div>
             </div>
 
             <div className="flex items-center">
@@ -207,6 +239,10 @@ export default function LoadTestPage() {
                   ) : (
                     <span className="text-yellow-600">⚠️ No (using sync mode)</span>
                   )}
+                </div>
+                <div>
+                  <span className="font-medium">Invoice Type:</span>{' '}
+                  <span className="text-blue-600 capitalize">{results.summary?.invoiceType || 'fast'}</span>
                 </div>
                 {results.errors && results.errors.length > 0 && (
                   <div className="mt-3">

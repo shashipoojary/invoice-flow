@@ -79,7 +79,8 @@ export async function POST(request: NextRequest) {
       count = 10,
       email = user.email || 'test@example.com',
       sendImmediately = true,
-      bypassLimits = false
+      bypassLimits = false,
+      invoiceType = 'fast' // 'fast' or 'detailed'
     } = body;
 
     // Validate count
@@ -160,27 +161,88 @@ export async function POST(request: NextRequest) {
     // Create invoices sequentially to avoid overwhelming the system
     for (let i = 0; i < count; i++) {
       try {
-        const invoiceNumber = `TEST-${Date.now()}-${i + 1}`;
+        const invoiceNumber = `TEST-${invoiceType.toUpperCase()}-${Date.now()}-${i + 1}`;
         const dueDate = new Date();
         dueDate.setDate(dueDate.getDate() + 30); // Due in 30 days
+        const issueDate = new Date();
+        issueDate.setDate(issueDate.getDate() - 5); // Issue date 5 days ago
+
+        // Calculate totals based on invoice type
+        let subtotal = 0;
+        let items: Array<{ description: string; rate: number; line_total: number }> = [];
+
+        if (invoiceType === 'detailed') {
+          // Detailed invoice: Multiple items (3-5 items per invoice)
+          const itemCount = 3 + (i % 3); // 3, 4, or 5 items
+          for (let j = 0; j < itemCount; j++) {
+            const rate = 50 + (j * 25) + (i * 10);
+            const lineTotal = rate;
+            subtotal += lineTotal;
+            items.push({
+              description: `Detailed Service ${j + 1} - Invoice ${i + 1}`,
+              rate: rate,
+              line_total: lineTotal,
+            });
+          }
+        } else {
+          // Fast invoice: Single item
+          const rate = 100 + (i * 10);
+          subtotal = rate;
+          items.push({
+            description: `Test Item ${i + 1}`,
+            rate: rate,
+            line_total: rate,
+          });
+        }
+
+        const discount = invoiceType === 'detailed' ? Math.floor(subtotal * 0.1) : 0; // 10% discount for detailed
+        const tax = invoiceType === 'detailed' ? Math.floor((subtotal - discount) * 0.08) : 0; // 8% tax for detailed
+        const total = subtotal - discount + tax;
+
+        // Prepare invoice data
+        const invoiceData: any = {
+          user_id: user.id,
+          client_id: clientId,
+          invoice_number: invoiceNumber,
+          public_token: uuidv4(),
+          currency: 'USD',
+          subtotal: subtotal,
+          tax: tax,
+          discount: discount,
+          total: total,
+          due_date: dueDate.toISOString().split('T')[0],
+          issue_date: issueDate.toISOString().split('T')[0],
+          status: sendImmediately ? 'draft' : 'draft',
+          type: invoiceType,
+          notes: invoiceType === 'detailed' ? `Test detailed invoice ${i + 1} with multiple items, payment terms, and late fees.` : `Test fast invoice ${i + 1}`,
+        };
+
+        // Add detailed invoice features
+        if (invoiceType === 'detailed') {
+          invoiceData.payment_terms = JSON.stringify({
+            enabled: true,
+            terms: i % 2 === 0 ? 'Net 30' : 'Due on Receipt',
+          });
+          invoiceData.late_fees = JSON.stringify({
+            enabled: true,
+            type: 'fixed',
+            amount: 25 + (i * 5),
+            gracePeriod: 7,
+          });
+          invoiceData.reminder_settings = JSON.stringify({
+            enabled: true,
+            useSystemDefaults: true,
+            rules: [],
+          });
+          invoiceData.theme = JSON.stringify({
+            template: 1, // Template 1 (free plan)
+          });
+        }
 
         // Create invoice
         const { data: invoice, error: invoiceError } = await supabaseAdmin
           .from('invoices')
-          .insert({
-            user_id: user.id,
-            client_id: clientId,
-            invoice_number: invoiceNumber,
-            public_token: uuidv4(),
-            currency: 'USD',
-            subtotal: 100 + (i * 10), // Varying amounts
-            tax: 0,
-            discount: 0,
-            total: 100 + (i * 10),
-            due_date: dueDate.toISOString().split('T')[0],
-            status: sendImmediately ? 'draft' : 'draft', // Will be updated to 'sent' when sent
-            issue_date: new Date().toISOString().split('T')[0],
-          })
+          .insert(invoiceData)
           .select('id, invoice_number')
           .single();
 
@@ -188,8 +250,6 @@ export async function POST(request: NextRequest) {
           // Check if it's a subscription limit error
           if (invoiceError.message?.includes('Subscription limit reached')) {
             if (bypassLimits) {
-              // For testing, we could try to delete old test invoices, but that's complex
-              // Instead, just skip and continue
               console.log(`⚠️ Subscription limit reached at invoice ${i + 1}, skipping...`);
               results.errors.push(`Invoice ${i + 1}: Subscription limit reached`);
               continue;
@@ -206,14 +266,16 @@ export async function POST(request: NextRequest) {
         }
 
         // Create invoice items
+        const invoiceItems = items.map(item => ({
+          invoice_id: invoice.id,
+          description: item.description,
+          rate: item.rate,
+          line_total: item.line_total,
+        }));
+
         const { error: itemsError } = await supabaseAdmin
           .from('invoice_items')
-          .insert({
-            invoice_id: invoice.id,
-            description: `Test Item ${i + 1}`,
-            rate: 100 + (i * 10),
-            line_total: 100 + (i * 10),
-          });
+          .insert(invoiceItems);
 
         if (itemsError) {
           // Rollback invoice
@@ -276,6 +338,7 @@ export async function POST(request: NextRequest) {
         failed: results.failed,
         duration: `${duration}s`,
         queueEnabled: process.env.ENABLE_ASYNC_QUEUE === 'true',
+        invoiceType: invoiceType,
       },
       invoiceIds: results.invoiceIds,
       errors: results.errors.length > 0 ? results.errors : undefined,
