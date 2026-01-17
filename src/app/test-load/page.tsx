@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useData } from '@/contexts/DataContext';
 import { supabase } from '@/lib/supabase';
 
 export default function LoadTestPage() {
-  const { refreshInvoices } = useData();
+  // Note: refreshInvoices is optional - test page works without DataProvider
+  // If you need to refresh invoices after test, navigate to dashboard
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any>(null);
   const [count, setCount] = useState(50);
@@ -53,10 +53,8 @@ export default function LoadTestPage() {
 
       if (response.ok) {
         setResults(data);
-        // Refresh invoices list
-        if (refreshInvoices) {
-          setTimeout(() => refreshInvoices(), 2000);
-        }
+        // Note: Invoice list will refresh when you navigate to dashboard
+        // No need to refresh here since test-load page doesn't display invoices
       } else {
         alert(`Error: ${data.error || 'Unknown error'}`);
         setResults(data);
