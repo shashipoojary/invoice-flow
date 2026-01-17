@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 
 export default function LoadTestPage() {
@@ -11,6 +11,16 @@ export default function LoadTestPage() {
   const [count, setCount] = useState(50);
   const [email, setEmail] = useState('');
   const [sendImmediately, setSendImmediately] = useState(true);
+  const [stopped, setStopped] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const stopLoadTest = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      setStopped(true);
+      setLoading(false);
+    }
+  };
 
   const runLoadTest = async () => {
     if (!email || !email.includes('@')) {
@@ -25,6 +35,10 @@ export default function LoadTestPage() {
 
     setLoading(true);
     setResults(null);
+    setStopped(false);
+    
+    // Create new AbortController for this request
+    abortControllerRef.current = new AbortController();
 
     try {
       // Get auth token
@@ -47,6 +61,7 @@ export default function LoadTestPage() {
           sendImmediately,
           bypassLimits: true, // For testing
         }),
+        signal: abortControllerRef.current.signal, // Add abort signal
       });
 
       const data = await response.json();
@@ -59,11 +74,27 @@ export default function LoadTestPage() {
         alert(`Error: ${data.error || 'Unknown error'}`);
         setResults(data);
       }
-    } catch (error) {
-      console.error('Load test error:', error);
-      alert(`Failed to run load test: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } catch (error: any) {
+      // Check if error is from abort
+      if (error?.name === 'AbortError' || abortControllerRef.current?.signal.aborted) {
+        setResults({
+          summary: {
+            requested: count,
+            created: 0,
+            sent: 0,
+            failed: 0,
+            duration: 'Stopped',
+            stopped: true,
+          },
+          message: 'Load test stopped by user',
+        });
+      } else {
+        console.error('Load test error:', error);
+        alert(`Failed to run load test: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     } finally {
       setLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -116,13 +147,23 @@ export default function LoadTestPage() {
               </label>
             </div>
 
-            <button
-              onClick={runLoadTest}
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Running Load Test...' : `Create ${count} Invoices`}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={runLoadTest}
+                disabled={loading}
+                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Running Load Test...' : `Create ${count} Invoices`}
+              </button>
+              {loading && (
+                <button
+                  onClick={stopLoadTest}
+                  className="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 font-medium"
+                >
+                  ⏹ Stop
+                </button>
+              )}
+            </div>
           </div>
 
           {results && (
@@ -150,7 +191,15 @@ export default function LoadTestPage() {
                 )}
                 <div>
                   <span className="font-medium">Duration:</span> {results.summary?.duration}
+                  {results.summary?.stopped && (
+                    <span className="ml-2 text-red-600 font-semibold">(Stopped)</span>
+                  )}
                 </div>
+                {results.message && (
+                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                    {results.message}
+                  </div>
+                )}
                 <div>
                   <span className="font-medium">Queue Enabled:</span>{' '}
                   {results.summary?.queueEnabled ? (
