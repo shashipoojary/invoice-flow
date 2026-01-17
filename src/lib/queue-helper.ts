@@ -48,7 +48,19 @@ export async function enqueueBackgroundJob(
   }
 
   // Build the queue handler URL
+  // IMPORTANT: QStash cannot reach localhost - skip queue in local development
   const baseUrl = getBaseUrl();
+  
+  // Skip queue if running on localhost (QStash can't reach it)
+  if (baseUrl.includes('localhost') || baseUrl.includes('127.0.0.1')) {
+    console.log('⚠️ Queue skipped: QStash cannot reach localhost. Using sync mode.');
+    return {
+      queued: false,
+      fallbackToSync: true,
+      error: 'Queue not available for localhost - QStash requires public URL',
+    };
+  }
+  
   const queueUrl = `${baseUrl}/api/queue/${type}`;
 
   // Enqueue job
