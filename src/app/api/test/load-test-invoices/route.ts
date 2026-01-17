@@ -32,17 +32,21 @@ export async function POST(request: NextRequest) {
     const validSecret = process.env.TEST_SECRET_TOKEN;
     
     // Check ENABLE_LOAD_TEST (case-insensitive, trimmed)
+    // Also check VERCEL_ENV as fallback (Vercel sets this automatically)
     const enableLoadTestRaw = process.env.ENABLE_LOAD_TEST;
+    const vercelEnv = process.env.VERCEL_ENV; // 'production', 'preview', or 'development'
     const enableInProduction = enableLoadTestRaw?.toLowerCase().trim() === 'true';
     
     // Debug logging (only in production to help troubleshoot)
     if (!isDevelopment) {
       console.log('🔍 Load Test Debug:', {
         NODE_ENV: process.env.NODE_ENV,
+        VERCEL_ENV: vercelEnv,
         ENABLE_LOAD_TEST: enableLoadTestRaw,
         enableInProduction,
         hasSecretToken: !!secretToken,
         hasValidSecret: !!validSecret,
+        allEnvKeys: Object.keys(process.env).filter(k => k.includes('LOAD') || k.includes('TEST')).join(', '),
       });
     }
     
@@ -53,11 +57,19 @@ export async function POST(request: NextRequest) {
     if (!isDevelopment && !enableInProduction && (!secretToken || secretToken !== validSecret)) {
       return NextResponse.json({ 
         error: 'Load testing only allowed in development or with valid secret token',
-        hint: `Set ENABLE_LOAD_TEST=true in Vercel environment variables (Production environment) and redeploy. Current value: "${enableLoadTestRaw || 'not set'}"`,
+        hint: `Set ENABLE_LOAD_TEST=true in Vercel environment variables (Production environment) and redeploy. Current value: "${enableLoadTestRaw || 'not set'}". VERCEL_ENV: "${vercelEnv || 'not set'}"`,
         debug: !isDevelopment ? {
           NODE_ENV: process.env.NODE_ENV,
+          VERCEL_ENV: vercelEnv || 'not set',
           ENABLE_LOAD_TEST: enableLoadTestRaw || 'not set',
-          enableInProduction: false
+          enableInProduction: false,
+          troubleshooting: [
+            '1. Go to Vercel Dashboard → Settings → Environment Variables',
+            '2. Add ENABLE_LOAD_TEST with value "true"',
+            '3. Make sure "Production" environment is selected (not just Preview/Development)',
+            '4. Click "Save" and then "Redeploy" your latest deployment',
+            '5. Wait for deployment to complete before testing again'
+          ]
         } : undefined
       }, { status: 403 });
     }
