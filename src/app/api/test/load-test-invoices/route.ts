@@ -30,11 +30,16 @@ export async function POST(request: NextRequest) {
     const isDevelopment = process.env.NODE_ENV === 'development';
     const secretToken = request.headers.get('x-test-secret');
     const validSecret = process.env.TEST_SECRET_TOKEN;
+    const enableInProduction = process.env.ENABLE_LOAD_TEST === 'true';
     
-    if (!isDevelopment && (!secretToken || secretToken !== validSecret)) {
+    // Allow if:
+    // 1. Development mode, OR
+    // 2. ENABLE_LOAD_TEST=true is set (for production testing), OR
+    // 3. Valid secret token is provided
+    if (!isDevelopment && !enableInProduction && (!secretToken || secretToken !== validSecret)) {
       return NextResponse.json({ 
         error: 'Load testing only allowed in development or with valid secret token',
-        hint: 'Set TEST_SECRET_TOKEN in environment variables'
+        hint: 'Set ENABLE_LOAD_TEST=true in Vercel environment variables to enable in production, or set TEST_SECRET_TOKEN and pass it as x-test-secret header'
       }, { status: 403 });
     }
 
