@@ -1,9 +1,12 @@
--- Robust Free Plan Restrictions
--- This migration makes all free plan restrictions more robust and production-ready
+-- =====================================================
+-- SUBSCRIPTION LIMITS ENFORCEMENT
+-- =====================================================
+-- Database-level subscription limit enforcement
+-- This ensures subscription limits cannot be bypassed even if API checks are skipped
 
--- ============================================
--- IMPROVE INVOICE LIMIT TRIGGER
--- ============================================
+-- =====================================================
+-- 1. INVOICE LIMIT FUNCTION & TRIGGER
+-- =====================================================
 CREATE OR REPLACE FUNCTION check_subscription_limit()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -57,9 +60,9 @@ CREATE TRIGGER enforce_subscription_limit_trigger
   FOR EACH ROW
   EXECUTE FUNCTION check_subscription_limit();
 
--- ============================================
--- IMPROVE CLIENT LIMIT TRIGGER
--- ============================================
+-- =====================================================
+-- 2. CLIENT LIMIT FUNCTION & TRIGGER
+-- =====================================================
 CREATE OR REPLACE FUNCTION check_client_limit()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -102,9 +105,9 @@ CREATE TRIGGER enforce_client_limit_trigger
   FOR EACH ROW
   EXECUTE FUNCTION check_client_limit();
 
--- ============================================
--- IMPROVE ESTIMATE LIMIT TRIGGER
--- ============================================
+-- =====================================================
+-- 3. ESTIMATE LIMIT FUNCTION & TRIGGER
+-- =====================================================
 CREATE OR REPLACE FUNCTION check_estimate_limit()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -147,9 +150,9 @@ CREATE TRIGGER enforce_estimate_limit_trigger
   FOR EACH ROW
   EXECUTE FUNCTION check_estimate_limit();
 
--- ============================================
--- IMPROVE REMINDER LIMIT FUNCTION
--- ============================================
+-- =====================================================
+-- 4. REMINDER LIMIT FUNCTION
+-- =====================================================
 CREATE OR REPLACE FUNCTION check_reminder_limit(p_user_id uuid)
 RETURNS boolean AS $$
 DECLARE
@@ -194,9 +197,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- ============================================
--- COMMENTS FOR DOCUMENTATION
--- ============================================
+-- =====================================================
+-- 5. COMMENTS FOR DOCUMENTATION
+-- =====================================================
 COMMENT ON FUNCTION check_subscription_limit() IS 
   'Enforces subscription limits at database level. Free plan users are limited to 5 invoices per month. This cannot be bypassed by API calls. Uses UTC for consistent month boundaries.';
 

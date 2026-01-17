@@ -48,6 +48,7 @@ function EstimatesContent(): React.JSX.Element {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
   const [filterAppliedManually, setFilterAppliedManually] = useState(false);
+  const [sortBy, setSortBy] = useState<string>('');
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [loadingActions, setLoadingActions] = useState<{[key: string]: boolean}>({});
   const [selectedEstimate, setSelectedEstimate] = useState<Estimate | null>(null);
@@ -170,6 +171,39 @@ function EstimatesContent(): React.JSX.Element {
 
     return filtered;
   }, [estimates, debouncedSearchQuery, statusFilter]);
+
+  // Sort filtered estimates
+  const sortedEstimates = useMemo(() => {
+    if (!sortBy) return filteredEstimates;
+    
+    const sorted = [...filteredEstimates];
+    
+    if (sortBy === 'amount') {
+      return sorted.sort((a, b) => b.total - a.total);
+    } else if (sortBy === 'amountDesc') {
+      return sorted.sort((a, b) => a.total - b.total);
+    } else if (sortBy === 'date') {
+      return sorted.sort((a, b) => {
+        const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
+        const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
+        return dateB - dateA;
+      });
+    } else if (sortBy === 'dateDesc') {
+      return sorted.sort((a, b) => {
+        const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
+        const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
+        return dateA - dateB;
+      });
+    } else if (sortBy === 'client') {
+      return sorted.sort((a, b) => {
+        const nameA = (a.client?.name || '').toLowerCase();
+        const nameB = (b.client?.name || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+    }
+    
+    return sorted;
+  }, [filteredEstimates, sortBy]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -506,6 +540,7 @@ function EstimatesContent(): React.JSX.Element {
                       <button
                         onClick={() => {
                           setStatusFilter('');
+                          setSortBy('');
                           setFilterAppliedManually(true);
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
@@ -519,6 +554,7 @@ function EstimatesContent(): React.JSX.Element {
                       <button
                         onClick={() => {
                           setStatusFilter('draft');
+                          setSortBy('');
                           setFilterAppliedManually(true);
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
@@ -532,6 +568,7 @@ function EstimatesContent(): React.JSX.Element {
                       <button
                         onClick={() => {
                           setStatusFilter('sent');
+                          setSortBy('');
                           setFilterAppliedManually(true);
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
@@ -545,6 +582,7 @@ function EstimatesContent(): React.JSX.Element {
                       <button
                         onClick={() => {
                           setStatusFilter('approved');
+                          setSortBy('');
                           setFilterAppliedManually(true);
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
@@ -558,6 +596,7 @@ function EstimatesContent(): React.JSX.Element {
                       <button
                         onClick={() => {
                           setStatusFilter('rejected');
+                          setSortBy('');
                           setFilterAppliedManually(true);
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
@@ -571,6 +610,7 @@ function EstimatesContent(): React.JSX.Element {
                       <button
                         onClick={() => {
                           setStatusFilter('converted');
+                          setSortBy('');
                           setFilterAppliedManually(true);
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
@@ -584,6 +624,7 @@ function EstimatesContent(): React.JSX.Element {
                       <button
                         onClick={() => {
                           setStatusFilter('expired');
+                          setSortBy('');
                           setFilterAppliedManually(true);
                         }}
                         className={`px-3 py-1.5 text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
@@ -595,6 +636,67 @@ function EstimatesContent(): React.JSX.Element {
                         Expired
                       </button>
                     </div>
+                    
+                    {/* Sort Options - Show when filter is selected */}
+                    {statusFilter && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-xs sm:text-sm font-medium text-gray-700">Sort by:</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          <button
+                            onClick={() => setSortBy('amount')}
+                            className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                              sortBy === 'amount'
+                                ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                            }`}
+                          >
+                            Amount (High to Low)
+                          </button>
+                          <button
+                            onClick={() => setSortBy('amountDesc')}
+                            className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                              sortBy === 'amountDesc'
+                                ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                            }`}
+                          >
+                            Amount (Low to High)
+                          </button>
+                          <button
+                            onClick={() => setSortBy('date')}
+                            className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                              sortBy === 'date'
+                                ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                            }`}
+                          >
+                            Date (Newest First)
+                          </button>
+                          <button
+                            onClick={() => setSortBy('dateDesc')}
+                            className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                              sortBy === 'dateDesc'
+                                ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                            }`}
+                          >
+                            Date (Oldest First)
+                          </button>
+                          <button
+                            onClick={() => setSortBy('client')}
+                            className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                              sortBy === 'client'
+                                ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                            }`}
+                          >
+                            Client Name (A-Z)
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -628,7 +730,7 @@ function EstimatesContent(): React.JSX.Element {
                     </div>
                   ))}
                 </div>
-              ) : filteredEstimates.length === 0 ? (
+              ) : sortedEstimates.length === 0 ? (
                 <div className="p-12 text-center bg-white/70 border border-gray-200 backdrop-blur-sm">
                   <div className="inline-flex items-center justify-center w-20 h-20 mb-6 bg-gray-100">
                     <ClipboardCheck className="h-10 w-10 text-gray-500" />
@@ -656,7 +758,7 @@ function EstimatesContent(): React.JSX.Element {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {filteredEstimates.map((estimate) => (
+                  {sortedEstimates.map((estimate) => (
                     <div
                       key={estimate.id}
                       className="border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50"

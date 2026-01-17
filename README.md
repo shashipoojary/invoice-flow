@@ -14,7 +14,7 @@ A modern, responsive invoicing application built with Next.js, designed specific
 - 📊 **Analytics Dashboard** - Track your business performance
 - 🔒 **Secure Authentication** - JWT-based user authentication
 - 📄 **PDF Generation** - Professional invoice PDFs
-- 🗄️ **SQLite Database** - Simple, reliable data storage
+- 🗄️ **Supabase Database** - Scalable PostgreSQL database
 
 ## 🚀 Quick Start
 
@@ -54,9 +54,9 @@ The application is fully responsive and works perfectly on:
 ## 🛠️ Tech Stack
 
 - **Frontend:** Next.js 15, React 19, TypeScript, Tailwind CSS v4
-- **Backend:** Next.js API Routes, SQLite with better-sqlite3
-- **Authentication:** Custom JWT-based system
-- **Database:** SQLite (works out of the box)
+- **Backend:** Next.js API Routes
+- **Database:** Supabase (PostgreSQL)
+- **Authentication:** Supabase Auth
 - **PDF:** React PDF for invoice generation
 - **Icons:** Lucide React
 - **Styling:** Tailwind CSS with custom design system
@@ -73,14 +73,10 @@ git push origin main
 ### Step 2: Deploy to Vercel
 1. Go to [vercel.com](https://vercel.com)
 2. Import your GitHub repository
-3. Set environment variables:
-   ```
-   JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-   DATABASE_URL=file:./invoice_flow.db
-   ```
+3. Set environment variables (see [docs/SETUP.md](./docs/SETUP.md) for full list)
 4. Deploy!
 
-**See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.**
+**See [docs/SETUP.md](./docs/SETUP.md) for detailed setup and deployment instructions.**
 
 ## 🏗️ Project Structure
 
@@ -126,11 +122,13 @@ src/
 
 ## 🔧 Environment Variables
 
-For production deployment, set these environment variables:
+For production deployment, set these environment variables (see [docs/SETUP.md](./docs/SETUP.md) for complete list):
 
 ```env
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-DATABASE_URL=file:./invoice_flow.db
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+RESEND_API_KEY=your-resend-key
 ```
 
 ## 📦 Dependencies
@@ -138,10 +136,9 @@ DATABASE_URL=file:./invoice_flow.db
 ### Core Dependencies
 - `next` - React framework
 - `react` - UI library
-- `better-sqlite3` - Database
-- `bcryptjs` - Password hashing
-- `jsonwebtoken` - JWT authentication
+- `@supabase/supabase-js` - Supabase client
 - `@react-pdf/renderer` - PDF generation
+- `resend` - Email service
 - `lucide-react` - Icons
 - `tailwindcss` - Styling
 
@@ -155,11 +152,12 @@ DATABASE_URL=file:./invoice_flow.db
 
 ## 🔒 Security
 
-- JWT-based authentication
-- Password hashing with bcrypt
+- Supabase Auth with JWT tokens
+- Row Level Security (RLS) policies
 - Protected API routes
 - Input validation and sanitization
 - Secure environment variable handling
+- Webhook signature verification
 
 ## 📈 Performance
 
@@ -183,7 +181,8 @@ MIT License - feel free to use this project for your own invoicing needs!
 
 ## 🆘 Support
 
-- Check the [DEPLOYMENT.md](./DEPLOYMENT.md) for deployment issues
+- Check the [docs/SETUP.md](./docs/SETUP.md) for setup and deployment instructions
+- Check the [docs/REFERENCE.md](./docs/REFERENCE.md) for detailed documentation
 - Review the code comments for implementation details
 - Create an issue for bugs or feature requests
 

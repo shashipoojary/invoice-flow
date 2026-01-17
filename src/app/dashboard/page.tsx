@@ -2571,7 +2571,7 @@ export default function DashboardOverview() {
                         Due Invoices
                       </h2>
                       <button
-                        onClick={() => router.push('/dashboard/invoices?filter=overdue')}
+                        onClick={() => router.push('/dashboard/invoices')}
                         className="group flex items-center gap-1.5 text-xs sm:text-sm font-medium px-2.5 sm:px-3 py-1.5 sm:py-2 transition-colors text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 cursor-pointer"
                       >
                         <span>View all</span>

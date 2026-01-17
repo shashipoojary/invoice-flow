@@ -333,13 +333,15 @@ export default function ReminderHistoryPage() {
         return false;
       }
       
-      // Apply search filter
-      const matchesSearch = 
-        reminder.invoice.invoice_number.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        (reminder.invoice.clients?.name || '').toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        (reminder.invoice.clients?.email || '').toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+      // Apply search filter (only if search term exists)
+      if (debouncedSearchTerm.trim()) {
+        const matchesSearch = 
+          reminder.invoice.invoice_number.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+          (reminder.invoice.clients?.name || '').toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+          (reminder.invoice.clients?.email || '').toLowerCase().includes(debouncedSearchTerm.toLowerCase());
 
-      if (!matchesSearch) return false;
+        if (!matchesSearch) return false;
+      }
 
       // Apply status filter
       if (statusFilter && reminder.reminder_status !== statusFilter) {
@@ -351,7 +353,8 @@ export default function ReminderHistoryPage() {
         return false;
       }
 
-      // Filter scheduled reminders: show those scheduled for today or within 1 day ahead
+      // For scheduled reminders: show those scheduled for today or within 1 day ahead
+      // For all other statuses: show ALL reminders (complete history)
       if (reminder.reminder_status === 'scheduled') {
         const now = new Date();
         const scheduledDate = new Date(reminder.sent_at || reminder.created_at || now);
@@ -367,8 +370,6 @@ export default function ReminderHistoryPage() {
         const scheduledDay = new Date(scheduledDate.getFullYear(), scheduledDate.getMonth(), scheduledDate.getDate());
         
         // Show if scheduled for today or tomorrow (within 1 day ahead)
-        // scheduledDay >= today means today or future
-        // scheduledDay < dayAfterTomorrow means before the day after tomorrow (so today or tomorrow)
         if (scheduledDay >= today && scheduledDay < dayAfterTomorrow) {
           return true; // Show scheduled reminders for today or tomorrow
         }

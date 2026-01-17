@@ -80,6 +80,7 @@ function InvoicesContent(): React.JSX.Element {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
   const [filterAppliedManually, setFilterAppliedManually] = useState(false);
+  const [sortBy, setSortBy] = useState<string>(''); // 'date', 'amount', 'daysOverdue', 'dateDesc', 'amountDesc'
   const [invoicesWithPartialPayments, setInvoicesWithPartialPayments] = useState<Set<string>>(new Set());
   const [paymentDataMap, setPaymentDataMap] = useState<Record<string, { totalPaid: number; remainingBalance: number }>>({});
   const [isLoadingPayments, setIsLoadingPayments] = useState(false);
@@ -346,6 +347,18 @@ function InvoicesContent(): React.JSX.Element {
           const dueDateStart = new Date(Date.UTC(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate()));
           return dueDateStart < todayStart;
         });
+      } else if (statusFilter === 'dueToday') {
+        const today = new Date();
+        const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+        const todayEnd = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59));
+        
+        filtered = filtered.filter(invoice => {
+          if (invoice.status !== 'pending' && invoice.status !== 'sent') return false;
+          
+          const effectiveDueDate = parseDateOnly(invoice.dueDate);
+          const dueDateStart = new Date(Date.UTC(effectiveDueDate.getFullYear(), effectiveDueDate.getMonth(), effectiveDueDate.getDate()));
+          return dueDateStart.getTime() >= todayStart.getTime() && dueDateStart.getTime() <= todayEnd.getTime();
+        });
       } else if (statusFilter === 'partial') {
         // Filter for invoices with partial payments
         filtered = filtered.filter(invoice => {
@@ -374,20 +387,151 @@ function InvoicesContent(): React.JSX.Element {
     return uniqueInvoices;
   }, [invoices, debouncedSearchQuery, statusFilter, invoicesWithPartialPayments, parseDateOnly]);
 
+  // Sort filtered invoices based on sortBy
+  const sortedInvoices = useMemo(() => {
+    if (!sortBy) return filteredInvoices;
+    
+    const sorted = [...filteredInvoices];
+    
+    // Overdue filter sorts
+    if (statusFilter === 'overdue' && sortBy === 'daysOverdue') {
+      // Sort by days overdue (high to low: 90+ to 10+)
+      return sorted.sort((a, b) => {
+        const today = new Date();
+        const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+        
+        const dueDateA = parseDateOnly(a.dueDate);
+        const dueDateStartA = new Date(Date.UTC(dueDateA.getFullYear(), dueDateA.getMonth(), dueDateA.getDate()));
+        const daysOverdueA = Math.floor((todayStart.getTime() - dueDateStartA.getTime()) / (1000 * 60 * 60 * 24));
+        
+        const dueDateB = parseDateOnly(b.dueDate);
+        const dueDateStartB = new Date(Date.UTC(dueDateB.getFullYear(), dueDateB.getMonth(), dueDateB.getDate()));
+        const daysOverdueB = Math.floor((todayStart.getTime() - dueDateStartB.getTime()) / (1000 * 60 * 60 * 24));
+        
+        return daysOverdueB - daysOverdueA; // High to low
+      });
+    }
+    
+    // Due Today filter sorts
+    if (statusFilter === 'dueToday' && sortBy === 'amount') {
+      return sorted.sort((a, b) => b.total - a.total);
+    } else if (statusFilter === 'dueToday' && sortBy === 'amountDesc') {
+      return sorted.sort((a, b) => a.total - b.total);
+    } else if (statusFilter === 'dueToday' && sortBy === 'client') {
+      return sorted.sort((a, b) => {
+        const nameA = (a.client?.name || '').toLowerCase();
+        const nameB = (b.client?.name || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+    }
+    
+    // Paid filter sorts
+    if (statusFilter === 'paid' && sortBy === 'amount') {
+      return sorted.sort((a, b) => b.total - a.total);
+    } else if (statusFilter === 'paid' && sortBy === 'amountDesc') {
+      return sorted.sort((a, b) => a.total - b.total);
+    } else if (statusFilter === 'paid' && sortBy === 'date') {
+      return sorted.sort((a, b) => {
+        const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
+        const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
+        return dateB - dateA;
+      });
+    } else if (statusFilter === 'paid' && sortBy === 'dateDesc') {
+      return sorted.sort((a, b) => {
+        const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
+        const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
+        return dateA - dateB;
+      });
+    }
+    
+    // Pending filter sorts
+    if (statusFilter === 'pending' && sortBy === 'amount') {
+      return sorted.sort((a, b) => b.total - a.total);
+    } else if (statusFilter === 'pending' && sortBy === 'amountDesc') {
+      return sorted.sort((a, b) => a.total - b.total);
+    } else if (statusFilter === 'pending' && sortBy === 'dueDate') {
+      return sorted.sort((a, b) => {
+        const dueDateA = parseDateOnly(a.dueDate);
+        const dueDateB = parseDateOnly(b.dueDate);
+        return dueDateA.getTime() - dueDateB.getTime(); // Earliest first
+      });
+    } else if (statusFilter === 'pending' && sortBy === 'dueDateDesc') {
+      return sorted.sort((a, b) => {
+        const dueDateA = parseDateOnly(a.dueDate);
+        const dueDateB = parseDateOnly(b.dueDate);
+        return dueDateB.getTime() - dueDateA.getTime(); // Latest first
+      });
+    } else if (statusFilter === 'pending' && sortBy === 'date') {
+      return sorted.sort((a, b) => {
+        const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
+        const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
+        return dateB - dateA;
+      });
+    }
+    
+    // Draft filter sorts
+    if (statusFilter === 'draft' && sortBy === 'amount') {
+      return sorted.sort((a, b) => b.total - a.total);
+    } else if (statusFilter === 'draft' && sortBy === 'amountDesc') {
+      return sorted.sort((a, b) => a.total - b.total);
+    } else if (statusFilter === 'draft' && sortBy === 'date') {
+      return sorted.sort((a, b) => {
+        const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
+        const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
+        return dateB - dateA;
+      });
+    } else if (statusFilter === 'draft' && sortBy === 'dateDesc') {
+      return sorted.sort((a, b) => {
+        const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
+        const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
+        return dateA - dateB;
+      });
+    }
+    
+    // Partial filter sorts
+    if (statusFilter === 'partial' && sortBy === 'amount') {
+      return sorted.sort((a, b) => {
+        const remainingA = paymentDataMap[a.id]?.remainingBalance || a.total;
+        const remainingB = paymentDataMap[b.id]?.remainingBalance || b.total;
+        return remainingB - remainingA;
+      });
+    } else if (statusFilter === 'partial' && sortBy === 'amountDesc') {
+      return sorted.sort((a, b) => {
+        const remainingA = paymentDataMap[a.id]?.remainingBalance || a.total;
+        const remainingB = paymentDataMap[b.id]?.remainingBalance || b.total;
+        return remainingA - remainingB;
+      });
+    } else if (statusFilter === 'partial' && sortBy === 'dueDate') {
+      return sorted.sort((a, b) => {
+        const dueDateA = parseDateOnly(a.dueDate);
+        const dueDateB = parseDateOnly(b.dueDate);
+        return dueDateA.getTime() - dueDateB.getTime();
+      });
+    } else if (statusFilter === 'partial' && sortBy === 'date') {
+      return sorted.sort((a, b) => {
+        const dateA = new Date(a.created_at || a.createdAt || 0).getTime();
+        const dateB = new Date(b.created_at || b.createdAt || 0).getTime();
+        return dateB - dateA;
+      });
+    }
+    
+    return sorted;
+  }, [filteredInvoices, sortBy, statusFilter, parseDateOnly, paymentDataMap]);
+
   // Pagination logic
   const paginatedInvoices = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    return filteredInvoices.slice(startIndex, endIndex);
-  }, [filteredInvoices, currentPage, itemsPerPage]);
+    return sortedInvoices.slice(startIndex, endIndex);
+  }, [sortedInvoices, currentPage, itemsPerPage]);
 
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearchQuery, statusFilter]);
+  }, [debouncedSearchQuery, statusFilter, sortBy]);
 
   // Calculate pagination info
-  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
+  const totalPages = Math.ceil(sortedInvoices.length / itemsPerPage);
   const hasNextPage = currentPage < totalPages;
   const hasPrevPage = currentPage > 1;
 
@@ -1340,7 +1484,7 @@ function InvoicesContent(): React.JSX.Element {
 
   // Initialize filters from URL parameters
   useEffect(() => {
-    const status = searchParams.get('status');
+    const status = searchParams.get('status') || searchParams.get('filter');
     if (status) {
       setStatusFilter(status);
       // Don't set filterAppliedManually to true when coming from URL
@@ -1469,11 +1613,12 @@ function InvoicesContent(): React.JSX.Element {
                     </button>
 
                     {/* Clear Filters */}
-                    {(searchQuery || (statusFilter && filterAppliedManually)) && (
+                    {(searchQuery || (statusFilter && filterAppliedManually) || sortBy) && (
                       <button
                         onClick={() => {
                           setSearchQuery('');
                           setStatusFilter('');
+                          setSortBy('');
                           setFilterAppliedManually(false);
                           window.history.replaceState({}, '', '/dashboard/invoices');
                         }}
@@ -1507,6 +1652,7 @@ function InvoicesContent(): React.JSX.Element {
                         onClick={() => {
                           setStatusFilter('paid');
                           setFilterAppliedManually(true);
+                          setSortBy(''); // Reset sort when changing filter
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'paid' 
@@ -1519,6 +1665,7 @@ function InvoicesContent(): React.JSX.Element {
                       <button
                         onClick={() => {
                           setStatusFilter('pending');
+                          setSortBy('');
                           setFilterAppliedManually(true);
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
@@ -1533,6 +1680,7 @@ function InvoicesContent(): React.JSX.Element {
                         onClick={() => {
                           setStatusFilter('overdue');
                           setFilterAppliedManually(true);
+                          setSortBy(''); // Reset sort when changing filter
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'overdue' 
@@ -1545,6 +1693,7 @@ function InvoicesContent(): React.JSX.Element {
                       <button
                         onClick={() => {
                           setStatusFilter('draft');
+                          setSortBy('');
                           setFilterAppliedManually(true);
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
@@ -1558,6 +1707,7 @@ function InvoicesContent(): React.JSX.Element {
                       <button
                         onClick={() => {
                           setStatusFilter('partial');
+                          setSortBy('');
                           setFilterAppliedManually(true);
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
@@ -1569,6 +1719,272 @@ function InvoicesContent(): React.JSX.Element {
                         Partial Paid
                       </button>
                     </div>
+                    
+                    {/* Sort Options - Show when filter is selected */}
+                    {statusFilter && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-xs sm:text-sm font-medium text-gray-700">Sort by:</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {/* Overdue Sort Options */}
+                          {statusFilter === 'overdue' && (
+                            <>
+                              <button
+                                onClick={() => setSortBy('daysOverdue')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'daysOverdue'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Days Overdue (High to Low)
+                              </button>
+                              <button
+                                onClick={() => setSortBy('amount')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'amount'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Amount (High to Low)
+                              </button>
+                            </>
+                          )}
+                          
+                          {/* Due Today Sort Options */}
+                          {statusFilter === 'dueToday' && (
+                            <>
+                              <button
+                                onClick={() => setSortBy('amount')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'amount'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Amount (High to Low)
+                              </button>
+                              <button
+                                onClick={() => setSortBy('amountDesc')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'amountDesc'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Amount (Low to High)
+                              </button>
+                              <button
+                                onClick={() => setSortBy('client')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'client'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Client Name (A-Z)
+                              </button>
+                            </>
+                          )}
+                          
+                          {/* Paid Sort Options */}
+                          {statusFilter === 'paid' && (
+                            <>
+                              <button
+                                onClick={() => setSortBy('amount')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'amount'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Amount (High to Low)
+                              </button>
+                              <button
+                                onClick={() => setSortBy('amountDesc')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'amountDesc'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Amount (Low to High)
+                              </button>
+                              <button
+                                onClick={() => setSortBy('date')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'date'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Date (Newest First)
+                              </button>
+                              <button
+                                onClick={() => setSortBy('dateDesc')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'dateDesc'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Date (Oldest First)
+                              </button>
+                            </>
+                          )}
+                          
+                          {/* Pending Sort Options */}
+                          {statusFilter === 'pending' && (
+                            <>
+                              <button
+                                onClick={() => setSortBy('amount')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'amount'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Amount (High to Low)
+                              </button>
+                              <button
+                                onClick={() => setSortBy('amountDesc')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'amountDesc'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Amount (Low to High)
+                              </button>
+                              <button
+                                onClick={() => setSortBy('dueDate')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'dueDate'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Due Date (Earliest First)
+                              </button>
+                              <button
+                                onClick={() => setSortBy('dueDateDesc')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'dueDateDesc'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Due Date (Latest First)
+                              </button>
+                              <button
+                                onClick={() => setSortBy('date')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'date'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Created Date (Newest First)
+                              </button>
+                            </>
+                          )}
+                          
+                          {/* Draft Sort Options */}
+                          {statusFilter === 'draft' && (
+                            <>
+                              <button
+                                onClick={() => setSortBy('amount')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'amount'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Amount (High to Low)
+                              </button>
+                              <button
+                                onClick={() => setSortBy('amountDesc')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'amountDesc'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Amount (Low to High)
+                              </button>
+                              <button
+                                onClick={() => setSortBy('date')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'date'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Date (Newest First)
+                              </button>
+                              <button
+                                onClick={() => setSortBy('dateDesc')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'dateDesc'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Date (Oldest First)
+                              </button>
+                            </>
+                          )}
+                          
+                          {/* Partial Paid Sort Options */}
+                          {statusFilter === 'partial' && (
+                            <>
+                              <button
+                                onClick={() => setSortBy('amount')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'amount'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Remaining Balance (High to Low)
+                              </button>
+                              <button
+                                onClick={() => setSortBy('amountDesc')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'amountDesc'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Remaining Balance (Low to High)
+                              </button>
+                              <button
+                                onClick={() => setSortBy('dueDate')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'dueDate'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Due Date (Earliest First)
+                              </button>
+                              <button
+                                onClick={() => setSortBy('date')}
+                                className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
+                                  sortBy === 'date'
+                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                }`}
+                              >
+                                Created Date (Newest First)
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1577,11 +1993,11 @@ function InvoicesContent(): React.JSX.Element {
               {!isLoadingInvoices && (
                 <div className="flex items-center justify-between text-sm text-gray-600">
                   <div>
-                    {filteredInvoices.length === 0 ? (
+                    {sortedInvoices.length === 0 ? (
                       <span>No invoices found</span>
                     ) : (
                       <span>
-                        {filteredInvoices.length} invoice{filteredInvoices.length !== 1 ? 's' : ''} found
+                        {sortedInvoices.length} invoice{sortedInvoices.length !== 1 ? 's' : ''} found
                         {(searchQuery || statusFilter) && (
                           <span className="ml-2 text-gray-500">
                             (filtered from {invoices.length} total)
@@ -1625,16 +2041,7 @@ function InvoicesContent(): React.JSX.Element {
               ) : invoices.length > 0 ? (
                 <>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {paginatedInvoices
-                      .sort((a, b) => {
-                        if (statusFilter === 'paid' || statusFilter === 'pending') {
-                          // Sort by amount (highest first)
-                          return b.total - a.total;
-                        }
-                        // Default sort by date (newest first)
-                        return new Date(b.created_at || b.createdAt || 0).getTime() - new Date(a.created_at || a.createdAt || 0).getTime();
-                      })
-                      .map((invoice) => (
+                    {paginatedInvoices.map((invoice) => (
                     <UnifiedInvoiceCard
                       key={invoice.id}
                       invoice={invoice}
@@ -1655,7 +2062,7 @@ function InvoicesContent(): React.JSX.Element {
                 </div>
                   
                   {/* Pagination Controls */}
-                  {filteredInvoices.length > itemsPerPage && (
+                  {sortedInvoices.length > itemsPerPage && (
                     <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6 mt-6">
                       <div className="flex-1 flex justify-between sm:hidden">
                         <button
@@ -1680,10 +2087,10 @@ function InvoicesContent(): React.JSX.Element {
                             <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span>
                             {' '}to{' '}
                             <span className="font-medium">
-                              {Math.min(currentPage * itemsPerPage, filteredInvoices.length)}
+                              {Math.min(currentPage * itemsPerPage, sortedInvoices.length)}
                             </span>
                             {' '}of{' '}
-                            <span className="font-medium">{filteredInvoices.length}</span>
+                            <span className="font-medium">{sortedInvoices.length}</span>
                             {' '}results
                           </p>
                         </div>
