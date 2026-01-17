@@ -31,15 +31,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { invoiceId, clientEmail, clientName } = await request.json();
+    let { invoiceId, clientEmail, clientName } = await request.json();
 
     // Debug: Log the received data
     console.log('Send Invoice - Received data:', { invoiceId, clientEmail, clientName });
 
-    if (!invoiceId || !clientEmail) {
-      console.log('Send Invoice - Missing required fields:', { invoiceId, clientEmail });
+    if (!invoiceId) {
+      console.log('Send Invoice - Missing invoice ID');
       return NextResponse.json({ 
-        error: 'Invoice ID and client email are required' 
+        error: 'Invoice ID is required' 
       }, { status: 400 });
     }
 
@@ -98,6 +98,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         error: 'Invoice not found' 
       }, { status: 404 });
+    }
+
+    // If clientEmail/clientName are missing from request, get them from invoice's client relationship
+    // This handles cases where frontend doesn't send them (e.g., duplicate clients, data inconsistency)
+    if (!clientEmail || !clientName) {
+      // Handle both array and object formats from Supabase
+      const client = Array.isArray(invoice.clients) ? invoice.clients[0] : invoice.clients;
+      
+      if (client) {
+        if (!clientEmail) {
+          clientEmail = client.email;
+          console.log('Using client email from invoice relationship:', clientEmail);
+        }
+        if (!clientName) {
+          clientName = client.name;
+          console.log('Using client name from invoice relationship:', clientName);
+        }
+      }
+    }
+
+    // Final validation - ensure we have clientEmail
+    if (!clientEmail) {
+      console.log('Send Invoice - Missing client email (not in request or invoice):', { invoiceId, clientEmail, clientName });
+      return NextResponse.json({ 
+        error: 'Client email is required. Please ensure the invoice has a client with an email address.' 
+      }, { status: 400 });
     }
 
     // Fetch invoice items
