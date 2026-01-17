@@ -834,8 +834,18 @@ function InvoicesContent(): React.JSX.Element {
       });
 
       if (response.ok) {
-        // Update global state
-        updateInvoice({ ...invoice, status: 'paid' as const });
+        const payload = await response.json();
+        
+        // Update global state with server response if available
+        if (payload?.invoice) {
+          updateInvoice(payload.invoice);
+        } else {
+          updateInvoice({ ...invoice, status: 'paid' as const });
+        }
+        
+        // Refresh list to keep filters/pagination in sync
+        try { await refreshInvoices(); } catch {}
+        
         showSuccess('Invoice Updated', `Invoice ${invoice.invoiceNumber} has been marked as paid.`);
         setConfirmationModal(prev => ({ ...prev, isOpen: false, isLoading: false }));
       } else {

@@ -1182,24 +1182,41 @@ export default function QuickInvoiceModal({
         })
 
           if (sendResponse.ok) {
-            // Prefer server response's invoice if provided
-            let payload: any = null;
-            try { payload = await sendResponse.json(); if (payload?.invoice) { try { updateInvoice && updateInvoice(payload.invoice) } catch {} } } catch {}
-            // Prefer updating from existing cached invoice shape
-            const existing = invoices.find(inv => inv.id === result.invoice.id)
-            if (existing) {
-              try { updateInvoice && updateInvoice({ ...existing, status: 'sent' as const }) } catch {}
+            const payload = await sendResponse.json();
+            
+            // Handle queued response (async) - update status immediately
+            if (payload?.queued) {
+              const existing = invoices.find(inv => inv.id === result.invoice.id);
+              if (existing) {
+                try { updateInvoice && updateInvoice({ ...existing, status: 'sent' as const }) } catch {}
+              } else {
+                try { updateInvoice && updateInvoice({ ...result.invoice, status: 'sent' as const }) } catch {}
+              }
+              // Refresh list in background to get latest data
+              setTimeout(() => { refreshInvoices?.().catch(() => {}) }, 1000);
+              showSuccess(isEditing ? 'Invoice updated and queued for sending!' : 'Invoice created and queued for sending!');
             } else {
-              try { updateInvoice && updateInvoice({ ...result.invoice, status: 'sent' as const }) } catch {}
+              // Handle sync response - use server invoice if provided
+              if (payload?.invoice) {
+                try { updateInvoice && updateInvoice(payload.invoice) } catch {}
+              } else {
+                // Fallback optimistic update
+                const existing = invoices.find(inv => inv.id === result.invoice.id);
+                if (existing) {
+                  try { updateInvoice && updateInvoice({ ...existing, status: 'sent' as const }) } catch {}
+                } else {
+                  try { updateInvoice && updateInvoice({ ...result.invoice, status: 'sent' as const }) } catch {}
+                }
+              }
+              // Refresh invoices in background (non-blocking)
+              refreshInvoices?.().catch(() => {});
+              showSuccess(isEditing ? 'Invoice updated and sent successfully!' : 'Invoice created and sent successfully!');
             }
-            showSuccess(isEditing ? 'Invoice updated and sent successfully!' : 'Invoice created and sent successfully!')
             // Close modal immediately after successful send (don't wait for refresh)
             onSuccess()
             onClose()
             setShouldSend(false)
             shouldSendRef.current = false
-            // Refresh invoices in background (non-blocking)
-            refreshInvoices?.().catch(() => {})
             return // Exit early to prevent further execution
           } else {
             let errorMsg = 'Invoice created but failed to send. You can send it later from the invoice list.'

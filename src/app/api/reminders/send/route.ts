@@ -158,6 +158,17 @@ export async function POST(request: NextRequest) {
       );
 
       if (queueResult.queued) {
+        // Update invoice reminder count IMMEDIATELY for better UX
+        // This ensures UI updates right away, even though email sends in background
+        await supabaseAdmin
+          .from('invoices')
+          .update({
+            reminder_count: (invoice.reminder_count || 0) + 1,
+            last_reminder_sent: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', invoice.id);
+
         // Job queued successfully, return immediately
         console.log(`✅ Reminder for invoice ${invoice.invoice_number} queued (jobId: ${queueResult.jobId})`);
         return NextResponse.json({
@@ -165,6 +176,7 @@ export async function POST(request: NextRequest) {
           queued: true,
           jobId: queueResult.jobId,
           message: 'Reminder queued for sending',
+          totalPayable: invoice.total, // Include for consistency
         });
       }
 
