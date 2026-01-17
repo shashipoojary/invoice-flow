@@ -1720,6 +1720,7 @@ export default function DashboardOverview() {
         clientName: string;
         message: string;
         timestamp: string;
+        date?: string; // ISO date string for sorting
       }> = [];
       
       const today = new Date();
@@ -1842,7 +1843,8 @@ export default function DashboardOverview() {
                   invoiceNumber,
                   clientName,
                   message: mapped.message,
-                  timestamp: timeAgo
+                  timestamp: timeAgo,
+                  date: event.created_at // Store actual date for sorting
                 });
               }
             }
@@ -1870,7 +1872,8 @@ export default function DashboardOverview() {
               invoiceNumber: invoice.invoiceNumber || invoice.invoice_number || 'N/A',
               clientName: invoice.clientName || invoice.client?.name || 'Unknown',
               message: `Invoice #${invoice.invoiceNumber || invoice.invoice_number || 'N/A'} is due today`,
-              timestamp: 'Today'
+              timestamp: 'Today',
+              date: new Date().toISOString() // Store current date for sorting
             });
           }
           
@@ -1885,7 +1888,8 @@ export default function DashboardOverview() {
               invoiceNumber: invoice.invoiceNumber || invoice.invoice_number || 'N/A',
               clientName: invoice.clientName || invoice.client?.name || 'Unknown',
               message: `Invoice #${invoice.invoiceNumber || invoice.invoice_number || 'N/A'} is ${diffDays} day${diffDays > 1 ? 's' : ''} overdue`,
-              timestamp: `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
+              timestamp: `${diffDays} day${diffDays > 1 ? 's' : ''} ago`,
+              date: new Date().toISOString() // Store current date for sorting
             });
           }
         });
@@ -1895,26 +1899,23 @@ export default function DashboardOverview() {
       // Note: This would need to be implemented if estimate events are tracked separately
       // For now, we'll check invoice status changes that might indicate estimate conversions
       
-      // Sort by priority: overdue > due today > paid > partial_paid > failed > cancelled > sent > reminder_scheduled > viewed > downloaded > payment_copied > draft_created > estimate_approved > estimate_rejected > estimate_sent
+      // Sort by date (latest first) - newest notifications appear at the top
       notificationList.sort((a, b) => {
-        const priority: { [key: string]: number } = { 
-          overdue: 10, 
-          due_today: 9, 
-          paid: 8,
-          partial_paid: 7,
-          failed: 6,
-          cancelled: 5,
-          sent: 4,
-          reminder_scheduled: 3,
-          viewed: 2,
-          downloaded: 2,
-          payment_copied: 2,
-          draft_created: 1,
-          estimate_approved: 2,
-          estimate_rejected: 2,
-          estimate_sent: 2
+        // Get date from notification object (stored as ISO string)
+        const getDate = (notif: typeof a) => {
+          // If notification has a date field, use it
+          if ((notif as any).date) {
+            return new Date((notif as any).date).getTime();
+          }
+          // Fallback: use current time (shouldn't happen if date is always set)
+          return Date.now();
         };
-        return (priority[b.type] || 0) - (priority[a.type] || 0);
+        
+        const dateA = getDate(a);
+        const dateB = getDate(b);
+        
+        // Sort by date descending (newest first)
+        return dateB - dateA;
       });
       
       setNotifications(notificationList);
@@ -2145,7 +2146,7 @@ export default function DashboardOverview() {
                                   className={`flex gap-3 p-3 transition-colors cursor-pointer ${
                                     isRead 
                                       ? 'hover:bg-gray-50' 
-                                      : 'bg-gray-50 hover:bg-gray-100'
+                                      : 'bg-purple-50 hover:bg-purple-100'
                                   }`}
                                   onClick={() => {
                                     // Mark as read when clicked
