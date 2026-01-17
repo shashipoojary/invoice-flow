@@ -30,7 +30,21 @@ export async function POST(request: NextRequest) {
     const isDevelopment = process.env.NODE_ENV === 'development';
     const secretToken = request.headers.get('x-test-secret');
     const validSecret = process.env.TEST_SECRET_TOKEN;
-    const enableInProduction = process.env.ENABLE_LOAD_TEST === 'true';
+    
+    // Check ENABLE_LOAD_TEST (case-insensitive, trimmed)
+    const enableLoadTestRaw = process.env.ENABLE_LOAD_TEST;
+    const enableInProduction = enableLoadTestRaw?.toLowerCase().trim() === 'true';
+    
+    // Debug logging (only in production to help troubleshoot)
+    if (!isDevelopment) {
+      console.log('🔍 Load Test Debug:', {
+        NODE_ENV: process.env.NODE_ENV,
+        ENABLE_LOAD_TEST: enableLoadTestRaw,
+        enableInProduction,
+        hasSecretToken: !!secretToken,
+        hasValidSecret: !!validSecret,
+      });
+    }
     
     // Allow if:
     // 1. Development mode, OR
@@ -39,7 +53,12 @@ export async function POST(request: NextRequest) {
     if (!isDevelopment && !enableInProduction && (!secretToken || secretToken !== validSecret)) {
       return NextResponse.json({ 
         error: 'Load testing only allowed in development or with valid secret token',
-        hint: 'Set ENABLE_LOAD_TEST=true in Vercel environment variables to enable in production, or set TEST_SECRET_TOKEN and pass it as x-test-secret header'
+        hint: `Set ENABLE_LOAD_TEST=true in Vercel environment variables (Production environment) and redeploy. Current value: "${enableLoadTestRaw || 'not set'}"`,
+        debug: !isDevelopment ? {
+          NODE_ENV: process.env.NODE_ENV,
+          ENABLE_LOAD_TEST: enableLoadTestRaw || 'not set',
+          enableInProduction: false
+        } : undefined
       }, { status: 403 });
     }
 
