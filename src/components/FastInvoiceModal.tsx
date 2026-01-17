@@ -586,34 +586,41 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         if (sendResponse.ok) {
           const payload = await sendResponse.json();
           
-          // Handle queued response (async) - update status immediately
-          if (payload?.queued) {
+          // Always use server response invoice data if available (most accurate)
+          // This prevents flickering and ensures correct data immediately
+          if (payload?.invoice) {
+            // Map the invoice to match frontend format
+            const mappedInvoice = {
+              ...payload.invoice,
+              invoiceNumber: payload.invoice.invoice_number || payload.invoice.invoiceNumber,
+              dueDate: payload.invoice.due_date || payload.invoice.dueDate,
+              createdAt: payload.invoice.created_at || payload.invoice.createdAt,
+              updatedAt: payload.invoice.updated_at || payload.invoice.updatedAt,
+              status: payload.invoice.status || 'sent',
+            };
+            try { updateInvoice && updateInvoice(mappedInvoice) } catch {}
+          } else {
+            // Fallback: optimistic update only if no server data
             const existing = invoices.find(inv => inv.id === invoice.id);
             if (existing) {
               try { updateInvoice && updateInvoice({ ...existing, status: 'sent' as const }) } catch {}
             } else {
               try { updateInvoice && updateInvoice({ ...invoice, status: 'sent' as const }) } catch {}
             }
-            // Refresh list in background to get latest data
-            setTimeout(() => { refreshInvoices?.().catch(() => {}) }, 1000);
-            showSuccess(isEditing ? 'Invoice updated and queued for sending!' : 'Invoice created and queued for sending!');
-          } else {
-            // Handle sync response - use server invoice if provided
-            if (payload?.invoice) {
-              try { updateInvoice && updateInvoice(payload.invoice) } catch {}
-            } else {
-              // Fallback optimistic update
-              const existing = invoices.find(inv => inv.id === invoice.id);
-              if (existing) {
-                try { updateInvoice && updateInvoice({ ...existing, status: 'sent' as const }) } catch {}
-              } else {
-                try { updateInvoice && updateInvoice({ ...invoice, status: 'sent' as const }) } catch {}
-              }
-            }
-            // Refresh invoices in background (non-blocking)
-            refreshInvoices?.().catch(() => {});
-            showSuccess(isEditing ? 'Invoice updated and sent successfully!' : 'Invoice created and sent successfully!');
           }
+          
+          // Handle queued vs sync messages
+          if (payload?.queued) {
+            showSuccess(isEditing ? 'Invoice updated and queued for sending!' : 'Invoice created and queued for sending!');
+            // Delayed refresh only for queued (to catch any additional updates)
+            setTimeout(() => { refreshInvoices?.().catch(() => {}) }, 2000);
+          } else {
+            showSuccess(isEditing ? 'Invoice updated and sent successfully!' : 'Invoice created and sent successfully!');
+            // No immediate refresh needed - we already have the updated invoice from response
+            // Only refresh if needed for filters/pagination (non-blocking, delayed)
+            setTimeout(() => { refreshInvoices?.().catch(() => {}) }, 500);
+          }
+          
           // Close modal immediately after successful send (don't wait for refresh)
           onSuccess()
           onClose()

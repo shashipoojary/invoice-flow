@@ -698,24 +698,36 @@ export default function DashboardOverview() {
       if (response.ok) {
         const payload = await response.json();
         
-        // Handle queued response (async) - update status immediately
-        if (payload?.queued) {
-          // Update invoice status immediately for queued jobs
-          updateInvoice({ ...invoice, status: 'sent' as const });
-          // Refresh list in background to get latest data
-          setTimeout(() => { refreshInvoices().catch(() => {}) }, 1000);
-          showSuccess('Invoice Queued', `Invoice ${invoice.invoiceNumber} is being sent.`);
+        // Always use server response invoice data if available (most accurate)
+        // This prevents flickering and ensures correct data immediately
+        if (payload?.invoice) {
+          // Map the invoice to match frontend format
+          const mappedInvoice = {
+            ...payload.invoice,
+            invoiceNumber: payload.invoice.invoice_number || payload.invoice.invoiceNumber,
+            dueDate: payload.invoice.due_date || payload.invoice.dueDate,
+            createdAt: payload.invoice.created_at || payload.invoice.createdAt,
+            updatedAt: payload.invoice.updated_at || payload.invoice.updatedAt,
+            status: payload.invoice.status || 'sent',
+          };
+          updateInvoice(mappedInvoice);
         } else {
-          // Handle sync response - use server invoice if provided
-          if (payload?.invoice) {
-            updateInvoice(payload.invoice);
-          } else {
-            // Fallback optimistic update
-            updateInvoice({ ...invoice, status: 'sent' as const });
-          }
-          try { await refreshInvoices(); } catch {}
-          showSuccess('Invoice Sent', `Invoice ${invoice.invoiceNumber} has been sent successfully.`);
+          // Fallback: optimistic update only if no server data
+          updateInvoice({ ...invoice, status: 'sent' as const });
         }
+        
+        // Handle queued vs sync messages
+        if (payload?.queued) {
+          showSuccess('Invoice Queued', `Invoice ${invoice.invoiceNumber} is being sent.`);
+          // Delayed refresh only for queued (to catch any additional updates)
+          setTimeout(() => { refreshInvoices().catch(() => {}) }, 2000);
+        } else {
+          showSuccess('Invoice Sent', `Invoice ${invoice.invoiceNumber} has been sent successfully.`);
+          // No immediate refresh needed - we already have the updated invoice from response
+          // Only refresh if needed for filters/pagination (non-blocking)
+          setTimeout(() => { refreshInvoices().catch(() => {}) }, 500);
+        }
+        
         setSendInvoiceModal({ isOpen: false, invoice: null, isLoading: false });
       } else {
         showError('Send Failed', 'Failed to send invoice. Please try again.');

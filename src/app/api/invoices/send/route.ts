@@ -472,11 +472,27 @@ export async function POST(request: NextRequest) {
       // Invoice is still sent, billing will be handled separately
     }
 
+    // Always return the latest invoice data to prevent UI flickering
+    // Fetch the most up-to-date invoice to ensure accurate response
+    const { data: finalInvoiceData } = await supabaseAdmin
+      .from('invoices')
+      .select('*')
+      .eq('id', invoiceId)
+      .single();
+
+    const finalInvoiceResponse = finalInvoiceData ? {
+      ...finalInvoiceData,
+      invoiceNumber: finalInvoiceData.invoice_number,
+      dueDate: finalInvoiceData.due_date,
+      createdAt: finalInvoiceData.created_at,
+      updatedAt: finalInvoiceData.updated_at,
+    } : (latestMapped || mappedInvoice);
+
     return NextResponse.json({ 
       success: true, 
       message: 'Invoice sent successfully',
       emailId: data?.id,
-      invoice: latestMapped || mappedInvoice,
+      invoice: finalInvoiceResponse,
     });
 
   } catch (error) {
