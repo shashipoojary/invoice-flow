@@ -6,247 +6,18 @@ import { generateTemplatePDFBlob } from '@/lib/template-pdf-generator';
 import { getEmailTemplate } from '@/lib/email-templates';
 import { getBaseUrlFromRequest } from '@/lib/get-base-url';
 import { chargeForInvoice } from '@/lib/invoice-billing';
+import { enqueueBackgroundJob } from '@/lib/queue-helper';
+import { createScheduledReminders } from '@/lib/reminder-scheduler';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Function to create scheduled reminders
-async function createScheduledReminders(invoiceId: string, reminderSettings: any, dueDate: string, paymentTerms?: any, invoiceStatus?: string, updatedAt?: string) {
-  try {
-    // CRITICAL: Do not schedule reminders for draft or paid invoices
-    if (invoiceStatus === 'draft' || invoiceStatus === 'paid') {
-      console.log(`⏭️ Skipping reminder scheduling for invoice ${invoiceId} - invoice is in ${invoiceStatus} status`);
-      // Delete any existing scheduled reminders for draft or paid invoices
-      await supabaseAdmin
-        .from('invoice_reminders')
-        .delete()
-        .eq('invoice_id', invoiceId)
-        .eq('reminder_status', 'scheduled');
-      return;
-    }
-
-    // Parse payment terms if it's a string
-    let parsedPaymentTerms = paymentTerms;
-    if (typeof paymentTerms === 'string') {
-      try {
-        parsedPaymentTerms = JSON.parse(paymentTerms);
-      } catch (e) {
-        console.error('Failed to parse payment terms:', e);
-        parsedPaymentTerms = null;
-      }
-    }
-    
-    // For "Due on Receipt" invoices, use updated_at (when sent) as base date, otherwise use due_date
-    let baseDate = new Date(dueDate);
-    if (parsedPaymentTerms?.enabled && (parsedPaymentTerms.terms === 'Due on Receipt' || parsedPaymentTerms.defaultOption === 'Due on Receipt') && invoiceStatus !== 'draft' && updatedAt) {
-      baseDate = new Date(updatedAt);
-    }
-    
-    // First, aggressively delete any existing scheduled reminders and duplicate failed reminders for this invoice
-    // This prevents duplicates when invoice is sent multiple times or updated
-    const { data: existingReminders } = await supabaseAdmin
-      .from('invoice_reminders')
-      .select('id, reminder_type, reminder_status, created_at')
-      .eq('invoice_id', invoiceId);
-    
-    if (existingReminders && existingReminders.length > 0) {
-      // Delete ALL scheduled reminders (they will be recreated below)
-      await supabaseAdmin
-        .from('invoice_reminders')
-        .delete()
-        .eq('invoice_id', invoiceId)
-        .eq('reminder_status', 'scheduled');
-      
-      // Clean up duplicate failed reminders (keep only most recent per type)
-      const failedByType = new Map<string, any[]>();
-      for (const reminder of existingReminders) {
-        if (reminder.reminder_status === 'failed') {
-          const key = reminder.reminder_type || 'friendly';
-          if (!failedByType.has(key)) {
-            failedByType.set(key, []);
-          }
-          failedByType.get(key)!.push(reminder);
-        }
-      }
-      
-      // Delete duplicate failed reminders (keep most recent)
-      for (const [type, reminders] of failedByType.entries()) {
-        if (reminders.length > 1) {
-          // Sort by created_at descending
-          reminders.sort((a, b) => {
-            const dateA = new Date(a.created_at || 0).getTime();
-            const dateB = new Date(b.created_at || 0).getTime();
-            return dateB - dateA;
-          });
-          // Keep first (most recent), delete rest
-          const duplicateIds = reminders.slice(1).map(r => r.id);
-          if (duplicateIds.length > 0) {
-            await supabaseAdmin
-              .from('invoice_reminders')
-              .delete()
-              .in('id', duplicateIds);
-          }
-        }
-      }
-    }
-    
-    const scheduledReminders = [];
-
-    // Check useSystemDefaults flag FIRST - if true, use smart reminders regardless of custom rules
-    if (reminderSettings.useSystemDefaults) {
-      // Smart reminder system - adapts based on payment terms
-      let smartSchedule: Array<{ type: string; days: number }> = [];
-      
-      // Use already parsed payment terms from above
-      const paymentTerm = parsedPaymentTerms?.terms || parsedPaymentTerms?.defaultOption || 'Net 30';
-      
-      if (paymentTerm === 'Due on Receipt') {
-        // Due on Receipt: All reminders after due date
-        smartSchedule = [
-          { type: 'friendly', days: 1 },  // 1 day after
-          { type: 'polite', days: 3 },   // 3 days after
-          { type: 'firm', days: 7 },     // 7 days after
-          { type: 'urgent', days: 14 }   // 14 days after
-        ];
-      } else if (paymentTerm === 'Net 15') {
-        // Net 15: Reminders before and after due date
-        smartSchedule = [
-          { type: 'friendly', days: -7 }, // 7 days before
-          { type: 'polite', days: -3 },   // 3 days before
-          { type: 'firm', days: 1 },     // 1 day after
-          { type: 'urgent', days: 7 }    // 7 days after
-        ];
-      } else if (paymentTerm === 'Net 30') {
-        // Net 30: More time before, reminders before and after
-        smartSchedule = [
-          { type: 'friendly', days: -14 }, // 14 days before
-          { type: 'polite', days: -7 },   // 7 days before
-          { type: 'firm', days: 1 },     // 1 day after
-          { type: 'urgent', days: 7 }    // 7 days after
-        ];
-      } else if (paymentTerm === '2/10 Net 30') {
-        // 2/10 Net 30: Before discount period, after discount, and overdue
-        smartSchedule = [
-          { type: 'friendly', days: -2 }, // 2 days before (remind about discount)
-          { type: 'polite', days: 1 },    // 1 day after discount period
-          { type: 'firm', days: 7 },     // 7 days after due
-          { type: 'urgent', days: 14 }   // 14 days after due
-        ];
-      } else {
-        // Default for other payment terms: Generic smart schedule
-        // Try to extract number of days from custom terms
-        const daysMatch = paymentTerm.match(/(\d+)/);
-        const netDays = daysMatch ? parseInt(daysMatch[1]) : 30;
-        
-        if (netDays <= 15) {
-          // Short terms: More frequent reminders
-          smartSchedule = [
-            { type: 'friendly', days: -7 },
-            { type: 'polite', days: -3 },
-            { type: 'firm', days: 1 },
-            { type: 'urgent', days: 7 }
-          ];
-        } else {
-          // Longer terms: More time before due
-          smartSchedule = [
-            { type: 'friendly', days: -14 },
-            { type: 'polite', days: -7 },
-            { type: 'firm', days: 1 },
-            { type: 'urgent', days: 7 }
-          ];
-        }
-      }
-
-      for (const reminder of smartSchedule) {
-        const scheduledDate = new Date(baseDate);
-        scheduledDate.setDate(scheduledDate.getDate() + reminder.days);
-        
-        // Validate the scheduled date is valid
-        if (isNaN(scheduledDate.getTime())) {
-          console.error(`Invalid scheduled date calculated for smart reminder:`, reminder);
-          continue; // Skip invalid reminders instead of failing
-        }
-        
-        scheduledReminders.push({
-          invoice_id: invoiceId,
-          reminder_type: reminder.type,
-          overdue_days: reminder.days,
-          sent_at: scheduledDate.toISOString(),
-          reminder_status: 'scheduled',
-          email_id: null
-        });
-      }
-    } else if (reminderSettings.customRules && reminderSettings.customRules.length > 0) {
-      // Use custom reminder rules (only if useSystemDefaults is false)
-      const enabledRules = reminderSettings.customRules.filter((rule: any) => rule.enabled);
-      
-      // Create reminders with their scheduled dates first
-      const remindersWithDates = enabledRules.map((rule: any) => {
-        const scheduledDate = new Date(baseDate);
-        
-        // Validate rule days is a valid number
-        const days = typeof rule.days === 'number' && !isNaN(rule.days) ? rule.days : 0;
-        
-        // Fix scheduling logic: for "before" reminders, subtract days; for "after", add days
-        if (rule.type === 'before') {
-          scheduledDate.setDate(scheduledDate.getDate() - days);
-        } else {
-          scheduledDate.setDate(scheduledDate.getDate() + days);
-        }
-        
-        // Validate the scheduled date is valid
-        if (isNaN(scheduledDate.getTime())) {
-          console.error(`Invalid scheduled date calculated for rule:`, rule);
-          throw new Error(`Invalid scheduled date for reminder rule with ${days} days`);
-        }
-        
-        return {
-          rule,
-          scheduledDate,
-          overdue_days: rule.type === 'before' ? -days : days
-        };
-      });
-      
-      // Sort by scheduled date (earliest first) to get correct chronological order
-      remindersWithDates.sort((a: any, b: any) => a.scheduledDate.getTime() - b.scheduledDate.getTime());
-      
-      // Determine reminder types based on chronological sequence
-      const reminderTypes = ['friendly', 'polite', 'firm', 'urgent'];
-      
-      for (let i = 0; i < remindersWithDates.length; i++) {
-        const { rule, scheduledDate, overdue_days } = remindersWithDates[i];
-        
-        // Assign reminder type based on chronological sequence (friendly -> polite -> firm -> urgent)
-        const reminderType = reminderTypes[Math.min(i, reminderTypes.length - 1)];
-        
-        scheduledReminders.push({
-          invoice_id: invoiceId,
-          reminder_type: reminderType,
-          overdue_days,
-          sent_at: scheduledDate.toISOString(),
-          reminder_status: 'scheduled',
-          email_id: null
-        });
-      }
-    }
-
-    // Insert scheduled reminders
-    if (scheduledReminders.length > 0) {
-      const { error } = await supabaseAdmin
-        .from('invoice_reminders')
-        .insert(scheduledReminders);
-
-      if (error) {
-        console.error('Error creating scheduled reminders:', error);
-        throw error;
-      }
-
-      console.log(`Created ${scheduledReminders.length} scheduled reminders for invoice ${invoiceId}`);
-    }
-  } catch (error) {
-    console.error('Error in createScheduledReminders:', error);
-    throw error;
-  }
+// Legacy function wrapper for backward compatibility (now uses shared utility)
+async function createScheduledRemindersWrapper(invoiceId: string, reminderSettings: any, dueDate: string, paymentTerms?: any, invoiceStatus?: string, updatedAt?: string) {
+  return createScheduledReminders(invoiceId, reminderSettings, dueDate, paymentTerms, invoiceStatus, updatedAt);
 }
+
+// Export wrapper for use in this file
+const createScheduledRemindersLocal = createScheduledRemindersWrapper;
 
 if (!process.env.RESEND_API_KEY) {
   console.warn('RESEND_API_KEY not found in environment variables');
@@ -270,6 +41,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         error: 'Invoice ID and client email are required' 
       }, { status: 400 });
+    }
+
+    // Try to enqueue job if queue is enabled
+    // Feature flag: ENABLE_ASYNC_QUEUE must be 'true' to use queue
+    const useQueue = process.env.ENABLE_ASYNC_QUEUE === 'true';
+
+    if (useQueue) {
+      const queueResult = await enqueueBackgroundJob(
+        'send_invoice',
+        {
+          invoiceId,
+          clientEmail,
+          clientName,
+          userId: user.id,
+        },
+        {
+          retries: 3,
+          deduplicationId: `send_invoice_${invoiceId}_${Date.now()}`,
+        }
+      );
+
+      if (queueResult.queued) {
+        // Job queued successfully, return immediately
+        console.log(`✅ Invoice ${invoiceId} queued for sending (jobId: ${queueResult.jobId})`);
+        return NextResponse.json({
+          success: true,
+          queued: true,
+          jobId: queueResult.jobId,
+          message: 'Invoice queued for sending',
+        });
+      }
+
+      // Queue failed, log and fall through to sync processing
+      console.warn('Queue failed, falling back to synchronous processing:', queueResult.error);
     }
 
     // Fetch invoice with client data

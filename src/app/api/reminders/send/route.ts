@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { Resend } from 'resend';
 import { getReminderEmailTemplate } from '@/lib/reminder-email-templates';
 import { canEnableReminder } from '@/lib/subscription-validator';
+import { enqueueBackgroundJob } from '@/lib/queue-helper';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -131,9 +132,44 @@ export async function POST(request: NextRequest) {
     const today = new Date();
     const isOverdue = today > dueDate;
     let daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-
+    
     if (!isOverdue) {
       return NextResponse.json({ error: 'Invoice is not overdue yet' }, { status: 400 });
+    }
+
+    // Try to enqueue job if queue is enabled
+    // Feature flag: ENABLE_ASYNC_QUEUE must be 'true' to use queue
+    const useQueue = process.env.ENABLE_ASYNC_QUEUE === 'true';
+
+    if (useQueue) {
+      const queueResult = await enqueueBackgroundJob(
+        'send_reminder',
+        {
+          invoiceId: invoice.id,
+          reminderType,
+          daysOverdue,
+          clientEmail: (invoice.clients as any)?.email || '',
+          clientName: (invoice.clients as any)?.name || '',
+        },
+        {
+          retries: 3,
+          deduplicationId: `send_reminder_${invoice.id}_${reminderType}_${Date.now()}`,
+        }
+      );
+
+      if (queueResult.queued) {
+        // Job queued successfully, return immediately
+        console.log(`✅ Reminder for invoice ${invoice.invoice_number} queued (jobId: ${queueResult.jobId})`);
+        return NextResponse.json({
+          success: true,
+          queued: true,
+          jobId: queueResult.jobId,
+          message: 'Reminder queued for sending',
+        });
+      }
+
+      // Queue failed, log and fall through to sync processing
+      console.warn('Queue failed, falling back to synchronous processing:', queueResult.error);
     }
 
     // Get user email to verify if sending to own email (for free plan check)
