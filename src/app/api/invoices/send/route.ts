@@ -43,41 +43,8 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Try to enqueue job if queue is enabled
-    // Feature flag: ENABLE_ASYNC_QUEUE must be 'true' to use queue
-    const useQueue = process.env.ENABLE_ASYNC_QUEUE === 'true';
-
-    if (useQueue) {
-      const queueResult = await enqueueBackgroundJob(
-        'send_invoice',
-        {
-          invoiceId,
-          clientEmail,
-          clientName,
-          userId: user.id,
-        },
-        {
-          retries: 3,
-          deduplicationId: `send_invoice_${invoiceId}_${Date.now()}`,
-        }
-      );
-
-      if (queueResult.queued) {
-        // Job queued successfully, return immediately
-        console.log(`✅ Invoice ${invoiceId} queued for sending (jobId: ${queueResult.jobId})`);
-        return NextResponse.json({
-          success: true,
-          queued: true,
-          jobId: queueResult.jobId,
-          message: 'Invoice queued for sending',
-        });
-      }
-
-      // Queue failed, log and fall through to sync processing
-      console.warn('Queue failed, falling back to synchronous processing:', queueResult.error);
-    }
-
-    // Fetch invoice with client data
+    // Fetch invoice FIRST to check status and get client data if needed
+    // We need this before queue check to update status immediately
     const { data: invoice, error: invoiceError } = await supabaseAdmin
       .from('invoices')
       .select(`
@@ -125,6 +92,66 @@ export async function POST(request: NextRequest) {
         error: 'Client email is required. Please ensure the invoice has a client with an email address.' 
       }, { status: 400 });
     }
+
+    // Try to enqueue job if queue is enabled
+    // Feature flag: ENABLE_ASYNC_QUEUE must be 'true' to use queue
+    const useQueue = process.env.ENABLE_ASYNC_QUEUE === 'true';
+
+    if (useQueue) {
+      const queueResult = await enqueueBackgroundJob(
+        'send_invoice',
+        {
+          invoiceId,
+          clientEmail,
+          clientName,
+          userId: user.id,
+        },
+        {
+          retries: 3,
+          deduplicationId: `send_invoice_${invoiceId}_${Date.now()}`,
+        }
+      );
+
+      if (queueResult.queued) {
+        // Update invoice status to 'sent' IMMEDIATELY for better UX
+        // This ensures UI updates right away, even though email sends in background
+        if (invoice.status === 'draft') {
+          await supabaseAdmin
+            .from('invoices')
+            .update({ status: 'sent', updated_at: new Date().toISOString() })
+            .eq('id', invoiceId)
+            .eq('user_id', user.id);
+        }
+
+        // Fetch updated invoice for response
+        const { data: updatedInvoice } = await supabaseAdmin
+          .from('invoices')
+          .select('*')
+          .eq('id', invoiceId)
+          .single();
+
+        // Job queued successfully, return immediately with updated invoice
+        console.log(`✅ Invoice ${invoiceId} queued for sending (jobId: ${queueResult.jobId})`);
+        return NextResponse.json({
+          success: true,
+          queued: true,
+          jobId: queueResult.jobId,
+          message: 'Invoice queued for sending',
+          invoice: updatedInvoice ? {
+            ...updatedInvoice,
+            invoiceNumber: updatedInvoice.invoice_number,
+            dueDate: updatedInvoice.due_date,
+            createdAt: updatedInvoice.created_at,
+            updatedAt: updatedInvoice.updated_at,
+          } : undefined,
+        });
+      }
+
+      // Queue failed, log and fall through to sync processing
+      console.warn('Queue failed, falling back to synchronous processing:', queueResult.error);
+    }
+
+    // Invoice already fetched above (before queue check)
 
     // Fetch invoice items
     const { data: itemsData, error: itemsError } = await supabaseAdmin

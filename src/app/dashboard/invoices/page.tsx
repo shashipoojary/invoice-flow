@@ -759,13 +759,27 @@ function InvoicesContent(): React.JSX.Element {
       });
 
       if (response.ok) {
-        // Prefer server response's invoice if provided
-        try { const payload = await response.json(); if (payload?.invoice) { updateInvoice(payload.invoice) } } catch {}
-        // Fallback optimistic update
-        updateInvoice({ ...invoice, status: 'sent' as const });
-        // And refresh list to keep filters/pagination in sync
-        try { await refreshInvoices(); } catch {}
-        showSuccess('Invoice Sent', `Invoice ${invoice.invoiceNumber} has been sent successfully.`);
+        const payload = await response.json();
+        
+        // Handle queued response (async) - update status immediately
+        if (payload?.queued) {
+          // Update invoice status immediately for queued jobs
+          updateInvoice({ ...invoice, status: 'sent' as const });
+          // Refresh list in background to get latest data
+          setTimeout(() => { refreshInvoices().catch(() => {}) }, 1000);
+          showSuccess('Invoice Queued', `Invoice ${invoice.invoiceNumber} is being sent.`);
+        } else {
+          // Handle sync response - use server invoice if provided
+          if (payload?.invoice) {
+            updateInvoice(payload.invoice);
+          } else {
+            // Fallback optimistic update
+            updateInvoice({ ...invoice, status: 'sent' as const });
+          }
+          // Refresh list to keep filters/pagination in sync
+          try { await refreshInvoices(); } catch {}
+          showSuccess('Invoice Sent', `Invoice ${invoice.invoiceNumber} has been sent successfully.`);
+        }
         setSendInvoiceModal({ isOpen: false, invoice: null, isLoading: false });
       } else {
         showError('Send Failed', 'Failed to send invoice. Please try again.');
