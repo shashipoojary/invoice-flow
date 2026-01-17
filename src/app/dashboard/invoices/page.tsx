@@ -779,18 +779,22 @@ function InvoicesContent(): React.JSX.Element {
           updateInvoice({ ...invoice, status: 'sent' as const });
         }
         
+        // Refresh IMMEDIATELY after send confirmation (before closing modal)
+        // This ensures UI shows correct data before modal closes
+        try {
+          await refreshInvoices();
+        } catch (error) {
+          console.error('Error refreshing invoices:', error);
+        }
+        
         // Handle queued vs sync messages
         if (payload?.queued) {
           showSuccess('Invoice Queued', `Invoice ${invoice.invoiceNumber} is being sent.`);
-          // Delayed refresh only for queued (to catch any additional updates)
-          setTimeout(() => { refreshInvoices().catch(() => {}) }, 2000);
         } else {
           showSuccess('Invoice Sent', `Invoice ${invoice.invoiceNumber} has been sent successfully.`);
-          // No immediate refresh needed - we already have the updated invoice from response
-          // Only refresh if needed for filters/pagination (non-blocking)
-          setTimeout(() => { refreshInvoices().catch(() => {}) }, 500);
         }
         
+        // Close modal AFTER refresh completes (ensures UI is updated)
         setSendInvoiceModal({ isOpen: false, invoice: null, isLoading: false });
       } else {
         showError('Send Failed', 'Failed to send invoice. Please try again.');

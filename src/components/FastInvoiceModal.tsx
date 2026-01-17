@@ -609,19 +609,22 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
             }
           }
           
+          // Refresh IMMEDIATELY after send confirmation (before closing modal)
+          // This ensures UI shows correct data before modal closes
+          try {
+            await refreshInvoices?.();
+          } catch (error) {
+            console.error('Error refreshing invoices:', error);
+          }
+          
           // Handle queued vs sync messages
           if (payload?.queued) {
             showSuccess(isEditing ? 'Invoice updated and queued for sending!' : 'Invoice created and queued for sending!');
-            // Delayed refresh only for queued (to catch any additional updates)
-            setTimeout(() => { refreshInvoices?.().catch(() => {}) }, 2000);
           } else {
             showSuccess(isEditing ? 'Invoice updated and sent successfully!' : 'Invoice created and sent successfully!');
-            // No immediate refresh needed - we already have the updated invoice from response
-            // Only refresh if needed for filters/pagination (non-blocking, delayed)
-            setTimeout(() => { refreshInvoices?.().catch(() => {}) }, 500);
           }
           
-          // Close modal immediately after successful send (don't wait for refresh)
+          // Close modal AFTER refresh completes (ensures UI is updated)
           onSuccess()
           onClose()
           resetForm()
