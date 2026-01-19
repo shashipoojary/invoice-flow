@@ -24,12 +24,15 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLe
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 
 // Lazy load heavy modal components for better performance
+// Using ssr: false and no loading state to prevent layout shift
 const FastInvoiceModal = dynamic(() => import('@/components/FastInvoiceModal'), {
-  loading: () => <div className="flex items-center justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+  ssr: false,
+  loading: () => null // No loading state to prevent layout shift
 });
 
 const QuickInvoiceModal = dynamic(() => import('@/components/QuickInvoiceModal'), {
-  loading: () => <div className="flex items-center justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+  ssr: false,
+  loading: () => null // No loading state to prevent layout shift
 });
 
 const ConfirmationModal = dynamic(() => import('@/components/ConfirmationModal'), {
@@ -144,6 +147,15 @@ export default function DashboardOverview() {
   });
   
   // Business settings are now managed by SettingsContext
+
+  // Preload modals on mount to prevent layout shift and loading spinner
+  useEffect(() => {
+    // Preload FastInvoiceModal and QuickInvoiceModal in the background
+    if (typeof window !== 'undefined') {
+      import('@/components/FastInvoiceModal');
+      import('@/components/QuickInvoiceModal');
+    }
+  }, []);
 
   // Keep invoices ref updated
   useEffect(() => {
