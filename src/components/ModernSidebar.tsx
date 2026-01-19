@@ -37,6 +37,10 @@ const ModernSidebar = ({
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth >= 1024;
+  });
   const { user, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -49,7 +53,10 @@ const ModernSidebar = ({
   // Auto-collapse on mobile and handle resize
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 1024) {
+      const isDesktopNow = window.innerWidth >= 1024;
+      setIsDesktop(isDesktopNow);
+      
+      if (!isDesktopNow) {
         setIsCollapsed(true);
         setIsMobileOpen(false); // Close mobile menu on resize
       } else {
@@ -62,6 +69,9 @@ const ModernSidebar = ({
         }
       }
     };
+    
+    // Set initial desktop state
+    handleResize();
     
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -389,13 +399,16 @@ const ModernSidebar = ({
         />
       )}
 
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setIsMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-3 shadow-lg border transition-all duration-150 ease-out hover:scale-105 active:scale-95 cursor-pointer bg-white border-gray-200 hover:bg-gray-50"
-      >
-        <Menu className="w-5 h-5 text-gray-700" />
-      </button>
+      {/* Mobile Menu Button - Only render on mobile to prevent layout shift */}
+      {!isDesktop && (
+        <button
+          onClick={() => setIsMobileOpen(true)}
+          className="lg:hidden fixed top-4 left-4 z-50 p-3 shadow-lg border transition-all duration-150 ease-out hover:scale-105 active:scale-95 cursor-pointer bg-white border-gray-200 hover:bg-gray-50"
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5 text-gray-700" />
+        </button>
+      )}
 
       {/* Sidebar - Always fixed, overlays content */}
       <div 
@@ -410,14 +423,17 @@ const ModernSidebar = ({
       </div>
       
       {/* Spacer for desktop to maintain layout - matches sidebar width exactly */}
-      <div 
-        className="hidden lg:block transition-all duration-300 ease-in-out flex-shrink-0"
-        style={{
-          width: isCollapsed ? '64px' : '320px',
-          minWidth: isCollapsed ? '64px' : '320px',
-          maxWidth: isCollapsed ? '64px' : '320px',
-        }}
-      />
+      {/* Only render on desktop to prevent any mobile layout shift */}
+      {isDesktop && (
+        <div 
+          className="hidden lg:block transition-all duration-300 ease-in-out flex-shrink-0"
+          style={{
+            width: isCollapsed ? '64px' : '320px',
+            minWidth: isCollapsed ? '64px' : '320px',
+            maxWidth: isCollapsed ? '64px' : '320px',
+          }}
+        />
+      )}
 
       {/* Mobile Close Button */}
       {isMobileOpen && (
