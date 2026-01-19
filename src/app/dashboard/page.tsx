@@ -2870,10 +2870,12 @@ export default function DashboardOverview() {
                   Dashboard Overview
                 </h2>
                 {/* Notification Icon */}
-                <div className="relative" ref={notificationRef}>
+                <div className="relative flex-shrink-0" ref={notificationRef} style={{ minWidth: '40px', minHeight: '40px' }}>
                   <button
                     onClick={() => setShowNotifications(!showNotifications)}
                     className="relative p-2 hover:bg-gray-100 transition-colors cursor-pointer"
+                    style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    aria-label="Notifications"
                   >
                     <div className="relative inline-block">
                       <Bell className="h-5 w-5" style={{color: '#6b7280'}} />
@@ -2884,7 +2886,14 @@ export default function DashboardOverview() {
                   </button>
                   {/* Notification Dropdown */}
                   {showNotifications && (
-                    <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 lg:w-[28rem] xl:w-[32rem] bg-white border border-gray-200 shadow-lg z-50 flex flex-col max-h-96 lg:max-h-[32rem]">
+                    <div 
+                      className="absolute right-0 top-full mt-2 w-80 sm:w-96 lg:w-[28rem] xl:w-[32rem] bg-white border border-gray-200 shadow-lg z-50 flex flex-col max-h-96 lg:max-h-[32rem]"
+                      style={{
+                        // Prevent layout shift
+                        willChange: 'transform',
+                        contain: 'layout style paint'
+                      }}
+                    >
                       <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0 bg-white">
                         <h3 className="font-semibold text-sm" style={{color: '#1f2937'}}>Notifications</h3>
                         <div className="flex items-center gap-2">
