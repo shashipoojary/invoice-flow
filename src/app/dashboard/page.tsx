@@ -280,6 +280,7 @@ export default function DashboardOverview() {
     parseDateOnlyRef.current = parseDateOnly;
   }, [getAuthHeaders, parseDateOnly]);
 
+
   // Scroll handler for Due Invoices section
   const handleDueInvoicesScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const container = e.currentTarget;
@@ -308,6 +309,7 @@ export default function DashboardOverview() {
         left: index * containerWidth,
         behavior: 'smooth'
       });
+      setDueInvoicesScrollIndex(index);
     }
   }, []);
 
@@ -1729,6 +1731,53 @@ export default function DashboardOverview() {
     return { overdue, dueToday, upcoming };
   }, [invoices, parseDateOnly]);
 
+  // Determine which tabs have data - must be after dueInvoices is defined
+  const availableTabs = useMemo(() => {
+    const tabs: number[] = [];
+    
+    // Tab 0: Invoice List - show if there are any due invoices
+    const hasDueInvoices = dueInvoices.overdue.length > 0 || dueInvoices.dueToday.length > 0 || dueInvoices.upcoming.length > 0;
+    if (hasDueInvoices) tabs.push(0);
+    
+    // Tab 1: Analytics - show if there are any due invoices (same data as tab 0)
+    if (hasDueInvoices) tabs.push(1);
+    
+    // Tab 2: Performance Chart - show if there are any invoices
+    if (invoices.length > 0) tabs.push(2);
+    
+    // Tab 3: Conversion Rate - show if there are any sent/paid invoices
+    const totalSent = invoices.filter(inv => inv.status === 'sent' || inv.status === 'paid').length;
+    if (totalSent > 0) tabs.push(3);
+    
+    return tabs;
+  }, [dueInvoices, invoices]);
+
+  // Scroll handler for Due Invoices section - updated to work with available tabs
+  const handleDueInvoicesScrollUpdated = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    const scrollLeft = container.scrollLeft;
+    const containerWidth = container.clientWidth;
+    
+    // Calculate which slide is visible based on available tabs
+    const slideIndex = Math.round(scrollLeft / containerWidth);
+    if (slideIndex >= 0 && slideIndex < availableTabs.length) {
+      setDueInvoicesScrollIndex(slideIndex);
+    }
+  }, [availableTabs]);
+
+  // Function to scroll to specific slide (scrollIndex, not actual tab index)
+  const scrollToDueInvoicesSlideUpdated = useCallback((scrollIndex: number) => {
+    if (dueInvoicesScrollRef.current && scrollIndex >= 0 && scrollIndex < availableTabs.length) {
+      const container = dueInvoicesScrollRef.current;
+      const containerWidth = container.clientWidth;
+      container.scrollTo({
+        left: scrollIndex * containerWidth,
+        behavior: 'smooth'
+      });
+      setDueInvoicesScrollIndex(scrollIndex);
+    }
+  }, [availableTabs]);
+
   // Calculate invoice trends for the third slide
   const invoiceTrends = useMemo(() => {
     if (!Array.isArray(invoices) || invoices.length === 0) {
@@ -1867,11 +1916,11 @@ export default function DashboardOverview() {
     if (recentInvoices.length > 0) {
       return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:items-start">
-          {/* Due Invoices - First on Mobile, Right Side on Desktop - Horizontal Scrollable */}
+          {/* Invoice Insights - First on Mobile, Right Side on Desktop - Horizontal Scrollable */}
           <div className="space-y-3 sm:space-y-4 order-1 lg:order-2">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
-                Due Invoices
+                Invoice Insights
               </h2>
               <button
                 onClick={() => router.push('/dashboard/invoices')}
@@ -1884,51 +1933,39 @@ export default function DashboardOverview() {
             
             {/* Horizontal Scrollable Container with Snap */}
             <div className="relative">
-              {/* Scroll Indicator Dots */}
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <button
-                  onClick={() => scrollToDueInvoicesSlide(0)}
-                  className={`w-2 h-2 p-0 flex-shrink-0 aspect-square rounded-full border-0 outline-none transition-all ${
-                    dueInvoicesScrollIndex === 0 ? 'bg-indigo-600' : 'bg-gray-300 hover:bg-gray-400'
-                  }`}
-                  aria-label="Go to invoices list"
-                ></button>
-                <button
-                  onClick={() => scrollToDueInvoicesSlide(1)}
-                  className={`w-2 h-2 p-0 flex-shrink-0 aspect-square rounded-full border-0 outline-none transition-all ${
-                    dueInvoicesScrollIndex === 1 ? 'bg-indigo-600' : 'bg-gray-300 hover:bg-gray-400'
-                  }`}
-                  aria-label="Go to analytics"
-                ></button>
-                <button
-                  onClick={() => scrollToDueInvoicesSlide(2)}
-                  className={`w-2 h-2 p-0 flex-shrink-0 aspect-square rounded-full border-0 outline-none transition-all ${
-                    dueInvoicesScrollIndex === 2 ? 'bg-indigo-600' : 'bg-gray-300 hover:bg-gray-400'
-                  }`}
-                  aria-label="Go to performance chart"
-                ></button>
-                <button
-                  onClick={() => scrollToDueInvoicesSlide(3)}
-                  className={`w-2 h-2 p-0 flex-shrink-0 aspect-square rounded-full border-0 outline-none transition-all ${
-                    dueInvoicesScrollIndex === 3 ? 'bg-indigo-600' : 'bg-gray-300 hover:bg-gray-400'
-                  }`}
-                  aria-label="Go to conversion rate"
-                ></button>
-              </div>
+              {/* Scroll Indicator Dots - Only show for available tabs */}
+              {availableTabs.length > 1 && (
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  {availableTabs.map((actualTabIndex, scrollIndex) => {
+                    const tabLabels = ['Go to invoices list', 'Go to analytics', 'Go to performance chart', 'Go to conversion rate'];
+                    return (
+                      <button
+                        key={actualTabIndex}
+                        onClick={() => scrollToDueInvoicesSlideUpdated(scrollIndex)}
+                        className={`w-2 h-2 p-0 flex-shrink-0 aspect-square rounded-full border-0 outline-none transition-all ${
+                          dueInvoicesScrollIndex === scrollIndex ? 'bg-indigo-600' : 'bg-gray-300 hover:bg-gray-400'
+                        }`}
+                        aria-label={tabLabels[actualTabIndex]}
+                      ></button>
+                    );
+                  })}
+                </div>
+              )}
               
               {/* Scroll Container */}
               <div 
                 ref={dueInvoicesScrollRef}
                 className="overflow-x-auto scrollbar-hide snap-x snap-mandatory lg:pr-2"
-                onScroll={handleDueInvoicesScroll}
+                onScroll={handleDueInvoicesScrollUpdated}
                 style={{ 
                   scrollBehavior: 'smooth',
                   WebkitOverflowScrolling: 'touch'
                 }}
               >
-                <div className="flex h-full" style={{ width: '400%' }}>
-                  {/* Slide 1: Due Invoices List */}
-                  <div className="flex-shrink-0 snap-start pr-2" style={{ width: '25%' }}>
+                <div className="flex h-full" style={{ width: `${availableTabs.length * 100}%` }}>
+                  {/* Slide 1: Due Invoices List - Only render if tab 0 is available */}
+                  {availableTabs.includes(0) && (
+                  <div className="flex-shrink-0 snap-start pr-2" style={{ width: `${100 / availableTabs.length}%` }}>
                     {dueInvoices.overdue.length === 0 && dueInvoices.dueToday.length === 0 && dueInvoices.upcoming.length === 0 ? (
                       <div className="bg-white border border-gray-200 p-8 text-center">
                         <Calendar className="h-8 w-8 mx-auto mb-2" style={{color: '#9ca3af'}} />
@@ -2105,11 +2142,13 @@ export default function DashboardOverview() {
                       </div>
                     )}
                   </div>
+                  )}
 
-                  {/* Slide 2: Due Invoices Analytics Graph */}
-                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: '25%' }}>
+                  {/* Slide 2: Due Invoices Analytics Graph - Only render if tab 1 is available */}
+                  {availableTabs.includes(1) && (
+                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: `${100 / availableTabs.length}%` }}>
                     <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-4">Due Invoices Analytics</h3>
+                      <h3 className="text-sm font-semibold text-gray-900 mb-4">Invoice Analytics</h3>
                       
                       {(() => {
                         const allDue = [...dueInvoices.overdue, ...dueInvoices.dueToday, ...dueInvoices.upcoming];
@@ -2352,9 +2391,11 @@ export default function DashboardOverview() {
                       })()}
                     </div>
                   </div>
+                  )}
 
-                  {/* Slide 3: Performance Radar Chart */}
-                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: '25%' }}>
+                  {/* Slide 3: Performance Radar Chart - Only render if tab 2 is available */}
+                  {availableTabs.includes(2) && (
+                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: `${100 / availableTabs.length}%` }}>
                     <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-sm font-semibold text-gray-900">Invoice Performance</h3>
@@ -2730,9 +2771,11 @@ export default function DashboardOverview() {
                       })()}
                     </div>
                   </div>
+                  )}
 
-                  {/* Slide 4: Conversion Rate */}
-                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: '25%' }}>
+                  {/* Slide 4: Conversion Rate - Only render if tab 3 is available */}
+                  {availableTabs.includes(3) && (
+                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: `${100 / availableTabs.length}%` }}>
                     <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
                       <h3 className="text-sm font-semibold text-gray-900 mb-4">Conversion Rate</h3>
                       
@@ -3027,6 +3070,7 @@ export default function DashboardOverview() {
                       })()}
                     </div>
                   </div>
+                  )}
 
                 </div>
               </div>
@@ -3070,7 +3114,7 @@ export default function DashboardOverview() {
       );
     }
     return null;
-  }, [isLoadingInvoices, hasInitiallyLoaded, invoices.length, recentInvoices, dueInvoices, paymentDataMap, calculateDueCharges, parseDateOnly, handleViewInvoice, router, dueInvoicesScrollIndex, scrollToDueInvoicesSlide, handleDueInvoicesScroll, dueInvoicesScrollRef, getStatusIcon, getDueDateStatus, loadingActions, handleDownloadPDF, handleSendInvoice, handleMarkAsPaid, handleEditInvoice, handleDeleteInvoice, handleDuplicateInvoice]);
+  }, [isLoadingInvoices, hasInitiallyLoaded, invoices.length, recentInvoices, dueInvoices, paymentDataMap, calculateDueCharges, parseDateOnly, handleViewInvoice, router, dueInvoicesScrollIndex, scrollToDueInvoicesSlideUpdated, handleDueInvoicesScrollUpdated, dueInvoicesScrollRef, getStatusIcon, getDueDateStatus, loadingActions, handleDownloadPDF, handleSendInvoice, handleMarkAsPaid, handleEditInvoice, handleDeleteInvoice, handleDuplicateInvoice, availableTabs]);
 
   // Helper function to get time ago
   const getTimeAgo = useCallback((date: Date): string => {

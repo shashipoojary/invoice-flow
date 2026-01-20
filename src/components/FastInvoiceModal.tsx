@@ -44,7 +44,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   const [loading, setLoading] = useState(false)
   const [sendLoading, setSendLoading] = useState(false)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
-  const [subscriptionUsage, setSubscriptionUsage] = useState<{ used: number; limit: number | null; remaining: number | null; plan: string; clients?: { used: number; limit: number | null; remaining: number | null } } | null>(null)
+  const [subscriptionUsage, setSubscriptionUsage] = useState<{ used: number; limit: number | null; remaining: number | null; plan: string; payPerInvoice?: { freeInvoicesRemaining: number }; clients?: { used: number; limit: number | null; remaining: number | null } } | null>(null)
   const [showUpgradeContent, setShowUpgradeContent] = useState(false)
   const [showMissingDetailsWarning, setShowMissingDetailsWarning] = useState(false)
   
@@ -357,6 +357,8 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
     // Check subscription limit BEFORE creating invoice (only for new invoices, not editing)
     if (!editingInvoice) {
       const usageData = await fetchSubscriptionUsage()
+      
+      // For free plan: Check monthly invoice limit
       if (usageData && usageData.plan === 'free' && usageData.limit && usageData.used >= usageData.limit) {
         if (!isSending) {
           setLoading(false)
@@ -368,6 +370,20 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         setSubscriptionUsage(usageData)
         return
       }
+      
+      // For pay-per-invoice: Show warning when all 5 free invoices are used (but don't block)
+      // Users can still create invoices, they'll just be charged $0.50
+      if (usageData && usageData.plan === 'pay_per_invoice') {
+        const freeInvoicesRemaining = usageData.payPerInvoice?.freeInvoicesRemaining || 0
+        if (freeInvoicesRemaining === 0) {
+          // Show warning but allow creation (they'll be charged $0.50)
+          showWarning('You\'ve used all 5 free invoices. This invoice will be charged $0.50 when sent.')
+          setSubscriptionUsage(usageData)
+          // Continue with invoice creation - don't return
+        }
+      }
+      
+      // Monthly plan: No restrictions, allow creation
     }
 
     try {
@@ -530,6 +546,8 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
     // Check subscription limit BEFORE creating invoice (only for new invoices, not editing)
     if (!editingInvoice) {
       const usageData = await fetchSubscriptionUsage()
+      
+      // For free plan: Check monthly invoice limit
       if (usageData && usageData.plan === 'free' && usageData.limit && usageData.used >= usageData.limit) {
         setSendLoading(false)
         showError('Invoice Limit Reached', 'You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.')
@@ -539,6 +557,20 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         setSubscriptionUsage(usageData)
         return
       }
+      
+      // For pay-per-invoice: Show warning when all 5 free invoices are used (but don't block)
+      // Users can still create invoices, they'll just be charged $0.50
+      if (usageData && usageData.plan === 'pay_per_invoice') {
+        const freeInvoicesRemaining = usageData.payPerInvoice?.freeInvoicesRemaining || 0
+        if (freeInvoicesRemaining === 0) {
+          // Show warning but allow creation (they'll be charged $0.50)
+          showWarning('You\'ve used all 5 free invoices. This invoice will be charged $0.50 when sent.')
+          setSubscriptionUsage(usageData)
+          // Continue with invoice creation - don't return
+        }
+      }
+      
+      // Monthly plan: No restrictions, allow creation
     }
 
     try {
