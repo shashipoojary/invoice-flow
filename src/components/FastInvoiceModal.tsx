@@ -47,6 +47,8 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   const [subscriptionUsage, setSubscriptionUsage] = useState<{ used: number; limit: number | null; remaining: number | null; plan: string; payPerInvoice?: { freeInvoicesRemaining: number }; clients?: { used: number; limit: number | null; remaining: number | null } } | null>(null)
   const [showUpgradeContent, setShowUpgradeContent] = useState(false)
   const [showMissingDetailsWarning, setShowMissingDetailsWarning] = useState(false)
+  const [showChargeConfirmation, setShowChargeConfirmation] = useState(false)
+  const [pendingInvoiceCreation, setPendingInvoiceCreation] = useState<{ showToast: boolean; isSending: boolean } | null>(null)
   
   const router = useRouter()
   const { user } = useAuth()
@@ -371,15 +373,19 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         return
       }
       
-      // For pay-per-invoice: Show warning when all 5 free invoices are used (but don't block)
-      // Users can still create invoices, they'll just be charged $0.50
+      // For pay-per-invoice: Show confirmation modal when all 5 free invoices are used
+      // Users can still create invoices, they'll just be charged $0.50 when sent
       if (usageData && usageData.plan === 'pay_per_invoice') {
         const freeInvoicesRemaining = usageData.payPerInvoice?.freeInvoicesRemaining || 0
         if (freeInvoicesRemaining === 0) {
-          // Show warning but allow creation (they'll be charged $0.50)
-          showWarning('You\'ve used all 5 free invoices. This invoice will be charged $0.50 when sent.')
+          // Show confirmation modal before creating invoice
+          if (!isSending) {
+            setLoading(false)
+          }
           setSubscriptionUsage(usageData)
-          // Continue with invoice creation - don't return
+          setPendingInvoiceCreation({ showToast, isSending })
+          setShowChargeConfirmation(true)
+          return // Wait for user confirmation
         }
       }
       
@@ -558,15 +564,17 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         return
       }
       
-      // For pay-per-invoice: Show warning when all 5 free invoices are used (but don't block)
-      // Users can still create invoices, they'll just be charged $0.50
+      // For pay-per-invoice: Show confirmation modal when all 5 free invoices are used
+      // Users can still create invoices, they'll just be charged $0.50 when sent
       if (usageData && usageData.plan === 'pay_per_invoice') {
         const freeInvoicesRemaining = usageData.payPerInvoice?.freeInvoicesRemaining || 0
         if (freeInvoicesRemaining === 0) {
-          // Show warning but allow creation (they'll be charged $0.50)
-          showWarning('You\'ve used all 5 free invoices. This invoice will be charged $0.50 when sent.')
+          // Show confirmation modal before creating invoice
+          setSendLoading(false)
           setSubscriptionUsage(usageData)
-          // Continue with invoice creation - don't return
+          setPendingInvoiceCreation({ showToast: true, isSending: true })
+          setShowChargeConfirmation(true)
+          return // Wait for user confirmation
         }
       }
       
@@ -1282,6 +1290,36 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
           } : undefined}
           reason="You've reached your monthly invoice limit. Upgrade to create unlimited invoices."
           limitType="invoices"
+        />,
+        document.body
+      )}
+
+      {/* Charge Confirmation Modal - Show when pay-per-invoice user has no free invoices remaining */}
+      {typeof window !== 'undefined' && showChargeConfirmation && createPortal(
+        <ConfirmationModal
+          isOpen={showChargeConfirmation}
+          onClose={() => {
+            setShowChargeConfirmation(false)
+            setPendingInvoiceCreation(null)
+          }}
+          onConfirm={() => {
+            setShowChargeConfirmation(false)
+            if (pendingInvoiceCreation) {
+              const { showToast, isSending } = pendingInvoiceCreation
+              setPendingInvoiceCreation(null)
+              // Proceed with invoice creation
+              if (isSending) {
+                handleCreateAndSend()
+              } else {
+                handleCreateInvoice(showToast, isSending)
+              }
+            }
+          }}
+          title="Invoice Charge Confirmation"
+          message="You've used all 5 free invoices. This invoice will be charged $0.50 when sent. Do you want to continue?"
+          type="warning"
+          confirmText="Continue & Create Invoice"
+          cancelText="Cancel"
         />,
         document.body
       )}

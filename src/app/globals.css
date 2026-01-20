@@ -344,6 +344,23 @@ html:not(.loaded) .loading-spinner {
     display: none;  /* Chrome, Safari and Opera */
   }
 
+  /* Optimized scrolling for desktop - prevents laggy scrolling */
+  @media (min-width: 1024px) {
+    .scroll-optimized-desktop {
+      scroll-behavior: auto !important; /* Use instant scrolling on desktop */
+      -webkit-overflow-scrolling: auto; /* Disable momentum scrolling on desktop */
+      overscroll-behavior-x: contain; /* Prevent scroll chaining */
+    }
+  }
+
+  /* Smooth scrolling for mobile */
+  @media (max-width: 1023px) {
+    .scroll-optimized-desktop {
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch; /* Enable momentum scrolling on mobile */
+    }
+  }
+
   /* Hide navbar menu button on docs page */
   .docs-page nav button[aria-label="Open site navigation"] {
     display: none;

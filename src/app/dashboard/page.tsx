@@ -100,6 +100,8 @@ export default function DashboardOverview() {
   const parseDateOnlyRef = useRef<((input: string) => Date) | null>(null);
   const [dueInvoicesScrollIndex, setDueInvoicesScrollIndex] = useState(0);
   const dueInvoicesScrollRef = useRef<HTMLDivElement>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollRAFRef = useRef<number | null>(null);
   const [notifications, setNotifications] = useState<Array<{
     id: string;
     type: 'viewed' | 'due_today' | 'overdue' | 'paid' | 'partial_paid' | 'draft_created' | 'downloaded' | 'payment_copied' | 'reminder_scheduled' | 'sent' | 'failed' | 'cancelled' | 'estimate_sent' | 'estimate_approved' | 'estimate_rejected';
@@ -167,6 +169,18 @@ export default function DashboardOverview() {
   useEffect(() => {
     invoicesRef.current = invoices || [];
   }, [invoices]);
+
+  // Cleanup scroll animation frames on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollRAFRef.current !== null) {
+        cancelAnimationFrame(scrollRAFRef.current);
+      }
+      if (scrollTimeoutRef.current !== null) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Extract payment data from invoices immediately - now instant since it's direct properties
   useEffect(() => {
@@ -870,19 +884,53 @@ export default function DashboardOverview() {
     }
   }, [getAuthHeaders, showSuccess, showError]);
 
-  const handleDuplicateInvoice = useCallback((invoice: Invoice) => {
-    setConfirmationModal({
-      isOpen: true,
-      title: 'Duplicate Invoice',
-      message: `Are you sure you want to duplicate invoice ${invoice.invoiceNumber}? This will create a new draft invoice with the same details that you can edit.`,
-      type: 'info',
-      onConfirm: () => performDuplicateInvoice(invoice),
-      isLoading: false,
-      confirmText: 'Create Duplicate',
-      cancelText: 'Cancel',
-      infoBanner: undefined
-    });
-  }, []);
+  const handleDuplicateInvoice = useCallback(async (invoice: Invoice) => {
+    // Check subscription usage to see if charge applies
+    try {
+      const headers = await getAuthHeaders();
+      const usageResponse = await fetch('/api/subscription/usage', {
+        headers,
+        cache: 'no-store'
+      });
+      
+      let chargeWarning = '';
+      if (usageResponse.ok) {
+        const usageData = await usageResponse.json();
+        if (usageData.plan === 'pay_per_invoice') {
+          const freeInvoicesRemaining = usageData.payPerInvoice?.freeInvoicesRemaining || 0;
+          if (freeInvoicesRemaining === 0) {
+            chargeWarning = '\n\n⚠️ Note: You\'ve used all 5 free invoices. This duplicated invoice will be charged $0.50 when sent.';
+          }
+        }
+      }
+      
+      setConfirmationModal({
+        isOpen: true,
+        title: 'Duplicate Invoice',
+        message: `Are you sure you want to duplicate invoice ${invoice.invoiceNumber}? This will create a new draft invoice with the same details that you can edit.${chargeWarning}`,
+        type: chargeWarning ? 'warning' : 'info',
+        onConfirm: () => performDuplicateInvoice(invoice),
+        isLoading: false,
+        confirmText: 'Create Duplicate',
+        cancelText: 'Cancel',
+        infoBanner: undefined
+      });
+    } catch (error) {
+      console.error('Error fetching subscription usage:', error);
+      // Fallback to basic confirmation if fetch fails
+      setConfirmationModal({
+        isOpen: true,
+        title: 'Duplicate Invoice',
+        message: `Are you sure you want to duplicate invoice ${invoice.invoiceNumber}? This will create a new draft invoice with the same details that you can edit.`,
+        type: 'info',
+        onConfirm: () => performDuplicateInvoice(invoice),
+        isLoading: false,
+        confirmText: 'Create Duplicate',
+        cancelText: 'Cancel',
+        infoBanner: undefined
+      });
+    }
+  }, [getAuthHeaders]);
 
   const performDuplicateInvoice = useCallback(async (invoice: Invoice) => {
     const actionKey = `duplicate-${invoice.id}`;
@@ -1752,17 +1800,25 @@ export default function DashboardOverview() {
     return tabs;
   }, [dueInvoices, invoices]);
 
-  // Scroll handler for Due Invoices section - updated to work with available tabs
+  // Scroll handler for Due Invoices section - throttled for better performance on desktop
   const handleDueInvoicesScrollUpdated = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const container = e.currentTarget;
-    const scrollLeft = container.scrollLeft;
-    const containerWidth = container.clientWidth;
-    
-    // Calculate which slide is visible based on available tabs
-    const slideIndex = Math.round(scrollLeft / containerWidth);
-    if (slideIndex >= 0 && slideIndex < availableTabs.length) {
-      setDueInvoicesScrollIndex(slideIndex);
+    // Cancel any pending RAF
+    if (scrollRAFRef.current !== null) {
+      cancelAnimationFrame(scrollRAFRef.current);
     }
+    
+    // Use requestAnimationFrame for smooth updates
+    scrollRAFRef.current = requestAnimationFrame(() => {
+      const container = e.currentTarget;
+      const scrollLeft = container.scrollLeft;
+      const containerWidth = container.clientWidth;
+      
+      // Calculate which slide is visible based on available tabs
+      const slideIndex = Math.round(scrollLeft / containerWidth);
+      if (slideIndex >= 0 && slideIndex < availableTabs.length) {
+        setDueInvoicesScrollIndex(slideIndex);
+      }
+    });
   }, [availableTabs]);
 
   // Function to scroll to specific slide (scrollIndex, not actual tab index)
@@ -1952,14 +2008,15 @@ export default function DashboardOverview() {
                 </div>
               )}
               
-              {/* Scroll Container */}
+              {/* Scroll Container - Optimized for desktop performance */}
               <div 
                 ref={dueInvoicesScrollRef}
-                className="overflow-x-auto scrollbar-hide snap-x snap-mandatory lg:pr-2"
+                className="overflow-x-auto scrollbar-hide snap-x snap-mandatory lg:pr-2 scroll-optimized-desktop"
                 onScroll={handleDueInvoicesScrollUpdated}
                 style={{ 
-                  scrollBehavior: 'smooth',
-                  WebkitOverflowScrolling: 'touch'
+                  willChange: 'scroll-position', // Optimize for scrolling performance
+                  transform: 'translateZ(0)', // Force GPU acceleration
+                  backfaceVisibility: 'hidden' // Prevent flickering
                 }}
               >
                 <div className="flex h-full" style={{ width: `${availableTabs.length * 100}%` }}>
