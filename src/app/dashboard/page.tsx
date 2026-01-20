@@ -40,6 +40,11 @@ const ConfirmationModal = dynamic(() => import('@/components/ConfirmationModal')
   loading: () => null
 });
 
+const UpgradeModal = dynamic(() => import('@/components/UpgradeModal'), {
+  ssr: false,
+  loading: () => null
+});
+
 const SendInvoiceModal = dynamic(() => import('@/components/SendInvoiceModal'), {
   ssr: false,
   loading: () => null
@@ -141,6 +146,15 @@ export default function DashboardOverview() {
     cancelText: 'Cancel' as string | undefined,
     infoBanner: undefined as React.ReactNode | undefined
   });
+  
+  // Upgrade modal state
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [subscriptionUsage, setSubscriptionUsage] = useState<{
+    used: number;
+    limit: number | null;
+    remaining: number | null;
+    plan: string;
+  } | null>(null);
 
   // Send invoice modal state
   const [sendInvoiceModal, setSendInvoiceModal] = useState<{
@@ -884,52 +898,47 @@ export default function DashboardOverview() {
     }
   }, [getAuthHeaders, showSuccess, showError]);
 
-  const handleDuplicateInvoice = useCallback(async (invoice: Invoice) => {
-    // Check subscription usage to see if charge applies
-    try {
-      const headers = await getAuthHeaders();
-      const usageResponse = await fetch('/api/subscription/usage', {
+  const handleDuplicateInvoice = useCallback((invoice: Invoice) => {
+    // Show modal instantly for better UX
+    setConfirmationModal({
+      isOpen: true,
+      title: 'Duplicate Invoice',
+      message: `Are you sure you want to duplicate invoice ${invoice.invoiceNumber}? This will create a new draft invoice with the same details that you can edit.`,
+      type: 'info',
+      onConfirm: () => performDuplicateInvoice(invoice),
+      isLoading: false,
+      confirmText: 'Create Duplicate',
+      cancelText: 'Cancel',
+      infoBanner: undefined
+    });
+    
+    // Fetch subscription usage in background and update modal if needed
+    getAuthHeaders().then(headers => {
+      fetch('/api/subscription/usage', {
         headers,
         cache: 'no-store'
-      });
-      
-      let chargeWarning = '';
-      if (usageResponse.ok) {
-        const usageData = await usageResponse.json();
-        if (usageData.plan === 'pay_per_invoice') {
+      }).then(usageResponse => {
+        if (usageResponse.ok) {
+          return usageResponse.json();
+        }
+        return null;
+      }).then(usageData => {
+        if (usageData && usageData.plan === 'pay_per_invoice') {
           const freeInvoicesRemaining = usageData.payPerInvoice?.freeInvoicesRemaining || 0;
           if (freeInvoicesRemaining === 0) {
-            chargeWarning = '\n\n⚠️ Note: You\'ve used all 5 free invoices. This duplicated invoice will be charged $0.50 when sent.';
+            // Update modal with charge warning
+            setConfirmationModal(prev => ({
+              ...prev,
+              message: `${prev.message}\n\n⚠️ Note: You've used all 5 free invoices. This duplicated invoice will be charged $0.50 when sent.`,
+              type: 'warning'
+            }));
           }
         }
-      }
-      
-      setConfirmationModal({
-        isOpen: true,
-        title: 'Duplicate Invoice',
-        message: `Are you sure you want to duplicate invoice ${invoice.invoiceNumber}? This will create a new draft invoice with the same details that you can edit.${chargeWarning}`,
-        type: chargeWarning ? 'warning' : 'info',
-        onConfirm: () => performDuplicateInvoice(invoice),
-        isLoading: false,
-        confirmText: 'Create Duplicate',
-        cancelText: 'Cancel',
-        infoBanner: undefined
+      }).catch(error => {
+        console.error('Error fetching subscription usage:', error);
+        // Silently fail - modal already shown
       });
-    } catch (error) {
-      console.error('Error fetching subscription usage:', error);
-      // Fallback to basic confirmation if fetch fails
-      setConfirmationModal({
-        isOpen: true,
-        title: 'Duplicate Invoice',
-        message: `Are you sure you want to duplicate invoice ${invoice.invoiceNumber}? This will create a new draft invoice with the same details that you can edit.`,
-        type: 'info',
-        onConfirm: () => performDuplicateInvoice(invoice),
-        isLoading: false,
-        confirmText: 'Create Duplicate',
-        cancelText: 'Cancel',
-        infoBanner: undefined
-      });
-    }
+    });
   }, [getAuthHeaders]);
 
   const performDuplicateInvoice = useCallback(async (invoice: Invoice) => {
@@ -967,8 +976,34 @@ export default function DashboardOverview() {
         }
       } else {
         const error = await response.json();
-        showError('Duplicate Failed', error.error || 'Failed to duplicate invoice. Please try again.');
         setConfirmationModal(prev => ({ ...prev, isLoading: false }));
+        
+        // Check if it's a subscription limit error
+        if (error.limitReached) {
+          // Fetch subscription usage to show upgrade modal
+          try {
+            const headers = await getAuthHeaders();
+            const usageResponse = await fetch('/api/subscription/usage', {
+              headers,
+              cache: 'no-store'
+            });
+            
+            if (usageResponse.ok) {
+              const usageData = await usageResponse.json();
+              // Show upgrade modal instead of error toast
+              setShowUpgradeModal(true);
+              setSubscriptionUsage(usageData);
+              showError('Invoice Limit Reached', error.error || 'You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.');
+            } else {
+              showError('Invoice Limit Reached', error.error || 'You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.');
+            }
+          } catch (usageError) {
+            console.error('Error fetching subscription usage:', usageError);
+            showError('Invoice Limit Reached', error.error || 'You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.');
+          }
+        } else {
+          showError('Duplicate Failed', error.error || 'Failed to duplicate invoice. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Error duplicating invoice:', error);
@@ -4907,6 +4942,25 @@ export default function DashboardOverview() {
         confirmText={confirmationModal.confirmText || (confirmationModal.type === 'success' ? 'Mark as Paid' : confirmationModal.type === 'info' ? 'Create Duplicate' : 'Delete Invoice')}
         cancelText="Cancel"
       />
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && subscriptionUsage && (
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => {
+            setShowUpgradeModal(false);
+            setSubscriptionUsage(null);
+          }}
+          currentPlan={subscriptionUsage.plan as 'free' | 'monthly' | 'pay_per_invoice' || 'free'}
+          usage={{
+            used: subscriptionUsage.used,
+            limit: subscriptionUsage.limit,
+            remaining: subscriptionUsage.remaining
+          }}
+          reason="You've reached your monthly invoice limit. Upgrade to create unlimited invoices."
+          limitType="invoices"
+        />
+      )}
 
        <SendInvoiceModal
          isOpen={sendInvoiceModal.isOpen}

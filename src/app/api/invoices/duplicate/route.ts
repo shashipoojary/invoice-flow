@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/auth-middleware';
+import { canCreateInvoice } from '@/lib/subscription-validator';
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,6 +9,16 @@ export async function POST(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check subscription limits before proceeding
+    const limitCheck = await canCreateInvoice(user.id);
+    if (!limitCheck.allowed) {
+      return NextResponse.json({ 
+        error: limitCheck.reason || 'Subscription limit reached',
+        limitReached: true,
+        limitType: limitCheck.limitType || 'invoices'
+      }, { status: 403 });
     }
 
     const { invoiceId } = await request.json();
@@ -130,6 +141,16 @@ export async function POST(request: NextRequest) {
     if (insertError) {
       console.error('Invoice duplication error:', insertError);
       console.error('Invoice data attempted:', JSON.stringify(duplicatedInvoice, null, 2));
+      
+      // Check if it's a subscription limit error from database trigger
+      if (insertError.code === 'P0001' || insertError.message?.includes('Subscription limit')) {
+        return NextResponse.json({ 
+          error: insertError.message || 'Subscription limit reached. Free plan users can create up to 5 invoices per month. Please upgrade to create more invoices.',
+          limitReached: true,
+          limitType: 'invoices'
+        }, { status: 403 });
+      }
+      
       return NextResponse.json({ 
         error: 'Failed to duplicate invoice',
         details: insertError.message 
