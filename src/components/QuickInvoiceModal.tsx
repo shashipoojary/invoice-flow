@@ -166,7 +166,7 @@ export default function QuickInvoiceModal({
 
   // Track if we're currently fetching to prevent multiple simultaneous requests
   const isFetchingRef = useRef(false)
-  const hasFetchedRef = useRef(false)
+  const lastFetchModalOpenRef = useRef(false) // Track if we fetched for current modal open state
 
   // Memoize fetchSubscriptionUsage to prevent infinite loops
   const fetchSubscriptionUsage = useCallback(async () => {
@@ -184,18 +184,14 @@ export default function QuickInvoiceModal({
       })
       if (response.ok) {
         const data = await response.json()
-        setSubscriptionUsage({
-          ...data,
-          payPerInvoice: data.payPerInvoice ? {
-            freeInvoicesRemaining: data.payPerInvoice.freeInvoicesRemaining || 0
-          } : undefined
-        })
-        return {
+        const usageData = {
           ...data,
           payPerInvoice: data.payPerInvoice ? {
             freeInvoicesRemaining: data.payPerInvoice.freeInvoicesRemaining || 0
           } : undefined
         }
+        setSubscriptionUsage(usageData)
+        return usageData
       }
     } catch (error) {
       console.error('Error fetching subscription usage:', error)
@@ -205,12 +201,27 @@ export default function QuickInvoiceModal({
     return null
   }, []) // Empty deps - using refs instead
 
-  // Fetch subscription usage when modal opens
+  // Fetch subscription usage when modal opens - fetch once per modal open
   useEffect(() => {
-    if (isOpen && user && !subscriptionUsage) {
-      fetchSubscriptionUsage()
+    if (isOpen && user) {
+      // Only fetch if modal just opened (wasn't open before)
+      if (!lastFetchModalOpenRef.current) {
+        lastFetchModalOpenRef.current = true
+        fetchSubscriptionUsage().then((usageData) => {
+          if (usageData) {
+            // For monthly plan users creating new invoice: Always unlock premium
+            if (usageData.plan === 'monthly' && !editingInvoice) {
+              setIsPremiumUnlocked(true);
+              setUnlockedTemplate(null); // Monthly plan unlocks all templates
+            }
+          }
+        });
+      }
+    } else {
+      // Reset when modal closes
+      lastFetchModalOpenRef.current = false
     }
-  }, [isOpen, user, subscriptionUsage, fetchSubscriptionUsage])
+  }, [isOpen, user, editingInvoice]) // Removed fetchSubscriptionUsage from deps - it's stable
   const [localClients, setLocalClients] = useState<Client[]>([])
   const { clients, isLoadingClients } = useData()
   
@@ -675,7 +686,6 @@ export default function QuickInvoiceModal({
         if (editingInvoice.status === 'draft' && (templateId === 2 || templateId === 3)) {
           fetchSubscriptionUsage().then(usageData => {
             if (usageData && usageData.plan === 'pay_per_invoice') {
-              console.log(`🔓 Draft invoice has premium template ${templateId}. Setting premium unlock optimistically.`);
               setIsPremiumUnlocked(true);
               setUnlockedTemplate(templateId);
             }
@@ -723,9 +733,14 @@ export default function QuickInvoiceModal({
             const data = await response.json();
             isUnlocked = data.isPremiumUnlocked || false;
             const unlockedTemplateFromApi = data.unlockedTemplate || null;
-            console.log(`🔓 Premium unlock status for invoice ${editingInvoice.id}:`, isUnlocked, 'unlockedTemplate:', unlockedTemplateFromApi);
+            console.log(`🔓 [PREMIUM STATUS API] Premium unlock status for invoice ${editingInvoice.id}:`, {
+              isUnlocked,
+              unlockedTemplate: unlockedTemplateFromApi,
+              apiResponse: data
+            });
             
             setIsPremiumUnlocked(isUnlocked);
+            console.log(`🔓 [PREMIUM STATUS] Set isPremiumUnlocked to:`, isUnlocked);
             
             // CRITICAL: Set unlockedTemplate from API response
             if (unlockedTemplateFromApi) {
@@ -761,11 +776,20 @@ export default function QuickInvoiceModal({
       };
       fetchPremiumStatus();
     } else if (isOpen && !editingInvoice) {
-      // Reset premium unlock when creating new invoice
-      setIsPremiumUnlocked(false);
-      setUnlockedTemplate(null);
+      // For new invoice: Check plan and set premium unlock accordingly
+      // Monthly plan: Always unlocked (no per-invoice unlock needed)
+      // Pay-per-invoice: Reset to false (needs unlock per invoice)
+      // Free plan: Always false
+      if (subscriptionUsage?.plan === 'monthly') {
+        setIsPremiumUnlocked(true);
+        setUnlockedTemplate(null); // Monthly plan unlocks all templates
+      } else {
+        // Pay-per-invoice or free: Reset premium unlock for new invoice
+        setIsPremiumUnlocked(false);
+        setUnlockedTemplate(null);
+      }
     }
-  }, [isOpen, editingInvoice?.id, editingInvoice?.theme, editingInvoice?.status, getAuthHeaders, fetchSubscriptionUsage])
+  }, [isOpen, editingInvoice?.id, editingInvoice?.theme, editingInvoice?.status, getAuthHeaders, fetchSubscriptionUsage, subscriptionUsage])
 
   const addItem = () => {
     setItems([...items, { 
@@ -1483,14 +1507,26 @@ export default function QuickInvoiceModal({
       return;
     }
     
-    // Check if Pay Per Invoice user with free invoices trying to add 5th reminder
-    if (usageData && usageData.plan === 'pay_per_invoice' && 
-        usageData.payPerInvoice?.freeInvoicesRemaining && 
-        usageData.payPerInvoice.freeInvoicesRemaining > 0 && 
-        currentRulesCount >= 4) {
-      // Show confirmation modal
-      setPremiumFeatureType('reminder');
-      setShowPremiumFeatureConfirm(true);
+    // Check if Pay Per Invoice user trying to add 5th reminder
+    if (usageData && usageData.plan === 'pay_per_invoice' && currentRulesCount >= 4) {
+      // If premium is already unlocked, allow it
+      if (isPremiumUnlocked) {
+        // Premium unlocked, allow unlimited reminders
+        const newRule: ReminderRule = {
+          id: Date.now().toString(),
+          type: 'before',
+          days: 1,
+          enabled: true
+        }
+        setReminders({
+          ...reminders,
+          rules: [...reminders.rules, newRule]
+        })
+        return
+      }
+      
+      // Premium not unlocked - show toast message instead of confirmation modal
+      showWarning('Adding more than 4 reminders requires premium features. Unlock any premium template (Template 2 or 3) to enable unlimited reminders and all premium color presets for this invoice.');
       return;
     }
     
@@ -2266,25 +2302,29 @@ export default function QuickInvoiceModal({
                         return
                       }
                       
-                      // Check if template is locked for free plan
-                      if (subscriptionUsage?.plan === 'free' && template !== 1) {
+                      // Get plan info - default to 'free' if not loaded yet
+                      const userPlan = subscriptionUsage?.plan || 'free';
+                      const isPremiumTemplate = template !== 1;
+                      
+                      // Check if template is locked for free plan (or if plan data not loaded yet, treat as free)
+                      if (userPlan === 'free' && isPremiumTemplate) {
                         showError('Free plan users can only use Template 1 (Minimal). Please upgrade to access all templates.');
                         return;
                       }
                       
-                      // Check if Pay Per Invoice user with free invoices trying to use premium template (2 or 3)
-                      // Note: Paying for a premium template unlocks only that specific template, plus all colors and unlimited reminders
-                      if (subscriptionUsage?.plan === 'pay_per_invoice' && 
-                          subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining && 
-                          subscriptionUsage.payPerInvoice.freeInvoicesRemaining > 0 && 
-                          template !== 1) {
-                        // Show confirmation modal - paying for this template unlocks only this template, plus all colors and reminders
+                      // Check if Pay Per Invoice user trying to use premium template (2 or 3)
+                      // Note: Premium templates ALWAYS require $0.50 charge, even if user has free invoices remaining
+                      // Free invoices are only for basic features (Template 1, first 4 colors, max 4 reminders)
+                      if (userPlan === 'pay_per_invoice' && isPremiumTemplate) {
+                        // ALWAYS show confirmation modal for premium templates - they require $0.50 charge
+                        // Free invoices are only for basic features, not premium templates
                         setPendingTemplate(template);
                         setPremiumFeatureType('template');
                         setShowPremiumFeatureConfirm(true);
                         return;
                       }
                       
+                      // For monthly plan or other plans, allow template selection
                       setTheme(prevTheme => ({...prevTheme, template}))
                     }}
                     primaryColor={theme.primaryColor}
@@ -2295,10 +2335,12 @@ export default function QuickInvoiceModal({
                         return
                       }
                       
-                      // Check if Pay Per Invoice user with free invoices trying to use premium color
-                      if (subscriptionUsage?.plan === 'pay_per_invoice' && 
-                          subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining && 
-                          subscriptionUsage.payPerInvoice.freeInvoicesRemaining > 0) {
+                      // Check if Pay Per Invoice user trying to use premium color
+                      const userPlan = subscriptionUsage?.plan || 'free';
+                      
+                      // For pay-per-invoice users: If premium is unlocked, allow all colors without confirmation
+                      // If premium not unlocked, only allow first 4 color presets (free colors)
+                      if (userPlan === 'pay_per_invoice' && !isPremiumUnlocked) {
                         // Check if this color is from a premium preset (beyond first 4)
                         const colorPresets = [
                           { name: 'Purple', primary: '#5C2D91', secondary: '#8B5CF6' },
@@ -2329,11 +2371,9 @@ export default function QuickInvoiceModal({
                           preset.primary === color && preset.secondary === theme.secondaryColor
                         );
                         
+                        // Block premium colors if premium not unlocked
                         if (matchesPremiumPreset && !matchesFirstFour) {
-                          // Show confirmation modal
-                          setPendingTemplate(null);
-                          setPremiumFeatureType('customization');
-                          setShowPremiumFeatureConfirm(true);
+                          showError('Premium colors are unlocked when you select Template 2 or 3. Please unlock a premium template first to use premium color presets.');
                           return;
                         }
                       }
@@ -2347,10 +2387,12 @@ export default function QuickInvoiceModal({
                         return
                       }
                       
-                      // Check if Pay Per Invoice user with free invoices trying to use premium color
-                      if (subscriptionUsage?.plan === 'pay_per_invoice' && 
-                          subscriptionUsage?.payPerInvoice?.freeInvoicesRemaining && 
-                          subscriptionUsage.payPerInvoice.freeInvoicesRemaining > 0) {
+                      // Check if Pay Per Invoice user trying to use premium color
+                      const userPlan = subscriptionUsage?.plan || 'free';
+                      
+                      // For pay-per-invoice users: If premium is unlocked, allow all colors without confirmation
+                      // If premium not unlocked, only allow first 4 color presets (free colors)
+                      if (userPlan === 'pay_per_invoice' && !isPremiumUnlocked) {
                         // Check if this color is from a premium preset (beyond first 4)
                         const colorPresets = [
                           { name: 'Purple', primary: '#5C2D91', secondary: '#8B5CF6' },
@@ -2381,11 +2423,9 @@ export default function QuickInvoiceModal({
                           preset.primary === theme.primaryColor && preset.secondary === color
                         );
                         
+                        // Block premium colors if premium not unlocked
                         if (matchesPremiumPreset && !matchesFirstFour) {
-                          // Show confirmation modal
-                          setPendingTemplate(null);
-                          setPremiumFeatureType('customization');
-                          setShowPremiumFeatureConfirm(true);
+                          showError('Premium colors are unlocked when you select Template 2 or 3. Please unlock a premium template first to use premium color presets.');
                           return;
                         }
                       }
@@ -2397,12 +2437,14 @@ export default function QuickInvoiceModal({
                     isPremiumUnlocked={isPremiumUnlocked}
                     unlockedTemplate={unlockedTemplate}
                     onPremiumColorSelect={(primary: string, secondary: string) => {
-                      // Store pending colors and show confirmation modal - return false to prevent color change
-                      setPendingColors({ primary, secondary })
-                      setPendingTemplate(null)
-                      setPremiumFeatureType('customization')
-                      setShowPremiumFeatureConfirm(true)
-                      return false // Prevent color change until user confirms
+                      // If premium is already unlocked, allow colors directly without confirmation
+                      if (isPremiumUnlocked) {
+                        setTheme({ ...theme, primaryColor: primary, secondaryColor: secondary })
+                        return true // Allow color change
+                      }
+                      // Premium not unlocked - show error message
+                      showError('Premium colors are unlocked when you select Template 2 or 3. Please unlock a premium template first to use premium color presets.')
+                      return false // Prevent color change
                     }}
                   />
               </div>

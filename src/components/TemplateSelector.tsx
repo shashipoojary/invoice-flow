@@ -134,11 +134,13 @@ export default function TemplateSelector({
             const IconComponent = template.icon;
             const isSelected = selectedTemplate === template.id;
             // For free plan: lock templates 2/3
-            // For Pay Per Invoice: show premium symbol if template 2/3 and has free invoices
+            // For Pay Per Invoice: lock templates 2/3 if no free invoices remaining, show premium symbol if has free invoices
             // If premium unlocked, only the unlocked template is available (not both 2 & 3)
-            const isLocked = !isPremiumUnlocked && userPlan === 'free' && template.id !== 1;
+            // Default to 'free' if plan is undefined (data not loaded yet)
+            const effectivePlan = userPlan || 'free';
+            const isLocked = !isPremiumUnlocked && (effectivePlan === 'free' || (effectivePlan === 'pay_per_invoice' && freeInvoicesRemaining === 0)) && template.id !== 1;
             // Show premium lock if: not premium unlocked, OR premium unlocked but this is not the unlocked template
-            const isPremium = !isPremiumUnlocked && userPlan === 'pay_per_invoice' && freeInvoicesRemaining > 0 && template.id !== 1;
+            const isPremium = !isPremiumUnlocked && effectivePlan === 'pay_per_invoice' && freeInvoicesRemaining > 0 && template.id !== 1;
             const isLockedEvenWithPremium = isPremiumUnlocked && unlockedTemplate && template.id !== 1 && template.id !== unlockedTemplate && template.id !== 1;
             
             return (

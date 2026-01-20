@@ -80,7 +80,6 @@ export default function DashboardOverview() {
   const [showPartialPayment, setShowPartialPayment] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showPerformanceInfo, setShowPerformanceInfo] = useState(false);
   const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(() => {
     // Load read notifications from localStorage
     if (typeof window !== 'undefined') {
@@ -198,6 +197,8 @@ export default function DashboardOverview() {
     setPaymentDataMap(payments);
     setInvoicesWithPartialPayments(partialSet);
   }, [invoices]);
+
+
 
   // Payment data is now embedded directly in invoices from /api/invoices
   // No need for separate bulk fetch - removed to prevent infinite loops
@@ -2357,13 +2358,88 @@ export default function DashboardOverview() {
                     <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-sm font-semibold text-gray-900">Invoice Performance</h3>
-                        <button
-                          onClick={() => setShowPerformanceInfo(true)}
-                          className="p-1 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
-                          aria-label="Learn more about Invoice Performance"
-                        >
-                          <Info className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-                        </button>
+                        <div className="relative group">
+                          <button
+                            type="button"
+                            className="p-1 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+                            aria-label="Learn more about Invoice Performance"
+                          >
+                            <Info className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                          </button>
+                          
+                          {/* Tooltip-style Info Popup */}
+                          <div className="absolute right-0 top-full mt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-200 z-[9999] bg-white border border-gray-300 shadow-xl w-80 max-h-96 overflow-y-auto pointer-events-none group-hover:pointer-events-auto"
+                               style={{ borderRadius: '0' }}
+                          >
+                              <div className="p-4 space-y-4">
+                                {/* Metrics */}
+                                <div>
+                                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Metrics</h4>
+                                  <div className="space-y-2.5">
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-900">Payment Rate</p>
+                                      <p className="text-xs text-gray-600 mt-0.5">% of invoices fully paid</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-900">On-Time Payment</p>
+                                      <p className="text-xs text-gray-600 mt-0.5">% paid on or before due date</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-900">Average Value</p>
+                                      <p className="text-xs text-gray-600 mt-0.5">Normalized score of invoice sizes</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-900">Collection Rate</p>
+                                      <p className="text-xs text-gray-600 mt-0.5">% of total invoiced amount collected</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-900">Invoice Health</p>
+                                      <p className="text-xs text-gray-600 mt-0.5">Score based on overdue invoices</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-900">Revenue Efficiency</p>
+                                      <p className="text-xs text-gray-600 mt-0.5">% of invoices converted to revenue</p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Insights */}
+                                <div className="pt-4 border-t border-gray-200">
+                                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Insights</h4>
+                                  <div className="space-y-2">
+                                    <div>
+                                      <span className="text-sm font-medium text-gray-900">Total Revenue: </span>
+                                      <span className="text-sm text-gray-600">All collected payments</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-sm font-medium text-gray-900">Outstanding: </span>
+                                      <span className="text-sm text-gray-600">Amount still owed</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-sm font-medium text-gray-900">Avg Payment Time: </span>
+                                      <span className="text-sm text-gray-600">Days from invoice to payment</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-sm font-medium text-gray-900">Risk Level: </span>
+                                      <span className="text-sm text-gray-600">Low (&lt;10%), Medium (10-25%), High (&gt;25%)</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-sm font-medium text-gray-900">Top Clients: </span>
+                                      <span className="text-sm text-gray-600">Best clients by total paid</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Usage */}
+                                <div className="pt-4 border-t border-gray-200">
+                                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Usage</h4>
+                                  <p className="text-sm text-gray-600 leading-relaxed">
+                                    Larger radar shape = better performance. Use to identify areas needing improvement.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                        </div>
                       </div>
                       
                       {(() => {
@@ -3569,7 +3645,7 @@ export default function DashboardOverview() {
                               return (
                                 <div
                                   key={notification.id}
-                                  className={`flex gap-3 p-3 transition-colors cursor-pointer ${
+                                  className={`flex gap-3 p-3 transition-colors cursor-pointer relative ${
                                     isRead 
                                       ? 'hover:bg-gray-50' 
                                       : 'bg-purple-50 hover:bg-purple-100'
@@ -3638,7 +3714,10 @@ export default function DashboardOverview() {
                                       <FileX className="h-5 w-5 text-red-600" />
                                     )}
                                   </div>
-                                  <div className="flex-1 min-w-0">
+                                  <div className="flex-1 min-w-0 relative">
+                                    {!isRead && (
+                                      <div className="absolute -right-1 top-0 w-2 h-2 bg-purple-500 rounded-full border border-white shadow-sm"></div>
+                                    )}
                                     <p className="text-sm font-medium" style={{color: '#1f2937'}}>
                                       {notification.message}
                                     </p>
@@ -4776,111 +4855,6 @@ export default function DashboardOverview() {
          />
        )}
 
-      {/* Performance Info Modal */}
-      {showPerformanceInfo && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4">
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 bg-black/40"
-            onClick={() => setShowPerformanceInfo(false)}
-          />
-          
-          {/* Modal */}
-          <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-              <h3 className="text-base font-semibold text-gray-900">Invoice Performance</h3>
-              <button
-                onClick={() => setShowPerformanceInfo(false)}
-                className="p-1 hover:bg-gray-100 rounded transition-colors"
-              >
-                <X className="h-4 w-4 text-gray-500" />
-              </button>
-            </div>
-
-            {/* Content - Scrollable */}
-            <div className="flex-1 overflow-y-auto px-5 py-4">
-              <div className="space-y-5">
-                {/* Metrics */}
-                <div>
-                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Metrics</h4>
-                  <div className="space-y-2.5">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Payment Rate</p>
-                      <p className="text-xs text-gray-600 mt-0.5">% of invoices fully paid</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">On-Time Payment</p>
-                      <p className="text-xs text-gray-600 mt-0.5">% paid on or before due date</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Average Value</p>
-                      <p className="text-xs text-gray-600 mt-0.5">Normalized score of invoice sizes</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Collection Rate</p>
-                      <p className="text-xs text-gray-600 mt-0.5">% of total invoiced amount collected</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Invoice Health</p>
-                      <p className="text-xs text-gray-600 mt-0.5">Score based on overdue invoices</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Revenue Efficiency</p>
-                      <p className="text-xs text-gray-600 mt-0.5">% of invoices converted to revenue</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Insights */}
-                <div className="pt-4 border-t border-gray-100">
-                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Insights</h4>
-                  <div className="space-y-2">
-                    <div>
-                      <span className="text-sm font-medium text-gray-900">Total Revenue: </span>
-                      <span className="text-sm text-gray-600">All collected payments</span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-900">Outstanding: </span>
-                      <span className="text-sm text-gray-600">Amount still owed</span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-900">Avg Payment Time: </span>
-                      <span className="text-sm text-gray-600">Days from invoice to payment</span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-900">Risk Level: </span>
-                      <span className="text-sm text-gray-600">Low (&lt;10%), Medium (10-25%), High (&gt;25%)</span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-900">Top Clients: </span>
-                      <span className="text-sm text-gray-600">Best clients by total paid</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Usage */}
-                <div className="pt-4 border-t border-gray-100">
-                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Usage</h4>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    Larger radar shape = better performance. Use to identify areas needing improvement.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="px-5 py-3 border-t border-gray-200 bg-gray-50">
-              <button
-                onClick={() => setShowPerformanceInfo(false)}
-                className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded transition-colors"
-              >
-                Got it
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Toast Container */}
       <ToastContainer
