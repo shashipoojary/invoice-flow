@@ -6,7 +6,7 @@ import {
   FileText, Users, 
   Clock, CheckCircle, AlertCircle, AlertTriangle, UserPlus, FilePlus, Sparkles, Receipt, Timer,
   Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2, ArrowRight, ChevronDown, ChevronUp,
-  ArrowUp, ArrowDown, ClipboardCheck, Copy, Calendar, Ban, FileCheck, FileX, ArrowLeft
+  ArrowUp, ArrowDown, ClipboardCheck, Copy, Calendar, Ban, FileCheck, FileX, ArrowLeft, Info
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -36,19 +36,23 @@ const QuickInvoiceModal = dynamic(() => import('@/components/QuickInvoiceModal')
 });
 
 const ConfirmationModal = dynamic(() => import('@/components/ConfirmationModal'), {
+  ssr: false,
   loading: () => null
 });
 
 const SendInvoiceModal = dynamic(() => import('@/components/SendInvoiceModal'), {
+  ssr: false,
   loading: () => null
 });
 
 const ClientModal = dynamic(() => import('@/components/ClientModal'), {
+  ssr: false,
   loading: () => null
 });
 
 const EstimateModal = dynamic(() => import('@/components/EstimateModal'), {
-  loading: () => <div className="flex items-center justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+  ssr: false,
+  loading: () => null // No loading state to prevent layout shift
 });
 
 
@@ -60,7 +64,8 @@ export default function DashboardOverview() {
   const router = useRouter();
   
   // Local state for UI
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  // Initialize loading state to false to prevent flash - stats are calculated from invoices which are already loaded
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [paymentDataMap, setPaymentDataMap] = useState<Record<string, { totalPaid: number; remainingBalance: number }>>({});
   const [invoicesWithPartialPayments, setInvoicesWithPartialPayments] = useState<Set<string>>(new Set());
@@ -75,6 +80,7 @@ export default function DashboardOverview() {
   const [showPartialPayment, setShowPartialPayment] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showPerformanceInfo, setShowPerformanceInfo] = useState(false);
   const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(() => {
     // Load read notifications from localStorage
     if (typeof window !== 'undefined') {
@@ -150,10 +156,11 @@ export default function DashboardOverview() {
 
   // Preload modals on mount to prevent layout shift and loading spinner
   useEffect(() => {
-    // Preload FastInvoiceModal and QuickInvoiceModal in the background
+    // Preload all modals in the background to prevent any loading spinners
     if (typeof window !== 'undefined') {
       import('@/components/FastInvoiceModal');
       import('@/components/QuickInvoiceModal');
+      import('@/components/EstimateModal');
     }
   }, []);
 
@@ -284,8 +291,10 @@ export default function DashboardOverview() {
       setDueInvoicesScrollIndex(0);
     } else if (scrollLeft < containerWidth * 1.3) {
       setDueInvoicesScrollIndex(1);
-    } else {
+    } else if (scrollLeft < containerWidth * 2.3) {
       setDueInvoicesScrollIndex(2);
+    } else {
+      setDueInvoicesScrollIndex(3);
     }
   }, []);
 
@@ -1521,6 +1530,7 @@ export default function DashboardOverview() {
   // Settings are now loaded by SettingsContext
 
   // Optimized data loading - only handle stats since invoices/clients are global
+  // Stats are calculated from invoices, so no need for separate loading state
   const loadData = useCallback(async () => {
     if (!user || loading || dataLoaded) return;
     
@@ -1534,6 +1544,7 @@ export default function DashboardOverview() {
       });
       
       if (response.ok) {
+        // Stats are calculated from invoices, so no loading state needed
         setIsLoadingStats(false);
         setDataLoaded(true);
       } else {
@@ -1541,6 +1552,7 @@ export default function DashboardOverview() {
       }
     } catch (error) {
       console.error('Error loading dashboard stats:', error);
+      // Don't show loading state on error - stats are calculated from invoices anyway
       setIsLoadingStats(false);
       setHasError(true);
       setErrorMessage('Failed to load dashboard stats. Please try refreshing the page.');
@@ -1875,24 +1887,31 @@ export default function DashboardOverview() {
               <div className="flex items-center justify-center gap-2 mb-3">
                 <button
                   onClick={() => scrollToDueInvoicesSlide(0)}
-                  className={`w-2 h-2 rounded-full transition-all ${
+                  className={`w-2 h-2 p-0 flex-shrink-0 aspect-square rounded-full border-0 outline-none transition-all ${
                     dueInvoicesScrollIndex === 0 ? 'bg-indigo-600' : 'bg-gray-300 hover:bg-gray-400'
                   }`}
                   aria-label="Go to invoices list"
                 ></button>
                 <button
                   onClick={() => scrollToDueInvoicesSlide(1)}
-                  className={`w-2 h-2 rounded-full transition-all ${
+                  className={`w-2 h-2 p-0 flex-shrink-0 aspect-square rounded-full border-0 outline-none transition-all ${
                     dueInvoicesScrollIndex === 1 ? 'bg-indigo-600' : 'bg-gray-300 hover:bg-gray-400'
                   }`}
                   aria-label="Go to analytics"
                 ></button>
                 <button
                   onClick={() => scrollToDueInvoicesSlide(2)}
-                  className={`w-2 h-2 rounded-full transition-all ${
+                  className={`w-2 h-2 p-0 flex-shrink-0 aspect-square rounded-full border-0 outline-none transition-all ${
                     dueInvoicesScrollIndex === 2 ? 'bg-indigo-600' : 'bg-gray-300 hover:bg-gray-400'
                   }`}
                   aria-label="Go to performance chart"
+                ></button>
+                <button
+                  onClick={() => scrollToDueInvoicesSlide(3)}
+                  className={`w-2 h-2 p-0 flex-shrink-0 aspect-square rounded-full border-0 outline-none transition-all ${
+                    dueInvoicesScrollIndex === 3 ? 'bg-indigo-600' : 'bg-gray-300 hover:bg-gray-400'
+                  }`}
+                  aria-label="Go to conversion rate"
                 ></button>
               </div>
               
@@ -1906,9 +1925,9 @@ export default function DashboardOverview() {
                   WebkitOverflowScrolling: 'touch'
                 }}
               >
-                <div className="flex h-full" style={{ width: '300%' }}>
+                <div className="flex h-full" style={{ width: '400%' }}>
                   {/* Slide 1: Due Invoices List */}
-                  <div className="flex-shrink-0 snap-start pr-2" style={{ width: '33.333%' }}>
+                  <div className="flex-shrink-0 snap-start pr-2" style={{ width: '25%' }}>
                     {dueInvoices.overdue.length === 0 && dueInvoices.dueToday.length === 0 && dueInvoices.upcoming.length === 0 ? (
                       <div className="bg-white border border-gray-200 p-8 text-center">
                         <Calendar className="h-8 w-8 mx-auto mb-2" style={{color: '#9ca3af'}} />
@@ -2087,160 +2106,265 @@ export default function DashboardOverview() {
                   </div>
 
                   {/* Slide 2: Due Invoices Analytics Graph */}
-                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: '33.333%' }}>
+                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: '25%' }}>
                     <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
                       <h3 className="text-sm font-semibold text-gray-900 mb-4">Due Invoices Analytics</h3>
                       
-                      {/* Total Amount Due */}
-                      <div className="mb-6">
-                        <p className="text-xs text-gray-500 mb-1">Total Amount Due</p>
-                        <p className="text-2xl font-semibold text-gray-900">
-                          ${(() => {
-                            const allDue = [...dueInvoices.overdue, ...dueInvoices.dueToday, ...dueInvoices.upcoming];
-                            return allDue.reduce((sum, inv) => {
-                              const paymentData = paymentDataMap[inv.id];
-                              const dueCharges = calculateDueCharges(inv, paymentData);
-                              return sum + dueCharges.totalPayable;
-                            }, 0).toFixed(2);
-                          })()}
-                        </p>
-                      </div>
-
-                      {/* Breakdown by Status */}
-                      <div className="space-y-4">
-                        {dueInvoices.overdue.length > 0 && (
-                          <div>
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs text-gray-600">Overdue</span>
-                              <span className="text-sm font-semibold text-red-600">
-                                ${dueInvoices.overdue.reduce((sum, inv) => {
-                                  const paymentData = paymentDataMap[inv.id];
-                                  const dueCharges = calculateDueCharges(inv, paymentData);
-                                  return sum + dueCharges.totalPayable;
-                                }, 0).toFixed(2)}
-                              </span>
-                            </div>
-                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-red-500 transition-all"
-                                style={{
-                                  width: `${(() => {
-                                    const allDue = [...dueInvoices.overdue, ...dueInvoices.dueToday, ...dueInvoices.upcoming];
-                                    const total = allDue.reduce((sum, inv) => {
-                                      const paymentData = paymentDataMap[inv.id];
-                                      const dueCharges = calculateDueCharges(inv, paymentData);
-                                      return sum + dueCharges.totalPayable;
-                                    }, 0);
-                                    const overdueTotal = dueInvoices.overdue.reduce((sum, inv) => {
-                                      const paymentData = paymentDataMap[inv.id];
-                                      const dueCharges = calculateDueCharges(inv, paymentData);
-                                      return sum + dueCharges.totalPayable;
-                                    }, 0);
-                                    return total > 0 ? (overdueTotal / total) * 100 : 0;
-                                  })()}%`
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-                        )}
+                      {(() => {
+                        const allDue = [...dueInvoices.overdue, ...dueInvoices.dueToday, ...dueInvoices.upcoming];
+                        const today = new Date();
+                        const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
                         
-                        {dueInvoices.dueToday.length > 0 && (
-                          <div>
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs text-gray-600">Due Today</span>
-                              <span className="text-sm font-semibold text-amber-600">
-                                ${dueInvoices.dueToday.reduce((sum, inv) => {
-                                  const paymentData = paymentDataMap[inv.id];
-                                  const dueCharges = calculateDueCharges(inv, paymentData);
-                                  return sum + dueCharges.totalPayable;
-                                }, 0).toFixed(2)}
-                              </span>
-                            </div>
-                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-amber-500 transition-all"
-                                style={{
-                                  width: `${(() => {
-                                    const allDue = [...dueInvoices.overdue, ...dueInvoices.dueToday, ...dueInvoices.upcoming];
-                                    const total = allDue.reduce((sum, inv) => {
-                                      const paymentData = paymentDataMap[inv.id];
-                                      const dueCharges = calculateDueCharges(inv, paymentData);
-                                      return sum + dueCharges.totalPayable;
-                                    }, 0);
-                                    const dueTodayTotal = dueInvoices.dueToday.reduce((sum, inv) => {
-                                      const paymentData = paymentDataMap[inv.id];
-                                      const dueCharges = calculateDueCharges(inv, paymentData);
-                                      return sum + dueCharges.totalPayable;
-                                    }, 0);
-                                    return total > 0 ? (dueTodayTotal / total) * 100 : 0;
-                                  })()}%`
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-                        )}
+                        // Calculate totals
+                        const totalAmount = allDue.reduce((sum, inv) => {
+                          const paymentData = paymentDataMap[inv.id];
+                          const dueCharges = calculateDueCharges(inv, paymentData);
+                          return sum + dueCharges.totalPayable;
+                        }, 0);
                         
-                        {dueInvoices.upcoming.length > 0 && (
-                          <div>
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs text-gray-600">Upcoming</span>
-                              <span className="text-sm font-semibold text-blue-600">
-                                ${dueInvoices.upcoming.reduce((sum, inv) => {
-                                  const paymentData = paymentDataMap[inv.id];
-                                  const dueCharges = calculateDueCharges(inv, paymentData);
-                                  return sum + dueCharges.totalPayable;
-                                }, 0).toFixed(2)}
-                              </span>
+                        const overdueTotal = dueInvoices.overdue.reduce((sum, inv) => {
+                          const paymentData = paymentDataMap[inv.id];
+                          const dueCharges = calculateDueCharges(inv, paymentData);
+                          return sum + dueCharges.totalPayable;
+                        }, 0);
+                        
+                        const dueTodayTotal = dueInvoices.dueToday.reduce((sum, inv) => {
+                          const paymentData = paymentDataMap[inv.id];
+                          const dueCharges = calculateDueCharges(inv, paymentData);
+                          return sum + dueCharges.totalPayable;
+                        }, 0);
+                        
+                        const upcomingTotal = dueInvoices.upcoming.reduce((sum, inv) => {
+                          const paymentData = paymentDataMap[inv.id];
+                          const dueCharges = calculateDueCharges(inv, paymentData);
+                          return sum + dueCharges.totalPayable;
+                        }, 0);
+                        
+                        // Calculate average days overdue
+                        const overdueDays = dueInvoices.overdue.map(inv => {
+                          const dueDate = parseDateOnly(inv.dueDate);
+                          const dueDateStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
+                          const diffTime = todayStart.getTime() - dueDateStart.getTime();
+                          return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                        });
+                        const avgDaysOverdue = overdueDays.length > 0 
+                          ? Math.round(overdueDays.reduce((a, b) => a + b, 0) / overdueDays.length)
+                          : 0;
+                        
+                        // Calculate aging buckets
+                        const agingBuckets = {
+                          '0-30': 0,
+                          '31-60': 0,
+                          '61-90': 0,
+                          '90+': 0
+                        };
+                        
+                        dueInvoices.overdue.forEach(inv => {
+                          const paymentData = paymentDataMap[inv.id];
+                          const dueCharges = calculateDueCharges(inv, paymentData);
+                          const dueDate = parseDateOnly(inv.dueDate);
+                          const dueDateStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
+                          const diffTime = todayStart.getTime() - dueDateStart.getTime();
+                          const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                          
+                          if (days <= 30) agingBuckets['0-30'] += dueCharges.totalPayable;
+                          else if (days <= 60) agingBuckets['31-60'] += dueCharges.totalPayable;
+                          else if (days <= 90) agingBuckets['61-90'] += dueCharges.totalPayable;
+                          else agingBuckets['90+'] += dueCharges.totalPayable;
+                        });
+                        
+                        // Top clients by amount due
+                        const clientTotals: { [key: string]: { name: string; amount: number; count: number } } = {};
+                        allDue.forEach(inv => {
+                          const clientName = inv.client?.name || 'Unknown Client';
+                          const paymentData = paymentDataMap[inv.id];
+                          const dueCharges = calculateDueCharges(inv, paymentData);
+                          
+                          if (!clientTotals[clientName]) {
+                            clientTotals[clientName] = { name: clientName, amount: 0, count: 0 };
+                          }
+                          clientTotals[clientName].amount += dueCharges.totalPayable;
+                          clientTotals[clientName].count += 1;
+                        });
+                        
+                        const topClients = Object.values(clientTotals)
+                          .sort((a, b) => b.amount - a.amount)
+                          .slice(0, 3);
+                        
+                        // Calculate partial payment stats
+                        const partialPaidCount = allDue.filter(inv => {
+                          const paymentData = paymentDataMap[inv.id];
+                          return paymentData && paymentData.totalPaid > 0 && paymentData.remainingBalance > 0.01;
+                        }).length;
+                        
+                        const totalPaidAmount = allDue.reduce((sum, inv) => {
+                          const paymentData = paymentDataMap[inv.id];
+                          return sum + (paymentData?.totalPaid || 0);
+                        }, 0);
+                        
+                        const collectionRate = totalAmount > 0 ? ((totalPaidAmount / (totalAmount + totalPaidAmount)) * 100) : 0;
+                        
+                        // Average invoice amount
+                        const avgInvoiceAmount = allDue.length > 0 ? totalAmount / allDue.length : 0;
+                        
+                        return (
+                          <div className="flex-1 flex flex-col space-y-4">
+                            {/* Key Metrics */}
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <p className="text-xs text-gray-500 mb-1">Total Due</p>
+                                <p className="text-xl font-semibold text-gray-900">${totalAmount.toFixed(0)}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-500 mb-1">Avg Invoice</p>
+                                <p className="text-xl font-semibold text-gray-900">${avgInvoiceAmount.toFixed(0)}</p>
+                              </div>
                             </div>
-                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-blue-500 transition-all"
-                                style={{
-                                  width: `${(() => {
-                                    const allDue = [...dueInvoices.overdue, ...dueInvoices.dueToday, ...dueInvoices.upcoming];
-                                    const total = allDue.reduce((sum, inv) => {
-                                      const paymentData = paymentDataMap[inv.id];
-                                      const dueCharges = calculateDueCharges(inv, paymentData);
-                                      return sum + dueCharges.totalPayable;
-                                    }, 0);
-                                    const upcomingTotal = dueInvoices.upcoming.reduce((sum, inv) => {
-                                      const paymentData = paymentDataMap[inv.id];
-                                      const dueCharges = calculateDueCharges(inv, paymentData);
-                                      return sum + dueCharges.totalPayable;
-                                    }, 0);
-                                    return total > 0 ? (upcomingTotal / total) * 100 : 0;
-                                  })()}%`
-                                }}
-                              ></div>
+                            
+                            {/* Breakdown by Status */}
+                            <div className="space-y-3">
+                              {dueInvoices.overdue.length > 0 && (
+                                <div>
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <span className="text-xs font-medium text-gray-700">Overdue</span>
+                                    <span className="text-xs font-semibold text-red-600">
+                                      ${overdueTotal.toFixed(0)}
+                                    </span>
+                                  </div>
+                                  <div className="h-2.5 bg-gray-100 overflow-hidden">
+                                    <div
+                                      className="h-full bg-red-500 transition-all"
+                                      style={{
+                                        width: `${totalAmount > 0 ? (overdueTotal / totalAmount) * 100 : 0}%`
+                                      }}
+                                    ></div>
+                                  </div>
+                                  {avgDaysOverdue > 0 && (
+                                    <p className="text-xs text-gray-500 mt-1">Avg {avgDaysOverdue} days overdue</p>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {dueInvoices.dueToday.length > 0 && (
+                                <div>
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <span className="text-xs font-medium text-gray-700">Due Today</span>
+                                    <span className="text-xs font-semibold text-amber-600">
+                                      ${dueTodayTotal.toFixed(0)}
+                                    </span>
+                                  </div>
+                                  <div className="h-2.5 bg-gray-100 overflow-hidden">
+                                    <div
+                                      className="h-full bg-amber-500 transition-all"
+                                      style={{
+                                        width: `${totalAmount > 0 ? (dueTodayTotal / totalAmount) * 100 : 0}%`
+                                      }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {dueInvoices.upcoming.length > 0 && (
+                                <div>
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <span className="text-xs font-medium text-gray-700">Upcoming</span>
+                                    <span className="text-xs font-semibold text-blue-600">
+                                      ${upcomingTotal.toFixed(0)}
+                                    </span>
+                                  </div>
+                                  <div className="h-2.5 bg-gray-100 overflow-hidden">
+                                    <div
+                                      className="h-full bg-blue-500 transition-all"
+                                      style={{
+                                        width: `${totalAmount > 0 ? (upcomingTotal / totalAmount) * 100 : 0}%`
+                                      }}
+                                    ></div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Aging Analysis */}
+                            {dueInvoices.overdue.length > 0 && (
+                              <div className="pt-3 border-t border-gray-200">
+                                <p className="text-xs font-semibold text-gray-700 mb-2">Aging Analysis</p>
+                                <div className="space-y-2">
+                                  {Object.entries(agingBuckets).map(([range, amount]) => {
+                                    if (amount === 0) return null;
+                                    const color = range === '0-30' ? 'bg-orange-500' : 
+                                                 range === '31-60' ? 'bg-red-500' : 
+                                                 range === '61-90' ? 'bg-red-600' : 'bg-red-700';
+                                    return (
+                                      <div key={range}>
+                                        <div className="flex items-center justify-between mb-1">
+                                          <span className="text-xs text-gray-600">{range} days</span>
+                                          <span className="text-xs font-medium text-gray-900">${amount.toFixed(0)}</span>
+                                        </div>
+                                        <div className="h-2.5 bg-gray-100 overflow-hidden">
+                                          <div
+                                            className={`h-full ${color} transition-all`}
+                                            style={{
+                                              width: `${overdueTotal > 0 ? (amount / overdueTotal) * 100 : 0}%`
+                                            }}
+                                          ></div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Top Clients */}
+                            {topClients.length > 0 && (
+                              <div className="pt-3 border-t border-gray-200">
+                                <p className="text-xs font-semibold text-gray-700 mb-2">Top Clients by Amount Due</p>
+                                <div className="space-y-2">
+                                  {topClients.map((client, idx) => (
+                                    <div key={idx} className="flex items-center justify-between">
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-medium text-gray-900 truncate">{client.name}</p>
+                                        <p className="text-xs text-gray-500">{client.count} invoice{client.count !== 1 ? 's' : ''}</p>
+                                      </div>
+                                      <p className="text-xs font-semibold text-gray-900 ml-2">${client.amount.toFixed(0)}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Payment Stats */}
+                            <div className="pt-3 border-t border-gray-200">
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <p className="text-xs text-gray-500">Collection Rate</p>
+                                  <p className="text-sm font-semibold text-gray-900">{collectionRate.toFixed(0)}%</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-gray-500">Partial Paid</p>
+                                  <p className="text-sm font-semibold text-gray-900">{partialPaidCount}</p>
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        )}
-                      </div>
-
-                      {/* Count Summary */}
-                      <div className="pt-4 border-t border-gray-200">
-                        <div className="grid grid-cols-3 gap-4 text-center">
-                          <div>
-                            <div className="text-lg font-semibold text-red-600">{dueInvoices.overdue.length}</div>
-                            <div className="text-xs text-gray-500">Overdue</div>
-                          </div>
-                          <div>
-                            <div className="text-lg font-semibold text-amber-600">{dueInvoices.dueToday.length}</div>
-                            <div className="text-xs text-gray-500">Due Today</div>
-                          </div>
-                          <div>
-                            <div className="text-lg font-semibold text-blue-600">{dueInvoices.upcoming.length}</div>
-                            <div className="text-xs text-gray-500">Upcoming</div>
-                          </div>
-                        </div>
-                      </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
                   {/* Slide 3: Performance Radar Chart */}
-                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: '33.333%' }}>
+                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: '25%' }}>
                     <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-4">Invoice Performance</h3>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold text-gray-900">Invoice Performance</h3>
+                        <button
+                          onClick={() => setShowPerformanceInfo(true)}
+                          className="p-1 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+                          aria-label="Learn more about Invoice Performance"
+                        >
+                          <Info className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                        </button>
+                      </div>
                       
                       {(() => {
                         // Calculate performance metrics
@@ -2311,6 +2435,61 @@ export default function DashboardOverview() {
                           ? (paidInvoices / totalInvoices) * 100 
                           : 0;
                         
+                        // Calculate average payment time (days from invoice date to payment)
+                        const paidInvoicesWithDates = invoices.filter(inv => {
+                          if (inv.status !== 'paid' || !inv.updatedAt) return false;
+                          return true;
+                        });
+                        const avgPaymentDays = paidInvoicesWithDates.length > 0
+                          ? Math.round(paidInvoicesWithDates.reduce((sum, inv) => {
+                              if (!inv.updatedAt) return sum;
+                              const invoiceDate = parseDateOnly(inv.createdAt);
+                              const paidDate = new Date(inv.updatedAt);
+                              const invoiceDateStart = new Date(Date.UTC(invoiceDate.getFullYear(), invoiceDate.getMonth(), invoiceDate.getDate()));
+                              const paidDateStart = new Date(Date.UTC(paidDate.getFullYear(), paidDate.getMonth(), paidDate.getDate()));
+                              const diffTime = paidDateStart.getTime() - invoiceDateStart.getTime();
+                              const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                              return sum + diffDays;
+                            }, 0) / paidInvoicesWithDates.length)
+                          : 0;
+                        
+                        // Calculate total revenue
+                        const totalRevenue = invoices.reduce((sum, inv) => {
+                          if (inv.status === 'paid') return sum + (inv.total || 0);
+                          const paymentData = paymentDataMap[inv.id];
+                          return sum + (paymentData?.totalPaid || 0);
+                        }, 0);
+                        
+                        // Calculate outstanding amount
+                        const outstandingAmount = invoices.reduce((sum, inv) => {
+                          if (inv.status === 'paid') return sum;
+                          const paymentData = paymentDataMap[inv.id];
+                          const remaining = paymentData?.remainingBalance !== undefined 
+                            ? paymentData.remainingBalance 
+                            : (inv.total || 0);
+                          return sum + remaining;
+                        }, 0);
+                        
+                        // Top performing clients (by total paid)
+                        const clientPerformance: { [key: string]: { name: string; paid: number; count: number } } = {};
+                        invoices.forEach(inv => {
+                          if (inv.status !== 'paid') return;
+                          const clientName = inv.client?.name || 'Unknown Client';
+                          if (!clientPerformance[clientName]) {
+                            clientPerformance[clientName] = { name: clientName, paid: 0, count: 0 };
+                          }
+                          clientPerformance[clientName].paid += inv.total || 0;
+                          clientPerformance[clientName].count += 1;
+                        });
+                        const topClients = Object.values(clientPerformance)
+                          .sort((a, b) => b.paid - a.paid)
+                          .slice(0, 2);
+                        
+                        // Risk indicator (overdue percentage)
+                        const riskLevel = totalInvoices > 0 ? (overdueInvoices / totalInvoices) * 100 : 0;
+                        const riskStatus = riskLevel < 10 ? 'Low' : riskLevel < 25 ? 'Medium' : 'High';
+                        const riskColor = riskLevel < 10 ? 'text-green-600' : riskLevel < 25 ? 'text-amber-600' : 'text-red-600';
+                        
                         const radarData = [
                           { metric: 'Payment Rate', value: Math.max(0, Math.round(paymentRate)), fullMark: 100 },
                           { metric: 'On-Time Payment', value: Math.max(0, Math.round(onTimeRate)), fullMark: 100 },
@@ -2349,10 +2528,10 @@ export default function DashboardOverview() {
                         
                         return (
                           <div className="flex-1 w-full flex flex-col">
-                            <div className="flex-1 w-full flex items-center justify-center" style={{ minHeight: '280px' }}>
+                            <div className="flex-1 w-full flex items-center justify-center" style={{ minHeight: '240px' }}>
                               <ChartContainer 
                                 config={chartConfig} 
-                                className="w-full h-[280px] aspect-none"
+                                className="w-full h-[240px] aspect-none"
                                 id="invoice-performance-radar"
                               >
                                 <RadarChart data={radarData}>
@@ -2379,11 +2558,23 @@ export default function DashboardOverview() {
                                     dot={{ fill: '#6366f1', r: 3 }}
                                   />
                                   <ChartTooltip
+                                    animationDuration={0}
+                                    allowEscapeViewBox={{ x: true, y: true }}
+                                    wrapperStyle={{ 
+                                      transition: 'none',
+                                      animation: 'none',
+                                      transform: 'none'
+                                    }}
+                                    contentStyle={{ 
+                                      transition: 'none',
+                                      animation: 'none',
+                                      transform: 'none'
+                                    }}
                                     content={({ active, payload }) => {
                                       if (active && payload && payload.length) {
                                         const data = payload[0];
                                         return (
-                                          <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
+                                          <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3" style={{ transition: 'none', animation: 'none' }}>
                                             <p className="text-xs font-semibold text-gray-900 mb-1">
                                               {data.payload.metric}
                                             </p>
@@ -2400,29 +2591,359 @@ export default function DashboardOverview() {
                               </ChartContainer>
                             </div>
                             
-                            {/* Summary Stats */}
-                            <div className="mt-4 pt-4 border-t border-gray-200">
-                              <div className="grid grid-cols-2 gap-3 text-xs">
+                            {/* Key Insights */}
+                            <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
+                              <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                  <div className="text-gray-500 mb-1">Total Invoices</div>
-                                  <div className="text-sm font-semibold text-gray-900">{totalInvoices}</div>
+                                  <div className="text-xs text-gray-500 mb-1">Total Revenue</div>
+                                  <div className="text-sm font-semibold text-gray-900">${totalRevenue.toFixed(0)}</div>
                                 </div>
                                 <div>
-                                  <div className="text-gray-500 mb-1">Paid</div>
-                                  <div className="text-sm font-semibold text-green-600">{paidInvoices}</div>
+                                  <div className="text-xs text-gray-500 mb-1">Outstanding</div>
+                                  <div className="text-sm font-semibold text-amber-600">${outstandingAmount.toFixed(0)}</div>
+                                </div>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-1">Avg Payment Time</div>
+                                  <div className="text-sm font-semibold text-gray-900">
+                                    {avgPaymentDays > 0 ? `${avgPaymentDays} days` : 'N/A'}
+                                  </div>
                                 </div>
                                 <div>
-                                  <div className="text-gray-500 mb-1">Partial Paid</div>
-                                  <div className="text-sm font-semibold text-blue-600">{partialPaidInvoices}</div>
+                                  <div className="text-xs text-gray-500 mb-1">Risk Level</div>
+                                  <div className={`text-sm font-semibold ${riskColor}`}>{riskStatus}</div>
                                 </div>
-                                <div>
-                                  <div className="text-gray-500 mb-1">Pending</div>
-                                  <div className="text-sm font-semibold text-amber-600">{pendingInvoices}</div>
+                              </div>
+                              
+                              {topClients.length > 0 && (
+                                <div className="pt-2 border-t border-gray-100">
+                                  <div className="text-xs text-gray-500 mb-1.5">Top Paying Clients</div>
+                                  <div className="space-y-1.5">
+                                    {topClients.map((client, idx) => (
+                                      <div key={idx} className="flex items-center justify-between">
+                                        <span className="text-xs font-medium text-gray-700 truncate flex-1">{client.name}</span>
+                                        <span className="text-xs font-semibold text-gray-900 ml-2">${client.paid.toFixed(0)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
-                                <div>
-                                  <div className="text-gray-500 mb-1">Overdue</div>
-                                  <div className="text-sm font-semibold text-red-600">{overdueInvoices}</div>
+                              )}
+                              
+                              {/* Summary Stats */}
+                              <div className="pt-2 border-t border-gray-100">
+                                <div className="grid grid-cols-3 gap-2 text-xs">
+                                  <div>
+                                    <div className="text-gray-500 mb-0.5">Paid</div>
+                                    <div className="text-xs font-semibold text-green-600">{paidInvoices}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-gray-500 mb-0.5">Pending</div>
+                                    <div className="text-xs font-semibold text-amber-600">{pendingInvoices}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-gray-500 mb-0.5">Overdue</div>
+                                    <div className="text-xs font-semibold text-red-600">{overdueInvoices}</div>
+                                  </div>
                                 </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Slide 4: Conversion Rate */}
+                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: '25%' }}>
+                    <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-4">Conversion Rate</h3>
+                      
+                      {(() => {
+                        const now = new Date();
+                        
+                        const totalSent = invoices.filter(inv => inv.status === 'sent' || inv.status === 'paid').length;
+                        const totalPaid = invoices.filter(inv => inv.status === 'paid').length;
+                        const conversionRate = totalSent > 0 ? (totalPaid / totalSent) * 100 : 0;
+                        
+                        // Calculate revenue metrics
+                        const totalRevenue = invoices.reduce((sum, inv) => {
+                          if (inv.status === 'paid') return sum + (inv.total || 0);
+                          const paymentData = paymentDataMap[inv.id];
+                          return sum + (paymentData?.totalPaid || 0);
+                        }, 0);
+                        
+                        // Generate monthly data for last 6 months with multiple metrics
+                        const monthlyData = [];
+                        const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                        
+                        for (let i = 5; i >= 0; i--) {
+                          const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                          const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+                          
+                          const sentInMonth = invoices.filter(inv => {
+                            if ((inv.status !== 'sent' && inv.status !== 'paid') || !inv.createdAt) return false;
+                            const sentDate = new Date(inv.createdAt);
+                            return sentDate >= monthStart && sentDate <= monthEnd;
+                          }).length;
+                          
+                          const paidInMonth = invoices.filter(inv => {
+                            if (inv.status !== 'paid' || !inv.updatedAt) return false;
+                            const paidDate = new Date(inv.updatedAt);
+                            return paidDate >= monthStart && paidDate <= monthEnd;
+                          }).length;
+                          
+                          const revenueInMonth = invoices.reduce((sum, inv) => {
+                            // Count fully paid invoices in this month
+                            if (inv.status === 'paid' && inv.updatedAt) {
+                              const paidDate = new Date(inv.updatedAt);
+                              if (paidDate >= monthStart && paidDate <= monthEnd) {
+                                return sum + (inv.total || 0);
+                              }
+                            }
+                            // Note: Partial payments are tracked in totalPaid but we don't have 
+                            // individual payment dates, so we only count fully paid invoices here
+                            return sum;
+                          }, 0);
+                          
+                          const conversionInMonth = sentInMonth > 0 ? (paidInMonth / sentInMonth) * 100 : 0;
+                          
+                          monthlyData.push({
+                            month: monthNames[monthStart.getMonth()],
+                            sent: sentInMonth,
+                            paid: paidInMonth,
+                            revenue: Math.round(revenueInMonth / 100), // Scale down for chart
+                            conversion: Math.round(conversionInMonth),
+                          });
+                        }
+                        
+                        // Calculate trends (last 30 days vs previous 30 days)
+                        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                        const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+                        
+                        const recentPaid = invoices.filter(inv => {
+                          if (inv.status !== 'paid' || !inv.updatedAt) return false;
+                          const paidDate = new Date(inv.updatedAt);
+                          return paidDate >= thirtyDaysAgo;
+                        }).length;
+                        
+                        const recentSent = invoices.filter(inv => {
+                          if ((inv.status !== 'sent' && inv.status !== 'paid') || !inv.createdAt) return false;
+                          const sentDate = new Date(inv.createdAt);
+                          return sentDate >= thirtyDaysAgo;
+                        }).length;
+                        
+                        const previousPaid = invoices.filter(inv => {
+                          if (inv.status !== 'paid' || !inv.updatedAt) return false;
+                          const paidDate = new Date(inv.updatedAt);
+                          return paidDate >= sixtyDaysAgo && paidDate < thirtyDaysAgo;
+                        }).length;
+                        
+                        const previousSent = invoices.filter(inv => {
+                          if ((inv.status !== 'sent' && inv.status !== 'paid') || !inv.createdAt) return false;
+                          const sentDate = new Date(inv.createdAt);
+                          return sentDate >= sixtyDaysAgo && sentDate < thirtyDaysAgo;
+                        }).length;
+                        
+                        const recentRate = recentSent > 0 ? (recentPaid / recentSent) * 100 : 0;
+                        const previousRate = previousSent > 0 ? (previousPaid / previousSent) * 100 : 0;
+                        const rateChange = recentRate - previousRate;
+                        
+                        const chartConfig = {
+                          sent: {
+                            label: 'Sent',
+                            color: '#6366f1', // Indigo
+                          },
+                          paid: {
+                            label: 'Paid',
+                            color: '#10b981', // Green
+                          },
+                          revenue: {
+                            label: 'Revenue',
+                            color: '#f59e0b', // Amber
+                          },
+                          conversion: {
+                            label: 'Conversion %',
+                            color: '#ef4444', // Red
+                          },
+                        };
+                        
+                        // Calculate percentage change safely
+                        const calculateChange = (current: number, previous: number) => {
+                          if (previous === 0) {
+                            if (current === 0) return { change: '0%', isPositive: true };
+                            return { change: 'New', isPositive: true };
+                          }
+                          const percentChange = ((current - previous) / previous) * 100;
+                          return {
+                            change: percentChange >= 0 ? `+${percentChange.toFixed(1)}%` : `${percentChange.toFixed(1)}%`,
+                            isPositive: percentChange >= 0
+                          };
+                        };
+                        
+                        const sentChange = calculateChange(recentSent, previousSent);
+                        const paidChange = calculateChange(recentPaid, previousPaid);
+                        const rateChangePercent = previousRate > 0 ? ((rateChange / previousRate) * 100) : (recentRate > 0 ? 100 : 0);
+                        
+                        return (
+                          <div className="flex flex-col gap-4 flex-1">
+                            <div className="flex items-center gap-3">
+                              <span className="text-2xl font-medium leading-none tracking-tight tabular-nums">
+                                {conversionRate.toFixed(1)}%
+                              </span>
+                              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                                rateChangePercent >= 0 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {rateChangePercent >= 0 ? '+' : ''}{rateChangePercent.toFixed(1)}%
+                              </span>
+                            </div>
+                            
+                            <div className="flex flex-col gap-2">
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium text-gray-600">Sent</p>
+                                <div className="flex items-center gap-4">
+                                  <span className="text-sm font-medium">{totalSent}</span>
+                                  {sentChange.change !== 'New' && sentChange.change !== '0%' && (
+                                    <div className="flex items-center gap-1">
+                                      {sentChange.isPositive ? (
+                                        <ArrowUp className="w-3.5 h-3.5 text-green-600" />
+                                      ) : (
+                                        <ArrowDown className="w-3.5 h-3.5 text-red-600" />
+                                      )}
+                                      <span className={`text-xs font-medium ${
+                                        sentChange.isPositive ? 'text-green-600' : 'text-red-600'
+                                      }`}>
+                                        {sentChange.change}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium text-gray-600">Paid</p>
+                                <div className="flex items-center gap-4">
+                                  <span className="text-sm font-medium">{totalPaid}</span>
+                                  {paidChange.change !== 'New' && paidChange.change !== '0%' && (
+                                    <div className="flex items-center gap-1">
+                                      {paidChange.isPositive ? (
+                                        <ArrowUp className="w-3.5 h-3.5 text-green-600" />
+                                      ) : (
+                                        <ArrowDown className="w-3.5 h-3.5 text-red-600" />
+                                      )}
+                                      <span className={`text-xs font-medium ${
+                                        paidChange.isPositive ? 'text-green-600' : 'text-red-600'
+                                      }`}>
+                                        {paidChange.change}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium text-gray-600">Revenue</p>
+                                <span className="text-sm font-medium">${(totalRevenue / 1000).toFixed(1)}k</span>
+                              </div>
+                            </div>
+                            
+                            <div className="w-full mt-2">
+                              <div
+                                className="h-[112px] overflow-hidden ring-1 ring-gray-200 ring-inset"
+                                style={{
+                                  borderRadius: 0,
+                                  background: 'transparent'
+                                }}
+                              >
+                                <ChartContainer
+                                  id="conversion-rate-chart"
+                                  config={chartConfig}
+                                  className="h-full w-full"
+                                >
+                                  <AreaChart
+                                    accessibilityLayer
+                                    data={monthlyData}
+                                    margin={{ right: 4, left: 4, top: 4, bottom: 4 }}
+                                  >
+                                    <XAxis dataKey="month" hide />
+                                    <YAxis hide />
+                                    <ChartTooltip
+                                      animationDuration={0}
+                                      cursor={false}
+                                      allowEscapeViewBox={{ x: true, y: true }}
+                                      wrapperStyle={{ 
+                                        transition: 'none',
+                                        animation: 'none',
+                                        transform: 'none'
+                                      }}
+                                      contentStyle={{ 
+                                        transition: 'none',
+                                        animation: 'none',
+                                        transform: 'none',
+                                        backgroundColor: '#f9fafb',
+                                        border: '1px solid #e5e7eb',
+                                        borderRadius: '8px',
+                                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+                                      }}
+                                      content={
+                                        <ChartTooltipContent
+                                          labelFormatter={(value) => {
+                                            const monthMap: Record<string, string> = {
+                                              JAN: 'January', FEB: 'February', MAR: 'March', APR: 'April',
+                                              MAY: 'May', JUN: 'June', JUL: 'July', AUG: 'August',
+                                              SEP: 'September', OCT: 'October', NOV: 'November', DEC: 'December'
+                                            };
+                                            return monthMap[value as keyof typeof monthMap] || value;
+                                          }}
+                                          indicator="line"
+                                          className="min-w-[200px] conversion-tooltip"
+                                        />
+                                      }
+                                    />
+                                    {(() => {
+                                      // Check if there's actual data (non-zero values) for each series
+                                      const hasSentData = monthlyData.some(d => d.sent > 0);
+                                      const hasPaidData = monthlyData.some(d => d.paid > 0);
+                                      const hasConversionData = monthlyData.some(d => d.conversion > 0);
+                                      
+                                      return (
+                                        <>
+                                          {hasSentData && (
+                                            <Area
+                                              dataKey="sent"
+                                              type="linear"
+                                              fill={chartConfig.sent.color}
+                                              fillOpacity={0.3}
+                                              stroke={chartConfig.sent.color}
+                                              strokeWidth={2}
+                                            />
+                                          )}
+                                          {hasPaidData && (
+                                            <Area
+                                              dataKey="paid"
+                                              type="linear"
+                                              fill={chartConfig.paid.color}
+                                              fillOpacity={0.5}
+                                              stroke={chartConfig.paid.color}
+                                              strokeWidth={2}
+                                            />
+                                          )}
+                                          {hasConversionData && (
+                                            <Line
+                                              type="linear"
+                                              dataKey="conversion"
+                                              stroke={chartConfig.conversion.color}
+                                              strokeWidth={2}
+                                              dot={false}
+                                              strokeDasharray="4 4"
+                                            />
+                                          )}
+                                        </>
+                                      );
+                                    })()}
+                                  </AreaChart>
+                                </ChartContainer>
                               </div>
                             </div>
                           </div>
@@ -2673,7 +3194,7 @@ export default function DashboardOverview() {
               clientName: invoice.clientName || invoice.client?.name || 'Unknown',
               message: `Invoice #${invoice.invoiceNumber || invoice.invoice_number || 'N/A'} is due today`,
               timestamp: 'Today',
-              date: new Date().toISOString() // Store current date for sorting
+              date: dueDateStart.toISOString() // Use actual due date for proper sorting
             });
           }
           
@@ -2681,6 +3202,9 @@ export default function DashboardOverview() {
           if (dueDateStart < todayStart) {
             const diffTime = todayStart.getTime() - dueDateStart.getTime();
             const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            // Use current time minus days overdue to sort: most recently overdue first
+            // This ensures invoices that became overdue more recently appear at the top
+            const sortDate = new Date(todayStart.getTime() - diffTime);
             notificationList.push({
               id: `overdue-${invoice.id}`,
               type: 'overdue',
@@ -2689,7 +3213,7 @@ export default function DashboardOverview() {
               clientName: invoice.clientName || invoice.client?.name || 'Unknown',
               message: `Invoice #${invoice.invoiceNumber || invoice.invoice_number || 'N/A'} is ${diffDays} day${diffDays > 1 ? 's' : ''} overdue`,
               timestamp: `${diffDays} day${diffDays > 1 ? 's' : ''} ago`,
-              date: new Date().toISOString() // Store current date for sorting
+              date: sortDate.toISOString() // Sort by when it became overdue (most recent first)
             });
           }
         });
@@ -2699,26 +3223,95 @@ export default function DashboardOverview() {
       // Note: This would need to be implemented if estimate events are tracked separately
       // For now, we'll check invoice status changes that might indicate estimate conversions
       
+      // Deduplicate notifications - remove duplicates based on ID and content
+      // This prevents the same notification from appearing multiple times
+      // Use a Set to track unique notification IDs and content keys
+      const seenNotificationIds = new Set<string>();
+      const seenNotificationKeys = new Set<string>();
+      const deduplicatedList: typeof notificationList = [];
+      
+      for (const notif of notificationList) {
+        // First check by notification ID (most specific)
+        if (seenNotificationIds.has(notif.id)) {
+          continue; // Skip exact duplicate by ID
+        }
+        
+        // Also check by content key: invoiceId + type + invoiceNumber + message
+        // This catches duplicates even if they have different event IDs
+        const contentKey = `${notif.invoiceId}-${notif.type}-${notif.invoiceNumber}-${notif.message}`;
+        if (seenNotificationKeys.has(contentKey)) {
+          continue; // Skip duplicate by content
+        }
+        
+        // Add to both tracking sets and the deduplicated list
+        seenNotificationIds.add(notif.id);
+        seenNotificationKeys.add(contentKey);
+        deduplicatedList.push(notif);
+      }
+      
       // Sort by date (latest first) - newest notifications appear at the top
-      notificationList.sort((a, b) => {
+      deduplicatedList.sort((a, b) => {
         // Get date from notification object (stored as ISO string)
         const getDate = (notif: typeof a) => {
           // If notification has a date field, use it
           if ((notif as any).date) {
-            return new Date((notif as any).date).getTime();
+            const date = new Date((notif as any).date);
+            // Validate date
+            if (isNaN(date.getTime())) {
+              return 0; // Invalid date, put at end
+            }
+            return date.getTime();
           }
           // Fallback: use current time (shouldn't happen if date is always set)
-          return Date.now();
+          return 0;
         };
         
         const dateA = getDate(a);
         const dateB = getDate(b);
         
         // Sort by date descending (newest first)
+        // If dates are equal, maintain order (stable sort)
+        if (dateB === dateA) {
+          return 0;
+        }
         return dateB - dateA;
       });
       
-      setNotifications(notificationList);
+      // Preserve read state when setting new notifications
+      // Load read IDs from localStorage before setting notifications
+      const storedReadIds: Set<string> = typeof window !== 'undefined' 
+        ? (() => {
+            try {
+              const stored = localStorage.getItem('readNotificationIds');
+              if (stored) {
+                const parsed = JSON.parse(stored) as string[];
+                return new Set<string>(parsed);
+              }
+              return new Set<string>();
+            } catch {
+              return new Set<string>();
+            }
+          })()
+        : new Set<string>();
+      
+      // Only update readNotificationIds if there are new notifications that should be marked as read
+      // Don't reset the read state - preserve it
+      setNotifications(deduplicatedList);
+      
+      // Sync read state with stored values (but don't overwrite if user just marked as read)
+      // This ensures read state persists across refetches
+      if (storedReadIds.size > 0) {
+        const currentNotificationIds = new Set(notificationList.map(n => n.id));
+        const validStoredReadIds = new Set<string>([...storedReadIds].filter((id: string) => currentNotificationIds.has(id)));
+        if (validStoredReadIds.size > 0) {
+          // Only update if there are valid read IDs to preserve
+          setReadNotificationIds(prev => {
+            // Merge with existing read IDs, don't replace
+            const merged = new Set([...prev, ...validStoredReadIds]);
+            return merged;
+          });
+        }
+      }
     };
     
     fetchNotifications();
@@ -2779,18 +3372,25 @@ export default function DashboardOverview() {
   }, [user?.id, hasInitiallyLoaded, isLoadingInvoices]);
 
   // Clean up read notification IDs for notifications that no longer exist
+  // But preserve read state - only remove IDs that truly don't exist anymore
   useEffect(() => {
     if (readNotificationIds.size > 0 && notifications.length > 0) {
       const currentNotificationIds = new Set(notifications.map(n => n.id));
       const validReadIds = new Set([...readNotificationIds].filter(id => currentNotificationIds.has(id)));
-      if (validReadIds.size !== readNotificationIds.size) {
+      
+      // Only update if there are actually invalid IDs to remove
+      // Don't reset if all IDs are still valid
+      if (validReadIds.size < readNotificationIds.size) {
         setReadNotificationIds(validReadIds);
         if (typeof window !== 'undefined') {
           localStorage.setItem('readNotificationIds', JSON.stringify([...validReadIds]));
         }
       }
+    } else if (notifications.length === 0 && readNotificationIds.size > 0) {
+      // If no notifications, don't clear read state - preserve it for when notifications come back
+      // This prevents read state from being lost when notifications are temporarily empty
     }
-  }, [notifications, readNotificationIds]);
+  }, [notifications]); // Removed readNotificationIds from deps to prevent infinite loops
 
   // Close notification dropdown when clicking outside
   useEffect(() => {
@@ -2833,12 +3433,27 @@ export default function DashboardOverview() {
   }, [router]);
 
   // Only show loading spinner if user is not authenticated yet
+  // Don't show spinner immediately to prevent flash
+  const [showAuthSpinner, setShowAuthSpinner] = useState(false);
+  
+  useEffect(() => {
+    if ((loading && !user) || (!user && !loading)) {
+      // Delay showing spinner to prevent flash (150ms delay)
+      const timer = setTimeout(() => setShowAuthSpinner(true), 150);
+      return () => clearTimeout(timer);
+    } else {
+      setShowAuthSpinner(false);
+    }
+  }, [loading, user]);
+  
   if (loading && !user) {
     return (
       <div className="min-h-screen transition-colors duration-200 bg-white">
-        <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
-        </div>
+        {showAuthSpinner && (
+          <div className="flex items-center justify-center h-screen">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
+          </div>
+        )}
       </div>
     );
   }
@@ -2847,9 +3462,11 @@ export default function DashboardOverview() {
     // Show loading while checking session (layout will handle redirect)
     return (
       <div className="min-h-screen transition-colors duration-200 bg-white">
-        <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
-        </div>
+        {showAuthSpinner && (
+          <div className="flex items-center justify-center h-screen">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
+          </div>
+        )}
       </div>
     );
   }
@@ -2865,7 +3482,7 @@ export default function DashboardOverview() {
           <div className="pt-16 lg:pt-4 p-4 sm:p-5 lg:p-6 xl:p-8">
             {/* Dashboard Overview */}
             <div>
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center justify-between mb-0">
                 <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
                   Dashboard Overview
                 </h2>
@@ -3063,7 +3680,7 @@ export default function DashboardOverview() {
                   )}
                 </div>
               </div>
-              <p className="mb-2 sm:mb-3 text-sm sm:text-base" style={{color: '#374151'}}>
+              <p className="-mt-1 mb-2 sm:mb-3 text-sm sm:text-base" style={{color: '#374151'}}>
                 The fastest way for freelancers & contractors to get paid
               </p>
               
@@ -3121,11 +3738,7 @@ export default function DashboardOverview() {
                         <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Revenue</p>
                         <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
                           <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-emerald-600 text-left break-words" style={{ display: 'block' }}>
-                            {isLoadingStats ? (
-                              <div className="animate-pulse bg-gray-300 h-5 sm:h-6 lg:h-8 w-16 sm:w-20 lg:w-24"></div>
-                            ) : (
-                              <div>{formatMoney(totalRevenue)}</div>
-                            )}
+                            {formatMoney(totalRevenue)}
                           </div>
                           {/* Fixed height placeholder to match late fees line spacing - ensures alignment */}
                           <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
@@ -3158,11 +3771,7 @@ export default function DashboardOverview() {
                         <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Payable</p>
                         <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
                           <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-orange-500 text-left break-words" style={{ display: 'block' }}>
-                            {isLoadingStats ? (
-                              <div className="animate-pulse bg-gray-300 h-5 sm:h-6 lg:h-8 w-16 sm:w-20 lg:w-24"></div>
-                            ) : (
-                              <div>{formatMoney(totalPayableAmount)}</div>
-                            )}
+                            {formatMoney(totalPayableAmount)}
                           </div>
                           {/* Fixed height container for late fees - always reserves space for alignment */}
                           <div className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-amber-600 text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
@@ -3198,11 +3807,7 @@ export default function DashboardOverview() {
                         <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Overdue</p>
                         <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
                           <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-red-600 text-left" style={{ display: 'block' }}>
-                            {isLoadingStats ? (
-                              <div className="animate-pulse bg-gray-300 h-5 sm:h-6 lg:h-8 w-6 sm:w-8 lg:w-10 rounded"></div>
-                            ) : (
-                              <div>{overdueCount}</div>
-                            )}
+                            {overdueCount}
                           </div>
                           {/* Fixed height placeholder to match late fees line spacing - ensures alignment */}
                           <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
@@ -3235,11 +3840,7 @@ export default function DashboardOverview() {
                         <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Clients</p>
                         <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
                           <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-indigo-600 text-left" style={{ display: 'block' }}>
-                            {isLoadingStats ? (
-                              <div className="animate-pulse bg-gray-300 h-5 sm:h-6 lg:h-8 w-6 sm:w-8 lg:w-10 rounded"></div>
-                            ) : (
-                              <div>{totalClients}</div>
-                            )}
+                            {totalClients}
                           </div>
                           {/* Fixed height placeholder to match late fees line spacing - ensures alignment */}
                           <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
@@ -4174,6 +4775,112 @@ export default function DashboardOverview() {
            getAuthHeaders={getAuthHeaders}
          />
        )}
+
+      {/* Performance Info Modal */}
+      {showPerformanceInfo && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setShowPerformanceInfo(false)}
+          />
+          
+          {/* Modal */}
+          <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+              <h3 className="text-base font-semibold text-gray-900">Invoice Performance</h3>
+              <button
+                onClick={() => setShowPerformanceInfo(false)}
+                className="p-1 hover:bg-gray-100 rounded transition-colors"
+              >
+                <X className="h-4 w-4 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              <div className="space-y-5">
+                {/* Metrics */}
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Metrics</h4>
+                  <div className="space-y-2.5">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Payment Rate</p>
+                      <p className="text-xs text-gray-600 mt-0.5">% of invoices fully paid</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">On-Time Payment</p>
+                      <p className="text-xs text-gray-600 mt-0.5">% paid on or before due date</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Average Value</p>
+                      <p className="text-xs text-gray-600 mt-0.5">Normalized score of invoice sizes</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Collection Rate</p>
+                      <p className="text-xs text-gray-600 mt-0.5">% of total invoiced amount collected</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Invoice Health</p>
+                      <p className="text-xs text-gray-600 mt-0.5">Score based on overdue invoices</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Revenue Efficiency</p>
+                      <p className="text-xs text-gray-600 mt-0.5">% of invoices converted to revenue</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Insights */}
+                <div className="pt-4 border-t border-gray-100">
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Insights</h4>
+                  <div className="space-y-2">
+                    <div>
+                      <span className="text-sm font-medium text-gray-900">Total Revenue: </span>
+                      <span className="text-sm text-gray-600">All collected payments</span>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-900">Outstanding: </span>
+                      <span className="text-sm text-gray-600">Amount still owed</span>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-900">Avg Payment Time: </span>
+                      <span className="text-sm text-gray-600">Days from invoice to payment</span>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-900">Risk Level: </span>
+                      <span className="text-sm text-gray-600">Low (&lt;10%), Medium (10-25%), High (&gt;25%)</span>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-900">Top Clients: </span>
+                      <span className="text-sm text-gray-600">Best clients by total paid</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Usage */}
+                <div className="pt-4 border-t border-gray-100">
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Usage</h4>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    Larger radar shape = better performance. Use to identify areas needing improvement.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-3 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={() => setShowPerformanceInfo(false)}
+                className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded transition-colors"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Container */}
       <ToastContainer

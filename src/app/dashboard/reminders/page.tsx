@@ -811,6 +811,33 @@ export default function ReminderHistoryPage() {
     }
   };
 
+  const testWebhook = async () => {
+    try {
+      showSuccess('Testing webhook...', 'Simulating email.delivered event');
+      
+      const response = await fetch('/api/reminders/test-webhook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_type: 'email.delivered'
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        showSuccess('Webhook test successful!', `Status updated to: ${data.webhook_response?.body?.status || 'delivered'}`);
+        await fetchReminderHistory(); // Refresh to see updated status
+      } else {
+        const errorMsg = data.error || data.webhook_response?.body?.error || 'Webhook test failed';
+        showError('Webhook test failed', errorMsg);
+      }
+    } catch (error) {
+      console.error('Error testing webhook:', error);
+      showError('Error testing webhook', 'An unexpected error occurred. Please try again.');
+    }
+  };
+
   const handleViewReminder = (reminder: ReminderHistory) => {
     setSelectedReminder(reminder);
     setShowReminderModal(true);
@@ -875,13 +902,23 @@ export default function ReminderHistoryPage() {
             <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
               Reminder History
             </h2>
-             <button
-               onClick={fetchReminderHistory}
-               className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
-             >
-               <RefreshCw className="h-4 w-4" />
-               <span>Refresh</span>
-             </button>
+             <div className="flex items-center gap-2">
+               <button
+                 onClick={testWebhook}
+                 className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white hover:bg-green-700 transition-colors text-sm font-medium cursor-pointer rounded"
+                 title="Test webhook with most recent reminder"
+               >
+                 <Sparkles className="h-4 w-4" />
+                 <span>Test Webhook</span>
+               </button>
+               <button
+                 onClick={fetchReminderHistory}
+                 className="flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium cursor-pointer"
+               >
+                 <RefreshCw className="h-4 w-4" />
+                 <span>Refresh</span>
+               </button>
+             </div>
           </div>
         </div>
 

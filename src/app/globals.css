@@ -104,6 +104,14 @@
   to { transform: rotate(360deg); }
 }
 
+/* Prevent spinner flash on initial page load */
+html:not(.loaded) [class*="animate-spin"],
+html:not(.loaded) [class*="spinner"],
+html:not(.loaded) .loading-spinner {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
 
 /* Marquee animation for mobile testimonials */
 @keyframes marquee {
@@ -375,8 +383,91 @@
     border-radius: 0 !important;
   }
 
+  /* Remove all animations and transitions from chart tooltips - instant appearance */
+  .recharts-tooltip-wrapper,
+  .recharts-tooltip-wrapper *,
+  .recharts-tooltip-content,
+  .recharts-tooltip-content *,
+  .recharts-default-tooltip,
+  .recharts-default-tooltip * {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+
+  /* Ensure tooltip appears instantly without sliding */
+  .recharts-tooltip-wrapper {
+    opacity: 1 !important;
+    transition: opacity 0s !important;
+    pointer-events: none !important;
+    position: absolute !important;
+  }
+
+  /* Square corners for conversion rate chart */
+  #conversion-rate-chart,
+  #conversion-rate-chart .recharts-surface {
+    border-radius: 0 !important;
+  }
+
+  /* Proper border and square corners for tooltip */
+  #conversion-rate-chart .recharts-tooltip-wrapper,
+  #conversion-rate-chart .recharts-tooltip-wrapper > div,
+  #conversion-rate-chart .recharts-default-tooltip,
+  .conversion-tooltip,
+  .conversion-tooltip * {
+    border-radius: 0 !important;
+  }
+
+  /* Thick black border for tooltip */
+  .conversion-tooltip {
+    border: 1px solid #e5e7eb !important;
+    background-color: #f9fafb !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  }
+
+  /* Override default border from ChartTooltipContent */
+  .conversion-tooltip {
+    border-color: #e5e7eb !important;
+    border-width: 1px !important;
+  }
+
   .recharts-active-dot {
     border-radius: 0 !important;
+  }
+
+  /* Remove all borders and outlines from chart elements on click/focus */
+  [data-chart],
+  [data-chart] *,
+  [data-chart] svg,
+  [data-chart] svg *,
+  [data-chart] text,
+  [data-chart] .recharts-layer,
+  [data-chart] .recharts-polar-angle-axis,
+  [data-chart] .recharts-polar-angle-axis-tick,
+  [data-chart] .recharts-polar-angle-axis-tick-value,
+  [data-chart] .recharts-polar-radius-axis,
+  [data-chart] .recharts-polar-radius-axis-tick,
+  [data-chart] .recharts-polar-radius-axis-tick-value {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  [data-chart]:focus,
+  [data-chart]:focus-visible,
+  [data-chart]:active,
+  [data-chart] *:focus,
+  [data-chart] *:focus-visible,
+  [data-chart] *:active,
+  [data-chart] svg:focus,
+  [data-chart] svg:focus-visible,
+  [data-chart] svg:active,
+  [data-chart] text:focus,
+  [data-chart] text:focus-visible,
+  [data-chart] text:active {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
   }
 
   /* Mobile Touch Feedback for Buttons - Enhanced UX */
@@ -483,6 +574,34 @@
     opacity: 0.8;
     transform: scale(0.98);
     transition: opacity 0.15s ease, transform 0.1s ease;
+  }
+
+  /* Remove borders on chart elements specifically for mobile */
+  @media (max-width: 768px) {
+    [data-chart],
+    [data-chart] *,
+    [data-chart] svg,
+    [data-chart] svg *,
+    [data-chart] text {
+      -webkit-tap-highlight-color: transparent !important;
+      outline: none !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    [data-chart]:focus,
+    [data-chart]:active,
+    [data-chart] *:focus,
+    [data-chart] *:active,
+    [data-chart] svg:focus,
+    [data-chart] svg:active,
+    [data-chart] text:focus,
+    [data-chart] text:active {
+      outline: none !important;
+      border: none !important;
+      box-shadow: none !important;
+      -webkit-tap-highlight-color: transparent !important;
+    }
   }
 
   /* Ensure minimum touch target size for mobile (44x44px recommended by Apple/Google) */

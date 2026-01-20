@@ -80,13 +80,28 @@ export default function DashboardLayout({
   }, [router]);
 
   // Show loading while checking - prevent any content flash
+  // Don't show spinner immediately - wait a bit to prevent flash
+  const [showSpinner, setShowSpinner] = useState(false);
+  
+  useEffect(() => {
+    if (isChecking || !shouldRender) {
+      // Delay showing spinner to prevent flash
+      const timer = setTimeout(() => setShowSpinner(true), 100);
+      return () => clearTimeout(timer);
+    } else {
+      setShowSpinner(false);
+    }
+  }, [isChecking, shouldRender]);
+  
   if (isChecking || !shouldRender) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex flex-col items-center space-y-4">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-          <p className="text-gray-600">Loading...</p>
-        </div>
+        {showSpinner && (
+          <div className="flex flex-col items-center space-y-4">
+            <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        )}
       </div>
     );
   }

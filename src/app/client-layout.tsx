@@ -31,6 +31,14 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       });
     }
     
+    // Mark page as loaded to allow spinners to show (prevents initial flash)
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      if (typeof document !== 'undefined') {
+        document.documentElement.classList.add('loaded');
+      }
+    });
+    
     setMounted(true);
   }, []);
 

@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
 // Shared webhook handler for Resend webhooks
-async function handleWebhook(request: NextRequest) {
+export async function handleWebhook(request: NextRequest) {
   try {
     const body = await request.json();
     
-    console.log('📥 Webhook received:', { type: body.type, email_id: body.data?.email_id });
+    console.log('📥 Webhook received:', JSON.stringify({ 
+      type: body.type, 
+      email_id: body.data?.email_id,
+      data_keys: body.data ? Object.keys(body.data) : []
+    }, null, 2));
     
     // Handle different webhook formats (Resend, SendGrid, etc.)
     let reminderId = null;
@@ -14,6 +18,7 @@ async function handleWebhook(request: NextRequest) {
     let failureReason = null;
 
     // Resend webhook format
+    // Resend sends email_id in body.data.email_id for webhooks
     if (body.type === 'email.delivered') {
       status = 'delivered';
       reminderId = body.data?.email_id;
@@ -32,21 +37,76 @@ async function handleWebhook(request: NextRequest) {
     }
 
     if (!reminderId) {
-      console.error('❌ No email_id found in webhook:', body);
-      return NextResponse.json({ error: 'No reminder ID found in webhook' }, { status: 400 });
+      console.error('❌ No email_id found in webhook. Full body:', JSON.stringify(body, null, 2));
+      return NextResponse.json({ 
+        error: 'No reminder ID found in webhook',
+        received_data: {
+          type: body.type,
+          has_data: !!body.data,
+          data_keys: body.data ? Object.keys(body.data) : []
+        }
+      }, { status: 400 });
     }
 
-    // Find reminder by email_id
-    const { data: reminder, error: findError } = await supabaseAdmin
+    console.log('🔍 Looking up reminder with email_id:', reminderId);
+
+    // Find reminder by email_id (exact match first)
+    let { data: reminder, error: findError } = await supabaseAdmin
       .from('invoice_reminders')
-      .select('id')
+      .select('id, email_id, reminder_status')
       .eq('email_id', reminderId)
       .single();
 
+    // If not found, try to find by partial match (in case of formatting differences)
     if (findError || !reminder) {
-      console.error('❌ Reminder not found for email ID:', reminderId);
-      return NextResponse.json({ error: 'Reminder not found' }, { status: 404 });
+      console.log('⚠️ Exact match not found, trying alternative lookup...');
+      const { data: alternativeReminders, error: altError } = await supabaseAdmin
+        .from('invoice_reminders')
+        .select('id, email_id, reminder_status')
+        .ilike('email_id', `%${reminderId}%`)
+        .limit(5);
+      
+      if (altError) {
+        console.error('❌ Error in alternative lookup:', altError);
+      } else if (alternativeReminders && alternativeReminders.length > 0) {
+        console.log('✅ Found reminder with partial match:', alternativeReminders[0]);
+        reminder = alternativeReminders[0];
+        findError = null;
+      }
     }
+
+    // If still not found, log debugging info
+    if (findError && findError.code !== 'PGRST116') { // PGRST116 is "not found" error
+      console.error('❌ Database error finding reminder:', findError);
+      const { data: allReminders } = await supabaseAdmin
+        .from('invoice_reminders')
+        .select('id, email_id, reminder_status')
+        .limit(10);
+      console.log('📋 Recent reminders (for debugging):', allReminders?.map(r => ({ id: r.id, email_id: r.email_id })));
+      
+      return NextResponse.json({ 
+        error: 'Database error finding reminder',
+        details: findError.message,
+        email_id_searched: reminderId
+      }, { status: 500 });
+    }
+
+    if (!reminder) {
+      console.error('❌ Reminder not found for email ID:', reminderId);
+      // Check if there are any reminders at all
+      const { count } = await supabaseAdmin
+        .from('invoice_reminders')
+        .select('*', { count: 'exact', head: true });
+      console.log('📊 Total reminders in database:', count);
+      
+      return NextResponse.json({ 
+        error: 'Reminder not found',
+        email_id_searched: reminderId,
+        total_reminders: count
+      }, { status: 404 });
+    }
+
+    console.log('✅ Found reminder:', { id: reminder.id, current_status: reminder.reminder_status });
 
     // Update reminder status
     const { error: updateError } = await supabaseAdmin
@@ -60,18 +120,28 @@ async function handleWebhook(request: NextRequest) {
 
     if (updateError) {
       console.error('❌ Error updating reminder status:', updateError);
-      return NextResponse.json({ error: 'Failed to update reminder status' }, { status: 500 });
+      return NextResponse.json({ 
+        error: 'Failed to update reminder status',
+        details: updateError.message
+      }, { status: 500 });
     }
 
-    console.log('✅ Webhook processed successfully:', { reminderId: reminder.id, status });
+    console.log('✅ Webhook processed successfully:', { reminderId: reminder.id, status, email_id: reminderId });
     return NextResponse.json({ 
       success: true, 
-      message: 'Reminder status updated from webhook'
+      message: 'Reminder status updated from webhook',
+      reminder_id: reminder.id,
+      status: status
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error processing webhook:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('❌ Error stack:', error?.stack);
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      message: error?.message || 'Unknown error',
+      type: error?.name || 'Error'
+    }, { status: 500 });
   }
 }
 
