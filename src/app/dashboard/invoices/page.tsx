@@ -2826,7 +2826,7 @@ function InvoicesContent(): React.JSX.Element {
                   <h3 className={`text-sm sm:text-base font-semibold mb-3 ${'text-gray-900'}`}>Enhanced Features</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs sm:text-sm">
                     {selectedInvoice.paymentTerms && (
-                      <div className="p-3 rounded-lg bg-gray-50">
+                      <div className="p-3 bg-gray-50">
                         <div className="flex items-center space-x-2 mb-2">
                           <CreditCard className="h-4 w-4 text-blue-500" />
                           <span className={`font-medium ${'text-gray-600'}`}>Payment Terms</span>
@@ -2837,7 +2837,7 @@ function InvoicesContent(): React.JSX.Element {
                       </div>
                     )}
                     {selectedInvoice.lateFees && (
-                      <div className="p-3 rounded-lg bg-gray-50">
+                      <div className="p-3 bg-gray-50">
                         <div className="flex items-center space-x-2 mb-2">
                           <DollarSign className="h-4 w-4 text-orange-500" />
                           <span className={`font-medium ${'text-gray-600'}`}>Late Fees</span>
@@ -2851,7 +2851,7 @@ function InvoicesContent(): React.JSX.Element {
                       </div>
                     )}
                     {selectedInvoice.reminders && (
-                      <div className="p-3 rounded-lg bg-gray-50">
+                      <div className="p-3 bg-gray-50">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center space-x-2">
                             <Bell className="h-4 w-4 text-green-500" />

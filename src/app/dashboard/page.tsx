@@ -84,6 +84,7 @@ export default function DashboardOverview() {
   const [showCreateEstimate, setShowCreateEstimate] = useState(false);
   const [showPartialPayment, setShowPartialPayment] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [showPerformanceTooltip, setShowPerformanceTooltip] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(() => {
     // Load read notifications from localStorage
@@ -108,6 +109,7 @@ export default function DashboardOverview() {
   const dotsContainerRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollRAFRef = useRef<number | null>(null);
+  const previousScrollIndexRef = useRef<number>(-1);
   const [notifications, setNotifications] = useState<Array<{
     id: string;
     type: 'viewed' | 'due_today' | 'overdue' | 'paid' | 'partial_paid' | 'draft_created' | 'downloaded' | 'payment_copied' | 'reminder_scheduled' | 'sent' | 'failed' | 'cancelled' | 'estimate_sent' | 'estimate_approved' | 'estimate_rejected';
@@ -1955,27 +1957,52 @@ export default function DashboardOverview() {
       const container = e.currentTarget;
       const scrollLeft = container.scrollLeft;
       const containerWidth = container.clientWidth;
+      const tabsCount = availableTabs.length;
       
-      // Calculate which slide is visible based on available tabs
-      const slideIndex = Math.round(scrollLeft / containerWidth);
-      if (slideIndex >= 0 && slideIndex < availableTabs.length) {
-        setDueInvoicesScrollIndex(slideIndex);
+      if (tabsCount === 0) return;
+      
+      // Calculate which slide is visible - use viewport center method for accuracy
+      // Each slide takes up 100% / tabsCount of the container width
+      const slideWidth = containerWidth / tabsCount;
+      
+      // Find which slide's center is closest to the viewport center
+      const viewportCenter = scrollLeft + containerWidth / 2;
+      let closestIndex = 0;
+      let minDistance = Infinity;
+      
+      for (let i = 0; i < tabsCount; i++) {
+        const slideCenter = (i + 0.5) * slideWidth;
+        const distance = Math.abs(viewportCenter - slideCenter);
         
-        // On mobile, scroll dots container to show active dot
-        if (dotsContainerRef.current && window.innerWidth < 1024) {
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestIndex = i;
+        }
+      }
+      
+      // Ensure index is within bounds
+      const clampedIndex = Math.max(0, Math.min(closestIndex, tabsCount - 1));
+      
+      // Only update if index actually changed (use ref to avoid stale closure)
+      if (clampedIndex !== previousScrollIndexRef.current) {
+        previousScrollIndexRef.current = clampedIndex;
+        setDueInvoicesScrollIndex(clampedIndex);
+        
+        // Scroll dots container to show active dot (works on all screen sizes)
+        if (dotsContainerRef.current) {
           const dotsContainer = dotsContainerRef.current;
-          const activeDot = dotsContainer.children[slideIndex] as HTMLElement;
+          const activeDot = dotsContainer.children[clampedIndex] as HTMLElement;
           if (activeDot) {
             const dotLeft = activeDot.offsetLeft;
             const dotWidth = activeDot.offsetWidth;
-            const containerWidth = dotsContainer.clientWidth;
-            const scrollLeft = dotsContainer.scrollLeft;
+            const dotsContainerWidth = dotsContainer.clientWidth;
+            const dotsScrollLeft = dotsContainer.scrollLeft;
             
             // Calculate if dot is outside visible area
             const dotRight = dotLeft + dotWidth;
-            const visibleRight = scrollLeft + containerWidth;
+            const visibleRight = dotsScrollLeft + dotsContainerWidth;
             
-            if (dotLeft < scrollLeft) {
+            if (dotLeft < dotsScrollLeft) {
               // Dot is to the left of visible area, scroll left
               dotsContainer.scrollTo({
                 left: dotLeft - 10, // 10px padding
@@ -1984,7 +2011,7 @@ export default function DashboardOverview() {
             } else if (dotRight > visibleRight) {
               // Dot is to the right of visible area, scroll right
               dotsContainer.scrollTo({
-                left: dotRight - containerWidth + 10, // 10px padding
+                left: dotRight - dotsContainerWidth + 10, // 10px padding
                 behavior: 'smooth'
               });
             }
@@ -1999,12 +2026,66 @@ export default function DashboardOverview() {
     if (dueInvoicesScrollRef.current && scrollIndex >= 0 && scrollIndex < availableTabs.length) {
       const container = dueInvoicesScrollRef.current;
       const containerWidth = container.clientWidth;
+      const tabsCount = availableTabs.length;
+      const slideWidth = containerWidth / tabsCount;
+      
       container.scrollTo({
-        left: scrollIndex * containerWidth,
+        left: scrollIndex * slideWidth,
         behavior: 'smooth'
       });
+      
+      // Update ref and state immediately when clicking
+      previousScrollIndexRef.current = scrollIndex;
       setDueInvoicesScrollIndex(scrollIndex);
     }
+  }, [availableTabs]);
+
+  // Add direct scroll listener as fallback and sync on mount/tabs change
+  useEffect(() => {
+    const container = dueInvoicesScrollRef.current;
+    if (!container || availableTabs.length === 0) return;
+
+    const updateScrollIndex = () => {
+      const containerWidth = container.clientWidth;
+      const tabsCount = availableTabs.length;
+      if (tabsCount === 0) return;
+      
+      const slideWidth = containerWidth / tabsCount;
+      const scrollLeft = container.scrollLeft;
+      
+      // Use viewport center method (same as main handler)
+      const viewportCenter = scrollLeft + containerWidth / 2;
+      let closestIndex = 0;
+      let minDistance = Infinity;
+      
+      for (let i = 0; i < tabsCount; i++) {
+        const slideCenter = (i + 0.5) * slideWidth;
+        const distance = Math.abs(viewportCenter - slideCenter);
+        
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestIndex = i;
+        }
+      }
+      
+      const clampedIndex = Math.max(0, Math.min(closestIndex, tabsCount - 1));
+      
+      if (clampedIndex !== previousScrollIndexRef.current) {
+        previousScrollIndexRef.current = clampedIndex;
+        setDueInvoicesScrollIndex(clampedIndex);
+      }
+    };
+
+    // Initial sync with a small delay to ensure container is rendered
+    const timeoutId = setTimeout(updateScrollIndex, 100);
+
+    // Add scroll listener as fallback
+    container.addEventListener('scroll', updateScrollIndex, { passive: true });
+
+    return () => {
+      clearTimeout(timeoutId);
+      container.removeEventListener('scroll', updateScrollIndex);
+    };
   }, [availableTabs]);
 
   // Calculate invoice trends for the third slide
@@ -2639,6 +2720,8 @@ export default function DashboardOverview() {
                         <div className="relative group">
                           <button
                             type="button"
+                            onClick={() => setShowPerformanceTooltip(!showPerformanceTooltip)}
+                            onBlur={() => setTimeout(() => setShowPerformanceTooltip(false), 200)}
                             className="p-1 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
                             aria-label="Learn more about Invoice Performance"
                           >
@@ -2646,7 +2729,9 @@ export default function DashboardOverview() {
                           </button>
                           
                           {/* Tooltip-style Info Popup */}
-                          <div className="absolute right-0 top-full mt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-200 z-[9999] bg-white border border-gray-300 shadow-xl w-80 max-h-96 overflow-y-auto pointer-events-none group-hover:pointer-events-auto"
+                          <div className={`absolute right-0 top-full mt-2 transition-opacity duration-200 z-[9999] bg-white border border-gray-300 shadow-xl w-80 max-h-96 overflow-y-auto ${
+                            showPerformanceTooltip ? 'opacity-100 visible pointer-events-auto' : 'opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto'
+                          }`}
                                style={{ borderRadius: '0' }}
                           >
                               <div className="p-4 space-y-4">
