@@ -278,10 +278,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check subscription limits before proceeding (only for non-PDF generation)
+    // Check subscription limits before proceeding (including PDF generation)
     const invoiceData = await request.json();
-    if (!invoiceData.generate_pdf_only) {
-      // Check invoice creation limit
+    
+    // IMPORTANT: For PDF generation of existing invoices, check if invoice is already sent/paid
+    // If invoice is already sent/paid, skip subscription limit check (invoice already exists)
+    let shouldSkipLimitCheck = false;
+    if (invoiceData.generate_pdf_only && invoiceData.invoice_id) {
+      const { data: existingInvoice } = await supabaseAdmin
+        .from('invoices')
+        .select('status')
+        .eq('id', invoiceData.invoice_id)
+        .eq('user_id', user.id)
+        .single();
+      
+      if (existingInvoice && (existingInvoice.status === 'sent' || existingInvoice.status === 'paid')) {
+        shouldSkipLimitCheck = true; // Invoice already sent/paid, allow PDF generation
+      }
+    }
+    
+    // Check invoice creation limit (applies to both invoice creation and PDF generation)
+    // Skip check for already sent/paid invoices when generating PDF
+    if (!shouldSkipLimitCheck) {
       const limitCheck = await checkSubscriptionLimit(user.id);
       if (!limitCheck.allowed) {
         return NextResponse.json({ 
@@ -289,9 +307,11 @@ export async function POST(request: NextRequest) {
           limitReached: true
         }, { status: 403 });
       }
+    }
 
       // Check template restriction for free plan (only template 1 allowed, templates 2 and 3 locked)
-      if (invoiceData.theme && invoiceData.theme.template) {
+    // This check only applies when creating invoices, not when generating PDF only
+    if (!invoiceData.generate_pdf_only && invoiceData.theme && invoiceData.theme.template) {
         const templateCheck = await canUseTemplate(user.id, invoiceData.theme.template);
         if (!templateCheck.allowed) {
           return NextResponse.json({ 
@@ -299,7 +319,6 @@ export async function POST(request: NextRequest) {
             limitReached: true,
             limitType: templateCheck.limitType
           }, { status: 403 });
-        }
       }
     }
 

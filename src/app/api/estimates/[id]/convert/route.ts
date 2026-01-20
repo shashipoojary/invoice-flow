@@ -79,8 +79,13 @@ export async function POST(
     }
 
     // Check template restriction for free plan (only template 1 allowed)
+    // IMPORTANT: Convert PDF template number to UI template number before checking
+    // PDF templates: 6=Minimal (UI 1), 4=Modern (UI 2), 5=Creative (UI 3)
+    // canUseTemplate expects UI template numbers (1, 2, 3)
     if (invoiceType === 'detailed' && template) {
-      const templateCheck = await canUseTemplate(user.id, template);
+      // Convert PDF template to UI template number
+      const uiTemplateNumber = template === 6 ? 1 : template === 4 ? 2 : template === 5 ? 3 : template;
+      const templateCheck = await canUseTemplate(user.id, uiTemplateNumber);
       if (!templateCheck.allowed) {
         return NextResponse.json({ 
           error: templateCheck.reason || 'Template not available on free plan',

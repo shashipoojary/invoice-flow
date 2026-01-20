@@ -105,6 +105,7 @@ export default function DashboardOverview() {
   const parseDateOnlyRef = useRef<((input: string) => Date) | null>(null);
   const [dueInvoicesScrollIndex, setDueInvoicesScrollIndex] = useState(0);
   const dueInvoicesScrollRef = useRef<HTMLDivElement>(null);
+  const dotsContainerRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollRAFRef = useRef<number | null>(null);
   const [notifications, setNotifications] = useState<Array<{
@@ -653,19 +654,64 @@ export default function DashboardOverview() {
     setLoadingActions(prev => ({ ...prev, [actionKey]: true }));
     
     try {
-      // Fetch complete invoice data from API to ensure all fields are present
+      // IMPORTANT: Skip subscription limits for already sent/paid invoices
+      // These invoices are already created and sent, so users should be able to download PDFs
+      const isAlreadySent = invoice.status === 'sent' || invoice.status === 'paid';
+      
+      // Only check subscription limits for draft invoices (not yet sent)
+      if (!isAlreadySent) {
+        const headers = await getAuthHeaders();
+        const usageResponse = await fetch('/api/subscription/usage', {
+          headers,
+          cache: 'no-store'
+        });
+        
+        if (usageResponse.ok) {
+          const usageData = await usageResponse.json();
+          
+          // For free plan: Check monthly invoice limit (only for draft invoices)
+          if (usageData.plan === 'free' && usageData.limit && usageData.used >= usageData.limit) {
+            setLoadingActions(prev => ({ ...prev, [actionKey]: false }));
+            setShowUpgradeModal(true);
+            setSubscriptionUsage(usageData);
+            showError('PDF Download Limit Reached', 'You\'ve reached your monthly invoice limit. Please upgrade to download more PDFs.');
+            return;
+          }
+        }
+      }
+      
       const headers = await getAuthHeaders();
+      
+      // Fetch complete invoice data from API to ensure all fields are present
       const response = await fetch(`/api/invoices/${invoice.id}`, { headers });
       
       if (!response.ok) {
-        throw new Error('Failed to fetch invoice data');
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('AUTH_ERROR');
+        } else if (response.status === 404) {
+          throw new Error('NOT_FOUND');
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          if (errorData.limitReached) {
+            throw new Error('LIMIT_REACHED');
+          }
+          throw new Error('FETCH_ERROR');
+        }
       }
       
       const data = await response.json();
       const completeInvoice = data.invoice;
       
-      if (!completeInvoice || !completeInvoice.client || !completeInvoice.items) {
-        throw new Error('Invoice data is incomplete');
+      if (!completeInvoice) {
+        throw new Error('INVOICE_MISSING');
+      }
+      
+      if (!completeInvoice.client) {
+        throw new Error('CLIENT_MISSING');
+      }
+      
+      if (!completeInvoice.items || completeInvoice.items.length === 0) {
+        throw new Error('ITEMS_MISSING');
       }
       
       // Prepare business settings for PDF
@@ -705,13 +751,22 @@ export default function DashboardOverview() {
       const primaryColor = invoiceTheme?.primary_color || '#5C2D91';
       const secondaryColor = invoiceTheme?.secondary_color || '#8B5CF6';
       
-      const pdfBlob = await generateTemplatePDFBlob(
-        completeInvoice, 
-        businessSettings, 
-        template, 
-        primaryColor, 
-        secondaryColor
-      );
+      let pdfBlob: Blob;
+      try {
+        pdfBlob = await generateTemplatePDFBlob(
+          completeInvoice, 
+          businessSettings, 
+          template, 
+          primaryColor, 
+          secondaryColor
+        );
+      } catch (pdfGenError: any) {
+        const pdfErrorMsg = pdfGenError?.message || pdfGenError?.toString() || '';
+        if (pdfErrorMsg.includes('Failed to generate PDF') || pdfErrorMsg.includes('PDF')) {
+          throw new Error('PDF_GENERATION_ERROR');
+        }
+        throw pdfGenError;
+      }
       
       // Create download link
       const url = URL.createObjectURL(pdfBlob);
@@ -724,13 +779,63 @@ export default function DashboardOverview() {
       URL.revokeObjectURL(url);
       
       showSuccess('PDF Downloaded', `Invoice ${completeInvoice.invoiceNumber || completeInvoice.invoice_number} has been downloaded.`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('PDF download error:', error);
-      showError('Download Failed', 'Failed to download PDF. Please try again.');
+      const errorMessage = error?.message || error?.toString() || 'UNKNOWN';
+      
+      // Handle specific error types with clear messages
+      let errorTitle = 'PDF Download Failed';
+      let errorDescription = '';
+      
+      if (errorMessage === 'LIMIT_REACHED') {
+        errorTitle = 'Subscription Limit Reached';
+        errorDescription = 'You\'ve reached your monthly invoice limit. Please upgrade to download more PDFs.';
+        // Fetch usage and show upgrade modal
+        try {
+          const headers = await getAuthHeaders();
+          const usageResponse = await fetch('/api/subscription/usage', {
+            headers,
+            cache: 'no-store'
+          });
+          if (usageResponse.ok) {
+            const usageData = await usageResponse.json();
+            setShowUpgradeModal(true);
+            setSubscriptionUsage(usageData);
+          }
+        } catch (usageError) {
+          console.error('Error fetching subscription usage:', usageError);
+        }
+      } else if (errorMessage === 'AUTH_ERROR') {
+        errorTitle = 'Authentication Error';
+        errorDescription = 'Your session has expired. Please refresh the page and try again.';
+      } else if (errorMessage === 'NOT_FOUND') {
+        errorTitle = 'Invoice Not Found';
+        errorDescription = 'This invoice could not be found. It may have been deleted.';
+      } else if (errorMessage === 'INVOICE_MISSING') {
+        errorTitle = 'Invoice Data Error';
+        errorDescription = 'Invoice data is missing. Please try refreshing the page.';
+      } else if (errorMessage === 'CLIENT_MISSING') {
+        errorTitle = 'Client Information Missing';
+        errorDescription = 'This invoice is missing client information. Please edit the invoice and add a client.';
+      } else if (errorMessage === 'ITEMS_MISSING') {
+        errorTitle = 'Invoice Items Missing';
+        errorDescription = 'This invoice has no items. Please add items to the invoice before downloading.';
+      } else if (errorMessage === 'FETCH_ERROR') {
+        errorTitle = 'Network Error';
+        errorDescription = 'Failed to load invoice data. Please check your internet connection and try again.';
+      } else if (errorMessage === 'PDF_GENERATION_ERROR' || errorMessage.includes('Failed to generate PDF') || errorMessage.includes('PDF generation')) {
+        errorTitle = 'PDF Generation Error';
+        errorDescription = 'An error occurred while generating the PDF. This may be due to missing invoice data or a template issue. Please try again or contact support if the problem persists.';
+      } else {
+        errorTitle = 'PDF Download Failed';
+        errorDescription = 'An unexpected error occurred. Please try again or refresh the page.';
+      }
+      
+      showError(errorTitle, errorDescription);
     } finally {
       setLoadingActions(prev => ({ ...prev, [actionKey]: false }));
     }
-  }, [settings, showSuccess, showError, getAuthHeaders]);
+  }, [settings, showSuccess, showError, getAuthHeaders, setShowUpgradeModal, setSubscriptionUsage]);
 
   const handleSendInvoice = useCallback((invoice: Invoice) => {
     // Show modal for draft and paid invoices
@@ -913,6 +1018,7 @@ export default function DashboardOverview() {
     });
     
     // Fetch subscription usage in background and update modal if needed
+    // NOTE: Duplication ALWAYS checks limits because it creates a NEW invoice that can be edited
     getAuthHeaders().then(headers => {
       fetch('/api/subscription/usage', {
         headers,
@@ -947,6 +1053,8 @@ export default function DashboardOverview() {
     setConfirmationModal(prev => ({ ...prev, isLoading: true }));
     
     try {
+      // NOTE: Duplication ALWAYS checks subscription limits because it creates a NEW invoice
+      // Even if the original invoice was sent/paid, the duplicate is a new draft that can be edited
       const headers = await getAuthHeaders();
       const response = await fetch('/api/invoices/duplicate', {
         method: 'POST',
@@ -1852,6 +1960,36 @@ export default function DashboardOverview() {
       const slideIndex = Math.round(scrollLeft / containerWidth);
       if (slideIndex >= 0 && slideIndex < availableTabs.length) {
         setDueInvoicesScrollIndex(slideIndex);
+        
+        // On mobile, scroll dots container to show active dot
+        if (dotsContainerRef.current && window.innerWidth < 1024) {
+          const dotsContainer = dotsContainerRef.current;
+          const activeDot = dotsContainer.children[slideIndex] as HTMLElement;
+          if (activeDot) {
+            const dotLeft = activeDot.offsetLeft;
+            const dotWidth = activeDot.offsetWidth;
+            const containerWidth = dotsContainer.clientWidth;
+            const scrollLeft = dotsContainer.scrollLeft;
+            
+            // Calculate if dot is outside visible area
+            const dotRight = dotLeft + dotWidth;
+            const visibleRight = scrollLeft + containerWidth;
+            
+            if (dotLeft < scrollLeft) {
+              // Dot is to the left of visible area, scroll left
+              dotsContainer.scrollTo({
+                left: dotLeft - 10, // 10px padding
+                behavior: 'smooth'
+              });
+            } else if (dotRight > visibleRight) {
+              // Dot is to the right of visible area, scroll right
+              dotsContainer.scrollTo({
+                left: dotRight - containerWidth + 10, // 10px padding
+                behavior: 'smooth'
+              });
+            }
+          }
+        }
       }
     });
   }, [availableTabs]);
@@ -2026,7 +2164,14 @@ export default function DashboardOverview() {
             <div className="relative">
               {/* Scroll Indicator Dots - Only show for available tabs */}
               {availableTabs.length > 1 && (
-                <div className="flex items-center justify-center gap-2 mb-3">
+                <div 
+                  ref={dotsContainerRef}
+                  className="flex items-center justify-center gap-2 mb-3 overflow-x-auto scrollbar-hide"
+                  style={{ 
+                    scrollBehavior: 'smooth',
+                    WebkitOverflowScrolling: 'touch'
+                  }}
+                >
                   {availableTabs.map((actualTabIndex, scrollIndex) => {
                     const tabLabels = ['Go to invoices list', 'Go to analytics', 'Go to performance chart', 'Go to conversion rate'];
                     return (

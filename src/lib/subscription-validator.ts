@@ -88,6 +88,67 @@ export async function getPayPerInvoiceFreeStatus(userId: string): Promise<{ hasF
 }
 
 /**
+ * Count free plan invoices for a user (shared logic for canCreateInvoice and getUsageStats)
+ * This ensures both functions use the exact same counting logic
+ */
+async function countFreePlanInvoices(userId: string): Promise<number> {
+  const { start, end } = getCurrentMonthBoundaries();
+  
+  // First, get all invoices in current month (non-draft only)
+  const { data: monthlyInvoices } = await supabaseAdmin
+    .from('invoices')
+    .select('id, created_at')
+    .eq('user_id', userId)
+    .gte('created_at', start)
+    .lte('created_at', end)
+    .neq('status', 'draft');
+  
+  if (!monthlyInvoices || monthlyInvoices.length === 0) {
+    return 0;
+  }
+  
+  const invoiceIds = monthlyInvoices.map(inv => inv.id);
+  
+  // Get all billing records for these invoices (charged invoices = pay_per_invoice invoices)
+  const { data: billingRecords } = await supabaseAdmin
+    .from('billing_records')
+    .select('invoice_id')
+    .eq('user_id', userId)
+    .eq('type', 'per_invoice_fee')
+    .in('invoice_id', invoiceIds);
+  
+  const chargedInvoiceIds = new Set((billingRecords || []).map(br => br.invoice_id));
+  
+  // Also check pay_per_invoice_activated_at - if it exists and invoice was created after it, exclude it
+  const { data: userData } = await supabaseAdmin
+    .from('users')
+    .select('pay_per_invoice_activated_at')
+    .eq('id', userId)
+    .single();
+  
+  // Count only invoices that:
+  // 1. Don't have billing records (not charged = free plan invoices)
+  // 2. Were created before pay_per_invoice_activated_at (if it exists)
+  return monthlyInvoices.filter(inv => {
+    // Exclude if has billing record (was charged = pay_per_invoice invoice)
+    if (chargedInvoiceIds.has(inv.id)) {
+      return false;
+    }
+    
+    // Exclude if created after pay_per_invoice activation (if activation date exists)
+    if (userData?.pay_per_invoice_activated_at) {
+      const invoiceDate = new Date(inv.created_at);
+      const activationDate = new Date(userData.pay_per_invoice_activated_at);
+      if (invoiceDate >= activationDate) {
+        return false; // Invoice was created during/after pay_per_invoice period
+      }
+    }
+    
+    return true; // This is a free plan invoice
+  }).length;
+}
+
+/**
  * Check if user can create an invoice
  * FREE PLAN: Max 5 invoices per month (includes fast, detailed, and estimate conversions)
  */
@@ -98,18 +159,12 @@ export async function canCreateInvoice(userId: string): Promise<ValidationResult
     return { allowed: true };
   }
 
-  // Free plan: Check monthly invoice limit
-  const { start, end } = getCurrentMonthBoundaries();
-  const { count } = await supabaseAdmin
-    .from('invoices')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .gte('created_at', start)
-    .lte('created_at', end);
-
-  const used = count || 0;
+  // Free plan: Check monthly invoice limit using shared counting logic
+  const used = await countFreePlanInvoices(userId);
   const limit = 5;
 
+  // Allow if used is less than limit (e.g., used=4, limit=5 means 1 remaining)
+  // Block only when used equals or exceeds limit (e.g., used=5, limit=5 means 0 remaining)
   if (used >= limit) {
     return {
       allowed: false,
@@ -118,6 +173,7 @@ export async function canCreateInvoice(userId: string): Promise<ValidationResult
     };
   }
 
+  // used < limit, so there's remaining capacity - allow creation
   return { allowed: true };
 }
 
@@ -304,14 +360,8 @@ export async function getUsageStats(userId: string): Promise<SubscriptionLimits>
       invoiceCount = count || 0;
     }
   } else {
-    // For free plan: Count invoices for current month
-    const { count } = await supabaseAdmin
-      .from('invoices')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .gte('created_at', start)
-      .lte('created_at', end);
-    invoiceCount = count || 0;
+    // For free plan: Use shared counting function to ensure consistency with canCreateInvoice
+    invoiceCount = await countFreePlanInvoices(userId);
   }
 
   // Get total client count

@@ -32,6 +32,10 @@ const EstimateConversionModal = dynamic(() => import('@/components/EstimateConve
   loading: () => null
 });
 
+const UpgradeModal = dynamic(() => import('@/components/UpgradeModal'), {
+  loading: () => null
+});
+
 function EstimatesContent(): React.JSX.Element {
   const { user, loading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
@@ -71,6 +75,14 @@ function EstimatesContent(): React.JSX.Element {
     estimate: null,
     isLoading: false
   });
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [subscriptionUsage, setSubscriptionUsage] = useState<any>(null);
+  const [showChargeConfirmation, setShowChargeConfirmation] = useState(false);
+  const [pendingConversion, setPendingConversion] = useState<{
+    estimate: Estimate;
+    invoiceType: 'fast' | 'detailed';
+    template?: number;
+  } | null>(null);
   
   // Handle session expiration - wait for potential refresh from visibility handlers
   useEffect(() => {
@@ -339,6 +351,118 @@ function EstimatesContent(): React.JSX.Element {
       isLoading: false
     });
   }, [showError]);
+
+  // Fetch subscription usage
+  const fetchSubscriptionUsage = useCallback(async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/subscription/usage', {
+        headers,
+        cache: 'no-store'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSubscriptionUsage(data);
+        return data;
+      }
+    } catch (error) {
+      console.error('Error fetching subscription usage:', error);
+    }
+    return null;
+  }, [getAuthHeaders]);
+
+  // Perform the actual conversion (called after subscription checks)
+  const performConversion = useCallback(async (estimate: Estimate, invoiceType: 'fast' | 'detailed', template?: number) => {
+    const actionKey = `convert-${estimate.id}`;
+    setLoadingActions(prev => ({ ...prev, [actionKey]: true }));
+    setConvertConfirmationModal(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/estimates/${estimate.id}/convert`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          invoiceType,
+          template
+        }),
+      });
+      
+      if (response.ok) {
+        const contentType = response.headers.get('content-type');
+        let data = null;
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const text = await response.text();
+            data = text ? JSON.parse(text) : null;
+          } catch (e) {
+            console.error('Error parsing convert response:', e);
+          }
+        }
+        const templateName = invoiceType === 'fast' 
+          ? 'Fast Invoice' 
+          : (template === 6 ? 'Minimal' : template === 4 ? 'Modern' : template === 5 ? 'Creative' : 'Default');
+        showSuccess('Estimate Converted', `The estimate has been converted to ${invoiceType} invoice ${data?.invoice?.invoiceNumber || ''} using ${templateName} template.`);
+        // Close confirmation modal
+        setConvertConfirmationModal({ isOpen: false, estimate: null, isLoading: false });
+        // Refresh estimates
+        setHasLoadedData(false); // Reset to allow refresh
+        const refreshResponse = await fetch('/api/estimates', { headers });
+        if (refreshResponse.ok) {
+          try {
+            const refreshText = await refreshResponse.text();
+            const refreshData = refreshText ? JSON.parse(refreshText) : null;
+            setEstimates(refreshData?.estimates || []);
+            setHasLoadedData(true);
+          } catch (e) {
+            console.error('Error parsing refresh response:', e);
+            setHasLoadedData(true);
+          }
+        } else {
+          setHasLoadedData(true);
+        }
+        // Refresh invoices list so the new invoice appears immediately
+        try {
+          await refreshInvoices();
+        } catch (e) {
+          console.error('Error refreshing invoices:', e);
+        }
+        // Refresh entire page including sidebar (after a short delay to ensure data is saved)
+        setTimeout(() => {
+          router.refresh();
+        }, 500);
+      } else {
+        const error = await response.json();
+        // Check if it's a subscription limit error
+        if (response.status === 403 && error.limitReached) {
+          // Show upgrade modal
+          const usageData = await fetchSubscriptionUsage();
+          if (usageData) {
+            setSubscriptionUsage(usageData);
+            setShowUpgradeModal(true);
+          } else {
+            showError('Limit Reached', error.error || 'Subscription limit reached');
+          }
+        } else {
+          showError('Error', error.error || 'Failed to convert estimate');
+        }
+      }
+    } catch (error) {
+      console.error('Error converting estimate:', error);
+      showError('Error', 'Failed to convert estimate');
+      setConvertConfirmationModal(prev => ({ ...prev, isLoading: false }));
+    } finally {
+      setLoadingActions(prev => {
+        const newState = { ...prev };
+        delete newState[actionKey];
+        return newState;
+      });
+      setConvertConfirmationModal(prev => ({ ...prev, isLoading: false }));
+    }
+  }, [getAuthHeaders, showSuccess, showError, router, refreshInvoices, fetchSubscriptionUsage]);
 
   // Handle convert to invoice
   const handleConvertToInvoice = useCallback(async (estimate: Estimate, invoiceType: 'fast' | 'detailed', template?: number) => {
@@ -1221,6 +1345,54 @@ function EstimatesContent(): React.JSX.Element {
         estimate={convertConfirmationModal.estimate}
         isLoading={convertConfirmationModal.isLoading}
       />
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && subscriptionUsage && (
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => {
+            setShowUpgradeModal(false);
+            setSubscriptionUsage(null);
+          }}
+          currentPlan={subscriptionUsage.plan as 'free' | 'monthly' | 'pay_per_invoice' || 'free'}
+          usage={{
+            used: subscriptionUsage.used,
+            limit: subscriptionUsage.limit,
+            remaining: subscriptionUsage.remaining
+          }}
+          reason="You've reached your monthly invoice limit. Upgrade to create unlimited invoices."
+          limitType="invoices"
+        />
+      )}
+
+      {/* Charge Confirmation Modal */}
+      {showChargeConfirmation && pendingConversion && subscriptionUsage && (
+        <ConfirmationModal
+          isOpen={showChargeConfirmation}
+          onClose={() => {
+            setShowChargeConfirmation(false);
+            setPendingConversion(null);
+            setSubscriptionUsage(null);
+          }}
+          onConfirm={async () => {
+            setShowChargeConfirmation(false);
+            if (pendingConversion) {
+              await performConversion(
+                pendingConversion.estimate,
+                pendingConversion.invoiceType,
+                pendingConversion.template
+              );
+              setPendingConversion(null);
+            }
+          }}
+          title="Confirm Charge"
+          message={`You've used all 5 free invoices this month. This conversion will be charged $0.50 when the invoice is sent. Do you want to proceed?`}
+          type="warning"
+          isLoading={false}
+          confirmText="Proceed with Charge"
+          cancelText="Cancel"
+        />
+      )}
 
       <ToastContainer
         toasts={toasts}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import { 
   X, Plus, Minus, Send, User, Mail, 
@@ -337,6 +337,7 @@ export default function QuickInvoiceModal({
   const [shouldSend, setShouldSend] = useState(false)
   const shouldSendRef = useRef(false) // Use ref to track send intent immediately
   const [pdfLoading, setPdfLoading] = useState(false)
+  const createButtonRef = useRef<HTMLButtonElement>(null) // Ref to track Create button for stability
   const [discount, setDiscount] = useState('')
   const [markAsPaid, setMarkAsPaid] = useState(false)
   
@@ -880,37 +881,37 @@ export default function QuickInvoiceModal({
   }
 
   const handleCreateDraft = async () => {
-    // Validate form FIRST before showing loading or checking subscription
-      if (!validateForm()) {
-        showError('Please fill in all required fields correctly')
-      // Scroll to first error field
-      setTimeout(() => {
-        const firstError = document.querySelector('.border-red-500')
-        if (firstError) {
-          firstError.scrollIntoView({ behavior: 'smooth', block: 'center' })
-        }
-      }, 100)
-      return
-    }
-
-    // Show loading state after validation passes
+    // Set loading state IMMEDIATELY - this is the key to prevent fade
     setCreatingLoading(true)
-
-    // Check subscription limit BEFORE creating invoice (only for new invoices, not editing)
-    if (!editingInvoice) {
-      const usageData = await fetchSubscriptionUsage()
-      if (usageData && usageData.plan === 'free' && usageData.limit && usageData.used >= usageData.limit) {
+    
+    try {
+      // Validate form AFTER setting loading state
+      if (!validateForm()) {
         setCreatingLoading(false)
-        showError('You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.')
-        // Show upgrade modal
-        setShowUpgradeContent(true)
-        setShowUpgradeModal(true)
-        setSubscriptionUsage(usageData)
+        showError('Please fill in all required fields correctly')
+        // Scroll to first error field
+        setTimeout(() => {
+          const firstError = document.querySelector('.border-red-500')
+          if (firstError) {
+            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        }, 100)
         return
       }
-      }
 
-    try {
+      // Check subscription limit BEFORE creating invoice (only for new invoices, not editing)
+      if (!editingInvoice) {
+        const usageData = await fetchSubscriptionUsage()
+        if (usageData && usageData.plan === 'free' && usageData.limit && usageData.used >= usageData.limit) {
+          setCreatingLoading(false)
+          showError('You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.')
+          // Show upgrade modal
+          setShowUpgradeContent(true)
+          setShowUpgradeModal(true)
+          setSubscriptionUsage(usageData)
+          return
+        }
+      }
       
       calculateTotals()
       // Calculate totals for validation
@@ -1362,6 +1363,26 @@ export default function QuickInvoiceModal({
         return
       }
 
+      // Check subscription limits before generating PDF
+      const headers = await getAuthHeaders()
+      const usageResponse = await fetch('/api/subscription/usage', {
+        headers,
+        cache: 'no-store'
+      })
+      
+      if (usageResponse.ok) {
+        const usageData = await usageResponse.json()
+        
+        // For free plan: Check monthly invoice limit
+        if (usageData.plan === 'free' && usageData.limit && usageData.used >= usageData.limit) {
+          setPdfLoading(false)
+          setShowUpgradeModal(true)
+          setSubscriptionUsage(usageData)
+          showError('PDF Generation Limit Reached', 'You\'ve reached your monthly invoice limit. Please upgrade to generate more PDFs.')
+          return
+        }
+      }
+
       const payload = {
         client_id: selectedClientId || undefined,
         client_data: selectedClientId ? undefined : newClient,
@@ -1418,7 +1439,6 @@ export default function QuickInvoiceModal({
         generate_pdf_only: true
       }
 
-      const headers = await getAuthHeaders()
       const response = await fetch('/api/invoices/create', {
         method: 'POST',
         headers,
@@ -1437,12 +1457,61 @@ export default function QuickInvoiceModal({
         document.body.removeChild(a)
         showSuccess('PDF generated successfully!')
       } else {
-        throw new Error('Failed to generate PDF')
+        // Handle API errors with specific messages
+        const errorData = await response.json().catch(() => ({}))
+        
+        if (response.status === 403 && errorData.limitReached) {
+          // Subscription limit reached - show upgrade modal
+          try {
+            const usageResponse = await fetch('/api/subscription/usage', {
+              headers,
+              cache: 'no-store'
+            })
+            if (usageResponse.ok) {
+              const usageData = await usageResponse.json()
+              setShowUpgradeModal(true)
+              setSubscriptionUsage(usageData)
+            }
+          } catch (usageError) {
+            console.error('Error fetching subscription usage:', usageError)
+          }
+          throw new Error('LIMIT_REACHED')
+        } else if (response.status === 401 || response.status === 403) {
+          throw new Error('AUTH_ERROR')
+        } else if (response.status === 400) {
+          throw new Error('VALIDATION_ERROR')
+        } else {
+          throw new Error('PDF_GENERATION_ERROR')
+        }
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating PDF:', error)
-      showError('Failed to generate PDF. Please try again.')
+      const errorMessage = error?.message || error?.toString() || 'UNKNOWN'
+      
+      // Handle specific error types with clear messages
+      let errorTitle = 'PDF Generation Failed'
+      let errorDescription = ''
+      
+      if (errorMessage === 'LIMIT_REACHED') {
+        errorTitle = 'Subscription Limit Reached'
+        errorDescription = 'You\'ve reached your monthly invoice limit. Please upgrade to generate more PDFs.'
+        // Upgrade modal already shown above
+      } else if (errorMessage === 'AUTH_ERROR') {
+        errorTitle = 'Authentication Error'
+        errorDescription = 'Your session has expired. Please refresh the page and try again.'
+      } else if (errorMessage === 'VALIDATION_ERROR') {
+        errorTitle = 'Validation Error'
+        errorDescription = 'Please check that all required fields are filled correctly before generating the PDF.'
+      } else if (errorMessage === 'PDF_GENERATION_ERROR' || errorMessage.includes('Failed to generate PDF')) {
+        errorTitle = 'PDF Generation Error'
+        errorDescription = 'An error occurred while generating the PDF. This may be due to missing invoice data or a template issue. Please try again or contact support if the problem persists.'
+      } else {
+        errorTitle = 'PDF Generation Failed'
+        errorDescription = 'An unexpected error occurred. Please try again or refresh the page.'
+      }
+      
+      showError(errorTitle, errorDescription)
     } finally {
       setPdfLoading(false)
     }
@@ -3232,7 +3301,7 @@ export default function QuickInvoiceModal({
               </div>
 
               {/* Action Buttons */}
-              <div className={`flex flex-col sm:flex-row ${hasMissingDetails && showMissingDetailsWarning ? 'gap-3' : 'gap-3'}`}>
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   type="button"
                   onClick={prevStep}
@@ -3246,43 +3315,70 @@ export default function QuickInvoiceModal({
                   <span>Back</span>
                 </button>
                 
-                {/* Hide Generate PDF and Create Draft buttons when markAsPaid is true OR when showing missing details warning */}
-                {!markAsPaid && !showMissingDetailsWarning && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={handleGeneratePDF}
-                      disabled={pdfLoading}
-                      className={`flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
-                        isDarkMode 
-                          ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                      }`}
-                    >
-                      {pdfLoading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          <span>Generating...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Download className="h-4 w-4" />
-                          <span>Generate PDF</span>
-                        </>
-                      )}
-                    </button>
-                    
-                    <button
-                      type="button"
-                      data-testid="quick-invoice-create-draft"
-                      onClick={handleCreateDraft}
-                      disabled={creatingLoading || sendingLoading}
-                      className={`flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
-                        isDarkMode 
-                          ? 'bg-gray-600 text-white hover:bg-gray-700' 
-                          : 'bg-gray-500 text-white hover:bg-gray-600'
-                      }`}
-                    >
+                {/* Generate PDF and Create Draft buttons - always mounted with stable structure to prevent fade and layout shift */}
+                <div className="flex-1 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleGeneratePDF}
+                    disabled={pdfLoading || markAsPaid || showMissingDetailsWarning}
+                    className="flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer"
+                    style={{ 
+                      minWidth: 0, 
+                      minHeight: '48px', // Fixed height to prevent layout shift
+                      visibility: (markAsPaid || showMissingDetailsWarning) ? 'hidden' : 'visible', // Use visibility instead of hidden class
+                      backgroundColor: '#2563EB',
+                      color: 'white'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!pdfLoading && !markAsPaid && !showMissingDetailsWarning) {
+                        e.currentTarget.style.backgroundColor = '#1D4ED8'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!pdfLoading && !markAsPaid && !showMissingDetailsWarning) {
+                        e.currentTarget.style.backgroundColor = '#2563EB'
+                      }
+                    }}
+                  >
+                    {pdfLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Generating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4" />
+                        <span>Generate PDF</span>
+                      </>
+                    )}
+                  </button>
+                  
+                  <button
+                    ref={createButtonRef}
+                    type="button"
+                    data-testid="quick-invoice-create-draft"
+                    onClick={handleCreateDraft}
+                    disabled={creatingLoading || sendingLoading || markAsPaid || showMissingDetailsWarning}
+                    className="flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer"
+                    style={{ 
+                      minWidth: 0, 
+                      minHeight: '48px', // Fixed height to prevent layout shift
+                      visibility: (markAsPaid || showMissingDetailsWarning) ? 'hidden' : 'visible', // Use visibility instead of hidden class
+                      backgroundColor: isDarkMode ? '#4B5563' : '#6B7280',
+                      color: 'white'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!creatingLoading && !sendingLoading && !markAsPaid && !showMissingDetailsWarning) {
+                        e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#4B5563'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!creatingLoading && !sendingLoading && !markAsPaid && !showMissingDetailsWarning) {
+                        e.currentTarget.style.backgroundColor = isDarkMode ? '#4B5563' : '#6B7280'
+                      }
+                    }}
+                  >
+                    <span className="flex items-center justify-center space-x-2">
                       {creatingLoading ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -3294,9 +3390,9 @@ export default function QuickInvoiceModal({
                           <span>Create</span>
                         </>
                       )}
-                    </button>
-                  </>
-                )}
+                    </span>
+                  </button>
+                </div>
                 
                 {/* Show Update/Send Anyway buttons if missing details and user clicked Create & Send */}
                 {hasMissingDetails && showMissingDetailsWarning ? (

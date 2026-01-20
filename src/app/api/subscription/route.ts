@@ -172,6 +172,8 @@ export async function PUT(request: NextRequest) {
         updateData.subscription_status = 'cancelled';
         updateData.subscription_cancelled_at = new Date().toISOString();
         updateData.subscription_cancels_at_period_end = false;
+        // Clear pay_per_invoice activation date when switching to free (keep data separate)
+        updateData.pay_per_invoice_activated_at = null;
         // Keep payment method for easy reactivation
       }
     } else {
@@ -183,11 +185,18 @@ export async function PUT(request: NextRequest) {
     // If switching to Pay Per Invoice, set activation date (for tracking free invoices)
     if (plan === 'pay_per_invoice') {
       // Only set activation date if not already set (first time switching to Pay Per Invoice)
-      if (!currentUser?.pay_per_invoice_activated_at) {
+      // OR if switching from free/monthly back to pay_per_invoice (reset activation date)
+      if (!currentUser?.pay_per_invoice_activated_at || (currentPlan !== 'pay_per_invoice')) {
         updateData.pay_per_invoice_activated_at = new Date().toISOString();
       }
       // Clear cancellation timestamp if reactivating
       updateData.subscription_cancelled_at = null;
+    } else {
+      // If switching AWAY from pay_per_invoice (to free or monthly), clear activation date
+      // This ensures free and pay_per_invoice data are kept separate
+      if (currentPlan === 'pay_per_invoice') {
+        updateData.pay_per_invoice_activated_at = null;
+      }
     }
 
     // If switching to monthly, clear cancellation timestamp

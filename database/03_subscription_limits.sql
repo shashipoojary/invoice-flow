@@ -14,6 +14,7 @@ DECLARE
   current_month_count integer;
   start_of_month timestamptz;
   end_of_month timestamptz;
+  pay_per_invoice_activated timestamptz;
 BEGIN
   -- Get user's subscription plan (with explicit error handling)
   SELECT COALESCE(subscription_plan, 'free') INTO user_plan
@@ -31,14 +32,35 @@ BEGIN
     start_of_month := date_trunc('month', CURRENT_TIMESTAMP AT TIME ZONE 'UTC');
     end_of_month := (date_trunc('month', CURRENT_TIMESTAMP AT TIME ZONE 'UTC') + interval '1 month' - interval '1 day')::date + interval '23 hours 59 minutes 59 seconds';
 
-    -- Count invoices created this month by this user
-    -- Exclude the invoice being inserted (BEFORE INSERT trigger)
+    -- Count free plan invoices created this month by this user
+    -- IMPORTANT: Use the SAME logic as countFreePlanInvoices() to ensure consistency
+    -- This means excluding:
+    -- 1. Draft invoices (status != 'draft')
+    -- 2. Invoices with billing records (charged invoices = pay_per_invoice invoices)
+    -- 3. Invoices created after pay_per_invoice_activated_at (if it exists)
+    
+    -- Get pay_per_invoice activation date if it exists
+    SELECT pay_per_invoice_activated_at INTO pay_per_invoice_activated
+    FROM public.users
+    WHERE id = NEW.user_id;
+    
+    -- Count only free plan invoices (non-draft, no billing records, before activation if applicable)
     SELECT COUNT(*) INTO current_month_count
-    FROM public.invoices
-    WHERE user_id = NEW.user_id
-      AND created_at >= start_of_month
-      AND created_at <= end_of_month
-      AND id != COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000'::uuid); -- Exclude current insert
+    FROM public.invoices i
+    WHERE i.user_id = NEW.user_id
+      AND i.created_at >= start_of_month
+      AND i.created_at <= end_of_month
+      AND i.status != 'draft'  -- Exclude drafts - only count sent/paid invoices
+      AND i.id != COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000'::uuid)  -- Exclude current insert
+      -- Exclude invoices with billing records (charged = pay_per_invoice invoices)
+      AND NOT EXISTS (
+        SELECT 1 FROM public.billing_records br
+        WHERE br.invoice_id = i.id
+          AND br.user_id = NEW.user_id
+          AND br.type = 'per_invoice_fee'
+      )
+      -- Exclude invoices created after pay_per_invoice activation (if activation date exists)
+      AND (pay_per_invoice_activated IS NULL OR i.created_at < pay_per_invoice_activated);
 
     -- Check if limit is reached (5 invoices per month for free plan)
     -- If current_month_count is 5 or more, this would be the 6th invoice

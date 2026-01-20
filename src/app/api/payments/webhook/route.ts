@@ -894,13 +894,26 @@ async function updateUserSubscription(userId: string, plan: string, paymentId?: 
       if (plan === 'pay_per_invoice') {
         const { data: existingUser } = await supabaseAdmin
           .from('users')
-          .select('pay_per_invoice_activated_at')
+          .select('pay_per_invoice_activated_at, subscription_plan')
           .eq('id', userId)
           .single();
         
         // Only set activation date if not already set (first time switching to Pay Per Invoice)
-        if (!existingUser?.pay_per_invoice_activated_at) {
+        // OR if switching from free/monthly back to pay_per_invoice (reset activation date)
+        if (!existingUser?.pay_per_invoice_activated_at || (existingUser.subscription_plan !== 'pay_per_invoice')) {
           updateData.pay_per_invoice_activated_at = new Date().toISOString();
+        }
+      } else {
+        // If switching AWAY from pay_per_invoice (to free or monthly), clear activation date
+        // This ensures free and pay_per_invoice data are kept separate
+        const { data: existingUser } = await supabaseAdmin
+          .from('users')
+          .select('subscription_plan')
+          .eq('id', userId)
+          .single();
+        
+        if (existingUser?.subscription_plan === 'pay_per_invoice') {
+          updateData.pay_per_invoice_activated_at = null;
         }
       }
 

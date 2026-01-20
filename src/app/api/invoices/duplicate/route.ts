@@ -11,7 +11,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check subscription limits before proceeding
+    const { invoiceId } = await request.json();
+
+    if (!invoiceId) {
+      return NextResponse.json({ error: 'Invoice ID is required' }, { status: 400 });
+    }
+
+    // IMPORTANT: ALWAYS check subscription limits for duplication
+    // Duplication creates a NEW draft invoice that can be edited and used for future invoices
+    // Even if the original invoice was sent/paid, the duplicate is a new invoice that counts toward limits
     const limitCheck = await canCreateInvoice(user.id);
     if (!limitCheck.allowed) {
       return NextResponse.json({ 
@@ -20,8 +28,6 @@ export async function POST(request: NextRequest) {
         limitType: limitCheck.limitType || 'invoices'
       }, { status: 403 });
     }
-
-    const { invoiceId } = await request.json();
 
     if (!invoiceId) {
       return NextResponse.json({ error: 'Invoice ID is required' }, { status: 400 });
