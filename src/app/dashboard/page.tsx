@@ -5089,7 +5089,11 @@ export default function DashboardOverview() {
                      {(() => {
                        const paymentData = paymentDataMap[selectedInvoice.id] || null;
                        const dueCharges = calculateDueCharges(selectedInvoice, paymentData);
-                       const hasPartialPayments = totalPaid > 0 && remainingBalance > 0;
+                       const isPaid = selectedInvoice.status === 'paid';
+                       // Only show partial payments if invoice is not fully paid
+                       const hasPartialPayments = !isPaid && totalPaid > 0 && remainingBalance > 0;
+                       // Show total paid if there are any payments, but only show remaining balance if not fully paid
+                       const showPaymentInfo = totalPaid > 0;
                        return (
                          <div className="space-y-1">
                            <div className="flex justify-between text-xs sm:text-sm">
@@ -5110,17 +5114,17 @@ export default function DashboardOverview() {
                                  <span className="text-gray-700">Total:</span>
                                  <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
                                </div>
+                               {showPaymentInfo && (
+                                 <div className="flex justify-between text-xs sm:text-sm">
+                                   <span className="text-emerald-700">Total Paid:</span>
+                                   <span className="text-emerald-700 font-semibold">${totalPaid.toFixed(2)}</span>
+                                 </div>
+                               )}
                                {hasPartialPayments && (
-                                 <>
-                                   <div className="flex justify-between text-xs sm:text-sm">
-                                     <span className="text-emerald-700">Total Paid:</span>
-                                     <span className="text-emerald-700 font-semibold">${totalPaid.toFixed(2)}</span>
-                                   </div>
-                                   <div className="flex justify-between text-xs sm:text-sm">
-                                     <span className="text-orange-700">Remaining Balance:</span>
-                                     <span className="text-orange-700 font-semibold">${remainingBalance.toFixed(2)}</span>
-                                   </div>
-                                 </>
+                                 <div className="flex justify-between text-xs sm:text-sm">
+                                   <span className="text-orange-700">Remaining Balance:</span>
+                                   <span className="text-orange-700 font-semibold">${remainingBalance.toFixed(2)}</span>
+                                 </div>
                                )}
                                <div className="flex justify-between text-xs sm:text-sm">
                                  <span className="text-red-700">Late Fees:</span>
@@ -5137,17 +5141,17 @@ export default function DashboardOverview() {
                                  <span className="text-gray-700">Total:</span>
                                <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
                              </div>
+                               {showPaymentInfo && (
+                                 <div className="flex justify-between text-xs sm:text-sm">
+                                   <span className="text-emerald-700">Total Paid:</span>
+                                   <span className="text-emerald-700 font-semibold">${totalPaid.toFixed(2)}</span>
+                                 </div>
+                               )}
                                {hasPartialPayments && (
-                                 <>
-                                   <div className="flex justify-between text-xs sm:text-sm">
-                                     <span className="text-emerald-700">Total Paid:</span>
-                                     <span className="text-emerald-700 font-semibold">${totalPaid.toFixed(2)}</span>
-                                   </div>
-                                   <div className="flex justify-between text-xs sm:text-sm font-bold">
-                                     <span className="text-orange-700">Remaining Balance:</span>
-                                     <span className="text-orange-700">${remainingBalance.toFixed(2)}</span>
-                                   </div>
-                                 </>
+                                 <div className="flex justify-between text-xs sm:text-sm font-bold">
+                                   <span className="text-orange-700">Remaining Balance:</span>
+                                   <span className="text-orange-700">${remainingBalance.toFixed(2)}</span>
+                                 </div>
                                )}
                              </>
                            )}
