@@ -1257,29 +1257,41 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                   <span>Back</span>
                 </button>
                 
-                {/* Create button - always mounted with stable structure to prevent fade and layout shift */}
+                {/* Create button - changes to "Update Settings" when missing details */}
                 <button
                   ref={createButtonRef}
                   type="button"
                   data-testid="fast-invoice-create-and-send"
-                  onClick={() => handleCreateInvoice(true)}
-                  disabled={loading || sendLoading || markAsPaid || showMissingDetailsWarning}
+                  onClick={hasMissingDetails && showMissingDetailsWarning ? () => {
+                    onClose();
+                    router.push('/dashboard/settings');
+                  } : () => handleCreateInvoice(true)}
+                  disabled={loading || sendLoading || markAsPaid || (showMissingDetailsWarning && !hasMissingDetails)}
                   className="flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer"
                   style={{ 
                     minWidth: 0, 
                     minHeight: '48px', // Fixed height to prevent layout shift
-                    visibility: (markAsPaid || showMissingDetailsWarning) ? 'hidden' : 'visible', // Use visibility instead of hidden class
-                    backgroundColor: isDarkMode ? '#4B5563' : '#6B7280',
+                    backgroundColor: (hasMissingDetails && showMissingDetailsWarning) 
+                      ? (isDarkMode ? '#4F46E5' : '#6366F1') // Indigo when showing update
+                      : (isDarkMode ? '#4B5563' : '#6B7280'), // Gray when normal
                     color: 'white'
                   }}
                   onMouseEnter={(e) => {
-                    if (!loading && !sendLoading && !markAsPaid && !showMissingDetailsWarning) {
-                      e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#4B5563'
+                    if (!loading && !sendLoading && !markAsPaid) {
+                      if (hasMissingDetails && showMissingDetailsWarning) {
+                        e.currentTarget.style.backgroundColor = isDarkMode ? '#4338CA' : '#4F46E5'
+                      } else {
+                        e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#4B5563'
+                      }
                     }
                   }}
                   onMouseLeave={(e) => {
-                    if (!loading && !sendLoading && !markAsPaid && !showMissingDetailsWarning) {
-                      e.currentTarget.style.backgroundColor = isDarkMode ? '#4B5563' : '#6B7280'
+                    if (!loading && !sendLoading && !markAsPaid) {
+                      if (hasMissingDetails && showMissingDetailsWarning) {
+                        e.currentTarget.style.backgroundColor = isDarkMode ? '#4F46E5' : '#6366F1'
+                      } else {
+                        e.currentTarget.style.backgroundColor = isDarkMode ? '#4B5563' : '#6B7280'
+                      }
                     }
                   }}
                 >
@@ -1288,6 +1300,11 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                         <span>Creating...</span>
+                      </>
+                    ) : (hasMissingDetails && showMissingDetailsWarning) ? (
+                      <>
+                        <Settings className="h-4 w-4" />
+                        <span>Update Settings</span>
                       </>
                     ) : (
                       <>
@@ -1298,86 +1315,46 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                   </span>
                 </button>
                 
-                {/* Show Update/Send Anyway buttons if missing details and user clicked Create & Send */}
-                {hasMissingDetails && showMissingDetailsWarning ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        router.push('/dashboard/settings');
-                      }}
-                      className={`flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm cursor-pointer ${
-                        isDarkMode 
-                          ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
-                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                      }`}
-                    >
-                      <Settings className="h-4 w-4" />
-                      <span>Update Settings</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowMissingDetailsWarning(false);
-                        handleCreateAndSend();
-                      }}
-                      disabled={loading || sendLoading}
-                      className={`flex-1 py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
-                        isDarkMode 
-                          ? 'bg-gray-600 text-white hover:bg-gray-700' 
-                          : 'bg-gray-500 text-white hover:bg-gray-600'
-                      }`}
-                    >
-                      {sendLoading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          <span>Sending...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send className="h-4 w-4" />
-                          <span>Send Anyway</span>
-                        </>
-                      )}
-                    </button>
-                  </>
-                ) : (
+                {/* Send button - changes to "Send Anyway" when missing details */}
                 <button
                   type="button"
                   data-testid="fast-invoice-create-draft"
-                    onClick={() => {
-                      if (hasMissingDetails) {
-                        setShowMissingDetailsWarning(true);
-                        // Show toast notification
-                        const missingText = missingDetails.missing.length === 1 
-                          ? missingDetails.missing[0]
-                          : `${missingDetails.missing.slice(0, 2).join(', ')}${missingDetails.missing.length > 2 ? ` +${missingDetails.missing.length - 2} more` : ''}`;
-                        showWarning('Missing Business Details', `Please update: ${missingText} before sending.`);
-                        return;
-                      }
+                  onClick={() => {
+                    if (hasMissingDetails && showMissingDetailsWarning) {
+                      // Send anyway
+                      setShowMissingDetailsWarning(false);
                       handleCreateAndSend();
-                    }}
+                    } else if (hasMissingDetails) {
+                      setShowMissingDetailsWarning(true);
+                      const missingText = missingDetails.missing.length === 1 
+                        ? missingDetails.missing[0]
+                        : `${missingDetails.missing.slice(0, 2).join(', ')}${missingDetails.missing.length > 2 ? ` +${missingDetails.missing.length - 2} more` : ''}`;
+                      showWarning('Missing Business Details', `Please update: ${missingText} before sending.`);
+                      return;
+                    } else {
+                      handleCreateAndSend();
+                    }
+                  }}
                   disabled={loading || sendLoading}
-                    className={`flex-1 ${markAsPaid ? 'sm:flex-1' : ''} py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
+                  className={`flex-1 ${markAsPaid ? 'sm:flex-1' : ''} py-3 px-6 transition-colors font-medium flex items-center justify-center space-x-2 text-sm disabled:opacity-50 cursor-pointer ${
                     isDarkMode 
-                      ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
-                      : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      ? (hasMissingDetails && showMissingDetailsWarning ? 'bg-gray-600 text-white hover:bg-gray-700' : 'bg-indigo-600 text-white hover:bg-indigo-700')
+                      : (hasMissingDetails && showMissingDetailsWarning ? 'bg-gray-500 text-white hover:bg-gray-600' : 'bg-indigo-600 text-white hover:bg-indigo-700')
                   }`}
+                  style={{ minHeight: '48px' }}
                 >
                   {sendLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span>Sending...</span>
-                      </>
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Sending...</span>
+                    </>
                   ) : (
-                      <>
-                        <Send className="h-4 w-4" />
-                        <span>{markAsPaid ? 'Send Receipt' : 'Send'}</span>
-                      </>
+                    <>
+                      <Send className="h-4 w-4" />
+                      <span>{hasMissingDetails && showMissingDetailsWarning ? 'Send Anyway' : (markAsPaid ? 'Send Receipt' : 'Send')}</span>
+                    </>
                   )}
                 </button>
-                )}
               </div>
             </div>
           )}
