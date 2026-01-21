@@ -61,6 +61,190 @@ const EstimateModal = dynamic(() => import('@/components/EstimateModal'), {
   loading: () => null // No loading state to prevent layout shift
 });
 
+// Invoice Performance Chart Component with simple donut charts
+const InvoicePerformanceChart = ({ invoices, paymentDataMap }: { invoices: Invoice[], paymentDataMap: Record<string, { totalPaid: number; remainingBalance: number }> }) => {
+  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+  
+  // Calculate revenue metrics
+  const totalRevenue = invoices.reduce((sum, inv) => {
+    if (inv.status === 'paid') {
+      const paymentData = paymentDataMap[inv.id];
+      return sum + (paymentData?.totalPaid || inv.total);
+    }
+    return sum;
+  }, 0);
+  
+  const pendingRevenue = invoices.reduce((sum, inv) => {
+    if (inv.status === 'sent' || inv.status === 'pending') {
+      const paymentData = paymentDataMap[inv.id];
+      return sum + (paymentData?.remainingBalance || inv.total);
+    }
+    return sum;
+  }, 0);
+  
+  const overdueRevenue = invoices.reduce((sum, inv) => {
+    if (inv.status === 'overdue') {
+      const paymentData = paymentDataMap[inv.id];
+      return sum + (paymentData?.remainingBalance || inv.total);
+    }
+    return sum;
+  }, 0);
+  
+  const totalRevenueAmount = totalRevenue + pendingRevenue + overdueRevenue;
+  
+  // Revenue distribution chart data
+  const revenueData: DonutChartSegment[] = [
+    {
+      value: totalRevenue,
+      color: '#10b981', // Green
+      label: 'Paid'
+    },
+    {
+      value: pendingRevenue,
+      color: '#6366f1', // Indigo
+      label: 'Pending'
+    },
+    {
+      value: overdueRevenue,
+      color: '#ef4444', // Red
+      label: 'Overdue'
+    }
+  ].filter(seg => seg.value > 0);
+  
+  // Calculate performance metrics
+  const paidInvoices = invoices.filter(inv => inv.status === 'paid');
+  const totalInvoices = invoices.length;
+  const avgInvoiceValue = totalInvoices > 0 ? totalRevenueAmount / totalInvoices : 0;
+  const collectionRate = totalRevenueAmount > 0 ? (totalRevenue / totalRevenueAmount) * 100 : 0;
+  
+  // Calculate average days to payment (for paid invoices)
+  const today = new Date();
+  let totalDaysToPayment = 0;
+  let paidWithDates = 0;
+  
+  paidInvoices.forEach(inv => {
+    const paymentData = paymentDataMap[inv.id];
+    if (paymentData && paymentData.totalPaid > 0 && inv.createdAt) {
+      try {
+        const invoiceDate = new Date(inv.createdAt);
+        const daysDiff = Math.floor((today.getTime() - invoiceDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysDiff >= 0 && daysDiff < 365) { // Reasonable range check
+          totalDaysToPayment += daysDiff;
+          paidWithDates++;
+        }
+      } catch (e) {
+        // Skip invalid dates
+      }
+    }
+  });
+  
+  const avgDaysToPayment = paidWithDates > 0 ? Math.round(totalDaysToPayment / paidWithDates) : 0;
+  
+  const hoveredRevenueSegment = hoveredCategory && hoveredCategory.startsWith('revenue-')
+    ? revenueData.find(seg => seg.label === hoveredCategory.replace('revenue-', ''))
+    : null;
+  
+  const revenueCenterContent = hoveredRevenueSegment ? (
+    <div className="flex flex-col items-center justify-center">
+      <span className="text-2xl font-semibold tabular-nums">
+        ${(hoveredRevenueSegment.value / 1000).toFixed(1)}k
+      </span>
+      <span className="text-xs text-gray-500">{hoveredRevenueSegment.label}</span>
+    </div>
+  ) : (
+    <div className="flex flex-col items-center justify-center">
+      <span className="text-lg font-semibold text-gray-400">Total</span>
+      <span className="text-2xl font-semibold tabular-nums">
+        ${(totalRevenueAmount / 1000).toFixed(1)}k
+      </span>
+      <span className="text-xs text-gray-500">Revenue</span>
+    </div>
+  );
+  
+  return (
+    <div className="flex flex-col gap-6 flex-1">
+      {/* Revenue Distribution */}
+      <div>
+        <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-start">
+          <div className="flex-shrink-0">
+            <DonutChart
+              data={revenueData}
+              size={140}
+              strokeWidth={18}
+              hoveredSegmentLabel={hoveredCategory?.startsWith('revenue-') ? hoveredCategory.replace('revenue-', '') : null}
+              centerContent={revenueCenterContent}
+            />
+          </div>
+          <div className="flex-1 w-full sm:w-auto">
+            <div className="space-y-2">
+              {revenueData.map((segment) => {
+                const percentage = totalRevenueAmount > 0 
+                  ? ((segment.value / totalRevenueAmount) * 100).toFixed(1)
+                  : '0';
+                const isHovered = hoveredCategory === `revenue-${segment.label}`;
+                
+                return (
+                  <div
+                    key={segment.label}
+                    className={`flex items-center justify-between p-2 transition-colors cursor-pointer ${
+                      isHovered ? 'bg-gray-50' : 'hover:bg-gray-50'
+                    }`}
+                    style={{ borderRadius: 0 }}
+                    onMouseEnter={() => setHoveredCategory(`revenue-${segment.label}`)}
+                    onMouseLeave={() => setHoveredCategory(null)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 flex-shrink-0"
+                        style={{ backgroundColor: segment.color }}
+                      />
+                      <span className="text-sm font-medium text-gray-700">
+                        {segment.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-semibold tabular-nums">
+                        ${(segment.value / 1000).toFixed(1)}k
+                      </span>
+                      <span className="text-xs text-gray-500 min-w-[35px] text-right">
+                        {percentage}%
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Performance Metrics */}
+      <div className="pt-4 border-t border-gray-200">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs text-gray-500 mb-1">Avg Invoice Value</p>
+            <p className="text-xl font-semibold text-gray-900">${avgInvoiceValue.toFixed(0)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 mb-1">Collection Rate</p>
+            <p className="text-xl font-semibold text-gray-900">{collectionRate.toFixed(1)}%</p>
+          </div>
+          {avgDaysToPayment > 0 && (
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Avg Days to Payment</p>
+              <p className="text-xl font-semibold text-gray-900">{avgDaysToPayment} days</p>
+            </div>
+          )}
+          <div>
+            <p className="text-xs text-gray-500 mb-1">Total Invoices</p>
+            <p className="text-xl font-semibold text-gray-900">{totalInvoices}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Conversion Rate Chart Component with interactive donut chart and legend
 const ConversionRateChart = ({ invoices, paymentDataMap }: { invoices: Invoice[], paymentDataMap: Record<string, { totalPaid: number; remainingBalance: number }> }) => {
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
@@ -160,15 +344,16 @@ const ConversionRateChart = ({ invoices, paymentDataMap }: { invoices: Invoice[]
               return (
                 <div
                   key={segment.label}
-                  className={`flex items-center justify-between p-2 rounded transition-colors cursor-pointer ${
+                  className={`flex items-center justify-between p-2 transition-colors cursor-pointer ${
                     isHovered ? 'bg-gray-50' : 'hover:bg-gray-50'
                   }`}
+                  style={{ borderRadius: 0 }}
                   onMouseEnter={() => setHoveredCategory(segment.label)}
                   onMouseLeave={() => setHoveredCategory(null)}
                 >
                   <div className="flex items-center gap-2">
                     <div
-                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      className="w-3 h-3 flex-shrink-0"
                       style={{ backgroundColor: segment.color }}
                     />
                     <span className="text-sm font-medium text-gray-700">
@@ -254,6 +439,32 @@ export default function DashboardOverview() {
     message: string;
     timestamp: string;
   }>>([]);
+  
+  // Payment Activity and Reminders state
+  const [paymentActivity, setPaymentActivity] = useState<Array<{
+    id: string;
+    invoiceId: string;
+    invoiceNumber: string;
+    clientName: string;
+    amount: number;
+    date: string;
+    method?: string;
+  }>>([]);
+  const [upcomingReminders, setUpcomingReminders] = useState<Array<{
+    id: string;
+    invoiceId: string;
+    invoiceNumber: string;
+    clientName: string;
+    dueDate: string;
+    scheduledFor: string;
+    reminderType: string;
+    amount: number; // The exact amount that will be sent in the reminder
+    invoiceTotal: number;
+    lateFees?: { enabled: boolean; type: 'fixed' | 'percentage'; amount: number; gracePeriod: number };
+    invoiceStatus: string;
+  }>>([]);
+  const [loadingPaymentActivity, setLoadingPaymentActivity] = useState(false);
+  const [loadingReminders, setLoadingReminders] = useState(false);
   
   // Payment form state
   const [payments, setPayments] = useState<any[]>([]);
@@ -377,6 +588,195 @@ export default function DashboardOverview() {
     setPaymentDataMap(payments);
     setInvoicesWithPartialPayments(partialSet);
   }, [invoices]);
+
+  // Fetch payment activity
+  useEffect(() => {
+    const fetchPaymentActivity = async () => {
+      if (!user?.id || isLoadingInvoices) return;
+      
+      setLoadingPaymentActivity(true);
+      try {
+        const { data: payments, error } = await supabase
+          .from('invoice_payments')
+          .select(`
+            id,
+            invoice_id,
+            amount,
+            payment_date,
+            payment_method,
+            invoices (
+              invoice_number,
+              clients (name)
+            )
+          `)
+          .order('payment_date', { ascending: false })
+          .limit(10);
+        
+        if (error) throw error;
+        
+        const activity = (payments || []).map((p: any) => ({
+          id: p.id,
+          invoiceId: p.invoice_id,
+          invoiceNumber: p.invoices?.invoice_number || 'N/A',
+          clientName: p.invoices?.clients?.name || 'Unknown Client',
+          amount: parseFloat(p.amount.toString()),
+          date: p.payment_date,
+          method: p.payment_method || 'N/A'
+        }));
+        
+        setPaymentActivity(activity);
+      } catch (error) {
+        console.error('Error fetching payment activity:', error);
+        setPaymentActivity([]);
+      } finally {
+        setLoadingPaymentActivity(false);
+      }
+    };
+    
+    fetchPaymentActivity();
+  }, [user?.id, isLoadingInvoices]);
+
+  // Fetch upcoming reminders
+  useEffect(() => {
+    const fetchUpcomingReminders = async () => {
+      if (!user?.id || isLoadingInvoices) return;
+      
+      setLoadingReminders(true);
+      try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const nextWeek = new Date(today);
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        
+        const { data: reminders, error } = await supabase
+          .from('invoice_reminders')
+          .select(`
+            id,
+            invoice_id,
+            scheduled_for,
+            reminder_type,
+            invoices (
+              invoice_number,
+              due_date,
+              total,
+              status,
+              late_fees,
+              clients (name)
+            )
+          `)
+          .eq('reminder_status', 'scheduled')
+          .gte('scheduled_for', today.toISOString())
+          .lte('scheduled_for', nextWeek.toISOString())
+          .order('scheduled_for', { ascending: true })
+          .limit(10);
+        
+        if (error) throw error;
+        
+        // Fetch payment data for all invoice IDs
+        const invoiceIds = (reminders || []).map((r: any) => r.invoice_id).filter(Boolean);
+        const paymentDataMap: Record<string, { totalPaid: number; remainingBalance: number }> = {};
+        
+        if (invoiceIds.length > 0) {
+          const { data: payments } = await supabase
+            .from('invoice_payments')
+            .select('invoice_id, amount')
+            .in('invoice_id', invoiceIds);
+          
+          if (payments) {
+            invoiceIds.forEach((invoiceId: string) => {
+              const invoicePayments = payments.filter((p: any) => p.invoice_id === invoiceId);
+              const totalPaid = invoicePayments.reduce((sum: number, p: any) => sum + parseFloat(p.amount.toString()), 0);
+              const reminder = (reminders || []).find((r: any) => r.invoice_id === invoiceId);
+              const invoice = reminder?.invoices as any;
+              const invoiceTotal = (invoice && !Array.isArray(invoice) ? invoice.total : Array.isArray(invoice) && invoice.length > 0 ? invoice[0].total : 0) || 0;
+              paymentDataMap[invoiceId] = {
+                totalPaid,
+                remainingBalance: Math.max(0, invoiceTotal - totalPaid)
+              };
+            });
+          }
+        }
+        
+        const upcoming = (reminders || []).map((r: any) => {
+          const invoice = Array.isArray(r.invoices) ? r.invoices[0] : r.invoices;
+          const invoiceTotal = invoice?.total || 0;
+          const invoiceStatus = invoice?.status || 'pending';
+          const paymentData = paymentDataMap[r.invoice_id];
+          
+          // Parse late fees
+          let lateFeesSettings = null;
+          if (invoice?.late_fees) {
+            try {
+              lateFeesSettings = typeof invoice.late_fees === 'string' 
+                ? JSON.parse(invoice.late_fees) 
+                : invoice.late_fees;
+            } catch (e) {
+              lateFeesSettings = null;
+            }
+          }
+          
+          // Calculate base amount (for scheduled reminders, use remaining balance if available)
+          const baseAmount = (invoiceStatus === 'cancelled') 
+            ? invoiceTotal 
+            : (paymentData?.remainingBalance || invoiceTotal);
+          
+          // Calculate late fees if invoice is overdue
+          let lateFeesAmount = 0;
+          let totalPayable = baseAmount;
+          
+          if (invoice?.due_date && lateFeesSettings?.enabled) {
+            const dueDate = new Date(invoice.due_date);
+            const dueDateStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
+            const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+            const isOverdue = dueDateStart < todayStart && invoiceStatus !== 'paid';
+            
+            if (isOverdue) {
+              const daysOverdue = Math.round((todayStart.getTime() - dueDateStart.getTime()) / (1000 * 60 * 60 * 24));
+              const gracePeriod = lateFeesSettings.gracePeriod || 0;
+              const chargeableDays = Math.max(0, daysOverdue - gracePeriod);
+              
+              if (chargeableDays > 0) {
+                if (lateFeesSettings.type === 'percentage') {
+                  lateFeesAmount = baseAmount * ((lateFeesSettings.amount || 0) / 100);
+                } else if (lateFeesSettings.type === 'fixed') {
+                  lateFeesAmount = lateFeesSettings.amount || 0;
+                }
+                totalPayable = baseAmount + lateFeesAmount;
+              }
+            }
+          }
+          
+          const clients = invoice?.clients;
+          const clientName = Array.isArray(clients) 
+            ? (clients.length > 0 ? clients[0]?.name : 'Unknown Client')
+            : (clients?.name || 'Unknown Client');
+          
+          return {
+            id: r.id,
+            invoiceId: r.invoice_id,
+            invoiceNumber: invoice?.invoice_number || 'N/A',
+            clientName,
+            dueDate: invoice?.due_date || '',
+            scheduledFor: r.scheduled_for,
+            reminderType: r.reminder_type || 'friendly',
+            amount: totalPayable, // The exact amount that will be sent
+            invoiceTotal,
+            lateFees: lateFeesSettings,
+            invoiceStatus
+          };
+        });
+        
+        setUpcomingReminders(upcoming);
+      } catch (error) {
+        console.error('Error fetching upcoming reminders:', error);
+        setUpcomingReminders([]);
+      } finally {
+        setLoadingReminders(false);
+      }
+    };
+    
+    fetchUpcomingReminders();
+  }, [user?.id, isLoadingInvoices]);
 
 
 
@@ -2084,12 +2484,21 @@ export default function DashboardOverview() {
     // Tab 1: Analytics - show if there are any due invoices (same data as tab 0)
     if (hasDueInvoices) tabs.push(1);
     
-    // Tab 2: Conversion Rate - show if there are any sent/paid invoices
+    // Tab 2: Invoice Performance - show if there are any invoices
+    if (invoices.length > 0) tabs.push(2);
+    
+    // Tab 3: Conversion Rate - show if there are any sent/paid invoices
     const totalSent = invoices.filter(inv => inv.status === 'sent' || inv.status === 'paid').length;
-    if (totalSent > 0) tabs.push(2);
+    if (totalSent > 0) tabs.push(3);
+    
+    // Tab 4: Payment Activity - show if there are any payments
+    if (paymentActivity.length > 0) tabs.push(4);
+    
+    // Tab 5: Upcoming Reminders - show if there are any scheduled reminders
+    if (upcomingReminders.length > 0) tabs.push(5);
     
     return tabs;
-  }, [dueInvoices, invoices]);
+  }, [dueInvoices, invoices, paymentActivity.length, upcomingReminders.length]);
 
   // Scroll handler for dot indicator - each slide is full-width
   const handleDueInvoicesScrollUpdated = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -2440,7 +2849,14 @@ export default function DashboardOverview() {
                   
                   {/* Dots */}
                   {availableTabs.map((actualTabIndex, scrollIndex) => {
-                    const tabLabels = ['Go to invoices list', 'Go to analytics', 'Go to conversion rate'];
+                    const tabLabels = [
+                      'Go to invoices list',
+                      'Go to analytics',
+                      'Go to invoice performance',
+                      'Go to conversion rate',
+                      'Go to payment activity',
+                      'Go to upcoming reminders'
+                    ];
                     return (
                       <button
                         key={actualTabIndex}
@@ -2472,7 +2888,7 @@ export default function DashboardOverview() {
               {/* Scroll Container - Production-grade: Maintains position during transitions */}
               <div 
                 ref={dueInvoicesScrollRef}
-                className="overflow-x-auto scrollbar-hide snap-x snap-mandatory lg:pr-2 scroll-optimized-desktop"
+                className="overflow-x-auto scrollbar-hide snap-x snap-mandatory scroll-optimized-desktop"
                 onScroll={handleDueInvoicesScrollUpdated}
                 style={{ 
                   overflowX: 'auto',
@@ -2485,6 +2901,8 @@ export default function DashboardOverview() {
                   WebkitScrollSnapType: 'x mandatory', // Safari support
                   scrollSnapStop: 'always', // Prevent skipping tabs
                   contain: 'layout style', // Isolate layout calculations to prevent affecting sidebar animation
+                  position: 'relative', // For proper overflow handling
+                  width: '100%', // Ensure full width
                 }}
               >
                 <div 
@@ -2496,12 +2914,14 @@ export default function DashboardOverview() {
                 >
                   {/* Slide 1: Due Invoices List - Only render if tab 0 is available */}
                   {availableTabs.includes(0) && (
-                  <div className="flex-shrink-0 snap-start pr-2" style={{ 
+                  <div className="flex-shrink-0 snap-start w-full" style={{ 
                     width: `${100 / availableTabs.length}%`, 
                     minWidth: `${100 / availableTabs.length}%`, 
                     maxWidth: `${100 / availableTabs.length}%`,
                     scrollSnapAlign: 'start',
-                    scrollSnapStop: 'always'
+                    scrollSnapStop: 'always',
+                    boxSizing: 'border-box',
+                    paddingRight: '0.5rem'
                   }}>
                     {dueInvoices.overdue.length === 0 && dueInvoices.dueToday.length === 0 && dueInvoices.upcoming.length === 0 ? (
                       <div className="bg-white border border-gray-200 p-8 text-center">
@@ -2683,12 +3103,15 @@ export default function DashboardOverview() {
 
                   {/* Slide 2: Due Invoices Analytics Graph - Only render if tab 1 is available */}
                   {availableTabs.includes(1) && (
-                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ 
+                  <div className="flex-shrink-0 snap-start flex self-start w-full" style={{ 
                     width: `${100 / availableTabs.length}%`, 
                     minWidth: `${100 / availableTabs.length}%`, 
                     maxWidth: `${100 / availableTabs.length}%`,
                     scrollSnapAlign: 'start',
-                    scrollSnapStop: 'always'
+                    scrollSnapStop: 'always',
+                    boxSizing: 'border-box',
+                    paddingLeft: '0.5rem',
+                    paddingRight: '0.5rem'
                   }}>
                     <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
                       <h3 className="text-sm font-semibold text-gray-900 mb-4">Invoice Analytics</h3>
@@ -2935,20 +3358,207 @@ export default function DashboardOverview() {
                     </div>
                   </div>
                   )}
-                  {/* Slide 3: Conversion Rate - Only render if tab 2 is available */}
+                  {/* Slide 2: Invoice Performance - Only render if tab 2 is available */}
                   {availableTabs.includes(2) && (
-                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ 
+                  <div className="flex-shrink-0 snap-start flex self-start w-full" style={{ 
                     width: `${100 / availableTabs.length}%`, 
                     minWidth: `${100 / availableTabs.length}%`, 
                     maxWidth: `${100 / availableTabs.length}%`,
                     scrollSnapAlign: 'start',
-                    scrollSnapStop: 'always'
+                    scrollSnapStop: 'always',
+                    boxSizing: 'border-box',
+                    paddingLeft: '0.5rem',
+                    paddingRight: '0.5rem'
+                  }}>
+                    <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-4">Invoice Performance</h3>
+                      
+                      <InvoicePerformanceChart invoices={invoices} paymentDataMap={paymentDataMap} />
+                    </div>
+                  </div>
+                  )}
+
+                  {/* Slide 3: Conversion Rate - Only render if tab 3 is available */}
+                  {availableTabs.includes(3) && (
+                  <div className="flex-shrink-0 snap-start flex self-start w-full" style={{ 
+                    width: `${100 / availableTabs.length}%`, 
+                    minWidth: `${100 / availableTabs.length}%`, 
+                    maxWidth: `${100 / availableTabs.length}%`,
+                    scrollSnapAlign: 'start',
+                    scrollSnapStop: 'always',
+                    boxSizing: 'border-box',
+                    paddingLeft: '0.5rem',
+                    paddingRight: '0.5rem'
                   }}>
                     <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
                       <h3 className="text-sm font-semibold text-gray-900 mb-4">Conversion Rate</h3>
                       
                       <ConversionRateChart invoices={invoices} paymentDataMap={paymentDataMap} />
                     </div>
+                  </div>
+                  )}
+
+                  {/* Slide 4: Payment Activity - Only render if tab 4 is available */}
+                  {availableTabs.includes(4) && (
+                  <div className="flex-shrink-0 snap-start w-full" style={{ 
+                    width: `${100 / availableTabs.length}%`, 
+                    minWidth: `${100 / availableTabs.length}%`, 
+                    maxWidth: `${100 / availableTabs.length}%`,
+                    scrollSnapAlign: 'start',
+                    scrollSnapStop: 'always',
+                    boxSizing: 'border-box',
+                    paddingRight: '0.5rem'
+                  }}>
+                    {loadingPaymentActivity ? (
+                      <div className="bg-white border border-gray-200 p-8 text-center">
+                        <Loader2 className="h-5 w-5 animate-spin text-gray-400 mx-auto" />
+                      </div>
+                    ) : paymentActivity.length === 0 ? (
+                      <div className="bg-white border border-gray-200 p-8 text-center">
+                        <CreditCard className="h-8 w-8 mx-auto mb-2" style={{color: '#9ca3af'}} />
+                        <p className="text-sm" style={{color: '#6b7280'}}>No recent payments</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <CreditCard className="h-4 w-4 text-green-500" />
+                            <h3 className="text-sm font-semibold text-green-600">Recent Payments</h3>
+                            <span className="text-xs text-gray-500">({paymentActivity.length})</span>
+                          </div>
+                          <div className="bg-white border border-gray-200 divide-y divide-gray-100">
+                            {paymentActivity.map((payment) => (
+                              <div
+                                key={payment.id}
+                                onClick={() => {
+                                  const invoice = invoices.find(inv => inv.id === payment.invoiceId);
+                                  if (invoice) handleViewInvoice(invoice);
+                                }}
+                                className="p-3 sm:p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-sm font-medium text-gray-900 truncate">
+                                        {payment.invoiceNumber}
+                                      </span>
+                                      <span className="text-xs text-gray-500 truncate">
+                                        {payment.clientName}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-xs text-gray-500">
+                                      <span>{new Date(payment.date).toLocaleDateString()}</span>
+                                      {payment.method && payment.method !== 'N/A' && (
+                                        <>
+                                          <span>•</span>
+                                          <span>{payment.method}</span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="ml-4 text-right">
+                                    <div className="text-sm font-semibold text-green-600">
+                                      ${payment.amount.toFixed(2)}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  )}
+
+                  {/* Slide 5: Upcoming Reminders - Only render if tab 5 is available */}
+                  {availableTabs.includes(5) && (
+                  <div className="flex-shrink-0 snap-start w-full" style={{ 
+                    width: `${100 / availableTabs.length}%`, 
+                    minWidth: `${100 / availableTabs.length}%`, 
+                    maxWidth: `${100 / availableTabs.length}%`,
+                    scrollSnapAlign: 'start',
+                    scrollSnapStop: 'always',
+                    boxSizing: 'border-box',
+                    paddingRight: '0.5rem'
+                  }}>
+                    {loadingReminders ? (
+                      <div className="bg-white border border-gray-200 p-8 text-center">
+                        <Loader2 className="h-5 w-5 animate-spin text-gray-400 mx-auto" />
+                      </div>
+                    ) : upcomingReminders.length === 0 ? (
+                      <div className="bg-white border border-gray-200 p-8 text-center">
+                        <Bell className="h-8 w-8 mx-auto mb-2" style={{color: '#9ca3af'}} />
+                        <p className="text-sm" style={{color: '#6b7280'}}>No upcoming reminders</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4 w-full">
+                        <div className="w-full">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Bell className="h-4 w-4 text-indigo-500" />
+                            <h3 className="text-sm font-semibold text-indigo-600">Scheduled Reminders</h3>
+                            <span className="text-xs text-gray-500">({upcomingReminders.length})</span>
+                          </div>
+                          <div className="bg-white border border-gray-200 divide-y divide-gray-100 w-full">
+                            {upcomingReminders.map((reminder) => {
+                              const reminderDate = new Date(reminder.scheduledFor);
+                              const dueDate = reminder.dueDate ? parseDateOnly(reminder.dueDate) : null;
+                              const today = new Date();
+                              const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+                              const reminderDateStart = new Date(Date.UTC(reminderDate.getFullYear(), reminderDate.getMonth(), reminderDate.getDate()));
+                              const daysUntilReminder = Math.floor((reminderDateStart.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24));
+                              
+                              const reminderTypeLabels: Record<string, string> = {
+                                friendly: 'Friendly',
+                                polite: 'Polite',
+                                firm: 'Firm',
+                                urgent: 'Urgent'
+                              };
+                              
+                              return (
+                                <div
+                                  key={reminder.id}
+                                  onClick={() => {
+                                    const invoice = invoices.find(inv => inv.id === reminder.invoiceId);
+                                    if (invoice) handleViewInvoice(invoice);
+                                  }}
+                                  className="p-3 sm:p-4 hover:bg-gray-50 transition-colors cursor-pointer w-full"
+                                >
+                                  <div className="flex items-center justify-between w-full">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <span className="text-sm font-medium text-gray-900 truncate">
+                                          {reminder.invoiceNumber}
+                                        </span>
+                                        <span className="text-xs text-gray-500 truncate">
+                                          {reminder.clientName}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                                        <span>{reminderDate.toLocaleDateString()}</span>
+                                        <span>•</span>
+                                        <span>{reminderTypeLabels[reminder.reminderType] || reminder.reminderType}</span>
+                                        {daysUntilReminder >= 0 && (
+                                          <>
+                                            <span>•</span>
+                                            <span>{daysUntilReminder === 0 ? 'Today' : `In ${daysUntilReminder} day${daysUntilReminder !== 1 ? 's' : ''}`}</span>
+                                          </>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="ml-4 text-right">
+                                      <div className="text-sm font-semibold text-indigo-600">
+                                        ${reminder.amount.toFixed(2)}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   )}
                 </div>
@@ -2994,7 +3604,7 @@ export default function DashboardOverview() {
       );
     }
     return null;
-  }, [isLoadingInvoices, hasInitiallyLoaded, invoices.length, recentInvoices, dueInvoices, paymentDataMap, calculateDueCharges, parseDateOnly, handleViewInvoice, router, dueInvoicesScrollIndex, scrollToDueInvoicesSlideUpdated, handleDueInvoicesScrollUpdated, dueInvoicesScrollRef, getStatusIcon, getDueDateStatus, loadingActions, handleDownloadPDF, handleSendInvoice, handleMarkAsPaid, handleEditInvoice, handleDeleteInvoice, handleDuplicateInvoice, availableTabs]);
+  }, [isLoadingInvoices, hasInitiallyLoaded, invoices.length, recentInvoices, dueInvoices, paymentDataMap, calculateDueCharges, parseDateOnly, handleViewInvoice, router, dueInvoicesScrollIndex, scrollToDueInvoicesSlideUpdated, handleDueInvoicesScrollUpdated, dueInvoicesScrollRef, getStatusIcon, getDueDateStatus, loadingActions, handleDownloadPDF, handleSendInvoice, handleMarkAsPaid, handleEditInvoice, handleDeleteInvoice, handleDuplicateInvoice, availableTabs, paymentActivity, upcomingReminders, loadingPaymentActivity, loadingReminders, invoices]);
 
   // Helper function to get time ago
   const getTimeAgo = useCallback((date: Date): string => {
