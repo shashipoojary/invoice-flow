@@ -966,3 +966,14 @@ html:not(.loaded) .loading-spinner {
     .lg\:cal-col-span-12 { grid-column: span 12 / span 12; }
   }
 }
+
+/* Smooth sidebar transition optimizations for dashboard */
+/* Only apply to dashboard main content, not other pages */
+main[class*="flex-1"] {
+  /* Use GPU acceleration for smoother transitions */
+  transform: translateZ(0);
+  /* Optimize repaints during transitions */
+  backface-visibility: hidden;
+  /* Hint browser about potential changes */
+  will-change: auto;
+}

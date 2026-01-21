@@ -21,10 +21,14 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface ModernSidebarProps {
   onCreateInvoice: () => void;
+  onTransitionStart?: () => void;
+  onTransitionEnd?: () => void;
 }
 
 const ModernSidebar = ({ 
-  onCreateInvoice 
+  onCreateInvoice,
+  onTransitionStart,
+  onTransitionEnd
 }: ModernSidebarProps) => {
   // Initialize collapsed state from localStorage immediately to prevent flash
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -52,29 +56,173 @@ const ModernSidebar = ({
 
   // Auto-collapse on mobile and handle resize
   useEffect(() => {
-    const handleResize = () => {
-      const isDesktopNow = window.innerWidth >= 1024;
-      setIsDesktop(isDesktopNow);
-      
-      if (!isDesktopNow) {
-        setIsCollapsed(true);
-        setIsMobileOpen(false); // Close mobile menu on resize
-      } else {
-        setIsMobileOpen(false); // Always close mobile menu on desktop
-        // Restore saved collapse state on desktop
-        const savedCollapsed = localStorage.getItem('sidebarCollapsed');
-        if (savedCollapsed !== null) {
-          const shouldCollapse = JSON.parse(savedCollapsed);
-          setIsCollapsed(shouldCollapse);
-        }
+    // Track actual window dimensions to distinguish real resize from layout changes
+    let lastWindowWidth = window.innerWidth;
+    let lastWindowHeight = window.innerHeight;
+    let resizeTimeout: NodeJS.Timeout | null = null;
+    let isTransitioning = false;
+    
+    // Track when sidebar transitions start/end to ignore resize events during transitions
+    let transitionCount = 0;
+    const handleTransitionStart = () => {
+      transitionCount++;
+      if (transitionCount === 1) {
+        isTransitioning = true;
+        // Only log once per transition cycle
+        console.log('🚫 Resize handler: Sidebar transition started - ignoring resize events');
       }
     };
     
+    const handleTransitionEnd = () => {
+      transitionCount--;
+      if (transitionCount === 0) {
+        // Delay clearing the flag to catch any resize events that fire right after transition
+        setTimeout(() => {
+          isTransitioning = false;
+          // Only log once per transition cycle
+          console.log('✅ Resize handler: Sidebar transition ended - resuming resize handling');
+        }, 100);
+      }
+    };
+    
+    const handleResize = () => {
+      const timestamp = performance.now();
+      const currentWindowWidth = window.innerWidth;
+      const currentWindowHeight = window.innerHeight;
+      
+      // Ignore resize events during sidebar transitions
+      if (isTransitioning) {
+        console.log('🟡 RESIZE EVENT IGNORED (sidebar transitioning):', {
+          timestamp: `${timestamp.toFixed(2)}ms`,
+          windowWidth: currentWindowWidth,
+          windowHeight: currentWindowHeight,
+          reason: 'Sidebar animation in progress'
+        });
+        return;
+      }
+      
+      // Use a threshold to account for sub-pixel differences (browser rounding)
+      const widthDiff = Math.abs(currentWindowWidth - lastWindowWidth);
+      const heightDiff = Math.abs(currentWindowHeight - lastWindowHeight);
+      const threshold = 1; // Ignore changes less than 1px (sub-pixel differences)
+      
+      // Only proceed if window size actually changed significantly
+      if (widthDiff < threshold && heightDiff < threshold) {
+        console.log('🟡 RESIZE EVENT IGNORED (layout change, not window resize):', {
+          timestamp: `${timestamp.toFixed(2)}ms`,
+          windowWidth: currentWindowWidth,
+          windowHeight: currentWindowHeight,
+          widthDiff,
+          heightDiff,
+          reason: 'Dimensions unchanged - likely layout recalculation'
+        });
+        return;
+      }
+      
+      // Debounce resize handler to prevent multiple rapid fires
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+      }
+      
+      resizeTimeout = setTimeout(() => {
+        console.group('🟠 WINDOW RESIZE EVENT');
+        console.log('📐 Window Size Change:', {
+          timestamp: `${timestamp.toFixed(2)}ms`,
+          from: { width: lastWindowWidth, height: lastWindowHeight },
+          to: { width: currentWindowWidth, height: currentWindowHeight },
+          delta: {
+            width: currentWindowWidth - lastWindowWidth,
+            height: currentWindowHeight - lastWindowHeight
+          }
+        });
+        
+        // Update tracked dimensions
+        lastWindowWidth = currentWindowWidth;
+        lastWindowHeight = currentWindowHeight;
+        
+        const isDesktopNow = currentWindowWidth >= 1024;
+        console.log('💻 Desktop Check:', {
+          isDesktop: isDesktopNow,
+          threshold: 1024,
+          currentWidth: currentWindowWidth
+        });
+        
+        // Only update state if it actually changed
+        setIsDesktop(prev => {
+          if (prev !== isDesktopNow) {
+            return isDesktopNow;
+          }
+          return prev;
+        });
+        
+        if (!isDesktopNow) {
+          console.log('📱 Mobile Mode - Collapsing sidebar');
+          setIsCollapsed(true);
+          setIsMobileOpen(false); // Close mobile menu on resize
+        } else {
+          setIsMobileOpen(false); // Always close mobile menu on desktop
+          // Restore saved collapse state on desktop - but only if state would change
+          const savedCollapsed = localStorage.getItem('sidebarCollapsed');
+          if (savedCollapsed !== null) {
+            const shouldCollapse = JSON.parse(savedCollapsed);
+            console.log('💾 Restoring saved collapse state:', shouldCollapse);
+            setIsCollapsed((prev: boolean) => {
+              if (prev !== shouldCollapse) {
+                return shouldCollapse;
+              }
+              return prev;
+            });
+          }
+        }
+        console.groupEnd();
+      }, 150); // Debounce resize handler
+    };
+    
     // Set initial desktop state
+    console.log('🚀 ModernSidebar: Initializing resize handler');
     handleResize();
     
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize, { passive: true });
+    
+    // Listen for sidebar transition events - use a ref to track the actual sidebar element
+    // We'll set this up in a separate effect to avoid querying DOM during render
+    let sidebarElementRef: HTMLElement | null = null;
+    const setupTransitionListeners = () => {
+      sidebarElementRef = document.querySelector('[data-sidebar-element]') as HTMLElement;
+      if (sidebarElementRef) {
+        // Only listen to 'width' property transitions to avoid child element noise
+        const filteredTransitionStart = (e: TransitionEvent) => {
+          if (e.propertyName === 'width' && e.target === sidebarElementRef) {
+            handleTransitionStart();
+          }
+        };
+        const filteredTransitionEnd = (e: TransitionEvent) => {
+          if (e.propertyName === 'width' && e.target === sidebarElementRef) {
+            handleTransitionEnd();
+          }
+        };
+        sidebarElementRef.addEventListener('transitionstart', filteredTransitionStart);
+        sidebarElementRef.addEventListener('transitionend', filteredTransitionEnd);
+        
+        return () => {
+          if (sidebarElementRef) {
+            sidebarElementRef.removeEventListener('transitionstart', filteredTransitionStart);
+            sidebarElementRef.removeEventListener('transitionend', filteredTransitionEnd);
+          }
+        };
+      }
+      return () => {};
+    };
+    
+    // Setup listeners after a brief delay to ensure DOM is ready
+    const cleanupListeners = setupTransitionListeners();
+    
+    return () => {
+      console.log('🧹 ModernSidebar: Cleaning up resize handler');
+      window.removeEventListener('resize', handleResize);
+      if (resizeTimeout) clearTimeout(resizeTimeout);
+      cleanupListeners();
+    };
   }, []); // Empty deps - only run on mount for resize listener
 
   // Memoized navigation items for better performance
@@ -212,12 +360,62 @@ const ModernSidebar = ({
   }, [signOut]);
 
   const handleToggleCollapse = () => {
+    const timestamp = performance.now();
+    const action = !isCollapsed ? 'EXPANDING' : 'COLLAPSING';
     const newCollapsed = !isCollapsed;
-    setIsCollapsed(newCollapsed);
-    // Save to localStorage only on desktop
+    
+    console.group(`🔵 SIDEBAR ${action} - ${new Date().toISOString()}`);
+    console.log('📊 Initial State:', {
+      isCollapsed,
+      isDesktop,
+      isMobileOpen,
+      windowWidth: window.innerWidth,
+      windowHeight: window.innerHeight,
+      timestamp: `${timestamp.toFixed(2)}ms`
+    });
+    console.log('🔄 State Change:', {
+      from: isCollapsed ? 'collapsed (64px)' : 'expanded (320px)',
+      to: newCollapsed ? 'collapsed (64px)' : 'expanded (320px)',
+      widthChange: newCollapsed ? '-256px' : '+256px'
+    });
+    
+    // Track before state update
+    const beforeUpdate = performance.now();
+    console.log('⏱️ Before setIsCollapsed:', `${beforeUpdate.toFixed(2)}ms`);
+    
+    // Use startTransition to mark this as non-urgent, preventing it from blocking the animation
+    startTransition(() => {
+      setIsCollapsed(newCollapsed);
+    });
+    
+    // Save to localStorage only on desktop (synchronously, but it's fast)
     if (window.innerWidth >= 1024) {
+      const storageStart = performance.now();
       localStorage.setItem('sidebarCollapsed', JSON.stringify(newCollapsed));
+      const storageEnd = performance.now();
+      console.log('💾 localStorage update:', {
+        duration: `${(storageEnd - storageStart).toFixed(2)}ms`,
+        value: newCollapsed
+      });
     }
+    
+    // Track after state update
+    requestAnimationFrame(() => {
+      const afterUpdate = performance.now();
+      console.log('⏱️ After setIsCollapsed (RAF):', `${afterUpdate.toFixed(2)}ms`);
+      console.log('⏱️ Total time to RAF:', `${(afterUpdate - timestamp).toFixed(2)}ms`);
+    });
+    
+    // Track animation completion
+    setTimeout(() => {
+      const animationEnd = performance.now();
+      console.log('✅ Animation should be complete:', {
+        duration: `${(animationEnd - timestamp).toFixed(2)}ms`,
+        expectedDuration: '300ms',
+        actualDuration: `${(animationEnd - timestamp).toFixed(2)}ms`
+      });
+      console.groupEnd();
+    }, 300);
   };
 
   const sidebarContent = (
@@ -412,11 +610,42 @@ const ModernSidebar = ({
 
       {/* Sidebar - Always fixed, overlays content */}
       <div 
+        data-sidebar-element="true"
         className={`fixed left-0 top-0 h-full z-50 transition-all duration-300 ease-in-out ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
         style={{
           width: isCollapsed ? '64px' : '320px',
+          willChange: 'width', // Hint to browser to optimize for width changes
+        }}
+        onTransitionStart={(e) => {
+          // Only handle width transitions on the sidebar element itself, not children
+          if (e.propertyName === 'width' && e.target === e.currentTarget) {
+            // Dispatch custom event for resize handler to listen to
+            e.currentTarget.dispatchEvent(new CustomEvent('transitionstart', { bubbles: true }));
+            // Notify parent component
+            onTransitionStart?.();
+            console.log('🎬 SIDEBAR TRANSITION START:', {
+              property: e.propertyName,
+              width: window.getComputedStyle(e.currentTarget).width,
+              timestamp: `${performance.now().toFixed(2)}ms`
+            });
+          }
+        }}
+        onTransitionEnd={(e) => {
+          // Only handle width transitions on the sidebar element itself, not children
+          if (e.propertyName === 'width' && e.target === e.currentTarget) {
+            // Dispatch custom event for resize handler to listen to
+            e.currentTarget.dispatchEvent(new CustomEvent('transitionend', { bubbles: true }));
+            // Notify parent component
+            onTransitionEnd?.();
+            console.log('🏁 SIDEBAR TRANSITION END:', {
+              property: e.propertyName,
+              elapsedTime: e.elapsedTime,
+              width: window.getComputedStyle(e.currentTarget).width,
+              timestamp: `${performance.now().toFixed(2)}ms`
+            });
+          }
         }}
       >
         {sidebarContent}
@@ -431,6 +660,28 @@ const ModernSidebar = ({
             width: isCollapsed ? '64px' : '320px',
             minWidth: isCollapsed ? '64px' : '320px',
             maxWidth: isCollapsed ? '64px' : '320px',
+            willChange: 'width', // Hint to browser to optimize for width changes
+          }}
+          onTransitionStart={(e) => {
+            // Only handle width transitions on the spacer element itself, not children
+            if (e.propertyName === 'width' && e.target === e.currentTarget) {
+              console.log('🎬 SPACER TRANSITION START:', {
+                property: e.propertyName,
+                width: window.getComputedStyle(e.currentTarget).width,
+                timestamp: `${performance.now().toFixed(2)}ms`
+              });
+            }
+          }}
+          onTransitionEnd={(e) => {
+            // Only handle width transitions on the spacer element itself, not children
+            if (e.propertyName === 'width' && e.target === e.currentTarget) {
+              console.log('🏁 SPACER TRANSITION END:', {
+                property: e.propertyName,
+                elapsedTime: e.elapsedTime,
+                width: window.getComputedStyle(e.currentTarget).width,
+                timestamp: `${performance.now().toFixed(2)}ms`
+              });
+            }
           }}
         />
       )}

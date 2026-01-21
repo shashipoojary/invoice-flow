@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef, useDeferredValue } from 'react';
-import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { 
   FileText, Users, 
@@ -23,6 +22,7 @@ import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
+import { DonutChart, DonutChartSegment } from '@/components/ui/donut-chart';
 
 // Lazy load heavy modal components for better performance
 // Using ssr: false and no loading state to prevent layout shift
@@ -61,336 +61,126 @@ const EstimateModal = dynamic(() => import('@/components/EstimateModal'), {
   loading: () => null // No loading state to prevent layout shift
 });
 
-
-// Custom portal-based tooltip for Conversion Rate chart
-// Must be a function component that Recharts can call with props
-const ConversionRateTooltip = ({ active, payload, coordinate, viewBox }: any) => {
-  const tooltipRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ left: 0, top: 0 });
-  const [shouldHide, setShouldHide] = useState(false);
-  const mousePositionRef = useRef<{ x: number; y: number } | null>(null);
-  const positionUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastPositionRef = useRef<{ left: number; top: number } | null>(null);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Hide tooltip on scroll (desktop and mobile)
-  useEffect(() => {
-    const handleScroll = () => {
-      setShouldHide(true);
-      // Clear any existing timeout
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-      // Reset shouldHide after scroll ends (debounce)
-      scrollTimeoutRef.current = setTimeout(() => {
-        setShouldHide(false);
-      }, 150);
-    };
-
-    const handleTouchStart = () => {
-      // On mobile, hide tooltip immediately on touch (scroll will follow)
-      setShouldHide(true);
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-      scrollTimeoutRef.current = setTimeout(() => {
-        setShouldHide(false);
-      }, 300);
-    };
-
-    // Listen to scroll on window and all scrollable containers
-    window.addEventListener('scroll', handleScroll, true); // Use capture phase
-    window.addEventListener('touchstart', handleTouchStart, true);
-    
-    // Also listen to wheel events (for trackpad scrolling)
-    window.addEventListener('wheel', handleScroll, true);
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll, true);
-      window.removeEventListener('touchstart', handleTouchStart, true);
-      window.removeEventListener('wheel', handleScroll, true);
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Track mouse position globally - Recharts will trigger tooltip when mouse is over chart
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      // Always update mouse position - we'll filter by chart bounds when calculating tooltip position
-      mousePositionRef.current = { x: e.clientX, y: e.clientY };
-    };
-
-    // Attach to window to catch all mouse movements
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, []);
-
-  // Also track mouse position specifically on chart area for better accuracy
-  useEffect(() => {
-    const handleChartMouseMove = (e: MouseEvent) => {
-      // Find chart element
-      let chartElement: HTMLElement | null = document.querySelector('[data-chart="chart-conversion-rate-chart"]') as HTMLElement;
-      if (!chartElement) {
-        chartElement = document.getElementById('conversion-rate-chart');
-      }
-      if (!chartElement) {
-        chartElement = document.querySelector('[data-chart*="conversion-rate-chart"]') as HTMLElement;
-      }
+// Conversion Rate Chart Component with interactive donut chart and legend
+const ConversionRateChart = ({ invoices, paymentDataMap }: { invoices: Invoice[], paymentDataMap: Record<string, { totalPaid: number; remainingBalance: number }> }) => {
+  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+  
+  // Calculate invoice categories
+  const totalPaid = invoices.filter(inv => inv.status === 'paid').length;
+  const totalSent = invoices.filter(inv => inv.status === 'sent').length;
+  const totalPending = invoices.filter(inv => inv.status === 'pending').length;
+  const totalDraft = invoices.filter(inv => inv.status === 'draft').length;
+  const totalOverdue = invoices.filter(inv => inv.status === 'overdue').length;
+  const totalInvoices = invoices.length;
+  const totalSentOrPaid = invoices.filter(inv => inv.status === 'sent' || inv.status === 'paid').length;
+  const conversionRate = totalSentOrPaid > 0 ? (totalPaid / totalSentOrPaid) * 100 : 0;
+  
+  // Create category data for donut chart
+  const categoryData: DonutChartSegment[] = [
+    {
+      value: totalPaid,
+      color: '#10b981', // Green
+      label: 'Paid'
+    },
+    {
+      value: totalSent,
+      color: '#6366f1', // Indigo
+      label: 'Sent'
+    },
+    {
+      value: totalPending,
+      color: '#f59e0b', // Amber
+      label: 'Pending'
+    },
+    {
+      value: totalDraft,
+      color: '#6b7280', // Gray
+      label: 'Draft'
+    },
+    {
+      value: totalOverdue,
+      color: '#ef4444', // Red
+      label: 'Overdue'
+    }
+  ].filter(seg => seg.value > 0); // Only show categories with data
+  
+  // Get hovered segment data
+  const hoveredSegment = hoveredCategory 
+    ? categoryData.find(seg => seg.label === hoveredCategory)
+    : null;
+  
+  // Center content based on hover
+  const centerContent = hoveredSegment ? (
+    <div className="flex flex-col items-center justify-center">
+      <span className="text-2xl font-semibold tabular-nums">
+        {hoveredSegment.value}
+      </span>
+      <span className="text-xs text-gray-500">{hoveredSegment.label}</span>
+    </div>
+  ) : (
+    <div className="flex flex-col items-center justify-center">
+      <span className="text-lg font-semibold text-gray-400">Total</span>
+      <span className="text-2xl font-semibold tabular-nums">
+        {totalInvoices}
+      </span>
+      <span className="text-xs text-gray-500">Invoices</span>
+    </div>
+  );
+  
+  return (
+    <div className="flex flex-col gap-4 flex-1">
+      <div className="flex items-center gap-3">
+        <span className="text-2xl font-medium leading-none tracking-tight tabular-nums">
+          {conversionRate.toFixed(1)}%
+        </span>
+        <span className="text-xs text-gray-500">Conversion Rate</span>
+      </div>
       
-      if (chartElement) {
-        const rect = chartElement.getBoundingClientRect();
-        if (
-          e.clientX >= rect.left &&
-          e.clientX <= rect.right &&
-          e.clientY >= rect.top &&
-          e.clientY <= rect.bottom
-        ) {
-          mousePositionRef.current = { x: e.clientX, y: e.clientY };
-        }
-      }
-    };
-
-    // Use capture phase to catch events early
-    document.addEventListener('mousemove', handleChartMouseMove, true);
-    return () => {
-      document.removeEventListener('mousemove', handleChartMouseMove, true);
-    };
-  }, []);
-
-  // Calculate position when active or coordinate changes
-  useEffect(() => {
-    if (!active) {
-      // Clear any pending updates when inactive
-      if (positionUpdateTimeoutRef.current) {
-        clearTimeout(positionUpdateTimeoutRef.current);
-        positionUpdateTimeoutRef.current = null;
-      }
-      return;
-    }
-
-    // Clear any pending updates
-    if (positionUpdateTimeoutRef.current) {
-      clearTimeout(positionUpdateTimeoutRef.current);
-    }
-
-    // Use RAF to ensure DOM is ready and prevent flickering
-    const rafId = requestAnimationFrame(() => {
-      if (!tooltipRef.current) {
-        // Use mouse position as fallback if ref not ready
-        if (mousePositionRef.current) {
-          const left = mousePositionRef.current.x + 10;
-          const top = mousePositionRef.current.y + 10;
-          // Only update if significantly different
-          if (!lastPositionRef.current || 
-              Math.abs(lastPositionRef.current.left - left) > 2 || 
-              Math.abs(lastPositionRef.current.top - top) > 2) {
-            lastPositionRef.current = { left, top };
-            setPosition({ left, top });
-          }
-        }
-        return;
-      }
-
-      const tooltip = tooltipRef.current;
-      // Force layout recalculation
-      const tooltipWidth = tooltip.offsetWidth || 200;
-      const tooltipHeight = tooltip.offsetHeight || 100;
-      const cursorOffset = 10;
-
-      // Get viewport dimensions
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-
-      // Get the chart element - ChartContainer uses data-chart attribute, not id
-      let chartElement: HTMLElement | null = document.querySelector('[data-chart="chart-conversion-rate-chart"]') as HTMLElement;
-      if (!chartElement) {
-        // Fallback: try to find by id (in case it's set elsewhere)
-        chartElement = document.getElementById('conversion-rate-chart');
-      }
-      if (!chartElement) {
-        // Last fallback: try to find any element with conversion-rate-chart in data-chart
-        chartElement = document.querySelector('[data-chart*="conversion-rate-chart"]') as HTMLElement;
-      }
-      if (!chartElement) {
-        return;
-      }
-
-      const chartRect = chartElement.getBoundingClientRect();
-
-      // Use Recharts coordinate (data point position) - this makes tooltip stick to data points
-      let left: number;
-      let top: number;
-      let positionSource = '';
-
-      // Prioritize Recharts coordinate (data point position) over mouse position
-      if (coordinate && coordinate.x !== undefined && coordinate.y !== undefined) {
-        // Use Recharts coordinate - try multiple reference elements to find the correct one
-        const wrapper = chartElement.querySelector('.recharts-wrapper');
-        const svgElement = chartElement.querySelector('svg');
-        const responsiveContainer = chartElement.querySelector('.recharts-responsive-container');
+      <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-start">
+        {/* Donut Chart */}
+        <div className="flex-shrink-0">
+          <DonutChart
+            data={categoryData}
+            size={160}
+            strokeWidth={20}
+            hoveredSegmentLabel={hoveredCategory}
+            centerContent={centerContent}
+          />
+        </div>
         
-        if (wrapper) {
-          const wrapperRect = wrapper.getBoundingClientRect();
-          left = wrapperRect.left + coordinate.x;
-          top = wrapperRect.top + coordinate.y;
-          positionSource = 'wrapper-coordinate';
-        } else if (svgElement) {
-          const svgRect = svgElement.getBoundingClientRect();
-          left = svgRect.left + coordinate.x;
-          top = svgRect.top + coordinate.y;
-          positionSource = 'svg-coordinate';
-        } else if (responsiveContainer) {
-          const containerRect = responsiveContainer.getBoundingClientRect();
-          left = containerRect.left + coordinate.x;
-          top = containerRect.top + coordinate.y;
-          positionSource = 'container-coordinate';
-        } else {
-          // Last resort: use chart container
-          left = chartRect.left + coordinate.x;
-          top = chartRect.top + coordinate.y;
-          positionSource = 'chart-coordinate';
-        }
-      } else if (mousePositionRef.current) {
-        // Fallback: use mouse position if coordinate is not available
-        left = mousePositionRef.current.x;
-        top = mousePositionRef.current.y;
-        positionSource = 'mouse-position-fallback';
-      } else {
-        // No position data - use center of chart as fallback
-        left = chartRect.left + chartRect.width / 2;
-        top = chartRect.top + chartRect.height / 2;
-        positionSource = 'center-fallback';
-      }
-
-      // Store original position before offset (for edge detection)
-      const leftBeforeOffset = left;
-      const topBeforeOffset = top;
-      
-      // Add offset from data point
-      left += cursorOffset;
-      top += cursorOffset;
-
-      // Edge detection with threshold to prevent flickering
-      const edgeThreshold = 5; // Small threshold to prevent rapid flipping
-
-      // Edge detection: Right edge - flip to left side of data point
-      if (left + tooltipWidth > viewportWidth - edgeThreshold) {
-        const newLeft = leftBeforeOffset - tooltipWidth - cursorOffset;
-        // Only flip if it won't go off the left edge
-        if (newLeft >= edgeThreshold) {
-          left = newLeft;
-        } else {
-          // Clamp to right edge instead
-          left = viewportWidth - tooltipWidth - edgeThreshold;
-        }
-      }
-
-      // Edge detection: Bottom edge - flip upward
-      if (top + tooltipHeight > viewportHeight - edgeThreshold) {
-        const newTop = topBeforeOffset - tooltipHeight - cursorOffset;
-        // Only flip if it won't go off the top edge
-        if (newTop >= edgeThreshold) {
-          top = newTop;
-        } else {
-          // Clamp to bottom edge instead
-          top = viewportHeight - tooltipHeight - edgeThreshold;
-        }
-      }
-
-      // Edge detection: Left edge - clamp to viewport
-      if (left < edgeThreshold) {
-        left = edgeThreshold;
-      }
-
-      // Edge detection: Top edge - clamp to viewport
-      if (top < edgeThreshold) {
-        top = edgeThreshold;
-      }
-
-      // Only update if position changed significantly (prevents flickering)
-      const positionChanged = !lastPositionRef.current || 
-        Math.abs(lastPositionRef.current.left - left) > 2 || 
-        Math.abs(lastPositionRef.current.top - top) > 2;
-
-      if (positionChanged) {
-        lastPositionRef.current = { left, top };
-        // Use immediate update (no debounce) since we're already in RAF
-        setPosition({ left, top });
-      }
-    });
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      if (positionUpdateTimeoutRef.current) {
-        clearTimeout(positionUpdateTimeoutRef.current);
-        positionUpdateTimeoutRef.current = null;
-      }
-    };
-  }, [active, coordinate]);
-
-  // Hide tooltip if inactive, no payload, or scroll detected
-  if (!active || !payload || !payload.length || shouldHide) {
-    return null;
-  }
-
-  const monthMap: Record<string, string> = {
-    JAN: 'January', FEB: 'February', MAR: 'March', APR: 'April',
-    MAY: 'May', JUN: 'June', JUL: 'July', AUG: 'August',
-    SEP: 'September', OCT: 'October', NOV: 'November', DEC: 'December'
-  };
-
-  // Render tooltip content directly to avoid double container
-  const tooltipContent = (
-    <div
-      ref={tooltipRef}
-      className="min-w-[200px] conversion-tooltip"
-      style={{
-        position: 'fixed',
-        left: `${position.left}px`,
-        top: `${position.top}px`,
-        backgroundColor: '#f9fafb',
-        border: '1px solid #e5e7eb',
-        borderRadius: '0',
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-        padding: '12px',
-        zIndex: 10000,
-        pointerEvents: 'auto',
-        transition: 'none',
-        animation: 'none'
-      }}
-    >
-      {payload && payload.length > 0 && (
-        <div className="grid gap-1.5">
-          {payload[0].payload && (
-            <div className="font-medium text-xs">
-              {monthMap[payload[0].payload.month as keyof typeof monthMap] || payload[0].payload.month}
-            </div>
-          )}
-          <div className="grid gap-1.5">
-            {payload.map((item: any, index: number) => {
-              const value = typeof item.value === 'number' ? item.value.toLocaleString() : item.value;
-              const label = item.name || item.dataKey || 'Value';
-              const color = item.color || item.payload?.fill || '#6366f1';
+        {/* Category Legend */}
+        <div className="flex-1 w-full sm:w-auto">
+          <div className="space-y-2">
+            {categoryData.map((segment) => {
+              const percentage = totalInvoices > 0 
+                ? ((segment.value / totalInvoices) * 100).toFixed(1)
+                : '0';
+              const isHovered = hoveredCategory === segment.label;
               
               return (
                 <div
-                  key={item.dataKey || index}
-                  className="flex w-full items-center gap-2"
+                  key={segment.label}
+                  className={`flex items-center justify-between p-2 rounded transition-colors cursor-pointer ${
+                    isHovered ? 'bg-gray-50' : 'hover:bg-gray-50'
+                  }`}
+                  onMouseEnter={() => setHoveredCategory(segment.label)}
+                  onMouseLeave={() => setHoveredCategory(null)}
                 >
-                  <div
-                    className="w-1 h-4 shrink-0"
-                    style={{
-                      backgroundColor: color,
-                    }}
-                  />
-                  <div className="flex flex-1 justify-between items-center leading-none">
-                    <span className="text-muted-foreground text-xs">{label}</span>
-                    <span className="text-foreground font-mono font-medium tabular-nums text-xs">
-                      {value}
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: segment.color }}
+                    />
+                    <span className="text-sm font-medium text-gray-700">
+                      {segment.label}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold tabular-nums">
+                      {segment.value}
+                    </span>
+                    <span className="text-xs text-gray-500 min-w-[35px] text-right">
+                      {percentage}%
                     </span>
                   </div>
                 </div>
@@ -398,18 +188,9 @@ const ConversionRateTooltip = ({ active, payload, coordinate, viewBox }: any) =>
             })}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
-
-  // Render portal tooltip to body, return null to prevent Recharts from creating wrapper
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  // Render tooltip via portal to document.body and return null
-  // Returning null prevents Recharts from creating its own wrapper div
-  return createPortal(tooltipContent, document.body);
 };
 
 export default function DashboardOverview() {
@@ -418,6 +199,9 @@ export default function DashboardOverview() {
   const { settings } = useSettings();
   const { invoices, clients, isLoadingInvoices, isLoadingClients, hasInitiallyLoaded, addInvoice, updateInvoice, deleteInvoice, refreshInvoices } = useData();
   const router = useRouter();
+  
+  // Track if sidebar is transitioning to prevent unnecessary re-renders
+  const sidebarTransitioningRef = useRef(false);
   
   // Local state for UI
   // Initialize loading state to false to prevent flash - stats are calculated from invoices which are already loaded
@@ -460,8 +244,7 @@ export default function DashboardOverview() {
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollRAFRef = useRef<number | null>(null);
   const previousScrollIndexRef = useRef<number>(-1);
-  const mainContentRef = useRef<HTMLElement>(null);
-  const [isSidebarTransitioning, setIsSidebarTransitioning] = useState(false);
+  const renderCount = useRef(0);
   const [notifications, setNotifications] = useState<Array<{
     id: string;
     type: 'viewed' | 'due_today' | 'overdue' | 'paid' | 'partial_paid' | 'draft_created' | 'downloaded' | 'payment_copied' | 'reminder_scheduled' | 'sent' | 'failed' | 'cancelled' | 'estimate_sent' | 'estimate_approved' | 'estimate_rejected';
@@ -527,6 +310,20 @@ export default function DashboardOverview() {
   const invoicePerformanceInfoRef = useRef<HTMLDivElement>(null);
   
   // Business settings are now managed by SettingsContext
+
+  // Debug: Track component renders (throttled to reduce console noise)
+  useEffect(() => {
+    renderCount.current += 1;
+    // Only log every 5th render to reduce console noise
+    if (renderCount.current % 5 === 0 || renderCount.current <= 3) {
+      console.log('🔄 Dashboard: Component rendered', {
+        renderCount: renderCount.current,
+        timestamp: `${performance.now().toFixed(2)}ms`,
+        invoicesCount: invoices?.length || 0,
+        clientsCount: clients?.length || 0
+      });
+    }
+  });
 
   // Preload modals on mount to prevent layout shift and loading spinner
   useEffect(() => {
@@ -2303,6 +2100,11 @@ export default function DashboardOverview() {
 
   // Scroll handler for dot indicator - each slide is full-width
   const handleDueInvoicesScrollUpdated = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    // Skip scroll handling during sidebar transitions to prevent lag
+    if (sidebarTransitioningRef.current) {
+      return;
+    }
+    
     const container = e.currentTarget;
     const scrollLeft = container.scrollLeft;
     const slideWidth = container.clientWidth; // Each slide is full-width (100% of container)
@@ -2313,6 +2115,11 @@ export default function DashboardOverview() {
     // Use requestAnimationFrame to debounce and ensure smooth updates
     // This prevents interference with native snap scrolling
     requestAnimationFrame(() => {
+      // Skip if sidebar is transitioning (double-check)
+      if (sidebarTransitioningRef.current) {
+        return;
+      }
+      
       // Calculate active index using center-point detection
       // This updates the dot when the next slide is at least 50% visible
       // Formula: floor((scrollLeft + slideWidth / 2) / slideWidth)
@@ -2367,155 +2174,261 @@ export default function DashboardOverview() {
     });
   }, [availableTabs]);
 
-  // Production-grade: Maintain current slide position during sidebar transition
-  // Updates scroll position on each width change during transition to prevent glimpses
+  // Maintain scroll position only on actual window resize (not sidebar transitions)
+  // This allows sidebar to animate smoothly without interference
   useEffect(() => {
     const container = dueInvoicesScrollRef.current;
     if (!container || availableTabs.length === 0) return;
 
-    let lastWidth = container.clientWidth;
-    let isTransitioning = false;
-    let transitionEndTimeout: NodeJS.Timeout | null = null;
+    // Track actual window dimensions to distinguish real resize from layout changes
+    let lastWindowWidth = window.innerWidth;
+    let lastWindowHeight = window.innerHeight;
 
     // Update scroll to maintain current slide position
     const updateScrollToCurrentSlide = () => {
+      // Skip during sidebar transitions
+      if (sidebarTransitioningRef.current) {
+        return;
+      }
+      
       if (!container || availableTabs.length === 0) return;
       const currentScrollIndex = previousScrollIndexRef.current;
       const currentContainerWidth = container.clientWidth;
       if (currentContainerWidth > 0) {
-        // Calculate target scroll position for current slide
         const targetScrollLeft = currentScrollIndex * currentContainerWidth;
         container.scrollLeft = targetScrollLeft;
+        console.log('📜 Dashboard: Updated scroll position:', {
+          index: currentScrollIndex,
+          containerWidth: currentContainerWidth,
+          scrollLeft: targetScrollLeft,
+          timestamp: `${performance.now().toFixed(2)}ms`
+        });
       }
     };
 
-    // ResizeObserver - detects sidebar width changes and updates scroll immediately
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const newWidth = entry.contentRect.width;
-        const widthChanged = Math.abs(newWidth - lastWidth) > 0.5;
-        
-        if (widthChanged) {
-          // Update scroll position immediately when width changes
-          // This maintains the current slide during transition
-          updateScrollToCurrentSlide();
-          
-          // Mark as transitioning
-          if (!isTransitioning) {
-            isTransitioning = true;
-          }
-          
-          // Clear any pending end timeout
-          if (transitionEndTimeout) clearTimeout(transitionEndTimeout);
-          
-          // Mark transition as complete after sidebar animation
-          transitionEndTimeout = setTimeout(() => {
-            isTransitioning = false;
-            // Final update to ensure perfect position
-            updateScrollToCurrentSlide();
-            lastWidth = container.clientWidth;
-          }, 320); // 300ms transition + 20ms buffer
-        }
-      }
-    });
-    resizeObserver.observe(container);
-
-    // Window resize handler - for actual window resizes (not sidebar)
+    // Only handle actual window resize - ignore sidebar transitions and layout changes
     let windowResizeTimeout: NodeJS.Timeout | null = null;
     const handleWindowResize = () => {
+      // Skip during sidebar transitions
+      if (sidebarTransitioningRef.current) {
+        console.log('🟡 Dashboard RESIZE IGNORED (sidebar transitioning)');
+        return;
+      }
+      
+      const timestamp = performance.now();
+      // Check if window dimensions actually changed (not just layout)
+      const currentWindowWidth = window.innerWidth;
+      const currentWindowHeight = window.innerHeight;
+      
+      // Only proceed if window size actually changed
+      if (currentWindowWidth === lastWindowWidth && currentWindowHeight === lastWindowHeight) {
+        console.log('🟡 Dashboard RESIZE IGNORED (layout change, not window resize):', {
+          timestamp: `${timestamp.toFixed(2)}ms`,
+          windowWidth: currentWindowWidth,
+          windowHeight: currentWindowHeight,
+          reason: 'Dimensions unchanged - likely sidebar animation'
+        });
+        return;
+      }
+      
+      console.group('🟠 Dashboard: WINDOW RESIZE EVENT');
+      console.log('📐 Window Size Change:', {
+        timestamp: `${timestamp.toFixed(2)}ms`,
+        from: { width: lastWindowWidth, height: lastWindowHeight },
+        to: { width: currentWindowWidth, height: currentWindowHeight }
+      });
+      
+      // Update tracked dimensions
+      lastWindowWidth = currentWindowWidth;
+      lastWindowHeight = currentWindowHeight;
+
       if (windowResizeTimeout) clearTimeout(windowResizeTimeout);
       windowResizeTimeout = setTimeout(() => {
-        if (!isTransitioning && container && availableTabs.length > 0) {
-          updateScrollToCurrentSlide();
-          lastWidth = container.clientWidth;
+        // Double-check sidebar isn't transitioning
+        if (sidebarTransitioningRef.current) {
+          console.log('🟡 Dashboard: Skipping scroll update (sidebar transitioning)');
+          return;
         }
-      }, 100);
+        if (container && availableTabs.length > 0) {
+          console.log('⏱️ Dashboard: Executing scroll update after debounce');
+          updateScrollToCurrentSlide();
+        }
+        console.groupEnd();
+      }, 150); // Slightly longer debounce to avoid interfering with animations
     };
     window.addEventListener('resize', handleWindowResize, { passive: true });
 
     return () => {
-      resizeObserver.disconnect();
       window.removeEventListener('resize', handleWindowResize);
-      if (transitionEndTimeout) clearTimeout(transitionEndTimeout);
       if (windowResizeTimeout) clearTimeout(windowResizeTimeout);
-      isTransitioning = false;
     };
   }, [availableTabs]);
 
-  // Detect sidebar transition and optimize dashboard rendering during transition
-  // Uses CSS containment to prevent layout recalculations from blocking sidebar animation
-  useEffect(() => {
-    // Find the sidebar spacer element (created by ModernSidebar)
-    const findSidebarSpacer = () => {
-      // The spacer has class "hidden lg:block" and has width style
-      const spacers = document.querySelectorAll('[class*="hidden lg:block"]');
-      for (const spacer of spacers) {
-        const htmlSpacer = spacer as HTMLElement;
-        const width = htmlSpacer.style.width;
-        if (width && (width === '64px' || width === '320px')) {
-          return htmlSpacer;
-        }
-      }
-      return null;
-    };
 
-    // Wait for DOM to be ready
-    const initObserver = () => {
-      const sidebarSpacer = findSidebarSpacer();
-      if (!sidebarSpacer || !mainContentRef.current) {
-        // Retry if not found yet
-        setTimeout(initObserver, 100);
-        return;
-      }
-
-      let lastWidth = sidebarSpacer.offsetWidth;
-      let transitionTimeout: NodeJS.Timeout | null = null;
-
-      const observer = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          const newWidth = entry.contentRect.width;
-          const widthChanged = Math.abs(newWidth - lastWidth) > 0.5;
-
-          if (widthChanged) {
-            // Sidebar is transitioning - optimize main content with CSS containment
-            setIsSidebarTransitioning(true);
-            if (mainContentRef.current) {
-              // Use CSS containment to isolate layout during transition
-              mainContentRef.current.style.contain = 'layout style';
-              mainContentRef.current.style.willChange = 'contents';
-            }
-
-            // Clear any pending timeout
-            if (transitionTimeout) clearTimeout(transitionTimeout);
-
-            // Restore normal rendering after transition
-            transitionTimeout = setTimeout(() => {
-              setIsSidebarTransitioning(false);
-              if (mainContentRef.current) {
-                mainContentRef.current.style.contain = '';
-                mainContentRef.current.style.willChange = '';
-              }
-              lastWidth = newWidth;
-            }, 320); // 300ms transition + 20ms buffer
-          }
-        }
-      });
-
-      observer.observe(sidebarSpacer);
-
-      return () => {
-        observer.disconnect();
-        if (transitionTimeout) clearTimeout(transitionTimeout);
-        if (mainContentRef.current) {
-          mainContentRef.current.style.contain = '';
-          mainContentRef.current.style.willChange = '';
-        }
+  // Memoize Invoice Performance metrics to prevent recalculation during sidebar transitions
+  const invoicePerformanceMetrics = useMemo(() => {
+    if (!Array.isArray(invoices) || invoices.length === 0) {
+      return {
+        radarData: [],
+        totalRevenue: 0,
+        outstandingAmount: 0,
+        avgPaymentDays: 0,
+        riskStatus: 'Low',
+        riskColor: 'text-green-600',
+        topClients: [],
+        paidInvoices: 0,
+        pendingInvoices: 0,
+        overdueInvoices: 0,
+        partialPaidCount: 0,
+        collectionRate: 0,
       };
-    };
+    }
 
-    const cleanup = initObserver();
-    return cleanup || (() => {});
-  }, []);
+    const totalInvoices = invoices.length;
+    const paidInvoices = invoices.filter(inv => inv.status === 'paid').length;
+    const pendingInvoices = invoices.filter(inv => inv.status === 'pending' || inv.status === 'sent').length;
+    
+    // Calculate partial paid invoices
+    const partialPaidInvoices = invoices.filter(inv => {
+      if (inv.status === 'paid') return false;
+      const paymentData = paymentDataMap[inv.id];
+      const totalPaid = paymentData?.totalPaid || 0;
+      const remainingBalance = paymentData?.remainingBalance !== undefined 
+        ? paymentData.remainingBalance 
+        : (inv.total - totalPaid);
+      return totalPaid > 0 && remainingBalance > 0.01;
+    });
+    const partialPaidCount = partialPaidInvoices.length;
+    
+    // Payment Rate
+    const paymentRate = totalInvoices > 0 ? (paidInvoices / totalInvoices) * 100 : 0;
+    
+    // Calculate on-time payment rate
+    const today = new Date();
+    const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+    
+    const onTimePaid = invoices.filter(inv => {
+      if (inv.status !== 'paid') return false;
+      const dueDate = parseDateOnly(inv.dueDate);
+      const dueDateStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
+      const paidDate = inv.updatedAt ? new Date(inv.updatedAt) : null;
+      if (!paidDate) return false;
+      const paidDateStart = new Date(Date.UTC(paidDate.getFullYear(), paidDate.getMonth(), paidDate.getDate()));
+      return paidDateStart <= dueDateStart;
+    }).length;
+    const onTimeRate = paidInvoices > 0 ? (onTimePaid / paidInvoices) * 100 : 0;
+    
+    // Average Invoice Value (normalized score)
+    const totalValue = invoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
+    const avgValue = totalInvoices > 0 ? totalValue / totalInvoices : 0;
+    const avgValueScore = avgValue <= 5000 
+      ? (avgValue / 5000) * 50 
+      : 50 + Math.min(((avgValue - 5000) / 10000) * 50, 50);
+    
+    // Collection Rate
+    const totalInvoiced = invoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
+    const collectedRevenue = invoices.reduce((sum, inv) => {
+      if (inv.status === 'paid') return sum + (inv.total || 0);
+      const paymentData = paymentDataMap[inv.id];
+      return sum + (paymentData?.totalPaid || 0);
+    }, 0);
+    const collectionRate = totalInvoiced > 0 ? (collectedRevenue / totalInvoiced) * 100 : 0;
+    
+    // Invoice Health
+    const overdueInvoices = invoices.filter(inv => {
+      if (inv.status === 'paid') return false;
+      const dueDate = parseDateOnly(inv.dueDate);
+      const dueDateStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
+      return dueDateStart < todayStart;
+    }).length;
+    const invoiceHealth = totalInvoices > 0 
+      ? Math.max(0, 100 - (overdueInvoices / totalInvoices) * 100)
+      : 100;
+    
+    // Revenue Efficiency
+    const revenueEfficiency = totalInvoices > 0 
+      ? (paidInvoices / totalInvoices) * 100 
+      : 0;
+    
+    // Average payment time
+    const paidInvoicesWithDates = invoices.filter(inv => {
+      if (inv.status !== 'paid' || !inv.updatedAt) return false;
+      return true;
+    });
+    const avgPaymentDays = paidInvoicesWithDates.length > 0
+      ? Math.round(paidInvoicesWithDates.reduce((sum, inv) => {
+          if (!inv.updatedAt) return sum;
+          const invoiceDate = parseDateOnly(inv.createdAt);
+          const paidDate = new Date(inv.updatedAt);
+          const invoiceDateStart = new Date(Date.UTC(invoiceDate.getFullYear(), invoiceDate.getMonth(), invoiceDate.getDate()));
+          const paidDateStart = new Date(Date.UTC(paidDate.getFullYear(), paidDate.getMonth(), paidDate.getDate()));
+          const diffTime = paidDateStart.getTime() - invoiceDateStart.getTime();
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+          return sum + diffDays;
+        }, 0) / paidInvoicesWithDates.length)
+      : 0;
+    
+    // Total revenue
+    const totalRevenue = invoices.reduce((sum, inv) => {
+      if (inv.status === 'paid') return sum + (inv.total || 0);
+      const paymentData = paymentDataMap[inv.id];
+      return sum + (paymentData?.totalPaid || 0);
+    }, 0);
+    
+    // Outstanding amount
+    const outstandingAmount = invoices.reduce((sum, inv) => {
+      if (inv.status === 'paid') return sum;
+      const paymentData = paymentDataMap[inv.id];
+      const remaining = paymentData?.remainingBalance !== undefined 
+        ? paymentData.remainingBalance 
+        : (inv.total || 0);
+      return sum + remaining;
+    }, 0);
+    
+    // Top performing clients
+    const clientPerformance: { [key: string]: { name: string; paid: number; count: number } } = {};
+    invoices.forEach(inv => {
+      if (inv.status !== 'paid') return;
+      const clientName = inv.client?.name || 'Unknown Client';
+      if (!clientPerformance[clientName]) {
+        clientPerformance[clientName] = { name: clientName, paid: 0, count: 0 };
+      }
+      clientPerformance[clientName].paid += inv.total || 0;
+      clientPerformance[clientName].count += 1;
+    });
+    const topClients = Object.values(clientPerformance)
+      .sort((a, b) => b.paid - a.paid)
+      .slice(0, 2);
+    
+    // Risk indicator
+    const riskLevel = totalInvoices > 0 ? (overdueInvoices / totalInvoices) * 100 : 0;
+    const riskStatus = riskLevel < 10 ? 'Low' : riskLevel < 25 ? 'Medium' : 'High';
+    const riskColor = riskLevel < 10 ? 'text-green-600' : riskLevel < 25 ? 'text-amber-600' : 'text-red-600';
+    
+    const radarData = [
+      { metric: 'Payment Rate', value: Math.max(0, Math.round(paymentRate)), fullMark: 100 },
+      { metric: 'On-Time Payment', value: Math.max(0, Math.round(onTimeRate)), fullMark: 100 },
+      { metric: 'Avg Value', value: Math.max(0, Math.round(avgValueScore)), fullMark: 100 },
+      { metric: 'Collection Rate', value: Math.max(0, Math.round(collectionRate)), fullMark: 100 },
+      { metric: 'Invoice Health', value: Math.max(0, Math.round(invoiceHealth)), fullMark: 100 },
+      { metric: 'Revenue Efficiency', value: Math.max(0, Math.round(revenueEfficiency)), fullMark: 100 },
+    ];
+    
+    return {
+      radarData,
+      totalRevenue,
+      outstandingAmount,
+      avgPaymentDays,
+      riskStatus,
+      riskColor,
+      topClients,
+      paidInvoices,
+      pendingInvoices,
+      overdueInvoices,
+      partialPaidCount,
+      collectionRate,
+    };
+  }, [invoices, paymentDataMap, parseDateOnly]);
 
   // Calculate invoice trends for the third slide
   const invoiceTrends = useMemo(() => {
@@ -2655,8 +2568,8 @@ export default function DashboardOverview() {
     if (recentInvoices.length > 0) {
       return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:items-start">
-          {/* Invoice Insights - First on Mobile, Right Side on Desktop - Horizontal Scrollable */}
-          <div className="space-y-3 sm:space-y-4 order-1 lg:order-2">
+          {/* Invoice Insights - Second on Mobile, Right Side on Desktop - Horizontal Scrollable */}
+          <div className="space-y-3 sm:space-y-4 order-2 lg:order-2">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
                 Invoice Insights
@@ -2738,12 +2651,11 @@ export default function DashboardOverview() {
                   scrollbarWidth: 'none', // Firefox
                   msOverflowStyle: 'none', // IE/Edge
                   scrollBehavior: 'smooth', // Smooth for snap scrolling
-                  scrollSnapType: 'x mandatory', // Enable snap scrolling - mandatory ensures it always snaps
+                  scrollSnapType: 'x mandatory', // Enable snap scrolling
                   WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
                   WebkitScrollSnapType: 'x mandatory', // Safari support
                   scrollSnapStop: 'always', // Prevent skipping tabs
-                  contain: 'layout style paint', // Better performance isolation
-                  willChange: 'scroll-position', // Optimize for scrolling
+                  contain: 'layout style', // Isolate layout calculations to prevent affecting sidebar animation
                 }}
               >
                 <div 
@@ -3202,10 +3114,11 @@ export default function DashboardOverview() {
                     minWidth: `${100 / availableTabs.length}%`, 
                     maxWidth: `${100 / availableTabs.length}%`,
                     scrollSnapAlign: 'start',
-                    scrollSnapStop: 'always'
+                    scrollSnapStop: 'always',
+                    contain: 'layout style', // Isolate layout to prevent affecting sidebar
                   }}>
-                    <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
-                      <div className="flex items-center justify-between mb-4">
+                    <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col h-full">
+                      <div className="flex items-center justify-between mb-4 flex-shrink-0">
                         <h3 className="text-sm font-semibold text-gray-900">Invoice Performance</h3>
                         <div 
                           className="relative group" 
@@ -3213,43 +3126,18 @@ export default function DashboardOverview() {
                         >
                           <button
                             type="button"
-                            className="p-1 hover:bg-gray-100 active:bg-gray-200 transition-colors cursor-pointer relative"
+                            className="p-1 hover:bg-gray-100 active:bg-gray-200 transition-colors cursor-pointer relative z-10"
                             style={{ 
                               borderRadius: 0,
-                              touchAction: 'manipulation',
-                              WebkitTapHighlightColor: 'rgba(0, 0, 0, 0.1)',
                               outline: 'none'
                             }}
                             aria-label="Learn more about Invoice Performance"
                             onMouseEnter={() => {
-                              // Desktop: Show on hover
-                              if (window.innerWidth >= 1024) {
-                                setShowInvoicePerformanceInfo(true);
-                              }
+                              setShowInvoicePerformanceInfo(true);
                             }}
                             onClick={(e) => {
                               e.stopPropagation();
                               setShowInvoicePerformanceInfo(!showInvoicePerformanceInfo);
-                            }}
-                            onTouchStart={(e) => {
-                              // Mobile: Add visual feedback with proper highlight
-                              const button = e.currentTarget;
-                              button.style.backgroundColor = '#e5e7eb';
-                              button.style.transform = 'scale(0.95)';
-                            }}
-                            onTouchEnd={(e) => {
-                              // Reset after touch with smooth transition
-                              const button = e.currentTarget;
-                              setTimeout(() => {
-                                button.style.backgroundColor = '';
-                                button.style.transform = '';
-                              }, 150);
-                            }}
-                            onTouchCancel={(e) => {
-                              // Reset if touch is cancelled
-                              const button = e.currentTarget;
-                              button.style.backgroundColor = '';
-                              button.style.transform = '';
                             }}
                           >
                             <Info className="h-4 w-4 text-gray-400 hover:text-gray-600" />
@@ -3264,18 +3152,10 @@ export default function DashboardOverview() {
                             }`}
                             style={{ borderRadius: '0' }}
                             onMouseEnter={() => {
-                              // Keep open when hovering over tooltip (desktop)
-                              if (window.innerWidth >= 1024) {
-                                setShowInvoicePerformanceInfo(true);
-                              }
+                              setShowInvoicePerformanceInfo(true);
                             }}
                             onMouseLeave={() => {
-                              // Hide when leaving tooltip (desktop) with delay
-                              if (window.innerWidth >= 1024) {
-                                setTimeout(() => {
-                                  setShowInvoicePerformanceInfo(false);
-                                }, 100);
-                              }
+                              setShowInvoicePerformanceInfo(false);
                             }}
                           >
                               <div className="p-4 space-y-4">
@@ -3350,137 +3230,18 @@ export default function DashboardOverview() {
                       </div>
                       
                       {(() => {
-                        // Calculate performance metrics
-                        const totalInvoices = invoices.length || 0;
-                        const paidInvoices = invoices.filter(inv => inv.status === 'paid').length;
-                        const pendingInvoices = invoices.filter(inv => inv.status === 'pending' || inv.status === 'sent').length;
-                        
-                        // Calculate partial paid invoices (have payments but not fully paid)
-                        const partialPaidInvoices = invoices.filter(inv => {
-                          if (inv.status === 'paid') return false; // Fully paid, not partial
-                          const paymentData = paymentDataMap[inv.id];
-                          const totalPaid = paymentData?.totalPaid || 0;
-                          const remainingBalance = paymentData?.remainingBalance !== undefined 
-                            ? paymentData.remainingBalance 
-                            : (inv.total - totalPaid);
-                          return totalPaid > 0 && remainingBalance > 0.01; // Has partial payment and still has balance
-                        }).length;
-                        
-                        // Payment Rate: % of invoices that are paid
-                        const paymentRate = totalInvoices > 0 ? (paidInvoices / totalInvoices) * 100 : 0;
-                        
-                        // Calculate on-time payment rate (paid before or on due date)
-                        const today = new Date();
-                        const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
-                        
-                        const onTimePaid = invoices.filter(inv => {
-                          if (inv.status !== 'paid') return false;
-                          const dueDate = parseDateOnly(inv.dueDate);
-                          const dueDateStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
-                          // Check if paid on or before due date
-                          const paidDate = inv.updatedAt ? new Date(inv.updatedAt) : null;
-                          if (!paidDate) return false;
-                          const paidDateStart = new Date(Date.UTC(paidDate.getFullYear(), paidDate.getMonth(), paidDate.getDate()));
-                          return paidDateStart <= dueDateStart;
-                        }).length;
-                        const onTimeRate = paidInvoices > 0 ? (onTimePaid / paidInvoices) * 100 : 0;
-                        
-                        // Average Invoice Value (normalized score)
-                        const totalValue = invoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
-                        const avgValue = totalInvoices > 0 ? totalValue / totalInvoices : 0;
-                        // Normalize: $0-$5000 = 0-50, $5000-$15000 = 50-100
-                        const avgValueScore = avgValue <= 5000 
-                          ? (avgValue / 5000) * 50 
-                          : 50 + Math.min(((avgValue - 5000) / 10000) * 50, 50);
-                        
-                        // Collection Rate: % of total invoiced amount that has been collected
-                        const totalInvoiced = invoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
-                        const collectedRevenue = invoices.reduce((sum, inv) => {
-                          if (inv.status === 'paid') return sum + (inv.total || 0);
-                          const paymentData = paymentDataMap[inv.id];
-                          return sum + (paymentData?.totalPaid || 0);
-                        }, 0);
-                        const collectionRate = totalInvoiced > 0 ? (collectedRevenue / totalInvoiced) * 100 : 0;
-                        
-                        // Invoice Health: Based on overdue vs total (lower overdue = higher health)
-                        const overdueInvoices = invoices.filter(inv => {
-                          if (inv.status === 'paid') return false;
-                          const dueDate = parseDateOnly(inv.dueDate);
-                          const dueDateStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
-                          return dueDateStart < todayStart;
-                        }).length;
-                        const invoiceHealth = totalInvoices > 0 
-                          ? Math.max(0, 100 - (overdueInvoices / totalInvoices) * 100)
-                          : 100;
-                        
-                        // Revenue Efficiency: Based on paid invoices vs total (higher = better)
-                        const revenueEfficiency = totalInvoices > 0 
-                          ? (paidInvoices / totalInvoices) * 100 
-                          : 0;
-                        
-                        // Calculate average payment time (days from invoice date to payment)
-                        const paidInvoicesWithDates = invoices.filter(inv => {
-                          if (inv.status !== 'paid' || !inv.updatedAt) return false;
-                          return true;
-                        });
-                        const avgPaymentDays = paidInvoicesWithDates.length > 0
-                          ? Math.round(paidInvoicesWithDates.reduce((sum, inv) => {
-                              if (!inv.updatedAt) return sum;
-                              const invoiceDate = parseDateOnly(inv.createdAt);
-                              const paidDate = new Date(inv.updatedAt);
-                              const invoiceDateStart = new Date(Date.UTC(invoiceDate.getFullYear(), invoiceDate.getMonth(), invoiceDate.getDate()));
-                              const paidDateStart = new Date(Date.UTC(paidDate.getFullYear(), paidDate.getMonth(), paidDate.getDate()));
-                              const diffTime = paidDateStart.getTime() - invoiceDateStart.getTime();
-                              const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-                              return sum + diffDays;
-                            }, 0) / paidInvoicesWithDates.length)
-                          : 0;
-                        
-                        // Calculate total revenue
-                        const totalRevenue = invoices.reduce((sum, inv) => {
-                          if (inv.status === 'paid') return sum + (inv.total || 0);
-                          const paymentData = paymentDataMap[inv.id];
-                          return sum + (paymentData?.totalPaid || 0);
-                        }, 0);
-                        
-                        // Calculate outstanding amount
-                        const outstandingAmount = invoices.reduce((sum, inv) => {
-                          if (inv.status === 'paid') return sum;
-                          const paymentData = paymentDataMap[inv.id];
-                          const remaining = paymentData?.remainingBalance !== undefined 
-                            ? paymentData.remainingBalance 
-                            : (inv.total || 0);
-                          return sum + remaining;
-                        }, 0);
-                        
-                        // Top performing clients (by total paid)
-                        const clientPerformance: { [key: string]: { name: string; paid: number; count: number } } = {};
-                        invoices.forEach(inv => {
-                          if (inv.status !== 'paid') return;
-                          const clientName = inv.client?.name || 'Unknown Client';
-                          if (!clientPerformance[clientName]) {
-                            clientPerformance[clientName] = { name: clientName, paid: 0, count: 0 };
-                          }
-                          clientPerformance[clientName].paid += inv.total || 0;
-                          clientPerformance[clientName].count += 1;
-                        });
-                        const topClients = Object.values(clientPerformance)
-                          .sort((a, b) => b.paid - a.paid)
-                          .slice(0, 2);
-                        
-                        // Risk indicator (overdue percentage)
-                        const riskLevel = totalInvoices > 0 ? (overdueInvoices / totalInvoices) * 100 : 0;
-                        const riskStatus = riskLevel < 10 ? 'Low' : riskLevel < 25 ? 'Medium' : 'High';
-                        const riskColor = riskLevel < 10 ? 'text-green-600' : riskLevel < 25 ? 'text-amber-600' : 'text-red-600';
-                        
-                        const radarData = [
-                          { metric: 'Payment Rate', value: Math.max(0, Math.round(paymentRate)), fullMark: 100 },
-                          { metric: 'On-Time Payment', value: Math.max(0, Math.round(onTimeRate)), fullMark: 100 },
-                          { metric: 'Avg Value', value: Math.max(0, Math.round(avgValueScore)), fullMark: 100 },
-                          { metric: 'Collection Rate', value: Math.max(0, Math.round(collectionRate)), fullMark: 100 },
-                          { metric: 'Invoice Health', value: Math.max(0, Math.round(invoiceHealth)), fullMark: 100 },
-                          { metric: 'Revenue Efficiency', value: Math.max(0, Math.round(revenueEfficiency)), fullMark: 100 },
-                        ];
+                        const {
+                          radarData,
+                          totalRevenue,
+                          outstandingAmount,
+                          avgPaymentDays,
+                          riskStatus,
+                          riskColor,
+                          topClients,
+                          paidInvoices,
+                          pendingInvoices,
+                          overdueInvoices,
+                        } = invoicePerformanceMetrics;
                         
                         const chartConfig = {
                           'Payment Rate': {
@@ -3510,14 +3271,18 @@ export default function DashboardOverview() {
                         };
                         
                         return (
-                          <div className="flex-1 w-full flex flex-col">
-                            <div className="flex-1 w-full flex items-center justify-center" style={{ minHeight: '240px' }}>
+                          <div className="flex-1 w-full flex flex-col min-h-0">
+                            {/* Chart Container - Fixed height to prevent layout shifts */}
+                            <div className="flex-shrink-0 w-full" style={{ height: '240px', position: 'relative' }}>
                               <ChartContainer 
                                 config={chartConfig} 
-                                className="w-full h-[240px] aspect-none radar-chart-tooltip-enabled"
+                                className="w-full h-full aspect-none radar-chart-tooltip-enabled"
                                 id="invoice-performance-radar"
+                                style={{
+                                  contain: 'layout style paint', // Isolate chart rendering
+                                }}
                               >
-                                <RadarChart data={radarData}>
+                                <RadarChart data={radarData} width={undefined} height={240}>
                                   <PolarGrid stroke="#e5e7eb" />
                                   <PolarAngleAxis 
                                     dataKey="metric" 
@@ -3539,12 +3304,13 @@ export default function DashboardOverview() {
                                     fillOpacity={0.4}
                                     strokeWidth={2}
                                     dot={{ fill: '#6366f1', r: 3 }}
+                                    isAnimationActive={!sidebarTransitioningRef.current} // Disable animation during sidebar transition
                                   />
                                   <ChartTooltip
                                     animationDuration={0}
                                     allowEscapeViewBox={{ x: true, y: true }}
                                     cursor={{ stroke: '#6366f1', strokeWidth: 1 }}
-                                    content={({ active, payload, coordinate }) => {
+                                    content={({ active, payload }) => {
                                       if (active && payload && payload.length) {
                                         const data = payload[0];
                                         return (
@@ -3574,8 +3340,8 @@ export default function DashboardOverview() {
                               </ChartContainer>
                             </div>
                             
-                            {/* Key Insights */}
-                            <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
+                            {/* Key Insights - Fixed at bottom */}
+                            <div className="mt-4 pt-4 border-t border-gray-200 space-y-3 flex-shrink-0">
                               <div className="grid grid-cols-2 gap-3">
                                 <div>
                                   <div className="text-xs text-gray-500 mb-1">Total Revenue</div>
@@ -3651,267 +3417,7 @@ export default function DashboardOverview() {
                     <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
                       <h3 className="text-sm font-semibold text-gray-900 mb-4">Conversion Rate</h3>
                       
-                      {(() => {
-                        const now = new Date();
-                        
-                        const totalSent = invoices.filter(inv => inv.status === 'sent' || inv.status === 'paid').length;
-                        const totalPaid = invoices.filter(inv => inv.status === 'paid').length;
-                        const conversionRate = totalSent > 0 ? (totalPaid / totalSent) * 100 : 0;
-                        
-                        // Calculate revenue metrics
-                        const totalRevenue = invoices.reduce((sum, inv) => {
-                          if (inv.status === 'paid') return sum + (inv.total || 0);
-                          const paymentData = paymentDataMap[inv.id];
-                          return sum + (paymentData?.totalPaid || 0);
-                        }, 0);
-                        
-                        // Generate monthly data for last 6 months with multiple metrics
-                        const monthlyData = [];
-                        const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-                        
-                        for (let i = 5; i >= 0; i--) {
-                          const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                          const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
-                          
-                          const sentInMonth = invoices.filter(inv => {
-                            if ((inv.status !== 'sent' && inv.status !== 'paid') || !inv.createdAt) return false;
-                            const sentDate = new Date(inv.createdAt);
-                            return sentDate >= monthStart && sentDate <= monthEnd;
-                          }).length;
-                          
-                          const paidInMonth = invoices.filter(inv => {
-                            if (inv.status !== 'paid' || !inv.updatedAt) return false;
-                            const paidDate = new Date(inv.updatedAt);
-                            return paidDate >= monthStart && paidDate <= monthEnd;
-                          }).length;
-                          
-                          const revenueInMonth = invoices.reduce((sum, inv) => {
-                            // Count fully paid invoices in this month
-                            if (inv.status === 'paid' && inv.updatedAt) {
-                              const paidDate = new Date(inv.updatedAt);
-                              if (paidDate >= monthStart && paidDate <= monthEnd) {
-                                return sum + (inv.total || 0);
-                              }
-                            }
-                            // Note: Partial payments are tracked in totalPaid but we don't have 
-                            // individual payment dates, so we only count fully paid invoices here
-                            return sum;
-                          }, 0);
-                          
-                          const conversionInMonth = sentInMonth > 0 ? (paidInMonth / sentInMonth) * 100 : 0;
-                          
-                          monthlyData.push({
-                            month: monthNames[monthStart.getMonth()],
-                            sent: sentInMonth,
-                            paid: paidInMonth,
-                            revenue: Math.round(revenueInMonth / 100), // Scale down for chart
-                            conversion: Math.round(conversionInMonth),
-                          });
-                        }
-                        
-                        // Calculate trends (last 30 days vs previous 30 days)
-                        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-                        const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
-                        
-                        const recentPaid = invoices.filter(inv => {
-                          if (inv.status !== 'paid' || !inv.updatedAt) return false;
-                          const paidDate = new Date(inv.updatedAt);
-                          return paidDate >= thirtyDaysAgo;
-                        }).length;
-                        
-                        const recentSent = invoices.filter(inv => {
-                          if ((inv.status !== 'sent' && inv.status !== 'paid') || !inv.createdAt) return false;
-                          const sentDate = new Date(inv.createdAt);
-                          return sentDate >= thirtyDaysAgo;
-                        }).length;
-                        
-                        const previousPaid = invoices.filter(inv => {
-                          if (inv.status !== 'paid' || !inv.updatedAt) return false;
-                          const paidDate = new Date(inv.updatedAt);
-                          return paidDate >= sixtyDaysAgo && paidDate < thirtyDaysAgo;
-                        }).length;
-                        
-                        const previousSent = invoices.filter(inv => {
-                          if ((inv.status !== 'sent' && inv.status !== 'paid') || !inv.createdAt) return false;
-                          const sentDate = new Date(inv.createdAt);
-                          return sentDate >= sixtyDaysAgo && sentDate < thirtyDaysAgo;
-                        }).length;
-                        
-                        const recentRate = recentSent > 0 ? (recentPaid / recentSent) * 100 : 0;
-                        const previousRate = previousSent > 0 ? (previousPaid / previousSent) * 100 : 0;
-                        const rateChange = recentRate - previousRate;
-                        
-                        const chartConfig = {
-                          sent: {
-                            label: 'Sent',
-                            color: '#6366f1', // Indigo
-                          },
-                          paid: {
-                            label: 'Paid',
-                            color: '#10b981', // Green
-                          },
-                          revenue: {
-                            label: 'Revenue',
-                            color: '#f59e0b', // Amber
-                          },
-                          conversion: {
-                            label: 'Conversion %',
-                            color: '#ef4444', // Red
-                          },
-                        };
-                        
-                        // Calculate percentage change safely
-                        const calculateChange = (current: number, previous: number) => {
-                          if (previous === 0) {
-                            if (current === 0) return { change: '0%', isPositive: true };
-                            return { change: 'New', isPositive: true };
-                          }
-                          const percentChange = ((current - previous) / previous) * 100;
-                          return {
-                            change: percentChange >= 0 ? `+${percentChange.toFixed(1)}%` : `${percentChange.toFixed(1)}%`,
-                            isPositive: percentChange >= 0
-                          };
-                        };
-                        
-                        const sentChange = calculateChange(recentSent, previousSent);
-                        const paidChange = calculateChange(recentPaid, previousPaid);
-                        const rateChangePercent = previousRate > 0 ? ((rateChange / previousRate) * 100) : (recentRate > 0 ? 100 : 0);
-                        
-                        return (
-                          <div className="flex flex-col gap-4 flex-1">
-                            <div className="flex items-center gap-3">
-                              <span className="text-2xl font-medium leading-none tracking-tight tabular-nums">
-                                {conversionRate.toFixed(1)}%
-                              </span>
-                              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                                rateChangePercent >= 0 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-red-100 text-red-800'
-                              }`}>
-                                {rateChangePercent >= 0 ? '+' : ''}{rateChangePercent.toFixed(1)}%
-                              </span>
-                            </div>
-                            
-                            <div className="flex flex-col gap-2">
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium text-gray-600">Sent</p>
-                                <div className="flex items-center gap-4">
-                                  <span className="text-sm font-medium">{totalSent}</span>
-                                  {sentChange.change !== 'New' && sentChange.change !== '0%' && (
-                                    <div className="flex items-center gap-1">
-                                      {sentChange.isPositive ? (
-                                        <ArrowUp className="w-3.5 h-3.5 text-green-600" />
-                                      ) : (
-                                        <ArrowDown className="w-3.5 h-3.5 text-red-600" />
-                                      )}
-                                      <span className={`text-xs font-medium ${
-                                        sentChange.isPositive ? 'text-green-600' : 'text-red-600'
-                                      }`}>
-                                        {sentChange.change}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium text-gray-600">Paid</p>
-                                <div className="flex items-center gap-4">
-                                  <span className="text-sm font-medium">{totalPaid}</span>
-                                  {paidChange.change !== 'New' && paidChange.change !== '0%' && (
-                                    <div className="flex items-center gap-1">
-                                      {paidChange.isPositive ? (
-                                        <ArrowUp className="w-3.5 h-3.5 text-green-600" />
-                                      ) : (
-                                        <ArrowDown className="w-3.5 h-3.5 text-red-600" />
-                                      )}
-                                      <span className={`text-xs font-medium ${
-                                        paidChange.isPositive ? 'text-green-600' : 'text-red-600'
-                                      }`}>
-                                        {paidChange.change}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium text-gray-600">Revenue</p>
-                                <span className="text-sm font-medium">${(totalRevenue / 1000).toFixed(1)}k</span>
-                              </div>
-                            </div>
-                            
-                            <div className="w-full mt-2">
-                              <div
-                                className="h-[112px] overflow-hidden ring-1 ring-gray-200 ring-inset"
-                                style={{
-                                  borderRadius: 0,
-                                  background: 'transparent'
-                                }}
-                              >
-                                <ChartContainer
-                                  id="conversion-rate-chart"
-                                  config={chartConfig}
-                                  className="h-full w-full"
-                                >
-                                  <AreaChart
-                                    accessibilityLayer
-                                    data={monthlyData}
-                                    margin={{ right: 4, left: 4, top: 4, bottom: 4 }}
-                                  >
-                                    <XAxis dataKey="month" hide />
-                                    <YAxis hide />
-                                    <ChartTooltip
-                                      animationDuration={0}
-                                      cursor={false}
-                                      content={ConversionRateTooltip}
-                                    />
-                                    {(() => {
-                                      // Check if there's actual data (non-zero values) for each series
-                                      const hasSentData = monthlyData.some(d => d.sent > 0);
-                                      const hasPaidData = monthlyData.some(d => d.paid > 0);
-                                      const hasConversionData = monthlyData.some(d => d.conversion > 0);
-                                      
-                                      return (
-                                        <>
-                                          {hasSentData && (
-                                            <Area
-                                              dataKey="sent"
-                                              type="linear"
-                                              fill={chartConfig.sent.color}
-                                              fillOpacity={0.3}
-                                              stroke={chartConfig.sent.color}
-                                              strokeWidth={2}
-                                            />
-                                          )}
-                                          {hasPaidData && (
-                                            <Area
-                                              dataKey="paid"
-                                              type="linear"
-                                              fill={chartConfig.paid.color}
-                                              fillOpacity={0.5}
-                                              stroke={chartConfig.paid.color}
-                                              strokeWidth={2}
-                                            />
-                                          )}
-                                          {hasConversionData && (
-                                            <Line
-                                              type="linear"
-                                              dataKey="conversion"
-                                              stroke={chartConfig.conversion.color}
-                                              strokeWidth={2}
-                                              dot={false}
-                                              strokeDasharray="4 4"
-                                            />
-                                          )}
-                                        </>
-                                      );
-                                    })()}
-                                  </AreaChart>
-                                </ChartContainer>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })()}
+                      <ConversionRateChart invoices={invoices} paymentDataMap={paymentDataMap} />
                     </div>
                   </div>
                   )}
@@ -3921,8 +3427,8 @@ export default function DashboardOverview() {
             </div>
           </div>
           
-          {/* Recent Invoices - Second on Mobile, Left Side on Desktop */}
-          <div className="space-y-3 sm:space-y-4 order-2 lg:order-1">
+          {/* Recent Invoices - First on Mobile, Left Side on Desktop */}
+          <div className="space-y-3 sm:space-y-4 order-1 lg:order-1">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
                 Recent Invoices
@@ -4373,18 +3879,16 @@ export default function DashboardOverview() {
     };
   }, [showNotifications]);
 
-  // Close Invoice Performance info tooltip when clicking outside (mobile only - desktop uses hover)
+  // Close Invoice Performance info tooltip when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-      // Only handle click outside on mobile (desktop uses hover)
-      if (window.innerWidth < 1024 && invoicePerformanceInfoRef.current && !invoicePerformanceInfoRef.current.contains(event.target as Node)) {
+      if (invoicePerformanceInfoRef.current && !invoicePerformanceInfoRef.current.contains(event.target as Node)) {
         setShowInvoicePerformanceInfo(false);
       }
     };
 
-    // Only add listeners on mobile
-    if (showInvoicePerformanceInfo && window.innerWidth < 1024) {
-      // Use a small delay to prevent immediate closing
+    if (showInvoicePerformanceInfo) {
+      // Small delay to prevent immediate closing when button is clicked
       const timeoutId = setTimeout(() => {
         document.addEventListener('mousedown', handleClickOutside);
         document.addEventListener('touchstart', handleClickOutside);
@@ -4465,9 +3969,36 @@ export default function DashboardOverview() {
       <div className="flex h-screen">
         <ModernSidebar 
           onCreateInvoice={handleCreateInvoice}
+          onTransitionStart={() => {
+            sidebarTransitioningRef.current = true;
+          }}
+          onTransitionEnd={() => {
+            sidebarTransitioningRef.current = false;
+          }}
         />
         
-        <main ref={mainContentRef} className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar">
+        <main 
+          className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar"
+          onTransitionStart={(e) => {
+            // Only log significant transitions, ignore micro-transitions on child elements
+            if (e.propertyName && ['width', 'transform', 'margin', 'padding'].includes(e.propertyName)) {
+              console.log('🎬 Dashboard Main: Transition started', {
+                property: e.propertyName,
+                timestamp: `${performance.now().toFixed(2)}ms`
+              });
+            }
+          }}
+          onTransitionEnd={(e) => {
+            // Only log significant transitions, ignore micro-transitions on child elements
+            if (e.propertyName && ['width', 'transform', 'margin', 'padding'].includes(e.propertyName)) {
+              console.log('🏁 Dashboard Main: Transition ended', {
+                property: e.propertyName,
+                elapsedTime: e.elapsedTime,
+                timestamp: `${performance.now().toFixed(2)}ms`
+              });
+            }
+          }}
+        >
           <div className="pt-16 lg:pt-4 p-4 sm:p-5 lg:p-6 xl:p-8">
             {/* Dashboard Overview */}
             <div>
