@@ -6,7 +6,7 @@ import {
   FileText, Users, 
   Clock, CheckCircle, AlertCircle, AlertTriangle, UserPlus, FilePlus, Sparkles, Receipt, Timer,
   Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2, ArrowRight, ChevronDown, ChevronUp,
-  ArrowUp, ArrowDown, ClipboardCheck, Copy, Calendar, Ban, FileCheck, FileX, ArrowLeft, Info, ChevronLeft, ChevronRight
+  ArrowUp, ArrowDown, ClipboardCheck, Copy, Calendar, Ban, FileCheck, FileX, ArrowLeft, Info, ChevronLeft, ChevronRight, Plus
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -2396,7 +2396,8 @@ export default function DashboardOverview() {
     if (recentInvoices.length > 0) {
       return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:items-start">
-          {/* Invoice Insights - Second on Mobile, Right Side on Desktop - Horizontal Scrollable */}
+          {/* Invoice Insights - Second on Mobile, Right Side on Desktop - Horizontal Scrollable - Only show if tabs are available */}
+          {availableTabs.length > 0 && (
           <div className="space-y-3 sm:space-y-4 order-2 lg:order-2">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
@@ -2934,7 +2935,6 @@ export default function DashboardOverview() {
                     </div>
                   </div>
                   )}
-
                   {/* Slide 3: Conversion Rate - Only render if tab 2 is available */}
                   {availableTabs.includes(2) && (
                   <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ 
@@ -2951,11 +2951,11 @@ export default function DashboardOverview() {
                     </div>
                   </div>
                   )}
-
                 </div>
               </div>
             </div>
           </div>
+          )}
           
           {/* Recent Invoices - First on Mobile, Left Side on Desktop */}
           <div className="space-y-3 sm:space-y-4 order-1 lg:order-1">
