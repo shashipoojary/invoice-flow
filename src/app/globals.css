@@ -351,6 +351,12 @@ html:not(.loaded) .loading-spinner {
       -webkit-overflow-scrolling: auto; /* Disable momentum scrolling on desktop */
       overscroll-behavior-x: contain; /* Prevent scroll chaining */
     }
+    
+    /* Override for snap scrolling - needs smooth behavior for magnetic snap */
+    .scroll-optimized-desktop.snap-x {
+      scroll-behavior: smooth !important; /* Smooth for snap scrolling */
+      scroll-snap-type: x mandatory;
+    }
   }
 
   /* Smooth scrolling for mobile */
@@ -358,6 +364,12 @@ html:not(.loaded) .loading-spinner {
     .scroll-optimized-desktop {
       scroll-behavior: smooth;
       -webkit-overflow-scrolling: touch; /* Enable momentum scrolling on mobile */
+    }
+    
+    /* Ensure snap scrolling works smoothly on mobile */
+    .scroll-optimized-desktop.snap-x {
+      scroll-snap-type: x mandatory;
+      -webkit-scroll-snap-type: x mandatory; /* Safari support */
     }
   }
 

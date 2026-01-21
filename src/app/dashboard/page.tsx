@@ -7,7 +7,7 @@ import {
   FileText, Users, 
   Clock, CheckCircle, AlertCircle, AlertTriangle, UserPlus, FilePlus, Sparkles, Receipt, Timer,
   Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2, ArrowRight, ChevronDown, ChevronUp,
-  ArrowUp, ArrowDown, ClipboardCheck, Copy, Calendar, Ban, FileCheck, FileX, ArrowLeft, Info
+  ArrowUp, ArrowDown, ClipboardCheck, Copy, Calendar, Ban, FileCheck, FileX, ArrowLeft, Info, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -67,9 +67,53 @@ const EstimateModal = dynamic(() => import('@/components/EstimateModal'), {
 const ConversionRateTooltip = ({ active, payload, coordinate, viewBox }: any) => {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ left: 0, top: 0 });
+  const [shouldHide, setShouldHide] = useState(false);
   const mousePositionRef = useRef<{ x: number; y: number } | null>(null);
   const positionUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastPositionRef = useRef<{ left: number; top: number } | null>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Hide tooltip on scroll (desktop and mobile)
+  useEffect(() => {
+    const handleScroll = () => {
+      setShouldHide(true);
+      // Clear any existing timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+      // Reset shouldHide after scroll ends (debounce)
+      scrollTimeoutRef.current = setTimeout(() => {
+        setShouldHide(false);
+      }, 150);
+    };
+
+    const handleTouchStart = () => {
+      // On mobile, hide tooltip immediately on touch (scroll will follow)
+      setShouldHide(true);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+      scrollTimeoutRef.current = setTimeout(() => {
+        setShouldHide(false);
+      }, 300);
+    };
+
+    // Listen to scroll on window and all scrollable containers
+    window.addEventListener('scroll', handleScroll, true); // Use capture phase
+    window.addEventListener('touchstart', handleTouchStart, true);
+    
+    // Also listen to wheel events (for trackpad scrolling)
+    window.addEventListener('wheel', handleScroll, true);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('touchstart', handleTouchStart, true);
+      window.removeEventListener('wheel', handleScroll, true);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Track mouse position globally - Recharts will trigger tooltip when mouse is over chart
   useEffect(() => {
@@ -288,8 +332,8 @@ const ConversionRateTooltip = ({ active, payload, coordinate, viewBox }: any) =>
     };
   }, [active, coordinate]);
 
-  // Only hide when explicitly inactive
-  if (!active || !payload || !payload.length) {
+  // Hide tooltip if inactive, no payload, or scroll detected
+  if (!active || !payload || !payload.length || shouldHide) {
     return null;
   }
 
@@ -2266,19 +2310,23 @@ export default function DashboardOverview() {
     
     if (tabsCount === 0 || slideWidth === 0) return;
     
-    // Calculate active index using center-point detection
-    // This updates the dot when the next slide is at least 50% visible
-    // Formula: floor((scrollLeft + slideWidth / 2) / slideWidth)
-    const activeIndex = Math.floor((scrollLeft + slideWidth / 2) / slideWidth);
-    
-    // Clamp to valid range (0 to tabsCount - 1)
-    const clampedIndex = Math.max(0, Math.min(activeIndex, tabsCount - 1));
-    
-    // Only update if index actually changed to prevent skipped indices during momentum scrolling
-    if (clampedIndex !== previousScrollIndexRef.current) {
-      previousScrollIndexRef.current = clampedIndex;
-      setDueInvoicesScrollIndex(clampedIndex);
-    }
+    // Use requestAnimationFrame to debounce and ensure smooth updates
+    // This prevents interference with native snap scrolling
+    requestAnimationFrame(() => {
+      // Calculate active index using center-point detection
+      // This updates the dot when the next slide is at least 50% visible
+      // Formula: floor((scrollLeft + slideWidth / 2) / slideWidth)
+      const activeIndex = Math.floor((container.scrollLeft + slideWidth / 2) / slideWidth);
+      
+      // Clamp to valid range (0 to tabsCount - 1)
+      const clampedIndex = Math.max(0, Math.min(activeIndex, tabsCount - 1));
+      
+      // Only update if index actually changed to prevent skipped indices during momentum scrolling
+      if (clampedIndex !== previousScrollIndexRef.current) {
+        previousScrollIndexRef.current = clampedIndex;
+        setDueInvoicesScrollIndex(clampedIndex);
+      }
+    });
   }, [availableTabs]);
 
   // Function to scroll to specific slide - each slide is full-width
@@ -2624,7 +2672,7 @@ export default function DashboardOverview() {
             
             {/* Horizontal Scrollable Container with Snap */}
             <div className="relative">
-              {/* Scroll Indicator Dots - Only show for available tabs */}
+              {/* Scroll Indicator Dots with Navigation Arrows - Only show for available tabs */}
               {availableTabs.length > 1 && (
                 <div 
                   ref={dotsContainerRef}
@@ -2634,6 +2682,21 @@ export default function DashboardOverview() {
                     WebkitOverflowScrolling: 'touch'
                   }}
                 >
+                  {/* Left Arrow Button - Desktop Only */}
+                  <button
+                    onClick={() => {
+                      const prevIndex = Math.max(0, dueInvoicesScrollIndex - 1);
+                      scrollToDueInvoicesSlideUpdated(prevIndex);
+                    }}
+                    disabled={dueInvoicesScrollIndex === 0}
+                    className="hidden lg:flex items-center justify-center w-6 h-6 p-0 flex-shrink-0 border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    style={{ borderRadius: 0 }}
+                    aria-label="Previous tab"
+                  >
+                    <ChevronLeft className="w-4 h-4 text-gray-600" />
+                  </button>
+                  
+                  {/* Dots */}
                   {availableTabs.map((actualTabIndex, scrollIndex) => {
                     const tabLabels = ['Go to invoices list', 'Go to analytics', 'Go to performance chart', 'Go to conversion rate'];
                     return (
@@ -2647,6 +2710,20 @@ export default function DashboardOverview() {
                       ></button>
                     );
                   })}
+                  
+                  {/* Right Arrow Button - Desktop Only */}
+                  <button
+                    onClick={() => {
+                      const nextIndex = Math.min(availableTabs.length - 1, dueInvoicesScrollIndex + 1);
+                      scrollToDueInvoicesSlideUpdated(nextIndex);
+                    }}
+                    disabled={dueInvoicesScrollIndex === availableTabs.length - 1}
+                    className="hidden lg:flex items-center justify-center w-6 h-6 p-0 flex-shrink-0 border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    style={{ borderRadius: 0 }}
+                    aria-label="Next tab"
+                  >
+                    <ChevronRight className="w-4 h-4 text-gray-600" />
+                  </button>
                 </div>
               )}
               
@@ -2660,19 +2737,31 @@ export default function DashboardOverview() {
                   overflowY: 'hidden',
                   scrollbarWidth: 'none', // Firefox
                   msOverflowStyle: 'none', // IE/Edge
-                  scrollBehavior: 'auto', // Instant for programmatic updates
-                  contain: 'layout style', // Isolate layout calculations
+                  scrollBehavior: 'smooth', // Smooth for snap scrolling
+                  scrollSnapType: 'x mandatory', // Enable snap scrolling - mandatory ensures it always snaps
+                  WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
+                  WebkitScrollSnapType: 'x mandatory', // Safari support
+                  scrollSnapStop: 'always', // Prevent skipping tabs
+                  contain: 'layout style paint', // Better performance isolation
+                  willChange: 'scroll-position', // Optimize for scrolling
                 }}
               >
                 <div 
                   className="flex h-full" 
                   style={{ 
-                    width: `${availableTabs.length * 100}%`
+                    width: `${availableTabs.length * 100}%`,
+                    scrollSnapType: 'x mandatory' // Ensure snap on flex container
                   }}
                 >
                   {/* Slide 1: Due Invoices List - Only render if tab 0 is available */}
                   {availableTabs.includes(0) && (
-                  <div className="flex-shrink-0 snap-start pr-2" style={{ width: `${100 / availableTabs.length}%`, minWidth: `${100 / availableTabs.length}%`, maxWidth: `${100 / availableTabs.length}%` }}>
+                  <div className="flex-shrink-0 snap-start pr-2" style={{ 
+                    width: `${100 / availableTabs.length}%`, 
+                    minWidth: `${100 / availableTabs.length}%`, 
+                    maxWidth: `${100 / availableTabs.length}%`,
+                    scrollSnapAlign: 'start',
+                    scrollSnapStop: 'always'
+                  }}>
                     {dueInvoices.overdue.length === 0 && dueInvoices.dueToday.length === 0 && dueInvoices.upcoming.length === 0 ? (
                       <div className="bg-white border border-gray-200 p-8 text-center">
                         <Calendar className="h-8 w-8 mx-auto mb-2" style={{color: '#9ca3af'}} />
@@ -2853,7 +2942,13 @@ export default function DashboardOverview() {
 
                   {/* Slide 2: Due Invoices Analytics Graph - Only render if tab 1 is available */}
                   {availableTabs.includes(1) && (
-                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: `${100 / availableTabs.length}%`, minWidth: `${100 / availableTabs.length}%`, maxWidth: `${100 / availableTabs.length}%` }}>
+                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ 
+                    width: `${100 / availableTabs.length}%`, 
+                    minWidth: `${100 / availableTabs.length}%`, 
+                    maxWidth: `${100 / availableTabs.length}%`,
+                    scrollSnapAlign: 'start',
+                    scrollSnapStop: 'always'
+                  }}>
                     <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
                       <h3 className="text-sm font-semibold text-gray-900 mb-4">Invoice Analytics</h3>
                       
@@ -3102,27 +3197,86 @@ export default function DashboardOverview() {
 
                   {/* Slide 3: Performance Radar Chart - Only render if tab 2 is available */}
                   {availableTabs.includes(2) && (
-                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: `${100 / availableTabs.length}%`, minWidth: `${100 / availableTabs.length}%`, maxWidth: `${100 / availableTabs.length}%` }}>
+                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ 
+                    width: `${100 / availableTabs.length}%`, 
+                    minWidth: `${100 / availableTabs.length}%`, 
+                    maxWidth: `${100 / availableTabs.length}%`,
+                    scrollSnapAlign: 'start',
+                    scrollSnapStop: 'always'
+                  }}>
                     <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-sm font-semibold text-gray-900">Invoice Performance</h3>
-                        <div className="relative group" ref={invoicePerformanceInfoRef}>
+                        <div 
+                          className="relative group" 
+                          ref={invoicePerformanceInfoRef}
+                        >
                           <button
                             type="button"
-                            className="p-1 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
+                            className="p-1 hover:bg-gray-100 active:bg-gray-200 transition-colors cursor-pointer relative"
+                            style={{ 
+                              borderRadius: 0,
+                              touchAction: 'manipulation',
+                              WebkitTapHighlightColor: 'rgba(0, 0, 0, 0.1)',
+                              outline: 'none'
+                            }}
                             aria-label="Learn more about Invoice Performance"
-                            onClick={() => setShowInvoicePerformanceInfo(!showInvoicePerformanceInfo)}
+                            onMouseEnter={() => {
+                              // Desktop: Show on hover
+                              if (window.innerWidth >= 1024) {
+                                setShowInvoicePerformanceInfo(true);
+                              }
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowInvoicePerformanceInfo(!showInvoicePerformanceInfo);
+                            }}
+                            onTouchStart={(e) => {
+                              // Mobile: Add visual feedback with proper highlight
+                              const button = e.currentTarget;
+                              button.style.backgroundColor = '#e5e7eb';
+                              button.style.transform = 'scale(0.95)';
+                            }}
+                            onTouchEnd={(e) => {
+                              // Reset after touch with smooth transition
+                              const button = e.currentTarget;
+                              setTimeout(() => {
+                                button.style.backgroundColor = '';
+                                button.style.transform = '';
+                              }, 150);
+                            }}
+                            onTouchCancel={(e) => {
+                              // Reset if touch is cancelled
+                              const button = e.currentTarget;
+                              button.style.backgroundColor = '';
+                              button.style.transform = '';
+                            }}
                           >
                             <Info className="h-4 w-4 text-gray-400 hover:text-gray-600" />
                           </button>
                           
                           {/* Tooltip-style Info Popup - Works on hover (desktop) and click (mobile) */}
-                          <div className={`absolute right-0 top-full mt-2 transition-opacity duration-200 z-[9999] bg-white border border-gray-300 shadow-xl w-80 max-h-96 overflow-y-auto ${
-                            showInvoicePerformanceInfo 
-                              ? 'opacity-100 visible pointer-events-auto' 
-                              : 'opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto'
-                          }`}
-                               style={{ borderRadius: '0' }}
+                          <div 
+                            className={`absolute right-0 top-full mt-1 transition-opacity duration-200 z-[9999] bg-white border border-gray-300 shadow-xl w-80 max-h-96 overflow-y-auto ${
+                              showInvoicePerformanceInfo 
+                                ? 'opacity-100 visible pointer-events-auto' 
+                                : 'opacity-0 invisible pointer-events-none'
+                            }`}
+                            style={{ borderRadius: '0' }}
+                            onMouseEnter={() => {
+                              // Keep open when hovering over tooltip (desktop)
+                              if (window.innerWidth >= 1024) {
+                                setShowInvoicePerformanceInfo(true);
+                              }
+                            }}
+                            onMouseLeave={() => {
+                              // Hide when leaving tooltip (desktop) with delay
+                              if (window.innerWidth >= 1024) {
+                                setTimeout(() => {
+                                  setShowInvoicePerformanceInfo(false);
+                                }, 100);
+                              }
+                            }}
                           >
                               <div className="p-4 space-y-4">
                                 {/* Metrics */}
@@ -3487,7 +3641,13 @@ export default function DashboardOverview() {
 
                   {/* Slide 4: Conversion Rate - Only render if tab 3 is available */}
                   {availableTabs.includes(3) && (
-                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: `${100 / availableTabs.length}%`, minWidth: `${100 / availableTabs.length}%`, maxWidth: `${100 / availableTabs.length}%` }}>
+                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ 
+                    width: `${100 / availableTabs.length}%`, 
+                    minWidth: `${100 / availableTabs.length}%`, 
+                    maxWidth: `${100 / availableTabs.length}%`,
+                    scrollSnapAlign: 'start',
+                    scrollSnapStop: 'always'
+                  }}>
                     <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
                       <h3 className="text-sm font-semibold text-gray-900 mb-4">Conversion Rate</h3>
                       
@@ -4213,23 +4373,29 @@ export default function DashboardOverview() {
     };
   }, [showNotifications]);
 
-  // Close Invoice Performance info tooltip when clicking outside (for mobile)
+  // Close Invoice Performance info tooltip when clicking outside (mobile only - desktop uses hover)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-      if (invoicePerformanceInfoRef.current && !invoicePerformanceInfoRef.current.contains(event.target as Node)) {
+      // Only handle click outside on mobile (desktop uses hover)
+      if (window.innerWidth < 1024 && invoicePerformanceInfoRef.current && !invoicePerformanceInfoRef.current.contains(event.target as Node)) {
         setShowInvoicePerformanceInfo(false);
       }
     };
 
-    if (showInvoicePerformanceInfo) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside);
-    }
+    // Only add listeners on mobile
+    if (showInvoicePerformanceInfo && window.innerWidth < 1024) {
+      // Use a small delay to prevent immediate closing
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside);
+      }, 100);
 
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-    };
+      return () => {
+        clearTimeout(timeoutId);
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('touchstart', handleClickOutside);
+      };
+    }
   }, [showInvoicePerformanceInfo]);
 
   // Navigation functions for dashboard cards
