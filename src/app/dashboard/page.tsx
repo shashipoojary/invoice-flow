@@ -20,8 +20,8 @@ import { Client, Invoice } from '@/types';
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
-import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
+import { ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { DonutChart, DonutChartSegment } from '@/components/ui/donut-chart';
 
 // Lazy load heavy modal components for better performance
@@ -304,10 +304,6 @@ export default function DashboardOverview() {
     invoice: null,
     isLoading: false
   });
-  
-  // Invoice Performance info tooltip state (for mobile click support)
-  const [showInvoicePerformanceInfo, setShowInvoicePerformanceInfo] = useState(false);
-  const invoicePerformanceInfoRef = useRef<HTMLDivElement>(null);
   
   // Business settings are now managed by SettingsContext
 
@@ -2088,12 +2084,9 @@ export default function DashboardOverview() {
     // Tab 1: Analytics - show if there are any due invoices (same data as tab 0)
     if (hasDueInvoices) tabs.push(1);
     
-    // Tab 2: Performance Chart - show if there are any invoices
-    if (invoices.length > 0) tabs.push(2);
-    
-    // Tab 3: Conversion Rate - show if there are any sent/paid invoices
+    // Tab 2: Conversion Rate - show if there are any sent/paid invoices
     const totalSent = invoices.filter(inv => inv.status === 'sent' || inv.status === 'paid').length;
-    if (totalSent > 0) tabs.push(3);
+    if (totalSent > 0) tabs.push(2);
     
     return tabs;
   }, [dueInvoices, invoices]);
@@ -2265,172 +2258,7 @@ export default function DashboardOverview() {
   }, [availableTabs]);
 
 
-  // Memoize Invoice Performance metrics to prevent recalculation during sidebar transitions
-  const invoicePerformanceMetrics = useMemo(() => {
-    if (!Array.isArray(invoices) || invoices.length === 0) {
-      return {
-        radarData: [],
-        totalRevenue: 0,
-        outstandingAmount: 0,
-        avgPaymentDays: 0,
-        riskStatus: 'Low',
-        riskColor: 'text-green-600',
-        topClients: [],
-        paidInvoices: 0,
-        pendingInvoices: 0,
-        overdueInvoices: 0,
-        partialPaidCount: 0,
-        collectionRate: 0,
-      };
-    }
-
-    const totalInvoices = invoices.length;
-    const paidInvoices = invoices.filter(inv => inv.status === 'paid').length;
-    const pendingInvoices = invoices.filter(inv => inv.status === 'pending' || inv.status === 'sent').length;
-    
-    // Calculate partial paid invoices
-    const partialPaidInvoices = invoices.filter(inv => {
-      if (inv.status === 'paid') return false;
-      const paymentData = paymentDataMap[inv.id];
-      const totalPaid = paymentData?.totalPaid || 0;
-      const remainingBalance = paymentData?.remainingBalance !== undefined 
-        ? paymentData.remainingBalance 
-        : (inv.total - totalPaid);
-      return totalPaid > 0 && remainingBalance > 0.01;
-    });
-    const partialPaidCount = partialPaidInvoices.length;
-    
-    // Payment Rate
-    const paymentRate = totalInvoices > 0 ? (paidInvoices / totalInvoices) * 100 : 0;
-    
-    // Calculate on-time payment rate
-    const today = new Date();
-    const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
-    
-    const onTimePaid = invoices.filter(inv => {
-      if (inv.status !== 'paid') return false;
-      const dueDate = parseDateOnly(inv.dueDate);
-      const dueDateStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
-      const paidDate = inv.updatedAt ? new Date(inv.updatedAt) : null;
-      if (!paidDate) return false;
-      const paidDateStart = new Date(Date.UTC(paidDate.getFullYear(), paidDate.getMonth(), paidDate.getDate()));
-      return paidDateStart <= dueDateStart;
-    }).length;
-    const onTimeRate = paidInvoices > 0 ? (onTimePaid / paidInvoices) * 100 : 0;
-    
-    // Average Invoice Value (normalized score)
-    const totalValue = invoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
-    const avgValue = totalInvoices > 0 ? totalValue / totalInvoices : 0;
-    const avgValueScore = avgValue <= 5000 
-      ? (avgValue / 5000) * 50 
-      : 50 + Math.min(((avgValue - 5000) / 10000) * 50, 50);
-    
-    // Collection Rate
-    const totalInvoiced = invoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
-    const collectedRevenue = invoices.reduce((sum, inv) => {
-      if (inv.status === 'paid') return sum + (inv.total || 0);
-      const paymentData = paymentDataMap[inv.id];
-      return sum + (paymentData?.totalPaid || 0);
-    }, 0);
-    const collectionRate = totalInvoiced > 0 ? (collectedRevenue / totalInvoiced) * 100 : 0;
-    
-    // Invoice Health
-    const overdueInvoices = invoices.filter(inv => {
-      if (inv.status === 'paid') return false;
-      const dueDate = parseDateOnly(inv.dueDate);
-      const dueDateStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
-      return dueDateStart < todayStart;
-    }).length;
-    const invoiceHealth = totalInvoices > 0 
-      ? Math.max(0, 100 - (overdueInvoices / totalInvoices) * 100)
-      : 100;
-    
-    // Revenue Efficiency
-    const revenueEfficiency = totalInvoices > 0 
-      ? (paidInvoices / totalInvoices) * 100 
-      : 0;
-    
-    // Average payment time
-    const paidInvoicesWithDates = invoices.filter(inv => {
-      if (inv.status !== 'paid' || !inv.updatedAt) return false;
-      return true;
-    });
-    const avgPaymentDays = paidInvoicesWithDates.length > 0
-      ? Math.round(paidInvoicesWithDates.reduce((sum, inv) => {
-          if (!inv.updatedAt) return sum;
-          const invoiceDate = parseDateOnly(inv.createdAt);
-          const paidDate = new Date(inv.updatedAt);
-          const invoiceDateStart = new Date(Date.UTC(invoiceDate.getFullYear(), invoiceDate.getMonth(), invoiceDate.getDate()));
-          const paidDateStart = new Date(Date.UTC(paidDate.getFullYear(), paidDate.getMonth(), paidDate.getDate()));
-          const diffTime = paidDateStart.getTime() - invoiceDateStart.getTime();
-          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-          return sum + diffDays;
-        }, 0) / paidInvoicesWithDates.length)
-      : 0;
-    
-    // Total revenue
-    const totalRevenue = invoices.reduce((sum, inv) => {
-      if (inv.status === 'paid') return sum + (inv.total || 0);
-      const paymentData = paymentDataMap[inv.id];
-      return sum + (paymentData?.totalPaid || 0);
-    }, 0);
-    
-    // Outstanding amount
-    const outstandingAmount = invoices.reduce((sum, inv) => {
-      if (inv.status === 'paid') return sum;
-      const paymentData = paymentDataMap[inv.id];
-      const remaining = paymentData?.remainingBalance !== undefined 
-        ? paymentData.remainingBalance 
-        : (inv.total || 0);
-      return sum + remaining;
-    }, 0);
-    
-    // Top performing clients
-    const clientPerformance: { [key: string]: { name: string; paid: number; count: number } } = {};
-    invoices.forEach(inv => {
-      if (inv.status !== 'paid') return;
-      const clientName = inv.client?.name || 'Unknown Client';
-      if (!clientPerformance[clientName]) {
-        clientPerformance[clientName] = { name: clientName, paid: 0, count: 0 };
-      }
-      clientPerformance[clientName].paid += inv.total || 0;
-      clientPerformance[clientName].count += 1;
-    });
-    const topClients = Object.values(clientPerformance)
-      .sort((a, b) => b.paid - a.paid)
-      .slice(0, 2);
-    
-    // Risk indicator
-    const riskLevel = totalInvoices > 0 ? (overdueInvoices / totalInvoices) * 100 : 0;
-    const riskStatus = riskLevel < 10 ? 'Low' : riskLevel < 25 ? 'Medium' : 'High';
-    const riskColor = riskLevel < 10 ? 'text-green-600' : riskLevel < 25 ? 'text-amber-600' : 'text-red-600';
-    
-    const radarData = [
-      { metric: 'Payment Rate', value: Math.max(0, Math.round(paymentRate)), fullMark: 100 },
-      { metric: 'On-Time Payment', value: Math.max(0, Math.round(onTimeRate)), fullMark: 100 },
-      { metric: 'Avg Value', value: Math.max(0, Math.round(avgValueScore)), fullMark: 100 },
-      { metric: 'Collection Rate', value: Math.max(0, Math.round(collectionRate)), fullMark: 100 },
-      { metric: 'Invoice Health', value: Math.max(0, Math.round(invoiceHealth)), fullMark: 100 },
-      { metric: 'Revenue Efficiency', value: Math.max(0, Math.round(revenueEfficiency)), fullMark: 100 },
-    ];
-    
-    return {
-      radarData,
-      totalRevenue,
-      outstandingAmount,
-      avgPaymentDays,
-      riskStatus,
-      riskColor,
-      topClients,
-      paidInvoices,
-      pendingInvoices,
-      overdueInvoices,
-      partialPaidCount,
-      collectionRate,
-    };
-  }, [invoices, paymentDataMap, parseDateOnly]);
-
-  // Calculate invoice trends for the third slide
+  // Calculate invoice trends for the conversion rate slide
   const invoiceTrends = useMemo(() => {
     if (!Array.isArray(invoices) || invoices.length === 0) {
       return {
@@ -2611,7 +2439,7 @@ export default function DashboardOverview() {
                   
                   {/* Dots */}
                   {availableTabs.map((actualTabIndex, scrollIndex) => {
-                    const tabLabels = ['Go to invoices list', 'Go to analytics', 'Go to performance chart', 'Go to conversion rate'];
+                    const tabLabels = ['Go to invoices list', 'Go to analytics', 'Go to conversion rate'];
                     return (
                       <button
                         key={actualTabIndex}
@@ -3107,306 +2935,8 @@ export default function DashboardOverview() {
                   </div>
                   )}
 
-                  {/* Slide 3: Performance Radar Chart - Only render if tab 2 is available */}
+                  {/* Slide 3: Conversion Rate - Only render if tab 2 is available */}
                   {availableTabs.includes(2) && (
-                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ 
-                    width: `${100 / availableTabs.length}%`, 
-                    minWidth: `${100 / availableTabs.length}%`, 
-                    maxWidth: `${100 / availableTabs.length}%`,
-                    scrollSnapAlign: 'start',
-                    scrollSnapStop: 'always',
-                    contain: 'layout style', // Isolate layout to prevent affecting sidebar
-                  }}>
-                    <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col h-full">
-                      <div className="flex items-center justify-between mb-4 flex-shrink-0">
-                        <h3 className="text-sm font-semibold text-gray-900">Invoice Performance</h3>
-                        <div 
-                          className="relative group" 
-                          ref={invoicePerformanceInfoRef}
-                        >
-                          <button
-                            type="button"
-                            className="p-1 hover:bg-gray-100 active:bg-gray-200 transition-colors cursor-pointer relative z-10"
-                            style={{ 
-                              borderRadius: 0,
-                              outline: 'none'
-                            }}
-                            aria-label="Learn more about Invoice Performance"
-                            onMouseEnter={() => {
-                              setShowInvoicePerformanceInfo(true);
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowInvoicePerformanceInfo(!showInvoicePerformanceInfo);
-                            }}
-                          >
-                            <Info className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-                          </button>
-                          
-                          {/* Tooltip-style Info Popup - Works on hover (desktop) and click (mobile) */}
-                          <div 
-                            className={`absolute right-0 top-full mt-1 transition-opacity duration-200 z-[9999] bg-white border border-gray-300 shadow-xl w-80 max-h-96 overflow-y-auto ${
-                              showInvoicePerformanceInfo 
-                                ? 'opacity-100 visible pointer-events-auto' 
-                                : 'opacity-0 invisible pointer-events-none'
-                            }`}
-                            style={{ borderRadius: '0' }}
-                            onMouseEnter={() => {
-                              setShowInvoicePerformanceInfo(true);
-                            }}
-                            onMouseLeave={() => {
-                              setShowInvoicePerformanceInfo(false);
-                            }}
-                          >
-                              <div className="p-4 space-y-4">
-                                {/* Metrics */}
-                                <div>
-                                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Metrics</h4>
-                                  <div className="space-y-2.5">
-                                    <div>
-                                      <p className="text-sm font-medium text-gray-900">Payment Rate</p>
-                                      <p className="text-xs text-gray-600 mt-0.5">% of invoices fully paid</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-sm font-medium text-gray-900">On-Time Payment</p>
-                                      <p className="text-xs text-gray-600 mt-0.5">% paid on or before due date</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-sm font-medium text-gray-900">Average Value</p>
-                                      <p className="text-xs text-gray-600 mt-0.5">Normalized score of invoice sizes</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-sm font-medium text-gray-900">Collection Rate</p>
-                                      <p className="text-xs text-gray-600 mt-0.5">% of total invoiced amount collected</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-sm font-medium text-gray-900">Invoice Health</p>
-                                      <p className="text-xs text-gray-600 mt-0.5">Score based on overdue invoices</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-sm font-medium text-gray-900">Revenue Efficiency</p>
-                                      <p className="text-xs text-gray-600 mt-0.5">% of invoices converted to revenue</p>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Insights */}
-                                <div className="pt-4 border-t border-gray-200">
-                                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Insights</h4>
-                                  <div className="space-y-2">
-                                    <div>
-                                      <span className="text-sm font-medium text-gray-900">Total Revenue: </span>
-                                      <span className="text-sm text-gray-600">All collected payments</span>
-                                    </div>
-                                    <div>
-                                      <span className="text-sm font-medium text-gray-900">Outstanding: </span>
-                                      <span className="text-sm text-gray-600">Amount still owed</span>
-                                    </div>
-                                    <div>
-                                      <span className="text-sm font-medium text-gray-900">Avg Payment Time: </span>
-                                      <span className="text-sm text-gray-600">Days from invoice to payment</span>
-                                    </div>
-                                    <div>
-                                      <span className="text-sm font-medium text-gray-900">Risk Level: </span>
-                                      <span className="text-sm text-gray-600">Low (&lt;10%), Medium (10-25%), High (&gt;25%)</span>
-                                    </div>
-                                    <div>
-                                      <span className="text-sm font-medium text-gray-900">Top Clients: </span>
-                                      <span className="text-sm text-gray-600">Best clients by total paid</span>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Usage */}
-                                <div className="pt-4 border-t border-gray-200">
-                                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Usage</h4>
-                                  <p className="text-sm text-gray-600 leading-relaxed">
-                                    Larger radar shape = better performance. Use to identify areas needing improvement.
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                        </div>
-                      </div>
-                      
-                      {(() => {
-                        const {
-                          radarData,
-                          totalRevenue,
-                          outstandingAmount,
-                          avgPaymentDays,
-                          riskStatus,
-                          riskColor,
-                          topClients,
-                          paidInvoices,
-                          pendingInvoices,
-                          overdueInvoices,
-                        } = invoicePerformanceMetrics;
-                        
-                        const chartConfig = {
-                          'Payment Rate': {
-                            label: 'Payment Rate',
-                            color: '#6366f1',
-                          },
-                          'On-Time Payment': {
-                            label: 'On-Time Payment',
-                            color: '#10b981',
-                          },
-                          'Avg Value': {
-                            label: 'Average Value',
-                            color: '#f59e0b',
-                          },
-                          'Collection Rate': {
-                            label: 'Collection Rate',
-                            color: '#ef4444',
-                          },
-                          'Invoice Health': {
-                            label: 'Invoice Health',
-                            color: '#8b5cf6',
-                          },
-                          'Revenue Efficiency': {
-                            label: 'Revenue Efficiency',
-                            color: '#06b6d4',
-                          },
-                        };
-                        
-                        return (
-                          <div className="flex-1 w-full flex flex-col min-h-0">
-                            {/* Chart Container - Fixed height to prevent layout shifts */}
-                            <div className="flex-shrink-0 w-full" style={{ height: '240px', position: 'relative' }}>
-                              <ChartContainer 
-                                config={chartConfig} 
-                                className="w-full h-full aspect-none radar-chart-tooltip-enabled"
-                                id="invoice-performance-radar"
-                                style={{
-                                  contain: 'layout style paint', // Isolate chart rendering
-                                }}
-                              >
-                                <RadarChart data={radarData} width={undefined} height={240}>
-                                  <PolarGrid stroke="#e5e7eb" />
-                                  <PolarAngleAxis 
-                                    dataKey="metric" 
-                                    tick={{ fill: '#6b7280', fontSize: 10 }}
-                                    tickLine={{ stroke: '#e5e7eb' }}
-                                  />
-                                  <PolarRadiusAxis 
-                                    angle={90} 
-                                    domain={[0, 100]}
-                                    tick={{ fill: '#9ca3af', fontSize: 9 }}
-                                    tickCount={5}
-                                    tickFormatter={(value) => `${value}%`}
-                                  />
-                                  <Radar
-                                    name="Performance"
-                                    dataKey="value"
-                                    stroke="#6366f1"
-                                    fill="#6366f1"
-                                    fillOpacity={0.4}
-                                    strokeWidth={2}
-                                    dot={{ fill: '#6366f1', r: 3 }}
-                                    isAnimationActive={!sidebarTransitioningRef.current} // Disable animation during sidebar transition
-                                  />
-                                  <ChartTooltip
-                                    animationDuration={0}
-                                    allowEscapeViewBox={{ x: true, y: true }}
-                                    cursor={{ stroke: '#6366f1', strokeWidth: 1 }}
-                                    content={({ active, payload }) => {
-                                      if (active && payload && payload.length) {
-                                        const data = payload[0];
-                                        return (
-                                          <div 
-                                            className="border border-gray-300 shadow-xl p-3"
-                                            style={{ 
-                                              borderRadius: '0',
-                                              backgroundColor: '#f9fafb',
-                                              transition: 'none',
-                                              animation: 'none',
-                                              pointerEvents: 'auto'
-                                            }}
-                                          >
-                                            <p className="text-xs font-semibold text-gray-900 mb-1">
-                                              {data.payload.metric}
-                                            </p>
-                                            <p className="text-sm font-bold text-indigo-600">
-                                              {data.value}%
-                                            </p>
-                                          </div>
-                                        );
-                                      }
-                                      return null;
-                                    }}
-                                  />
-                                </RadarChart>
-                              </ChartContainer>
-                            </div>
-                            
-                            {/* Key Insights - Fixed at bottom */}
-                            <div className="mt-4 pt-4 border-t border-gray-200 space-y-3 flex-shrink-0">
-                              <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                  <div className="text-xs text-gray-500 mb-1">Total Revenue</div>
-                                  <div className="text-sm font-semibold text-gray-900">${totalRevenue.toFixed(0)}</div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-gray-500 mb-1">Outstanding</div>
-                                  <div className="text-sm font-semibold text-amber-600">${outstandingAmount.toFixed(0)}</div>
-                                </div>
-                              </div>
-                              
-                              <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                  <div className="text-xs text-gray-500 mb-1">Avg Payment Time</div>
-                                  <div className="text-sm font-semibold text-gray-900">
-                                    {avgPaymentDays > 0 ? `${avgPaymentDays} days` : 'N/A'}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-xs text-gray-500 mb-1">Risk Level</div>
-                                  <div className={`text-sm font-semibold ${riskColor}`}>{riskStatus}</div>
-                                </div>
-                              </div>
-                              
-                              {topClients.length > 0 && (
-                                <div className="pt-2 border-t border-gray-100">
-                                  <div className="text-xs text-gray-500 mb-1.5">Top Paying Clients</div>
-                                  <div className="space-y-1.5">
-                                    {topClients.map((client, idx) => (
-                                      <div key={idx} className="flex items-center justify-between">
-                                        <span className="text-xs font-medium text-gray-700 truncate flex-1">{client.name}</span>
-                                        <span className="text-xs font-semibold text-gray-900 ml-2">${client.paid.toFixed(0)}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                              
-                              {/* Summary Stats */}
-                              <div className="pt-2 border-t border-gray-100">
-                                <div className="grid grid-cols-3 gap-2 text-xs">
-                                  <div>
-                                    <div className="text-gray-500 mb-0.5">Paid</div>
-                                    <div className="text-xs font-semibold text-green-600">{paidInvoices}</div>
-                                  </div>
-                                  <div>
-                                    <div className="text-gray-500 mb-0.5">Pending</div>
-                                    <div className="text-xs font-semibold text-amber-600">{pendingInvoices}</div>
-                                  </div>
-                                  <div>
-                                    <div className="text-gray-500 mb-0.5">Overdue</div>
-                                    <div className="text-xs font-semibold text-red-600">{overdueInvoices}</div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                  )}
-
-                  {/* Slide 4: Conversion Rate - Only render if tab 3 is available */}
-                  {availableTabs.includes(3) && (
                   <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ 
                     width: `${100 / availableTabs.length}%`, 
                     minWidth: `${100 / availableTabs.length}%`, 
@@ -3879,28 +3409,6 @@ export default function DashboardOverview() {
     };
   }, [showNotifications]);
 
-  // Close Invoice Performance info tooltip when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-      if (invoicePerformanceInfoRef.current && !invoicePerformanceInfoRef.current.contains(event.target as Node)) {
-        setShowInvoicePerformanceInfo(false);
-      }
-    };
-
-    if (showInvoicePerformanceInfo) {
-      // Small delay to prevent immediate closing when button is clicked
-      const timeoutId = setTimeout(() => {
-        document.addEventListener('mousedown', handleClickOutside);
-        document.addEventListener('touchstart', handleClickOutside);
-      }, 100);
-
-      return () => {
-        clearTimeout(timeoutId);
-        document.removeEventListener('mousedown', handleClickOutside);
-        document.removeEventListener('touchstart', handleClickOutside);
-      };
-    }
-  }, [showInvoicePerformanceInfo]);
 
   // Navigation functions for dashboard cards
   const handlePaidInvoicesClick = useCallback(() => {
