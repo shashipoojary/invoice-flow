@@ -101,7 +101,7 @@ const InvoicePerformanceChart = ({ invoices, paymentDataMap }: { invoices: Invoi
     },
     {
       value: pendingRevenue,
-      color: '#6366f1', // Indigo
+      color: '#f59e0b', // Amber/Orange for pending balance
       label: 'Pending'
     },
     {
@@ -2840,7 +2840,7 @@ export default function DashboardOverview() {
                       scrollToDueInvoicesSlideUpdated(prevIndex);
                     }}
                     disabled={dueInvoicesScrollIndex === 0}
-                    className="hidden lg:flex items-center justify-center w-6 h-6 p-0 flex-shrink-0 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="hidden lg:flex items-center justify-center w-6 h-6 p-0 flex-shrink-0 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                     style={{ borderRadius: 0 }}
                     aria-label="Previous tab"
                   >
@@ -2861,7 +2861,7 @@ export default function DashboardOverview() {
                       <button
                         key={actualTabIndex}
                         onClick={() => scrollToDueInvoicesSlideUpdated(scrollIndex)}
-                        className={`w-2 h-2 p-0 flex-shrink-0 aspect-square rounded-full border-0 outline-none transition-all ${
+                        className={`w-2 h-2 p-0 flex-shrink-0 aspect-square rounded-full border-0 outline-none transition-all cursor-pointer ${
                           dueInvoicesScrollIndex === scrollIndex ? 'bg-indigo-600' : 'bg-gray-300 hover:bg-gray-400'
                         }`}
                         aria-label={tabLabels[actualTabIndex]}
@@ -2876,7 +2876,7 @@ export default function DashboardOverview() {
                       scrollToDueInvoicesSlideUpdated(nextIndex);
                     }}
                     disabled={dueInvoicesScrollIndex === availableTabs.length - 1}
-                    className="hidden lg:flex items-center justify-center w-6 h-6 p-0 flex-shrink-0 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="hidden lg:flex items-center justify-center w-6 h-6 p-0 flex-shrink-0 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                     style={{ borderRadius: 0 }}
                     aria-label="Next tab"
                   >
