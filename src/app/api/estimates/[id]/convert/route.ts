@@ -144,11 +144,17 @@ export async function POST(
       }
     }
 
-    // Parse payment_terms if it's a string
+    // Parse payment_terms - handle both JSONB object and string formats
     let paymentTerms = null;
     if (invoiceType !== 'fast' && estimate.payment_terms) {
       try {
-        paymentTerms = typeof estimate.payment_terms === 'string' ? estimate.payment_terms : JSON.stringify(estimate.payment_terms);
+        // If it's already a string, use it directly
+        if (typeof estimate.payment_terms === 'string') {
+          paymentTerms = estimate.payment_terms;
+        } else {
+          // If it's an object (JSONB), stringify it
+          paymentTerms = JSON.stringify(estimate.payment_terms);
+        }
       } catch (e) {
         console.error('Error processing payment_terms:', e);
         paymentTerms = null;
@@ -166,6 +172,25 @@ export async function POST(
       }
     }
 
+    // Calculate due date - use expiry_date if available, otherwise set to 30 days from issue date
+    let dueDate = null;
+    if (estimate.expiry_date) {
+      dueDate = estimate.expiry_date;
+    } else if (estimate.issue_date) {
+      // If no expiry date, set due date to 30 days from issue date
+      const issueDate = new Date(estimate.issue_date);
+      issueDate.setDate(issueDate.getDate() + 30);
+      dueDate = issueDate.toISOString().split('T')[0];
+    } else {
+      // If no issue date either, set to 30 days from today
+      const today = new Date();
+      today.setDate(today.getDate() + 30);
+      dueDate = today.toISOString().split('T')[0];
+    }
+
+    // Ensure notes is properly handled (convert empty string to null if needed)
+    const invoiceNotes = estimate.notes && estimate.notes.trim() !== '' ? estimate.notes.trim() : null;
+
     // Create invoice from estimate
     const invoice = {
       user_id: user.id,
@@ -178,10 +203,10 @@ export async function POST(
       total: estimate.total,
       status: 'draft',
       issue_date: estimate.issue_date || new Date().toISOString().split('T')[0],
-      due_date: estimate.expiry_date || null, // Use expiry date as due date
-      notes: estimate.notes || null,
+      due_date: dueDate, // Use expiry_date if available, otherwise calculate 30 days from issue date
+      notes: invoiceNotes, // Properly handle notes (null if empty)
       type: invoiceType, // 'fast' or 'detailed'
-      payment_terms: paymentTerms,
+      payment_terms: paymentTerms, // Payment terms (properly formatted)
       theme: invoiceType === 'fast' ? null : (invoiceTheme ? JSON.stringify(invoiceTheme) : (estimate.theme ? (typeof estimate.theme === 'string' ? estimate.theme : JSON.stringify(estimate.theme)) : null)),
       branding: branding,
     };

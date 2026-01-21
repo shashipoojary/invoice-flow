@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, useDeferredValue } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { 
   FileText, Users, 
@@ -61,6 +62,312 @@ const EstimateModal = dynamic(() => import('@/components/EstimateModal'), {
 });
 
 
+// Custom portal-based tooltip for Conversion Rate chart
+// Must be a function component that Recharts can call with props
+const ConversionRateTooltip = ({ active, payload, coordinate, viewBox }: any) => {
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ left: 0, top: 0 });
+  const mousePositionRef = useRef<{ x: number; y: number } | null>(null);
+  const positionUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastPositionRef = useRef<{ left: number; top: number } | null>(null);
+
+  // Track mouse position globally - Recharts will trigger tooltip when mouse is over chart
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      // Always update mouse position - we'll filter by chart bounds when calculating tooltip position
+      mousePositionRef.current = { x: e.clientX, y: e.clientY };
+    };
+
+    // Attach to window to catch all mouse movements
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
+
+  // Also track mouse position specifically on chart area for better accuracy
+  useEffect(() => {
+    const handleChartMouseMove = (e: MouseEvent) => {
+      // Find chart element
+      let chartElement: HTMLElement | null = document.querySelector('[data-chart="chart-conversion-rate-chart"]') as HTMLElement;
+      if (!chartElement) {
+        chartElement = document.getElementById('conversion-rate-chart');
+      }
+      if (!chartElement) {
+        chartElement = document.querySelector('[data-chart*="conversion-rate-chart"]') as HTMLElement;
+      }
+      
+      if (chartElement) {
+        const rect = chartElement.getBoundingClientRect();
+        if (
+          e.clientX >= rect.left &&
+          e.clientX <= rect.right &&
+          e.clientY >= rect.top &&
+          e.clientY <= rect.bottom
+        ) {
+          mousePositionRef.current = { x: e.clientX, y: e.clientY };
+        }
+      }
+    };
+
+    // Use capture phase to catch events early
+    document.addEventListener('mousemove', handleChartMouseMove, true);
+    return () => {
+      document.removeEventListener('mousemove', handleChartMouseMove, true);
+    };
+  }, []);
+
+  // Calculate position when active or coordinate changes
+  useEffect(() => {
+    if (!active) {
+      // Clear any pending updates when inactive
+      if (positionUpdateTimeoutRef.current) {
+        clearTimeout(positionUpdateTimeoutRef.current);
+        positionUpdateTimeoutRef.current = null;
+      }
+      return;
+    }
+
+    // Clear any pending updates
+    if (positionUpdateTimeoutRef.current) {
+      clearTimeout(positionUpdateTimeoutRef.current);
+    }
+
+    // Use RAF to ensure DOM is ready and prevent flickering
+    const rafId = requestAnimationFrame(() => {
+      if (!tooltipRef.current) {
+        // Use mouse position as fallback if ref not ready
+        if (mousePositionRef.current) {
+          const left = mousePositionRef.current.x + 10;
+          const top = mousePositionRef.current.y + 10;
+          // Only update if significantly different
+          if (!lastPositionRef.current || 
+              Math.abs(lastPositionRef.current.left - left) > 2 || 
+              Math.abs(lastPositionRef.current.top - top) > 2) {
+            lastPositionRef.current = { left, top };
+            setPosition({ left, top });
+          }
+        }
+        return;
+      }
+
+      const tooltip = tooltipRef.current;
+      // Force layout recalculation
+      const tooltipWidth = tooltip.offsetWidth || 200;
+      const tooltipHeight = tooltip.offsetHeight || 100;
+      const cursorOffset = 10;
+
+      // Get viewport dimensions
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      // Get the chart element - ChartContainer uses data-chart attribute, not id
+      let chartElement: HTMLElement | null = document.querySelector('[data-chart="chart-conversion-rate-chart"]') as HTMLElement;
+      if (!chartElement) {
+        // Fallback: try to find by id (in case it's set elsewhere)
+        chartElement = document.getElementById('conversion-rate-chart');
+      }
+      if (!chartElement) {
+        // Last fallback: try to find any element with conversion-rate-chart in data-chart
+        chartElement = document.querySelector('[data-chart*="conversion-rate-chart"]') as HTMLElement;
+      }
+      if (!chartElement) {
+        return;
+      }
+
+      const chartRect = chartElement.getBoundingClientRect();
+
+      // Use Recharts coordinate (data point position) - this makes tooltip stick to data points
+      let left: number;
+      let top: number;
+      let positionSource = '';
+
+      // Prioritize Recharts coordinate (data point position) over mouse position
+      if (coordinate && coordinate.x !== undefined && coordinate.y !== undefined) {
+        // Use Recharts coordinate - try multiple reference elements to find the correct one
+        const wrapper = chartElement.querySelector('.recharts-wrapper');
+        const svgElement = chartElement.querySelector('svg');
+        const responsiveContainer = chartElement.querySelector('.recharts-responsive-container');
+        
+        if (wrapper) {
+          const wrapperRect = wrapper.getBoundingClientRect();
+          left = wrapperRect.left + coordinate.x;
+          top = wrapperRect.top + coordinate.y;
+          positionSource = 'wrapper-coordinate';
+        } else if (svgElement) {
+          const svgRect = svgElement.getBoundingClientRect();
+          left = svgRect.left + coordinate.x;
+          top = svgRect.top + coordinate.y;
+          positionSource = 'svg-coordinate';
+        } else if (responsiveContainer) {
+          const containerRect = responsiveContainer.getBoundingClientRect();
+          left = containerRect.left + coordinate.x;
+          top = containerRect.top + coordinate.y;
+          positionSource = 'container-coordinate';
+        } else {
+          // Last resort: use chart container
+          left = chartRect.left + coordinate.x;
+          top = chartRect.top + coordinate.y;
+          positionSource = 'chart-coordinate';
+        }
+      } else if (mousePositionRef.current) {
+        // Fallback: use mouse position if coordinate is not available
+        left = mousePositionRef.current.x;
+        top = mousePositionRef.current.y;
+        positionSource = 'mouse-position-fallback';
+      } else {
+        // No position data - use center of chart as fallback
+        left = chartRect.left + chartRect.width / 2;
+        top = chartRect.top + chartRect.height / 2;
+        positionSource = 'center-fallback';
+      }
+
+      // Store original position before offset (for edge detection)
+      const leftBeforeOffset = left;
+      const topBeforeOffset = top;
+      
+      // Add offset from data point
+      left += cursorOffset;
+      top += cursorOffset;
+
+      // Edge detection with threshold to prevent flickering
+      const edgeThreshold = 5; // Small threshold to prevent rapid flipping
+
+      // Edge detection: Right edge - flip to left side of data point
+      if (left + tooltipWidth > viewportWidth - edgeThreshold) {
+        const newLeft = leftBeforeOffset - tooltipWidth - cursorOffset;
+        // Only flip if it won't go off the left edge
+        if (newLeft >= edgeThreshold) {
+          left = newLeft;
+        } else {
+          // Clamp to right edge instead
+          left = viewportWidth - tooltipWidth - edgeThreshold;
+        }
+      }
+
+      // Edge detection: Bottom edge - flip upward
+      if (top + tooltipHeight > viewportHeight - edgeThreshold) {
+        const newTop = topBeforeOffset - tooltipHeight - cursorOffset;
+        // Only flip if it won't go off the top edge
+        if (newTop >= edgeThreshold) {
+          top = newTop;
+        } else {
+          // Clamp to bottom edge instead
+          top = viewportHeight - tooltipHeight - edgeThreshold;
+        }
+      }
+
+      // Edge detection: Left edge - clamp to viewport
+      if (left < edgeThreshold) {
+        left = edgeThreshold;
+      }
+
+      // Edge detection: Top edge - clamp to viewport
+      if (top < edgeThreshold) {
+        top = edgeThreshold;
+      }
+
+      // Only update if position changed significantly (prevents flickering)
+      const positionChanged = !lastPositionRef.current || 
+        Math.abs(lastPositionRef.current.left - left) > 2 || 
+        Math.abs(lastPositionRef.current.top - top) > 2;
+
+      if (positionChanged) {
+        lastPositionRef.current = { left, top };
+        // Use immediate update (no debounce) since we're already in RAF
+        setPosition({ left, top });
+      }
+    });
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      if (positionUpdateTimeoutRef.current) {
+        clearTimeout(positionUpdateTimeoutRef.current);
+        positionUpdateTimeoutRef.current = null;
+      }
+    };
+  }, [active, coordinate]);
+
+  // Only hide when explicitly inactive
+  if (!active || !payload || !payload.length) {
+    return null;
+  }
+
+  const monthMap: Record<string, string> = {
+    JAN: 'January', FEB: 'February', MAR: 'March', APR: 'April',
+    MAY: 'May', JUN: 'June', JUL: 'July', AUG: 'August',
+    SEP: 'September', OCT: 'October', NOV: 'November', DEC: 'December'
+  };
+
+  // Render tooltip content directly to avoid double container
+  const tooltipContent = (
+    <div
+      ref={tooltipRef}
+      className="min-w-[200px] conversion-tooltip"
+      style={{
+        position: 'fixed',
+        left: `${position.left}px`,
+        top: `${position.top}px`,
+        backgroundColor: '#f9fafb',
+        border: '1px solid #e5e7eb',
+        borderRadius: '0',
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        padding: '12px',
+        zIndex: 10000,
+        pointerEvents: 'auto',
+        transition: 'none',
+        animation: 'none'
+      }}
+    >
+      {payload && payload.length > 0 && (
+        <div className="grid gap-1.5">
+          {payload[0].payload && (
+            <div className="font-medium text-xs">
+              {monthMap[payload[0].payload.month as keyof typeof monthMap] || payload[0].payload.month}
+            </div>
+          )}
+          <div className="grid gap-1.5">
+            {payload.map((item: any, index: number) => {
+              const value = typeof item.value === 'number' ? item.value.toLocaleString() : item.value;
+              const label = item.name || item.dataKey || 'Value';
+              const color = item.color || item.payload?.fill || '#6366f1';
+              
+              return (
+                <div
+                  key={item.dataKey || index}
+                  className="flex w-full items-center gap-2"
+                >
+                  <div
+                    className="w-1 h-4 shrink-0"
+                    style={{
+                      backgroundColor: color,
+                    }}
+                  />
+                  <div className="flex flex-1 justify-between items-center leading-none">
+                    <span className="text-muted-foreground text-xs">{label}</span>
+                    <span className="text-foreground font-mono font-medium tabular-nums text-xs">
+                      {value}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // Render portal tooltip to body, return null to prevent Recharts from creating wrapper
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  // Render tooltip via portal to document.body and return null
+  // Returning null prevents Recharts from creating its own wrapper div
+  return createPortal(tooltipContent, document.body);
+};
+
 export default function DashboardOverview() {
   const { user, loading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError, showWarning } = useToast();
@@ -84,7 +391,6 @@ export default function DashboardOverview() {
   const [showCreateEstimate, setShowCreateEstimate] = useState(false);
   const [showPartialPayment, setShowPartialPayment] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
-  const [showPerformanceTooltip, setShowPerformanceTooltip] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(() => {
     // Load read notifications from localStorage
@@ -110,6 +416,8 @@ export default function DashboardOverview() {
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollRAFRef = useRef<number | null>(null);
   const previousScrollIndexRef = useRef<number>(-1);
+  const mainContentRef = useRef<HTMLElement>(null);
+  const [isSidebarTransitioning, setIsSidebarTransitioning] = useState(false);
   const [notifications, setNotifications] = useState<Array<{
     id: string;
     type: 'viewed' | 'due_today' | 'overdue' | 'paid' | 'partial_paid' | 'draft_created' | 'downloaded' | 'payment_copied' | 'reminder_scheduled' | 'sent' | 'failed' | 'cancelled' | 'estimate_sent' | 'estimate_approved' | 'estimate_rejected';
@@ -169,6 +477,10 @@ export default function DashboardOverview() {
     invoice: null,
     isLoading: false
   });
+  
+  // Invoice Performance info tooltip state (for mobile click support)
+  const [showInvoicePerformanceInfo, setShowInvoicePerformanceInfo] = useState(false);
+  const invoicePerformanceInfoRef = useRef<HTMLDivElement>(null);
   
   // Business settings are now managed by SettingsContext
 
@@ -1945,148 +2257,217 @@ export default function DashboardOverview() {
     return tabs;
   }, [dueInvoices, invoices]);
 
-  // Scroll handler for Due Invoices section - throttled for better performance on desktop
+  // Scroll handler for dot indicator - each slide is full-width
   const handleDueInvoicesScrollUpdated = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    // Cancel any pending RAF
-    if (scrollRAFRef.current !== null) {
-      cancelAnimationFrame(scrollRAFRef.current);
-    }
+    const container = e.currentTarget;
+    const scrollLeft = container.scrollLeft;
+    const slideWidth = container.clientWidth; // Each slide is full-width (100% of container)
+    const tabsCount = availableTabs.length;
     
-    // Use requestAnimationFrame for smooth updates
-    scrollRAFRef.current = requestAnimationFrame(() => {
-      const container = e.currentTarget;
-      const scrollLeft = container.scrollLeft;
-      const containerWidth = container.clientWidth;
-      const tabsCount = availableTabs.length;
-      
-      if (tabsCount === 0) return;
-      
-      // Calculate which slide is visible - use viewport center method for accuracy
-      // Each slide takes up 100% / tabsCount of the container width
-      const slideWidth = containerWidth / tabsCount;
-      
-      // Find which slide's center is closest to the viewport center
-      const viewportCenter = scrollLeft + containerWidth / 2;
-      let closestIndex = 0;
-      let minDistance = Infinity;
-      
-      for (let i = 0; i < tabsCount; i++) {
-        const slideCenter = (i + 0.5) * slideWidth;
-        const distance = Math.abs(viewportCenter - slideCenter);
-        
-        if (distance < minDistance) {
-          minDistance = distance;
-          closestIndex = i;
-        }
-      }
-      
-      // Ensure index is within bounds
-      const clampedIndex = Math.max(0, Math.min(closestIndex, tabsCount - 1));
-      
-      // Only update if index actually changed (use ref to avoid stale closure)
-      if (clampedIndex !== previousScrollIndexRef.current) {
-        previousScrollIndexRef.current = clampedIndex;
-        setDueInvoicesScrollIndex(clampedIndex);
-        
-        // Scroll dots container to show active dot (works on all screen sizes)
-        if (dotsContainerRef.current) {
-          const dotsContainer = dotsContainerRef.current;
-          const activeDot = dotsContainer.children[clampedIndex] as HTMLElement;
-          if (activeDot) {
-            const dotLeft = activeDot.offsetLeft;
-            const dotWidth = activeDot.offsetWidth;
-            const dotsContainerWidth = dotsContainer.clientWidth;
-            const dotsScrollLeft = dotsContainer.scrollLeft;
-            
-            // Calculate if dot is outside visible area
-            const dotRight = dotLeft + dotWidth;
-            const visibleRight = dotsScrollLeft + dotsContainerWidth;
-            
-            if (dotLeft < dotsScrollLeft) {
-              // Dot is to the left of visible area, scroll left
-              dotsContainer.scrollTo({
-                left: dotLeft - 10, // 10px padding
-                behavior: 'smooth'
-              });
-            } else if (dotRight > visibleRight) {
-              // Dot is to the right of visible area, scroll right
-              dotsContainer.scrollTo({
-                left: dotRight - dotsContainerWidth + 10, // 10px padding
-                behavior: 'smooth'
-              });
-            }
-          }
-        }
-      }
-    });
+    if (tabsCount === 0 || slideWidth === 0) return;
+    
+    // Calculate active index using center-point detection
+    // This updates the dot when the next slide is at least 50% visible
+    // Formula: floor((scrollLeft + slideWidth / 2) / slideWidth)
+    const activeIndex = Math.floor((scrollLeft + slideWidth / 2) / slideWidth);
+    
+    // Clamp to valid range (0 to tabsCount - 1)
+    const clampedIndex = Math.max(0, Math.min(activeIndex, tabsCount - 1));
+    
+    // Only update if index actually changed to prevent skipped indices during momentum scrolling
+    if (clampedIndex !== previousScrollIndexRef.current) {
+      previousScrollIndexRef.current = clampedIndex;
+      setDueInvoicesScrollIndex(clampedIndex);
+    }
   }, [availableTabs]);
 
-  // Function to scroll to specific slide (scrollIndex, not actual tab index)
+  // Function to scroll to specific slide - each slide is full-width
   const scrollToDueInvoicesSlideUpdated = useCallback((scrollIndex: number) => {
     if (dueInvoicesScrollRef.current && scrollIndex >= 0 && scrollIndex < availableTabs.length) {
       const container = dueInvoicesScrollRef.current;
-      const containerWidth = container.clientWidth;
-      const tabsCount = availableTabs.length;
-      const slideWidth = containerWidth / tabsCount;
+      const slideWidth = container.clientWidth; // Each slide is full-width (100% of container)
       
+      if (slideWidth === 0) return;
+      
+      // Scroll to the specific full-width slide
       container.scrollTo({
         left: scrollIndex * slideWidth,
         behavior: 'smooth'
       });
       
-      // Update ref and state immediately when clicking
+      // Update ref and state immediately when clicking to keep dots in sync
       previousScrollIndexRef.current = scrollIndex;
       setDueInvoicesScrollIndex(scrollIndex);
     }
   }, [availableTabs]);
 
-  // Add direct scroll listener as fallback and sync on mount/tabs change
+  // Sync scroll position and dot indicator on mount/tabs change
   useEffect(() => {
     const container = dueInvoicesScrollRef.current;
     if (!container || availableTabs.length === 0) return;
 
-    const updateScrollIndex = () => {
-      const containerWidth = container.clientWidth;
-      const tabsCount = availableTabs.length;
-      if (tabsCount === 0) return;
-      
-      const slideWidth = containerWidth / tabsCount;
-      const scrollLeft = container.scrollLeft;
-      
-      // Use viewport center method (same as main handler)
-      const viewportCenter = scrollLeft + containerWidth / 2;
-      let closestIndex = 0;
-      let minDistance = Infinity;
-      
-      for (let i = 0; i < tabsCount; i++) {
-        const slideCenter = (i + 0.5) * slideWidth;
-        const distance = Math.abs(viewportCenter - slideCenter);
+    // Reset to first tab immediately
+    container.scrollLeft = 0;
+    previousScrollIndexRef.current = 0;
+    setDueInvoicesScrollIndex(0);
+    
+    // Also ensure correct position after a brief delay to catch any layout changes
+    requestAnimationFrame(() => {
+      if (container && availableTabs.length > 0) {
+        container.scrollLeft = 0;
+      }
+    });
+  }, [availableTabs]);
+
+  // Production-grade: Maintain current slide position during sidebar transition
+  // Updates scroll position on each width change during transition to prevent glimpses
+  useEffect(() => {
+    const container = dueInvoicesScrollRef.current;
+    if (!container || availableTabs.length === 0) return;
+
+    let lastWidth = container.clientWidth;
+    let isTransitioning = false;
+    let transitionEndTimeout: NodeJS.Timeout | null = null;
+
+    // Update scroll to maintain current slide position
+    const updateScrollToCurrentSlide = () => {
+      if (!container || availableTabs.length === 0) return;
+      const currentScrollIndex = previousScrollIndexRef.current;
+      const currentContainerWidth = container.clientWidth;
+      if (currentContainerWidth > 0) {
+        // Calculate target scroll position for current slide
+        const targetScrollLeft = currentScrollIndex * currentContainerWidth;
+        container.scrollLeft = targetScrollLeft;
+      }
+    };
+
+    // ResizeObserver - detects sidebar width changes and updates scroll immediately
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const newWidth = entry.contentRect.width;
+        const widthChanged = Math.abs(newWidth - lastWidth) > 0.5;
         
-        if (distance < minDistance) {
-          minDistance = distance;
-          closestIndex = i;
+        if (widthChanged) {
+          // Update scroll position immediately when width changes
+          // This maintains the current slide during transition
+          updateScrollToCurrentSlide();
+          
+          // Mark as transitioning
+          if (!isTransitioning) {
+            isTransitioning = true;
+          }
+          
+          // Clear any pending end timeout
+          if (transitionEndTimeout) clearTimeout(transitionEndTimeout);
+          
+          // Mark transition as complete after sidebar animation
+          transitionEndTimeout = setTimeout(() => {
+            isTransitioning = false;
+            // Final update to ensure perfect position
+            updateScrollToCurrentSlide();
+            lastWidth = container.clientWidth;
+          }, 320); // 300ms transition + 20ms buffer
         }
       }
-      
-      const clampedIndex = Math.max(0, Math.min(closestIndex, tabsCount - 1));
-      
-      if (clampedIndex !== previousScrollIndexRef.current) {
-        previousScrollIndexRef.current = clampedIndex;
-        setDueInvoicesScrollIndex(clampedIndex);
-      }
+    });
+    resizeObserver.observe(container);
+
+    // Window resize handler - for actual window resizes (not sidebar)
+    let windowResizeTimeout: NodeJS.Timeout | null = null;
+    const handleWindowResize = () => {
+      if (windowResizeTimeout) clearTimeout(windowResizeTimeout);
+      windowResizeTimeout = setTimeout(() => {
+        if (!isTransitioning && container && availableTabs.length > 0) {
+          updateScrollToCurrentSlide();
+          lastWidth = container.clientWidth;
+        }
+      }, 100);
     };
-
-    // Initial sync with a small delay to ensure container is rendered
-    const timeoutId = setTimeout(updateScrollIndex, 100);
-
-    // Add scroll listener as fallback
-    container.addEventListener('scroll', updateScrollIndex, { passive: true });
+    window.addEventListener('resize', handleWindowResize, { passive: true });
 
     return () => {
-      clearTimeout(timeoutId);
-      container.removeEventListener('scroll', updateScrollIndex);
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', handleWindowResize);
+      if (transitionEndTimeout) clearTimeout(transitionEndTimeout);
+      if (windowResizeTimeout) clearTimeout(windowResizeTimeout);
+      isTransitioning = false;
     };
   }, [availableTabs]);
+
+  // Detect sidebar transition and optimize dashboard rendering during transition
+  // Uses CSS containment to prevent layout recalculations from blocking sidebar animation
+  useEffect(() => {
+    // Find the sidebar spacer element (created by ModernSidebar)
+    const findSidebarSpacer = () => {
+      // The spacer has class "hidden lg:block" and has width style
+      const spacers = document.querySelectorAll('[class*="hidden lg:block"]');
+      for (const spacer of spacers) {
+        const htmlSpacer = spacer as HTMLElement;
+        const width = htmlSpacer.style.width;
+        if (width && (width === '64px' || width === '320px')) {
+          return htmlSpacer;
+        }
+      }
+      return null;
+    };
+
+    // Wait for DOM to be ready
+    const initObserver = () => {
+      const sidebarSpacer = findSidebarSpacer();
+      if (!sidebarSpacer || !mainContentRef.current) {
+        // Retry if not found yet
+        setTimeout(initObserver, 100);
+        return;
+      }
+
+      let lastWidth = sidebarSpacer.offsetWidth;
+      let transitionTimeout: NodeJS.Timeout | null = null;
+
+      const observer = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const newWidth = entry.contentRect.width;
+          const widthChanged = Math.abs(newWidth - lastWidth) > 0.5;
+
+          if (widthChanged) {
+            // Sidebar is transitioning - optimize main content with CSS containment
+            setIsSidebarTransitioning(true);
+            if (mainContentRef.current) {
+              // Use CSS containment to isolate layout during transition
+              mainContentRef.current.style.contain = 'layout style';
+              mainContentRef.current.style.willChange = 'contents';
+            }
+
+            // Clear any pending timeout
+            if (transitionTimeout) clearTimeout(transitionTimeout);
+
+            // Restore normal rendering after transition
+            transitionTimeout = setTimeout(() => {
+              setIsSidebarTransitioning(false);
+              if (mainContentRef.current) {
+                mainContentRef.current.style.contain = '';
+                mainContentRef.current.style.willChange = '';
+              }
+              lastWidth = newWidth;
+            }, 320); // 300ms transition + 20ms buffer
+          }
+        }
+      });
+
+      observer.observe(sidebarSpacer);
+
+      return () => {
+        observer.disconnect();
+        if (transitionTimeout) clearTimeout(transitionTimeout);
+        if (mainContentRef.current) {
+          mainContentRef.current.style.contain = '';
+          mainContentRef.current.style.willChange = '';
+        }
+      };
+    };
+
+    const cleanup = initObserver();
+    return cleanup || (() => {});
+  }, []);
 
   // Calculate invoice trends for the third slide
   const invoiceTrends = useMemo(() => {
@@ -2269,21 +2650,29 @@ export default function DashboardOverview() {
                 </div>
               )}
               
-              {/* Scroll Container - Optimized for desktop performance */}
+              {/* Scroll Container - Production-grade: Maintains position during transitions */}
               <div 
                 ref={dueInvoicesScrollRef}
                 className="overflow-x-auto scrollbar-hide snap-x snap-mandatory lg:pr-2 scroll-optimized-desktop"
                 onScroll={handleDueInvoicesScrollUpdated}
                 style={{ 
-                  willChange: 'scroll-position', // Optimize for scrolling performance
-                  transform: 'translateZ(0)', // Force GPU acceleration
-                  backfaceVisibility: 'hidden' // Prevent flickering
+                  overflowX: 'auto',
+                  overflowY: 'hidden',
+                  scrollbarWidth: 'none', // Firefox
+                  msOverflowStyle: 'none', // IE/Edge
+                  scrollBehavior: 'auto', // Instant for programmatic updates
+                  contain: 'layout style', // Isolate layout calculations
                 }}
               >
-                <div className="flex h-full" style={{ width: `${availableTabs.length * 100}%` }}>
+                <div 
+                  className="flex h-full" 
+                  style={{ 
+                    width: `${availableTabs.length * 100}%`
+                  }}
+                >
                   {/* Slide 1: Due Invoices List - Only render if tab 0 is available */}
                   {availableTabs.includes(0) && (
-                  <div className="flex-shrink-0 snap-start pr-2" style={{ width: `${100 / availableTabs.length}%` }}>
+                  <div className="flex-shrink-0 snap-start pr-2" style={{ width: `${100 / availableTabs.length}%`, minWidth: `${100 / availableTabs.length}%`, maxWidth: `${100 / availableTabs.length}%` }}>
                     {dueInvoices.overdue.length === 0 && dueInvoices.dueToday.length === 0 && dueInvoices.upcoming.length === 0 ? (
                       <div className="bg-white border border-gray-200 p-8 text-center">
                         <Calendar className="h-8 w-8 mx-auto mb-2" style={{color: '#9ca3af'}} />
@@ -2464,7 +2853,7 @@ export default function DashboardOverview() {
 
                   {/* Slide 2: Due Invoices Analytics Graph - Only render if tab 1 is available */}
                   {availableTabs.includes(1) && (
-                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: `${100 / availableTabs.length}%` }}>
+                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: `${100 / availableTabs.length}%`, minWidth: `${100 / availableTabs.length}%`, maxWidth: `${100 / availableTabs.length}%` }}>
                     <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
                       <h3 className="text-sm font-semibold text-gray-900 mb-4">Invoice Analytics</h3>
                       
@@ -2713,24 +3102,25 @@ export default function DashboardOverview() {
 
                   {/* Slide 3: Performance Radar Chart - Only render if tab 2 is available */}
                   {availableTabs.includes(2) && (
-                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: `${100 / availableTabs.length}%` }}>
+                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: `${100 / availableTabs.length}%`, minWidth: `${100 / availableTabs.length}%`, maxWidth: `${100 / availableTabs.length}%` }}>
                     <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-sm font-semibold text-gray-900">Invoice Performance</h3>
-                        <div className="relative group">
+                        <div className="relative group" ref={invoicePerformanceInfoRef}>
                           <button
                             type="button"
-                            onClick={() => setShowPerformanceTooltip(!showPerformanceTooltip)}
-                            onBlur={() => setTimeout(() => setShowPerformanceTooltip(false), 200)}
                             className="p-1 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
                             aria-label="Learn more about Invoice Performance"
+                            onClick={() => setShowInvoicePerformanceInfo(!showInvoicePerformanceInfo)}
                           >
                             <Info className="h-4 w-4 text-gray-400 hover:text-gray-600" />
                           </button>
                           
-                          {/* Tooltip-style Info Popup */}
+                          {/* Tooltip-style Info Popup - Works on hover (desktop) and click (mobile) */}
                           <div className={`absolute right-0 top-full mt-2 transition-opacity duration-200 z-[9999] bg-white border border-gray-300 shadow-xl w-80 max-h-96 overflow-y-auto ${
-                            showPerformanceTooltip ? 'opacity-100 visible pointer-events-auto' : 'opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto'
+                            showInvoicePerformanceInfo 
+                              ? 'opacity-100 visible pointer-events-auto' 
+                              : 'opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto'
                           }`}
                                style={{ borderRadius: '0' }}
                           >
@@ -2970,7 +3360,7 @@ export default function DashboardOverview() {
                             <div className="flex-1 w-full flex items-center justify-center" style={{ minHeight: '240px' }}>
                               <ChartContainer 
                                 config={chartConfig} 
-                                className="w-full h-[240px] aspect-none"
+                                className="w-full h-[240px] aspect-none radar-chart-tooltip-enabled"
                                 id="invoice-performance-radar"
                               >
                                 <RadarChart data={radarData}>
@@ -2999,21 +3389,21 @@ export default function DashboardOverview() {
                                   <ChartTooltip
                                     animationDuration={0}
                                     allowEscapeViewBox={{ x: true, y: true }}
-                                    wrapperStyle={{ 
-                                      transition: 'none',
-                                      animation: 'none',
-                                      transform: 'none'
-                                    }}
-                                    contentStyle={{ 
-                                      transition: 'none',
-                                      animation: 'none',
-                                      transform: 'none'
-                                    }}
-                                    content={({ active, payload }) => {
+                                    cursor={{ stroke: '#6366f1', strokeWidth: 1 }}
+                                    content={({ active, payload, coordinate }) => {
                                       if (active && payload && payload.length) {
                                         const data = payload[0];
                                         return (
-                                          <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3" style={{ transition: 'none', animation: 'none' }}>
+                                          <div 
+                                            className="border border-gray-300 shadow-xl p-3"
+                                            style={{ 
+                                              borderRadius: '0',
+                                              backgroundColor: '#f9fafb',
+                                              transition: 'none',
+                                              animation: 'none',
+                                              pointerEvents: 'auto'
+                                            }}
+                                          >
                                             <p className="text-xs font-semibold text-gray-900 mb-1">
                                               {data.payload.metric}
                                             </p>
@@ -3097,7 +3487,7 @@ export default function DashboardOverview() {
 
                   {/* Slide 4: Conversion Rate - Only render if tab 3 is available */}
                   {availableTabs.includes(3) && (
-                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: `${100 / availableTabs.length}%` }}>
+                  <div className="flex-shrink-0 snap-start pl-2 pr-2 flex self-start" style={{ width: `${100 / availableTabs.length}%`, minWidth: `${100 / availableTabs.length}%`, maxWidth: `${100 / availableTabs.length}%` }}>
                     <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
                       <h3 className="text-sm font-semibold text-gray-900 mb-4">Conversion Rate</h3>
                       
@@ -3312,35 +3702,7 @@ export default function DashboardOverview() {
                                     <ChartTooltip
                                       animationDuration={0}
                                       cursor={false}
-                                      allowEscapeViewBox={{ x: true, y: true }}
-                                      wrapperStyle={{ 
-                                        transition: 'none',
-                                        animation: 'none',
-                                        transform: 'none'
-                                      }}
-                                      contentStyle={{ 
-                                        transition: 'none',
-                                        animation: 'none',
-                                        transform: 'none',
-                                        backgroundColor: '#f9fafb',
-                                        border: '1px solid #e5e7eb',
-                                        borderRadius: '8px',
-                                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
-                                      }}
-                                      content={
-                                        <ChartTooltipContent
-                                          labelFormatter={(value) => {
-                                            const monthMap: Record<string, string> = {
-                                              JAN: 'January', FEB: 'February', MAR: 'March', APR: 'April',
-                                              MAY: 'May', JUN: 'June', JUL: 'July', AUG: 'August',
-                                              SEP: 'September', OCT: 'October', NOV: 'November', DEC: 'December'
-                                            };
-                                            return monthMap[value as keyof typeof monthMap] || value;
-                                          }}
-                                          indicator="line"
-                                          className="min-w-[200px] conversion-tooltip"
-                                        />
-                                      }
+                                      content={ConversionRateTooltip}
                                     />
                                     {(() => {
                                       // Check if there's actual data (non-zero values) for each series
@@ -3851,6 +4213,25 @@ export default function DashboardOverview() {
     };
   }, [showNotifications]);
 
+  // Close Invoice Performance info tooltip when clicking outside (for mobile)
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (invoicePerformanceInfoRef.current && !invoicePerformanceInfoRef.current.contains(event.target as Node)) {
+        setShowInvoicePerformanceInfo(false);
+      }
+    };
+
+    if (showInvoicePerformanceInfo) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showInvoicePerformanceInfo]);
+
   // Navigation functions for dashboard cards
   const handlePaidInvoicesClick = useCallback(() => {
     router.push('/dashboard/invoices?status=paid');
@@ -3920,7 +4301,7 @@ export default function DashboardOverview() {
           onCreateInvoice={handleCreateInvoice}
         />
         
-        <main className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar">
+        <main ref={mainContentRef} className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar">
           <div className="pt-16 lg:pt-4 p-4 sm:p-5 lg:p-6 xl:p-8">
             {/* Dashboard Overview */}
             <div>

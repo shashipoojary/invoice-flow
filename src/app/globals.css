@@ -401,7 +401,8 @@ html:not(.loaded) .loading-spinner {
   }
 
   /* Remove all animations and transitions from chart tooltips - instant appearance */
-  .recharts-tooltip-wrapper,
+  /* IMPORTANT: Do NOT apply transform: none to .recharts-tooltip-wrapper itself */
+  /* Recharts needs transform on the wrapper for positioning - only block transform on children */
   .recharts-tooltip-wrapper *,
   .recharts-tooltip-content,
   .recharts-tooltip-content *,
@@ -412,12 +413,108 @@ html:not(.loaded) .loading-spinner {
     transform: none !important;
   }
 
-  /* Ensure tooltip appears instantly without sliding */
+  /* Apply transitions/animations to wrapper but NOT transform (Recharts needs it for positioning) */
   .recharts-tooltip-wrapper {
+    transition: none !important;
+    animation: none !important;
+    /* DO NOT set transform here - let Recharts control it via inline styles */
     opacity: 1 !important;
-    transition: opacity 0s !important;
     pointer-events: none !important;
     position: absolute !important;
+  }
+
+  /* Exception: Radar chart tooltip needs pointer events to stay interactive */
+  .radar-chart-tooltip-enabled .recharts-tooltip-wrapper {
+    pointer-events: auto !important;
+  }
+  
+  /* Ensure radar chart tooltip content doesn't interfere with positioning */
+  .radar-chart-tooltip-enabled .recharts-tooltip-wrapper > div {
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+    border-radius: 0 !important; /* Force square corners */
+  }
+
+  /* Exception: Conversion rate chart tooltip - hide default wrapper since we use portal */
+  /* Completely remove Recharts wrapper from layout to prevent double container */
+  #conversion-rate-chart .recharts-tooltip-wrapper,
+  [data-chart="chart-conversion-rate-chart"] .recharts-tooltip-wrapper,
+  [data-chart*="conversion-rate-chart"] .recharts-tooltip-wrapper {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    position: fixed !important;
+    top: -9999px !important;
+    left: -9999px !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 0 !important;
+    max-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+  }
+  
+  /* Ensure conversion rate chart tooltip content doesn't interfere with positioning */
+  #conversion-rate-chart .recharts-tooltip-wrapper > div,
+  [data-chart="chart-conversion-rate-chart"] .recharts-tooltip-wrapper > div,
+  [data-chart*="conversion-rate-chart"] .recharts-tooltip-wrapper > div,
+  #conversion-rate-chart .recharts-tooltip-content,
+  [data-chart="chart-conversion-rate-chart"] .recharts-tooltip-content,
+  [data-chart*="conversion-rate-chart"] .recharts-tooltip-content {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 0 !important;
+    max-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    overflow: hidden !important;
+  }
+
+  /* Allow tooltip to escape chart bounds - prevent clipping at edges */
+  /* Target the chart container and all Recharts internal elements */
+  #conversion-rate-chart {
+    overflow: visible !important;
+  }
+  
+  #conversion-rate-chart[data-chart] {
+    overflow: visible !important;
+  }
+  
+  #conversion-rate-chart .recharts-responsive-container {
+    overflow: visible !important;
+  }
+  
+  #conversion-rate-chart .recharts-wrapper {
+    overflow: visible !important;
+  }
+  
+  #conversion-rate-chart .recharts-surface {
+    overflow: visible !important;
+  }
+  
+  /* Override parent container overflow - target parent div containing the chart */
+  /* This handles the overflow-hidden class on the wrapper div */
+  div:has(> #conversion-rate-chart) {
+    overflow: visible !important;
+  }
+  
+  /* Fallback for browsers that don't support :has() - use adjacent sibling or direct child */
+  div.overflow-hidden:has(#conversion-rate-chart),
+  div[class*="overflow-hidden"]:has(#conversion-rate-chart) {
+    overflow: visible !important;
   }
 
   /* Square corners for conversion rate chart */
@@ -450,6 +547,11 @@ html:not(.loaded) .loading-spinner {
 
   .recharts-active-dot {
     border-radius: 0 !important;
+  }
+
+  /* Only prevent transform on radar chart tooltip content, not wrapper (wrapper needs transform for positioning) */
+  #invoice-performance-radar .recharts-tooltip-wrapper > div {
+    transform: none !important;
   }
 
   /* Remove all borders and outlines from chart elements on click/focus */

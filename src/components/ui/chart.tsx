@@ -46,6 +46,7 @@ function ChartContainer({
   return (
     <ChartContext.Provider value={{ config }}>
       <div
+        id={id} // Explicitly set id attribute for easier lookup
         data-slot="chart"
         data-chart={chartId}
         className={cn(

@@ -90,26 +90,41 @@ export default function InvoiceTemplateRenderer({ invoice }: InvoiceTemplateRend
   const secondaryColor = invoice.theme?.secondary_color || '#8B5CF6'
   const accentColor = invoice.theme?.accent_color || '#3B82F6'
 
+  // Helper function to get amount color based on invoice status
+  // Orange for pending, Red for overdue, Green only when paid
+  const getAmountColor = () => {
+    if (invoice.status === 'paid') {
+      return '#10b981' // Green
+    }
+    if (invoice.status === 'overdue' || invoice.isOverdue) {
+      return '#ef4444' // Red
+    }
+    if (invoice.status === 'pending') {
+      return '#FF6B35' // Orange - matches estimate public page
+    }
+    return '#FF6B35' // Default to orange for other statuses (draft, due today) - matches estimate public page
+  }
+
   console.log(`InvoiceTemplateRenderer - Invoice Type: ${invoice.type}, Theme: ${JSON.stringify(invoice.theme)}, Template Number: ${templateNumber}`)
   console.log(`InvoiceTemplateRenderer - Primary Color: ${primaryColor}, Secondary Color: ${secondaryColor}`)
 
   // Render different templates based on template number
   switch (templateNumber) {
     case 1: // Fast Invoice (60-second) - Fixed colors, no customization
-      return <FastInvoiceTemplate invoice={invoice} />
+      return <FastInvoiceTemplate invoice={invoice} getAmountColor={getAmountColor} />
     case 4: // Modern
-      return <ModernTemplate invoice={invoice} primaryColor={primaryColor} secondaryColor={secondaryColor} />
+      return <ModernTemplate invoice={invoice} primaryColor={primaryColor} secondaryColor={secondaryColor} getAmountColor={getAmountColor} />
     case 5: // Creative
-      return <CreativeTemplate invoice={invoice} primaryColor={primaryColor} secondaryColor={secondaryColor} />
+      return <CreativeTemplate invoice={invoice} primaryColor={primaryColor} secondaryColor={secondaryColor} getAmountColor={getAmountColor} />
     case 6: // Minimal
-      return <MinimalTemplate invoice={invoice} primaryColor={primaryColor} secondaryColor={secondaryColor} accentColor={accentColor} />
+      return <MinimalTemplate invoice={invoice} primaryColor={primaryColor} secondaryColor={secondaryColor} accentColor={accentColor} getAmountColor={getAmountColor} />
     default:
-      return <FastInvoiceTemplate invoice={invoice} />
+      return <FastInvoiceTemplate invoice={invoice} getAmountColor={getAmountColor} />
   }
 }
 
 // Fast Invoice Template (60-second) - Fixed Design (No color customization)
-function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
+function FastInvoiceTemplate({ invoice, getAmountColor }: { invoice: Invoice, getAmountColor: () => string }) {
   // Fixed colors for fast invoice - purple theme to match site
   const primaryColor = '#5C2D91'   // Purple (for amount and accents)
   const secondaryColor = '#8B5CF6' // Light Purple
@@ -288,7 +303,7 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
               <div className="text-xs text-gray-500 mb-4">
                 Due: {new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
-              <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: primaryColor || '#5C2D91', letterSpacing: '-0.5px' }}>
+              <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: getAmountColor(), letterSpacing: '-0.5px' }}>
                 ${invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0
                   ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2))
                   : (invoice.isOverdue ? (invoice.totalWithLateFees || calculateTotal()).toFixed(2) : calculateTotal().toFixed(2))}
@@ -737,7 +752,7 @@ function FastInvoiceTemplate({ invoice }: { invoice: Invoice }) {
 }
 
 // Modern Template (Template 4) - Modern Design with Clean Aesthetics
-function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: Invoice, primaryColor: string, secondaryColor: string }) {
+function ModernTemplate({ invoice, primaryColor, secondaryColor, getAmountColor }: { invoice: Invoice, primaryColor: string, secondaryColor: string, getAmountColor: () => string }) {
   const [copiedMethod, setCopiedMethod] = useState<string | null>(null)
 
   const handleCopyPaymentMethod = async (methodType: string, details: string) => {
@@ -893,7 +908,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
               <div className="text-xs text-gray-500 mb-4">
                 Due: {new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
-              <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: primaryColor || '#FF6B35', letterSpacing: '-0.5px' }}>
+              <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: getAmountColor(), letterSpacing: '-0.5px' }}>
                 ${invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0
                   ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2))
                   : (invoice.isOverdue ? (invoice.totalWithLateFees || invoice.total).toFixed(2) : invoice.total.toFixed(2))}
@@ -1341,7 +1356,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor }: { invoice: In
 }
 
 // Creative Template (Template 5) - Senior Graphic Designer Style
-function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: Invoice, primaryColor: string, secondaryColor: string }) {
+function CreativeTemplate({ invoice, primaryColor, secondaryColor, getAmountColor }: { invoice: Invoice, primaryColor: string, secondaryColor: string, getAmountColor: () => string }) {
   const [copiedMethod, setCopiedMethod] = useState<string | null>(null)
 
   const handleCopyPaymentMethod = async (methodType: string, details: string) => {
@@ -1497,7 +1512,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
               <div className="text-xs text-gray-500 mb-4">
                 Due: {new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
-              <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: primaryColor || '#FF6B35', letterSpacing: '-0.5px' }}>
+              <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: getAmountColor(), letterSpacing: '-0.5px' }}>
                 ${invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0
                   ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2))
                   : (invoice.isOverdue ? (invoice.totalWithLateFees || invoice.total).toFixed(2) : invoice.total.toFixed(2))}
@@ -1945,7 +1960,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor }: { invoice: 
 }
 
 // Minimal Template (Template 6) - Copy of 60-second invoice with Dynamic Colors
-function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }: { invoice: Invoice, primaryColor: string, secondaryColor: string, accentColor: string }) {
+function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor, getAmountColor }: { invoice: Invoice, primaryColor: string, secondaryColor: string, accentColor: string, getAmountColor: () => string }) {
   const [copiedMethod, setCopiedMethod] = useState<string | null>(null)
 
   const handleCopyPaymentMethod = async (methodType: string, details: string) => {
@@ -2101,7 +2116,7 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor }:
               <div className="text-xs text-gray-500 mb-4">
                 Due: {new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
-              <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: primaryColor || '#FF6B35', letterSpacing: '-0.5px' }}>
+              <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: getAmountColor(), letterSpacing: '-0.5px' }}>
                 ${invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0
                   ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2))
                   : (invoice.isOverdue ? (invoice.totalWithLateFees || invoice.total).toFixed(2) : invoice.total.toFixed(2))}

@@ -155,13 +155,13 @@ export const getReminderEmailTemplate = (
     }
   };
 
-  // Determine tone color based on reminder type
+  // Determine tone color based on reminder type (for button only)
   const getToneColor = () => {
     switch (reminderType) {
       case 'friendly':
         return '#3B82F6'; // Blue
       case 'polite':
-        return '#10B981'; // Green
+        return '#8B5CF6'; // Purple (changed from green to avoid confusion)
       case 'firm':
         return '#F59E0B'; // Amber
       case 'urgent':
@@ -171,7 +171,22 @@ export const getReminderEmailTemplate = (
     }
   };
 
+  // Get amount color based on invoice status (not reminder type)
+  const getAmountColor = () => {
+    if (invoice.status === 'paid') {
+      return '#10b981'; // Green
+    }
+    if (invoice.status === 'overdue' || invoice.isOverdue || overdueDays > 0) {
+      return '#ef4444'; // Red
+    }
+    if (invoice.status === 'pending' || invoice.status === 'sent') {
+      return '#FF6B35'; // Orange - matches estimate/invoice public pages
+    }
+    return '#FF6B35'; // Default to orange for other statuses
+  };
+
   const toneColor = getToneColor();
+  const amountColor = getAmountColor();
   const primaryColor = '#1F2937';
 
   return {
@@ -230,7 +245,7 @@ export const getReminderEmailTemplate = (
               color: #000000 !important;
             }
             .amount {
-              color: #FF6B35 !important;
+              color: ${amountColor} !important;
             }
             .business-details,
             .invoice-date-label {
@@ -301,7 +316,7 @@ export const getReminderEmailTemplate = (
           .amount {
             font-size: 32px;
             font-weight: 700;
-            color: ${toneColor} !important;
+            color: ${amountColor} !important;
             letter-spacing: -0.5px;
             margin: 16px 0 0 0;
           }
@@ -427,6 +442,40 @@ export const getReminderEmailTemplate = (
             .amount {
               font-size: 28px;
             }
+            /* Mobile styles for late fees table */
+            .late-fees-table {
+              font-size: 13px !important;
+              width: 100% !important;
+            }
+            .late-fees-table td {
+              font-size: 13px !important;
+              padding: 4px 0 !important;
+              display: block !important;
+              width: 100% !important;
+              text-align: left !important;
+            }
+            .late-fees-table td:first-child {
+              font-weight: 500 !important;
+              margin-bottom: 2px !important;
+            }
+            .late-fees-table td:last-child {
+              font-size: 13px !important;
+              text-align: right !important;
+              margin-bottom: 8px !important;
+            }
+            .late-fees-table tr {
+              display: block !important;
+              width: 100% !important;
+              margin-bottom: 4px !important;
+            }
+            .late-fees-table tr:last-child td {
+              border-top: 1px solid #fecaca !important;
+              padding-top: 8px !important;
+              margin-top: 4px !important;
+            }
+            .late-fees-table tr:last-child td:last-child {
+              font-size: 15px !important;
+            }
           }
         </style>
       </head>
@@ -462,18 +511,20 @@ export const getReminderEmailTemplate = (
 
             ${invoice.hasLateFees && invoice.lateFees > 0 ? `
               <div style="background-color: #fef2f2; border-left: 4px solid #EF4444; padding: 12px 16px; margin: 16px 0;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                  <span style="color: #1F2937; font-size: 14px; font-weight: 500;">Invoice Amount:</span>
-                  <span style="color: #1F2937; font-size: 14px; font-weight: 500;">$${(invoice.baseTotal || ((invoice.total || 0) - (invoice.lateFees || 0))).toLocaleString()}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                  <span style="color: #dc2626; font-size: 14px; font-weight: 500;">Late Fee:</span>
-                  <span style="color: #dc2626; font-size: 14px; font-weight: 500;">$${(invoice.lateFees || 0).toLocaleString()}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px solid #fecaca;">
-                  <span style="color: #1F2937; font-size: 16px; font-weight: 700;">Total Due:</span>
-                  <span style="color: #1F2937; font-size: 16px; font-weight: 700;">$${(invoice.total || 0).toLocaleString()}</span>
-                </div>
+                <table class="late-fees-table" style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+                  <tr>
+                    <td style="color: #1F2937; font-size: 14px; font-weight: 500; padding: 0 0 4px 0; word-wrap: break-word; width: 60%;">Invoice Amount:</td>
+                    <td style="color: #1F2937; font-size: 14px; font-weight: 500; text-align: right; padding: 0 0 4px 0; white-space: nowrap; width: 40%;">$${(invoice.baseTotal || ((invoice.total || 0) - (invoice.lateFees || 0))).toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td style="color: #dc2626; font-size: 14px; font-weight: 500; padding: 0 0 4px 0; word-wrap: break-word; width: 60%;">Late Fee:</td>
+                    <td style="color: #dc2626; font-size: 14px; font-weight: 500; text-align: right; padding: 0 0 4px 0; white-space: nowrap; width: 40%;">$${(invoice.lateFees || 0).toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding-top: 8px; border-top: 1px solid #fecaca; color: #1F2937; font-size: 16px; font-weight: 700; padding-bottom: 0; word-wrap: break-word; width: 60%;">Total Due:</td>
+                    <td style="padding-top: 8px; border-top: 1px solid #fecaca; color: #1F2937; font-size: 16px; font-weight: 700; text-align: right; padding-bottom: 0; white-space: nowrap; width: 40%;">$${(invoice.total || 0).toLocaleString()}</td>
+                  </tr>
+                </table>
               </div>
             ` : ''}
 
