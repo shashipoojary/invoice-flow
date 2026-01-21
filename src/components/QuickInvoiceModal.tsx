@@ -3400,7 +3400,7 @@ export default function QuickInvoiceModal({
                       ) : (hasMissingDetails && showMissingDetailsWarning) ? (
                         <>
                           <Settings className="h-4 w-4" />
-                          <span>Update Settings</span>
+                          <span>Update</span>
                         </>
                       ) : (
                         <>
@@ -3458,7 +3458,7 @@ export default function QuickInvoiceModal({
                   ) : (
                     <>
                       <Send className="h-4 w-4" />
-                      <span>{hasMissingDetails && showMissingDetailsWarning ? 'Send Anyway' : (markAsPaid ? 'Send Receipt' : 'Send')}</span>
+                      <span>{markAsPaid ? 'Send Receipt' : 'Send'}</span>
                     </>
                   )}
                 </button>

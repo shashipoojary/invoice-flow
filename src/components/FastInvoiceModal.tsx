@@ -1304,7 +1304,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                     ) : (hasMissingDetails && showMissingDetailsWarning) ? (
                       <>
                         <Settings className="h-4 w-4" />
-                        <span>Update Settings</span>
+                        <span>Update</span>
                       </>
                     ) : (
                       <>
@@ -1351,7 +1351,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                   ) : (
                     <>
                       <Send className="h-4 w-4" />
-                      <span>{hasMissingDetails && showMissingDetailsWarning ? 'Send Anyway' : (markAsPaid ? 'Send Receipt' : 'Send')}</span>
+                      <span>{markAsPaid ? 'Send Receipt' : 'Send'}</span>
                     </>
                   )}
                 </button>
