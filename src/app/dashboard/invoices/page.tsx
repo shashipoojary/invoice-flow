@@ -394,6 +394,11 @@ function InvoicesContent(): React.JSX.Element {
           // Check if this invoice has partial payments
           return invoicesWithPartialPayments.has(invoice.id);
         });
+      } else if (statusFilter === 'writeoff' || statusFilter === 'write-off') {
+        // Filter for invoices with write-off amount
+        filtered = filtered.filter(invoice => {
+          return invoice.writeOffAmount && invoice.writeOffAmount > 0;
+        });
       } else {
         filtered = filtered.filter(invoice => {
           switch (statusFilter) {
@@ -3132,53 +3137,74 @@ function InvoicesContent(): React.JSX.Element {
                             <span className="text-gray-700">Tax ({(selectedInvoice.taxRate || 0) * 100}%):</span>
                             <span className="text-gray-900">${(selectedInvoice.taxAmount || 0).toFixed(2)}</span>
                           </div>
-                          {dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 ? (
-                            <>
-                              <div className="flex justify-between text-xs sm:text-sm border-t pt-1 border-gray-200">
-                                <span className="text-gray-700">Total:</span>
-                                <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
-                              </div>
-                              {showPaymentInfo && (
-                                <div className="flex justify-between text-xs sm:text-sm">
-                                  <span className="text-emerald-700">Total Paid:</span>
-                                  <span className="text-emerald-700 font-semibold">${totalPaid.toFixed(2)}</span>
-                                </div>
-                              )}
-                              {hasPartialPayments && (
-                                <div className="flex justify-between text-xs sm:text-sm">
-                                  <span className="text-orange-700">Remaining Balance:</span>
-                                  <span className="text-orange-700 font-semibold">${remainingBalance.toFixed(2)}</span>
-                                </div>
-                              )}
-                              <div className="flex justify-between text-xs sm:text-sm">
-                                <span className="text-red-700">Late Fees:</span>
-                                <span className="text-red-700 font-semibold">${dueCharges.lateFeeAmount.toFixed(2)}</span>
-                              </div>
-                              <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1 border-gray-200">
-                                <span className="text-red-900">Total Payable:</span>
-                                <span className="text-red-900">${dueCharges.totalPayable.toFixed(2)}</span>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div className="flex justify-between text-xs sm:text-sm border-t pt-1 border-gray-200">
-                                <span className="text-gray-700">Total:</span>
-                                <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
-                              </div>
-                              {showPaymentInfo && (
-                                <div className="flex justify-between text-xs sm:text-sm">
-                                  <span className="text-emerald-700">Total Paid:</span>
-                                  <span className="text-emerald-700 font-semibold">${totalPaid.toFixed(2)}</span>
-                                </div>
-                              )}
-                              {hasPartialPayments && (
-                                <div className="flex justify-between text-xs sm:text-sm font-bold">
-                                  <span className="text-orange-700">Remaining Balance:</span>
-                                  <span className="text-orange-700">${remainingBalance.toFixed(2)}</span>
-                                </div>
-                              )}
-                            </>
-                          )}
+                          {(() => {
+                            const hasWriteOff = selectedInvoice.writeOffAmount && selectedInvoice.writeOffAmount > 0;
+                            const isPaidWithWriteOff = isPaid && hasWriteOff;
+                            
+                            if (dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0) {
+                              return (
+                                <>
+                                  <div className="flex justify-between text-xs sm:text-sm border-t pt-1 border-gray-200">
+                                    <span className="text-gray-700">Total:</span>
+                                    <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
+                                  </div>
+                                  {showPaymentInfo && (
+                                    <div className="flex justify-between text-xs sm:text-sm">
+                                      <span className="text-emerald-700">Total Paid:</span>
+                                      <span className="text-emerald-700 font-semibold">${totalPaid.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  {hasPartialPayments && (
+                                    <div className="flex justify-between text-xs sm:text-sm">
+                                      <span className="text-orange-700">Remaining Balance:</span>
+                                      <span className="text-orange-700 font-semibold">${remainingBalance.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex justify-between text-xs sm:text-sm">
+                                    <span className="text-red-700">Late Fees:</span>
+                                    <span className="text-red-700 font-semibold">${dueCharges.lateFeeAmount.toFixed(2)}</span>
+                                  </div>
+                                  {isPaidWithWriteOff && (
+                                    <div className="flex justify-between text-xs sm:text-sm">
+                                      <span className="text-slate-700">Write-off Amount:</span>
+                                      <span className="text-slate-700 font-semibold">${(selectedInvoice.writeOffAmount || 0).toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1 border-gray-200">
+                                    <span className="text-red-900">Total Payable:</span>
+                                    <span className="text-red-900">${dueCharges.totalPayable.toFixed(2)}</span>
+                                  </div>
+                                </>
+                              );
+                            } else {
+                              return (
+                                <>
+                                  <div className="flex justify-between text-xs sm:text-sm border-t pt-1 border-gray-200">
+                                    <span className="text-gray-700">Total:</span>
+                                    <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
+                                  </div>
+                                  {showPaymentInfo && (
+                                    <div className="flex justify-between text-xs sm:text-sm">
+                                      <span className="text-emerald-700">Total Paid:</span>
+                                      <span className="text-emerald-700 font-semibold">${totalPaid.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  {hasPartialPayments && (
+                                    <div className="flex justify-between text-xs sm:text-sm font-bold">
+                                      <span className="text-orange-700">Remaining Balance:</span>
+                                      <span className="text-orange-700">${remainingBalance.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  {isPaidWithWriteOff && (
+                                    <div className="flex justify-between text-xs sm:text-sm">
+                                      <span className="text-slate-700">Write-off Amount:</span>
+                                      <span className="text-slate-700 font-semibold">${(selectedInvoice.writeOffAmount || 0).toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            }
+                          })()}
                         </div>
                       );
                     })()}
@@ -3191,6 +3217,25 @@ function InvoicesContent(): React.JSX.Element {
                 <div className={`p-3 sm:p-6 border-t ${'border-gray-200'}`}>
                   <h3 className={`text-sm sm:text-base font-semibold mb-2 ${'text-gray-900'}`}>Notes</h3>
                   <p className={`text-xs sm:text-sm ${'text-gray-600'}`}>{selectedInvoice.notes}</p>
+                </div>
+              )}
+
+              {/* Write-off Information */}
+              {selectedInvoice.writeOffAmount && selectedInvoice.writeOffAmount > 0 && (
+                <div className={`p-3 sm:p-6 border-t ${'border-gray-200'}`}>
+                  <h3 className={`text-sm sm:text-base font-semibold mb-2 ${'text-gray-900'}`}>Write-off Information</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs sm:text-sm">
+                      <span className="text-gray-700">Write-off Amount:</span>
+                      <span className="text-slate-700 font-semibold">${(selectedInvoice.writeOffAmount || 0).toFixed(2)}</span>
+                    </div>
+                    {selectedInvoice.writeOffNotes && (
+                      <div>
+                        <span className="text-xs sm:text-sm text-gray-700 font-medium">Notes:</span>
+                        <p className={`text-xs sm:text-sm ${'text-gray-600'} mt-1`}>{selectedInvoice.writeOffNotes}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 

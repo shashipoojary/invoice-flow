@@ -4124,6 +4124,10 @@ export default function DashboardOverview() {
     router.push('/dashboard/invoices?status=overdue');
   }, [router]);
 
+  const handleWriteOffInvoicesClick = useCallback(() => {
+    router.push('/dashboard/invoices?status=writeoff');
+  }, [router]);
+
   // Consistent money formatter for stats
   const formatMoney = useCallback((value: number | undefined | null) => {
     const n = Number(value || 0);
@@ -4568,12 +4572,14 @@ export default function DashboardOverview() {
                       </div>
                     </div>
                     {/* Trend Indicator - Right Side - Desktop Only */}
-                    {totalRevenue > 0 && (
-                      <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
-                        <ArrowUp className="w-3 h-3 text-emerald-600" />
-                        <span className="text-[10px] font-medium text-emerald-600">+23%</span>
-                      </div>
-                    )}
+                    <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                      {totalRevenue > 0 && (
+                        <>
+                          <ArrowUp className="w-3 h-3 text-emerald-600" />
+                          <span className="text-[10px] font-medium text-emerald-600">+23%</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </button>
 
@@ -4604,12 +4610,14 @@ export default function DashboardOverview() {
                       </div>
                     </div>
                     {/* Trend Indicator - Right Side - Desktop Only */}
-                    {totalPayableAmount > 0 && (
-                      <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
-                        <ArrowUp className="w-3 h-3 text-amber-600" />
-                        <span className="text-[10px] font-medium text-amber-600">+18%</span>
-                      </div>
-                    )}
+                    <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                      {totalPayableAmount > 0 && (
+                        <>
+                          <ArrowUp className="w-3 h-3 text-amber-600" />
+                          <span className="text-[10px] font-medium text-amber-600">+18%</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </button>
 
@@ -4637,12 +4645,14 @@ export default function DashboardOverview() {
                       </div>
                     </div>
                     {/* Trend Indicator - Right Side - Desktop Only */}
-                    {overdueCount > 0 && (
-                      <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
-                        <ArrowDown className="w-3 h-3 text-red-500" />
-                        <span className="text-[10px] font-medium text-red-500">-8%</span>
-                      </div>
-                    )}
+                    <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                      {overdueCount > 0 && (
+                        <>
+                          <ArrowDown className="w-3 h-3 text-red-500" />
+                          <span className="text-[10px] font-medium text-red-500">-8%</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </button>
 
@@ -4670,12 +4680,14 @@ export default function DashboardOverview() {
                       </div>
                     </div>
                     {/* Trend Indicator - Right Side - Desktop Only */}
-                    {totalClients > 0 && (
-                      <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
-                        <ArrowUp className="w-3 h-3 text-indigo-600" />
-                        <span className="text-[10px] font-medium text-indigo-600">+15%</span>
-                      </div>
-                    )}
+                    <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                      {totalClients > 0 && (
+                        <>
+                          <ArrowUp className="w-3 h-3 text-indigo-600" />
+                          <span className="text-[10px] font-medium text-indigo-600">+15%</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </button>
                       </div>
@@ -4716,11 +4728,15 @@ export default function DashboardOverview() {
                                 </div>
                               </div>
                             </div>
+                            {/* Trend Indicator Placeholder - Right Side - Desktop Only (for consistent width) */}
+                            <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                            </div>
                           </div>
                         </button>
 
                         {/* Total Write-off */}
                         <button 
+                          onClick={handleWriteOffInvoicesClick}
                           className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 cursor-pointer bg-white border border-gray-200 hover:border-slate-500 h-full transition-colors"
                         >
                           <div className="flex items-start justify-between h-full">
@@ -4741,6 +4757,9 @@ export default function DashboardOverview() {
                                   </span>
                                 </div>
                               </div>
+                            </div>
+                            {/* Trend Indicator Placeholder - Right Side - Desktop Only (for consistent width) */}
+                            <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
                             </div>
                           </div>
                         </button>
@@ -5391,53 +5410,74 @@ export default function DashboardOverview() {
                              <span className="text-gray-700">Tax ({(selectedInvoice.taxRate || 0) * 100}%):</span>
                              <span className="text-gray-900">${(selectedInvoice.taxAmount || 0).toFixed(2)}</span>
                            </div>
-                           {dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 ? (
-                             <>
-                               <div className="flex justify-between text-xs sm:text-sm border-t pt-1 border-gray-200">
-                                 <span className="text-gray-700">Total:</span>
-                                 <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
-                               </div>
-                               {showPaymentInfo && (
-                                 <div className="flex justify-between text-xs sm:text-sm">
-                                   <span className="text-emerald-700">Total Paid:</span>
-                                   <span className="text-emerald-700 font-semibold">${totalPaid.toFixed(2)}</span>
-                                 </div>
-                               )}
-                               {hasPartialPayments && (
-                                 <div className="flex justify-between text-xs sm:text-sm">
-                                   <span className="text-orange-700">Remaining Balance:</span>
-                                   <span className="text-orange-700 font-semibold">${remainingBalance.toFixed(2)}</span>
-                                 </div>
-                               )}
-                               <div className="flex justify-between text-xs sm:text-sm">
-                                 <span className="text-red-700">Late Fees:</span>
-                                 <span className="text-red-700 font-semibold">${dueCharges.lateFeeAmount.toFixed(2)}</span>
-                               </div>
-                               <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1 border-gray-200">
-                                 <span className="text-red-900">Total Payable:</span>
-                                 <span className="text-red-900">${dueCharges.totalPayable.toFixed(2)}</span>
-                               </div>
-                             </>
-                           ) : (
-                             <>
-                               <div className="flex justify-between text-xs sm:text-sm border-t pt-1 border-gray-200">
-                                 <span className="text-gray-700">Total:</span>
-                               <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
-                             </div>
-                               {showPaymentInfo && (
-                                 <div className="flex justify-between text-xs sm:text-sm">
-                                   <span className="text-emerald-700">Total Paid:</span>
-                                   <span className="text-emerald-700 font-semibold">${totalPaid.toFixed(2)}</span>
-                                 </div>
-                               )}
-                               {hasPartialPayments && (
-                                 <div className="flex justify-between text-xs sm:text-sm font-bold">
-                                   <span className="text-orange-700">Remaining Balance:</span>
-                                   <span className="text-orange-700">${remainingBalance.toFixed(2)}</span>
-                                 </div>
-                               )}
-                             </>
-                           )}
+                           {(() => {
+                             const hasWriteOff = selectedInvoice.writeOffAmount && selectedInvoice.writeOffAmount > 0;
+                             const isPaidWithWriteOff = isPaid && hasWriteOff;
+                             
+                             if (dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0) {
+                               return (
+                                 <>
+                                   <div className="flex justify-between text-xs sm:text-sm border-t pt-1 border-gray-200">
+                                     <span className="text-gray-700">Total:</span>
+                                     <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
+                                   </div>
+                                   {showPaymentInfo && (
+                                     <div className="flex justify-between text-xs sm:text-sm">
+                                       <span className="text-emerald-700">Total Paid:</span>
+                                       <span className="text-emerald-700 font-semibold">${totalPaid.toFixed(2)}</span>
+                                     </div>
+                                   )}
+                                   {hasPartialPayments && (
+                                     <div className="flex justify-between text-xs sm:text-sm">
+                                       <span className="text-orange-700">Remaining Balance:</span>
+                                       <span className="text-orange-700 font-semibold">${remainingBalance.toFixed(2)}</span>
+                                     </div>
+                                   )}
+                                   <div className="flex justify-between text-xs sm:text-sm">
+                                     <span className="text-red-700">Late Fees:</span>
+                                     <span className="text-red-700 font-semibold">${dueCharges.lateFeeAmount.toFixed(2)}</span>
+                                   </div>
+                                   {isPaidWithWriteOff && (
+                                     <div className="flex justify-between text-xs sm:text-sm">
+                                       <span className="text-slate-700">Write-off Amount:</span>
+                                       <span className="text-slate-700 font-semibold">${(selectedInvoice.writeOffAmount || 0).toFixed(2)}</span>
+                                     </div>
+                                   )}
+                                   <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1 border-gray-200">
+                                     <span className="text-red-900">Total Payable:</span>
+                                     <span className="text-red-900">${dueCharges.totalPayable.toFixed(2)}</span>
+                                   </div>
+                                 </>
+                               );
+                             } else {
+                               return (
+                                 <>
+                                   <div className="flex justify-between text-xs sm:text-sm border-t pt-1 border-gray-200">
+                                     <span className="text-gray-700">Total:</span>
+                                     <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
+                                   </div>
+                                   {showPaymentInfo && (
+                                     <div className="flex justify-between text-xs sm:text-sm">
+                                       <span className="text-emerald-700">Total Paid:</span>
+                                       <span className="text-emerald-700 font-semibold">${totalPaid.toFixed(2)}</span>
+                                     </div>
+                                   )}
+                                   {hasPartialPayments && (
+                                     <div className="flex justify-between text-xs sm:text-sm font-bold">
+                                       <span className="text-orange-700">Remaining Balance:</span>
+                                       <span className="text-orange-700">${remainingBalance.toFixed(2)}</span>
+                                     </div>
+                                   )}
+                                   {isPaidWithWriteOff && (
+                                     <div className="flex justify-between text-xs sm:text-sm">
+                                       <span className="text-slate-700">Write-off Amount:</span>
+                                       <span className="text-slate-700 font-semibold">${(selectedInvoice.writeOffAmount || 0).toFixed(2)}</span>
+                                     </div>
+                                   )}
+                                 </>
+                               );
+                             }
+                           })()}
                          </div>
                        );
                      })()}
@@ -5450,6 +5490,25 @@ export default function DashboardOverview() {
                  <div className="p-3 sm:p-6 border-t border-gray-200">
                    <h3 className="text-sm sm:text-base font-semibold mb-2 text-gray-900">Notes</h3>
                    <p className="text-xs sm:text-sm text-gray-700">{selectedInvoice.notes}</p>
+                 </div>
+               )}
+
+               {/* Write-off Information */}
+               {selectedInvoice.writeOffAmount && selectedInvoice.writeOffAmount > 0 && (
+                 <div className="p-3 sm:p-6 border-t border-gray-200">
+                   <h3 className="text-sm sm:text-base font-semibold mb-2 text-gray-900">Write-off Information</h3>
+                   <div className="space-y-2">
+                     <div className="flex justify-between text-xs sm:text-sm">
+                       <span className="text-gray-700">Write-off Amount:</span>
+                       <span className="text-slate-700 font-semibold">${(selectedInvoice.writeOffAmount || 0).toFixed(2)}</span>
+                     </div>
+                     {selectedInvoice.writeOffNotes && (
+                       <div>
+                         <span className="text-xs sm:text-sm text-gray-700 font-medium">Notes:</span>
+                         <p className="text-xs sm:text-sm text-gray-700 mt-1">{selectedInvoice.writeOffNotes}</p>
+                       </div>
+                     )}
+                   </div>
                  </div>
                )}
 

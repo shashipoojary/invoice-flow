@@ -133,7 +133,20 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
               created: { id: `created-${ev.id}`, type: 'system', title: 'Invoice created.', at: ev.created_at, icon: 'created' },
               edited: { id: `edited-${ev.id}`, type: 'system', title: 'Invoice edited.', at: ev.created_at, icon: 'scheduled' },
               sent: { id: `sent-${ev.id}`, type: 'email', title: 'Invoice sent.', at: ev.created_at, icon: 'sent' },
-              paid: { id: `paid-${ev.id}`, type: 'status', title: 'Invoice paid in full.', at: ev.created_at, icon: 'paid' },
+              paid: { 
+                id: `paid-${ev.id}`, 
+                type: 'status', 
+                title: ev.metadata?.writeOffAmount 
+                  ? `Invoice written off. Amount: $${parseFloat(ev.metadata.writeOffAmount.toString()).toFixed(2)}` 
+                  : 'Invoice paid in full.', 
+                details: ev.metadata?.writeOffAmount && ev.metadata?.notes 
+                  ? `Notes: ${ev.metadata.notes}` 
+                  : ev.metadata?.writeOffAmount 
+                    ? 'Invoice marked as paid with write-off.' 
+                    : undefined,
+                at: ev.created_at, 
+                icon: 'paid' 
+              },
               downloaded_by_customer: { id: `dl-${ev.id}`, type: 'client', title: 'Invoice downloaded by customer.', at: ev.created_at, icon: 'downloaded' },
               downloaded_pdf: { id: `dl-owner-${ev.id}`, type: 'owner', title: 'PDF downloaded.', at: ev.created_at, icon: 'downloaded' },
               payment_method_copied: { 

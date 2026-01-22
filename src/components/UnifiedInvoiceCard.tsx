@@ -94,6 +94,7 @@ export function UnifiedInvoiceCard({
   // Order matters: Partial Payment badge must match Paid/Remaining breakdown
   // Overdue badge must match Base/Late fee breakdown
   // Due today badge must match Base/Late fee breakdown (if applicable)
+  // Write Off badge shows when invoice has write-off amount
   // Memoize to prevent recreation on every render
   const badges = React.useMemo(() => [
     ...(dueCharges.isPartiallyPaid ? [
@@ -113,8 +114,14 @@ export function UnifiedInvoiceCard({
         <Clock className="h-3 w-3" />
         <span>Due today</span>
       </span>
+    ] : []),
+    ...(invoice.writeOffAmount && invoice.writeOffAmount > 0 ? [
+      <span key="writeoff" className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-slate-600">
+        <XCircle className="h-3 w-3" />
+        <span>Write Off</span>
+      </span>
     ] : [])
-  ], [dueCharges.isPartiallyPaid, dueDateStatus.status, dueDateStatus.days, invoice.status]);
+  ], [dueCharges.isPartiallyPaid, dueDateStatus.status, dueDateStatus.days, invoice.status, invoice.writeOffAmount]);
 
   // Prepare breakdowns - MUST match badge order for synchronization
   // Ensure complete strings are rendered atomically (no partial rendering)
@@ -124,6 +131,7 @@ export function UnifiedInvoiceCard({
     const items: React.ReactNode[] = [];
     
     const shouldShowPartialPayment = dueCharges.isPartiallyPaid;
+    const hasWriteOff = invoice.writeOffAmount && invoice.writeOffAmount > 0;
     
     // Calculate base amount (before late fees are added)
     // When hasLateFees is true, remainingBalance includes late fees, so we need to subtract them
@@ -142,6 +150,16 @@ export function UnifiedInvoiceCard({
       items.push(<div key="partial" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>{partialText}</div>);
     }
     
+    if (hasWriteOff && invoice.status === 'paid') {
+      // Show paid amount and write-off amount for written-off invoices
+      const paidAmount = dueCharges.totalPaid || 0;
+      const writeOffAmount = invoice.writeOffAmount || 0;
+      const paidStr = paidAmount.toFixed(2);
+      const writeOffStr = writeOffAmount.toFixed(2);
+      const writeOffText = `Paid: $${paidStr} • Write-off: $${writeOffStr}`;
+      items.push(<div key="writeoff" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>{writeOffText}</div>);
+    }
+    
     if (dueCharges.hasLateFees) {
       // Pre-compute all values before creating string to ensure atomic rendering
       const baseStr = baseAmount.toFixed(2);
@@ -152,12 +170,12 @@ export function UnifiedInvoiceCard({
       items.push(<div key="latefees" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>{lateFeesText}</div>);
     }
     
-    if (!shouldShowPartialPayment && !dueCharges.hasLateFees) {
+    if (!shouldShowPartialPayment && !dueCharges.hasLateFees && !hasWriteOff) {
       items.push(<div key="empty" className="min-h-[14px] sm:min-h-[16px]"></div>);
     }
     
     return items;
-  }, [dueCharges.isPartiallyPaid, dueCharges.hasLateFees, dueCharges.totalPaid, dueCharges.remainingBalance, dueCharges.lateFeeAmount, invoice.status]);
+  }, [dueCharges.isPartiallyPaid, dueCharges.hasLateFees, dueCharges.totalPaid, dueCharges.remainingBalance, dueCharges.lateFeeAmount, invoice.status, invoice.writeOffAmount]);
 
   // Use Intersection Observer to only enable rotation when card is visible
   const [isVisible, setIsVisible] = React.useState(false);
