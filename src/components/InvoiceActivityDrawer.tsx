@@ -20,6 +20,27 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
   const [loading, setLoading] = useState(false);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
 
+  // Prevent body and main scroll when drawer is open (simple approach)
+  useEffect(() => {
+    if (open) {
+      const originalBodyOverflow = document.body.style.overflow;
+      const mainElement = document.querySelector('main') as HTMLElement;
+      const originalMainOverflow = mainElement ? mainElement.style.overflow : '';
+      
+      document.body.style.overflow = 'hidden';
+      if (mainElement) {
+        mainElement.style.overflow = 'hidden';
+      }
+      
+      return () => {
+        document.body.style.overflow = originalBodyOverflow;
+        if (mainElement) {
+          mainElement.style.overflow = originalMainOverflow;
+        }
+      };
+    }
+  }, [open]);
+
   useEffect(() => {
     const fetchActivity = async () => {
       if (!open || !invoice?.id) return;
@@ -750,8 +771,6 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, invoice?.id]);
 
-  if (!open) return null;
-
   const iconFor = (i: ActivityItem) => {
     switch (i.icon) {
       case 'created': return <Clock className="h-4 w-4 text-gray-500" />;
@@ -768,60 +787,82 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
     }
   };
 
+  if (!open) return null;
+
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
-      <div className="absolute inset-0 backdrop-blur-sm bg-white/20 transition-all duration-300" onClick={onClose} />
-      <div className="absolute right-0 top-0 h-full w-1/2 sm:w-full sm:max-w-md bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 backdrop-blur-sm bg-white/20 transition-all duration-300"
+        onClick={onClose}
+      />
+      
+      {/* Sliding Panel - 75% width on mobile, fixed width on desktop */}
+      <div className="absolute right-0 top-0 h-full w-3/4 sm:w-full sm:max-w-md bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between p-5 border-b border-gray-200">
-            <h3 className="text-base font-semibold text-gray-900">Invoice activity</h3>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 transition-colors cursor-pointer">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Invoice activity</h3>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 transition-colors cursor-pointer"
+            >
               <X className="h-5 w-5 text-gray-500" />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-5">
-            <div className="mb-4">
-              <div className="text-sm text-gray-500">Invoice</div>
-              <div className="text-sm font-medium text-gray-900">{invoice.invoiceNumber} • {invoice.client?.name || 'Unknown'}</div>
+          
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            <div className="space-y-6">
+              {/* Invoice Info */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 mb-2">Invoice</h4>
+                <p className="text-sm font-medium text-gray-900">{invoice.invoiceNumber} • {invoice.client?.name || 'Unknown'}</p>
+              </div>
+
+              {/* Activity List */}
+              {loading ? (
+                <div className="text-sm text-gray-500">Loading activity…</div>
+              ) : activities.length === 0 ? (
+                <div className="text-sm text-gray-500">No activity yet.</div>
+              ) : (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 mb-4">Activity Timeline</h4>
+                  <ul className="pl-2">
+                    {activities.map((a, idx) => (
+                      <li key={a.id} className="relative grid grid-cols-[20px_1fr] gap-3 pb-5">
+                        {/* Connector line centered on the icon */}
+                        {idx !== activities.length - 1 && (
+                          <div className="absolute bottom-0 w-px bg-gray-200 z-0" style={{ left: '10px', top: '16px' }} />
+                        )}
+                        {/* Icon (no border/background) aligned to text center */}
+                        <div className="relative z-10 flex items-center justify-center h-5 w-5 mt-0.5">
+                          {iconFor(a)}
+                        </div>
+                        {/* Content */}
+                        <div className="py-0.5">
+                          <div className="text-sm text-gray-900 leading-5">{a.title}</div>
+                          <div className="text-xs text-gray-500 leading-4">
+                            {(() => {
+                              const date = new Date(a.at);
+                              // Format date to show correct date regardless of timezone
+                              // Use UTC date components to avoid timezone conversion issues
+                              const year = date.getUTCFullYear();
+                              const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+                              const day = String(date.getUTCDate()).padStart(2, '0');
+                              const hours = String(date.getUTCHours()).padStart(2, '0');
+                              const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+                              return `${year}-${month}-${day} ${hours}:${minutes} UTC`;
+                            })()}
+                          </div>
+                          {a.details && <div className="text-xs text-gray-500 mt-0.5">{a.details}</div>}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
-            {loading ? (
-              <div className="text-sm text-gray-500">Loading activity…</div>
-            ) : activities.length === 0 ? (
-              <div className="text-sm text-gray-500">No activity yet.</div>
-            ) : (
-              <ul className="pl-2">
-                {activities.map((a, idx) => (
-                  <li key={a.id} className="relative grid grid-cols-[20px_1fr] gap-3 pb-5">
-                    {/* Connector line centered on the icon */}
-                    {idx !== activities.length - 1 && (
-                      <div className="absolute bottom-0 w-px bg-gray-200 z-0" style={{ left: '10px', top: '16px' }} />
-                    )}
-                    {/* Icon (no border/background) aligned to text center */}
-                    <div className="relative z-10 flex items-center justify-center h-5 w-5 mt-0.5">
-                      {iconFor(a)}
-                    </div>
-                    {/* Content */}
-                    <div className="py-0.5">
-                      <div className="text-sm text-gray-900 leading-5">{a.title}</div>
-                      <div className="text-xs text-gray-500 leading-4">
-                        {(() => {
-                          const date = new Date(a.at);
-                          // Format date to show correct date regardless of timezone
-                          // Use UTC date components to avoid timezone conversion issues
-                          const year = date.getUTCFullYear();
-                          const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-                          const day = String(date.getUTCDate()).padStart(2, '0');
-                          const hours = String(date.getUTCHours()).padStart(2, '0');
-                          const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-                          return `${year}-${month}-${day} ${hours}:${minutes} UTC`;
-                        })()}
-                      </div>
-                      {a.details && <div className="text-xs text-gray-500 mt-0.5">{a.details}</div>}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
           </div>
           <div className="p-5 border-t border-gray-200 space-y-3">
             {invoice.public_token && (

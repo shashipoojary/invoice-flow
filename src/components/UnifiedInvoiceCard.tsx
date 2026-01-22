@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { FileText, AlertTriangle, Eye, Download, Send, CheckCircle, Edit, Trash2, Info, Copy, DollarSign, Clock, XCircle } from 'lucide-react';
 import InvoiceActivityDrawer from '@/components/InvoiceActivityDrawer';
 import type { Invoice } from '@/types';
@@ -66,6 +67,11 @@ export function UnifiedInvoiceCard({
 }: UnifiedInvoiceCardProps) {
   const { getAuthHeaders } = useAuth();
   const [showActivity, setShowActivity] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   // Use payment data from props (fetched in bulk) instead of individual fetch
   const paymentData = propPaymentData || null;
@@ -573,8 +579,9 @@ export function UnifiedInvoiceCard({
           </div>
         </div>
       </div>
-      {showActivity && (
-        <InvoiceActivityDrawer invoice={invoice as any} open={showActivity} onClose={() => setShowActivity(false)} />
+      {isMounted && showActivity && typeof window !== 'undefined' && createPortal(
+        <InvoiceActivityDrawer invoice={invoice as any} open={showActivity} onClose={() => setShowActivity(false)} />,
+        document.body
       )}
     </div>
   );
