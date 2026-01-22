@@ -414,71 +414,64 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         // If we can't fetch usage data, allow creation (fail open)
         // Continue to invoice creation
       } else {
-        // Step 1: Check free plan monthly limit (5 invoices/month) - ALWAYS check this first for fast invoices
-        // For fast invoices, we always check the monthly free limit regardless of user's plan
-        const freePlanLimit = 5 // Free plan always has 5 invoices/month limit
-        
-        // Calculate monthly invoice count (for current month)
-        let freePlanUsed = 0
-        if (usageData.plan === 'free' && usageData.limit !== null) {
-          // User is on free plan - use the provided monthly count
-          freePlanUsed = usageData.used || 0
-        } else if (usageData.plan === 'pay_per_invoice' || usageData.plan === 'monthly') {
-          // User is on pay_per_invoice or monthly - need to calculate monthly count
-          // For fast invoices, we still check the free monthly limit first
-          // We'll use a simplified approach: if limit is null, we need to fetch monthly count
-          // But to avoid extra API calls, we'll check pay_per_invoice free invoices if monthly limit check fails
-          // For now, assume monthly limit is available if we can't determine (fail open for monthly plan)
-          if (usageData.plan === 'monthly') {
-            // Monthly plan users have unlimited, so skip free limit check
-            freePlanUsed = 0 // Don't block monthly plan users
-          } else {
+        // CRITICAL: Monthly plan users have unlimited invoices - skip all limit checks
+        if (usageData.plan === 'monthly') {
+          // Monthly plan: No restrictions, allow creation
+          // Continue to invoice creation
+        } else {
+          // Step 1: Check free plan monthly limit (5 invoices/month) - ALWAYS check this first for fast invoices
+          const freePlanLimit = 5 // Free plan always has 5 invoices/month limit
+          
+          // Calculate monthly invoice count (for current month)
+          let freePlanUsed = 0
+          if (usageData.plan === 'free' && usageData.limit !== null) {
+            // User is on free plan - use the provided monthly count
+            freePlanUsed = usageData.used || 0
+          } else if (usageData.plan === 'pay_per_invoice') {
             // For pay_per_invoice, we'll check monthly limit by making a direct query
             // But to keep it simple, we'll check pay_per_invoice free invoices after this
             // For now, assume monthly limit might be available (we'll check pay_per_invoice next)
             freePlanUsed = 0 // Will check pay_per_invoice free invoices below
           }
-        }
-        
-        const freePlanRemaining = Math.max(0, freePlanLimit - freePlanUsed)
-        
-        if (freePlanRemaining > 0) {
-          // Free plan monthly limit available - use it (no charge)
-          // Continue to invoice creation
-        } else {
-          // Free plan monthly limit exhausted - check pay_per_invoice free invoices
-          if (usageData.plan === 'pay_per_invoice' && usageData.payPerInvoice) {
-            const payPerInvoiceFreeRemaining = usageData.payPerInvoice.freeInvoicesRemaining || 0
-            
-            if (payPerInvoiceFreeRemaining > 0) {
-              // Pay per invoice free invoices available - use them (no charge)
-              // Continue to invoice creation
+          
+          const freePlanRemaining = Math.max(0, freePlanLimit - freePlanUsed)
+          
+          if (freePlanRemaining > 0) {
+            // Free plan monthly limit available - use it (no charge)
+            // Continue to invoice creation
+          } else {
+            // Free plan monthly limit exhausted - check pay_per_invoice free invoices
+            if (usageData.plan === 'pay_per_invoice' && usageData.payPerInvoice) {
+              const payPerInvoiceFreeRemaining = usageData.payPerInvoice.freeInvoicesRemaining || 0
+              
+              if (payPerInvoiceFreeRemaining > 0) {
+                // Pay per invoice free invoices available - use them (no charge)
+                // Continue to invoice creation
+              } else {
+                // Both free plan monthly limit and pay_per_invoice free invoices exhausted - show charge confirmation
+                if (!isSending) {
+                  setLoading(false)
+                }
+                setSubscriptionUsage(usageData)
+                setPendingInvoiceCreation({ showToast, isSending })
+                setShowChargeConfirmation(true)
+                return // Wait for user confirmation
+              }
             } else {
-              // Both free plan monthly limit and pay_per_invoice free invoices exhausted - show charge confirmation
+              // Not on pay_per_invoice plan and free monthly limit exhausted - show upgrade modal
               if (!isSending) {
                 setLoading(false)
               }
+              showError('Invoice Limit Reached', 'You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.')
+              // Show upgrade modal
+              setShowUpgradeContent(true)
+              setShowUpgradeModal(true)
               setSubscriptionUsage(usageData)
-              setPendingInvoiceCreation({ showToast, isSending })
-              setShowChargeConfirmation(true)
-              return // Wait for user confirmation
+              return
             }
-          } else {
-            // Not on pay_per_invoice plan and free monthly limit exhausted - show upgrade modal
-            if (!isSending) {
-              setLoading(false)
-            }
-            showError('Invoice Limit Reached', 'You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.')
-            // Show upgrade modal
-            setShowUpgradeContent(true)
-            setShowUpgradeModal(true)
-            setSubscriptionUsage(usageData)
-            return
           }
         }
       }
-      
-      // Monthly plan: No restrictions, allow creation
     }
 
     try {
@@ -647,44 +640,60 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         // If we can't fetch usage data, allow creation (fail open)
         // Continue to invoice creation
       } else {
-        // Step 1: Check free plan monthly limit (5 invoices/month) - ALWAYS check this first for fast invoices
-        const freePlanLimit = 5 // Free plan always has 5 invoices/month limit
-        const freePlanUsed = usageData.used || 0
-        const freePlanRemaining = Math.max(0, freePlanLimit - freePlanUsed)
-        
-        if (freePlanRemaining > 0) {
-          // Free plan limit available - use it (no charge)
+        // CRITICAL: Monthly plan users have unlimited invoices - skip all limit checks
+        if (usageData.plan === 'monthly') {
+          // Monthly plan: No restrictions, allow creation
           // Continue to invoice creation
         } else {
-          // Free plan limit exhausted - check pay_per_invoice free invoices
-          if (usageData.plan === 'pay_per_invoice' && usageData.payPerInvoice) {
-            const payPerInvoiceFreeRemaining = usageData.payPerInvoice.freeInvoicesRemaining || 0
-            
-            if (payPerInvoiceFreeRemaining > 0) {
-              // Pay per invoice free invoices available - use them (no charge)
-              // Continue to invoice creation
-            } else {
-              // Both free plan and pay_per_invoice free invoices exhausted - show charge confirmation
-              setSendLoading(false)
-              setSubscriptionUsage(usageData)
-              setPendingInvoiceCreation({ showToast: true, isSending: true })
-              setShowChargeConfirmation(true)
-              return // Wait for user confirmation
-            }
+          // Step 1: Check free plan monthly limit (5 invoices/month) - ALWAYS check this first for fast invoices
+          const freePlanLimit = 5 // Free plan always has 5 invoices/month limit
+          
+          // Calculate monthly invoice count (for current month)
+          let freePlanUsed = 0
+          if (usageData.plan === 'free' && usageData.limit !== null) {
+            // User is on free plan - use the provided monthly count
+            freePlanUsed = usageData.used || 0
+          } else if (usageData.plan === 'pay_per_invoice') {
+            // For pay_per_invoice, we'll check monthly limit by making a direct query
+            // But to keep it simple, we'll check pay_per_invoice free invoices after this
+            // For now, assume monthly limit might be available (we'll check pay_per_invoice next)
+            freePlanUsed = 0 // Will check pay_per_invoice free invoices below
+          }
+          
+          const freePlanRemaining = Math.max(0, freePlanLimit - freePlanUsed)
+          
+          if (freePlanRemaining > 0) {
+            // Free plan monthly limit available - use it (no charge)
+            // Continue to invoice creation
           } else {
-            // Not on pay_per_invoice plan and free limit exhausted - show upgrade modal
-            setSendLoading(false)
-            showError('Invoice Limit Reached', 'You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.')
-            // Show upgrade modal
-            setShowUpgradeContent(true)
-            setShowUpgradeModal(true)
-            setSubscriptionUsage(usageData)
-            return
+            // Free plan monthly limit exhausted - check pay_per_invoice free invoices
+            if (usageData.plan === 'pay_per_invoice' && usageData.payPerInvoice) {
+              const payPerInvoiceFreeRemaining = usageData.payPerInvoice.freeInvoicesRemaining || 0
+              
+              if (payPerInvoiceFreeRemaining > 0) {
+                // Pay per invoice free invoices available - use them (no charge)
+                // Continue to invoice creation
+              } else {
+                // Both free plan and pay_per_invoice free invoices exhausted - show charge confirmation
+                setSendLoading(false)
+                setSubscriptionUsage(usageData)
+                setPendingInvoiceCreation({ showToast: true, isSending: true })
+                setShowChargeConfirmation(true)
+                return // Wait for user confirmation
+              }
+            } else {
+              // Not on pay_per_invoice plan and free limit exhausted - show upgrade modal
+              setSendLoading(false)
+              showError('Invoice Limit Reached', 'You\'ve reached your monthly invoice limit. Please upgrade to create more invoices.')
+              // Show upgrade modal
+              setShowUpgradeContent(true)
+              setShowUpgradeModal(true)
+              setSubscriptionUsage(usageData)
+              return
+            }
           }
         }
       }
-      
-      // Monthly plan: No restrictions, allow creation
     }
 
     try {

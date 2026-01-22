@@ -31,6 +31,8 @@ export default function PartialPaymentModal({
   const [payments, setPayments] = useState<Payment[]>([]);
   const [totalPaid, setTotalPaid] = useState(0);
   const [remainingBalance, setRemainingBalance] = useState(0);
+  const [lateFeesAmount, setLateFeesAmount] = useState(0);
+  const [totalPayable, setTotalPayable] = useState(0);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -62,6 +64,8 @@ export default function PartialPaymentModal({
         setPayments(data.payments || []);
         setTotalPaid(data.totalPaid || 0);
         setRemainingBalance(data.remainingBalance || invoice.total);
+        setLateFeesAmount(data.lateFeesAmount || 0);
+        setTotalPayable(data.totalPayable || invoice.total);
       }
     } catch (error) {
       console.error('Error fetching payments:', error);
@@ -77,8 +81,10 @@ export default function PartialPaymentModal({
       return;
     }
 
-    if (parseFloat(amount) > remainingBalance) {
-      alert(`Payment amount cannot exceed remaining balance of $${remainingBalance.toFixed(2)}`);
+    // Check against total payable (including late fees), not just remaining balance
+    const maxPayment = totalPayable - totalPaid;
+    if (parseFloat(amount) > maxPayment) {
+      alert(`Payment amount cannot exceed total payable (including late fees) of $${maxPayment.toFixed(2)}`);
       return;
     }
 
@@ -194,6 +200,18 @@ export default function PartialPaymentModal({
               <span className="text-sm font-medium text-gray-700">Invoice Total</span>
               <span className="text-lg font-semibold text-gray-900">${invoice.total.toFixed(2)}</span>
             </div>
+            {lateFeesAmount > 0 && (
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-red-700">Late Fees</span>
+                <span className="text-lg font-semibold text-red-700">${lateFeesAmount.toFixed(2)}</span>
+              </div>
+            )}
+            {lateFeesAmount > 0 && (
+              <div className="flex items-center justify-between mb-2 border-t border-gray-300 pt-2">
+                <span className="text-sm font-medium text-gray-700">Total Payable</span>
+                <span className="text-lg font-semibold text-gray-900">${totalPayable.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">Total Paid</span>
               <span className="text-lg font-semibold text-emerald-600">${totalPaid.toFixed(2)}</span>
@@ -228,14 +246,14 @@ export default function PartialPaymentModal({
                   type="number"
                   step="0.01"
                   min="0.01"
-                  max={remainingBalance}
+                  max={totalPayable - totalPaid}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="0.00"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">Max: ${remainingBalance.toFixed(2)}</p>
+                <p className="text-xs text-gray-500 mt-1">Max: ${(totalPayable - totalPaid).toFixed(2)} {lateFeesAmount > 0 ? '(including late fees)' : ''}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">

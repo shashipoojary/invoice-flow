@@ -82,6 +82,9 @@ export interface Invoice {
   // Partial payment fields (always available, 0 if no payments)
   totalPaid?: number;
   remainingBalance?: number;
+  // Write-off fields
+  writeOffAmount?: number;
+  writeOffNotes?: string;
 }
 
 export interface FreelancerSettings {

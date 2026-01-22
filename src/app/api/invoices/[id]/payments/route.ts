@@ -42,12 +42,59 @@ export async function GET(
     // Calculate total paid and remaining balance
     const totalPaid = (payments || []).reduce((sum, payment) => sum + parseFloat(payment.amount.toString()), 0);
     const remainingBalance = invoice.total - totalPaid;
+    
+    // Calculate late fees if invoice is overdue
+    let lateFeesAmount = 0;
+    let totalPayable = invoice.total;
+    
+    // Fetch invoice with late fees data
+    const { data: invoiceWithLateFees } = await supabaseAdmin
+      .from('invoices')
+      .select('due_date, late_fees, status')
+      .eq('id', invoiceId)
+      .single();
+    
+    if (invoiceWithLateFees && invoiceWithLateFees.due_date && invoiceWithLateFees.late_fees) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dueDate = new Date(invoiceWithLateFees.due_date);
+      dueDate.setHours(0, 0, 0, 0);
+      const isOverdue = dueDate < today && invoiceWithLateFees.status !== 'paid';
+      
+      if (isOverdue) {
+        try {
+          const lateFeesSettings = typeof invoiceWithLateFees.late_fees === 'string' 
+            ? JSON.parse(invoiceWithLateFees.late_fees) 
+            : invoiceWithLateFees.late_fees;
+          
+          if (lateFeesSettings && lateFeesSettings.enabled) {
+            const daysOverdue = Math.round((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+            const gracePeriod = lateFeesSettings.gracePeriod || 0;
+            
+            if (daysOverdue > gracePeriod) {
+              if (lateFeesSettings.type === 'percentage') {
+                lateFeesAmount = remainingBalance * ((lateFeesSettings.amount || 0) / 100);
+              } else if (lateFeesSettings.type === 'fixed') {
+                lateFeesAmount = lateFeesSettings.amount || 0;
+              }
+              totalPayable = invoice.total + lateFeesAmount;
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing late fees:', e);
+        }
+      }
+    }
+    
+    const finalRemainingBalance = Math.max(0, totalPayable - totalPaid);
 
     return NextResponse.json({
       payments: payments || [],
       totalPaid,
-      remainingBalance,
-      invoiceTotal: invoice.total
+      remainingBalance: finalRemainingBalance,
+      invoiceTotal: invoice.total,
+      lateFeesAmount,
+      totalPayable
     });
 
   } catch (error) {
@@ -77,7 +124,7 @@ export async function POST(
     // Verify invoice belongs to user and is not already fully paid
     const { data: invoice, error: invoiceError } = await supabaseAdmin
       .from('invoices')
-      .select('id, status, total')
+      .select('id, status, total, due_date, late_fees')
       .eq('id', invoiceId)
       .eq('user_id', user.id)
       .single();
@@ -100,12 +147,59 @@ export async function POST(
       .eq('invoice_id', invoiceId);
 
     const totalPaid = (existingPayments || []).reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
+    const remainingBalance = invoice.total - totalPaid;
+    
+    // Calculate late fees if invoice is overdue
+    let lateFeesAmount = 0;
+    let totalPayable = invoice.total;
+    
+    if (invoice.due_date && invoice.late_fees) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dueDate = new Date(invoice.due_date);
+      dueDate.setHours(0, 0, 0, 0);
+      const isOverdue = dueDate < today && invoice.status !== 'paid';
+      
+      if (isOverdue) {
+        try {
+          const lateFeesSettings = typeof invoice.late_fees === 'string' 
+            ? JSON.parse(invoice.late_fees) 
+            : invoice.late_fees;
+          
+          if (lateFeesSettings && lateFeesSettings.enabled) {
+            const daysOverdue = Math.round((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+            const gracePeriod = lateFeesSettings.gracePeriod || 0;
+            
+            if (daysOverdue > gracePeriod) {
+              if (lateFeesSettings.type === 'percentage') {
+                // For percentage-based: calculate late fee on remaining balance (after partial payments)
+                lateFeesAmount = remainingBalance * ((lateFeesSettings.amount || 0) / 100);
+              } else if (lateFeesSettings.type === 'fixed') {
+                // For fixed: late fee is a fixed amount regardless of partial payments
+                lateFeesAmount = lateFeesSettings.amount || 0;
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing late fees:', e);
+        }
+      }
+    }
+    
+    // Calculate total payable: invoice total + late fees
+    // For fixed late fees: lateFeesAmount is fixed
+    // For percentage late fees: lateFeesAmount is calculated on remaining balance
+    totalPayable = invoice.total + lateFeesAmount;
+    
+    // What customer actually owes now = remaining balance on invoice + late fees
+    const actualTotalPayable = remainingBalance + lateFeesAmount;
+    
     const newTotalPaid = totalPaid + parseFloat(amount.toString());
 
-    // Check if payment would exceed invoice total
-    if (newTotalPaid > invoice.total) {
+    // Check if payment would exceed total payable (including late fees)
+    if (newTotalPaid > totalPayable) {
       return NextResponse.json({ 
-        error: `Payment amount exceeds invoice total. Maximum payment allowed: $${(invoice.total - totalPaid).toFixed(2)}` 
+        error: `Payment amount exceeds total payable (including late fees). Maximum payment allowed: $${(actualTotalPayable).toFixed(2)}` 
       }, { status: 400 });
     }
 
@@ -140,25 +234,53 @@ export async function POST(
 
       const invoiceStatus = invoiceData?.status;
 
-    // Check if invoice is now fully paid
-    if (newTotalPaid >= invoice.total) {
-      // Auto-mark invoice as paid if fully paid
-      await supabaseAdmin
-        .from('invoices')
-        .update({ status: 'paid', updated_at: new Date().toISOString() })
-        .eq('id', invoiceId);
+      // Calculate new remaining balance after payment
+      const newRemainingBalance = invoice.total - newTotalPaid;
+      
+      // Recalculate late fees after payment (for percentage-based fees, recalculate on new remaining balance)
+      let finalLateFees = lateFeesAmount;
+      
+      if (invoice.due_date && invoice.late_fees && lateFeesAmount > 0) {
+        try {
+          const lateFeesSettings = typeof invoice.late_fees === 'string' 
+            ? JSON.parse(invoice.late_fees) 
+            : invoice.late_fees;
+          
+          if (lateFeesSettings && lateFeesSettings.enabled && lateFeesSettings.type === 'percentage') {
+            // For percentage-based: recalculate late fees on new remaining balance
+            finalLateFees = newRemainingBalance * ((lateFeesSettings.amount || 0) / 100);
+          }
+          // For fixed late fees: keep the same amount
+        } catch (e) {
+          // Keep original lateFeesAmount
+        }
+      }
+      
+      // Total payable = invoice.total + late fees
+      // But what's actually remaining = new remaining balance + recalculated late fees
+      const finalTotalPayable = invoice.total + finalLateFees;
+      const finalRemainingBalance = Math.max(0, newRemainingBalance + finalLateFees);
 
-      // Log paid event
-      try {
-        await supabaseAdmin.from('invoice_events').insert({ 
-          invoice_id: invoiceId, 
-          type: 'paid' 
-        });
-      } catch {}
+      // Check if invoice is now fully paid (including late fees)
+      // Invoice is fully paid when: totalPaid >= (invoice.total + late fees)
+      if (newTotalPaid >= finalTotalPayable) {
+        // Auto-mark invoice as paid if fully paid
+        await supabaseAdmin
+          .from('invoices')
+          .update({ status: 'paid', updated_at: new Date().toISOString() })
+          .eq('id', invoiceId);
 
-      // Cancel ONLY scheduled reminders (not sent, cancelled, or other statuses)
-      // Sent reminders should remain unchanged as they were already sent
-      // Cancelled reminders should remain unchanged
+        // Log paid event
+        try {
+          await supabaseAdmin.from('invoice_events').insert({ 
+            invoice_id: invoiceId, 
+            type: 'paid' 
+          });
+        } catch {}
+
+        // Cancel ONLY scheduled reminders (not sent, cancelled, or other statuses)
+        // Sent reminders should remain unchanged as they were already sent
+        // Cancelled reminders should remain unchanged
         await supabaseAdmin
           .from('invoice_reminders')
           .update({
@@ -191,12 +313,35 @@ export async function POST(
       // Don't fail the payment if reminder update fails
     }
 
+    // Calculate values outside try-catch for return statement
+    const newRemainingBalance = invoice.total - newTotalPaid;
+    let finalLateFees = lateFeesAmount;
+    
+    if (invoice.due_date && invoice.late_fees && lateFeesAmount > 0) {
+      try {
+        const lateFeesSettings = typeof invoice.late_fees === 'string' 
+          ? JSON.parse(invoice.late_fees) 
+          : invoice.late_fees;
+        
+        if (lateFeesSettings && lateFeesSettings.enabled && lateFeesSettings.type === 'percentage') {
+          finalLateFees = newRemainingBalance * ((lateFeesSettings.amount || 0) / 100);
+        }
+      } catch (e) {
+        // Keep original lateFeesAmount
+      }
+    }
+    
+    const finalTotalPayable = invoice.total + finalLateFees;
+    const finalRemainingBalance = Math.max(0, newRemainingBalance + finalLateFees);
+
     return NextResponse.json({
       success: true,
       payment,
       totalPaid: newTotalPaid,
-      remainingBalance: invoice.total - newTotalPaid,
-      isFullyPaid: newTotalPaid >= invoice.total
+      remainingBalance: finalRemainingBalance,
+      lateFeesAmount: finalLateFees,
+      totalPayable: finalTotalPayable,
+      isFullyPaid: newTotalPaid >= finalTotalPayable
     });
 
   } catch (error) {
@@ -227,7 +372,7 @@ export async function DELETE(
     // Verify invoice belongs to user
     const { data: invoice } = await supabaseAdmin
       .from('invoices')
-      .select('id, user_id')
+      .select('id, user_id, total, due_date, late_fees, status')
       .eq('id', invoiceId)
       .eq('user_id', user.id)
       .single();
@@ -255,14 +400,48 @@ export async function DELETE(
       .eq('invoice_id', invoiceId);
 
     const totalPaid = (remainingPayments || []).reduce((sum, p) => sum + parseFloat(p.amount.toString()), 0);
-    const { data: invoiceData } = await supabaseAdmin
-      .from('invoices')
-      .select('total, status')
-      .eq('id', invoiceId)
-      .single();
+    const remainingBalance = invoice.total - totalPaid;
+    
+    // Calculate late fees if invoice is overdue
+    let lateFeesAmount = 0;
+    let totalPayable = invoice.total;
+    
+    if (invoice.due_date && invoice.late_fees) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dueDate = new Date(invoice.due_date);
+      dueDate.setHours(0, 0, 0, 0);
+      const isOverdue = dueDate < today && invoice.status !== 'paid';
+      
+      if (isOverdue) {
+        try {
+          const lateFeesSettings = typeof invoice.late_fees === 'string' 
+            ? JSON.parse(invoice.late_fees) 
+            : invoice.late_fees;
+          
+          if (lateFeesSettings && lateFeesSettings.enabled) {
+            const daysOverdue = Math.round((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+            const gracePeriod = lateFeesSettings.gracePeriod || 0;
+            
+            if (daysOverdue > gracePeriod) {
+              if (lateFeesSettings.type === 'percentage') {
+                lateFeesAmount = remainingBalance * ((lateFeesSettings.amount || 0) / 100);
+              } else if (lateFeesSettings.type === 'fixed') {
+                lateFeesAmount = lateFeesSettings.amount || 0;
+              }
+              totalPayable = invoice.total + lateFeesAmount;
+            }
+          }
+        } catch (e) {
+          console.error('Error parsing late fees:', e);
+        }
+      }
+    }
+    
+    const finalRemainingBalance = Math.max(0, totalPayable - totalPaid);
 
-    // If invoice was marked as paid but now has remaining balance, change status back to sent/pending
-    if (invoiceData && invoiceData.status === 'paid' && totalPaid < invoiceData.total) {
+    // If invoice was marked as paid but now has remaining balance (including late fees), change status back to sent/pending
+    if (invoice.status === 'paid' && totalPaid < totalPayable) {
       await supabaseAdmin
         .from('invoices')
         .update({ status: 'sent', updated_at: new Date().toISOString() })
@@ -272,7 +451,9 @@ export async function DELETE(
     return NextResponse.json({
       success: true,
       totalPaid,
-      remainingBalance: invoiceData ? invoiceData.total - totalPaid : 0
+      remainingBalance: finalRemainingBalance,
+      lateFeesAmount,
+      totalPayable
     });
 
   } catch (error) {

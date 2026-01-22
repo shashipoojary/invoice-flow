@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { 
   Plus, Users, UserPlus, Edit, Trash2, Mail, Phone, Building2, MapPin, Calendar,
-  Eye, X, Loader2, Sparkles, FilePlus
+  Eye, X, Loader2, Sparkles, FileText, FilePlus
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -676,11 +676,11 @@ export default function ClientsPage() {
               >
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-indigo-100 group-hover:bg-indigo-200 transition-colors">
-                    <FilePlus className="w-5 h-5 text-indigo-600" />
+                    <FileText className="w-5 h-5 text-indigo-600" />
                   </div>
                   <div className="text-left flex-1">
                     <h4 className="font-medium text-gray-900">Detailed Invoice</h4>
-                    <p className="text-sm text-gray-500">Full customization and advanced features</p>
+                    <p className="text-sm text-gray-500">Complete invoice with all details and customization</p>
                   </div>
                   <div className="text-indigo-600 group-hover:text-indigo-700">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -691,12 +691,15 @@ export default function ClientsPage() {
               </button>
             </div>
 
-            <button
-              onClick={() => setShowInvoiceTypeSelection(false)}
-              className="mt-6 w-full px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors text-sm font-medium"
-            >
-              Cancel
-            </button>
+            {/* Cancel Button */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => setShowInvoiceTypeSelection(false)}
+                className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}

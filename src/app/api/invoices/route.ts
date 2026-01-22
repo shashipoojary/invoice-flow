@@ -106,6 +106,9 @@ export async function GET(request: NextRequest) {
         // Include payment data as DIRECT properties (not nested) for instant access
         totalPaid: totalPaid,
         remainingBalance: remainingBalance,
+        // Write-off fields
+        writeOffAmount: invoice.write_off_amount || 0,
+        writeOffNotes: invoice.write_off_notes || undefined,
         // Parse JSON fields with fallbacks for existing invoices (only for detailed invoices)
         paymentTerms: invoice.type === 'fast' ? undefined : 
           (invoice.payment_terms ? 

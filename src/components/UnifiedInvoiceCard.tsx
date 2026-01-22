@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FileText, AlertTriangle, Eye, Download, Send, CheckCircle, Edit, Trash2, Info, Copy, DollarSign, Clock } from 'lucide-react';
+import { FileText, AlertTriangle, Eye, Download, Send, CheckCircle, Edit, Trash2, Info, Copy, DollarSign, Clock, XCircle } from 'lucide-react';
 import InvoiceActivityDrawer from '@/components/InvoiceActivityDrawer';
 import type { Invoice } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,10 +32,16 @@ export type UnifiedInvoiceCardProps = {
   onPdf: (invoice: Invoice) => void;
   onSend: (invoice: Invoice) => void;
   onMarkPaid: (invoice: Invoice) => void;
+  onWriteOff?: (invoice: Invoice) => void;
   onEdit?: (invoice: Invoice) => void;
   onDelete?: (invoice: Invoice) => void;
   onDuplicate?: (invoice: Invoice) => void;
   paymentData?: { totalPaid: number; remainingBalance: number } | null;
+  // Bulk selection props
+  isSelected?: boolean;
+  onSelect?: (invoiceId: string, selected: boolean) => void;
+  showCheckbox?: boolean;
+  bulkActionMode?: 'none' | 'send' | 'mark-paid';
 };
 
 export function UnifiedInvoiceCard({
@@ -48,10 +54,15 @@ export function UnifiedInvoiceCard({
   onPdf,
   onSend,
   onMarkPaid,
+  onWriteOff,
   onEdit,
   onDelete,
   onDuplicate,
   paymentData: propPaymentData,
+  isSelected = false,
+  onSelect,
+  showCheckbox = false,
+  bulkActionMode = 'none',
 }: UnifiedInvoiceCardProps) {
   const { getAuthHeaders } = useAuth();
   const [showActivity, setShowActivity] = useState(false);
@@ -176,22 +187,53 @@ export function UnifiedInvoiceCard({
   const maxItems = Math.max(badges.length, breakdowns.length);
   const rotationState = useSynchronizedRotation(maxItems, isVisible);
 
+  // Determine if checkbox should be shown for this invoice
+  const canShowCheckbox = showCheckbox && onSelect && (
+    bulkActionMode === 'none' ? invoice.status !== 'paid' : // Show all non-paid when mode is 'none' (mixed selections)
+    (bulkActionMode === 'send' && (invoice.status === 'draft' || invoice.status === 'pending')) ||
+    (bulkActionMode === 'mark-paid' && invoice.status !== 'paid')
+  );
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (showCheckbox && onSelect && canShowCheckbox) {
+      // Don't trigger if clicking on buttons or links
+      const target = e.target as HTMLElement;
+      if (target.closest('button') || target.closest('a') || target.closest('input[type="checkbox"]')) {
+        return;
+      }
+      onSelect(invoice.id, !isSelected);
+    }
+  };
+
   return (
-    <div ref={cardRef} className="border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
+    <div 
+      ref={cardRef} 
+      onClick={handleCardClick}
+      className={`border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50 ${isSelected ? 'border-indigo-600 border-2' : ''} ${showCheckbox && canShowCheckbox ? 'cursor-pointer' : ''}`}
+    >
       {/* Mobile */}
-      <div className="block sm:hidden p-4">
-        <div className="space-y-3">
+      <div className="block sm:hidden p-3">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
-                <FileText className="h-4 w-4 text-gray-700" />
+            <div className="flex items-center space-x-2.5">
+              {canShowCheckbox && (
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={(e) => onSelect(invoice.id, e.target.checked)}
+                  className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 cursor-pointer"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              )}
+              <div className="w-7 h-7 flex items-center justify-center bg-gray-100">
+                <FileText className="h-3.5 w-3.5 text-gray-700" />
               </div>
               <div>
                 <div className="font-medium text-sm" style={{ color: '#1f2937' }}>{invoice.invoiceNumber}</div>
                 <div className="text-xs" style={{ color: '#6b7280' }}>{invoice.client?.name || 'Unknown Client'}</div>
               </div>
             </div>
-            <div className="text-right min-h-[56px] flex flex-col items-end">
+            <div className="text-right flex flex-col items-end">
               <div
                 className={`font-semibold text-base ${
                   invoice.status === 'paid'
@@ -207,7 +249,7 @@ export function UnifiedInvoiceCard({
               >
                 ${displayTotal.toLocaleString()}
               </div>
-              <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500" style={{ minHeight: '14px' }}>
+              <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500" style={{ minHeight: '12px' }}>
                 <RotatingAmountBreakdown
                   breakdowns={breakdowns}
                   rotationState={rotationState}
@@ -240,10 +282,10 @@ export function UnifiedInvoiceCard({
             </div>
 
             <div className="flex items-center space-x-1">
-              <button onClick={() => { onView(invoice); logEvent('viewed_by_owner'); }} className="p-1.5 rounded-md transition-colors hover:bg-gray-100" title="View">
+              <button onClick={() => { onView(invoice); logEvent('viewed_by_owner'); }} className="p-1.5 transition-colors hover:bg-gray-100" title="View">
                 <Eye className="h-4 w-4 text-gray-700" />
               </button>
-              <button onClick={() => setShowActivity(true)} className="p-1.5 rounded-md transition-colors hover:bg-gray-100" title="Activity">
+              <button onClick={() => setShowActivity(true)} className="p-1.5 transition-colors hover:bg-gray-100" title="Activity">
                 <Info className="h-4 w-4 text-gray-700" />
               </button>
               <button
@@ -311,20 +353,31 @@ export function UnifiedInvoiceCard({
                 </button>
               )}
               {(invoice.status === 'pending' || invoice.status === 'sent') && (
-                <button
-                  onClick={() => { onMarkPaid(invoice); logEvent('paid'); }}
-                  disabled={loadingActions[`paid-${invoice.id}`]}
-                  className={`p-1.5 transition-colors hover:bg-gray-100 ${
-                    loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                  }`}
-                  title="Mark Paid"
-                >
-                  {loadingActions[`paid-${invoice.id}`] ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                  ) : (
-                    <CheckCircle className="h-4 w-4 text-gray-700" />
+                <>
+                  {onWriteOff && (
+                    <button
+                      onClick={() => { onWriteOff(invoice); logEvent('writeoff_clicked'); }}
+                      className="p-1.5 transition-colors hover:bg-orange-50 cursor-pointer"
+                      title="Write Off"
+                    >
+                      <XCircle className="h-4 w-4 text-orange-600" />
+                    </button>
                   )}
-                </button>
+                  <button
+                    onClick={() => { onMarkPaid(invoice); logEvent('paid'); }}
+                    disabled={loadingActions[`paid-${invoice.id}`]}
+                    className={`p-1.5 transition-colors hover:bg-gray-100 ${
+                      loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                    }`}
+                    title="Mark Paid"
+                  >
+                    {loadingActions[`paid-${invoice.id}`] ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : (
+                      <CheckCircle className="h-4 w-4 text-gray-700" />
+                    )}
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -332,12 +385,21 @@ export function UnifiedInvoiceCard({
       </div>
 
       {/* Desktop */}
-      <div className="hidden sm:block p-4">
-        <div className="space-y-3">
+      <div className="hidden sm:block p-3">
+        <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
-                <FileText className="h-4 w-4 text-gray-700" />
+            <div className="flex items-center space-x-2.5">
+              {canShowCheckbox && (
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={(e) => onSelect(invoice.id, e.target.checked)}
+                  className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 cursor-pointer"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              )}
+              <div className="w-7 h-7 flex items-center justify-center bg-gray-100">
+                <FileText className="h-3.5 w-3.5 text-gray-700" />
               </div>
               <div>
                 <div className="font-medium text-sm" style={{ color: '#1f2937' }}>{invoice.invoiceNumber}</div>
@@ -360,7 +422,7 @@ export function UnifiedInvoiceCard({
               >
                 ${displayTotal.toLocaleString()}
               </div>
-              <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500" style={{ minHeight: '14px' }}>
+              <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500" style={{ minHeight: '12px' }}>
                 <RotatingAmountBreakdown
                   breakdowns={breakdowns}
                   rotationState={rotationState}
@@ -395,7 +457,7 @@ export function UnifiedInvoiceCard({
               <button onClick={() => onView(invoice)} className="p-1.5 rounded-md transition-colors hover:bg-gray-100" title="View">
                 <Eye className="h-4 w-4 text-gray-700" />
               </button>
-              <button onClick={() => setShowActivity(true)} className="p-1.5 rounded-md transition-colors hover:bg-gray-100" title="Activity">
+              <button onClick={() => setShowActivity(true)} className="p-1.5 transition-colors hover:bg-gray-100" title="Activity">
                 <Info className="h-4 w-4 text-gray-700" />
               </button>
               <button
@@ -463,20 +525,31 @@ export function UnifiedInvoiceCard({
                 </button>
               )}
               {(invoice.status === 'pending' || invoice.status === 'sent') && (
-                <button
-                  onClick={() => onMarkPaid(invoice)}
-                  disabled={loadingActions[`paid-${invoice.id}`]}
-                  className={`p-1.5 transition-colors hover:bg-gray-100 ${
-                    loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                  }`}
-                  title="Mark Paid"
-                >
-                  {loadingActions[`paid-${invoice.id}`] ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                  ) : (
-                    <CheckCircle className="h-4 w-4 text-gray-700" />
+                <>
+                  {onWriteOff && (
+                    <button
+                      onClick={() => onWriteOff(invoice)}
+                      className="p-1.5 transition-colors hover:bg-orange-50 cursor-pointer"
+                      title="Write Off"
+                    >
+                      <XCircle className="h-4 w-4 text-orange-600" />
+                    </button>
                   )}
-                </button>
+                  <button
+                    onClick={() => onMarkPaid(invoice)}
+                    disabled={loadingActions[`paid-${invoice.id}`]}
+                    className={`p-1.5 transition-colors hover:bg-gray-100 ${
+                      loadingActions[`paid-${invoice.id}`] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                    }`}
+                    title="Mark Paid"
+                  >
+                    {loadingActions[`paid-${invoice.id}`] ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : (
+                      <CheckCircle className="h-4 w-4 text-gray-700" />
+                    )}
+                  </button>
+                </>
               )}
             </div>
           </div>

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Plus, FileText, Clock, CheckCircle, AlertCircle, X,
-  Eye, Send, Edit, Trash2, Search, Filter, ClipboardCheck, Loader2
+  Eye, Send, Edit, Trash2, Search, Filter, ClipboardCheck, Loader2, Sparkles
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -34,6 +34,14 @@ const EstimateConversionModal = dynamic(() => import('@/components/EstimateConve
 
 const UpgradeModal = dynamic(() => import('@/components/UpgradeModal'), {
   loading: () => null
+});
+
+const FastInvoiceModal = dynamic(() => import('@/components/FastInvoiceModal'), {
+  loading: () => <div className="flex items-center justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+});
+
+const QuickInvoiceModal = dynamic(() => import('@/components/QuickInvoiceModal'), {
+  loading: () => <div className="flex items-center justify-center p-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
 });
 
 function EstimatesContent(): React.JSX.Element {
@@ -83,6 +91,9 @@ function EstimatesContent(): React.JSX.Element {
     invoiceType: 'fast' | 'detailed';
     template?: number;
   } | null>(null);
+  const [showInvoiceTypeSelection, setShowInvoiceTypeSelection] = useState(false);
+  const [showFastInvoice, setShowFastInvoice] = useState(false);
+  const [showCreateInvoice, setShowCreateInvoice] = useState(false);
   
   // Handle session expiration - wait for potential refresh from visibility handlers
   useEffect(() => {
@@ -464,6 +475,27 @@ function EstimatesContent(): React.JSX.Element {
     }
   }, [getAuthHeaders, showSuccess, showError, router, refreshInvoices, fetchSubscriptionUsage]);
 
+  // Create invoice handler
+  const handleCreateInvoice = useCallback(() => {
+    // Show the invoice type selection modal
+    setShowInvoiceTypeSelection(true);
+  }, []);
+
+  // Handle invoice type selection
+  const handleSelectFastInvoice = useCallback(() => {
+    setShowInvoiceTypeSelection(false);
+    requestAnimationFrame(() => {
+      setShowFastInvoice(true);
+    });
+  }, []);
+
+  const handleSelectDetailedInvoice = useCallback(() => {
+    setShowInvoiceTypeSelection(false);
+    requestAnimationFrame(() => {
+      setShowCreateInvoice(true);
+    });
+  }, []);
+
   // Handle convert to invoice
   const handleConvertToInvoice = useCallback(async (estimate: Estimate, invoiceType: 'fast' | 'detailed', template?: number) => {
     if (estimate.status !== 'approved') {
@@ -577,7 +609,7 @@ function EstimatesContent(): React.JSX.Element {
   return (
     <div className="min-h-screen transition-colors duration-200 bg-white">
       <div className="flex h-screen">
-        <ModernSidebar onCreateInvoice={() => {}} />
+        <ModernSidebar onCreateInvoice={handleCreateInvoice} />
         
         <main className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar">
           <div className="pt-16 lg:pt-4 p-4 sm:p-6 lg:p-8">
@@ -888,23 +920,23 @@ function EstimatesContent(): React.JSX.Element {
                       className="border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50"
                     >
                       {/* Mobile */}
-                      <div className="block sm:hidden p-4">
-                        <div className="space-y-3">
+                      <div className="block sm:hidden p-3">
+                        <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
-                                <ClipboardCheck className="h-4 w-4 text-gray-700" />
+                            <div className="flex items-center space-x-2.5">
+                              <div className="w-7 h-7 flex items-center justify-center bg-gray-100">
+                                <ClipboardCheck className="h-3.5 w-3.5 text-gray-700" />
                               </div>
                               <div>
                                 <div className="font-medium text-sm" style={{ color: '#1f2937' }}>{estimate.estimateNumber}</div>
                                 <div className="text-xs" style={{ color: '#6b7280' }}>{estimate.client?.name || 'Unknown Client'}</div>
                               </div>
                             </div>
-                            <div className="text-right min-h-[56px] flex flex-col items-end">
+                            <div className="text-right flex flex-col items-end">
                               <div className="font-semibold text-base text-gray-900">
                                 ${estimate.total.toLocaleString()}
                               </div>
-                              <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
+                              <div className="mt-0 mb-0.5 min-h-[12px]"></div>
                               <div className="text-xs" style={{ color: '#6b7280' }}>{new Date(estimate.issueDate || estimate.createdAt).toLocaleDateString()}</div>
                             </div>
                           </div>
@@ -970,12 +1002,12 @@ function EstimatesContent(): React.JSX.Element {
                       </div>
 
                       {/* Desktop */}
-                      <div className="hidden sm:block p-4">
-                        <div className="space-y-3">
+                      <div className="hidden sm:block p-3">
+                        <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
-                                <ClipboardCheck className="h-4 w-4 text-gray-600" />
+                            <div className="flex items-center space-x-2.5">
+                              <div className="w-7 h-7 flex items-center justify-center bg-gray-100">
+                                <ClipboardCheck className="h-3.5 w-3.5 text-gray-600" />
                               </div>
                               <div>
                                 <div className="font-medium text-sm" style={{ color: '#1f2937' }}>{estimate.estimateNumber}</div>
@@ -986,7 +1018,7 @@ function EstimatesContent(): React.JSX.Element {
                               <div className="font-semibold text-base text-gray-900">
                                 ${estimate.total.toLocaleString()}
                               </div>
-                              <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
+                              <div className="mt-0 mb-0.5 min-h-[12px]"></div>
                               <div className="text-xs" style={{ color: '#6b7280' }}>{new Date(estimate.issueDate || estimate.createdAt).toLocaleDateString()}</div>
                             </div>
                           </div>
@@ -1391,6 +1423,113 @@ function EstimatesContent(): React.JSX.Element {
           isLoading={false}
           confirmText="Proceed with Charge"
           cancelText="Cancel"
+        />
+      )}
+
+      {/* Invoice Type Selection Modal */}
+      {showInvoiceTypeSelection && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white shadow-2xl border border-gray-200 max-w-md w-full p-6">
+            <div className="text-center mb-6">
+              <h3 className="font-heading text-xl font-semibold mb-2" style={{color: '#1f2937'}}>
+                Choose Invoice Type
+              </h3>
+              <p className="text-gray-600 text-sm">
+                Select the type of invoice you want to create
+              </p>
+            </div>
+                  
+            <div className="space-y-3">
+              {/* Fast Invoice Option */}
+              <button
+                onClick={handleSelectFastInvoice}
+                className="w-full p-4 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-indigo-100 group-hover:bg-indigo-200 transition-colors">
+                    <Sparkles className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <h4 className="font-medium text-gray-900">Fast Invoice</h4>
+                    <p className="text-sm text-gray-500">Quick invoice with minimal details</p>
+                  </div>
+                  <div className="text-indigo-600 group-hover:text-indigo-700">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </button>
+
+              {/* Detailed Invoice Option */}
+              <button
+                onClick={handleSelectDetailedInvoice}
+                className="w-full p-4 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-indigo-100 group-hover:bg-indigo-200 transition-colors">
+                    <FileText className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <h4 className="font-medium text-gray-900">Detailed Invoice</h4>
+                    <p className="text-sm text-gray-500">Complete invoice with all details and customization</p>
+                  </div>
+                  <div className="text-indigo-600 group-hover:text-indigo-700">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </button>
+            </div>
+      
+            {/* Cancel Button */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => setShowInvoiceTypeSelection(false)}
+                className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fast Invoice Modal */}
+      {showFastInvoice && (
+        <FastInvoiceModal
+          isOpen={showFastInvoice}
+          onClose={() => {
+            setShowFastInvoice(false);
+          }}
+          user={user!}
+          getAuthHeaders={getAuthHeaders}
+          showSuccess={showSuccess}
+          showError={showError}
+          onSuccess={() => {
+            setShowFastInvoice(false);
+            showSuccess('Invoice created successfully');
+            router.refresh();
+          }}
+        />
+      )}
+
+      {/* Detailed Invoice Modal */}
+      {showCreateInvoice && (
+        <QuickInvoiceModal
+          isOpen={showCreateInvoice}
+          onClose={() => {
+            setShowCreateInvoice(false);
+          }}
+          getAuthHeaders={getAuthHeaders}
+          showSuccess={showSuccess}
+          showError={showError}
+          onSuccess={() => {
+            setShowCreateInvoice(false);
+            showSuccess('Invoice created successfully');
+            router.refresh();
+          }}
         />
       )}
 

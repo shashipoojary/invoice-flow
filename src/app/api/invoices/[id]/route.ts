@@ -102,6 +102,9 @@ export async function GET(
           (invoice.theme ? 
             (typeof invoice.theme === 'string' ? JSON.parse(invoice.theme) : invoice.theme) : 
             undefined),
+        // Write-off fields
+        writeOffAmount: invoice.write_off_amount || 0,
+        writeOffNotes: invoice.write_off_notes || undefined,
       }
     })
 

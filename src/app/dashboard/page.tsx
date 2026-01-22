@@ -6,7 +6,7 @@ import {
   FileText, Users, 
   Clock, CheckCircle, AlertCircle, AlertTriangle, UserPlus, FilePlus, Sparkles, Receipt, Timer,
   Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2, ArrowRight, ChevronDown, ChevronUp,
-  ArrowUp, ArrowDown, ClipboardCheck, Copy, Calendar, Ban, FileCheck, FileX, ArrowLeft, Info, ChevronLeft, ChevronRight, Plus
+  ArrowUp, ArrowDown, ClipboardCheck, Copy, Calendar, Ban, FileCheck, FileX, ArrowLeft, Info, ChevronLeft, ChevronRight, Plus, XCircle
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -420,11 +420,16 @@ export default function DashboardOverview() {
   const notificationRef = useRef<HTMLDivElement>(null);
   const invoicesRef = useRef<Invoice[]>([]);
   const notificationsFetchedRef = useRef(false);
+  const [additionalStatsTab, setAdditionalStatsTab] = useState(0);
   const lastFetchKeyRef = useRef<string>('');
   const getAuthHeadersRef = useRef<typeof getAuthHeaders | null>(null);
   const parseDateOnlyRef = useRef<((input: string) => Date) | null>(null);
   const [dueInvoicesScrollIndex, setDueInvoicesScrollIndex] = useState(0);
   const dueInvoicesScrollRef = useRef<HTMLDivElement>(null);
+  const statsCardsScrollRef = useRef<HTMLDivElement>(null);
+  const [statsCardsScrollIndex, setStatsCardsScrollIndex] = useState(0);
+  const previousStatsScrollIndexRef = useRef(0);
+  const statsCardsScrollRAFRef = useRef<number | null>(null);
   const dotsContainerRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollRAFRef = useRef<number | null>(null);
@@ -2395,17 +2400,32 @@ export default function DashboardOverview() {
       index === self.findIndex(i => i.id === invoice.id)
     );
     
+    // Calculate draft amount and total write-off
+    let draftAmount = 0;
+    let totalWriteOff = 0;
+    
+    for (const invoice of invoices) {
+      if (invoice.status === 'draft') {
+        draftAmount += invoice.total;
+      }
+      if (invoice.writeOffAmount && invoice.writeOffAmount > 0) {
+        totalWriteOff += invoice.writeOffAmount;
+      }
+    }
+    
     return {
       recentInvoices: uniqueInvoices.slice(0, 8),
       totalRevenue,
       totalPayableAmount,
       overdueCount,
-      totalLateFees
+      totalLateFees,
+      draftAmount,
+      totalWriteOff
     };
   }, [invoices, calculateDueCharges, parseDateOnly, paymentDataMap]);
   
   // Extract individual values for easier access
-  const { recentInvoices, totalRevenue, totalPayableAmount, overdueCount, totalLateFees } = dashboardStats;
+  const { recentInvoices, totalRevenue, totalPayableAmount, overdueCount, totalLateFees, draftAmount, totalWriteOff } = dashboardStats;
   
   // Calculate total clients (simple, no need to include in complex calculation)
   const totalClients = clients.length;
@@ -2575,6 +2595,77 @@ export default function DashboardOverview() {
       }
     });
   }, [availableTabs]);
+
+  // Stats Cards Scroll Handler - Optimized with throttling
+  const handleStatsCardsScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    
+    // Cancel any pending RAF
+    if (statsCardsScrollRAFRef.current !== null) {
+      cancelAnimationFrame(statsCardsScrollRAFRef.current);
+    }
+    
+    // Throttle using requestAnimationFrame
+    statsCardsScrollRAFRef.current = requestAnimationFrame(() => {
+      const slideWidth = container.clientWidth;
+      if (slideWidth === 0) return;
+      
+      const scrollLeft = container.scrollLeft;
+      const activeIndex = Math.floor((scrollLeft + slideWidth / 2) / slideWidth);
+      const clampedIndex = Math.max(0, Math.min(activeIndex, 1));
+      
+      // Only update state if index actually changed
+      if (clampedIndex !== previousStatsScrollIndexRef.current) {
+        previousStatsScrollIndexRef.current = clampedIndex;
+        setStatsCardsScrollIndex(clampedIndex);
+      }
+      
+      statsCardsScrollRAFRef.current = null;
+    });
+  }, []);
+
+  // Function to scroll to specific stats cards slide
+  const scrollToStatsCardsSlide = useCallback((scrollIndex: number) => {
+    if (statsCardsScrollRef.current && scrollIndex >= 0 && scrollIndex < 2) {
+      const container = statsCardsScrollRef.current;
+      const slideWidth = container.clientWidth;
+      
+      if (slideWidth === 0) return;
+      
+      container.scrollTo({
+        left: scrollIndex * slideWidth,
+        behavior: 'smooth'
+      });
+      
+      previousStatsScrollIndexRef.current = scrollIndex;
+      setStatsCardsScrollIndex(scrollIndex);
+    }
+  }, []);
+
+  // Sync stats cards scroll position on mount
+  useEffect(() => {
+    const container = statsCardsScrollRef.current;
+    if (!container) return;
+
+    container.scrollLeft = 0;
+    previousStatsScrollIndexRef.current = 0;
+    setStatsCardsScrollIndex(0);
+    
+    requestAnimationFrame(() => {
+      if (container) {
+        container.scrollLeft = 0;
+      }
+    });
+  }, []);
+
+  // Cleanup: Cancel pending RAF on unmount
+  useEffect(() => {
+    return () => {
+      if (statsCardsScrollRAFRef.current !== null) {
+        cancelAnimationFrame(statsCardsScrollRAFRef.current);
+      }
+    };
+  }, []);
 
   // Maintain scroll position only on actual window resize (not sidebar transitions)
   // This allows sidebar to animate smoothly without interference
@@ -2804,11 +2895,11 @@ export default function DashboardOverview() {
     }
     if (recentInvoices.length > 0) {
       return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:items-start">
-          {/* Invoice Insights - Second on Mobile, Right Side on Desktop - Horizontal Scrollable - Only show if tabs are available */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:items-start lg:gap-4">
+          {/* Invoice Insights - First on Mobile, Right Side on Desktop - Horizontal Scrollable - Only show if tabs are available */}
           {availableTabs.length > 0 && (
-          <div className="space-y-3 sm:space-y-4 order-2 lg:order-2">
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <div className="space-y-2 sm:space-y-4 order-1 lg:order-2">
+            <div className="flex items-center justify-between mb-3 sm:mb-6">
               <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
                 Invoice Insights
               </h2>
@@ -2827,7 +2918,7 @@ export default function DashboardOverview() {
               {availableTabs.length > 1 && (
                 <div 
                   ref={dotsContainerRef}
-                  className="flex items-center justify-center gap-2 mb-3 overflow-x-auto scrollbar-hide"
+                  className="flex items-center justify-center gap-2 mb-2 sm:mb-3 overflow-x-auto scrollbar-hide"
                   style={{ 
                     scrollBehavior: 'smooth',
                     WebkitOverflowScrolling: 'touch'
@@ -3567,8 +3658,8 @@ export default function DashboardOverview() {
           </div>
           )}
           
-          {/* Recent Invoices - First on Mobile, Left Side on Desktop */}
-          <div className="space-y-3 sm:space-y-4 order-1 lg:order-1">
+          {/* Recent Invoices - Second on Mobile, Left Side on Desktop */}
+          <div className="space-y-3 sm:space-y-4 order-2 lg:order-1">
             <div className="flex items-center justify-between mb-4 sm:mb-6">
               <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
                 Recent Invoices
@@ -4366,13 +4457,98 @@ export default function DashboardOverview() {
                 </div>
               )}
               
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
-                {/* Total Revenue */}
-                <button 
-                  onClick={handlePaidInvoicesClick}
-                  className="group relative overflow-hidden p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border border-gray-200 hover:border-emerald-500 h-full"
+              {/* Stats Grid - Swipeable Tabs */}
+              <div className="relative" style={{ paddingTop: '8px', paddingBottom: '8px' }}>
+                {/* Scroll Indicator Dots */}
+                <div className="flex items-center justify-center gap-2 mb-2 sm:mb-3">
+                  <button
+                    onClick={() => {
+                      const prevIndex = Math.max(0, statsCardsScrollIndex - 1);
+                      scrollToStatsCardsSlide(prevIndex);
+                    }}
+                    disabled={statsCardsScrollIndex === 0}
+                    className="hidden lg:flex items-center justify-center w-6 h-6 p-0 flex-shrink-0 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    style={{ borderRadius: 0 }}
+                    aria-label="Previous stats tab"
+                  >
+                    <ChevronLeft className="w-4 h-4 text-gray-600" />
+                  </button>
+                  
+                  {/* Dots */}
+                  <button
+                    onClick={() => scrollToStatsCardsSlide(0)}
+                    className={`w-2 h-2 p-0 flex-shrink-0 aspect-square rounded-full border-0 outline-none transition-all cursor-pointer ${
+                      statsCardsScrollIndex === 0 ? 'bg-indigo-600' : 'bg-gray-300 hover:bg-gray-400'
+                    }`}
+                    aria-label="Main stats"
+                  ></button>
+                  <button
+                    onClick={() => scrollToStatsCardsSlide(1)}
+                    className={`w-2 h-2 p-0 flex-shrink-0 aspect-square rounded-full border-0 outline-none transition-all cursor-pointer ${
+                      statsCardsScrollIndex === 1 ? 'bg-indigo-600' : 'bg-gray-300 hover:bg-gray-400'
+                    }`}
+                    aria-label="Additional stats"
+                  ></button>
+                  
+                  {/* Right Arrow Button */}
+                  <button
+                    onClick={() => {
+                      const nextIndex = Math.min(1, statsCardsScrollIndex + 1);
+                      scrollToStatsCardsSlide(nextIndex);
+                    }}
+                    disabled={statsCardsScrollIndex === 1}
+                    className="hidden lg:flex items-center justify-center w-6 h-6 p-0 flex-shrink-0 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                    style={{ borderRadius: 0 }}
+                    aria-label="Next stats tab"
+                  >
+                    <ChevronRight className="w-4 h-4 text-gray-600" />
+                  </button>
+                </div>
+
+                {/* Scroll Container */}
+                <div 
+                  ref={statsCardsScrollRef}
+                  className="overflow-x-auto scrollbar-hide snap-x snap-mandatory"
+                  onScroll={handleStatsCardsScroll}
+                  style={{ 
+                    overflowX: 'auto',
+                    overflowY: 'visible',
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none',
+                    scrollSnapType: 'x mandatory',
+                    WebkitOverflowScrolling: 'touch',
+                    WebkitScrollSnapType: 'x mandatory',
+                    scrollSnapStop: 'always',
+                    width: '100%',
+                    willChange: 'scroll-position',
+                    transform: 'translateZ(0)', // Force GPU acceleration
+                  }}
                 >
+                  <div 
+                    className="flex"
+                    style={{ 
+                      width: '200%',
+                      scrollSnapType: 'x mandatory',
+                      willChange: 'transform',
+                      transform: 'translateZ(0)', // Force GPU acceleration
+                    }}
+                  >
+                    {/* Tab 1: Main Stats (4 cards) */}
+                    <div className="flex-shrink-0 snap-start w-full" style={{ 
+                      width: '50%', 
+                      minWidth: '50%', 
+                      maxWidth: '50%',
+                      scrollSnapAlign: 'start',
+                      scrollSnapStop: 'always',
+                      boxSizing: 'border-box',
+                      paddingRight: '0.5rem'
+                    }}>
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4" style={{ padding: '8px' }}>
+                        {/* Total Revenue */}
+                        <button 
+                          onClick={handlePaidInvoicesClick}
+                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border-2 border-gray-200 hover:border-emerald-500 h-full transition-colors"
+                        >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
                       <div className="space-y-1 sm:space-y-1.5">
@@ -4401,11 +4577,11 @@ export default function DashboardOverview() {
                   </div>
                 </button>
 
-                {/* Outstanding Amount */}
-                <button 
-                  onClick={handlePendingInvoicesClick}
-                  className="group relative overflow-hidden p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border border-gray-200 hover:border-amber-500 h-full"
-                >
+                        {/* Outstanding Amount */}
+                        <button 
+                          onClick={handlePendingInvoicesClick}
+                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border-2 border-gray-200 hover:border-amber-500 h-full transition-colors"
+                        >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
                       <div className="space-y-1 sm:space-y-1.5">
@@ -4437,11 +4613,11 @@ export default function DashboardOverview() {
                   </div>
                 </button>
 
-                {/* Overdue Invoices */}
-                <button 
-                  onClick={handleOverdueInvoicesClick}
-                  className="group relative overflow-hidden p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border border-gray-200 hover:border-red-500 h-full"
-                >
+                        {/* Overdue Invoices */}
+                        <button 
+                          onClick={handleOverdueInvoicesClick}
+                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border-2 border-gray-200 hover:border-red-500 h-full transition-colors"
+                        >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
                       <div className="space-y-1 sm:space-y-1.5">
@@ -4470,11 +4646,11 @@ export default function DashboardOverview() {
                   </div>
                 </button>
 
-                {/* Total Clients */}
-                <button 
-                  onClick={handleClientsClick}
-                  className="group relative overflow-hidden p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border border-gray-200 hover:border-indigo-500 h-full"
-                >
+                        {/* Total Clients */}
+                        <button 
+                          onClick={handleClientsClick}
+                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border-2 border-gray-200 hover:border-indigo-500 h-full transition-colors"
+                        >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
                       <div className="space-y-1 sm:space-y-1.5">
@@ -4502,6 +4678,113 @@ export default function DashboardOverview() {
                     )}
                   </div>
                 </button>
+                      </div>
+                    </div>
+
+                    {/* Tab 2: Additional Stats (4 cards) */}
+                    <div className="flex-shrink-0 snap-start w-full" style={{ 
+                      width: '50%', 
+                      minWidth: '50%', 
+                      maxWidth: '50%',
+                      scrollSnapAlign: 'start',
+                      scrollSnapStop: 'always',
+                      boxSizing: 'border-box',
+                      paddingLeft: '0.5rem'
+                    }}>
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4" style={{ padding: '8px' }}>
+                        {/* Draft Amount */}
+                        <button 
+                          onClick={() => router.push('/dashboard/invoices?status=draft')}
+                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border-2 border-gray-200 hover:border-gray-500 h-full transition-colors"
+                        >
+                          <div className="flex items-start justify-between h-full">
+                            <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
+                              <div className="space-y-1 sm:space-y-1.5">
+                                <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Draft Amount</p>
+                                <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
+                                  <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-600 text-left break-words" style={{ display: 'block' }}>
+                                    {formatMoney(draftAmount)}
+                                  </div>
+                                  <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-0.5 sm:space-x-1.5 justify-start leading-tight mt-auto">
+                                  <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-gray-600 flex-shrink-0" />
+                                  <span className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-gray-600 truncate">
+                                    {invoices.filter(inv => inv.status === 'draft').length} draft invoices
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+
+                        {/* Total Write-off */}
+                        <button 
+                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border-2 border-gray-200 hover:border-slate-500 h-full transition-colors"
+                        >
+                          <div className="flex items-start justify-between h-full">
+                            <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
+                              <div className="space-y-1 sm:space-y-1.5">
+                                <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Write-off</p>
+                                <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
+                                  <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-slate-600 text-left break-words" style={{ display: 'block' }}>
+                                    {formatMoney(totalWriteOff)}
+                                  </div>
+                                  <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-0.5 sm:space-x-1.5 justify-start leading-tight mt-auto">
+                                  <XCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-slate-600 flex-shrink-0" />
+                                  <span className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-slate-600 truncate">
+                                    Written off invoices
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+
+                        {/* Placeholder cards to make 4 total */}
+                        <div className="group relative overflow-hidden p-3 sm:p-4 lg:p-5 transition-all duration-300 bg-white border border-gray-200 h-full opacity-0 pointer-events-none">
+                          <div className="flex items-start justify-between h-full">
+                            <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
+                              <div className="space-y-1 sm:space-y-1.5">
+                                <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}></p>
+                                <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
+                                  <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-600 text-left break-words" style={{ display: 'block' }}>
+                                  </div>
+                                  <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-0.5 sm:space-x-1.5 justify-start leading-tight mt-auto">
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="group relative overflow-hidden p-3 sm:p-4 lg:p-5 transition-all duration-300 bg-white border border-gray-200 h-full opacity-0 pointer-events-none">
+                          <div className="flex items-start justify-between h-full">
+                            <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
+                              <div className="space-y-1 sm:space-y-1.5">
+                                <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}></p>
+                                <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
+                                  <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-600 text-left break-words" style={{ display: 'block' }}>
+                                  </div>
+                                  <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-0.5 sm:space-x-1.5 justify-start leading-tight mt-auto">
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 

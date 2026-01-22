@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'next/navigation';
 import { 
   Plus, FileText, Clock, CheckCircle, AlertCircle, AlertTriangle, FilePlus, Sparkles,
-  Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Calendar, Trash2, ChevronDown, ChevronUp
+  Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Calendar, Trash2, ChevronDown, ChevronUp,
+  CheckSquare, Square, XCircle
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -14,6 +16,7 @@ import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
 import UnifiedInvoiceCard from '@/components/UnifiedInvoiceCard';
 import PartialPaymentModal from '@/components/PartialPaymentModal';
+import WriteOffModal from '@/components/WriteOffModal';
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -64,7 +67,18 @@ function InvoicesContent(): React.JSX.Element {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [showReminderDates, setShowReminderDates] = useState(false);
   const [showPartialPayment, setShowPartialPayment] = useState(false);
+  const [showWriteOff, setShowWriteOff] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set());
+  const [bulkActionMode, setBulkActionMode] = useState<'none' | 'send' | 'mark-paid'>('none');
+  const [bulkSelectionMode, setBulkSelectionMode] = useState(false);
+  const [selectionError, setSelectionError] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // Check if component is mounted (for portal)
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   // Payment form state
   const [payments, setPayments] = useState<any[]>([]);
@@ -1238,6 +1252,163 @@ function InvoicesContent(): React.JSX.Element {
     }
   }, [getAuthHeaders, showSuccess, showError, addInvoice, refreshInvoices]);
 
+  // Bulk operations handlers
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+
+  const handleBulkSend = useCallback(() => {
+    if (selectedInvoices.size === 0) return;
+    
+    // Get invoice details for confirmation message
+    const selectedInvoiceList = Array.from(selectedInvoices)
+      .map(id => invoices.find(inv => inv.id === id))
+      .filter(inv => inv && (inv.status === 'draft' || inv.status === 'pending'))
+      .filter(Boolean) as Invoice[];
+    
+    if (selectedInvoiceList.length === 0) {
+      showError('No Valid Invoices', 'No draft or pending invoices selected.');
+      return;
+    }
+    
+    const invoiceNumbers = selectedInvoiceList.map(inv => inv.invoiceNumber);
+    const count = selectedInvoiceList.length;
+    const displayNumbers = count <= 10 
+      ? invoiceNumbers.join(', ')
+      : `${invoiceNumbers.slice(0, 10).join(', ')} and ${count - 10} more`;
+    
+    setConfirmationModal({
+      isOpen: true,
+      title: 'Send Invoices',
+      message: `Are you sure you want to send ${count} invoice${count !== 1 ? 's' : ''}? This will mark them as sent and notify the clients.`,
+      type: 'info',
+      onConfirm: () => performBulkSend(),
+      isLoading: false,
+      confirmText: 'Send',
+      cancelText: 'Cancel',
+      infoBanner: (
+        <div className="mt-2 text-sm text-gray-600">
+          <strong>Invoices to send:</strong> {displayNumbers}
+        </div>
+      )
+    });
+  }, [selectedInvoices, invoices, showError]);
+
+  const performBulkSend = useCallback(async () => {
+    if (selectedInvoices.size === 0) return;
+    
+    setBulkActionLoading(true);
+    setBulkActionMode('send');
+    setConfirmationModal(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/invoices/bulk/send', {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ invoiceIds: Array.from(selectedInvoices) }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        showSuccess('Bulk Send Complete', `Successfully sent ${data.count} invoice(s).`);
+        setSelectedInvoices(new Set());
+        setBulkActionMode('none');
+        setBulkSelectionMode(false);
+        setConfirmationModal(prev => ({ ...prev, isOpen: false, isLoading: false }));
+        await refreshInvoices();
+      } else {
+        const error = await response.json();
+        showError('Bulk Send Failed', error.error || 'Failed to send invoices');
+        setConfirmationModal(prev => ({ ...prev, isLoading: false }));
+      }
+    } catch (error) {
+      console.error('Error in bulk send:', error);
+      showError('Bulk Send Failed', 'Failed to send invoices. Please try again.');
+      setConfirmationModal(prev => ({ ...prev, isLoading: false }));
+    } finally {
+      setBulkActionLoading(false);
+    }
+  }, [selectedInvoices, getAuthHeaders, showSuccess, showError, refreshInvoices]);
+
+  const handleBulkMarkPaid = useCallback(() => {
+    if (selectedInvoices.size === 0) return;
+    
+    // Get invoice details for confirmation message
+    const selectedInvoiceList = Array.from(selectedInvoices)
+      .map(id => invoices.find(inv => inv.id === id))
+      .filter(inv => inv && inv.status !== 'paid')
+      .filter(Boolean) as Invoice[];
+    
+    if (selectedInvoiceList.length === 0) {
+      showError('No Valid Invoices', 'No unpaid invoices selected.');
+      return;
+    }
+    
+    const invoiceNumbers = selectedInvoiceList.map(inv => inv.invoiceNumber);
+    const count = selectedInvoiceList.length;
+    const displayNumbers = count <= 10 
+      ? invoiceNumbers.join(', ')
+      : `${invoiceNumbers.slice(0, 10).join(', ')} and ${count - 10} more`;
+    
+    setConfirmationModal({
+      isOpen: true,
+      title: 'Mark Invoices as Paid',
+      message: `Are you sure you want to mark ${count} invoice${count !== 1 ? 's' : ''} as paid? This will update the invoice status and cannot be easily undone.`,
+      type: 'success',
+      onConfirm: () => performBulkMarkPaid(),
+      isLoading: false,
+      confirmText: 'Mark as Paid',
+      cancelText: 'Cancel',
+      infoBanner: (
+        <div className="mt-2 text-sm text-gray-600">
+          <strong>Invoices to mark as paid:</strong> {displayNumbers}
+        </div>
+      )
+    });
+  }, [selectedInvoices, invoices, showError]);
+
+  const performBulkMarkPaid = useCallback(async () => {
+    if (selectedInvoices.size === 0) return;
+    
+    setBulkActionLoading(true);
+    setBulkActionMode('mark-paid');
+    setConfirmationModal(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/invoices/bulk/mark-paid', {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ invoiceIds: Array.from(selectedInvoices) }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        showSuccess('Bulk Mark Paid Complete', `Successfully marked ${data.count} invoice(s) as paid.`);
+        setSelectedInvoices(new Set());
+        setBulkActionMode('none');
+        setBulkSelectionMode(false);
+        setConfirmationModal(prev => ({ ...prev, isOpen: false, isLoading: false }));
+        await refreshInvoices();
+      } else {
+        const error = await response.json();
+        showError('Bulk Mark Paid Failed', error.error || 'Failed to mark invoices as paid');
+        setConfirmationModal(prev => ({ ...prev, isLoading: false }));
+      }
+    } catch (error) {
+      console.error('Error in bulk mark paid:', error);
+      showError('Bulk Mark Paid Failed', 'Failed to mark invoices as paid. Please try again.');
+      setConfirmationModal(prev => ({ ...prev, isLoading: false }));
+    } finally {
+      setBulkActionLoading(false);
+    }
+  }, [selectedInvoices, getAuthHeaders, showSuccess, showError, refreshInvoices]);
+
   // Memoized Invoice Card Component - optimized with React.memo
   const InvoiceCard = React.memo(({ invoice, handleViewInvoice, handleDownloadPDF, handleSendInvoice, handleEditInvoice, handleMarkAsPaid, handleDeleteInvoice, getStatusIcon, getStatusColor, getDueDateStatus, formatPaymentTerms, formatLateFees, formatReminders, calculateDueCharges, loadingActions }: {
     invoice: Invoice;
@@ -1314,12 +1485,12 @@ function InvoicesContent(): React.JSX.Element {
     return (
       <div className="border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
           {/* Mobile Layout */}
-        <div className="block sm:hidden p-4">
-          <div className="space-y-3">
+        <div className="block sm:hidden p-3">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100`}>
-                  <FileText className="h-4 w-4 text-gray-600" />
+              <div className="flex items-center space-x-2.5">
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center bg-gray-100`}>
+                  <FileText className="h-3.5 w-3.5 text-gray-600" />
                 </div>
                 <div>
                   <div className="font-medium text-sm" style={{color: '#1f2937'}}>
@@ -1330,7 +1501,7 @@ function InvoicesContent(): React.JSX.Element {
               </div>
                 </div>
               </div>
-              <div className="text-right min-h-[56px] flex flex-col items-end">
+              <div className="text-right flex flex-col items-end">
                 <div className={`font-semibold text-base ${
                   invoice.status === 'paid' ? ('text-emerald-600') :
                   dueDateStatus.status === 'overdue' ? ('text-red-600') :
@@ -1342,16 +1513,16 @@ function InvoicesContent(): React.JSX.Element {
                 ${dueCharges.totalPayable.toFixed(2)}
                   </div>
                   {dueCharges.isPartiallyPaid ? (
-                    <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                    <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500">
                       Paid: ${dueCharges.totalPaid.toFixed(2)} • Remaining: ${dueCharges.remainingBalance.toFixed(2)}
                       {dueCharges.hasLateFees && ` • Late fee: ${dueCharges.lateFeeAmount.toFixed(2)}`}
                     </div>
                   ) : dueCharges.hasLateFees ? (
-                    <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                    <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500">
                       Base ${invoice.total.toLocaleString()} • Late fee ${dueCharges.lateFeeAmount.toLocaleString()}
                     </div>
                   ) : (
-                    <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
+                    <div className="mt-0 mb-0.5 min-h-[12px]"></div>
                   )}
                 <div className="text-xs" style={{color: '#6b7280'}}>
                   {new Date(invoice.createdAt).toLocaleDateString()}
@@ -1444,12 +1615,12 @@ function InvoicesContent(): React.JSX.Element {
           </div>
           
           {/* Desktop Layout - Same as Mobile */}
-        <div className="hidden sm:block p-4">
-          <div className="space-y-3">
+        <div className="hidden sm:block p-3">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100`}>
-                  <FileText className="h-4 w-4 text-gray-600" />
+              <div className="flex items-center space-x-2.5">
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center bg-gray-100`}>
+                  <FileText className="h-3.5 w-3.5 text-gray-600" />
             </div>
             <div>
                   <div className="font-medium text-sm" style={{color: '#1f2937'}}>
@@ -1472,16 +1643,16 @@ function InvoicesContent(): React.JSX.Element {
               ${dueCharges.totalPayable.toFixed(2)}
                 </div>
               {dueCharges.isPartiallyPaid ? (
-                <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500">
                   Paid: ${dueCharges.totalPaid.toFixed(2)} • Remaining: ${dueCharges.remainingBalance.toFixed(2)}
                   {dueCharges.hasLateFees && ` • Late fee: ${dueCharges.lateFeeAmount.toFixed(2)}`}
             </div>
               ) : dueCharges.hasLateFees ? (
-                <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
+                <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500">
                   Base ${invoice.total.toLocaleString()} • Late fee ${dueCharges.lateFeeAmount.toLocaleString()}
             </div>
               ) : (
-                <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
+                <div className="mt-0 mb-0.5 min-h-[12px]"></div>
               )}
                 <div className="text-xs" style={{color: '#6b7280'}}>
                   {new Date(invoice.createdAt).toLocaleDateString()}
@@ -2106,9 +2277,9 @@ function InvoicesContent(): React.JSX.Element {
                 )}
               </div>
 
-              {/* Results Counter */}
+              {/* Results Counter and Selection Toggle */}
               {!isLoadingInvoices && (
-                <div className="flex items-center justify-between text-sm text-gray-600">
+                <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
                   <div>
                     {sortedInvoices.length === 0 ? (
                       <span>No invoices found</span>
@@ -2123,9 +2294,156 @@ function InvoicesContent(): React.JSX.Element {
                       </span>
                     )}
                   </div>
+                  {user && invoices.length > 0 && (
+                    <button
+                      onClick={() => {
+                        setBulkSelectionMode(!bulkSelectionMode);
+                        if (bulkSelectionMode) {
+                          setSelectedInvoices(new Set());
+                          setBulkActionMode('none');
+                          setSelectionError(null);
+                        }
+                      }}
+                      className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-sm font-medium transition-colors cursor-pointer ${
+                        bulkSelectionMode 
+                          ? 'bg-gray-600 text-white hover:bg-gray-700' 
+                          : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                      }`}
+                    >
+                      {bulkSelectionMode ? (
+                        <>
+                          <XCircle className="h-4 w-4" />
+                          <span className="hidden sm:inline">Cancel</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckSquare className="h-4 w-4" />
+                          <span className="hidden sm:inline">Select</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               )}
                 
+              {/* Selection Error Message */}
+              {selectionError && (
+                <div className="bg-red-50 border border-red-200 p-3 mb-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-red-700">{selectionError}</span>
+                    <button
+                      onClick={() => setSelectionError(null)}
+                      className="text-red-700 hover:text-red-900 cursor-pointer"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Desktop Bulk Action Toolbar - Top Bar (Desktop Only) */}
+              {bulkSelectionMode && selectedInvoices.size > 0 && (
+                <div className="hidden sm:block">
+                  <div className="flex items-center justify-between bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 p-3 mb-4 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <CheckSquare className="h-5 w-5 text-indigo-600" />
+                        <span className="text-sm font-semibold text-gray-700">
+                          {selectedInvoices.size} selected
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {(bulkActionMode === 'send' || bulkActionMode === 'none') && (
+                        <button
+                          onClick={handleBulkSend}
+                          disabled={bulkActionLoading || !Array.from(selectedInvoices).some(id => {
+                            const inv = invoices.find(i => i.id === id);
+                            return inv && (inv.status === 'draft' || inv.status === 'pending');
+                          })}
+                          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+                        >
+                          <Send className="h-4 w-4" />
+                          {bulkActionLoading ? 'Processing...' : 'Send'}
+                        </button>
+                      )}
+                      {(bulkActionMode === 'mark-paid' || bulkActionMode === 'none') && (
+                        <button
+                          onClick={handleBulkMarkPaid}
+                          disabled={bulkActionLoading || !Array.from(selectedInvoices).some(id => {
+                            const inv = invoices.find(i => i.id === id);
+                            return inv && inv.status !== 'paid';
+                          })}
+                          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+                        >
+                          <CheckCircle className="h-4 w-4" />
+                          {bulkActionLoading ? 'Processing...' : 'Mark Paid'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Mobile Floating Action Bar - Will be rendered via portal */}
+
+              {/* Select All Toggle */}
+              {bulkSelectionMode && invoices.length > 0 && (
+                <div className="flex items-center gap-2 mb-4 p-2 bg-gray-50 border border-gray-200">
+                  <input
+                    type="checkbox"
+                    checked={selectedInvoices.size > 0 && (() => {
+                      const validInvoices = sortedInvoices.filter(inv => {
+                        if (bulkActionMode === 'send') {
+                          return inv.status === 'draft' || inv.status === 'pending';
+                        } else if (bulkActionMode === 'mark-paid') {
+                          return inv.status !== 'paid';
+                        }
+                        return inv.status !== 'paid';
+                      });
+                      return selectedInvoices.size > 0 && selectedInvoices.size === validInvoices.length && 
+                             validInvoices.every(inv => selectedInvoices.has(inv.id));
+                    })()}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        let validInvoices;
+                        if (bulkActionMode === 'send') {
+                          validInvoices = sortedInvoices.filter(inv => inv.status === 'draft' || inv.status === 'pending');
+                          setBulkActionMode('send');
+                        } else if (bulkActionMode === 'mark-paid') {
+                          validInvoices = sortedInvoices.filter(inv => inv.status !== 'paid');
+                          setBulkActionMode('mark-paid');
+                        } else {
+                          // Mode is 'none' (mixed selections) - select all non-paid invoices
+                          validInvoices = sortedInvoices.filter(inv => inv.status !== 'paid');
+                          // Re-evaluate mode after selection
+                          const hasDraftPending = validInvoices.some(inv => inv.status === 'draft' || inv.status === 'pending');
+                          const hasSentOverdue = validInvoices.some(inv => inv.status === 'sent' || inv.status === 'overdue');
+                          if (hasDraftPending && hasSentOverdue) {
+                            setBulkActionMode('none'); // Keep as 'none' for mixed
+                          } else if (hasDraftPending) {
+                            setBulkActionMode('send');
+                          } else {
+                            setBulkActionMode('mark-paid');
+                          }
+                        }
+                        setSelectedInvoices(new Set(validInvoices.map(inv => inv.id)));
+                      } else {
+                        setSelectedInvoices(new Set());
+                        setBulkActionMode('none');
+                      }
+                    }}
+                    className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 cursor-pointer"
+                  />
+                  <label className="text-sm font-medium text-gray-700 cursor-pointer flex items-center gap-1">
+                    <span>Select all</span>
+                    <span className="text-gray-500 text-xs">
+                      {bulkActionMode === 'send' ? '(draft/pending)' : bulkActionMode === 'mark-paid' ? '(non-paid)' : '(non-paid)'}
+                    </span>
+                  </label>
+                </div>
+              )}
+
               {/* Invoice List */}
               {(isLoadingInvoices || !hasInitiallyLoaded) ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -2170,10 +2488,91 @@ function InvoicesContent(): React.JSX.Element {
                       onPdf={handleDownloadPDF}
                       onSend={handleSendInvoice}
                       onMarkPaid={handleMarkAsPaid}
+                      onWriteOff={(invoice) => {
+                        setSelectedInvoice(invoice);
+                        setShowWriteOff(true);
+                      }}
                       onEdit={handleEditInvoice}
                       onDelete={handleDeleteInvoice}
                       onDuplicate={handleDuplicateInvoice}
                       paymentData={paymentDataMap[invoice.id] || null}
+                      isSelected={selectedInvoices.has(invoice.id)}
+                      onSelect={(invoiceId, selected) => {
+                        setSelectionError(null);
+                        const invoice = invoices.find(inv => inv.id === invoiceId);
+                        if (!invoice) return;
+
+                        if (selected) {
+                          // Only block paid invoices from being selected
+                          if (invoice.status === 'paid') {
+                            const errorMsg = `Invoice ${invoice.invoiceNumber} is already paid.`;
+                            setSelectionError(errorMsg);
+                            setTimeout(() => setSelectionError(null), 5000);
+                            return;
+                          }
+
+                          const newSelected = new Set(selectedInvoices);
+                          newSelected.add(invoiceId);
+                          setSelectedInvoices(newSelected);
+                          
+                          // Re-evaluate mode based on all selected invoices
+                          const allSelectedInvoices = Array.from(newSelected).map(id => 
+                            invoices.find(inv => inv.id === id)
+                          ).filter((inv): inv is Invoice => inv !== undefined);
+                          
+                          const hasDraftPending = allSelectedInvoices.some(inv => 
+                            inv.status === 'draft' || inv.status === 'pending'
+                          );
+                          const hasSentOverdue = allSelectedInvoices.some(inv => 
+                            inv.status === 'sent' || inv.status === 'overdue'
+                          );
+                          
+                          // If mixed selections (both draft/pending AND sent/overdue), show both buttons
+                          if (hasDraftPending && hasSentOverdue) {
+                            setBulkActionMode('none');
+                          } else if (hasDraftPending) {
+                            setBulkActionMode('send');
+                          } else if (hasSentOverdue || allSelectedInvoices.some(inv => inv.status !== 'paid')) {
+                            setBulkActionMode('mark-paid');
+                          } else {
+                            setBulkActionMode('none');
+                          }
+                        } else {
+                          const newSelected = new Set(selectedInvoices);
+                          newSelected.delete(invoiceId);
+                          setSelectedInvoices(newSelected);
+                          
+                          // Reset mode if no selections
+                          if (newSelected.size === 0) {
+                            setBulkActionMode('none');
+                          } else {
+                            // Re-evaluate mode based on remaining selections
+                            const remainingInvoices = Array.from(newSelected).map(id => 
+                              invoices.find(inv => inv.id === id)
+                            ).filter((inv): inv is Invoice => inv !== undefined);
+                            
+                            const hasDraftPending = remainingInvoices.some(inv => 
+                              inv.status === 'draft' || inv.status === 'pending'
+                            );
+                            const hasSentOverdue = remainingInvoices.some(inv => 
+                              inv.status === 'sent' || inv.status === 'overdue'
+                            );
+                            
+                            // If mixed selections, show both buttons
+                            if (hasDraftPending && hasSentOverdue) {
+                              setBulkActionMode('none');
+                            } else if (hasDraftPending) {
+                              setBulkActionMode('send');
+                            } else if (hasSentOverdue || remainingInvoices.some(inv => inv.status !== 'paid')) {
+                              setBulkActionMode('mark-paid');
+                            } else {
+                              setBulkActionMode('none');
+                            }
+                          }
+                        }
+                      }}
+                      showCheckbox={bulkSelectionMode}
+                      bulkActionMode={bulkActionMode}
                     />
                   ))}
                 </div>
@@ -2247,6 +2646,11 @@ function InvoicesContent(): React.JSX.Element {
                         </div>
                       </div>
                     </div>
+                  )}
+                  
+                  {/* Add bottom padding on mobile when action bar is visible */}
+                  {bulkSelectionMode && selectedInvoices.size > 0 && (
+                    <div className="sm:hidden h-24"></div>
                   )}
                 </>
               ) : (
@@ -2982,7 +3386,7 @@ function InvoicesContent(): React.JSX.Element {
       {/* Invoice Type Selection Modal */}
       {showInvoiceTypeSelection && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 max-w-md w-full p-6">
+          <div className="bg-white shadow-2xl border border-gray-200 max-w-md w-full p-6">
             <div className="text-center mb-6">
               <h3 className="font-heading text-xl font-semibold mb-2" style={{color: '#1f2937'}}>
                 Choose Invoice Type
@@ -2996,10 +3400,10 @@ function InvoicesContent(): React.JSX.Element {
               {/* Fast Invoice Option */}
               <button
                 onClick={handleSelectFastInvoice}
-                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+                className="w-full p-4 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                  <div className="p-2 bg-indigo-100 group-hover:bg-indigo-200 transition-colors">
                     <Sparkles className="w-5 h-5 text-indigo-600" />
                   </div>
                   <div className="text-left flex-1">
@@ -3017,10 +3421,10 @@ function InvoicesContent(): React.JSX.Element {
               {/* Detailed Invoice Option */}
               <button
                 onClick={handleSelectDetailedInvoice}
-                className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
+                className="w-full p-4 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-200 group cursor-pointer"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-indigo-100 rounded-lg group-hover:bg-indigo-200 transition-colors">
+                  <div className="p-2 bg-indigo-100 group-hover:bg-indigo-200 transition-colors">
                     <FileText className="w-5 h-5 text-indigo-600" />
                   </div>
                   <div className="text-left flex-1">
@@ -3040,7 +3444,7 @@ function InvoicesContent(): React.JSX.Element {
             <div className="mt-6 pt-4 border-t border-gray-200">
               <button
                 onClick={() => setShowInvoiceTypeSelection(false)}
-                className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+                className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -3100,6 +3504,24 @@ function InvoicesContent(): React.JSX.Element {
         />
       )}
 
+      {/* Write Off Modal */}
+      {selectedInvoice && (
+        <WriteOffModal
+          invoice={selectedInvoice}
+          isOpen={showWriteOff}
+          onClose={() => {
+            setShowWriteOff(false);
+          }}
+          onSuccess={async () => {
+            await refreshInvoices();
+            showSuccess('Invoice Written Off', `Invoice ${selectedInvoice.invoiceNumber} has been written off and marked as paid.`);
+          }}
+          getAuthHeaders={getAuthHeaders}
+          calculateDueCharges={calculateDueCharges}
+          paymentData={paymentDataMap[selectedInvoice.id] || null}
+        />
+      )}
+
       {/* Upgrade Modal */}
       {showUpgradeModal && subscriptionUsage && (
         <UpgradeModal
@@ -3124,6 +3546,60 @@ function InvoicesContent(): React.JSX.Element {
         toasts={toasts}
         onRemove={removeToast}
       />
+
+      {/* Mobile Floating Action Bar - Portal to body */}
+      {isMounted && bulkSelectionMode && selectedInvoices.size > 0 && typeof window !== 'undefined' && createPortal(
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-[9999]" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <CheckSquare className="h-4 w-4 text-indigo-600" />
+                <span className="text-sm font-semibold text-gray-700">
+                  {selectedInvoices.size} selected
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedInvoices(new Set());
+                  setBulkActionMode('none');
+                }}
+                className="p-1.5 text-gray-500 hover:text-gray-700 cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              {(bulkActionMode === 'send' || bulkActionMode === 'none') && (
+                <button
+                  onClick={handleBulkSend}
+                  disabled={bulkActionLoading || !Array.from(selectedInvoices).some(id => {
+                    const inv = invoices.find(i => i.id === id);
+                    return inv && (inv.status === 'draft' || inv.status === 'pending');
+                  })}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+                >
+                  <Send className="h-4 w-4" />
+                  {bulkActionLoading ? 'Processing...' : 'Send'}
+                </button>
+              )}
+              {(bulkActionMode === 'mark-paid' || bulkActionMode === 'none') && (
+                <button
+                  onClick={handleBulkMarkPaid}
+                  disabled={bulkActionLoading || !Array.from(selectedInvoices).some(id => {
+                    const inv = invoices.find(i => i.id === id);
+                    return inv && inv.status !== 'paid';
+                  })}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  {bulkActionLoading ? 'Processing...' : 'Mark Paid'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

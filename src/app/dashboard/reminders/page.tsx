@@ -12,7 +12,7 @@ import {
   Eye,
   X,
   Sparkles,
-  FilePlus
+  FileText
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -517,13 +517,13 @@ export default function ReminderHistoryPage() {
     return (
       <div ref={cardRef} className="border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
         {/* Mobile Layout */}
-        <div className="block sm:hidden p-4">
-          <div className="space-y-3">
+        <div className="block sm:hidden p-3">
+          <div className="space-y-2">
             {/* Top Row: Invoice Info + Amount */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
-                  <Mail className="h-4 w-4 text-gray-700" />
+              <div className="flex items-center space-x-2.5">
+                <div className="w-7 h-7 flex items-center justify-center bg-gray-100">
+                  <Mail className="h-3.5 w-3.5 text-gray-700" />
                 </div>
                 <div>
                   <div className="font-medium text-sm" style={{color: '#1f2937'}}>
@@ -534,7 +534,7 @@ export default function ReminderHistoryPage() {
                   </div>
                 </div>
               </div>
-              <div className="text-right min-h-[56px] flex flex-col items-end">
+              <div className="text-right flex flex-col items-end">
                 <div className={`font-semibold text-base ${
                   reminder.invoice.status === 'paid' ? 'text-emerald-600' :
                   totals.hasLateFees ? 'text-red-600' :
@@ -542,7 +542,7 @@ export default function ReminderHistoryPage() {
                 }`}>
                   ${totals.totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
-                <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500" style={{ minHeight: '14px' }}>
+                <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500" style={{ minHeight: '12px' }}>
                   <RotatingAmountBreakdown
                     breakdowns={breakdowns}
                     rotationState={rotationState}
@@ -608,12 +608,12 @@ export default function ReminderHistoryPage() {
         </div>
 
         {/* Desktop Layout */}
-        <div className="hidden sm:block p-4">
-          <div className="space-y-3">
+        <div className="hidden sm:block p-3">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
-                  <Mail className="h-4 w-4 text-gray-700" />
+              <div className="flex items-center space-x-2.5">
+                <div className="w-7 h-7 flex items-center justify-center bg-gray-100">
+                  <Mail className="h-3.5 w-3.5 text-gray-700" />
                 </div>
                 <div>
                   <div className="font-medium text-sm" style={{color: '#1f2937'}}>
@@ -624,7 +624,7 @@ export default function ReminderHistoryPage() {
                   </div>
                 </div>
               </div>
-              <div className="text-right min-h-[56px] flex flex-col items-end">
+              <div className="text-right flex flex-col items-end">
                 <div className={`font-semibold text-base ${
                   reminder.invoice.status === 'paid' ? 'text-emerald-600' :
                   totals.hasLateFees ? 'text-red-600' :
@@ -632,7 +632,7 @@ export default function ReminderHistoryPage() {
                 }`}>
                   ${totals.totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
-                <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500" style={{ minHeight: '14px' }}>
+                <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500" style={{ minHeight: '12px' }}>
                   <RotatingAmountBreakdown
                     breakdowns={breakdowns}
                     rotationState={rotationState}
@@ -1446,11 +1446,11 @@ export default function ReminderHistoryPage() {
               >
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-indigo-100 group-hover:bg-indigo-200 transition-colors">
-                    <FilePlus className="w-5 h-5 text-indigo-600" />
+                    <FileText className="w-5 h-5 text-indigo-600" />
                   </div>
                   <div className="text-left flex-1">
                     <h4 className="font-medium text-gray-900">Detailed Invoice</h4>
-                    <p className="text-sm text-gray-500">Full customization and advanced features</p>
+                    <p className="text-sm text-gray-500">Complete invoice with all details and customization</p>
                   </div>
                   <div className="text-indigo-600 group-hover:text-indigo-700">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1461,12 +1461,15 @@ export default function ReminderHistoryPage() {
               </button>
             </div>
 
-            <button
-              onClick={() => setShowInvoiceTypeSelection(false)}
-              className="mt-6 w-full px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors text-sm font-medium"
-            >
-              Cancel
-            </button>
+            {/* Cancel Button */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => setShowInvoiceTypeSelection(false)}
+                className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
