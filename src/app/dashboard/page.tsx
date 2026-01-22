@@ -4543,11 +4543,11 @@ export default function DashboardOverview() {
                       boxSizing: 'border-box',
                       paddingRight: '0.5rem'
                     }}>
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4" style={{ padding: '8px' }}>
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
                         {/* Total Revenue */}
                         <button 
                           onClick={handlePaidInvoicesClick}
-                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border-2 border-gray-200 hover:border-emerald-500 h-full transition-colors"
+                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 cursor-pointer bg-white border border-gray-200 hover:border-emerald-500 h-full transition-colors"
                         >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
@@ -4580,7 +4580,7 @@ export default function DashboardOverview() {
                         {/* Outstanding Amount */}
                         <button 
                           onClick={handlePendingInvoicesClick}
-                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border-2 border-gray-200 hover:border-amber-500 h-full transition-colors"
+                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 cursor-pointer bg-white border border-gray-200 hover:border-amber-500 h-full transition-colors"
                         >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
@@ -4616,7 +4616,7 @@ export default function DashboardOverview() {
                         {/* Overdue Invoices */}
                         <button 
                           onClick={handleOverdueInvoicesClick}
-                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border-2 border-gray-200 hover:border-red-500 h-full transition-colors"
+                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 cursor-pointer bg-white border border-gray-200 hover:border-red-500 h-full transition-colors"
                         >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
@@ -4649,7 +4649,7 @@ export default function DashboardOverview() {
                         {/* Total Clients */}
                         <button 
                           onClick={handleClientsClick}
-                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border-2 border-gray-200 hover:border-indigo-500 h-full transition-colors"
+                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 cursor-pointer bg-white border border-gray-200 hover:border-indigo-500 h-full transition-colors"
                         >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
@@ -4691,11 +4691,11 @@ export default function DashboardOverview() {
                       boxSizing: 'border-box',
                       paddingLeft: '0.5rem'
                     }}>
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4" style={{ padding: '8px' }}>
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
                         {/* Draft Amount */}
                         <button 
                           onClick={() => router.push('/dashboard/invoices?status=draft')}
-                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border-2 border-gray-200 hover:border-gray-500 h-full transition-colors"
+                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 cursor-pointer bg-white border border-gray-200 hover:border-gray-500 h-full transition-colors"
                         >
                           <div className="flex items-start justify-between h-full">
                             <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
@@ -4721,7 +4721,7 @@ export default function DashboardOverview() {
 
                         {/* Total Write-off */}
                         <button 
-                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:scale-[1.02] cursor-pointer bg-white border-2 border-gray-200 hover:border-slate-500 h-full transition-colors"
+                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 cursor-pointer bg-white border border-gray-200 hover:border-slate-500 h-full transition-colors"
                         >
                           <div className="flex items-start justify-between h-full">
                             <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
