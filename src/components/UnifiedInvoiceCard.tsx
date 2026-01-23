@@ -158,8 +158,10 @@ export function UnifiedInvoiceCard({
     
     if (hasWriteOff && invoice.status === 'paid') {
       // Show paid amount and write-off amount for written-off invoices
-      const paidAmount = dueCharges.totalPaid || 0;
+      // Paid amount = total - write-off amount (what was actually received)
       const writeOffAmount = invoice.writeOffAmount || 0;
+      const totalAmount = invoice.total || 0;
+      const paidAmount = Math.max(0, totalAmount - writeOffAmount);
       const paidStr = paidAmount.toFixed(2);
       const writeOffStr = writeOffAmount.toFixed(2);
       const writeOffText = `Paid: $${paidStr} • Write-off: $${writeOffStr}`;

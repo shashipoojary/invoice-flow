@@ -144,10 +144,23 @@ const InvoicePerformanceChart = ({ invoices, paymentDataMap }: { invoices: Invoi
     ? revenueData.find(seg => seg.label === hoveredCategory.replace('revenue-', ''))
     : null;
   
+  // Helper function to format large numbers with k, M, B suffixes
+  const formatLargeNumber = (value: number): string => {
+    if (value >= 1000000000) {
+      return `$${(value / 1000000000).toFixed(1)}B`;
+    } else if (value >= 1000000) {
+      return `$${(value / 1000000).toFixed(1)}M`;
+    } else if (value >= 1000) {
+      return `$${(value / 1000).toFixed(1)}k`;
+    } else {
+      return `$${value.toFixed(2)}`;
+    }
+  };
+
   const revenueCenterContent = hoveredRevenueSegment ? (
     <div className="flex flex-col items-center justify-center">
       <span className="text-2xl font-semibold tabular-nums">
-        ${(hoveredRevenueSegment.value / 1000).toFixed(1)}k
+        {formatLargeNumber(hoveredRevenueSegment.value)}
       </span>
       <span className="text-xs text-gray-500">{hoveredRevenueSegment.label}</span>
     </div>
@@ -155,7 +168,7 @@ const InvoicePerformanceChart = ({ invoices, paymentDataMap }: { invoices: Invoi
     <div className="flex flex-col items-center justify-center">
       <span className="text-lg font-semibold text-gray-400">Total</span>
       <span className="text-2xl font-semibold tabular-nums">
-        ${(totalRevenueAmount / 1000).toFixed(1)}k
+        {formatLargeNumber(totalRevenueAmount)}
       </span>
       <span className="text-xs text-gray-500">Revenue</span>
     </div>
@@ -204,7 +217,7 @@ const InvoicePerformanceChart = ({ invoices, paymentDataMap }: { invoices: Invoi
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-semibold tabular-nums">
-                        ${(segment.value / 1000).toFixed(1)}k
+                        {formatLargeNumber(segment.value)}
                       </span>
                       <span className="text-xs text-gray-500 min-w-[35px] text-right">
                         {percentage}%
@@ -223,7 +236,7 @@ const InvoicePerformanceChart = ({ invoices, paymentDataMap }: { invoices: Invoi
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-xs text-gray-500 mb-1">Avg Invoice Value</p>
-            <p className="text-xl font-semibold text-gray-900">${avgInvoiceValue.toFixed(0)}</p>
+            <p className="text-xl font-semibold text-gray-900">{formatLargeNumber(avgInvoiceValue)}</p>
           </div>
           <div>
             <p className="text-xs text-gray-500 mb-1">Collection Rate</p>
@@ -392,6 +405,7 @@ export default function DashboardOverview() {
   // Initialize loading state to false to prevent flash - stats are calculated from invoices which are already loaded
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [paymentDataMap, setPaymentDataMap] = useState<Record<string, { totalPaid: number; remainingBalance: number }>>({});
   const [invoicesWithPartialPayments, setInvoicesWithPartialPayments] = useState<Set<string>>(new Set());
   const [showFastInvoice, setShowFastInvoice] = useState(false);
@@ -430,6 +444,7 @@ export default function DashboardOverview() {
   const [statsCardsScrollIndex, setStatsCardsScrollIndex] = useState(0);
   const previousStatsScrollIndexRef = useRef(0);
   const statsCardsScrollRAFRef = useRef<number | null>(null);
+  const statsCardsScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const dotsContainerRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollRAFRef = useRef<number | null>(null);
@@ -561,6 +576,9 @@ export default function DashboardOverview() {
       if (scrollTimeoutRef.current !== null) {
         clearTimeout(scrollTimeoutRef.current);
       }
+      if (scrollUpdateTimeoutRef.current !== null) {
+        clearTimeout(scrollUpdateTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -650,16 +668,42 @@ export default function DashboardOverview() {
       try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const nextWeek = new Date(today);
-        nextWeek.setDate(nextWeek.getDate() + 7);
+        const nextMonth = new Date(today);
+        nextMonth.setDate(nextMonth.getDate() + 30); // Extend to 30 days to catch all scheduled reminders
         
+        // First get user's invoice IDs to ensure proper filtering
+        const { data: userInvoices } = await supabase
+          .from('invoices')
+          .select('id, status')
+          .eq('user_id', user.id);
+        
+        if (!userInvoices || userInvoices.length === 0) {
+          setUpcomingReminders([]);
+          setLoadingReminders(false);
+          return;
+        }
+        
+        const validInvoiceIds = userInvoices
+          .filter(inv => inv.status !== 'draft' && inv.status !== 'paid')
+          .map(inv => inv.id);
+        
+        if (validInvoiceIds.length === 0) {
+          setUpcomingReminders([]);
+          setLoadingReminders(false);
+          return;
+        }
+        
+        // Query reminders similar to reminder history page - get all reminders first, then filter
         const { data: reminders, error } = await supabase
           .from('invoice_reminders')
           .select(`
             id,
             invoice_id,
-            scheduled_for,
+            sent_at,
+            email_id,
             reminder_type,
+            reminder_status,
+            created_at,
             invoices (
               invoice_number,
               due_date,
@@ -669,29 +713,88 @@ export default function DashboardOverview() {
               clients (name)
             )
           `)
-          .eq('reminder_status', 'scheduled')
-          .gte('scheduled_for', today.toISOString())
-          .lte('scheduled_for', nextWeek.toISOString())
-          .order('scheduled_for', { ascending: true })
-          .limit(10);
+          .in('invoice_id', validInvoiceIds)
+          .order('sent_at', { ascending: true });
         
-        if (error) throw error;
+        // Filter for scheduled reminders (matching reminder history page logic exactly)
+        // A reminder is "scheduled" if:
+        // 1. reminder_status is explicitly 'scheduled', OR
+        // 2. reminder_status is null/undefined AND email_id is null (hasn't been sent yet)
+        const scheduledReminders = (reminders || []).filter((r: any) => {
+          const status = r.reminder_status;
+          const emailId = r.email_id;
+          
+          // Determine if reminder is scheduled (matching reminder history page logic)
+          let isScheduled = false;
+          
+          // If status is explicitly 'scheduled', it's scheduled
+          if (status === 'scheduled') {
+            isScheduled = true;
+          }
+          // If status is null/undefined, check if it has email_id
+          // If no email_id, it's scheduled (hasn't been sent yet)
+          else if (!status && !emailId) {
+            isScheduled = true;
+          }
+          
+          if (!isScheduled) return false;
+          
+          // Must have a sent_at date (which stores the scheduled date for scheduled reminders)
+          const scheduledDate = r.sent_at ? new Date(r.sent_at) : (r.created_at ? new Date(r.created_at) : null);
+          if (!scheduledDate) return false;
+          
+          // Normalize dates to start of day for proper comparison (matching reminder history page logic)
+          const scheduledDay = new Date(scheduledDate.getFullYear(), scheduledDate.getMonth(), scheduledDate.getDate());
+          const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          const nextMonthStart = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), nextMonth.getDate());
+          
+          // Filter by date range: today to next month
+          return scheduledDay >= todayStart && scheduledDay <= nextMonthStart;
+        });
         
-        // Fetch payment data for all invoice IDs
-        const invoiceIds = (reminders || []).map((r: any) => r.invoice_id).filter(Boolean);
+        if (error) {
+          console.error('Supabase query error:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
+          throw error;
+        }
+        
+        // Filter out reminders with null invoices or draft/paid invoices (double-check)
+        // Limit to 6 reminders max
+        const validReminders = scheduledReminders
+          .filter((r: any) => {
+            const invoice = Array.isArray(r.invoices) ? r.invoices[0] : r.invoices;
+            return invoice && invoice.invoice_number && invoice.status !== 'draft' && invoice.status !== 'paid';
+          })
+          .slice(0, 6); // Limit to 6 reminders max
+        
+        // Fetch payment data for all reminder invoice IDs
+        const reminderInvoiceIds = validReminders.map((r: any) => r.invoice_id).filter(Boolean);
         const paymentDataMap: Record<string, { totalPaid: number; remainingBalance: number }> = {};
         
-        if (invoiceIds.length > 0) {
-          const { data: payments } = await supabase
+        if (reminderInvoiceIds.length > 0) {
+          const { data: payments, error: paymentsError } = await supabase
             .from('invoice_payments')
             .select('invoice_id, amount')
-            .in('invoice_id', invoiceIds);
+            .in('invoice_id', reminderInvoiceIds);
+          
+          if (paymentsError) {
+            console.warn('Error fetching payment data for reminders:', {
+              message: paymentsError.message,
+              details: paymentsError.details,
+              code: paymentsError.code
+            });
+            // Continue without payment data rather than failing completely
+          }
           
           if (payments) {
-            invoiceIds.forEach((invoiceId: string) => {
+            reminderInvoiceIds.forEach((invoiceId: string) => {
               const invoicePayments = payments.filter((p: any) => p.invoice_id === invoiceId);
               const totalPaid = invoicePayments.reduce((sum: number, p: any) => sum + parseFloat(p.amount.toString()), 0);
-              const reminder = (reminders || []).find((r: any) => r.invoice_id === invoiceId);
+              const reminder = validReminders.find((r: any) => r.invoice_id === invoiceId);
               const invoice = reminder?.invoices as any;
               const invoiceTotal = (invoice && !Array.isArray(invoice) ? invoice.total : Array.isArray(invoice) && invoice.length > 0 ? invoice[0].total : 0) || 0;
               paymentDataMap[invoiceId] = {
@@ -702,7 +805,7 @@ export default function DashboardOverview() {
           }
         }
         
-        const upcoming = (reminders || []).map((r: any) => {
+        const upcoming = validReminders.map((r: any) => {
           const invoice = Array.isArray(r.invoices) ? r.invoices[0] : r.invoices;
           const invoiceTotal = invoice?.total || 0;
           const invoiceStatus = invoice?.status || 'pending';
@@ -762,7 +865,7 @@ export default function DashboardOverview() {
             invoiceNumber: invoice?.invoice_number || 'N/A',
             clientName,
             dueDate: invoice?.due_date || '',
-            scheduledFor: r.scheduled_for,
+            scheduledFor: r.sent_at || r.created_at || new Date().toISOString(),
             reminderType: r.reminder_type || 'friendly',
             amount: totalPayable, // The exact amount that will be sent
             invoiceTotal,
@@ -773,7 +876,16 @@ export default function DashboardOverview() {
         
         setUpcomingReminders(upcoming);
       } catch (error) {
-        console.error('Error fetching upcoming reminders:', error);
+        // Enhanced error logging to capture more details
+        console.error('Error fetching upcoming reminders:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          error: error,
+          stack: error instanceof Error ? error.stack : undefined,
+          details: error instanceof Error ? {
+            name: error.name,
+            cause: error.cause
+          } : error
+        });
         setUpcomingReminders([]);
       } finally {
         setLoadingReminders(false);
@@ -782,6 +894,17 @@ export default function DashboardOverview() {
     
     fetchUpcomingReminders();
   }, [user?.id, isLoadingInvoices]);
+
+  // Detect mobile screen size for tab ordering
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
 
 
@@ -2493,6 +2616,67 @@ export default function DashboardOverview() {
     return { overdue, dueToday, upcoming };
   }, [invoices, parseDateOnly]);
 
+  // Combine invoices with priority: 3 overdue, 2 due today, 1 upcoming (max 6 total)
+  const combinedInvoices = useMemo(() => {
+    const result: Array<{ invoice: Invoice; type: 'overdue' | 'dueToday' | 'upcoming' }> = [];
+    
+    // Priority distribution: 3 overdue, 2 due today, 1 upcoming
+    let overdueCount = 0;
+    let dueTodayCount = 0;
+    let upcomingCount = 0;
+    const maxTotal = 6;
+    const maxOverdue = 3;
+    const maxDueToday = 2;
+    const maxUpcoming = 1;
+    
+    // Add overdue first (up to 3)
+    for (const invoice of dueInvoices.overdue) {
+      if (result.length >= maxTotal) break;
+      if (overdueCount >= maxOverdue) break;
+      result.push({ invoice, type: 'overdue' });
+      overdueCount++;
+    }
+    
+    // Add due today next (up to 2)
+    for (const invoice of dueInvoices.dueToday) {
+      if (result.length >= maxTotal) break;
+      if (dueTodayCount >= maxDueToday) break;
+      result.push({ invoice, type: 'dueToday' });
+      dueTodayCount++;
+    }
+    
+    // Add upcoming next (up to 1)
+    for (const invoice of dueInvoices.upcoming) {
+      if (result.length >= maxTotal) break;
+      if (upcomingCount >= maxUpcoming) break;
+      result.push({ invoice, type: 'upcoming' });
+      upcomingCount++;
+    }
+    
+    // If we haven't reached 6, fill remaining slots conditionally
+    if (result.length < maxTotal) {
+      // Fill with more overdue if available
+      for (const invoice of dueInvoices.overdue.slice(overdueCount)) {
+        if (result.length >= maxTotal) break;
+        result.push({ invoice, type: 'overdue' });
+      }
+      
+      // Fill with more due today if available
+      for (const invoice of dueInvoices.dueToday.slice(dueTodayCount)) {
+        if (result.length >= maxTotal) break;
+        result.push({ invoice, type: 'dueToday' });
+      }
+      
+      // Fill with more upcoming if available
+      for (const invoice of dueInvoices.upcoming.slice(upcomingCount)) {
+        if (result.length >= maxTotal) break;
+        result.push({ invoice, type: 'upcoming' });
+      }
+    }
+    
+    return result;
+  }, [dueInvoices]);
+
   // Determine which tabs have data - must be after dueInvoices is defined
   const availableTabs = useMemo(() => {
     const tabs: number[] = [];
@@ -2520,11 +2704,69 @@ export default function DashboardOverview() {
     return tabs;
   }, [dueInvoices, invoices, paymentActivity.length, upcomingReminders.length]);
 
+  // Reorder tabs for mobile: longest tab first to prevent empty space
+  // This ensures the container height is set by the longest content first
+  const orderedTabs = useMemo(() => {
+    if (availableTabs.length <= 1) return availableTabs;
+    
+    // Calculate estimated heights for each tab
+    const tabHeights: { tab: number; height: number }[] = availableTabs.map(tab => {
+      let estimatedHeight = 0;
+      
+      switch (tab) {
+        case 0: // Invoice List
+          // Each invoice item ~70px, plus container padding
+          estimatedHeight = 100 + (combinedInvoices.length * 70);
+          break;
+        case 1: // Analytics
+          // Fixed height graph with multiple sections
+          estimatedHeight = 600;
+          break;
+        case 2: // Invoice Performance
+          // Fixed height graph
+          estimatedHeight = 400;
+          break;
+        case 3: // Conversion Rate
+          // Fixed height graph
+          estimatedHeight = 400;
+          break;
+        case 4: // Payment Activity
+          // Each payment item ~70px, max 6 items, plus container padding
+          estimatedHeight = 100 + (Math.min(paymentActivity.length, 6) * 70);
+          break;
+        case 5: // Upcoming Reminders
+          // Each reminder item ~70px, max 6 items, plus container padding
+          estimatedHeight = 100 + (Math.min(upcomingReminders.length, 6) * 70);
+          break;
+        default:
+          estimatedHeight = 300;
+      }
+      
+      return { tab, height: estimatedHeight };
+    });
+    
+    // Sort by height (descending) - longest first
+    tabHeights.sort((a, b) => b.height - a.height);
+    
+    // Return reordered tabs (longest first)
+    return tabHeights.map(item => item.tab);
+  }, [availableTabs, combinedInvoices.length, paymentActivity.length, upcomingReminders.length]);
+
+  // Use ordered tabs on mobile, original order on desktop
+  const displayTabs = isMobile ? orderedTabs : availableTabs;
+
   // Scroll handler for dot indicator - each slide is full-width
+  // Use throttling to prevent dots from jumping back and forth
+  const scrollUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const handleDueInvoicesScrollUpdated = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     // Skip scroll handling during sidebar transitions to prevent lag
     if (sidebarTransitioningRef.current) {
       return;
+    }
+    
+    // Clear any pending timeout
+    if (scrollUpdateTimeoutRef.current) {
+      clearTimeout(scrollUpdateTimeoutRef.current);
     }
     
     const container = e.currentTarget;
@@ -2534,9 +2776,8 @@ export default function DashboardOverview() {
     
     if (tabsCount === 0 || slideWidth === 0) return;
     
-    // Use requestAnimationFrame to debounce and ensure smooth updates
-    // This prevents interference with native snap scrolling
-    requestAnimationFrame(() => {
+    // Throttle updates to prevent rapid state changes that cause jumping
+    scrollUpdateTimeoutRef.current = setTimeout(() => {
       // Skip if sidebar is transitioning (double-check)
       if (sidebarTransitioningRef.current) {
         return;
@@ -2545,7 +2786,7 @@ export default function DashboardOverview() {
       // Calculate active index using center-point detection
       // This updates the dot when the next slide is at least 50% visible
       // Formula: floor((scrollLeft + slideWidth / 2) / slideWidth)
-      const activeIndex = Math.floor((container.scrollLeft + slideWidth / 2) / slideWidth);
+      const activeIndex = Math.floor((scrollLeft + slideWidth / 2) / slideWidth);
       
       // Clamp to valid range (0 to tabsCount - 1)
       const clampedIndex = Math.max(0, Math.min(activeIndex, tabsCount - 1));
@@ -2555,7 +2796,7 @@ export default function DashboardOverview() {
         previousScrollIndexRef.current = clampedIndex;
         setDueInvoicesScrollIndex(clampedIndex);
       }
-    });
+    }, 50); // 50ms throttle for smooth updates
   }, [availableTabs]);
 
   // Function to scroll to specific slide - each slide is full-width
@@ -2566,15 +2807,20 @@ export default function DashboardOverview() {
       
       if (slideWidth === 0) return;
       
-      // Scroll to the specific full-width slide
-      container.scrollTo({
-        left: scrollIndex * slideWidth,
-        behavior: 'smooth'
-      });
+      // Clear any pending scroll updates to prevent conflicts
+      if (scrollUpdateTimeoutRef.current) {
+        clearTimeout(scrollUpdateTimeoutRef.current);
+      }
       
       // Update ref and state immediately when clicking to keep dots in sync
       previousScrollIndexRef.current = scrollIndex;
       setDueInvoicesScrollIndex(scrollIndex);
+      
+      // Scroll to the specific full-width slide with smooth behavior
+      container.scrollTo({
+        left: scrollIndex * slideWidth,
+        behavior: 'smooth'
+      });
     }
   }, [availableTabs]);
 
@@ -2596,17 +2842,23 @@ export default function DashboardOverview() {
     });
   }, [availableTabs]);
 
-  // Stats Cards Scroll Handler - Optimized with throttling
+  // Stats Cards Scroll Handler - Optimized with throttling to prevent dots from jumping
   const handleStatsCardsScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const container = e.currentTarget;
     
-    // Cancel any pending RAF
-    if (statsCardsScrollRAFRef.current !== null) {
-      cancelAnimationFrame(statsCardsScrollRAFRef.current);
+    // Clear any pending timeout
+    if (statsCardsScrollTimeoutRef.current) {
+      clearTimeout(statsCardsScrollTimeoutRef.current);
     }
     
-    // Throttle using requestAnimationFrame
-    statsCardsScrollRAFRef.current = requestAnimationFrame(() => {
+    // Cancel any pending RAF (keep for backward compatibility)
+    if (statsCardsScrollRAFRef.current !== null) {
+      cancelAnimationFrame(statsCardsScrollRAFRef.current);
+      statsCardsScrollRAFRef.current = null;
+    }
+    
+    // Throttle updates to prevent rapid state changes that cause jumping
+    statsCardsScrollTimeoutRef.current = setTimeout(() => {
       const slideWidth = container.clientWidth;
       if (slideWidth === 0) return;
       
@@ -2614,14 +2866,12 @@ export default function DashboardOverview() {
       const activeIndex = Math.floor((scrollLeft + slideWidth / 2) / slideWidth);
       const clampedIndex = Math.max(0, Math.min(activeIndex, 1));
       
-      // Only update state if index actually changed
+      // Only update state if index actually changed to prevent skipped indices during momentum scrolling
       if (clampedIndex !== previousStatsScrollIndexRef.current) {
         previousStatsScrollIndexRef.current = clampedIndex;
         setStatsCardsScrollIndex(clampedIndex);
       }
-      
-      statsCardsScrollRAFRef.current = null;
-    });
+    }, 50); // 50ms throttle for smooth updates
   }, []);
 
   // Function to scroll to specific stats cards slide
@@ -2632,13 +2882,20 @@ export default function DashboardOverview() {
       
       if (slideWidth === 0) return;
       
+      // Clear any pending scroll updates to prevent conflicts
+      if (statsCardsScrollTimeoutRef.current) {
+        clearTimeout(statsCardsScrollTimeoutRef.current);
+      }
+      
+      // Update ref and state immediately when clicking to keep dots in sync
+      previousStatsScrollIndexRef.current = scrollIndex;
+      setStatsCardsScrollIndex(scrollIndex);
+      
+      // Scroll to the specific slide with smooth behavior
       container.scrollTo({
         left: scrollIndex * slideWidth,
         behavior: 'smooth'
       });
-      
-      previousStatsScrollIndexRef.current = scrollIndex;
-      setStatsCardsScrollIndex(scrollIndex);
     }
   }, []);
 
@@ -2658,11 +2915,14 @@ export default function DashboardOverview() {
     });
   }, []);
 
-  // Cleanup: Cancel pending RAF on unmount
+  // Cleanup: Cancel pending RAF and timeout on unmount
   useEffect(() => {
     return () => {
       if (statsCardsScrollRAFRef.current !== null) {
         cancelAnimationFrame(statsCardsScrollRAFRef.current);
+      }
+      if (statsCardsScrollTimeoutRef.current !== null) {
+        clearTimeout(statsCardsScrollTimeoutRef.current);
       }
     };
   }, []);
@@ -2897,7 +3157,7 @@ export default function DashboardOverview() {
       return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:items-start lg:gap-4">
           {/* Invoice Insights - First on Mobile, Right Side on Desktop - Horizontal Scrollable - Only show if tabs are available */}
-          {availableTabs.length > 0 && (
+          {displayTabs.length > 0 && (
           <div className="space-y-2 sm:space-y-4 order-1 lg:order-2">
             <div className="flex items-center justify-between mb-3 sm:mb-6">
               <h2 className="font-heading text-xl sm:text-2xl font-semibold" style={{color: '#1f2937'}}>
@@ -2915,7 +3175,7 @@ export default function DashboardOverview() {
             {/* Horizontal Scrollable Container with Snap */}
             <div className="relative">
               {/* Scroll Indicator Dots with Navigation Arrows - Only show for available tabs */}
-              {availableTabs.length > 1 && (
+              {displayTabs.length > 1 && (
                 <div 
                   ref={dotsContainerRef}
                   className="flex items-center justify-center gap-2 mb-2 sm:mb-3 overflow-x-auto scrollbar-hide"
@@ -2939,7 +3199,7 @@ export default function DashboardOverview() {
                   </button>
                   
                   {/* Dots */}
-                  {availableTabs.map((actualTabIndex, scrollIndex) => {
+                  {displayTabs.map((actualTabIndex, scrollIndex) => {
                     const tabLabels = [
                       'Go to invoices list',
                       'Go to analytics',
@@ -2963,10 +3223,10 @@ export default function DashboardOverview() {
                   {/* Right Arrow Button - Desktop Only */}
                   <button
                     onClick={() => {
-                      const nextIndex = Math.min(availableTabs.length - 1, dueInvoicesScrollIndex + 1);
+                      const nextIndex = Math.min(displayTabs.length - 1, dueInvoicesScrollIndex + 1);
                       scrollToDueInvoicesSlideUpdated(nextIndex);
                     }}
-                    disabled={dueInvoicesScrollIndex === availableTabs.length - 1}
+                    disabled={dueInvoicesScrollIndex === displayTabs.length - 1}
                     className="hidden lg:flex items-center justify-center w-6 h-6 p-0 flex-shrink-0 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                     style={{ borderRadius: 0 }}
                     aria-label="Next tab"
@@ -2994,50 +3254,75 @@ export default function DashboardOverview() {
                   contain: 'layout style', // Isolate layout calculations to prevent affecting sidebar animation
                   position: 'relative', // For proper overflow handling
                   width: '100%', // Ensure full width
+                  willChange: 'scroll-position', // Optimize for scrolling performance
                 }}
               >
                 <div 
                   className="flex h-full" 
                   style={{ 
-                    width: `${availableTabs.length * 100}%`,
+                    width: `${displayTabs.length * 100}%`,
                     scrollSnapType: 'x mandatory' // Ensure snap on flex container
                   }}
                 >
-                  {/* Slide 1: Due Invoices List - Only render if tab 0 is available */}
-                  {availableTabs.includes(0) && (
-                  <div className="flex-shrink-0 snap-start w-full" style={{ 
-                    width: `${100 / availableTabs.length}%`, 
-                    minWidth: `${100 / availableTabs.length}%`, 
-                    maxWidth: `${100 / availableTabs.length}%`,
+                  {/* Render tabs in displayTabs order - longest first on mobile */}
+                  {displayTabs.map((actualTabIndex, scrollIndex) => {
+                    // Tab 0: Invoice List
+                    if (actualTabIndex === 0) {
+                      return (
+                  <div key={`tab-${actualTabIndex}-${scrollIndex}`} className="flex-shrink-0 snap-start w-full" style={{ 
+                    width: `${100 / displayTabs.length}%`, 
+                    minWidth: `${100 / displayTabs.length}%`, 
+                    maxWidth: `${100 / displayTabs.length}%`,
                     scrollSnapAlign: 'start',
                     scrollSnapStop: 'always',
                     boxSizing: 'border-box',
-                    paddingRight: '0.5rem'
+                    paddingRight: scrollIndex < displayTabs.length - 1 ? '0.5rem' : '0'
                   }}>
-                    {dueInvoices.overdue.length === 0 && dueInvoices.dueToday.length === 0 && dueInvoices.upcoming.length === 0 ? (
+                    {combinedInvoices.length === 0 ? (
                       <div className="bg-white border border-gray-200 p-8 text-center">
                         <Calendar className="h-8 w-8 mx-auto mb-2" style={{color: '#9ca3af'}} />
                         <p className="text-sm" style={{color: '#6b7280'}}>No invoices due</p>
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {/* Overdue Section */}
-                        {dueInvoices.overdue.length > 0 && (
+                        {/* Combined Invoices Section */}
+                        {combinedInvoices.length > 0 && (
                           <div>
-                            <div className="flex items-center gap-2 mb-2">
-                              <AlertCircle className="h-4 w-4 text-red-500" />
-                              <h3 className="text-sm font-semibold text-red-600">Overdue</h3>
-                              <span className="text-xs text-gray-500">({dueInvoices.overdue.length})</span>
-                            </div>
                             <div className="bg-white border border-gray-200 divide-y divide-gray-100">
-                              {dueInvoices.overdue.map((invoice) => {
+                              {combinedInvoices.map(({ invoice, type }) => {
                                 const paymentData = paymentDataMap[invoice.id] || null;
                                 const dueCharges = calculateDueCharges(invoice, paymentData);
                                 const dueDate = parseDateOnly(invoice.dueDate);
                                 const today = new Date();
                                 const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
                                 const dueDateStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
-                                const daysOverdue = Math.floor((todayStart.getTime() - dueDateStart.getTime()) / (1000 * 60 * 60 * 24));
+                                
+                                let statusInfo: { icon: React.ReactNode; label: string; color: string; amountColor: string };
+                                
+                                if (type === 'overdue') {
+                                  const daysOverdue = Math.floor((todayStart.getTime() - dueDateStart.getTime()) / (1000 * 60 * 60 * 24));
+                                  statusInfo = {
+                                    icon: <AlertCircle className="h-4 w-4 text-red-500" />,
+                                    label: `${daysOverdue} day${daysOverdue !== 1 ? 's' : ''} overdue`,
+                                    color: 'text-red-600',
+                                    amountColor: 'text-red-600'
+                                  };
+                                } else if (type === 'dueToday') {
+                                  statusInfo = {
+                                    icon: <Clock className="h-4 w-4 text-amber-500" />,
+                                    label: 'Due today',
+                                    color: 'text-amber-600',
+                                    amountColor: 'text-amber-600'
+                                  };
+                                } else {
+                                  const daysUntilDue = Math.floor((dueDateStart.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24));
+                                  statusInfo = {
+                                    icon: <Calendar className="h-4 w-4 text-blue-500" />,
+                                    label: `Due in ${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''}`,
+                                    color: 'text-blue-600',
+                                    amountColor: 'text-gray-900'
+                                  };
+                                }
                                 
                                 return (
                                   <div
@@ -3048,6 +3333,7 @@ export default function DashboardOverview() {
                                     <div className="flex items-center justify-between">
                                       <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
+                                          {statusInfo.icon}
                                           <span className="text-sm font-medium text-gray-900 truncate">
                                             {invoice.invoiceNumber}
                                           </span>
@@ -3055,123 +3341,14 @@ export default function DashboardOverview() {
                                             {invoice.client?.name || 'Unknown Client'}
                                           </span>
                                         </div>
-                                        <div className="flex items-center gap-3 text-xs text-gray-500">
-                                          <span>{daysOverdue} day{daysOverdue !== 1 ? 's' : ''} overdue</span>
+                                        <div className="flex items-center gap-3 text-xs text-gray-500 ml-6">
+                                          <span>{statusInfo.label}</span>
                                           <span>•</span>
                                           <span>{new Date(invoice.dueDate).toLocaleDateString()}</span>
                                         </div>
                                       </div>
                                       <div className="ml-4 text-right">
-                                        <div className="text-sm font-semibold text-red-600">
-                                          ${dueCharges.totalPayable.toFixed(2)}
-                                        </div>
-                                        {dueCharges.isPartiallyPaid && (
-                                          <div className="text-xs text-gray-500">
-                                            ${dueCharges.totalPaid.toFixed(2)} paid
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Due Today Section */}
-                        {dueInvoices.dueToday.length > 0 && (
-                          <div>
-                            <div className="flex items-center gap-2 mb-2">
-                              <Clock className="h-4 w-4 text-amber-500" />
-                              <h3 className="text-sm font-semibold text-amber-600">Due Today</h3>
-                              <span className="text-xs text-gray-500">({dueInvoices.dueToday.length})</span>
-                            </div>
-                            <div className="bg-white border border-gray-200 divide-y divide-gray-100">
-                              {dueInvoices.dueToday.map((invoice) => {
-                                const paymentData = paymentDataMap[invoice.id] || null;
-                                const dueCharges = calculateDueCharges(invoice, paymentData);
-                                
-                                return (
-                                  <div
-                                    key={invoice.id}
-                                    onClick={() => handleViewInvoice(invoice)}
-                                    className="p-3 sm:p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <span className="text-sm font-medium text-gray-900 truncate">
-                                            {invoice.invoiceNumber}
-                                          </span>
-                                          <span className="text-xs text-gray-500 truncate">
-                                            {invoice.client?.name || 'Unknown Client'}
-                                          </span>
-                                        </div>
-                                        <div className="text-xs text-gray-500">
-                                          Due today
-                                        </div>
-                                      </div>
-                                      <div className="ml-4 text-right">
-                                        <div className="text-sm font-semibold text-amber-600">
-                                          ${dueCharges.totalPayable.toFixed(2)}
-                                        </div>
-                                        {dueCharges.isPartiallyPaid && (
-                                          <div className="text-xs text-gray-500">
-                                            ${dueCharges.totalPaid.toFixed(2)} paid
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Upcoming Section */}
-                        {dueInvoices.upcoming.length > 0 && (
-                          <div>
-                            <div className="flex items-center gap-2 mb-2">
-                              <Calendar className="h-4 w-4 text-blue-500" />
-                              <h3 className="text-sm font-semibold text-blue-600">Upcoming</h3>
-                              <span className="text-xs text-gray-500">({dueInvoices.upcoming.length})</span>
-                            </div>
-                            <div className="bg-white border border-gray-200 divide-y divide-gray-100">
-                              {dueInvoices.upcoming.map((invoice) => {
-                                const paymentData = paymentDataMap[invoice.id] || null;
-                                const dueCharges = calculateDueCharges(invoice, paymentData);
-                                const dueDate = parseDateOnly(invoice.dueDate);
-                                const today = new Date();
-                                const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
-                                const dueDateStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
-                                const daysUntilDue = Math.floor((dueDateStart.getTime() - todayStart.getTime()) / (1000 * 60 * 60 * 24));
-                                
-                                return (
-                                  <div
-                                    key={invoice.id}
-                                    onClick={() => handleViewInvoice(invoice)}
-                                    className="p-3 sm:p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <span className="text-sm font-medium text-gray-900 truncate">
-                                            {invoice.invoiceNumber}
-                                          </span>
-                                          <span className="text-xs text-gray-500 truncate">
-                                            {invoice.client?.name || 'Unknown Client'}
-                                          </span>
-                                        </div>
-                                        <div className="flex items-center gap-3 text-xs text-gray-500">
-                                          <span>Due in {daysUntilDue} day{daysUntilDue !== 1 ? 's' : ''}</span>
-                                          <span>•</span>
-                                          <span>{new Date(invoice.dueDate).toLocaleDateString()}</span>
-                                        </div>
-                                      </div>
-                                      <div className="ml-4 text-right">
-                                        <div className="text-sm font-semibold text-gray-900">
+                                        <div className={`text-sm font-semibold ${statusInfo.amountColor}`}>
                                           ${dueCharges.totalPayable.toFixed(2)}
                                         </div>
                                         {dueCharges.isPartiallyPaid && (
@@ -3190,19 +3367,21 @@ export default function DashboardOverview() {
                       </div>
                     )}
                   </div>
-                  )}
-
-                  {/* Slide 2: Due Invoices Analytics Graph - Only render if tab 1 is available */}
-                  {availableTabs.includes(1) && (
-                  <div className="flex-shrink-0 snap-start flex self-start w-full" style={{ 
-                    width: `${100 / availableTabs.length}%`, 
-                    minWidth: `${100 / availableTabs.length}%`, 
-                    maxWidth: `${100 / availableTabs.length}%`,
+                      );
+                    }
+                    
+                    // Tab 1: Analytics
+                    if (actualTabIndex === 1) {
+                      return (
+                  <div key={`tab-${actualTabIndex}-${scrollIndex}`} className="flex-shrink-0 snap-start flex self-start w-full" style={{ 
+                    width: `${100 / displayTabs.length}%`, 
+                    minWidth: `${100 / displayTabs.length}%`, 
+                    maxWidth: `${100 / displayTabs.length}%`,
                     scrollSnapAlign: 'start',
                     scrollSnapStop: 'always',
                     boxSizing: 'border-box',
-                    paddingLeft: '0.5rem',
-                    paddingRight: '0.5rem'
+                    paddingLeft: scrollIndex > 0 ? '0.5rem' : '0',
+                    paddingRight: scrollIndex < displayTabs.length - 1 ? '0.5rem' : '0'
                   }}>
                     <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
                       <h3 className="text-sm font-semibold text-gray-900 mb-4">Invoice Analytics</h3>
@@ -3448,18 +3627,21 @@ export default function DashboardOverview() {
                       })()}
                     </div>
                   </div>
-                  )}
-                  {/* Slide 2: Invoice Performance - Only render if tab 2 is available */}
-                  {availableTabs.includes(2) && (
-                  <div className="flex-shrink-0 snap-start flex self-start w-full" style={{ 
-                    width: `${100 / availableTabs.length}%`, 
-                    minWidth: `${100 / availableTabs.length}%`, 
-                    maxWidth: `${100 / availableTabs.length}%`,
+                      );
+                    }
+                    
+                    // Tab 2: Invoice Performance
+                    if (actualTabIndex === 2) {
+                      return (
+                  <div key={`tab-${actualTabIndex}-${scrollIndex}`} className="flex-shrink-0 snap-start flex self-start w-full" style={{ 
+                    width: `${100 / displayTabs.length}%`, 
+                    minWidth: `${100 / displayTabs.length}%`, 
+                    maxWidth: `${100 / displayTabs.length}%`,
                     scrollSnapAlign: 'start',
                     scrollSnapStop: 'always',
                     boxSizing: 'border-box',
-                    paddingLeft: '0.5rem',
-                    paddingRight: '0.5rem'
+                    paddingLeft: scrollIndex > 0 ? '0.5rem' : '0',
+                    paddingRight: scrollIndex < displayTabs.length - 1 ? '0.5rem' : '0'
                   }}>
                     <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
                       <h3 className="text-sm font-semibold text-gray-900 mb-4">Invoice Performance</h3>
@@ -3467,19 +3649,21 @@ export default function DashboardOverview() {
                       <InvoicePerformanceChart invoices={invoices} paymentDataMap={paymentDataMap} />
                     </div>
                   </div>
-                  )}
-
-                  {/* Slide 3: Conversion Rate - Only render if tab 3 is available */}
-                  {availableTabs.includes(3) && (
-                  <div className="flex-shrink-0 snap-start flex self-start w-full" style={{ 
-                    width: `${100 / availableTabs.length}%`, 
-                    minWidth: `${100 / availableTabs.length}%`, 
-                    maxWidth: `${100 / availableTabs.length}%`,
+                      );
+                    }
+                    
+                    // Tab 3: Conversion Rate
+                    if (actualTabIndex === 3) {
+                      return (
+                  <div key={`tab-${actualTabIndex}-${scrollIndex}`} className="flex-shrink-0 snap-start flex self-start w-full" style={{ 
+                    width: `${100 / displayTabs.length}%`, 
+                    minWidth: `${100 / displayTabs.length}%`, 
+                    maxWidth: `${100 / displayTabs.length}%`,
                     scrollSnapAlign: 'start',
                     scrollSnapStop: 'always',
                     boxSizing: 'border-box',
-                    paddingLeft: '0.5rem',
-                    paddingRight: '0.5rem'
+                    paddingLeft: scrollIndex > 0 ? '0.5rem' : '0',
+                    paddingRight: scrollIndex < displayTabs.length - 1 ? '0.5rem' : '0'
                   }}>
                     <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
                       <h3 className="text-sm font-semibold text-gray-900 mb-4">Conversion Rate</h3>
@@ -3487,18 +3671,21 @@ export default function DashboardOverview() {
                       <ConversionRateChart invoices={invoices} paymentDataMap={paymentDataMap} />
                     </div>
                   </div>
-                  )}
-
-                  {/* Slide 4: Payment Activity - Only render if tab 4 is available */}
-                  {availableTabs.includes(4) && (
-                  <div className="flex-shrink-0 snap-start w-full" style={{ 
-                    width: `${100 / availableTabs.length}%`, 
-                    minWidth: `${100 / availableTabs.length}%`, 
-                    maxWidth: `${100 / availableTabs.length}%`,
+                      );
+                    }
+                    
+                    // Tab 4: Payment Activity
+                    if (actualTabIndex === 4) {
+                      return (
+                  <div key={`tab-${actualTabIndex}-${scrollIndex}`} className="flex-shrink-0 snap-start w-full" style={{ 
+                    width: `${100 / displayTabs.length}%`, 
+                    minWidth: `${100 / displayTabs.length}%`, 
+                    maxWidth: `${100 / displayTabs.length}%`,
                     scrollSnapAlign: 'start',
                     scrollSnapStop: 'always',
                     boxSizing: 'border-box',
-                    paddingRight: '0.5rem'
+                    paddingLeft: scrollIndex > 0 ? '0.5rem' : '0',
+                    paddingRight: scrollIndex < displayTabs.length - 1 ? '0.5rem' : '0'
                   }}>
                     {loadingPaymentActivity ? (
                       <div className="bg-white border border-gray-200 p-8 text-center">
@@ -3518,7 +3705,7 @@ export default function DashboardOverview() {
                             <span className="text-xs text-gray-500">({paymentActivity.length})</span>
                           </div>
                           <div className="bg-white border border-gray-200 divide-y divide-gray-100">
-                            {paymentActivity.map((payment) => (
+                            {paymentActivity.slice(0, 6).map((payment) => (
                               <div
                                 key={payment.id}
                                 onClick={() => {
@@ -3560,18 +3747,21 @@ export default function DashboardOverview() {
                       </div>
                     )}
                   </div>
-                  )}
-
-                  {/* Slide 5: Upcoming Reminders - Only render if tab 5 is available */}
-                  {availableTabs.includes(5) && (
-                  <div className="flex-shrink-0 snap-start w-full" style={{ 
-                    width: `${100 / availableTabs.length}%`, 
-                    minWidth: `${100 / availableTabs.length}%`, 
-                    maxWidth: `${100 / availableTabs.length}%`,
+                      );
+                    }
+                    
+                    // Tab 5: Upcoming Reminders
+                    if (actualTabIndex === 5) {
+                      return (
+                  <div key={`tab-${actualTabIndex}-${scrollIndex}`} className="flex-shrink-0 snap-start w-full" style={{ 
+                    width: `${100 / displayTabs.length}%`, 
+                    minWidth: `${100 / displayTabs.length}%`, 
+                    maxWidth: `${100 / displayTabs.length}%`,
                     scrollSnapAlign: 'start',
                     scrollSnapStop: 'always',
                     boxSizing: 'border-box',
-                    paddingRight: '0.5rem'
+                    paddingLeft: scrollIndex > 0 ? '0.5rem' : '0',
+                    paddingRight: scrollIndex < displayTabs.length - 1 ? '0.5rem' : '0'
                   }}>
                     {loadingReminders ? (
                       <div className="bg-white border border-gray-200 p-8 text-center">
@@ -3651,7 +3841,11 @@ export default function DashboardOverview() {
                       </div>
                     )}
                   </div>
-                  )}
+                      );
+                    }
+                    
+                    return null;
+                  })}
                 </div>
               </div>
             </div>
@@ -4519,12 +4713,13 @@ export default function DashboardOverview() {
                     overflowY: 'visible',
                     scrollbarWidth: 'none',
                     msOverflowStyle: 'none',
+                    scrollBehavior: 'smooth', // Smooth for snap scrolling
                     scrollSnapType: 'x mandatory',
                     WebkitOverflowScrolling: 'touch',
                     WebkitScrollSnapType: 'x mandatory',
                     scrollSnapStop: 'always',
                     width: '100%',
-                    willChange: 'scroll-position',
+                    willChange: 'scroll-position', // Optimize for scrolling performance
                     transform: 'translateZ(0)', // Force GPU acceleration
                   }}
                 >
@@ -4544,8 +4739,7 @@ export default function DashboardOverview() {
                       maxWidth: '50%',
                       scrollSnapAlign: 'start',
                       scrollSnapStop: 'always',
-                      boxSizing: 'border-box',
-                      paddingRight: '0.5rem'
+                      boxSizing: 'border-box'
                     }}>
                       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
                         {/* Total Revenue */}
@@ -5209,7 +5403,7 @@ export default function DashboardOverview() {
                              </div>
                              <div className="text-xs text-gray-500 mt-1">
                                {new Date(payment.payment_date).toLocaleDateString()}
-                               {payment.notes && ` • ${payment.notes}`}
+                               {payment.notes && payment.notes.trim() !== '' && payment.notes.trim() !== '0' ? ` • ${payment.notes}` : ''}
                              </div>
                            </div>
                            <button
@@ -5387,130 +5581,159 @@ export default function DashboardOverview() {
                    <div className="w-full sm:w-auto">
                      <p className="text-xs sm:text-sm text-gray-700">Thank you for your business!</p>
                    </div>
-                   <div className="w-full sm:w-64">
-                     {(() => {
-                       const paymentData = paymentDataMap[selectedInvoice.id] || null;
-                       const dueCharges = calculateDueCharges(selectedInvoice, paymentData);
-                       const isPaid = selectedInvoice.status === 'paid';
-                       // Only show partial payments if invoice is not fully paid
-                       const hasPartialPayments = !isPaid && totalPaid > 0 && remainingBalance > 0;
-                       // Show total paid if there are any payments, but only show remaining balance if not fully paid
-                       const showPaymentInfo = totalPaid > 0;
-                       return (
-                         <div className="space-y-1">
-                           <div className="flex justify-between text-xs sm:text-sm">
-                             <span className="text-gray-700">Subtotal:</span>
-                             <span className="text-gray-900">${(selectedInvoice.subtotal || 0).toFixed(2)}</span>
-                           </div>
-                           <div className="flex justify-between text-xs sm:text-sm">
-                             <span className="text-gray-700">Discount:</span>
-                             <span className="text-gray-900">${(selectedInvoice.discount || 0).toFixed(2)}</span>
-                           </div>
-                           <div className="flex justify-between text-xs sm:text-sm">
-                             <span className="text-gray-700">Tax ({(selectedInvoice.taxRate || 0) * 100}%):</span>
-                             <span className="text-gray-900">${(selectedInvoice.taxAmount || 0).toFixed(2)}</span>
-                           </div>
-                           {(() => {
-                             const hasWriteOff = selectedInvoice.writeOffAmount && selectedInvoice.writeOffAmount > 0;
-                             const isPaidWithWriteOff = isPaid && hasWriteOff;
-                             
-                             if (dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0) {
-                               return (
-                                 <>
-                                   <div className="flex justify-between text-xs sm:text-sm border-t pt-1 border-gray-200">
-                                     <span className="text-gray-700">Total:</span>
-                                     <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
-                                   </div>
-                                   {showPaymentInfo && (
-                                     <div className="flex justify-between text-xs sm:text-sm">
-                                       <span className="text-emerald-700">Total Paid:</span>
-                                       <span className="text-emerald-700 font-semibold">${totalPaid.toFixed(2)}</span>
-                                     </div>
-                                   )}
-                                   {hasPartialPayments && (
-                                     <div className="flex justify-between text-xs sm:text-sm">
-                                       <span className="text-orange-700">Remaining Balance:</span>
-                                       <span className="text-orange-700 font-semibold">${remainingBalance.toFixed(2)}</span>
-                                     </div>
-                                   )}
-                                   <div className="flex justify-between text-xs sm:text-sm">
-                                     <span className="text-red-700">Late Fees:</span>
-                                     <span className="text-red-700 font-semibold">${dueCharges.lateFeeAmount.toFixed(2)}</span>
-                                   </div>
-                                   {isPaidWithWriteOff && (
-                                     <div className="flex justify-between text-xs sm:text-sm">
-                                       <span className="text-slate-700">Write-off Amount:</span>
-                                       <span className="text-slate-700 font-semibold">${(selectedInvoice.writeOffAmount || 0).toFixed(2)}</span>
-                                     </div>
-                                   )}
-                                   <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1 border-gray-200">
-                                     <span className="text-red-900">Total Payable:</span>
-                                     <span className="text-red-900">${dueCharges.totalPayable.toFixed(2)}</span>
-                                   </div>
-                                 </>
-                               );
-                             } else {
-                               return (
-                                 <>
-                                   <div className="flex justify-between text-xs sm:text-sm border-t pt-1 border-gray-200">
-                                     <span className="text-gray-700">Total:</span>
-                                     <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
-                                   </div>
-                                   {showPaymentInfo && (
-                                     <div className="flex justify-between text-xs sm:text-sm">
-                                       <span className="text-emerald-700">Total Paid:</span>
-                                       <span className="text-emerald-700 font-semibold">${totalPaid.toFixed(2)}</span>
-                                     </div>
-                                   )}
-                                   {hasPartialPayments && (
-                                     <div className="flex justify-between text-xs sm:text-sm font-bold">
-                                       <span className="text-orange-700">Remaining Balance:</span>
-                                       <span className="text-orange-700">${remainingBalance.toFixed(2)}</span>
-                                     </div>
-                                   )}
-                                   {isPaidWithWriteOff && (
-                                     <div className="flex justify-between text-xs sm:text-sm">
-                                       <span className="text-slate-700">Write-off Amount:</span>
-                                       <span className="text-slate-700 font-semibold">${(selectedInvoice.writeOffAmount || 0).toFixed(2)}</span>
-                                     </div>
-                                   )}
-                                 </>
-                               );
-                             }
-                           })()}
-                         </div>
-                       );
-                     })()}
-                   </div>
+                  <div className="w-full sm:w-64">
+                    {(() => {
+                      const paymentData = paymentDataMap[selectedInvoice.id] || null;
+                      const dueCharges = calculateDueCharges(selectedInvoice, paymentData);
+                      const hasWriteOff = selectedInvoice.writeOffAmount && selectedInvoice.writeOffAmount > 0;
+                      // If invoice has write-off, treat it as paid
+                      const isPaid = selectedInvoice.status === 'paid' || hasWriteOff;
+                      
+                      // Calculate actual paid amount: if write-off exists, paid = total - write-off
+                      // For fully paid invoices without write-off, amount paid = total
+                      const actualTotalPaid = hasWriteOff 
+                        ? Math.max(0, (selectedInvoice.total || 0) - (selectedInvoice.writeOffAmount || 0))
+                        : isPaid 
+                          ? (selectedInvoice.total || 0) // Fully paid invoice, amount paid = total
+                          : (paymentData?.totalPaid || dueCharges.totalPaid || 0);
+                      
+                      const actualRemainingBalance = hasWriteOff 
+                        ? 0 // If written off, no remaining balance
+                        : (paymentData?.remainingBalance || dueCharges.remainingBalance || 0);
+                      
+                      // If invoice has write-off, treat it as paid
+                      const isPaidWithWriteOff = isPaid && hasWriteOff;
+                      
+                      // Only show partial payments if invoice is not fully paid and no write-off
+                      const hasPartialPayments = !isPaid && !hasWriteOff && actualTotalPaid > 0 && actualRemainingBalance > 0;
+                      // Determine if it's a partial payment (has both paid and remaining)
+                      const isPartialPayment = hasPartialPayments;
+                      return (
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-xs sm:text-sm">
+                            <span className="text-gray-700">Subtotal:</span>
+                            <span className="text-gray-900">${(selectedInvoice.subtotal || 0).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-xs sm:text-sm">
+                            <span className="text-gray-700">Discount:</span>
+                            <span className="text-gray-900">${(selectedInvoice.discount || 0).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-xs sm:text-sm">
+                            <span className="text-gray-700">Tax ({(selectedInvoice.taxRate || 0) * 100}%):</span>
+                            <span className="text-gray-900">${(selectedInvoice.taxAmount || 0).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-xs sm:text-sm border-t pt-1 border-gray-200">
+                            <span className="text-gray-700">Total:</span>
+                            <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
+                          </div>
+                          {hasWriteOff ? (
+                            <div className="flex justify-between text-xs sm:text-sm">
+                              <span className="text-slate-700">Write-off Amount:</span>
+                              <span className="text-slate-700 font-semibold">-${(selectedInvoice.writeOffAmount || 0).toFixed(2)}</span>
+                            </div>
+                          ) : null}
+                          {/* Only show Total Paid/Partial Paid for NON-PAID invoices with partial payments - NEVER show for paid invoices */}
+                          {(() => {
+                            // CRITICAL: Double-check isPaid to ensure this NEVER renders for paid invoices
+                            const invoiceIsPaid = selectedInvoice.status === 'paid' || hasWriteOff;
+                            if (invoiceIsPaid) return null;
+                            
+                            // Only show for non-paid invoices with actual payments
+                            if (!hasWriteOff && actualTotalPaid > 0) {
+                              return (
+                                <div className="flex justify-between text-xs sm:text-sm no-underline-invoice-amount" style={{ textDecoration: 'none', borderBottom: 'none' }}>
+                                  <span 
+                                    className={isPartialPayment ? "text-blue-600" : "text-emerald-700"} 
+                                    style={{ textDecoration: 'none', borderBottom: 'none', textDecorationLine: 'none', textDecorationColor: 'transparent' }}
+                                    spellCheck="false"
+                                  >
+                                    {isPartialPayment ? "Partial Paid:" : "Total Paid:"}
+                                  </span>
+                                  <span 
+                                    className={isPartialPayment ? "text-blue-600 font-semibold" : "text-emerald-700 font-semibold"} 
+                                    style={{ textDecoration: 'none', borderBottom: 'none', textDecorationLine: 'none', textDecorationColor: 'transparent' }}
+                                    spellCheck="false"
+                                  >
+                                    ${actualTotalPaid.toFixed(2)}
+                                  </span>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
+                          {hasPartialPayments === true ? (
+                            <div className="flex justify-between text-xs sm:text-sm">
+                              <span className="text-orange-700">Remaining Balance:</span>
+                              <span className="text-orange-700 font-semibold">${actualRemainingBalance.toFixed(2)}</span>
+                            </div>
+                          ) : null}
+                          {dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 ? (
+                            <div className="flex justify-between text-xs sm:text-sm">
+                              <span className="text-red-700">Late Fees:</span>
+                              <span className="text-red-700 font-semibold">${dueCharges.lateFeeAmount.toFixed(2)}</span>
+                            </div>
+                          ) : null}
+                          {(dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0) ? (
+                            <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1 border-gray-200">
+                              <span className="text-red-900">Total Payable:</span>
+                              <span className="text-red-900">${dueCharges.totalPayable.toFixed(2)}</span>
+                            </div>
+                          ) : isPaid ? (
+                            <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1 border-gray-200">
+                              <span className="text-emerald-700" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}>Amount Paid:</span>
+                              <span className="text-emerald-700" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}>${actualTotalPaid.toFixed(2)}</span>
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })()}
+                  </div>
                  </div>
                </div>
 
-               {/* Notes */}
-               {selectedInvoice.notes && (
-                 <div className="p-3 sm:p-6 border-t border-gray-200">
-                   <h3 className="text-sm sm:text-base font-semibold mb-2 text-gray-900">Notes</h3>
-                   <p className="text-xs sm:text-sm text-gray-700">{selectedInvoice.notes}</p>
-                 </div>
-               )}
+              {/* Notes */}
+              {(() => {
+                const notes = selectedInvoice.notes;
+                const hasValidNotes = Boolean(notes && 
+                  typeof notes === 'string' && 
+                  notes.trim() !== '' && 
+                  notes.trim() !== '0');
+                if (!hasValidNotes) {
+                  return null;
+                }
+                return (
+                  <div className={`p-3 sm:p-6 border-t ${'border-gray-200'}`}>
+                    <h3 className={`text-sm sm:text-base font-semibold mb-2 ${'text-gray-900'}`}>Notes</h3>
+                    <p className={`text-xs sm:text-sm ${'text-gray-600'}`}>{notes}</p>
+                  </div>
+                );
+              })()}
 
                {/* Write-off Information */}
-               {selectedInvoice.writeOffAmount && selectedInvoice.writeOffAmount > 0 && (
-                 <div className="p-3 sm:p-6 border-t border-gray-200">
-                   <h3 className="text-sm sm:text-base font-semibold mb-2 text-gray-900">Write-off Information</h3>
+               {selectedInvoice.writeOffAmount && selectedInvoice.writeOffAmount > 0 ? (
+                 <div className={`p-3 sm:p-6 border-t ${'border-gray-200'}`}>
+                   <h3 className={`text-sm sm:text-base font-semibold mb-2 ${'text-gray-900'}`}>Write-off Information</h3>
                    <div className="space-y-2">
                      <div className="flex justify-between text-xs sm:text-sm">
                        <span className="text-gray-700">Write-off Amount:</span>
                        <span className="text-slate-700 font-semibold">${(selectedInvoice.writeOffAmount || 0).toFixed(2)}</span>
                      </div>
-                     {selectedInvoice.writeOffNotes && (
-                       <div>
-                         <span className="text-xs sm:text-sm text-gray-700 font-medium">Notes:</span>
-                         <p className="text-xs sm:text-sm text-gray-700 mt-1">{selectedInvoice.writeOffNotes}</p>
-                       </div>
-                     )}
+                     {(() => {
+                       const writeOffNotes = selectedInvoice.writeOffNotes;
+                       const hasValidWriteOffNotes = Boolean(writeOffNotes && 
+                         typeof writeOffNotes === 'string' && 
+                         writeOffNotes.trim() !== '' && 
+                         writeOffNotes.trim() !== '0');
+                       return hasValidWriteOffNotes ? (
+                         <div>
+                           <span className="text-xs sm:text-sm text-gray-700 font-medium">Notes:</span>
+                           <p className="text-xs sm:text-sm text-gray-700 mt-1">{writeOffNotes}</p>
+                         </div>
+                       ) : null;
+                     })()}
                    </div>
                  </div>
-               )}
+               ) : null}
 
                {/* Payment History - Show if there are partial payments */}
                {totalPaid > 0 && (
@@ -5536,7 +5759,7 @@ export default function DashboardOverview() {
                              </div>
                              <div className="text-xs text-gray-500 mt-1">
                                {new Date(payment.payment_date).toLocaleDateString()}
-                               {payment.notes && ` • ${payment.notes}`}
+                               {payment.notes && payment.notes.trim() !== '' && payment.notes.trim() !== '0' ? ` • ${payment.notes}` : ''}
                              </div>
                            </div>
                          </div>

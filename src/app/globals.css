@@ -931,6 +931,49 @@ html:not(.loaded) .loading-spinner {
   animation: typeText 1s ease-out forwards;
 }
 
+/* Explicitly prevent underlines on invoice payment amounts - AGGRESSIVE FIX */
+.no-underline-invoice-amount,
+.no-underline-invoice-amount *,
+.no-underline-invoice-amount span,
+[class*="text-emerald-700"],
+[class*="text-blue-600"] {
+  text-decoration: none !important;
+  border-bottom: none !important;
+  text-decoration-line: none !important;
+  text-decoration-color: transparent !important;
+  text-underline-offset: 0 !important;
+  text-decoration-thickness: 0 !important;
+  text-underline-position: auto !important;
+}
+
+/* Prevent browser spell-check underlines */
+.no-underline-invoice-amount,
+.no-underline-invoice-amount * {
+  -webkit-text-decoration: none !important;
+  -moz-text-decoration: none !important;
+  -ms-text-decoration: none !important;
+  text-decoration-skip-ink: none !important;
+}
+
+/* AGGRESSIVE: Remove ALL red underlines from invoice totals section */
+[class*="space-y-1"] > div:has(span[class*="text-emerald-700"]),
+[class*="space-y-1"] > div:has(span[class*="text-blue-600"]) {
+  text-decoration: none !important;
+  border-bottom: none !important;
+}
+
+/* Target any red underlines specifically */
+span[class*="text-emerald-700"],
+span[class*="text-blue-600"],
+span.text-emerald-700,
+span.text-blue-600 {
+  text-decoration: none !important;
+  border-bottom: none !important;
+  text-decoration-color: transparent !important;
+  -webkit-text-decoration: none !important;
+  -moz-text-decoration: none !important;
+}
+
 }
 
 @layer utilities {

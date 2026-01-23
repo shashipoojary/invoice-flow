@@ -797,12 +797,12 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
         onClick={onClose}
       />
       
-      {/* Sliding Panel - 75% width on mobile, fixed width on desktop */}
-      <div className="absolute right-0 top-0 h-full w-3/4 sm:w-full sm:max-w-md bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
+      {/* Sliding Panel - 50% width on mobile, fixed width on desktop */}
+      <div className="absolute right-0 top-0 h-full w-1/2 sm:w-full sm:max-w-md bg-white shadow-xl transform transition-transform duration-300 ease-in-out">
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Invoice activity</h3>
+          <div className="flex items-center justify-between p-3 sm:p-6 border-b border-gray-200">
+            <h3 className="text-xs sm:text-lg font-semibold text-gray-900 truncate pr-2">Invoice activity</h3>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 transition-colors cursor-pointer"
@@ -812,12 +812,12 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
           </div>
           
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-            <div className="space-y-6">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Invoice Info */}
               <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Invoice</h4>
-                <p className="text-sm font-medium text-gray-900">{invoice.invoiceNumber} • {invoice.client?.name || 'Unknown'}</p>
+                <h4 className="text-xs sm:text-sm font-medium text-gray-500 mb-1 sm:mb-2">Invoice</h4>
+                <p className="text-xs sm:text-sm font-medium text-gray-900 break-words">{invoice.invoiceNumber} • {invoice.client?.name || 'Unknown'}</p>
               </div>
 
               {/* Activity List */}
@@ -827,22 +827,22 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                 <div className="text-sm text-gray-500">No activity yet.</div>
               ) : (
                 <div>
-                  <h4 className="text-sm font-medium text-gray-500 mb-4">Activity Timeline</h4>
-                  <ul className="pl-2">
+                  <h4 className="text-xs sm:text-sm font-medium text-gray-500 mb-3 sm:mb-4">Activity Timeline</h4>
+                  <ul className="pl-1 sm:pl-2">
                     {activities.map((a, idx) => (
-                      <li key={a.id} className="relative grid grid-cols-[20px_1fr] gap-3 pb-5">
+                      <li key={a.id} className="relative grid grid-cols-[16px_1fr] sm:grid-cols-[20px_1fr] gap-2 sm:gap-3 pb-4 sm:pb-5">
                         {/* Connector line centered on the icon */}
                         {idx !== activities.length - 1 && (
-                          <div className="absolute bottom-0 w-px bg-gray-200 z-0" style={{ left: '10px', top: '16px' }} />
+                          <div className="absolute bottom-0 w-px bg-gray-200 z-0 left-[8px] sm:left-[10px] top-[14px] sm:top-[16px]" />
                         )}
                         {/* Icon (no border/background) aligned to text center */}
-                        <div className="relative z-10 flex items-center justify-center h-5 w-5 mt-0.5">
+                        <div className="relative z-10 flex items-center justify-center h-4 w-4 sm:h-5 sm:w-5 mt-0.5">
                           {iconFor(a)}
                         </div>
                         {/* Content */}
                         <div className="py-0.5">
-                          <div className="text-sm text-gray-900 leading-5">{a.title}</div>
-                          <div className="text-xs text-gray-500 leading-4">
+                          <div className="text-xs sm:text-sm text-gray-900 leading-4 sm:leading-5 break-words">{a.title}</div>
+                          <div className="text-[10px] sm:text-xs text-gray-500 leading-3 sm:leading-4">
                             {(() => {
                               const date = new Date(a.at);
                               // Format date to show correct date regardless of timezone
@@ -855,7 +855,7 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                               return `${year}-${month}-${day} ${hours}:${minutes} UTC`;
                             })()}
                           </div>
-                          {a.details && <div className="text-xs text-gray-500 mt-0.5">{a.details}</div>}
+                          {a.details && <div className="text-[10px] sm:text-xs text-gray-500 mt-0.5 break-words">{a.details}</div>}
                         </div>
                       </li>
                     ))}
@@ -864,7 +864,7 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
               )}
             </div>
           </div>
-          <div className="p-5 border-t border-gray-200 space-y-3">
+          <div className="p-3 sm:p-5 border-t border-gray-200 space-y-2 sm:space-y-3">
             {invoice.public_token && (
               <button
                 onClick={() => {
@@ -874,12 +874,12 @@ export default function InvoiceActivityDrawer({ invoice, open, onClose }: { invo
                     window.open(`/invoice/${encodeURIComponent(token)}?owner=true&view=preview`, '_blank');
                   }
                 }}
-                className="w-full px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
+                className="w-full px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white bg-indigo-600 border border-transparent hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
               >
                 View Public Page
               </button>
             )}
-            <button onClick={onClose} className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors">Close</button>
+            <button onClick={onClose} className="w-full px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors">Close</button>
           </div>
         </div>
       </div>
