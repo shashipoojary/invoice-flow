@@ -251,7 +251,8 @@ export async function GET(
         items: (itemsData || []).map(item => ({
           id: item.id,
           description: item.description,
-          rate: item.line_total,
+          qty: item.qty || 1,
+          rate: item.rate || item.line_total,
           amount: item.line_total
         })),
         subtotal: invoice.subtotal || 0,

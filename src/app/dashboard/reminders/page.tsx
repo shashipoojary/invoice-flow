@@ -942,8 +942,8 @@ export default function ReminderHistoryPage() {
                       onClick={() => setStatusFilter('')}
                       className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         !statusFilter 
-                          ? 'bg-gray-900 text-white' 
-                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                          ? 'text-gray-900' 
+                          : 'text-gray-700 hover:text-gray-900'
                       }`}
                     >
                       All
@@ -952,8 +952,8 @@ export default function ReminderHistoryPage() {
                       onClick={() => setStatusFilter('sent')}
                       className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         statusFilter === 'sent' 
-                          ? 'bg-blue-100 text-blue-800 border border-blue-200' 
-                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                          ? 'text-blue-600' 
+                          : 'text-gray-700 hover:text-gray-900'
                       }`}
                     >
                       Sent
@@ -962,8 +962,8 @@ export default function ReminderHistoryPage() {
                       onClick={() => setStatusFilter('scheduled')}
                       className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         statusFilter === 'scheduled' 
-                          ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' 
-                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                          ? 'text-yellow-600' 
+                          : 'text-gray-700 hover:text-gray-900'
                       }`}
                     >
                       Scheduled
@@ -972,8 +972,8 @@ export default function ReminderHistoryPage() {
                       onClick={() => setStatusFilter('delivered')}
                       className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         statusFilter === 'delivered' 
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
-                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                          ? 'text-emerald-600' 
+                          : 'text-gray-700 hover:text-gray-900'
                       }`}
                     >
                       Delivered
@@ -982,8 +982,8 @@ export default function ReminderHistoryPage() {
                       onClick={() => setStatusFilter('failed')}
                       className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         statusFilter === 'failed' 
-                          ? 'bg-red-100 text-red-800 border border-red-200' 
-                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                          ? 'text-red-600' 
+                          : 'text-gray-700 hover:text-gray-900'
                       }`}
                     >
                       Failed
@@ -992,8 +992,8 @@ export default function ReminderHistoryPage() {
                       onClick={() => setStatusFilter('bounced')}
                       className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         statusFilter === 'bounced' 
-                          ? 'bg-orange-100 text-orange-800 border border-orange-200' 
-                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                          ? 'text-orange-600' 
+                          : 'text-gray-700 hover:text-gray-900'
                       }`}
                     >
                       Bounced
@@ -1002,8 +1002,8 @@ export default function ReminderHistoryPage() {
                       onClick={() => setStatusFilter('cancelled')}
                       className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         statusFilter === 'cancelled' 
-                          ? 'bg-gray-100 text-gray-800 border border-gray-200' 
-                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                          ? 'text-gray-900' 
+                          : 'text-gray-700 hover:text-gray-900'
                       }`}
                     >
                       Cancelled
@@ -1019,8 +1019,8 @@ export default function ReminderHistoryPage() {
                       onClick={() => setTypeFilter('')}
                       className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         !typeFilter 
-                          ? 'bg-gray-900 text-white' 
-                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                          ? 'text-gray-900' 
+                          : 'text-gray-700 hover:text-gray-900'
                       }`}
                     >
                       All
@@ -1029,8 +1029,8 @@ export default function ReminderHistoryPage() {
                       onClick={() => setTypeFilter('friendly')}
                       className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         typeFilter === 'friendly' 
-                          ? 'bg-blue-100 text-blue-800 border border-blue-200' 
-                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                          ? 'text-blue-600' 
+                          : 'text-gray-700 hover:text-gray-900'
                       }`}
                     >
                       Friendly
@@ -1039,8 +1039,8 @@ export default function ReminderHistoryPage() {
                       onClick={() => setTypeFilter('polite')}
                       className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         typeFilter === 'polite' 
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
-                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                          ? 'text-emerald-600' 
+                          : 'text-gray-700 hover:text-gray-900'
                       }`}
                     >
                       Polite
@@ -1049,8 +1049,8 @@ export default function ReminderHistoryPage() {
                       onClick={() => setTypeFilter('firm')}
                       className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         typeFilter === 'firm' 
-                          ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' 
-                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                          ? 'text-yellow-600' 
+                          : 'text-gray-700 hover:text-gray-900'
                       }`}
                     >
                       Firm
@@ -1059,8 +1059,8 @@ export default function ReminderHistoryPage() {
                       onClick={() => setTypeFilter('urgent')}
                       className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         typeFilter === 'urgent' 
-                          ? 'bg-red-100 text-red-800 border border-red-200' 
-                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                          ? 'text-red-600' 
+                          : 'text-gray-700 hover:text-gray-900'
                       }`}
                     >
                       Urgent

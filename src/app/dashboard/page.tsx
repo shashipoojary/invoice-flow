@@ -435,6 +435,7 @@ export default function DashboardOverview() {
   const invoicesRef = useRef<Invoice[]>([]);
   const clientsRef = useRef<Client[]>([]);
   const notificationsFetchedRef = useRef(false);
+  const lastNotificationUpdateRef = useRef<number>(Date.now());
   const [additionalStatsTab, setAdditionalStatsTab] = useState(0);
   const lastFetchKeyRef = useRef<string>('');
   const getAuthHeadersRef = useRef<typeof getAuthHeaders | null>(null);
@@ -1169,7 +1170,7 @@ export default function DashboardOverview() {
         overdueDays: 0,
         totalPaid: paymentData?.totalPaid || 0,
         remainingBalance: paymentData?.remainingBalance || invoice.total,
-        isPartiallyPaid: (paymentData?.totalPaid || 0) > 0 && (paymentData?.remainingBalance || 0) > 0
+        isPartiallyPaid: invoice.status !== 'paid' && (paymentData?.totalPaid || 0) > 0 && (paymentData?.remainingBalance || 0) > 0
       };
     }
 
@@ -2317,7 +2318,7 @@ export default function DashboardOverview() {
                 {getStatusIcon(invoice.status)}
                 <span className="capitalize">{invoice.status}</span>
               </span>
-              {dueCharges.isPartiallyPaid && (
+              {dueCharges.isPartiallyPaid && invoice.status !== 'paid' && (
                 <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
                   <DollarSign className="h-3 w-3" />
                   <span>Partial Paid</span>
@@ -4154,26 +4155,24 @@ export default function DashboardOverview() {
     return invoice?.clientName || invoice?.client?.name || 'Unknown';
   }, []);
 
-  // Fetch and calculate notifications - only once when data is ready
-  useEffect(() => {
+  // Fetch and calculate notifications - extracted to useCallback for reuse
+  const fetchNotifications = useCallback(async (force = false) => {
     if (!user || !hasInitiallyLoaded || isLoadingInvoices) {
-      notificationsFetchedRef.current = false;
-      lastFetchKeyRef.current = '';
       return;
     }
     
     // Create a unique key for this fetch attempt
     const fetchKey = `${user?.id || ''}-${hasInitiallyLoaded}-${isLoadingInvoices}`;
     
-    // Prevent multiple fetches with the same key
-    if (lastFetchKeyRef.current === fetchKey && notificationsFetchedRef.current) {
+    // Prevent multiple fetches with the same key unless forced
+    if (!force && lastFetchKeyRef.current === fetchKey && notificationsFetchedRef.current) {
       return;
     }
     
     lastFetchKeyRef.current = fetchKey;
     notificationsFetchedRef.current = true;
     
-    const fetchNotifications = async () => {
+    const fetchNotificationsInner = async () => {
       const currentInvoices = invoicesRef.current;
       const currentClients = clientsRef.current || [];
       const notificationList: Array<{
@@ -4639,6 +4638,7 @@ export default function DashboardOverview() {
       // CRITICAL FIX: Use deduplicatedList (not notificationList) to sync read state
       // This ensures we're checking against the actual notifications that will be displayed
       setNotifications(deduplicatedList);
+      lastNotificationUpdateRef.current = Date.now();
       
       // Sync read state with stored values AFTER setting notifications
       // Only sync IDs that exist in the current notification list
@@ -4669,6 +4669,17 @@ export default function DashboardOverview() {
       }
     };
     
+    await fetchNotificationsInner();
+  }, [user, hasInitiallyLoaded, isLoadingInvoices, invoices, getAuthHeaders, getClientNameFromSnapshot]);
+
+  // Initial fetch and set up real-time subscriptions
+  useEffect(() => {
+    if (!user || !hasInitiallyLoaded || isLoadingInvoices) {
+      notificationsFetchedRef.current = false;
+      lastFetchKeyRef.current = '';
+      return;
+    }
+    
     fetchNotifications();
     
     // Set up real-time subscriptions for notifications
@@ -4691,10 +4702,12 @@ export default function DashboardOverview() {
           const oldData = payload.old as any;
           if (newData && newData.invoice_id && invoiceIds.includes(newData.invoice_id)) {
             // Refresh notifications when events change for user's invoices
-            fetchNotifications();
+            fetchNotifications(true);
+            lastNotificationUpdateRef.current = Date.now();
           } else if (oldData && oldData.invoice_id && invoiceIds.includes(oldData.invoice_id)) {
             // Also handle updates/deletes
-            fetchNotifications();
+            fetchNotifications(true);
+            lastNotificationUpdateRef.current = Date.now();
           }
         }
       )
@@ -4713,7 +4726,8 @@ export default function DashboardOverview() {
         },
         (payload) => {
           // Refresh notifications when invoice status changes
-          fetchNotifications();
+          fetchNotifications(true);
+          lastNotificationUpdateRef.current = Date.now();
         }
       )
       .subscribe();
@@ -4723,8 +4737,53 @@ export default function DashboardOverview() {
       eventsChannel.unsubscribe();
       invoicesChannel.unsubscribe();
     };
-    // Only depend on stable values - use user.id instead of user object
-  }, [user?.id, hasInitiallyLoaded, isLoadingInvoices]);
+  }, [user?.id, hasInitiallyLoaded, isLoadingInvoices, fetchNotifications]);
+
+  // Smart fallback polling: Only refresh if real-time hasn't updated in 5 minutes
+  // This is a safety net in case real-time subscriptions fail - much less aggressive than before
+  useEffect(() => {
+    if (!user || !hasInitiallyLoaded || isLoadingInvoices) return;
+
+    const checkAndRefresh = () => {
+      const timeSinceLastUpdate = Date.now() - lastNotificationUpdateRef.current;
+      // Only poll if it's been more than 5 minutes since last update AND tab is visible
+      // This ensures we don't waste resources if real-time is working
+      if (timeSinceLastUpdate > 300000 && !document.hidden) {
+        fetchNotifications(true);
+        lastNotificationUpdateRef.current = Date.now();
+      }
+    };
+
+    // Check every 2 minutes (only acts as a fallback, doesn't always fetch)
+    const interval = setInterval(checkAndRefresh, 120000); // 2 minutes
+
+    return () => clearInterval(interval);
+  }, [user, hasInitiallyLoaded, isLoadingInvoices, fetchNotifications]);
+
+  // Auto-refresh notifications when window regains focus (user-initiated, reasonable)
+  useEffect(() => {
+    if (!user || !hasInitiallyLoaded || isLoadingInvoices) return;
+
+    const handleFocus = () => {
+      setTimeout(() => {
+        fetchNotifications(true);
+        lastNotificationUpdateRef.current = Date.now();
+      }, 500);
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [user, hasInitiallyLoaded, isLoadingInvoices, fetchNotifications]);
+
+  // Refresh notifications when notification panel opens (user-initiated, reasonable)
+  useEffect(() => {
+    if (showNotifications && user && hasInitiallyLoaded && !isLoadingInvoices) {
+      fetchNotifications(true);
+      lastNotificationUpdateRef.current = Date.now();
+    }
+  }, [showNotifications, user, hasInitiallyLoaded, isLoadingInvoices, fetchNotifications]);
 
   // Clean up read notification IDs for notifications that no longer exist
   // But preserve read state - only remove IDs that truly don't exist anymore

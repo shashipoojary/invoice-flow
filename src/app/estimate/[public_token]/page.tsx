@@ -619,12 +619,31 @@ export default function PublicEstimatePage() {
               <div className="text-sm font-normal text-gray-900 mb-4" style={{ color: '#1F2937' }}>
                 Items
               </div>
+              {/* Table Header - Hidden on mobile, shown on larger screens */}
+              <div className="hidden sm:grid grid-cols-12 gap-4 mb-3 pb-2 border-b border-gray-200">
+                <div className="col-span-5 text-xs font-medium text-gray-600">Description</div>
+                <div className="col-span-2 text-xs font-medium text-gray-600 text-right">Qty</div>
+                <div className="col-span-2 text-xs font-medium text-gray-600 text-right">Rate</div>
+                <div className="col-span-3 text-xs font-medium text-gray-600 text-right">Amount</div>
+              </div>
               <div className="space-y-3">
                 {estimate.items.map((item, index) => (
-                  <div key={item.id || index} className="flex justify-between text-sm">
-                    <div className="text-black flex-1">{item.description}</div>
-                    <div className="text-black text-right ml-4" style={{ minWidth: '100px' }}>
-                      ${item.amount.toFixed(2)}
+                  <div key={item.id || index}>
+                    {/* Mobile Layout */}
+                    <div className="sm:hidden space-y-1">
+                      <div className="text-sm text-black font-medium">{item.description}</div>
+                      <div className="flex justify-between text-xs text-gray-600">
+                        <span>Qty: {(item.qty || 1).toFixed(2)}</span>
+                        <span>Rate: ${typeof item.rate === 'number' ? item.rate.toFixed(2) : parseFloat(String(item.rate || 0)).toFixed(2)}</span>
+                        <span className="text-black font-medium">${item.amount.toFixed(2)}</span>
+                      </div>
+                    </div>
+                    {/* Desktop Layout */}
+                    <div className="hidden sm:grid grid-cols-12 gap-4 text-sm">
+                      <div className="col-span-5 text-black">{item.description}</div>
+                      <div className="col-span-2 text-black text-right">{(item.qty || 1).toFixed(2)}</div>
+                      <div className="col-span-2 text-black text-right">${typeof item.rate === 'number' ? item.rate.toFixed(2) : parseFloat(String(item.rate || 0)).toFixed(2)}</div>
+                      <div className="col-span-3 text-black text-right">${item.amount.toFixed(2)}</div>
                     </div>
                   </div>
                 ))}

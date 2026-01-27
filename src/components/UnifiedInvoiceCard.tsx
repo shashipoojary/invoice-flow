@@ -103,7 +103,7 @@ export function UnifiedInvoiceCard({
   // Write Off badge shows when invoice has write-off amount
   // Memoize to prevent recreation on every render
   const badges = React.useMemo(() => [
-    ...(dueCharges.isPartiallyPaid ? [
+    ...(dueCharges.isPartiallyPaid && invoice.status !== 'paid' ? [
       <span key="partial" className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
         <DollarSign className="h-3 w-3" />
         <span>Partial Paid</span>

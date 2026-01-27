@@ -578,7 +578,7 @@ function InvoicesContent(): React.JSX.Element {
         overdueDays: 0,
         totalPaid: paymentData?.totalPaid || 0,
         remainingBalance: paymentData?.remainingBalance || invoice.total,
-        isPartiallyPaid: (paymentData?.totalPaid || 0) > 0 && (paymentData?.remainingBalance || 0) > 0
+        isPartiallyPaid: invoice.status !== 'paid' && (paymentData?.totalPaid || 0) > 0 && (paymentData?.remainingBalance || 0) > 0
       };
     }
 
@@ -1593,7 +1593,7 @@ function InvoicesContent(): React.JSX.Element {
                 {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status}</span>
               </span>
-                {dueCharges.isPartiallyPaid && (
+                {dueCharges.isPartiallyPaid && invoice.status !== 'paid' && (
                   <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
                     <DollarSign className="h-3 w-3" />
                     <span>Partial Paid</span>
@@ -1723,7 +1723,7 @@ function InvoicesContent(): React.JSX.Element {
                 {getStatusIcon(invoice.status)}
                   <span className="capitalize">{invoice.status}</span>
                   </span>
-                {dueCharges.isPartiallyPaid && (
+                {dueCharges.isPartiallyPaid && invoice.status !== 'paid' && (
                   <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
                     <DollarSign className="h-3 w-3" />
                     <span>Partial Paid</span>
@@ -1982,8 +1982,8 @@ function InvoicesContent(): React.JSX.Element {
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           !statusFilter 
-                            ? 'bg-gray-900 text-white' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'text-gray-900' 
+                            : 'text-gray-700 hover:text-gray-900'
                         }`}
                       >
                         All
@@ -1996,8 +1996,8 @@ function InvoicesContent(): React.JSX.Element {
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'paid' 
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'text-emerald-600' 
+                            : 'text-gray-700 hover:text-gray-900'
                         }`}
                       >
                         Paid
@@ -2010,8 +2010,8 @@ function InvoicesContent(): React.JSX.Element {
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'pending' 
-                            ? 'bg-orange-100 text-orange-800 border border-orange-200' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'text-orange-600' 
+                            : 'text-gray-700 hover:text-gray-900'
                         }`}
                       >
                         Pending
@@ -2024,8 +2024,8 @@ function InvoicesContent(): React.JSX.Element {
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'overdue' 
-                            ? 'bg-red-100 text-red-800 border border-red-200' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'text-red-600' 
+                            : 'text-gray-700 hover:text-gray-900'
                         }`}
                       >
                         Overdue
@@ -2038,8 +2038,8 @@ function InvoicesContent(): React.JSX.Element {
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'draft' 
-                            ? 'bg-gray-100 text-gray-800 border border-gray-200' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'text-gray-900' 
+                            : 'text-gray-700 hover:text-gray-900'
                         }`}
                       >
                         Draft
@@ -2052,8 +2052,8 @@ function InvoicesContent(): React.JSX.Element {
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'partial' 
-                            ? 'bg-blue-100 text-blue-800 border border-blue-300' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'text-blue-600' 
+                            : 'text-gray-700 hover:text-gray-900'
                         }`}
                       >
                         Partial Paid
@@ -2074,8 +2074,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('daysOverdue')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'daysOverdue'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Days Overdue (High to Low)
@@ -2084,8 +2084,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('amount')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'amount'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Amount (High to Low)
@@ -2100,8 +2100,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('amount')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'amount'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Amount (High to Low)
@@ -2110,8 +2110,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('amountDesc')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'amountDesc'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Amount (Low to High)
@@ -2120,8 +2120,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('client')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'client'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Client Name (A-Z)
@@ -2136,8 +2136,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('amount')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'amount'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Amount (High to Low)
@@ -2146,8 +2146,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('amountDesc')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'amountDesc'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Amount (Low to High)
@@ -2156,8 +2156,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('date')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'date'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Date (Newest First)
@@ -2166,8 +2166,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('dateDesc')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'dateDesc'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Date (Oldest First)
@@ -2182,8 +2182,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('amount')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'amount'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Amount (High to Low)
@@ -2192,8 +2192,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('amountDesc')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'amountDesc'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Amount (Low to High)
@@ -2202,8 +2202,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('dueDate')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'dueDate'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Due Date (Earliest First)
@@ -2212,8 +2212,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('dueDateDesc')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'dueDateDesc'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Due Date (Latest First)
@@ -2222,8 +2222,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('date')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'date'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Created Date (Newest First)
@@ -2238,8 +2238,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('amount')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'amount'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Amount (High to Low)
@@ -2248,8 +2248,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('amountDesc')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'amountDesc'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Amount (Low to High)
@@ -2258,8 +2258,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('date')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'date'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Date (Newest First)
@@ -2268,8 +2268,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('dateDesc')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'dateDesc'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Date (Oldest First)
@@ -2284,8 +2284,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('amount')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'amount'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Remaining Balance (High to Low)
@@ -2294,8 +2294,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('amountDesc')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'amountDesc'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Remaining Balance (Low to High)
@@ -2304,8 +2304,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('dueDate')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'dueDate'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Due Date (Earliest First)
@@ -2314,8 +2314,8 @@ function InvoicesContent(): React.JSX.Element {
                                 onClick={() => setSortBy('date')}
                                 className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                                   sortBy === 'date'
-                                    ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                    ? 'text-indigo-600'
+                                    : 'text-gray-600 hover:text-gray-900'
                                 }`}
                               >
                                 Created Date (Newest First)

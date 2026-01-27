@@ -701,8 +701,8 @@ function EstimatesContent(): React.JSX.Element {
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           !statusFilter 
-                            ? 'bg-gray-900 text-white' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'text-gray-900' 
+                            : 'text-gray-700 hover:text-gray-900'
                         }`}
                       >
                         All
@@ -715,8 +715,8 @@ function EstimatesContent(): React.JSX.Element {
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'draft' 
-                            ? 'bg-gray-100 text-gray-800 border border-gray-200' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'text-gray-900' 
+                            : 'text-gray-700 hover:text-gray-900'
                         }`}
                       >
                         Draft
@@ -729,8 +729,8 @@ function EstimatesContent(): React.JSX.Element {
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'sent' 
-                            ? 'bg-blue-100 text-blue-800 border border-blue-200' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'text-blue-600' 
+                            : 'text-gray-700 hover:text-gray-900'
                         }`}
                       >
                         Sent
@@ -743,8 +743,8 @@ function EstimatesContent(): React.JSX.Element {
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'approved' 
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'text-emerald-600' 
+                            : 'text-gray-700 hover:text-gray-900'
                         }`}
                       >
                         Approved
@@ -757,8 +757,8 @@ function EstimatesContent(): React.JSX.Element {
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'rejected' 
-                            ? 'bg-red-100 text-red-800 border border-red-200' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'text-red-600' 
+                            : 'text-gray-700 hover:text-gray-900'
                         }`}
                       >
                         Rejected
@@ -771,8 +771,8 @@ function EstimatesContent(): React.JSX.Element {
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'converted' 
-                            ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'text-indigo-600' 
+                            : 'text-gray-700 hover:text-gray-900'
                         }`}
                       >
                         Converted
@@ -785,8 +785,8 @@ function EstimatesContent(): React.JSX.Element {
                         }}
                         className={`px-3 py-1.5 text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'expired' 
-                            ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'text-yellow-600' 
+                            : 'text-gray-700 hover:text-gray-900'
                         }`}
                       >
                         Expired
@@ -804,8 +804,8 @@ function EstimatesContent(): React.JSX.Element {
                             onClick={() => setSortBy('amount')}
                             className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                               sortBy === 'amount'
-                                ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                ? 'text-indigo-600'
+                                : 'text-gray-600 hover:text-gray-900'
                             }`}
                           >
                             Amount (High to Low)
@@ -814,8 +814,8 @@ function EstimatesContent(): React.JSX.Element {
                             onClick={() => setSortBy('amountDesc')}
                             className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                               sortBy === 'amountDesc'
-                                ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                ? 'text-indigo-600'
+                                : 'text-gray-600 hover:text-gray-900'
                             }`}
                           >
                             Amount (Low to High)
@@ -824,8 +824,8 @@ function EstimatesContent(): React.JSX.Element {
                             onClick={() => setSortBy('date')}
                             className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                               sortBy === 'date'
-                                ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                ? 'text-indigo-600'
+                                : 'text-gray-600 hover:text-gray-900'
                             }`}
                           >
                             Date (Newest First)
@@ -834,8 +834,8 @@ function EstimatesContent(): React.JSX.Element {
                             onClick={() => setSortBy('dateDesc')}
                             className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                               sortBy === 'dateDesc'
-                                ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                ? 'text-indigo-600'
+                                : 'text-gray-600 hover:text-gray-900'
                             }`}
                           >
                             Date (Oldest First)
@@ -844,8 +844,8 @@ function EstimatesContent(): React.JSX.Element {
                             onClick={() => setSortBy('client')}
                             className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                               sortBy === 'client'
-                                ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                                : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                                ? 'text-indigo-600'
+                                : 'text-gray-600 hover:text-gray-900'
                             }`}
                           >
                             Client Name (A-Z)
@@ -1116,7 +1116,7 @@ function EstimatesContent(): React.JSX.Element {
                 </button>
               </div>
               
-              {/* Content */}
+              {/* Content - Scrollable */}
               <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                 <div className="space-y-6">
                   {/* Estimate Number & Status */}
@@ -1229,52 +1229,54 @@ function EstimatesContent(): React.JSX.Element {
                       <p className="text-sm text-gray-700 bg-gray-50 p-3">{selectedEstimate.notes}</p>
                     </div>
                   )}
+                </div>
+              </div>
 
-                  {/* Actions */}
-                  <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200">
-                    {selectedEstimate.status !== 'approved' && (
-                      <button
-                        onClick={closeEstimateModal}
-                        className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
-                      >
-                        Close
-                      </button>
-                    )}
-                    {(selectedEstimate as any).public_token && (
-                      <button
-                        onClick={() => {
-                          const token = (selectedEstimate as any).public_token;
-                          // Add owner=true parameter so server can detect owner view (even in incognito)
-                          window.open(`/estimate/${encodeURIComponent(token)}?owner=true&view=preview`, '_blank');
-                        }}
-                        className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
-                      >
-                        View Public Page
-                      </button>
-                    )}
-                    {selectedEstimate.status === 'approved' && (
-                      <button
-                        onClick={() => {
-                          closeEstimateModal();
-                          showConvertConfirmation(selectedEstimate);
-                        }}
-                        disabled={loadingActions[`convert-${selectedEstimate.id}`]}
-                        className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent hover:bg-green-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-green-400 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                      >
-                        {loadingActions[`convert-${selectedEstimate.id}`] ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span>Converting...</span>
-                          </>
-                        ) : (
-                          <>
-                            <FileText className="h-4 w-4" />
-                            <span>Convert to Invoice</span>
-                          </>
-                        )}
-                      </button>
-                    )}
-                  </div>
+              {/* Actions - Locked at bottom */}
+              <div className="p-4 sm:p-6 border-t border-gray-200 space-y-2 sm:space-y-3 flex-shrink-0">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {selectedEstimate.status !== 'approved' && (
+                    <button
+                      onClick={closeEstimateModal}
+                      className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
+                    >
+                      Close
+                    </button>
+                  )}
+                  {(selectedEstimate as any).public_token && (
+                    <button
+                      onClick={() => {
+                        const token = (selectedEstimate as any).public_token;
+                        // Add owner=true parameter so server can detect owner view (even in incognito)
+                        window.open(`/estimate/${encodeURIComponent(token)}?owner=true&view=preview`, '_blank');
+                      }}
+                      className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-400 cursor-pointer transition-colors"
+                    >
+                      View Public Page
+                    </button>
+                  )}
+                  {selectedEstimate.status === 'approved' && (
+                    <button
+                      onClick={() => {
+                        closeEstimateModal();
+                        showConvertConfirmation(selectedEstimate);
+                      }}
+                      disabled={loadingActions[`convert-${selectedEstimate.id}`]}
+                      className="w-full sm:flex-1 px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent hover:bg-green-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-green-400 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    >
+                      {loadingActions[`convert-${selectedEstimate.id}`] ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Converting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="h-4 w-4" />
+                          <span>Convert to Invoice</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
