@@ -3747,8 +3747,13 @@ function InvoicesContent(): React.JSX.Element {
       />
 
       {/* Mobile Floating Action Bar - Portal to body */}
-      {isMounted && bulkSelectionMode && selectedInvoices.size > 0 && !confirmationModal.isOpen && typeof window !== 'undefined' && createPortal(
-        <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-[9999]" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      {isMounted && bulkSelectionMode && selectedInvoices.size > 0 && typeof window !== 'undefined' && createPortal(
+        <div 
+          className={`sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-[9999] transition-transform duration-300 ease-in-out ${
+            confirmationModal.isOpen ? 'translate-y-full' : 'translate-y-0'
+          }`}
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        >
           <div className="px-4 py-3">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">

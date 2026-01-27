@@ -4899,9 +4899,9 @@ export default function DashboardOverview() {
                       }}
                     >
                       {/* Header */}
-                      <div className="px-4 py-3 flex items-center justify-between flex-shrink-0 bg-white">
-                        <h3 className="font-medium text-sm" style={{color: '#1f2937'}}>Notifications</h3>
-                        <div className="flex items-center gap-4 sm:gap-3">
+                      <div className="flex items-center gap-2 flex-shrink-0 bg-white overflow-hidden">
+                        <h3 className="font-medium text-sm min-w-0 truncate pl-4 pr-2 py-3" style={{color: '#1f2937'}}>Notifications</h3>
+                        <div className="flex items-center gap-3 flex-shrink-0 ml-auto py-3 pr-0">
                           {notifications.length > 0 && notifications.some(n => !readNotificationIds.has(n.id)) && (
                             <button
                               onClick={() => {
@@ -4916,7 +4916,7 @@ export default function DashboardOverview() {
                                   localStorage.setItem('readNotificationIdsTimestamp', Date.now().toString());
                                 }
                               }}
-                              className="text-xs font-normal"
+                              className="text-xs font-normal whitespace-nowrap flex-shrink-0"
                               style={{color: '#6b7280'}}
                             >
                               Mark all read
@@ -4924,8 +4924,9 @@ export default function DashboardOverview() {
                           )}
                           <button
                             onClick={() => setShowNotifications(false)}
-                            className="p-0"
+                            className="py-2 pl-2 pr-0 sm:pr-4 flex-shrink-0"
                             style={{color: '#6b7280'}}
+                            aria-label="Close notifications"
                           >
                             <X className="h-4 w-4" />
                           </button>

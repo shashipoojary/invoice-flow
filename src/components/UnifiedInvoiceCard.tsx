@@ -235,7 +235,7 @@ export function UnifiedInvoiceCard({
     <div 
       ref={cardRef} 
       onClick={handleCardClick}
-      className={`border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50 ${isSelected ? 'border-indigo-600 border-2' : ''} ${showCheckbox && canShowCheckbox ? 'cursor-pointer' : ''}`}
+      className={`border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50 ${isSelected ? 'border-indigo-400 sm:border-indigo-600 border sm:border-2' : ''} ${showCheckbox && canShowCheckbox ? 'cursor-pointer' : ''}`}
     >
       {/* Mobile */}
       <div className="block sm:hidden p-3">

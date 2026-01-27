@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedUser } from '@/lib/auth-middleware';
+import { enqueueBackgroundJob } from '@/lib/queue-helper';
 
 // POST - Bulk send invoices
 export async function POST(request: NextRequest) {
@@ -16,10 +17,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'invoiceIds array is required' }, { status: 400 });
     }
 
-    // Verify all invoices belong to user and are in draft status
+    // Verify all invoices belong to user and are in draft/pending status
+    // Include client data for queue processing
     const { data: invoices, error: invoicesError } = await supabaseAdmin
       .from('invoices')
-      .select('id, invoice_number, status, client_id')
+      .select(`
+        id,
+        invoice_number,
+        status,
+        client_id,
+        clients (
+          name,
+          email
+        )
+      `)
       .eq('user_id', user.id)
       .in('id', invoiceIds)
       .in('status', ['draft', 'pending']);
@@ -33,39 +44,111 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No valid invoices found to send' }, { status: 400 });
     }
 
-    // Update all invoices to 'sent' status
-    const { error: updateError } = await supabaseAdmin
-      .from('invoices')
-      .update({ 
-        status: 'sent',
-        updated_at: new Date().toISOString()
-      })
-      .in('id', invoices.map(inv => inv.id));
+    const useQueue = process.env.ENABLE_ASYNC_QUEUE === 'true';
+    const queuedInvoices: string[] = [];
+    const failedInvoices: string[] = [];
 
-    if (updateError) {
-      console.error('Error updating invoices:', updateError);
-      return NextResponse.json({ error: 'Failed to send invoices' }, { status: 500 });
+    // Process each invoice - try to queue, fallback to sync update
+    for (const invoice of invoices) {
+      const client = Array.isArray(invoice.clients) ? invoice.clients[0] : invoice.clients;
+      const clientEmail = client?.email;
+      const clientName = client?.name || '';
+
+      if (!clientEmail) {
+        console.warn(`Skipping invoice ${invoice.invoice_number}: missing client email`);
+        failedInvoices.push(invoice.id);
+        continue;
+      }
+
+      if (useQueue) {
+        // Try to queue the invoice
+        const queueResult = await enqueueBackgroundJob(
+          'send_invoice',
+          {
+            invoiceId: invoice.id,
+            clientEmail,
+            clientName,
+            userId: user.id,
+          },
+          {
+            retries: 3,
+            deduplicationId: `send_invoice_${invoice.id}_${Date.now()}`,
+          }
+        );
+
+        if (queueResult.queued) {
+          // Update invoice status to 'sent' IMMEDIATELY for better UX
+          // This ensures UI updates right away, even though email sends in background
+          if (invoice.status === 'draft') {
+            await supabaseAdmin
+              .from('invoices')
+              .update({ status: 'sent', updated_at: new Date().toISOString() })
+              .eq('id', invoice.id)
+              .eq('user_id', user.id);
+          }
+          queuedInvoices.push(invoice.id);
+          console.log(`✅ Invoice ${invoice.invoice_number} queued for sending (jobId: ${queueResult.jobId})`);
+          continue;
+        }
+
+        // Queue failed, log and fall through to sync processing
+        console.warn(`Queue failed for invoice ${invoice.invoice_number}, falling back to sync:`, queueResult.error);
+      }
+
+      // Fallback: Update invoice status synchronously (for when queue is disabled or fails)
+      const { error: updateError } = await supabaseAdmin
+        .from('invoices')
+        .update({ 
+          status: 'sent',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', invoice.id)
+        .eq('user_id', user.id);
+
+      if (updateError) {
+        console.error(`Error updating invoice ${invoice.invoice_number}:`, updateError);
+        failedInvoices.push(invoice.id);
+      } else {
+        queuedInvoices.push(invoice.id);
+      }
     }
 
-    // Log events for each invoice
-    const events = invoices.map(invoice => ({
-      invoice_id: invoice.id,
-      user_id: user.id,
-      type: 'sent',
-      metadata: { bulk: true }
-    }));
+    // Log events for successfully processed invoices
+    if (queuedInvoices.length > 0) {
+      const events = queuedInvoices.map(invoiceId => ({
+        invoice_id: invoiceId,
+        user_id: user.id,
+        type: 'sent',
+        metadata: { bulk: true, queued: useQueue }
+      }));
 
-    try {
-      await supabaseAdmin.from('invoice_events').insert(events);
-    } catch (eventError) {
-      console.error('Error logging events:', eventError);
-      // Don't fail the request if event logging fails
+      try {
+        await supabaseAdmin.from('invoice_events').insert(events);
+      } catch (eventError) {
+        console.error('Error logging events:', eventError);
+        // Don't fail the request if event logging fails
+      }
+    }
+
+    const successCount = queuedInvoices.length;
+    const failedCount = failedInvoices.length;
+
+    if (successCount === 0) {
+      return NextResponse.json({ 
+        error: 'Failed to send all invoices',
+        count: 0,
+        failed: failedCount
+      }, { status: 500 });
     }
 
     return NextResponse.json({
       success: true,
-      count: invoices.length,
-      invoiceNumbers: invoices.map(inv => inv.invoice_number)
+      count: successCount,
+      queued: useQueue ? successCount : 0,
+      failed: failedCount,
+      invoiceNumbers: invoices
+        .filter(inv => queuedInvoices.includes(inv.id))
+        .map(inv => inv.invoice_number)
     });
 
   } catch (error) {
