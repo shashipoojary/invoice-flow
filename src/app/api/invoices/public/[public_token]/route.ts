@@ -21,11 +21,14 @@ export async function GET(
     console.log('Public Invoice API - Decoded token length:', decodedToken.length)
 
     // Fetch invoice by public token (no authentication required)
+    // CRITICAL: Include snapshot fields - public pages must use original business/client data
     // Try multiple approaches to handle URL encoding issues
     let { data: invoice, error } = await supabaseAdmin
       .from('invoices')
       .select(`
         *,
+        business_settings_snapshot,
+        client_data_snapshot,
         clients (
           name,
           email,
@@ -44,6 +47,8 @@ export async function GET(
         .from('invoices')
         .select(`
           *,
+          business_settings_snapshot,
+          client_data_snapshot,
           clients (
             name,
             email,
@@ -67,6 +72,8 @@ export async function GET(
         .from('invoices')
         .select(`
           *,
+          business_settings_snapshot,
+          client_data_snapshot,
           clients (
             name,
             email,
@@ -119,15 +126,44 @@ export async function GET(
       console.error('Error fetching invoice items:', itemsError)
     }
 
-    // Fetch user settings for business details
-    const { data: settingsData, error: settingsError } = await supabaseAdmin
-      .from('user_settings')
-      .select('*')
-      .eq('user_id', invoice.user_id)
-      .single()
+    // CRITICAL: Use snapshot if available (for sent invoices), otherwise fetch current settings
+    // This ensures public pages use the original business/client details from when invoice was sent
+    let businessSettings: any = {};
+    let clientName = '';
+    let clientEmail = '';
+    let clientCompany = '';
+    let clientPhone = '';
+    let clientAddress = '';
+    
+    if (invoice.business_settings_snapshot && invoice.client_data_snapshot) {
+      // Use stored snapshots - invoice was already sent
+      businessSettings = invoice.business_settings_snapshot;
+      clientName = invoice.client_data_snapshot.name || '';
+      clientEmail = invoice.client_data_snapshot.email || '';
+      clientCompany = invoice.client_data_snapshot.company || '';
+      clientPhone = invoice.client_data_snapshot.phone || '';
+      clientAddress = invoice.client_data_snapshot.address || '';
+    } else {
+      // No snapshot - fetch current settings (for draft invoices or legacy invoices)
+      const { data: settingsData, error: settingsError } = await supabaseAdmin
+        .from('user_settings')
+        .select('*')
+        .eq('user_id', invoice.user_id)
+        .single()
 
-    if (settingsError) {
-      console.error('Error fetching user settings:', settingsError)
+      if (settingsError) {
+        console.error('Error fetching user settings:', settingsError)
+      }
+      
+      businessSettings = settingsData || {};
+      
+      // Get client details from relationship
+      const clients = Array.isArray(invoice.clients) ? invoice.clients[0] : invoice.clients;
+      clientName = clients?.name || '';
+      clientEmail = clients?.email || '';
+      clientCompany = clients?.company || '';
+      clientPhone = clients?.phone || '';
+      clientAddress = clients?.address || '';
     }
 
     // Calculate overdue status and late fees
@@ -207,11 +243,11 @@ export async function GET(
         invoiceNumber: invoice.invoice_number,
         issueDate: invoice.issue_date,
         dueDate: invoice.due_date,
-        clientName: invoice.clients?.name || 'N/A',
-        clientEmail: invoice.clients?.email || 'N/A',
-        clientCompany: invoice.clients?.company,
-        clientPhone: invoice.clients?.phone,
-        clientAddress: invoice.clients?.address,
+        clientName: clientName || 'N/A',
+        clientEmail: clientEmail || 'N/A',
+        clientCompany: clientCompany,
+        clientPhone: clientPhone,
+        clientAddress: clientAddress,
         items: (itemsData || []).map(item => ({
           id: item.id,
           description: item.description,
@@ -247,38 +283,22 @@ export async function GET(
         })(),
         type: invoice.type,
         lateFeesSettings: lateFeesSettings,
-        freelancerSettings: settingsData ? {
-          businessName: settingsData.business_name || 'Your Business',
-          logo: settingsData.logo || '',
-          address: settingsData.business_address || '',
-          email: settingsData.business_email || '',
-          phone: settingsData.business_phone || '',
-          paypalEmail: settingsData.paypal_email || '',
-          cashappId: settingsData.cashapp_id || '',
-          venmoId: settingsData.venmo_id || '',
-          googlePayUpi: settingsData.google_pay_upi || '',
-          applePayId: settingsData.apple_pay_id || '',
-          bankAccount: settingsData.bank_account || '',
-          bankIfscSwift: settingsData.bank_ifsc_swift || '',
-          bankIban: settingsData.bank_iban || '',
-          stripeAccount: settingsData.stripe_account || '',
-          paymentNotes: settingsData.payment_notes || ''
-        } : {
-          businessName: 'Your Business',
-          logo: '',
-          address: '',
-          email: '',
-          phone: '',
-          paypalEmail: '',
-          cashappId: '',
-          venmoId: '',
-          googlePayUpi: '',
-          applePayId: '',
-          bankAccount: '',
-          bankIfscSwift: '',
-          bankIban: '',
-          stripeAccount: '',
-          paymentNotes: ''
+        freelancerSettings: {
+          businessName: businessSettings.business_name || 'Your Business',
+          logo: businessSettings.logo || businessSettings.logo_url || '',
+          address: businessSettings.business_address || '',
+          email: businessSettings.business_email || '',
+          phone: businessSettings.business_phone || '',
+          paypalEmail: businessSettings.paypal_email || '',
+          cashappId: businessSettings.cashapp_id || '',
+          venmoId: businessSettings.venmo_id || '',
+          googlePayUpi: businessSettings.google_pay_upi || '',
+          applePayId: businessSettings.apple_pay_id || '',
+          bankAccount: businessSettings.bank_account || '',
+          bankIfscSwift: businessSettings.bank_ifsc_swift || '',
+          bankIban: businessSettings.bank_iban || '',
+          stripeAccount: businessSettings.stripe_account || '',
+          paymentNotes: businessSettings.payment_notes || ''
         }
       }
     })

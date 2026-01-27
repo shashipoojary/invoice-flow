@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef, useDeferredValue } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
-  FileText, Users, 
-  Clock, CheckCircle, AlertCircle, AlertTriangle, UserPlus, FilePlus, Sparkles, Receipt, Timer,
+  FileText, Users, User, UserPlus, UserMinus,
+  Clock, CheckCircle, AlertCircle, AlertTriangle, FilePlus, Sparkles, Receipt, Timer,
   Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2, ArrowRight, ChevronDown, ChevronUp,
   ArrowUp, ArrowDown, ClipboardCheck, Copy, Calendar, Ban, FileCheck, FileX, ArrowLeft, Info, ChevronLeft, ChevronRight, Plus, XCircle
 } from 'lucide-react';
@@ -433,6 +433,7 @@ export default function DashboardOverview() {
   });
   const notificationRef = useRef<HTMLDivElement>(null);
   const invoicesRef = useRef<Invoice[]>([]);
+  const clientsRef = useRef<Client[]>([]);
   const notificationsFetchedRef = useRef(false);
   const [additionalStatsTab, setAdditionalStatsTab] = useState(0);
   const lastFetchKeyRef = useRef<string>('');
@@ -445,19 +446,27 @@ export default function DashboardOverview() {
   const previousStatsScrollIndexRef = useRef(0);
   const statsCardsScrollRAFRef = useRef<number | null>(null);
   const statsCardsScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isStatsProgrammaticScrollRef = useRef<boolean>(false);
   const dotsContainerRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollRAFRef = useRef<number | null>(null);
+  const scrollUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollUpdateRAFRef = useRef<number | null>(null);
   const previousScrollIndexRef = useRef<number>(-1);
+  const isProgrammaticScrollRef = useRef<boolean>(false);
   const renderCount = useRef(0);
   const [notifications, setNotifications] = useState<Array<{
     id: string;
-    type: 'viewed' | 'due_today' | 'overdue' | 'paid' | 'partial_paid' | 'draft_created' | 'downloaded' | 'payment_copied' | 'reminder_scheduled' | 'sent' | 'failed' | 'cancelled' | 'estimate_sent' | 'estimate_approved' | 'estimate_rejected';
-    invoiceId: string;
-    invoiceNumber: string;
+    type: 'viewed' | 'due_today' | 'overdue' | 'paid' | 'partial_paid' | 'draft_created' | 'downloaded' | 'payment_copied' | 'reminder_scheduled' | 'reminder_sent' | 'sent' | 'failed' | 'cancelled' | 'estimate_sent' | 'estimate_approved' | 'estimate_rejected' | 'client_created' | 'client_updated' | 'client_deleted' | 'payment_received' | 'writeoff_created';
+    invoiceId?: string;
+    estimateId?: string;
+    clientId?: string;
+    invoiceNumber?: string;
     clientName: string;
     message: string;
     timestamp: string;
+    amount?: number;
+    date?: string;
   }>>([]);
   
   // Payment Activity and Reminders state
@@ -567,6 +576,11 @@ export default function DashboardOverview() {
     invoicesRef.current = invoices || [];
   }, [invoices]);
 
+  // Keep clients ref updated
+  useEffect(() => {
+    clientsRef.current = clients || [];
+  }, [clients]);
+
   // Cleanup scroll animation frames on unmount
   useEffect(() => {
     return () => {
@@ -578,6 +592,9 @@ export default function DashboardOverview() {
       }
       if (scrollUpdateTimeoutRef.current !== null) {
         clearTimeout(scrollUpdateTimeoutRef.current);
+      }
+      if (scrollUpdateRAFRef.current !== null) {
+        cancelAnimationFrame(scrollUpdateRAFRef.current);
       }
     };
   }, []);
@@ -1393,24 +1410,71 @@ export default function DashboardOverview() {
         throw new Error('ITEMS_MISSING');
       }
       
-      // Prepare business settings for PDF
-      const businessSettings = {
-        businessName: settings.businessName || 'Your Business Name',
-        businessEmail: settings.businessEmail || 'your-email@example.com',
-        businessPhone: settings.businessPhone || '',
-        address: settings.address || '',
-        logo: settings.logo || '',
-        paypalEmail: settings.paypalEmail || '',
-        cashappId: settings.cashappId || '',
-        venmoId: settings.venmoId || '',
-        googlePayUpi: settings.googlePayUpi || '',
-        applePayId: settings.applePayId || '',
-        bankAccount: settings.bankAccount || '',
-        bankIfscSwift: settings.bankIfscSwift || '',
-        bankIban: settings.bankIban || '',
-        stripeAccount: settings.stripeAccount || '',
-        paymentNotes: settings.paymentNotes || ''
-      };
+      // CRITICAL: Use snapshot business settings and client data if available (for sent invoices)
+      // This ensures PDF downloads use original business/client details from when invoice was sent
+      const isDraft = completeInvoice.status === 'draft';
+      let businessSettings: any = {};
+      let clientData: any = null;
+      
+      if (completeInvoice.business_settings_snapshot && completeInvoice.client_data_snapshot && !isDraft) {
+        // Use stored snapshots - invoice was already sent
+        const snapshot = completeInvoice.business_settings_snapshot;
+        const clientSnapshot = completeInvoice.client_data_snapshot;
+        
+        businessSettings = {
+          businessName: snapshot.business_name || 'Your Business Name',
+          businessEmail: snapshot.business_email || 'your-email@example.com',
+          businessPhone: snapshot.business_phone || '',
+          address: snapshot.business_address || '',
+          logo: snapshot.logo || snapshot.logo_url || '',
+          paypalEmail: snapshot.paypal_email || '',
+          cashappId: snapshot.cashapp_id || '',
+          venmoId: snapshot.venmo_id || '',
+          googlePayUpi: snapshot.google_pay_upi || '',
+          applePayId: snapshot.apple_pay_id || '',
+          bankAccount: snapshot.bank_account || '',
+          bankIfscSwift: snapshot.bank_ifsc_swift || '',
+          bankIban: snapshot.bank_iban || '',
+          stripeAccount: snapshot.stripe_account || '',
+          paymentNotes: snapshot.payment_notes || ''
+        };
+        
+        // Use client snapshot
+        clientData = {
+          name: clientSnapshot.name || '',
+          email: clientSnapshot.email || '',
+          company: clientSnapshot.company || '',
+          phone: clientSnapshot.phone || '',
+          address: clientSnapshot.address || ''
+        };
+      } else {
+        // No snapshot - use current settings (for draft invoices or legacy invoices)
+        businessSettings = {
+          businessName: settings.businessName || 'Your Business Name',
+          businessEmail: settings.businessEmail || 'your-email@example.com',
+          businessPhone: settings.businessPhone || '',
+          address: settings.address || '',
+          logo: settings.logo || '',
+          paypalEmail: settings.paypalEmail || '',
+          cashappId: settings.cashappId || '',
+          venmoId: settings.venmoId || '',
+          googlePayUpi: settings.googlePayUpi || '',
+          applePayId: settings.applePayId || '',
+          bankAccount: settings.bankAccount || '',
+          bankIfscSwift: settings.bankIfscSwift || '',
+          bankIban: settings.bankIban || '',
+          stripeAccount: settings.stripeAccount || '',
+          paymentNotes: settings.paymentNotes || ''
+        };
+        
+        // Use current client data
+        clientData = completeInvoice.client;
+      }
+      
+      // Override invoice client data with snapshot if available
+      if (clientData) {
+        completeInvoice.client = clientData;
+      }
 
       const { generateTemplatePDFBlob } = await import('@/lib/template-pdf-generator');
       
@@ -2704,13 +2768,17 @@ export default function DashboardOverview() {
     return tabs;
   }, [dueInvoices, invoices, paymentActivity.length, upcomingReminders.length]);
 
-  // Reorder tabs for mobile: longest tab first to prevent empty space
+  // Reorder tabs for mobile: Invoice Performance first (highest card), then longest tab first to prevent empty space
   // This ensures the container height is set by the longest content first
   const orderedTabs = useMemo(() => {
     if (availableTabs.length <= 1) return availableTabs;
     
+    // Separate Invoice Performance (tab 2) from other tabs
+    const invoicePerformanceTab = availableTabs.find(tab => tab === 2);
+    const otherTabs = availableTabs.filter(tab => tab !== 2);
+    
     // Calculate estimated heights for each tab
-    const tabHeights: { tab: number; height: number }[] = availableTabs.map(tab => {
+    const tabHeights: { tab: number; height: number }[] = otherTabs.map(tab => {
       let estimatedHeight = 0;
       
       switch (tab) {
@@ -2721,10 +2789,6 @@ export default function DashboardOverview() {
         case 1: // Analytics
           // Fixed height graph with multiple sections
           estimatedHeight = 600;
-          break;
-        case 2: // Invoice Performance
-          // Fixed height graph
-          estimatedHeight = 400;
           break;
         case 3: // Conversion Rate
           // Fixed height graph
@@ -2748,25 +2812,36 @@ export default function DashboardOverview() {
     // Sort by height (descending) - longest first
     tabHeights.sort((a, b) => b.height - a.height);
     
-    // Return reordered tabs (longest first)
-    return tabHeights.map(item => item.tab);
+    // Return reordered tabs: Invoice Performance first, then others sorted by height
+    const reorderedTabs = invoicePerformanceTab !== undefined ? [invoicePerformanceTab, ...tabHeights.map(item => item.tab)] : tabHeights.map(item => item.tab);
+    
+    return reorderedTabs;
   }, [availableTabs, combinedInvoices.length, paymentActivity.length, upcomingReminders.length]);
 
   // Use ordered tabs on mobile, original order on desktop
   const displayTabs = isMobile ? orderedTabs : availableTabs;
 
   // Scroll handler for dot indicator - each slide is full-width
-  // Use throttling to prevent dots from jumping back and forth
-  const scrollUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Use requestAnimationFrame with threshold to prevent glitching
   const handleDueInvoicesScrollUpdated = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     // Skip scroll handling during sidebar transitions to prevent lag
     if (sidebarTransitioningRef.current) {
       return;
     }
     
-    // Clear any pending timeout
+    // Skip updates during programmatic scrolling to prevent flickering
+    if (isProgrammaticScrollRef.current) {
+      return;
+    }
+    
+    // Clear any pending timeout or RAF
     if (scrollUpdateTimeoutRef.current) {
       clearTimeout(scrollUpdateTimeoutRef.current);
+      scrollUpdateTimeoutRef.current = null;
+    }
+    if (scrollUpdateRAFRef.current !== null) {
+      cancelAnimationFrame(scrollUpdateRAFRef.current);
+      scrollUpdateRAFRef.current = null;
     }
     
     const container = e.currentTarget;
@@ -2776,27 +2851,37 @@ export default function DashboardOverview() {
     
     if (tabsCount === 0 || slideWidth === 0) return;
     
-    // Throttle updates to prevent rapid state changes that cause jumping
-    scrollUpdateTimeoutRef.current = setTimeout(() => {
+    // Use requestAnimationFrame for instant updates on next frame, with hysteresis to avoid flicker
+    scrollUpdateRAFRef.current = requestAnimationFrame(() => {
       // Skip if sidebar is transitioning (double-check)
       if (sidebarTransitioningRef.current) {
         return;
       }
       
-      // Calculate active index using center-point detection
-      // This updates the dot when the next slide is at least 50% visible
-      // Formula: floor((scrollLeft + slideWidth / 2) / slideWidth)
-      const activeIndex = Math.floor((scrollLeft + slideWidth / 2) / slideWidth);
+      // Skip if programmatic scroll is still active
+      if (isProgrammaticScrollRef.current) {
+        return;
+      }
       
+      // Calculate raw slide position
+      const rawIndex = scrollLeft / slideWidth;
+      const nearestIndex = Math.round(rawIndex);
+      const hysteresisThreshold = 0.3; // Require us to be within 30% of a slide before switching
+
+      // If we're too far between slides, keep the current dot to avoid back-and-forth flicker
+      if (Math.abs(rawIndex - nearestIndex) > hysteresisThreshold) {
+        return;
+      }
+
       // Clamp to valid range (0 to tabsCount - 1)
-      const clampedIndex = Math.max(0, Math.min(activeIndex, tabsCount - 1));
+      const clampedIndex = Math.max(0, Math.min(nearestIndex, tabsCount - 1));
       
-      // Only update if index actually changed to prevent skipped indices during momentum scrolling
+      // Only update if index actually changed to prevent unnecessary re-renders
       if (clampedIndex !== previousScrollIndexRef.current) {
         previousScrollIndexRef.current = clampedIndex;
         setDueInvoicesScrollIndex(clampedIndex);
       }
-    }, 50); // 50ms throttle for smooth updates
+    });
   }, [availableTabs]);
 
   // Function to scroll to specific slide - each slide is full-width
@@ -2810,7 +2895,15 @@ export default function DashboardOverview() {
       // Clear any pending scroll updates to prevent conflicts
       if (scrollUpdateTimeoutRef.current) {
         clearTimeout(scrollUpdateTimeoutRef.current);
+        scrollUpdateTimeoutRef.current = null;
       }
+      if (scrollUpdateRAFRef.current !== null) {
+        cancelAnimationFrame(scrollUpdateRAFRef.current);
+        scrollUpdateRAFRef.current = null;
+      }
+      
+      // Mark as programmatic scroll to prevent flickering during animation
+      isProgrammaticScrollRef.current = true;
       
       // Update ref and state immediately when clicking to keep dots in sync
       previousScrollIndexRef.current = scrollIndex;
@@ -2821,6 +2914,38 @@ export default function DashboardOverview() {
         left: scrollIndex * slideWidth,
         behavior: 'smooth'
       });
+      
+      // Reset programmatic scroll flag after animation completes
+      // Use scroll position tracking to detect when scrolling has stopped
+      let lastScrollPosition = container.scrollLeft;
+      let scrollCheckCount = 0;
+      const maxChecks = 20; // Check for up to 1 second (20 * 50ms)
+      
+      const checkScrollComplete = () => {
+        const currentScroll = container.scrollLeft;
+        const targetScroll = scrollIndex * slideWidth;
+        const threshold = slideWidth * 0.05; // 5% threshold for precision
+        
+        // If scroll position hasn't changed and we're close to target, scrolling is done
+        if (Math.abs(currentScroll - lastScrollPosition) < 1 && 
+            Math.abs(currentScroll - targetScroll) < threshold) {
+          isProgrammaticScrollRef.current = false;
+          return;
+        }
+        
+        lastScrollPosition = currentScroll;
+        scrollCheckCount++;
+        
+        // If we've checked enough times, reset flag anyway to prevent getting stuck
+        if (scrollCheckCount < maxChecks) {
+          setTimeout(checkScrollComplete, 50);
+        } else {
+          isProgrammaticScrollRef.current = false;
+        }
+      };
+      
+      // Start checking after a short delay to allow animation to begin
+      setTimeout(checkScrollComplete, 100);
     }
   }, [availableTabs]);
 
@@ -2842,36 +2967,57 @@ export default function DashboardOverview() {
     });
   }, [availableTabs]);
 
-  // Stats Cards Scroll Handler - Optimized with throttling to prevent dots from jumping
+  // Stats Cards Scroll Handler - Optimized with requestAnimationFrame to prevent glitching
   const handleStatsCardsScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const container = e.currentTarget;
+    
+    // Skip updates during programmatic scrolling to prevent flickering
+    if (isStatsProgrammaticScrollRef.current) {
+      return;
+    }
     
     // Clear any pending timeout
     if (statsCardsScrollTimeoutRef.current) {
       clearTimeout(statsCardsScrollTimeoutRef.current);
+      statsCardsScrollTimeoutRef.current = null;
     }
     
-    // Cancel any pending RAF (keep for backward compatibility)
+    // Cancel any pending RAF
     if (statsCardsScrollRAFRef.current !== null) {
       cancelAnimationFrame(statsCardsScrollRAFRef.current);
       statsCardsScrollRAFRef.current = null;
     }
     
-    // Throttle updates to prevent rapid state changes that cause jumping
-    statsCardsScrollTimeoutRef.current = setTimeout(() => {
+    // Use requestAnimationFrame for instant updates on next frame, with hysteresis to avoid flicker
+    statsCardsScrollRAFRef.current = requestAnimationFrame(() => {
+      // Skip if programmatic scroll is still active
+      if (isStatsProgrammaticScrollRef.current) {
+        return;
+      }
+      
       const slideWidth = container.clientWidth;
       if (slideWidth === 0) return;
       
       const scrollLeft = container.scrollLeft;
-      const activeIndex = Math.floor((scrollLeft + slideWidth / 2) / slideWidth);
-      const clampedIndex = Math.max(0, Math.min(activeIndex, 1));
       
-      // Only update state if index actually changed to prevent skipped indices during momentum scrolling
+      // Calculate raw slide position with hysteresis so dots don't bounce
+      const rawIndex = scrollLeft / slideWidth;
+      const nearestIndex = Math.round(rawIndex);
+      const hysteresisThreshold = 0.3; // Require us to be within 30% of a slide before switching
+
+      // If we're too far between slides, keep the current dot to avoid back-and-forth flicker
+      if (Math.abs(rawIndex - nearestIndex) > hysteresisThreshold) {
+        return;
+      }
+
+      const clampedIndex = Math.max(0, Math.min(nearestIndex, 1));
+      
+      // Only update state if index actually changed to prevent unnecessary re-renders
       if (clampedIndex !== previousStatsScrollIndexRef.current) {
         previousStatsScrollIndexRef.current = clampedIndex;
         setStatsCardsScrollIndex(clampedIndex);
       }
-    }, 50); // 50ms throttle for smooth updates
+    });
   }, []);
 
   // Function to scroll to specific stats cards slide
@@ -2885,7 +3031,15 @@ export default function DashboardOverview() {
       // Clear any pending scroll updates to prevent conflicts
       if (statsCardsScrollTimeoutRef.current) {
         clearTimeout(statsCardsScrollTimeoutRef.current);
+        statsCardsScrollTimeoutRef.current = null;
       }
+      if (statsCardsScrollRAFRef.current !== null) {
+        cancelAnimationFrame(statsCardsScrollRAFRef.current);
+        statsCardsScrollRAFRef.current = null;
+      }
+      
+      // Mark as programmatic scroll to prevent flickering during animation
+      isStatsProgrammaticScrollRef.current = true;
       
       // Update ref and state immediately when clicking to keep dots in sync
       previousStatsScrollIndexRef.current = scrollIndex;
@@ -2896,6 +3050,38 @@ export default function DashboardOverview() {
         left: scrollIndex * slideWidth,
         behavior: 'smooth'
       });
+      
+      // Reset programmatic scroll flag after animation completes
+      // Use scroll position tracking to detect when scrolling has stopped
+      let lastScrollPosition = container.scrollLeft;
+      let scrollCheckCount = 0;
+      const maxChecks = 20; // Check for up to 1 second (20 * 50ms)
+      
+      const checkScrollComplete = () => {
+        const currentScroll = container.scrollLeft;
+        const targetScroll = scrollIndex * slideWidth;
+        const threshold = slideWidth * 0.05; // 5% threshold for precision
+        
+        // If scroll position hasn't changed and we're close to target, scrolling is done
+        if (Math.abs(currentScroll - lastScrollPosition) < 1 && 
+            Math.abs(currentScroll - targetScroll) < threshold) {
+          isStatsProgrammaticScrollRef.current = false;
+          return;
+        }
+        
+        lastScrollPosition = currentScroll;
+        scrollCheckCount++;
+        
+        // If we've checked enough times, reset flag anyway to prevent getting stuck
+        if (scrollCheckCount < maxChecks) {
+          setTimeout(checkScrollComplete, 50);
+        } else {
+          isStatsProgrammaticScrollRef.current = false;
+        }
+      };
+      
+      // Start checking after a short delay to allow animation to begin
+      setTimeout(checkScrollComplete, 100);
     }
   }, []);
 
@@ -3928,14 +4114,18 @@ export default function DashboardOverview() {
     
     const fetchNotifications = async () => {
       const currentInvoices = invoicesRef.current;
+      const currentClients = clientsRef.current || [];
       const notificationList: Array<{
         id: string;
-        type: 'viewed' | 'due_today' | 'overdue';
-        invoiceId: string;
-        invoiceNumber: string;
+        type: 'viewed' | 'due_today' | 'overdue' | 'paid' | 'partial_paid' | 'draft_created' | 'downloaded' | 'payment_copied' | 'reminder_scheduled' | 'reminder_sent' | 'sent' | 'failed' | 'cancelled' | 'estimate_sent' | 'estimate_approved' | 'estimate_rejected' | 'client_created' | 'client_updated' | 'client_deleted' | 'payment_received' | 'writeoff_created';
+        invoiceId?: string;
+        estimateId?: string;
+        clientId?: string;
+        invoiceNumber?: string;
         clientName: string;
         message: string;
         timestamp: string;
+        amount?: number;
         date?: string; // ISO date string for sorting
       }> = [];
       
@@ -4052,6 +4242,8 @@ export default function DashboardOverview() {
               
               const mapped = eventTypeMap[event.type];
               if (mapped) {
+                // Ensure date is properly formatted as ISO string
+                const eventDate = new Date(event.created_at);
                 notificationList.push({
                   id: `${event.type}-${event.id}`,
                   type: mapped.type,
@@ -4060,7 +4252,7 @@ export default function DashboardOverview() {
                   clientName,
                   message: mapped.message,
                   timestamp: timeAgo,
-                  date: event.created_at // Store actual date for sorting
+                  date: eventDate.toISOString() // Store actual date for sorting
                 });
               }
             }
@@ -4114,9 +4306,174 @@ export default function DashboardOverview() {
         });
       }
       
-      // Fetch estimate events (if estimates API exists)
-      // Note: This would need to be implemented if estimate events are tracked separately
-      // For now, we'll check invoice status changes that might indicate estimate conversions
+      // Fetch client activities (last 7 days) - track client creation, updates
+      try {
+        const headers = await (getAuthHeadersRef.current || getAuthHeaders)();
+        // Check for recently created or updated clients (within last 7 days)
+        currentClients.forEach(client => {
+          const createdAt = client.createdAt || (client as any).created_at;
+          const updatedAt = (client as any).updatedAt || (client as any).updated_at;
+          
+          if (!createdAt) return;
+          
+          const createdDate = new Date(createdAt);
+          const updatedDate = updatedAt ? new Date(updatedAt) : null;
+          
+          // Check if created within last 7 days
+          const createdDaysDiff = (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24);
+          if (createdDaysDiff <= 7 && createdDaysDiff >= 0) {
+            const diffMs = today.getTime() - createdDate.getTime();
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            let timeAgo = 'Just now';
+            if (diffMins >= 1 && diffMins < 60) timeAgo = `${diffMins}m ago`;
+            else if (diffHours < 24) timeAgo = `${diffHours}h ago`;
+            else if (diffDays === 1) timeAgo = 'Yesterday';
+            else if (diffDays < 7) timeAgo = `${diffDays}d ago`;
+            else timeAgo = createdDate.toLocaleDateString();
+            
+            notificationList.push({
+              id: `client-created-${client.id}`,
+              type: 'client_created',
+              clientId: client.id,
+              clientName: client.name || 'Unknown Client',
+              message: `Client "${client.name || 'Unknown'}" added`,
+              timestamp: timeAgo,
+              date: createdDate.toISOString()
+            });
+          }
+          
+          // Check if updated within last 7 days (and updated is different from created)
+          if (updatedDate && updatedDate.getTime() !== createdDate.getTime()) {
+            const updatedDaysDiff = (today.getTime() - updatedDate.getTime()) / (1000 * 60 * 60 * 24);
+            if (updatedDaysDiff <= 7 && updatedDaysDiff >= 0) {
+              const diffMs = today.getTime() - updatedDate.getTime();
+              const diffMins = Math.floor(diffMs / 60000);
+              const diffHours = Math.floor(diffMs / 3600000);
+              const diffDays = Math.floor(diffMs / 86400000);
+              let timeAgo = 'Just now';
+              if (diffMins >= 1 && diffMins < 60) timeAgo = `${diffMins}m ago`;
+              else if (diffHours < 24) timeAgo = `${diffHours}h ago`;
+              else if (diffDays === 1) timeAgo = 'Yesterday';
+              else if (diffDays < 7) timeAgo = `${diffDays}d ago`;
+              else timeAgo = updatedDate.toLocaleDateString();
+              
+              notificationList.push({
+                id: `client-updated-${client.id}-${updatedDate.getTime()}`,
+                type: 'client_updated',
+                clientId: client.id,
+                clientName: client.name || 'Unknown Client',
+                message: `Client "${client.name || 'Unknown'}" updated`,
+                timestamp: timeAgo,
+                date: updatedDate.toISOString()
+              });
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error fetching client activities:', error);
+      }
+      
+      // Fetch estimate activities (last 7 days)
+      try {
+        const headers = await (getAuthHeadersRef.current || getAuthHeaders)();
+        const response = await fetch('/api/estimates/events?days=7', {
+          headers
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.events && Array.isArray(data.events)) {
+            for (const event of data.events) {
+              const estimate = (event as any).estimates;
+              if (!estimate) continue;
+              
+              const eventDate = new Date(event.created_at);
+              const now = new Date();
+              const diffMs = now.getTime() - eventDate.getTime();
+              const diffMins = Math.floor(diffMs / 60000);
+              const diffHours = Math.floor(diffMs / 3600000);
+              const diffDays = Math.floor(diffMs / 86400000);
+              let timeAgo = 'Just now';
+              if (diffMins >= 1 && diffMins < 60) timeAgo = `${diffMins}m ago`;
+              else if (diffHours < 24) timeAgo = `${diffHours}h ago`;
+              else if (diffDays === 1) timeAgo = 'Yesterday';
+              else if (diffDays < 7) timeAgo = `${diffDays}d ago`;
+              else timeAgo = eventDate.toLocaleDateString();
+              
+              const estimateNumber = estimate.estimate_number || 'N/A';
+              const clientName = (estimate as any).clients?.name || 'Unknown';
+              
+              // Map estimate event types to notifications
+              const estimateEventTypeMap: { [key: string]: { type: any; message: string } } = {
+                'sent': { type: 'estimate_sent', message: `Estimate #${estimateNumber} sent` },
+                'approved': { type: 'estimate_approved', message: `Estimate #${estimateNumber} approved` },
+                'rejected': { type: 'estimate_rejected', message: `Estimate #${estimateNumber} rejected` },
+                'converted': { type: 'estimate_sent', message: `Estimate #${estimateNumber} converted to invoice` },
+                'viewed': { type: 'estimate_sent', message: `Estimate #${estimateNumber} viewed by customer` }
+              };
+              
+              const mapped = estimateEventTypeMap[event.type];
+              if (mapped) {
+                // Ensure date is properly formatted as ISO string
+                const eventDate = new Date(event.created_at);
+                notificationList.push({
+                  id: `estimate-${event.type}-${event.id}`,
+                  type: mapped.type,
+                  estimateId: estimate.id,
+                  clientId: estimate.client_id,
+                  clientName,
+                  message: mapped.message,
+                  timestamp: timeAgo,
+                  date: eventDate.toISOString()
+                });
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching estimate activities:', error);
+      }
+      
+      // Fetch reminder activities - check for sent reminders from invoice events
+      // Reminders are tracked as invoice events, so we check for reminder_scheduled events that were sent
+      // Note: Actual reminder sent events are tracked separately, but we can infer from invoice events
+      // This is handled above in the invoice events section
+      
+      // Check for write-off invoices
+      currentInvoices.forEach(invoice => {
+        if (invoice.writeOffAmount && invoice.writeOffAmount > 0 && invoice.status === 'paid') {
+          const updatedAt = (invoice as any).updated_at || (invoice as any).updatedAt;
+          if (updatedAt) {
+            const writeOffDate = new Date(updatedAt);
+            const diffMs = today.getTime() - writeOffDate.getTime();
+            const diffDays = Math.floor(diffMs / 86400000);
+            if (diffDays <= 7) {
+              const diffMins = Math.floor(diffMs / 60000);
+              const diffHours = Math.floor(diffMs / 3600000);
+              let timeAgo = 'Just now';
+              if (diffMins >= 1 && diffMins < 60) timeAgo = `${diffMins}m ago`;
+              else if (diffHours < 24) timeAgo = `${diffHours}h ago`;
+              else if (diffDays === 1) timeAgo = 'Yesterday';
+              else if (diffDays < 7) timeAgo = `${diffDays}d ago`;
+              else timeAgo = writeOffDate.toLocaleDateString();
+              
+              notificationList.push({
+                id: `writeoff-${invoice.id}`,
+                type: 'writeoff_created',
+                invoiceId: invoice.id,
+                invoiceNumber: invoice.invoiceNumber || invoice.invoice_number || 'N/A',
+                clientName: invoice.clientName || invoice.client?.name || 'Unknown',
+                message: `Invoice #${invoice.invoiceNumber || invoice.invoice_number || 'N/A'} written off`,
+                timestamp: timeAgo,
+                amount: invoice.writeOffAmount,
+                date: writeOffDate.toISOString()
+              });
+            }
+          }
+        }
+      });
       
       // Deduplicate notifications - remove duplicates based on ID and content
       // This prevents the same notification from appearing multiple times
@@ -4147,18 +4504,22 @@ export default function DashboardOverview() {
       // Sort by date (latest first) - newest notifications appear at the top
       deduplicatedList.sort((a, b) => {
         // Get date from notification object (stored as ISO string)
-        const getDate = (notif: typeof a) => {
+        const getDate = (notif: typeof a): number => {
           // If notification has a date field, use it
-          if ((notif as any).date) {
-            const date = new Date((notif as any).date);
-            // Validate date
-            if (isNaN(date.getTime())) {
-              return 0; // Invalid date, put at end
+          if (notif.date) {
+            try {
+              const date = new Date(notif.date);
+              // Validate date
+              if (!isNaN(date.getTime())) {
+                return date.getTime();
+              }
+            } catch (e) {
+              // Invalid date format, fall through to fallback
             }
-            return date.getTime();
           }
-          // Fallback: use current time (shouldn't happen if date is always set)
-          return 0;
+          // Fallback: use current time for notifications without dates (shouldn't happen)
+          // This ensures they appear at the top if somehow missing date
+          return Date.now();
         };
         
         const dateA = getDate(a);
@@ -4166,9 +4527,6 @@ export default function DashboardOverview() {
         
         // Sort by date descending (newest first)
         // If dates are equal, maintain order (stable sort)
-        if (dateB === dateA) {
-          return 0;
-        }
         return dateB - dateA;
       });
       
@@ -4424,89 +4782,71 @@ export default function DashboardOverview() {
                     <div className="relative inline-block">
                       <Bell className="h-5 w-5" style={{color: '#6b7280'}} />
                       {notifications.length > 0 && notifications.some(n => !readNotificationIds.has(n.id)) && (
-                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-600 rounded-full border-2 border-white"></span>
+                        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
                       )}
                     </div>
                   </button>
-                  {/* Notification Dropdown */}
+                  {/* Notification Dropdown - Clean Minimal */}
                   {showNotifications && (
                     <div 
-                      className="absolute right-0 top-full mt-2 w-80 sm:w-96 lg:w-[28rem] xl:w-[32rem] bg-white border border-gray-200 shadow-lg z-50 flex flex-col max-h-96 lg:max-h-[32rem]"
+                      className="absolute right-0 top-full mt-2 w-80 sm:w-96 lg:w-[28rem] xl:w-[32rem] bg-white z-50 flex flex-col max-h-[32rem] overflow-hidden -mr-4 sm:-mr-5 lg:-mr-6 xl:-mr-8 border border-gray-200"
                       style={{
-                        // Prevent layout shift
                         willChange: 'transform',
-                        contain: 'layout style paint'
+                        contain: 'layout style paint',
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
                       }}
                     >
-                      <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0 bg-white">
-                        <h3 className="font-semibold text-sm" style={{color: '#1f2937'}}>Notifications</h3>
-                        <div className="flex items-center gap-2">
+                      {/* Header */}
+                      <div className="px-4 py-3 flex items-center justify-between flex-shrink-0 bg-white">
+                        <h3 className="font-medium text-sm" style={{color: '#1f2937'}}>Notifications</h3>
+                        <div className="flex items-center gap-3">
                           {notifications.length > 0 && notifications.some(n => !readNotificationIds.has(n.id)) && (
                             <button
                               onClick={() => {
                                 const allIds = new Set(notifications.map(n => n.id));
                                 setReadNotificationIds(allIds);
-                                // Persist to localStorage
                                 if (typeof window !== 'undefined') {
                                   localStorage.setItem('readNotificationIds', JSON.stringify([...allIds]));
                                 }
                               }}
-                              className="text-xs text-indigo-600 hover:text-indigo-700 font-medium px-2 py-1 hover:bg-indigo-50 transition-colors"
+                              className="text-xs font-normal"
+                              style={{color: '#6b7280'}}
                             >
-                              Mark all as read
+                              Mark all read
                             </button>
                           )}
                           <button
                             onClick={() => setShowNotifications(false)}
-                            className="p-1 hover:bg-gray-100 transition-colors"
+                            className="p-0"
+                            style={{color: '#6b7280'}}
                           >
-                            <X className="h-4 w-4" style={{color: '#6b7280'}} />
+                            <X className="h-4 w-4" />
                           </button>
                         </div>
                       </div>
+                      
+                      {/* Notifications List */}
                       <div className="overflow-y-auto flex-1">
                         {notifications.length === 0 ? (
-                          <div className="p-8 text-center">
-                            <Bell className="h-8 w-8 mx-auto mb-2" style={{color: '#9ca3af'}} />
+                          <div className="p-12 text-center">
                             <p className="text-sm" style={{color: '#6b7280'}}>No notifications</p>
                           </div>
                         ) : (
-                          <div className="p-2">
+                          <div>
                             {notifications.map((notification) => {
-                              const invoice = invoices.find(inv => inv.id === notification.invoiceId);
-                              const formatDate = (dateString: string | Date | null | undefined) => {
-                                if (!dateString) return 'N/A';
-                                try {
-                                  const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-                                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                                } catch {
-                                  return 'N/A';
-                                }
-                              };
-                              const displayDate = invoice 
-                                ? (invoice.dueDate || (invoice as any).due_date 
-                                  ? formatDate(invoice.dueDate || (invoice as any).due_date) 
-                                  : (invoice.issueDate || (invoice as any).issue_date 
-                                    ? formatDate(invoice.issueDate || (invoice as any).issue_date) 
-                                    : 'N/A'))
-                                : 'N/A';
-                              
+                              const invoice = notification.invoiceId ? invoices.find(inv => inv.id === notification.invoiceId) : null;
                               const isRead = readNotificationIds.has(notification.id);
                               
                               return (
                                 <div
                                   key={notification.id}
-                                  className={`flex gap-3 p-3 transition-colors cursor-pointer relative ${
-                                    isRead 
-                                      ? 'hover:bg-gray-50' 
-                                      : 'bg-purple-50 hover:bg-purple-100'
+                                  className={`flex gap-3 p-4 cursor-pointer ${
+                                    isRead ? 'bg-white hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100'
                                   }`}
                                   onClick={() => {
-                                    // Mark as read when clicked
                                     if (!isRead) {
                                       const newReadIds = new Set([...readNotificationIds, notification.id]);
                                       setReadNotificationIds(newReadIds);
-                                      // Persist to localStorage
                                       if (typeof window !== 'undefined') {
                                         localStorage.setItem('readNotificationIds', JSON.stringify([...newReadIds]));
                                       }
@@ -4515,86 +4855,51 @@ export default function DashboardOverview() {
                                       setSelectedInvoice(invoice);
                                       setShowViewInvoice(true);
                                       setShowNotifications(false);
+                                    } else if (notification.estimateId) {
+                                      router.push('/dashboard/estimates');
+                                      setShowNotifications(false);
+                                    } else if (notification.clientId) {
+                                      router.push('/dashboard/clients');
+                                      setShowNotifications(false);
                                     }
                                   }}
                                 >
-                                  <div className="flex-shrink-0 mt-0.5">
-                                    {notification.type === 'viewed' && (
-                                      <Eye className="h-5 w-5 text-blue-600" />
-                                    )}
-                                    {notification.type === 'due_today' && (
-                                      <Clock className="h-5 w-5 text-amber-600" />
-                                    )}
-                                    {notification.type === 'overdue' && (
-                                      <AlertCircle className="h-5 w-5 text-red-600" />
-                                    )}
-                                    {notification.type === 'paid' && (
-                                      <CheckCircle className="h-5 w-5 text-emerald-600" />
-                                    )}
-                                    {notification.type === 'partial_paid' && (
-                                      <DollarSign className="h-5 w-5 text-blue-600" />
-                                    )}
-                                    {notification.type === 'draft_created' && (
-                                      <FileText className="h-5 w-5 text-gray-600" />
-                                    )}
-                                    {notification.type === 'downloaded' && (
-                                      <Download className="h-5 w-5 text-indigo-600" />
-                                    )}
-                                    {notification.type === 'payment_copied' && (
-                                      <Copy className="h-5 w-5 text-purple-600" />
-                                    )}
-                                    {notification.type === 'reminder_scheduled' && (
-                                      <Timer className="h-5 w-5 text-teal-600" />
-                                    )}
-                                    {notification.type === 'sent' && (
-                                      <Send className="h-5 w-5 text-green-600" />
-                                    )}
-                                    {notification.type === 'failed' && (
-                                      <AlertTriangle className="h-5 w-5 text-red-600" />
-                                    )}
-                                    {notification.type === 'cancelled' && (
-                                      <Ban className="h-5 w-5 text-gray-600" />
-                                    )}
-                                    {notification.type === 'estimate_sent' && (
-                                      <Send className="h-5 w-5 text-blue-600" />
-                                    )}
-                                    {notification.type === 'estimate_approved' && (
-                                      <FileCheck className="h-5 w-5 text-emerald-600" />
-                                    )}
-                                    {notification.type === 'estimate_rejected' && (
-                                      <FileX className="h-5 w-5 text-red-600" />
-                                    )}
-                                  </div>
-                                  <div className="flex-1 min-w-0 relative">
-                                    {!isRead && (
-                                      <div className="absolute -right-1 top-0 w-2 h-2 bg-purple-500 rounded-full border border-white shadow-sm"></div>
-                                    )}
-                                    <p className="text-sm font-medium" style={{color: '#1f2937'}}>
+                                  {/* Content */}
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`text-sm ${isRead ? 'font-normal' : 'font-medium'}`} style={{color: '#1f2937'}}>
                                       {notification.message}
                                     </p>
-                                    <p className="text-xs mt-0.5" style={{color: '#6b7280'}}>
-                                      {displayDate} • {notification.clientName}
-                                    </p>
-                                    <div className="flex items-center justify-between mt-1">
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <p className="text-xs" style={{color: '#6b7280'}}>
+                                        {notification.clientName}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center justify-between mt-2">
                                       <p className="text-xs" style={{color: '#9ca3af'}}>
                                         {notification.timestamp}
                                       </p>
-                                      {invoice && (
-                                        <p className="text-xs font-semibold" style={{color: '#1f2937'}}>
+                                      {(invoice || notification.amount) && (
+                                        <p className="text-xs font-medium" style={{color: '#1f2937'}}>
                                           ${(() => {
-                                            // Show remaining balance if available and invoice is not fully paid
-                                            if (invoice.remainingBalance && invoice.remainingBalance > 0) {
-                                              return typeof invoice.remainingBalance === 'number' 
-                                                ? invoice.remainingBalance.toFixed(2) 
-                                                : parseFloat(String(invoice.remainingBalance || '0')).toFixed(2);
+                                            if (notification.amount) {
+                                              return typeof notification.amount === 'number' 
+                                                ? notification.amount.toFixed(2) 
+                                                : parseFloat(String(notification.amount || '0')).toFixed(2);
                                             }
-                                            // Otherwise show total
-                                            const total = invoice.total || 0;
-                                            return typeof total === 'number' 
-                                              ? total.toFixed(2) 
-                                              : (typeof total === 'string' 
-                                                ? parseFloat(total).toFixed(2) 
-                                                : '0.00');
+                                            if (invoice) {
+                                              if (invoice.remainingBalance && invoice.remainingBalance > 0) {
+                                                return typeof invoice.remainingBalance === 'number' 
+                                                  ? invoice.remainingBalance.toFixed(2) 
+                                                  : parseFloat(String(invoice.remainingBalance || '0')).toFixed(2);
+                                              }
+                                              const total = invoice.total || 0;
+                                              return typeof total === 'number' 
+                                                ? total.toFixed(2) 
+                                                : (typeof total === 'string' 
+                                                  ? parseFloat(total).toFixed(2) 
+                                                  : '0.00');
+                                            }
+                                            return '0.00';
                                           })()}
                                         </p>
                                       )}
@@ -4703,26 +5008,28 @@ export default function DashboardOverview() {
                   </button>
                 </div>
 
-                {/* Scroll Container */}
-                <div 
-                  ref={statsCardsScrollRef}
-                  className="overflow-x-auto scrollbar-hide snap-x snap-mandatory"
-                  onScroll={handleStatsCardsScroll}
-                  style={{ 
-                    overflowX: 'auto',
-                    overflowY: 'visible',
-                    scrollbarWidth: 'none',
-                    msOverflowStyle: 'none',
-                    scrollBehavior: 'smooth', // Smooth for snap scrolling
-                    scrollSnapType: 'x mandatory',
-                    WebkitOverflowScrolling: 'touch',
-                    WebkitScrollSnapType: 'x mandatory',
-                    scrollSnapStop: 'always',
-                    width: '100%',
-                    willChange: 'scroll-position', // Optimize for scrolling performance
-                    transform: 'translateZ(0)', // Force GPU acceleration
-                  }}
-                >
+                {/* Scroll Container Wrapper - Clips overflow on mobile */}
+                <div className="overflow-hidden w-full">
+                  {/* Scroll Container */}
+                  <div 
+                    ref={statsCardsScrollRef}
+                    className="overflow-x-auto scrollbar-hide snap-x snap-mandatory"
+                    onScroll={handleStatsCardsScroll}
+                    style={{ 
+                      overflowX: 'auto',
+                      overflowY: 'visible',
+                      scrollbarWidth: 'none',
+                      msOverflowStyle: 'none',
+                      scrollBehavior: 'smooth', // Smooth for snap scrolling
+                      scrollSnapType: 'x mandatory',
+                      WebkitOverflowScrolling: 'touch',
+                      WebkitScrollSnapType: 'x mandatory',
+                      scrollSnapStop: 'always',
+                      width: '100%',
+                      willChange: 'scroll-position', // Optimize for scrolling performance
+                      transform: 'translateZ(0)', // Force GPU acceleration
+                    }}
+                  >
                   <div 
                     className="flex"
                     style={{ 
@@ -4741,7 +5048,7 @@ export default function DashboardOverview() {
                       scrollSnapStop: 'always',
                       boxSizing: 'border-box'
                     }}>
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 items-stretch">
                         {/* Total Revenue */}
                         <button 
                           onClick={handlePaidInvoicesClick}
@@ -4894,69 +5201,70 @@ export default function DashboardOverview() {
                       maxWidth: '50%',
                       scrollSnapAlign: 'start',
                       scrollSnapStop: 'always',
-                      boxSizing: 'border-box',
-                      paddingLeft: '0.5rem'
+                      boxSizing: 'border-box'
                     }}>
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 items-stretch">
                         {/* Draft Amount */}
                         <button 
                           onClick={() => router.push('/dashboard/invoices?status=draft')}
                           className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 cursor-pointer bg-white border border-gray-200 hover:border-gray-500 h-full transition-colors"
                         >
-                          <div className="flex items-start justify-between h-full">
-                            <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
-                              <div className="space-y-1 sm:space-y-1.5">
-                                <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Draft Amount</p>
-                                <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
-                                  <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-600 text-left break-words" style={{ display: 'block' }}>
-                                    {formatMoney(draftAmount)}
-                                  </div>
-                                  <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
-                                  </div>
-                                </div>
-                                <div className="flex items-center space-x-0.5 sm:space-x-1.5 justify-start leading-tight mt-auto">
-                                  <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-gray-600 flex-shrink-0" />
-                                  <span className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-gray-600 truncate">
-                                    {invoices.filter(inv => inv.status === 'draft').length} draft invoices
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            {/* Trend Indicator Placeholder - Right Side - Desktop Only (for consistent width) */}
-                            <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
-                            </div>
+                  <div className="flex items-start justify-between h-full">
+                    <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
+                      <div className="space-y-1 sm:space-y-1.5">
+                        <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Draft Amount</p>
+                        <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
+                          <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-600 text-left break-words" style={{ display: 'block' }}>
+                            {formatMoney(draftAmount)}
                           </div>
-                        </button>
+                          {/* Fixed height placeholder to match late fees line spacing - ensures alignment */}
+                          <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-0.5 sm:space-x-1.5 justify-start leading-tight mt-auto">
+                          <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-gray-600 flex-shrink-0" />
+                          <span className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-gray-600 truncate">
+                            {invoices.filter(inv => inv.status === 'draft').length} draft invoices
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Trend Indicator Placeholder - Right Side - Desktop Only (for consistent width) */}
+                    <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                    </div>
+                  </div>
+                </button>
 
                         {/* Total Write-off */}
                         <button 
                           onClick={handleWriteOffInvoicesClick}
                           className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 cursor-pointer bg-white border border-gray-200 hover:border-slate-500 h-full transition-colors"
                         >
-                          <div className="flex items-start justify-between h-full">
-                            <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
-                              <div className="space-y-1 sm:space-y-1.5">
-                                <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Write-off</p>
-                                <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
-                                  <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-slate-600 text-left break-words" style={{ display: 'block' }}>
-                                    {formatMoney(totalWriteOff)}
-                                  </div>
-                                  <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
-                                  </div>
-                                </div>
-                                <div className="flex items-center space-x-0.5 sm:space-x-1.5 justify-start leading-tight mt-auto">
-                                  <XCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-slate-600 flex-shrink-0" />
-                                  <span className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-slate-600 truncate">
-                                    Written off invoices
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            {/* Trend Indicator Placeholder - Right Side - Desktop Only (for consistent width) */}
-                            <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
-                            </div>
+                  <div className="flex items-start justify-between h-full">
+                    <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
+                      <div className="space-y-1 sm:space-y-1.5">
+                        <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Write-off</p>
+                        <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
+                          <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-slate-600 text-left break-words" style={{ display: 'block' }}>
+                            {formatMoney(totalWriteOff)}
                           </div>
-                        </button>
+                          {/* Fixed height placeholder to match late fees line spacing - ensures alignment */}
+                          <div className="text-[10px] sm:text-xs font-medium text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-0.5 sm:space-x-1.5 justify-start leading-tight mt-auto">
+                          <XCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-slate-600 flex-shrink-0" />
+                          <span className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-slate-600 truncate">
+                            Written off invoices
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Trend Indicator Placeholder - Right Side - Desktop Only (for consistent width) */}
+                    <div className="hidden lg:flex items-center gap-1 flex-shrink-0">
+                    </div>
+                  </div>
+                </button>
 
                         {/* Placeholder cards to make 4 total */}
                         <div className="group relative overflow-hidden p-3 sm:p-4 lg:p-5 transition-all duration-300 bg-white border border-gray-200 h-full opacity-0 pointer-events-none">
@@ -4997,6 +5305,7 @@ export default function DashboardOverview() {
                       </div>
                     </div>
                   </div>
+                </div>
                 </div>
               </div>
             </div>
@@ -5253,8 +5562,59 @@ export default function DashboardOverview() {
          // For sent/paid invoices, use the stored client data (as it was when sent)
          const isDraft = selectedInvoice.status === 'draft';
          const clientId = selectedInvoice.clientId || selectedInvoice.client_id;
-         const latestClient = isDraft && clientId ? clients.find(c => c.id === clientId) : null;
-         const displayClient = latestClient || selectedInvoice.client || null;
+         
+         // CRITICAL: Use client snapshot if available (for sent invoices)
+         let displayClient: any = null;
+         const clientSnapshot = (selectedInvoice as any).client_data_snapshot;
+         const hasClientSnapshot = clientSnapshot && typeof clientSnapshot === 'object' && Object.keys(clientSnapshot).length > 0;
+         
+         // Use snapshot for all non-draft invoices (sent, paid, pending, overdue)
+         if (hasClientSnapshot && !isDraft) {
+           // Use stored snapshot - invoice was already sent
+           displayClient = {
+             name: clientSnapshot.name || '',
+             email: clientSnapshot.email || '',
+             company: clientSnapshot.company || '',
+             phone: clientSnapshot.phone || '',
+             address: clientSnapshot.address || ''
+           };
+         } else {
+           // No snapshot - use current client data (for draft invoices or legacy invoices without snapshots)
+           const latestClient = isDraft && clientId ? clients.find(c => c.id === clientId) : null;
+           displayClient = latestClient || selectedInvoice.client || null;
+         }
+         
+         // CRITICAL: Use snapshot business settings if available (for sent invoices)
+         // This ensures invoice details view shows original business details from when invoice was sent
+         let businessSettings: any = {};
+         const invoiceSnapshot = (selectedInvoice as any).business_settings_snapshot;
+         const hasSnapshot = invoiceSnapshot && typeof invoiceSnapshot === 'object' && Object.keys(invoiceSnapshot).length > 0;
+         
+         // Use snapshot for all non-draft invoices (sent, paid, pending, overdue)
+         if (hasSnapshot && !isDraft) {
+           // Use stored snapshot - invoice was already sent
+           const snapshot = invoiceSnapshot;
+           businessSettings = {
+             businessName: snapshot.business_name || 'Your Business Name',
+             businessEmail: snapshot.business_email || '',
+             businessPhone: snapshot.business_phone || '',
+             address: snapshot.business_address || '',
+             logo: snapshot.logo || snapshot.logo_url || '',
+             paypalEmail: snapshot.paypal_email || '',
+             cashappId: snapshot.cashapp_id || '',
+             venmoId: snapshot.venmo_id || '',
+             googlePayUpi: snapshot.google_pay_upi || '',
+             applePayId: snapshot.apple_pay_id || '',
+             bankAccount: snapshot.bank_account || '',
+             bankIfscSwift: snapshot.bank_ifsc_swift || '',
+             bankIban: snapshot.bank_iban || '',
+             stripeAccount: snapshot.stripe_account || '',
+             paymentNotes: snapshot.payment_notes || ''
+           };
+         } else {
+           // No snapshot - use current settings (for draft invoices or legacy invoices without snapshots)
+           businessSettings = settings;
+         }
          
          return (
          <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
@@ -5431,12 +5791,12 @@ export default function DashboardOverview() {
                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 sm:p-6 border-b border-gray-200">
                  <div className="w-full sm:w-auto mb-3 sm:mb-0">
                    <h2 className="text-lg sm:text-2xl font-bold mb-1 text-gray-900">
-                     {settings.businessName || 'Your Business Name'}
+                     {businessSettings.businessName || businessSettings.business_name || 'Your Business Name'}
                    </h2>
                    <div className="text-xs sm:text-sm space-y-1 text-gray-700">
-                     {settings.address && <p>{settings.address}</p>}
-                     {settings.businessEmail && <p>{settings.businessEmail}</p>}
-                     {settings.businessPhone && <p>{settings.businessPhone}</p>}
+                     {(businessSettings.address || businessSettings.business_address) && <p>{businessSettings.address || businessSettings.business_address}</p>}
+                     {(businessSettings.businessEmail || businessSettings.business_email) && <p>{businessSettings.businessEmail || businessSettings.business_email}</p>}
+                     {(businessSettings.businessPhone || businessSettings.business_phone) && <p>{businessSettings.businessPhone || businessSettings.business_phone}</p>}
                    </div>
                  </div>
                  <div className="flex items-center space-x-2">
@@ -5549,9 +5909,13 @@ export default function DashboardOverview() {
                        <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs sm:text-sm font-medium">Total</th>
                      </tr>
                    </thead>
-                   <tbody className="divide-y divide-gray-200">
-                     {selectedInvoice.items?.map((item, index) => (
-                       <tr key={item.id || index} className="hover:bg-gray-50">
+                   <tbody>
+                     {selectedInvoice.items?.filter(item => {
+                       // Filter out items with "Thank you for your business!" as description
+                       const description = item.description?.trim() || '';
+                       return description.toLowerCase() !== 'thank you for your business!';
+                     }).map((item, index) => (
+                       <tr key={item.id || index} className="hover:bg-gray-50 border-t border-gray-200">
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">
                            {item.description || 'Service'}
                          </td>
@@ -5564,131 +5928,156 @@ export default function DashboardOverview() {
                          </td>
                        </tr>
                      )) || (
-                       <tr>
+                       <tr className="border-t border-gray-200">
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">Service</td>
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-700">1</td>
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right text-gray-900">$0.00</td>
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium text-gray-900">$0.00</td>
                        </tr>
                      )}
+                     {(() => {
+                       const paymentData = paymentDataMap[selectedInvoice.id] || null;
+                       const dueCharges = calculateDueCharges(selectedInvoice, paymentData);
+                       const hasWriteOff = selectedInvoice.writeOffAmount && selectedInvoice.writeOffAmount > 0;
+                       // If invoice has write-off, treat it as paid
+                       const isPaid = selectedInvoice.status === 'paid' || hasWriteOff;
+                       
+                       // Calculate actual paid amount: if write-off exists, paid = total - write-off
+                       // For fully paid invoices without write-off, amount paid = total
+                       const actualTotalPaid = hasWriteOff 
+                         ? Math.max(0, (selectedInvoice.total || 0) - (selectedInvoice.writeOffAmount || 0))
+                         : isPaid 
+                           ? (selectedInvoice.total || 0) // Fully paid invoice, amount paid = total
+                           : (paymentData?.totalPaid || dueCharges.totalPaid || 0);
+                       
+                       const actualRemainingBalance = hasWriteOff 
+                         ? 0 // If written off, no remaining balance
+                         : (paymentData?.remainingBalance || dueCharges.remainingBalance || 0);
+                       
+                       // If invoice has write-off, treat it as paid
+                       const isPaidWithWriteOff = isPaid && hasWriteOff;
+                       
+                       // Only show partial payments if invoice is not fully paid and no write-off
+                       const hasPartialPayments = !isPaid && !hasWriteOff && actualTotalPaid > 0 && actualRemainingBalance > 0;
+                       // Determine if it's a partial payment (has both paid and remaining)
+                       const isPartialPayment = hasPartialPayments;
+                       
+                       // Determine status for color coding
+                       const dueDateStatus = getDueDateStatus(
+                         selectedInvoice.dueDate || '', 
+                         selectedInvoice.status, 
+                         selectedInvoice.paymentTerms,
+                         (selectedInvoice as any).updatedAt
+                       );
+                       
+                       // Determine status color for Total row
+                       let totalStatusColor = 'text-gray-900'; // Default
+                       if (isPaid || hasWriteOff) {
+                         totalStatusColor = 'text-emerald-700'; // Paid - green
+                       } else if (hasPartialPayments) {
+                         totalStatusColor = 'text-blue-600'; // Partial paid - blue
+                       } else if (dueDateStatus.status === 'overdue') {
+                         totalStatusColor = 'text-red-700'; // Overdue - red
+                       } else if (selectedInvoice.status === 'pending' || selectedInvoice.status === 'sent' || dueDateStatus.status === 'due-today') {
+                         totalStatusColor = 'text-amber-700'; // Pending/Sent/Due Today - amber/orange
+                       }
+                       
+                       return (
+                         <>
+                           <tr>
+                             <td colSpan={4} className="px-2 sm:px-4 pt-2" style={{ borderTop: '1px solid #e5e7eb' }}></td>
+                           </tr>
+                           <tr>
+                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
+                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
+                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Subtotal:</td>
+                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>${(selectedInvoice.subtotal || 0).toFixed(2)}</td>
+                           </tr>
+                           <tr>
+                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
+                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
+                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Discount:</td>
+                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>${(selectedInvoice.discount || 0).toFixed(2)}</td>
+                           </tr>
+                           <tr>
+                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
+                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
+                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Tax ({(selectedInvoice.taxRate || 0) * 100}%):</td>
+                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>${(selectedInvoice.taxAmount || 0).toFixed(2)}</td>
+                           </tr>
+                           <tr>
+                             <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm border-t border-gray-200 pt-2 ${totalStatusColor}`}></td>
+                             <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm border-t border-gray-200 pt-2 ${totalStatusColor}`}></td>
+                             <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>Total:</td>
+                             <td className={`px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>${(selectedInvoice.total || 0).toFixed(2)}</td>
+                           </tr>
+                           {hasWriteOff ? (
+                             <tr>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700" style={{ borderTop: 'none' }}></td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700" style={{ borderTop: 'none' }}></td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 text-right" style={{ borderTop: 'none' }}>Write-off Amount:</td>
+                               <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 font-semibold text-right" style={{ borderTop: 'none' }}>-${(selectedInvoice.writeOffAmount || 0).toFixed(2)}</td>
+                             </tr>
+                           ) : null}
+                           {/* Only show Total Paid/Partial Paid for NON-PAID invoices with partial payments - NEVER show for paid invoices */}
+                           {(() => {
+                             // CRITICAL: Double-check isPaid to ensure this NEVER renders for paid invoices
+                             const invoiceIsPaid = selectedInvoice.status === 'paid' || hasWriteOff;
+                             if (invoiceIsPaid) return null;
+                             
+                             // Only show for non-paid invoices with actual payments
+                             if (!hasWriteOff && actualTotalPaid > 0) {
+                               return (
+                                 <tr>
+                                   <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}></td>
+                                   <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}></td>
+                                   <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm text-right no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}>
+                                     {isPartialPayment ? "Partial Paid:" : "Total Paid:"}
+                                   </td>
+                                   <td className={`px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}>
+                                     ${actualTotalPaid.toFixed(2)}
+                                   </td>
+                                 </tr>
+                               );
+                             }
+                             return null;
+                           })()}
+                           {hasPartialPayments === true ? (
+                             <tr>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 text-right" style={{ borderTop: 'none' }}>Remaining Balance:</td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 font-semibold text-right" style={{ borderTop: 'none' }}>${actualRemainingBalance.toFixed(2)}</td>
+                             </tr>
+                           ) : null}
+                           {dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 ? (
+                             <tr>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 text-right" style={{ borderTop: 'none' }}>Late Fees:</td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 font-semibold text-right" style={{ borderTop: 'none' }}>${dueCharges.lateFeeAmount.toFixed(2)}</td>
+                             </tr>
+                           ) : null}
+                           {(dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0) ? (
+                             <tr>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">Total Payable:</td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">${dueCharges.totalPayable.toFixed(2)}</td>
+                             </tr>
+                           ) : isPaid ? (
+                             <tr>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}></td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}></td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}>Amount Paid:</td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}>${actualTotalPaid.toFixed(2)}</td>
+                             </tr>
+                           ) : null}
+                         </>
+                       );
+                     })()}
                    </tbody>
                  </table>
-               </div>
-
-               {/* Totals */}
-               <div className="p-3 sm:p-6">
-                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-                   <div className="w-full sm:w-auto">
-                     <p className="text-xs sm:text-sm text-gray-700">Thank you for your business!</p>
-                   </div>
-                  <div className="w-full sm:w-64">
-                    {(() => {
-                      const paymentData = paymentDataMap[selectedInvoice.id] || null;
-                      const dueCharges = calculateDueCharges(selectedInvoice, paymentData);
-                      const hasWriteOff = selectedInvoice.writeOffAmount && selectedInvoice.writeOffAmount > 0;
-                      // If invoice has write-off, treat it as paid
-                      const isPaid = selectedInvoice.status === 'paid' || hasWriteOff;
-                      
-                      // Calculate actual paid amount: if write-off exists, paid = total - write-off
-                      // For fully paid invoices without write-off, amount paid = total
-                      const actualTotalPaid = hasWriteOff 
-                        ? Math.max(0, (selectedInvoice.total || 0) - (selectedInvoice.writeOffAmount || 0))
-                        : isPaid 
-                          ? (selectedInvoice.total || 0) // Fully paid invoice, amount paid = total
-                          : (paymentData?.totalPaid || dueCharges.totalPaid || 0);
-                      
-                      const actualRemainingBalance = hasWriteOff 
-                        ? 0 // If written off, no remaining balance
-                        : (paymentData?.remainingBalance || dueCharges.remainingBalance || 0);
-                      
-                      // If invoice has write-off, treat it as paid
-                      const isPaidWithWriteOff = isPaid && hasWriteOff;
-                      
-                      // Only show partial payments if invoice is not fully paid and no write-off
-                      const hasPartialPayments = !isPaid && !hasWriteOff && actualTotalPaid > 0 && actualRemainingBalance > 0;
-                      // Determine if it's a partial payment (has both paid and remaining)
-                      const isPartialPayment = hasPartialPayments;
-                      return (
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-xs sm:text-sm">
-                            <span className="text-gray-700">Subtotal:</span>
-                            <span className="text-gray-900">${(selectedInvoice.subtotal || 0).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between text-xs sm:text-sm">
-                            <span className="text-gray-700">Discount:</span>
-                            <span className="text-gray-900">${(selectedInvoice.discount || 0).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between text-xs sm:text-sm">
-                            <span className="text-gray-700">Tax ({(selectedInvoice.taxRate || 0) * 100}%):</span>
-                            <span className="text-gray-900">${(selectedInvoice.taxAmount || 0).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between text-xs sm:text-sm border-t pt-1 border-gray-200">
-                            <span className="text-gray-700">Total:</span>
-                            <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
-                          </div>
-                          {hasWriteOff ? (
-                            <div className="flex justify-between text-xs sm:text-sm">
-                              <span className="text-slate-700">Write-off Amount:</span>
-                              <span className="text-slate-700 font-semibold">-${(selectedInvoice.writeOffAmount || 0).toFixed(2)}</span>
-                            </div>
-                          ) : null}
-                          {/* Only show Total Paid/Partial Paid for NON-PAID invoices with partial payments - NEVER show for paid invoices */}
-                          {(() => {
-                            // CRITICAL: Double-check isPaid to ensure this NEVER renders for paid invoices
-                            const invoiceIsPaid = selectedInvoice.status === 'paid' || hasWriteOff;
-                            if (invoiceIsPaid) return null;
-                            
-                            // Only show for non-paid invoices with actual payments
-                            if (!hasWriteOff && actualTotalPaid > 0) {
-                              return (
-                                <div className="flex justify-between text-xs sm:text-sm no-underline-invoice-amount" style={{ textDecoration: 'none', borderBottom: 'none' }}>
-                                  <span 
-                                    className={isPartialPayment ? "text-blue-600" : "text-emerald-700"} 
-                                    style={{ textDecoration: 'none', borderBottom: 'none', textDecorationLine: 'none', textDecorationColor: 'transparent' }}
-                                    spellCheck="false"
-                                  >
-                                    {isPartialPayment ? "Partial Paid:" : "Total Paid:"}
-                                  </span>
-                                  <span 
-                                    className={isPartialPayment ? "text-blue-600 font-semibold" : "text-emerald-700 font-semibold"} 
-                                    style={{ textDecoration: 'none', borderBottom: 'none', textDecorationLine: 'none', textDecorationColor: 'transparent' }}
-                                    spellCheck="false"
-                                  >
-                                    ${actualTotalPaid.toFixed(2)}
-                                  </span>
-                                </div>
-                              );
-                            }
-                            return null;
-                          })()}
-                          {hasPartialPayments === true ? (
-                            <div className="flex justify-between text-xs sm:text-sm">
-                              <span className="text-orange-700">Remaining Balance:</span>
-                              <span className="text-orange-700 font-semibold">${actualRemainingBalance.toFixed(2)}</span>
-                            </div>
-                          ) : null}
-                          {dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 ? (
-                            <div className="flex justify-between text-xs sm:text-sm">
-                              <span className="text-red-700">Late Fees:</span>
-                              <span className="text-red-700 font-semibold">${dueCharges.lateFeeAmount.toFixed(2)}</span>
-                            </div>
-                          ) : null}
-                          {(dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0) ? (
-                            <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1 border-gray-200">
-                              <span className="text-red-900">Total Payable:</span>
-                              <span className="text-red-900">${dueCharges.totalPayable.toFixed(2)}</span>
-                            </div>
-                          ) : isPaid ? (
-                            <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1 border-gray-200">
-                              <span className="text-emerald-700" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}>Amount Paid:</span>
-                              <span className="text-emerald-700" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}>${actualTotalPaid.toFixed(2)}</span>
-                            </div>
-                          ) : null}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                 </div>
                </div>
 
               {/* Notes */}
@@ -5912,7 +6301,7 @@ export default function DashboardOverview() {
                   <DollarSign className="h-4 w-4" />
                   Record Payment
                 </button>
-                  )}
+              )}
                 </>
               )}
             </div>

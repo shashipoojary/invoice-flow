@@ -305,10 +305,7 @@ const ModernSidebar = ({
       });
     }
     
-    // Preload route for instant navigation
-    router.prefetch(route);
-    
-    // Navigate with priority
+    // Navigate with priority (prefetching is handled automatically by Next.js)
     router.push(route, { scroll: false });
     
     // Close mobile menu if open

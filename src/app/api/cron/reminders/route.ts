@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
     const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
 
     // CRITICAL: Exclude draft invoices - they should never have reminders sent
+    // CRITICAL: Include snapshot fields - reminders must use original business/client data
     const { data: scheduledReminders, error: remindersError } = await supabaseAdmin
       .from('invoice_reminders')
       .select(`
@@ -37,6 +38,8 @@ export async function POST(request: NextRequest) {
           reminder_count,
           last_reminder_sent,
           user_id,
+          business_settings_snapshot,
+          client_data_snapshot,
           clients (
             name,
             email,
@@ -215,8 +218,21 @@ export async function POST(request: NextRequest) {
 
 async function sendReminderEmail(invoice: any, reminderType: string, overdueDays: number) {
   try {
-    // Validate client email
-    const clientEmail = invoice.clients?.email;
+    // CRITICAL: Use snapshot if available (for sent invoices), otherwise use relationship
+    // This ensures reminders use the original business/client details from when invoice was sent
+    let clientEmail = '';
+    let clientName = '';
+    
+    if (invoice.client_data_snapshot) {
+      // Use stored snapshot - invoice was already sent
+      clientEmail = invoice.client_data_snapshot.email || '';
+      clientName = invoice.client_data_snapshot.name || 'Valued Customer';
+    } else {
+      // No snapshot - use relationship (for draft invoices or legacy invoices)
+      clientEmail = invoice.clients?.email || '';
+      clientName = invoice.clients?.name || 'Valued Customer';
+    }
+
     if (!clientEmail || typeof clientEmail !== 'string') {
       throw new Error('Client email is required and must be valid');
     }
@@ -254,30 +270,47 @@ async function sendReminderEmail(invoice: any, reminderType: string, overdueDays
       invoiceNumber: invoice.invoice_number
     });
 
-    // Get ALL user business settings from user_settings table (properly isolated per user)
-    // This ensures complete data isolation - each user only gets their own settings
+    // CRITICAL: Use snapshot if available (for sent invoices), otherwise fetch current settings
+    // This ensures reminders use the original business/client details from when invoice was sent
     let businessSettings: any = {};
-    try {
-    const { data: userSettings, error: settingsError } = await supabaseAdmin
-      .from('user_settings')
-        .select('business_name, business_email, business_phone, business_address, website, logo, logo_url, email_from_address, payment_notes, paypal_email, cashapp_id, venmo_id, google_pay_upi, apple_pay_id, bank_account, bank_ifsc_swift, bank_iban, stripe_account')
-        .eq('user_id', invoice.user_id) // CRITICAL: Proper data isolation - only fetch settings for this specific user
-      .single();
+    
+    if (invoice.business_settings_snapshot) {
+      // Use stored snapshot - invoice was already sent
+      businessSettings = invoice.business_settings_snapshot;
+    } else {
+      // No snapshot - fetch current settings (for draft invoices or legacy invoices)
+      try {
+        const { data: userSettings, error: settingsError } = await supabaseAdmin
+          .from('user_settings')
+          .select('business_name, business_email, business_phone, business_address, website, logo, logo_url, email_from_address, payment_notes, paypal_email, cashapp_id, venmo_id, google_pay_upi, apple_pay_id, bank_account, bank_ifsc_swift, bank_iban, stripe_account')
+          .eq('user_id', invoice.user_id) // CRITICAL: Proper data isolation - only fetch settings for this specific user
+          .single();
 
-    if (settingsError) {
-      console.error('Error fetching user settings:', settingsError);
-        // Fall back to defaults if settings not found
-        businessSettings = {
-          business_name: 'FlowInvoicer',
-          business_email: '',
-          business_phone: '',
-          logo: null,
-          email_from_address: null
-        };
-      } else if (userSettings) {
-        businessSettings = userSettings;
-      } else {
-        // No settings found, use defaults
+        if (settingsError) {
+          console.error('Error fetching user settings:', settingsError);
+          // Fall back to defaults if settings not found
+          businessSettings = {
+            business_name: 'FlowInvoicer',
+            business_email: '',
+            business_phone: '',
+            logo: null,
+            email_from_address: null
+          };
+        } else if (userSettings) {
+          businessSettings = userSettings;
+        } else {
+          // No settings found, use defaults
+          businessSettings = {
+            business_name: 'FlowInvoicer',
+            business_email: '',
+            business_phone: '',
+            logo: null,
+            email_from_address: null
+          };
+        }
+      } catch (error) {
+        console.error('Error fetching user settings:', error);
+        // Fall back to defaults on error
         businessSettings = {
           business_name: 'FlowInvoicer',
           business_email: '',
@@ -286,30 +319,21 @@ async function sendReminderEmail(invoice: any, reminderType: string, overdueDays
           email_from_address: null
         };
       }
-    } catch (error) {
-      console.error('Error fetching user settings:', error);
-      // Fall back to defaults on error
-      businessSettings = {
-        business_name: 'FlowInvoicer',
-        business_email: '',
-        business_phone: '',
-        logo: null,
-        email_from_address: null
-      };
     }
 
     // Overdue days is passed as parameter (calculated in calling function for consistency)
     // This ensures consistent calculation across all reminder routes
 
     // Transform invoice data to match template structure
+    // Use clientName and clientEmail from snapshot or relationship (already set above)
     const templateInvoice = {
       invoiceNumber: invoice.invoice_number,
       total: invoice.total,
       dueDate: invoice.due_date,
       publicToken: invoice.public_token,
       client: {
-        name: invoice.clients?.name || 'Valued Customer',
-        email: invoice.clients?.email || recipientEmail
+        name: clientName,
+        email: clientEmail || recipientEmail
       }
     };
 

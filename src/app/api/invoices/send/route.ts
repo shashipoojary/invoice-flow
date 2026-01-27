@@ -44,11 +44,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch invoice FIRST to check status and get client data if needed
+    // CRITICAL: Include snapshot fields to check if they already exist
     // We need this before queue check to update status immediately
     const { data: invoice, error: invoiceError } = await supabaseAdmin
       .from('invoices')
       .select(`
         *,
+        business_settings_snapshot,
+        client_data_snapshot,
         clients (
           name,
           email,
@@ -230,24 +233,58 @@ export async function POST(request: NextRequest) {
       reminders
     };
 
-    // Prepare business settings for PDF
-    const businessSettings = {
-      businessName: settingsData?.business_name || 'Your Business Name',
-      businessEmail: settingsData?.business_email || '',
-      businessPhone: settingsData?.business_phone || '',
-      address: settingsData?.business_address || '',
+    // CRITICAL: Store snapshots of business settings and client data when sending
+    // This ensures that updates to business/client details don't affect already sent invoices
+    const clientSnapshot = {
+      name: clientName,
+      email: clientEmail,
+      company: (Array.isArray(invoice.clients) ? invoice.clients[0] : invoice.clients)?.company || null,
+      phone: (Array.isArray(invoice.clients) ? invoice.clients[0] : invoice.clients)?.phone || null,
+      address: (Array.isArray(invoice.clients) ? invoice.clients[0] : invoice.clients)?.address || null
+    };
+
+    const businessSnapshot = {
+      business_name: settingsData?.business_name || '',
+      business_email: settingsData?.business_email || '',
+      business_phone: settingsData?.business_phone || '',
+      business_address: settingsData?.business_address || '',
       website: settingsData?.website || '',
-      logo: settingsData?.logo || '',
-      paypalEmail: settingsData?.paypal_email || '',
-      cashappId: settingsData?.cashapp_id || '',
-      venmoId: settingsData?.venmo_id || '',
-      googlePayUpi: settingsData?.google_pay_upi || '',
-      applePayId: settingsData?.apple_pay_id || '',
-      bankAccount: settingsData?.bank_account || '',
-      bankIfscSwift: settingsData?.bank_ifsc_swift || '',
-      bankIban: settingsData?.bank_iban || '',
-      stripeAccount: settingsData?.stripe_account || '',
-      paymentNotes: settingsData?.payment_notes || ''
+      logo: settingsData?.logo || settingsData?.logo_url || '',
+      paypal_email: settingsData?.paypal_email || '',
+      cashapp_id: settingsData?.cashapp_id || '',
+      venmo_id: settingsData?.venmo_id || '',
+      google_pay_upi: settingsData?.google_pay_upi || '',
+      apple_pay_id: settingsData?.apple_pay_id || '',
+      bank_account: settingsData?.bank_account || '',
+      bank_ifsc_swift: settingsData?.bank_ifsc_swift || '',
+      bank_iban: settingsData?.bank_iban || '',
+      stripe_account: settingsData?.stripe_account || '',
+      payment_notes: settingsData?.payment_notes || ''
+    };
+
+    // CRITICAL: Use snapshot if available (for already sent invoices), otherwise use current settings
+    // This ensures reminders use the original business/client details from when invoice was sent
+    const useBusinessSnapshot = invoice.business_settings_snapshot || businessSnapshot;
+    const useClientSnapshot = invoice.client_data_snapshot || clientSnapshot;
+
+    // Prepare business settings for PDF - use snapshot if available
+    const businessSettings = {
+      businessName: useBusinessSnapshot.business_name || 'Your Business Name',
+      businessEmail: useBusinessSnapshot.business_email || '',
+      businessPhone: useBusinessSnapshot.business_phone || '',
+      address: useBusinessSnapshot.business_address || '',
+      website: useBusinessSnapshot.website || '',
+      logo: useBusinessSnapshot.logo || '',
+      paypalEmail: useBusinessSnapshot.paypal_email || '',
+      cashappId: useBusinessSnapshot.cashapp_id || '',
+      venmoId: useBusinessSnapshot.venmo_id || '',
+      googlePayUpi: useBusinessSnapshot.google_pay_upi || '',
+      applePayId: useBusinessSnapshot.apple_pay_id || '',
+      bankAccount: useBusinessSnapshot.bank_account || '',
+      bankIfscSwift: useBusinessSnapshot.bank_ifsc_swift || '',
+      bankIban: useBusinessSnapshot.bank_iban || '',
+      stripeAccount: useBusinessSnapshot.stripe_account || '',
+      paymentNotes: useBusinessSnapshot.payment_notes || ''
     };
 
     // Debug: Log the data being passed to PDF generation
@@ -335,14 +372,34 @@ export async function POST(request: NextRequest) {
 
     // Ensure invoice status is set to 'sent' immediately for drafts
     // But preserve 'paid' status if invoice was already marked as paid
+    // CRITICAL: Store snapshots when sending (only if not already stored)
     if (invoice.status === 'draft') {
       await supabaseAdmin
         .from('invoices')
-        .update({ status: 'sent', updated_at: new Date().toISOString() })
+        .update({ 
+          status: 'sent', 
+          updated_at: new Date().toISOString(),
+          business_settings_snapshot: businessSnapshot,
+          client_data_snapshot: clientSnapshot
+        })
         .eq('id', invoiceId)
         .eq('user_id', user.id);
       // Reflect in local invoice object for response mapping
       invoice.status = 'sent';
+    } else if (invoice.status === 'sent' || invoice.status === 'pending') {
+      // Re-sending: Only update snapshots if they don't exist
+      const updateData: any = { updated_at: new Date().toISOString() };
+      if (!invoice.business_settings_snapshot) {
+        updateData.business_settings_snapshot = businessSnapshot;
+      }
+      if (!invoice.client_data_snapshot) {
+        updateData.client_data_snapshot = clientSnapshot;
+      }
+      await supabaseAdmin
+        .from('invoices')
+        .update(updateData)
+        .eq('id', invoiceId)
+        .eq('user_id', user.id);
     } else if (invoice.status === 'paid') {
       // Keep paid status but update timestamp
       await supabaseAdmin

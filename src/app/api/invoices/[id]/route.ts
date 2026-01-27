@@ -20,10 +20,13 @@ export async function GET(
     }
 
     // Fetch invoice from Supabase
+    // CRITICAL: Include snapshot fields so frontend can use original business/client data for sent invoices
     const { data: invoice, error } = await supabaseAdmin
       .from('invoices')
       .select(`
         *,
+        business_settings_snapshot,
+        client_data_snapshot,
         clients (
           id,
           name,
@@ -56,9 +59,27 @@ export async function GET(
       console.error('Error fetching invoice items:', itemsError)
     }
 
+    // CRITICAL: Use client snapshot if available (for sent invoices)
+    // This ensures the API returns original client data from when invoice was sent
+    let clientData = invoice.clients;
+    if (invoice.client_data_snapshot && invoice.status !== 'draft') {
+      // Use stored snapshot - invoice was already sent
+      clientData = {
+        id: invoice.clients?.id || invoice.client_id,
+        name: invoice.client_data_snapshot.name || invoice.clients?.name || '',
+        email: invoice.client_data_snapshot.email || invoice.clients?.email || '',
+        company: invoice.client_data_snapshot.company || invoice.clients?.company || '',
+        phone: invoice.client_data_snapshot.phone || invoice.clients?.phone || '',
+        address: invoice.client_data_snapshot.address || invoice.clients?.address || ''
+      };
+    }
+
     return NextResponse.json({ 
       invoice: {
         ...invoice,
+        // CRITICAL: Include snapshot fields for frontend use
+        business_settings_snapshot: invoice.business_settings_snapshot,
+        client_data_snapshot: invoice.client_data_snapshot,
         // Map database fields to frontend interface
         invoiceNumber: invoice.invoice_number,
         dueDate: invoice.due_date,
@@ -67,7 +88,7 @@ export async function GET(
         createdAt: invoice.created_at,
         updatedAt: invoice.updated_at,
         clientId: invoice.client_id, // Map client_id to clientId
-        client: invoice.clients,
+        client: clientData, // Use snapshot client data if available
         items: (itemsData || []).map(item => ({
           id: item.id,
           description: item.description,
@@ -245,6 +266,26 @@ export async function PATCH(
 
     if (!invoiceId) {
       return NextResponse.json({ error: 'Invoice ID is required' }, { status: 400 })
+    }
+
+    // CRITICAL: Check current invoice status - only draft invoices can be edited
+    const { data: currentInvoice, error: fetchError } = await supabaseAdmin
+      .from('invoices')
+      .select('status')
+      .eq('id', invoiceId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (fetchError || !currentInvoice) {
+      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
+    }
+
+    // CRITICAL: Prevent editing sent, pending, paid, or overdue invoices
+    // Only draft invoices can be edited
+    if (currentInvoice.status !== 'draft') {
+      return NextResponse.json({ 
+        error: `Cannot edit invoice with status "${currentInvoice.status}". Only draft invoices can be edited.` 
+      }, { status: 400 })
     }
 
     const body = await request.json()

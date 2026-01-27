@@ -30,10 +30,13 @@ export async function GET(request: NextRequest) {
 
     // Fetch invoice by public token
     // Try multiple approaches to handle URL encoding issues
+    // CRITICAL: Include snapshot fields - receipts must use original business/client data
     let { data: invoice, error } = await supabaseAdmin
       .from('invoices')
       .select(`
         *,
+        business_settings_snapshot,
+        client_data_snapshot,
         clients (
           name,
           email,
@@ -52,6 +55,8 @@ export async function GET(request: NextRequest) {
         .from('invoices')
         .select(`
           *,
+          business_settings_snapshot,
+          client_data_snapshot,
           clients (
             name,
             email,
@@ -75,6 +80,8 @@ export async function GET(request: NextRequest) {
         .from('invoices')
         .select(`
           *,
+          business_settings_snapshot,
+          client_data_snapshot,
           clients (
             name,
             email,
@@ -123,29 +130,65 @@ export async function GET(request: NextRequest) {
       .select('*')
       .eq('invoice_id', invoice.id);
 
-    // Fetch user settings for business details
-    const { data: settingsData, error: settingsError } = await supabaseAdmin
-      .from('user_settings')
-      .select('*')
-      .eq('user_id', invoice.user_id)
-      .single();
+    // CRITICAL: Use snapshot if available (for sent invoices), otherwise fetch current settings
+    // This ensures receipts use the original business/client details from when invoice was sent
+    let businessSettings: any = {};
+    let clientName = '';
+    let clientEmail = '';
+    let clientCompany = '';
+    let clientPhone = '';
+    let clientAddress = '';
+    
+    if (invoice.business_settings_snapshot && invoice.client_data_snapshot) {
+      // Use stored snapshots - invoice was already sent
+      businessSettings = invoice.business_settings_snapshot;
+      clientName = invoice.client_data_snapshot.name || '';
+      clientEmail = invoice.client_data_snapshot.email || '';
+      clientCompany = invoice.client_data_snapshot.company || '';
+      clientPhone = invoice.client_data_snapshot.phone || '';
+      clientAddress = invoice.client_data_snapshot.address || '';
+    } else {
+      // No snapshot - fetch current settings (for draft invoices or legacy invoices)
+      const { data: settingsData, error: settingsError } = await supabaseAdmin
+        .from('user_settings')
+        .select('*')
+        .eq('user_id', invoice.user_id)
+        .single();
 
-    if (settingsError && settingsError.code !== 'PGRST116') {
-      console.warn('Warning: Could not fetch user settings:', settingsError);
-      // Continue with defaults if settings not found
+      if (settingsError && settingsError.code !== 'PGRST116') {
+        console.warn('Warning: Could not fetch user settings:', settingsError);
+      }
+      
+      businessSettings = settingsData || {};
+      
+      // Get client details from relationship
+      const clients = Array.isArray(invoice.clients) ? invoice.clients[0] : invoice.clients;
+      clientName = clients?.name || 'Client';
+      clientEmail = clients?.email || '';
+      clientCompany = clients?.company || '';
+      clientPhone = clients?.phone || '';
+      clientAddress = clients?.address || '';
     }
 
     // Map invoice data to match Invoice interface
+    // CRITICAL: Use client snapshot data for client object
     const mappedInvoice = {
       id: invoice.id,
       invoiceNumber: invoice.invoice_number,
       issueDate: invoice.issue_date || invoice.created_at,
       dueDate: invoice.due_date,
-      clientName: invoice.clients?.name || 'Client',
-      clientEmail: invoice.clients?.email || '',
-      clientCompany: invoice.clients?.company || '',
-      clientPhone: invoice.clients?.phone || '',
-      clientAddress: invoice.clients?.address || '',
+      client: {
+        name: clientName,
+        email: clientEmail,
+        company: clientCompany,
+        phone: clientPhone,
+        address: clientAddress
+      },
+      clientName: clientName,
+      clientEmail: clientEmail,
+      clientCompany: clientCompany,
+      clientPhone: clientPhone,
+      clientAddress: clientAddress,
       items: (itemsData || []).map((item: any) => ({
         id: item.id || String(Math.random()),
         description: item.description || 'Service',
@@ -162,23 +205,23 @@ export async function GET(request: NextRequest) {
       notes: invoice.notes || '',
     };
 
-    // Map business settings
-    const businessSettings = {
-      businessName: settingsData?.business_name || 'Business',
-      businessEmail: settingsData?.business_email || '',
-      businessPhone: settingsData?.business_phone || '',
-      address: settingsData?.business_address || '',
-      logo: settingsData?.logo || '',
-      paypalEmail: settingsData?.paypal_email || '',
-      cashappId: settingsData?.cashapp_id || '',
-      venmoId: settingsData?.venmo_id || '',
-      googlePayUpi: settingsData?.google_pay_upi || '',
-      applePayId: settingsData?.apple_pay_id || '',
-      bankAccount: settingsData?.bank_account || '',
-      bankIfscSwift: settingsData?.bank_ifsc_swift || '',
-      bankIban: settingsData?.bank_iban || '',
-      stripeAccount: settingsData?.stripe_account || '',
-      paymentNotes: settingsData?.payment_notes || '',
+    // Map business settings (already set above from snapshot or current settings)
+    const mappedBusinessSettings = {
+      businessName: businessSettings.business_name || 'Business',
+      businessEmail: businessSettings.business_email || '',
+      businessPhone: businessSettings.business_phone || '',
+      address: businessSettings.business_address || '',
+      logo: businessSettings.logo || businessSettings.logo_url || '',
+      paypalEmail: businessSettings.paypal_email || '',
+      cashappId: businessSettings.cashapp_id || '',
+      venmoId: businessSettings.venmo_id || '',
+      googlePayUpi: businessSettings.google_pay_upi || '',
+      applePayId: businessSettings.apple_pay_id || '',
+      bankAccount: businessSettings.bank_account || '',
+      bankIfscSwift: businessSettings.bank_ifsc_swift || '',
+      bankIban: businessSettings.bank_iban || '',
+      stripeAccount: businessSettings.stripe_account || '',
+      paymentNotes: businessSettings.payment_notes || '',
     };
 
     // Generate receipt PDF
@@ -190,22 +233,22 @@ export async function GET(request: NextRequest) {
       hasClientName: !!mappedInvoice.clientName,
     });
     console.log('Receipt API - Business settings:', {
-      businessName: businessSettings.businessName,
-      hasEmail: !!businessSettings.businessEmail,
+      businessName: mappedBusinessSettings.businessName,
+      hasEmail: !!mappedBusinessSettings.businessEmail,
     });
     
     // Validate required fields before PDF generation
     if (!mappedInvoice.invoiceNumber) {
       throw new Error('Invoice number is missing');
     }
-    if (!businessSettings.businessName) {
+    if (!mappedBusinessSettings.businessName) {
       console.warn('Receipt API - Business name missing, using default');
-      businessSettings.businessName = 'Business';
+      mappedBusinessSettings.businessName = 'Business';
     }
     
     try {
       console.log('Receipt API - Calling generateReceiptPDF...');
-      const pdfBytes = await generateReceiptPDF(mappedInvoice, businessSettings);
+      const pdfBytes = await generateReceiptPDF(mappedInvoice, mappedBusinessSettings);
       console.log('Receipt API - PDF generated successfully, size:', pdfBytes.length);
       
       if (!pdfBytes || pdfBytes.length === 0) {

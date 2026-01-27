@@ -10,11 +10,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Fetch invoices with client data
+    // Fetch invoices with client data and snapshot fields
+    // CRITICAL: Include snapshot fields so frontend can use original business/client data for sent invoices
     const { data: invoicesData, error: invoicesError } = await supabaseAdmin
       .from('invoices')
       .select(`
         *,
+        business_settings_snapshot,
+        client_data_snapshot,
         clients (
           id,
           name,
@@ -79,8 +82,37 @@ export async function GET(request: NextRequest) {
       const totalPaid = paymentsByInvoice[invoice.id] || 0;
       const remainingBalance = Math.max(0, invoice.total - totalPaid);
 
+      // CRITICAL: Use client snapshot if available (for sent invoices)
+      // This ensures the API returns original client data from when invoice was sent
+      let clientData = invoice.clients;
+      let clientName = invoice.clients?.name || '';
+      let clientEmail = invoice.clients?.email || '';
+      let clientCompany = invoice.clients?.company || '';
+      let clientPhone = invoice.clients?.phone || '';
+      let clientAddress = invoice.clients?.address || '';
+      
+      if (invoice.client_data_snapshot && invoice.status !== 'draft') {
+        // Use stored snapshot - invoice was already sent
+        clientData = {
+          id: invoice.clients?.id || invoice.client_id,
+          name: invoice.client_data_snapshot.name || invoice.clients?.name || '',
+          email: invoice.client_data_snapshot.email || invoice.clients?.email || '',
+          company: invoice.client_data_snapshot.company || invoice.clients?.company || '',
+          phone: invoice.client_data_snapshot.phone || invoice.clients?.phone || '',
+          address: invoice.client_data_snapshot.address || invoice.clients?.address || ''
+        };
+        clientName = invoice.client_data_snapshot.name || '';
+        clientEmail = invoice.client_data_snapshot.email || '';
+        clientCompany = invoice.client_data_snapshot.company || '';
+        clientPhone = invoice.client_data_snapshot.phone || '';
+        clientAddress = invoice.client_data_snapshot.address || '';
+      }
+
       return {
         ...invoice,
+        // CRITICAL: Include snapshot fields for frontend use
+        business_settings_snapshot: invoice.business_settings_snapshot,
+        client_data_snapshot: invoice.client_data_snapshot,
         // Map database fields to frontend interface
         invoiceNumber: invoice.invoice_number,
         issueDate: invoice.issue_date,
@@ -88,13 +120,13 @@ export async function GET(request: NextRequest) {
         createdAt: invoice.created_at,
         updatedAt: invoice.updated_at,
         clientId: invoice.client_id,
-        client: invoice.clients,
+        client: clientData, // Use snapshot client data if available
         // Map client fields to invoice level for easier access
-        clientName: invoice.clients?.name || '',
-        clientEmail: invoice.clients?.email || '',
-        clientCompany: invoice.clients?.company || '',
-        clientPhone: invoice.clients?.phone || '',
-        clientAddress: invoice.clients?.address || '',
+        clientName: clientName,
+        clientEmail: clientEmail,
+        clientCompany: clientCompany,
+        clientPhone: clientPhone,
+        clientAddress: clientAddress,
         discount: invoice.discount || 0,
         items: itemsData.map(item => ({
           id: item.id,

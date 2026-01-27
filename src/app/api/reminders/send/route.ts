@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get invoice details with reminder settings and late fees settings
+    // CRITICAL: Include snapshot fields - reminders must use original business/client data
     const { data: invoice, error: invoiceError } = await supabaseAdmin
       .from('invoices')
       .select(`
@@ -40,6 +41,8 @@ export async function POST(request: NextRequest) {
         last_reminder_sent,
         reminder_settings,
         late_fees,
+        business_settings_snapshot,
+        client_data_snapshot,
         clients (
           name,
           email,
@@ -56,12 +59,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
     }
 
-    // Extract and validate client email
-    // Supabase returns clients as an object (not array) when using .single()
-    // Handle both array and object cases for type safety
-    const clients = Array.isArray(invoice.clients) ? invoice.clients[0] : invoice.clients;
-    const clientEmail = clients?.email;
-    const clientName = clients?.name || 'Valued Customer';
+    // CRITICAL: Use snapshot if available (for sent invoices), otherwise fetch current settings
+    // This ensures reminders use the original business/client details from when invoice was sent
+    let businessSettings: any = {};
+    let clientName = '';
+    let clientEmail = '';
+
+    if (invoice.business_settings_snapshot && invoice.client_data_snapshot) {
+      // Use stored snapshots - invoice was already sent
+      businessSettings = invoice.business_settings_snapshot;
+      clientName = invoice.client_data_snapshot.name || '';
+      clientEmail = invoice.client_data_snapshot.email || '';
+    } else {
+      // No snapshots - fetch current settings (for draft invoices or legacy invoices)
+      const { data: userSettings, error: settingsError } = await supabaseAdmin
+        .from('user_settings')
+        .select('business_name, business_email, business_phone, business_address, website, payment_notes, paypal_email, cashapp_id, venmo_id, google_pay_upi, apple_pay_id, bank_account, bank_ifsc_swift, bank_iban, stripe_account')
+        .eq('user_id', invoice.user_id)
+        .single();
+
+      if (settingsError) {
+        console.error('Error fetching user settings:', settingsError);
+      }
+
+      businessSettings = userSettings || {};
+      
+      // Get client details from relationship
+      const clients = Array.isArray(invoice.clients) ? invoice.clients[0] : invoice.clients;
+      clientName = clients?.name || 'Valued Customer';
+      clientEmail = clients?.email || '';
+    }
     
     if (!clientEmail || typeof clientEmail !== 'string') {
       return NextResponse.json({ 
@@ -211,38 +238,6 @@ export async function POST(request: NextRequest) {
       emailMatch: userEmail === recipientEmail
     });
 
-    // Get ALL user business settings from user_settings table (properly isolated per user)
-    const { data: userSettings, error: settingsError } = await supabaseAdmin
-      .from('user_settings')
-      .select('business_name, business_email, business_phone, business_address, website, payment_notes, paypal_email, cashapp_id, venmo_id, google_pay_upi, apple_pay_id, bank_account, bank_ifsc_swift, bank_iban, stripe_account')
-      .eq('user_id', invoice.user_id)
-      .single();
-
-    if (settingsError) {
-      console.error('Error fetching user settings:', settingsError);
-    }
-
-    // Use Resend free plan default email address
-    const fromAddress = `${userSettings?.business_name || 'FlowInvoicer'} <onboarding@resend.dev>`;
-
-    // Use userSettings as businessSettings (all business details are in user_settings table)
-    const businessSettings: {
-      business_name?: string;
-      business_email?: string;
-      business_phone?: string;
-      business_address?: string;
-      website?: string;
-      payment_notes?: string;
-      paypal_email?: string;
-      cashapp_id?: string;
-      venmo_id?: string;
-      google_pay_upi?: string;
-      apple_pay_id?: string;
-      bank_account?: string;
-      bank_ifsc_swift?: string;
-      bank_iban?: string;
-      stripe_account?: string;
-    } = userSettings || {};
 
     // Fetch partial payments to calculate remaining balance for late fee calculations
     // IMPORTANT: For "sent" invoices, do NOT use partial payments - use original total
@@ -379,6 +374,12 @@ export async function POST(request: NextRequest) {
     // Use plain email address (Resend prefers this for free plan)
     // We'll pass just the email string, not "Name <email>" format
     const formattedEmail = cleanEmail;
+
+    // Determine from address: use email_from_address if available, otherwise use default
+    // email_from_address is a verified domain email (e.g., noreply@yourdomain.com)
+    // If not set, use Resend free plan default (only works for test emails to own email)
+    const fromEmail = businessSettings.email_from_address || 'onboarding@resend.dev';
+    const fromAddress = `${businessSettings.business_name || businessSettings.businessName || 'FlowInvoicer'} <${fromEmail}>`;
 
     // Send email using Resend with the new template
     const emailResult = await resend.emails.send({

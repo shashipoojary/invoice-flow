@@ -60,12 +60,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Business settings not found' }, { status: 404 });
     }
 
-    // Update estimate status to 'sent'
+    // CRITICAL: Store snapshots of business settings and client data when sending
+    // This ensures that updates to business/client details don't affect already sent estimates
+    const clientSnapshot = {
+      name: estimate.clients.name || '',
+      email: estimate.clients.email || '',
+      company: estimate.clients.company || null,
+      phone: estimate.clients.phone || null,
+      address: estimate.clients.address || null
+    };
+
+    const businessSnapshot = {
+      business_name: settings.business_name || '',
+      business_email: settings.business_email || '',
+      business_phone: settings.business_phone || '',
+      business_address: settings.business_address || '',
+      website: settings.website || '',
+      logo: settings.logo || settings.logo_url || '',
+      paypal_email: settings.paypal_email || '',
+      cashapp_id: settings.cashapp_id || '',
+      venmo_id: settings.venmo_id || '',
+      google_pay_upi: settings.google_pay_upi || '',
+      apple_pay_id: settings.apple_pay_id || '',
+      bank_account: settings.bank_account || '',
+      bank_ifsc_swift: settings.bank_ifsc_swift || '',
+      bank_iban: settings.bank_iban || '',
+      stripe_account: settings.stripe_account || '',
+      payment_notes: settings.payment_notes || ''
+    };
+
+    // Update estimate status to 'sent' and store snapshots
     const { error: updateError } = await supabaseAdmin
       .from('estimates')
       .update({ 
         status: 'sent',
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        business_settings_snapshot: businessSnapshot,
+        client_data_snapshot: clientSnapshot
       })
       .eq('id', estimateId);
 

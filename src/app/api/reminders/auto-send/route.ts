@@ -62,6 +62,7 @@ async function processReminders(request: NextRequest) {
     // Data isolation: Each reminder is linked to an invoice via invoice_id
     // Each invoice has user_id, ensuring proper isolation when fetching user settings
     // CRITICAL: Exclude draft and paid invoices - they should never have reminders sent
+    // CRITICAL: Include snapshot fields - reminders must use original business/client data
     const { data: scheduledReminders, error: remindersError } = await supabaseAdmin
       .from('invoice_reminders')
       .select(`
@@ -77,6 +78,8 @@ async function processReminders(request: NextRequest) {
           user_id,
           reminder_count,
           last_reminder_sent,
+          business_settings_snapshot,
+          client_data_snapshot,
           clients (
             name,
             email,
@@ -418,8 +421,21 @@ async function sendReminderEmail(invoice: any, reminderType: string, overdueDays
     throw new Error('Resend client not initialized - RESEND_API_KEY missing');
   }
   
-  // Validate client email
-  const clientEmail = invoice.clients?.email;
+  // CRITICAL: Use snapshot if available (for sent invoices), otherwise use relationship
+  // This ensures reminders use the original business/client details from when invoice was sent
+  let clientEmail = '';
+  let clientName = '';
+  
+  if (invoice.client_data_snapshot) {
+    // Use stored snapshot - invoice was already sent
+    clientEmail = invoice.client_data_snapshot.email || '';
+    clientName = invoice.client_data_snapshot.name || 'Valued Customer';
+  } else {
+    // No snapshot - use relationship (for draft invoices or legacy invoices)
+    clientEmail = invoice.clients?.email || '';
+    clientName = invoice.clients?.name || 'Valued Customer';
+  }
+
   if (!clientEmail || typeof clientEmail !== 'string') {
     throw new Error('Client email is required and must be valid');
   }
@@ -458,7 +474,6 @@ async function sendReminderEmail(invoice: any, reminderType: string, overdueDays
   });
 
   // Sanitize inputs for display
-  const clientName = invoice.clients?.name || 'Valued Customer';
   const invoiceNumber = invoice.invoice_number || 'N/A';
   const invoiceTotal = typeof invoice.total === 'number' ? invoice.total.toFixed(2) : '0.00';
   const dueDate = invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A';
@@ -526,30 +541,47 @@ async function sendReminderEmail(invoice: any, reminderType: string, overdueDays
     }
   }
   
-  // Get ALL user business settings from user_settings table (properly isolated per user)
-  // This ensures complete data isolation - each user only gets their own settings
+  // CRITICAL: Use snapshot if available (for sent invoices), otherwise fetch current settings
+  // This ensures reminders use the original business/client details from when invoice was sent
   let businessSettings: any = {};
-  try {
-    const { data: userSettings, error: settingsError } = await supabaseAdmin
-      .from('user_settings')
-      .select('business_name, business_email, business_phone, business_address, website, logo, logo_url, email_from_address, payment_notes, paypal_email, cashapp_id, venmo_id, google_pay_upi, apple_pay_id, bank_account, bank_ifsc_swift, bank_iban, stripe_account')
-      .eq('user_id', invoice.user_id) // CRITICAL: Proper data isolation - only fetch settings for this specific user
-      .single();
-    
-    if (settingsError) {
-      console.error('Error fetching user settings:', settingsError);
-      // Fall back to defaults if settings not found
-      businessSettings = {
-        business_name: 'FlowInvoicer',
-        business_email: '',
-        business_phone: '',
-        logo: null,
-        email_from_address: null
-      };
-    } else if (userSettings) {
-      businessSettings = userSettings;
-    } else {
-      // No settings found, use defaults
+  
+  if (invoice.business_settings_snapshot) {
+    // Use stored snapshot - invoice was already sent
+    businessSettings = invoice.business_settings_snapshot;
+  } else {
+    // No snapshot - fetch current settings (for draft invoices or legacy invoices)
+    try {
+      const { data: userSettings, error: settingsError } = await supabaseAdmin
+        .from('user_settings')
+        .select('business_name, business_email, business_phone, business_address, website, logo, logo_url, email_from_address, payment_notes, paypal_email, cashapp_id, venmo_id, google_pay_upi, apple_pay_id, bank_account, bank_ifsc_swift, bank_iban, stripe_account')
+        .eq('user_id', invoice.user_id) // CRITICAL: Proper data isolation - only fetch settings for this specific user
+        .single();
+      
+      if (settingsError) {
+        console.error('Error fetching user settings:', settingsError);
+        // Fall back to defaults if settings not found
+        businessSettings = {
+          business_name: 'FlowInvoicer',
+          business_email: '',
+          business_phone: '',
+          logo: null,
+          email_from_address: null
+        };
+      } else if (userSettings) {
+        businessSettings = userSettings;
+      } else {
+        // No settings found, use defaults
+        businessSettings = {
+          business_name: 'FlowInvoicer',
+          business_email: '',
+          business_phone: '',
+          logo: null,
+          email_from_address: null
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching user settings:', error);
+      // Fall back to defaults on error
       businessSettings = {
         business_name: 'FlowInvoicer',
         business_email: '',
@@ -558,16 +590,6 @@ async function sendReminderEmail(invoice: any, reminderType: string, overdueDays
         email_from_address: null
       };
     }
-  } catch (error) {
-    console.error('Error fetching user settings:', error);
-    // Fall back to defaults on error
-    businessSettings = {
-      business_name: 'FlowInvoicer',
-      business_email: '',
-      business_phone: '',
-      logo: null,
-      email_from_address: null
-    };
   }
   
   // Determine from address: use email_from_address if available, otherwise use default

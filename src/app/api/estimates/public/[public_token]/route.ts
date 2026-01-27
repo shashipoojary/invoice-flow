@@ -20,10 +20,13 @@ export async function GET(
     console.log('Public Estimate API - Decoded token:', decodedToken)
 
     // Fetch estimate by public token (no authentication required)
+    // CRITICAL: Include snapshot fields - public pages must use original business/client data
     let { data: estimate, error } = await supabaseAdmin
       .from('estimates')
       .select(`
         *,
+        business_settings_snapshot,
+        client_data_snapshot,
         clients (
           name,
           email,
@@ -41,6 +44,8 @@ export async function GET(
         .from('estimates')
         .select(`
           *,
+          business_settings_snapshot,
+          client_data_snapshot,
           clients (
             name,
             email,
@@ -63,6 +68,8 @@ export async function GET(
         .from('estimates')
         .select(`
           *,
+          business_settings_snapshot,
+          client_data_snapshot,
           clients (
             name,
             email,
@@ -93,15 +100,44 @@ export async function GET(
       console.error('Error fetching estimate items:', itemsError)
     }
 
-    // Fetch user settings for business details
-    const { data: settingsData, error: settingsError } = await supabaseAdmin
-      .from('user_settings')
-      .select('*')
-      .eq('user_id', estimate.user_id)
-      .single()
+    // CRITICAL: Use snapshot if available (for sent estimates), otherwise fetch current settings
+    // This ensures public pages use the original business/client details from when estimate was sent
+    let businessSettings: any = {};
+    let clientName = '';
+    let clientEmail = '';
+    let clientCompany = '';
+    let clientPhone = '';
+    let clientAddress = '';
+    
+    if (estimate.business_settings_snapshot && estimate.client_data_snapshot) {
+      // Use stored snapshots - estimate was already sent
+      businessSettings = estimate.business_settings_snapshot;
+      clientName = estimate.client_data_snapshot.name || '';
+      clientEmail = estimate.client_data_snapshot.email || '';
+      clientCompany = estimate.client_data_snapshot.company || '';
+      clientPhone = estimate.client_data_snapshot.phone || '';
+      clientAddress = estimate.client_data_snapshot.address || '';
+    } else {
+      // No snapshot - fetch current settings (for draft estimates or legacy estimates)
+      const { data: settingsData, error: settingsError } = await supabaseAdmin
+        .from('user_settings')
+        .select('*')
+        .eq('user_id', estimate.user_id)
+        .single()
 
-    if (settingsError) {
-      console.error('Error fetching user settings:', settingsError)
+      if (settingsError) {
+        console.error('Error fetching user settings:', settingsError)
+      }
+      
+      businessSettings = settingsData || {};
+      
+      // Get client details from relationship
+      const clients = Array.isArray(estimate.clients) ? estimate.clients[0] : estimate.clients;
+      clientName = clients?.name || '';
+      clientEmail = clients?.email || '';
+      clientCompany = clients?.company || '';
+      clientPhone = clients?.phone || '';
+      clientAddress = clients?.address || '';
     }
 
     // Check if estimate is expired and update status if needed
@@ -144,11 +180,11 @@ export async function GET(
         estimateNumber: estimate.estimate_number,
         issueDate: estimate.issue_date,
         expiryDate: estimate.expiry_date,
-        clientName: estimate.clients?.name || 'N/A',
-        clientEmail: estimate.clients?.email || 'N/A',
-        clientCompany: estimate.clients?.company,
-        clientPhone: estimate.clients?.phone,
-        clientAddress: estimate.clients?.address,
+        clientName: clientName || 'N/A',
+        clientEmail: clientEmail || 'N/A',
+        clientCompany: clientCompany,
+        clientPhone: clientPhone,
+        clientAddress: clientAddress,
         items: (itemsData || []).map(item => ({
           id: item.id,
           description: item.description,
@@ -187,38 +223,22 @@ export async function GET(
           }
           return estimate.payment_terms;
         })(),
-        freelancerSettings: settingsData ? {
-          businessName: settingsData.business_name || 'Your Business',
-          logo: settingsData.logo || '',
-          address: settingsData.business_address || '',
-          email: settingsData.business_email || '',
-          phone: settingsData.business_phone || '',
-          paypalEmail: settingsData.paypal_email || '',
-          cashappId: settingsData.cashapp_id || '',
-          venmoId: settingsData.venmo_id || '',
-          googlePayUpi: settingsData.google_pay_upi || '',
-          applePayId: settingsData.apple_pay_id || '',
-          bankAccount: settingsData.bank_account || '',
-          bankIfscSwift: settingsData.bank_ifsc_swift || '',
-          bankIban: settingsData.bank_iban || '',
-          stripeAccount: settingsData.stripe_account || '',
-          paymentNotes: settingsData.payment_notes || ''
-        } : {
-          businessName: 'Your Business',
-          logo: '',
-          address: '',
-          email: '',
-          phone: '',
-          paypalEmail: '',
-          cashappId: '',
-          venmoId: '',
-          googlePayUpi: '',
-          applePayId: '',
-          bankAccount: '',
-          bankIfscSwift: '',
-          bankIban: '',
-          stripeAccount: '',
-          paymentNotes: ''
+        freelancerSettings: {
+          businessName: businessSettings.business_name || 'Your Business',
+          logo: businessSettings.logo || businessSettings.logo_url || '',
+          address: businessSettings.business_address || '',
+          email: businessSettings.business_email || '',
+          phone: businessSettings.business_phone || '',
+          paypalEmail: businessSettings.paypal_email || '',
+          cashappId: businessSettings.cashapp_id || '',
+          venmoId: businessSettings.venmo_id || '',
+          googlePayUpi: businessSettings.google_pay_upi || '',
+          applePayId: businessSettings.apple_pay_id || '',
+          bankAccount: businessSettings.bank_account || '',
+          bankIfscSwift: businessSettings.bank_ifsc_swift || '',
+          bankIban: businessSettings.bank_iban || '',
+          stripeAccount: businessSettings.stripe_account || '',
+          paymentNotes: businessSettings.payment_notes || ''
         }
       }
     })

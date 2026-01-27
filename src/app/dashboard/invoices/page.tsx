@@ -867,24 +867,71 @@ function InvoicesContent(): React.JSX.Element {
         throw new Error('ITEMS_MISSING');
       }
       
-      // Prepare business settings for PDF
-      const businessSettings = {
-        businessName: settings.businessName || 'Your Business Name',
-        businessEmail: settings.businessEmail || 'your-email@example.com',
-        businessPhone: settings.businessPhone || '',
-        address: settings.address || '',
-        logo: settings.logo || '',
-        paypalEmail: settings.paypalEmail || '',
-        cashappId: settings.cashappId || '',
-        venmoId: settings.venmoId || '',
-        googlePayUpi: settings.googlePayUpi || '',
-        applePayId: settings.applePayId || '',
-        bankAccount: settings.bankAccount || '',
-        bankIfscSwift: settings.bankIfscSwift || '',
-        bankIban: settings.bankIban || '',
-        stripeAccount: settings.stripeAccount || '',
-        paymentNotes: settings.paymentNotes || ''
-      };
+      // CRITICAL: Use snapshot business settings and client data if available (for sent invoices)
+      // This ensures PDF downloads use original business/client details from when invoice was sent
+      const isDraft = completeInvoice.status === 'draft';
+      let businessSettings: any = {};
+      let clientData: any = null;
+      
+      if (completeInvoice.business_settings_snapshot && completeInvoice.client_data_snapshot && !isDraft) {
+        // Use stored snapshots - invoice was already sent
+        const snapshot = completeInvoice.business_settings_snapshot;
+        const clientSnapshot = completeInvoice.client_data_snapshot;
+        
+        businessSettings = {
+          businessName: snapshot.business_name || 'Your Business Name',
+          businessEmail: snapshot.business_email || 'your-email@example.com',
+          businessPhone: snapshot.business_phone || '',
+          address: snapshot.business_address || '',
+          logo: snapshot.logo || snapshot.logo_url || '',
+          paypalEmail: snapshot.paypal_email || '',
+          cashappId: snapshot.cashapp_id || '',
+          venmoId: snapshot.venmo_id || '',
+          googlePayUpi: snapshot.google_pay_upi || '',
+          applePayId: snapshot.apple_pay_id || '',
+          bankAccount: snapshot.bank_account || '',
+          bankIfscSwift: snapshot.bank_ifsc_swift || '',
+          bankIban: snapshot.bank_iban || '',
+          stripeAccount: snapshot.stripe_account || '',
+          paymentNotes: snapshot.payment_notes || ''
+        };
+        
+        // Use client snapshot
+        clientData = {
+          name: clientSnapshot.name || '',
+          email: clientSnapshot.email || '',
+          company: clientSnapshot.company || '',
+          phone: clientSnapshot.phone || '',
+          address: clientSnapshot.address || ''
+        };
+      } else {
+        // No snapshot - use current settings (for draft invoices or legacy invoices)
+        businessSettings = {
+          businessName: settings.businessName || 'Your Business Name',
+          businessEmail: settings.businessEmail || 'your-email@example.com',
+          businessPhone: settings.businessPhone || '',
+          address: settings.address || '',
+          logo: settings.logo || '',
+          paypalEmail: settings.paypalEmail || '',
+          cashappId: settings.cashappId || '',
+          venmoId: settings.venmoId || '',
+          googlePayUpi: settings.googlePayUpi || '',
+          applePayId: settings.applePayId || '',
+          bankAccount: settings.bankAccount || '',
+          bankIfscSwift: settings.bankIfscSwift || '',
+          bankIban: settings.bankIban || '',
+          stripeAccount: settings.stripeAccount || '',
+          paymentNotes: settings.paymentNotes || ''
+        };
+        
+        // Use current client data
+        clientData = completeInvoice.client;
+      }
+      
+      // Override invoice client data with snapshot if available
+      if (clientData) {
+        completeInvoice.client = clientData;
+      }
 
       const { generateTemplatePDFBlob } = await import('@/lib/template-pdf-generator');
       
@@ -2786,8 +2833,59 @@ function InvoicesContent(): React.JSX.Element {
         // For sent/paid invoices, use the stored client data (as it was when sent)
         const isDraft = selectedInvoice.status === 'draft';
         const clientId = selectedInvoice.clientId || selectedInvoice.client_id;
-        const latestClient = isDraft && clientId ? clients.find(c => c.id === clientId) : null;
-        const displayClient = latestClient || selectedInvoice.client || null;
+        
+        // CRITICAL: Use client snapshot if available (for sent invoices)
+        let displayClient: any = null;
+        const clientSnapshot = (selectedInvoice as any).client_data_snapshot;
+        const hasClientSnapshot = clientSnapshot && typeof clientSnapshot === 'object' && Object.keys(clientSnapshot).length > 0;
+        
+        // Use snapshot for all non-draft invoices (sent, paid, pending, overdue)
+        if (hasClientSnapshot && !isDraft) {
+          // Use stored snapshot - invoice was already sent
+          displayClient = {
+            name: clientSnapshot.name || '',
+            email: clientSnapshot.email || '',
+            company: clientSnapshot.company || '',
+            phone: clientSnapshot.phone || '',
+            address: clientSnapshot.address || ''
+          };
+        } else {
+          // No snapshot - use current client data (for draft invoices or legacy invoices without snapshots)
+          const latestClient = isDraft && clientId ? clients.find(c => c.id === clientId) : null;
+          displayClient = latestClient || selectedInvoice.client || null;
+        }
+        
+        // CRITICAL: Use snapshot business settings if available (for sent invoices)
+        // This ensures invoice details view shows original business details from when invoice was sent
+        let businessSettings: any = {};
+        const invoiceSnapshot = (selectedInvoice as any).business_settings_snapshot;
+        const hasSnapshot = invoiceSnapshot && typeof invoiceSnapshot === 'object' && Object.keys(invoiceSnapshot).length > 0;
+        
+        // Use snapshot for all non-draft invoices (sent, paid, pending, overdue)
+        if (hasSnapshot && !isDraft) {
+          // Use stored snapshot - invoice was already sent
+          const snapshot = invoiceSnapshot;
+          businessSettings = {
+            businessName: snapshot.business_name || 'Your Business Name',
+            businessEmail: snapshot.business_email || '',
+            businessPhone: snapshot.business_phone || '',
+            address: snapshot.business_address || '',
+            logo: snapshot.logo || snapshot.logo_url || '',
+            paypalEmail: snapshot.paypal_email || '',
+            cashappId: snapshot.cashapp_id || '',
+            venmoId: snapshot.venmo_id || '',
+            googlePayUpi: snapshot.google_pay_upi || '',
+            applePayId: snapshot.apple_pay_id || '',
+            bankAccount: snapshot.bank_account || '',
+            bankIfscSwift: snapshot.bank_ifsc_swift || '',
+            bankIban: snapshot.bank_iban || '',
+            stripeAccount: snapshot.stripe_account || '',
+            paymentNotes: snapshot.payment_notes || ''
+          };
+        } else {
+          // No snapshot - use current settings (for draft invoices or legacy invoices without snapshots)
+          businessSettings = settings;
+        }
         
         return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">
@@ -2964,12 +3062,12 @@ function InvoicesContent(): React.JSX.Element {
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 sm:p-6 border-b border-gray-200">
                 <div className="w-full sm:w-auto mb-3 sm:mb-0">
                   <h2 className="text-lg sm:text-2xl font-bold mb-1 text-gray-900">
-                    {settings.businessName || 'Your Business Name'}
+                    {businessSettings.businessName || businessSettings.business_name || 'Your Business Name'}
                   </h2>
                   <div className="text-xs sm:text-sm space-y-1 text-gray-600">
-                    {settings.address && <p>{settings.address}</p>}
-                    {settings.businessEmail && <p>{settings.businessEmail}</p>}
-                    {settings.businessPhone && <p>{settings.businessPhone}</p>}
+                    {(businessSettings.address || businessSettings.business_address) && <p>{businessSettings.address || businessSettings.business_address}</p>}
+                    {(businessSettings.businessEmail || businessSettings.business_email) && <p>{businessSettings.businessEmail || businessSettings.business_email}</p>}
+                    {(businessSettings.businessPhone || businessSettings.business_phone) && <p>{businessSettings.businessPhone || businessSettings.business_phone}</p>}
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -3082,9 +3180,9 @@ function InvoicesContent(): React.JSX.Element {
                       <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs sm:text-sm font-medium">Total</th>
                     </tr>
                   </thead>
-                  <tbody className={`divide-y ${'divide-gray-200'}`}>
+                  <tbody>
                     {selectedInvoice.items?.map((item, index) => (
-                      <tr key={item.id || index} className={'hover:bg-gray-50'}>
+                      <tr key={item.id || index} className={'hover:bg-gray-50 border-t border-gray-200'}>
                         <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-900'}`}>
                           {item.description || 'Service'}
                         </td>
@@ -3097,24 +3195,13 @@ function InvoicesContent(): React.JSX.Element {
                         </td>
                       </tr>
                     )) || (
-                      <tr>
+                      <tr className="border-t border-gray-200">
                         <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-900'}`}>Service</td>
                         <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-600'}`}>1</td>
                         <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right ${'text-gray-900'}`}>$0.00</td>
                         <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium ${'text-gray-900'}`}>$0.00</td>
                       </tr>
                     )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Totals */}
-              <div className="p-3 sm:p-6">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-                  <div className="w-full sm:w-auto">
-                    <p className={`text-xs sm:text-sm ${'text-gray-700'}`}>Thank you for your business!</p>
-                  </div>
-                  <div className="w-full sm:w-64">
                     {(() => {
                       const paymentData = paymentDataMap[selectedInvoice.id] || null;
                       const dueCharges = calculateDueCharges(selectedInvoice, paymentData);
@@ -3141,29 +3228,63 @@ function InvoicesContent(): React.JSX.Element {
                       const hasPartialPayments = !isPaid && !hasWriteOff && actualTotalPaid > 0 && actualRemainingBalance > 0;
                       // Determine if it's a partial payment (has both paid and remaining)
                       const isPartialPayment = hasPartialPayments;
+                      
+                      // Determine status for color coding
+                      const dueDateStatus = getDueDateStatus(
+                        selectedInvoice.dueDate || '', 
+                        selectedInvoice.status, 
+                        selectedInvoice.paymentTerms,
+                        (selectedInvoice as any).updatedAt
+                      );
+                      
+                      // Determine status color for Total row
+                      let totalStatusColor = 'text-gray-900'; // Default
+                      if (isPaid || hasWriteOff) {
+                        totalStatusColor = 'text-emerald-700'; // Paid - green
+                      } else if (hasPartialPayments) {
+                        totalStatusColor = 'text-blue-600'; // Partial paid - blue
+                      } else if (dueDateStatus.status === 'overdue') {
+                        totalStatusColor = 'text-red-700'; // Overdue - red
+                      } else if (selectedInvoice.status === 'pending' || selectedInvoice.status === 'sent' || dueDateStatus.status === 'due-today') {
+                        totalStatusColor = 'text-amber-700'; // Pending/Sent/Due Today - amber/orange
+                      }
+                      
                       return (
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-xs sm:text-sm">
-                            <span className="text-gray-700">Subtotal:</span>
-                            <span className="text-gray-900">${(selectedInvoice.subtotal || 0).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between text-xs sm:text-sm">
-                            <span className="text-gray-700">Discount:</span>
-                            <span className="text-gray-900">${(selectedInvoice.discount || 0).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between text-xs sm:text-sm">
-                            <span className="text-gray-700">Tax ({(selectedInvoice.taxRate || 0) * 100}%):</span>
-                            <span className="text-gray-900">${(selectedInvoice.taxAmount || 0).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between text-xs sm:text-sm border-t pt-1 border-gray-200">
-                            <span className="text-gray-700">Total:</span>
-                            <span className="text-gray-900">${(selectedInvoice.total || 0).toFixed(2)}</span>
-                          </div>
+                        <>
+                          <tr>
+                            <td colSpan={4} className="px-2 sm:px-4 pt-2" style={{ borderTop: '1px solid #e5e7eb' }}></td>
+                          </tr>
+                          <tr>
+                            <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
+                            <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
+                            <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Subtotal:</td>
+                            <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>${(selectedInvoice.subtotal || 0).toFixed(2)}</td>
+                          </tr>
+                          <tr>
+                            <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
+                            <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
+                            <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Discount:</td>
+                            <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>${(selectedInvoice.discount || 0).toFixed(2)}</td>
+                          </tr>
+                          <tr>
+                            <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
+                            <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
+                            <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Tax ({(selectedInvoice.taxRate || 0) * 100}%):</td>
+                            <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>${(selectedInvoice.taxAmount || 0).toFixed(2)}</td>
+                          </tr>
+                          <tr>
+                            <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm border-t border-gray-200 pt-2 ${totalStatusColor}`}></td>
+                            <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm border-t border-gray-200 pt-2 ${totalStatusColor}`}></td>
+                            <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>Total:</td>
+                            <td className={`px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>${(selectedInvoice.total || 0).toFixed(2)}</td>
+                          </tr>
                           {hasWriteOff ? (
-                            <div className="flex justify-between text-xs sm:text-sm">
-                              <span className="text-slate-700">Write-off Amount:</span>
-                              <span className="text-slate-700 font-semibold">-${(selectedInvoice.writeOffAmount || 0).toFixed(2)}</span>
-                            </div>
+                            <tr>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700" style={{ borderTop: 'none' }}></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700" style={{ borderTop: 'none' }}></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 text-right" style={{ borderTop: 'none' }}>Write-off Amount:</td>
+                              <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 font-semibold text-right" style={{ borderTop: 'none' }}>-${(selectedInvoice.writeOffAmount || 0).toFixed(2)}</td>
+                            </tr>
                           ) : null}
                           {/* Only show Total Paid/Partial Paid for NON-PAID invoices with partial payments - NEVER show for paid invoices */}
                           {(() => {
@@ -3174,54 +3295,61 @@ function InvoicesContent(): React.JSX.Element {
                             // Only show for non-paid invoices with actual payments
                             if (!hasWriteOff && actualTotalPaid > 0) {
                               return (
-                                <div className="flex justify-between text-xs sm:text-sm no-underline-invoice-amount" style={{ textDecoration: 'none', borderBottom: 'none' }}>
-                                  <span 
-                                    className={isPartialPayment ? "text-blue-600" : "text-emerald-700"} 
-                                    style={{ textDecoration: 'none', borderBottom: 'none', textDecorationLine: 'none', textDecorationColor: 'transparent' }}
-                                    spellCheck="false"
-                                  >
+                                <tr>
+                                  <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}></td>
+                                  <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}></td>
+                                  <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm text-right no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}>
                                     {isPartialPayment ? "Partial Paid:" : "Total Paid:"}
-                                  </span>
-                                  <span 
-                                    className={isPartialPayment ? "text-blue-600 font-semibold" : "text-emerald-700 font-semibold"} 
-                                    style={{ textDecoration: 'none', borderBottom: 'none', textDecorationLine: 'none', textDecorationColor: 'transparent' }}
-                                    spellCheck="false"
-                                  >
+                                  </td>
+                                  <td className={`px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}>
                                     ${actualTotalPaid.toFixed(2)}
-                                  </span>
-                                </div>
+                                  </td>
+                                </tr>
                               );
                             }
                             return null;
                           })()}
                           {hasPartialPayments ? (
-                            <div className="flex justify-between text-xs sm:text-sm">
-                              <span className="text-orange-700">Remaining Balance:</span>
-                              <span className="text-orange-700 font-semibold">${actualRemainingBalance.toFixed(2)}</span>
-                            </div>
+                            <tr>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 text-right" style={{ borderTop: 'none' }}>Remaining Balance:</td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 font-semibold text-right" style={{ borderTop: 'none' }}>${actualRemainingBalance.toFixed(2)}</td>
+                            </tr>
                           ) : null}
                           {dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 ? (
-                            <div className="flex justify-between text-xs sm:text-sm">
-                              <span className="text-red-700">Late Fees:</span>
-                              <span className="text-red-700 font-semibold">${dueCharges.lateFeeAmount.toFixed(2)}</span>
-                            </div>
+                            <tr>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 text-right" style={{ borderTop: 'none' }}>Late Fees:</td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 font-semibold text-right" style={{ borderTop: 'none' }}>${dueCharges.lateFeeAmount.toFixed(2)}</td>
+                            </tr>
                           ) : null}
                           {(dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0) ? (
-                            <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1 border-gray-200">
-                              <span className="text-red-900">Total Payable:</span>
-                              <span className="text-red-900">${dueCharges.totalPayable.toFixed(2)}</span>
-                            </div>
+                            <tr>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">Total Payable:</td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">${dueCharges.totalPayable.toFixed(2)}</td>
+                            </tr>
                           ) : isPaid ? (
-                            <div className="flex justify-between text-xs sm:text-sm font-bold border-t pt-1 border-gray-200">
-                              <span className="text-emerald-700" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}>Amount Paid:</span>
-                              <span className="text-emerald-700" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}>${actualTotalPaid.toFixed(2)}</span>
-                            </div>
+                            <tr>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}>Amount Paid:</td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}>${actualTotalPaid.toFixed(2)}</td>
+                            </tr>
                           ) : null}
-                        </div>
+                        </>
                       );
                     })()}
-                  </div>
-                </div>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Thank you message */}
+              <div className="p-3 sm:p-6">
+                <p className={`text-xs sm:text-sm ${'text-gray-700'}`}>Thank you for your business!</p>
               </div>
 
               {/* Notes */}
