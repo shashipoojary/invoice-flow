@@ -168,3 +168,5 @@ Detect transition start, schedule all work for after 320ms delay.
 ### Option 4: Use CSS-only Solution
 Remove JavaScript observers, use pure CSS for scroll position maintenance.
 
+
+

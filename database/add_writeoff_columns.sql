@@ -10,3 +10,5 @@ CREATE INDEX IF NOT EXISTS idx_invoices_write_off_amount
 ON public.invoices(write_off_amount) 
 WHERE write_off_amount > 0;
 
+
+

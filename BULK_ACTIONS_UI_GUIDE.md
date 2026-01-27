@@ -134,3 +134,5 @@ Once you have invoices selected, a **blue toolbar** will appear showing:
 7. All 3 invoices now show "Paid" status
 8. Click "Cancel" to clear selection
 
+
+

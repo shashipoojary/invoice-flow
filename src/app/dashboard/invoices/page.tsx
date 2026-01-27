@@ -2903,7 +2903,7 @@ function InvoicesContent(): React.JSX.Element {
                   setShowReminderDates(false);
                   setShowPaymentForm(false);
                 }}
-                className="p-1 sm:p-2 rounded-lg transition-colors hover:bg-gray-100 cursor-pointer"
+                className="p-1 sm:p-2 rounded-none transition-colors hover:bg-gray-100 cursor-pointer"
               >
                 <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
               </button>
@@ -3334,10 +3334,10 @@ function InvoicesContent(): React.JSX.Element {
                             </tr>
                           ) : isPaid ? (
                             <tr>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}>Amount Paid:</td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}>${actualTotalPaid.toFixed(2)}</td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">Amount Paid:</td>
+                              <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">${actualTotalPaid.toFixed(2)}</td>
                             </tr>
                           ) : null}
                         </>

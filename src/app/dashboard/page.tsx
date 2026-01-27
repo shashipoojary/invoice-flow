@@ -982,6 +982,54 @@ export default function DashboardOverview() {
     }
   }, []);
 
+  // Helper function to get notification icon and color
+  const getNotificationIcon = useCallback((type: string) => {
+    switch (type) {
+      case 'paid':
+        return <CheckCircle className="h-4 w-4 text-emerald-500" />;
+      case 'partial_paid':
+        return <DollarSign className="h-4 w-4 text-blue-500" />;
+      case 'sent':
+      case 'estimate_sent':
+        return <Send className="h-4 w-4 text-indigo-500" />;
+      case 'viewed':
+        return <Eye className="h-4 w-4 text-blue-500" />;
+      case 'downloaded':
+        return <Download className="h-4 w-4 text-purple-500" />;
+      case 'payment_copied':
+        return <Copy className="h-4 w-4 text-amber-500" />;
+      case 'overdue':
+        return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      case 'due_today':
+        return <Clock className="h-4 w-4 text-amber-500" />;
+      case 'draft_created':
+        return <FilePlus className="h-4 w-4 text-gray-500" />;
+      case 'reminder_scheduled':
+      case 'reminder_sent':
+        return <Bell className="h-4 w-4 text-orange-500" />;
+      case 'failed':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'cancelled':
+        return <XCircle className="h-4 w-4 text-gray-500" />;
+      case 'estimate_approved':
+        return <CheckCircle className="h-4 w-4 text-emerald-500" />;
+      case 'estimate_rejected':
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      case 'client_created':
+        return <FilePlus className="h-4 w-4 text-green-500" />;
+      case 'client_updated':
+        return <Edit className="h-4 w-4 text-blue-500" />;
+      case 'client_deleted':
+        return <Trash2 className="h-4 w-4 text-red-500" />;
+      case 'payment_received':
+        return <DollarSign className="h-4 w-4 text-emerald-500" />;
+      case 'writeoff_created':
+        return <Ban className="h-4 w-4 text-gray-500" />;
+      default:
+        return <Bell className="h-4 w-4 text-gray-500" />;
+    }
+  }, []);
+
   // Helper function to calculate due date status
   // Parse a YYYY-MM-DD or MM/DD/YYYY date string as a local date (no timezone shifts)
   const parseDateOnly = useCallback((input: string) => {
@@ -4093,6 +4141,19 @@ export default function DashboardOverview() {
     return date.toLocaleDateString();
   }, []);
 
+  // Helper function to get client name from snapshot if available (for sent invoices/estimates)
+  const getClientNameFromSnapshot = useCallback((invoice: Invoice | any, isDraft: boolean = false): string => {
+    // For non-draft invoices, use snapshot if available
+    if (!isDraft && invoice?.client_data_snapshot) {
+      const clientSnapshot = invoice.client_data_snapshot;
+      if (typeof clientSnapshot === 'object' && clientSnapshot.name) {
+        return clientSnapshot.name;
+      }
+    }
+    // Fallback to current client data
+    return invoice?.clientName || invoice?.client?.name || 'Unknown';
+  }, []);
+
   // Fetch and calculate notifications - only once when data is ready
   useEffect(() => {
     if (!user || !hasInitiallyLoaded || isLoadingInvoices) {
@@ -4184,7 +4245,8 @@ export default function DashboardOverview() {
               else timeAgo = eventDate.toLocaleDateString();
               
               const invoiceNumber = invoice.invoiceNumber || invoice.invoice_number || 'N/A';
-              const clientName = invoice.clientName || invoice.client?.name || 'Unknown';
+              const isDraft = invoice.status === 'draft';
+              const clientName = getClientNameFromSnapshot(invoice, isDraft);
               
               // Skip notifications for cancelled invoices (except cancellation notification itself)
               // Note: 'cancelled' is not in Invoice status type, but we check event type
@@ -4271,33 +4333,35 @@ export default function DashboardOverview() {
           const dueDate = parseFn(invoice.dueDate);
           const dueDateStart = new Date(Date.UTC(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate()));
           
-          // Due today
+          // Due today (invoices that are due today cannot be drafts - they must have been sent)
           if (dueDateStart.getTime() === todayStart.getTime()) {
+            // Use snapshot since invoice was already sent (not draft)
             notificationList.push({
               id: `due-today-${invoice.id}`,
               type: 'due_today',
               invoiceId: invoice.id,
               invoiceNumber: invoice.invoiceNumber || invoice.invoice_number || 'N/A',
-              clientName: invoice.clientName || invoice.client?.name || 'Unknown',
+              clientName: getClientNameFromSnapshot(invoice, false),
               message: `Invoice #${invoice.invoiceNumber || invoice.invoice_number || 'N/A'} is due today`,
               timestamp: 'Today',
               date: dueDateStart.toISOString() // Use actual due date for proper sorting
             });
           }
           
-          // Overdue
+          // Overdue (invoices that are overdue cannot be drafts - they must have been sent)
           if (dueDateStart < todayStart) {
             const diffTime = todayStart.getTime() - dueDateStart.getTime();
             const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
             // Use current time minus days overdue to sort: most recently overdue first
             // This ensures invoices that became overdue more recently appear at the top
             const sortDate = new Date(todayStart.getTime() - diffTime);
+            // Use snapshot since invoice was already sent (not draft)
             notificationList.push({
               id: `overdue-${invoice.id}`,
               type: 'overdue',
               invoiceId: invoice.id,
               invoiceNumber: invoice.invoiceNumber || invoice.invoice_number || 'N/A',
-              clientName: invoice.clientName || invoice.client?.name || 'Unknown',
+              clientName: getClientNameFromSnapshot(invoice, false),
               message: `Invoice #${invoice.invoiceNumber || invoice.invoice_number || 'N/A'} is ${diffDays} day${diffDays > 1 ? 's' : ''} overdue`,
               timestamp: `${diffDays} day${diffDays > 1 ? 's' : ''} ago`,
               date: sortDate.toISOString() // Sort by when it became overdue (most recent first)
@@ -4403,7 +4467,19 @@ export default function DashboardOverview() {
               else timeAgo = eventDate.toLocaleDateString();
               
               const estimateNumber = estimate.estimate_number || 'N/A';
-              const clientName = (estimate as any).clients?.name || 'Unknown';
+              // Use snapshot for estimate client name if available (for sent estimates)
+              const isDraft = estimate.status === 'draft';
+              let clientName = 'Unknown';
+              if (!isDraft && estimate.client_data_snapshot) {
+                const clientSnapshot = estimate.client_data_snapshot;
+                if (typeof clientSnapshot === 'object' && clientSnapshot.name) {
+                  clientName = clientSnapshot.name;
+                } else {
+                  clientName = (estimate as any).clients?.name || 'Unknown';
+                }
+              } else {
+                clientName = (estimate as any).clients?.name || 'Unknown';
+              }
               
               // Map estimate event types to notifications
               const estimateEventTypeMap: { [key: string]: { type: any; message: string } } = {
@@ -4459,12 +4535,13 @@ export default function DashboardOverview() {
               else if (diffDays < 7) timeAgo = `${diffDays}d ago`;
               else timeAgo = writeOffDate.toLocaleDateString();
               
+              // Writeoffs are only for sent invoices (not drafts), so use snapshot
               notificationList.push({
                 id: `writeoff-${invoice.id}`,
                 type: 'writeoff_created',
                 invoiceId: invoice.id,
                 invoiceNumber: invoice.invoiceNumber || invoice.invoice_number || 'N/A',
-                clientName: invoice.clientName || invoice.client?.name || 'Unknown',
+                clientName: getClientNameFromSnapshot(invoice, false),
                 message: `Invoice #${invoice.invoiceNumber || invoice.invoice_number || 'N/A'} written off`,
                 timestamp: timeAgo,
                 amount: invoice.writeOffAmount,
@@ -4547,22 +4624,47 @@ export default function DashboardOverview() {
           })()
         : new Set<string>();
       
-      // Only update readNotificationIds if there are new notifications that should be marked as read
-      // Don't reset the read state - preserve it
+      // Check when read state was last updated (to prevent overwriting recent user actions)
+      const readStateTimestamp = typeof window !== 'undefined' 
+        ? (() => {
+            try {
+              const timestamp = localStorage.getItem('readNotificationIdsTimestamp');
+              return timestamp ? parseInt(timestamp, 10) : 0;
+            } catch {
+              return 0;
+            }
+          })()
+        : 0;
+      
+      // CRITICAL FIX: Use deduplicatedList (not notificationList) to sync read state
+      // This ensures we're checking against the actual notifications that will be displayed
       setNotifications(deduplicatedList);
       
-      // Sync read state with stored values (but don't overwrite if user just marked as read)
-      // This ensures read state persists across refetches
-      if (storedReadIds.size > 0) {
-        const currentNotificationIds = new Set(notificationList.map(n => n.id));
+      // Sync read state with stored values AFTER setting notifications
+      // Only sync IDs that exist in the current notification list
+      // Don't overwrite if user recently marked notifications as read (within last 5 seconds)
+      const timeSinceLastMark = Date.now() - readStateTimestamp;
+      const shouldPreserveUserAction = timeSinceLastMark < 5000; // 5 seconds grace period
+      
+      if (storedReadIds.size > 0 && !shouldPreserveUserAction) {
+        const currentNotificationIds = new Set(deduplicatedList.map(n => n.id));
         const validStoredReadIds = new Set<string>([...storedReadIds].filter((id: string) => currentNotificationIds.has(id)));
+        
+        // Only update read state if there are valid stored IDs
         if (validStoredReadIds.size > 0) {
-          // Only update if there are valid read IDs to preserve
           setReadNotificationIds(prev => {
-            // Merge with existing read IDs, don't replace
+            // Merge with existing read IDs, prioritizing stored values
+            // But don't remove IDs that are in current state but not in stored (preserve user actions)
             const merged = new Set([...prev, ...validStoredReadIds]);
             return merged;
           });
+        }
+      } else if (shouldPreserveUserAction) {
+        // User recently marked as read - use stored state directly to preserve their action
+        const currentNotificationIds = new Set(deduplicatedList.map(n => n.id));
+        const validStoredReadIds = new Set<string>([...storedReadIds].filter((id: string) => currentNotificationIds.has(id)));
+        if (validStoredReadIds.size > 0) {
+          setReadNotificationIds(validStoredReadIds);
         }
       }
     };
@@ -4789,7 +4891,7 @@ export default function DashboardOverview() {
                   {/* Notification Dropdown - Clean Minimal */}
                   {showNotifications && (
                     <div 
-                      className="absolute right-0 top-full mt-2 w-80 sm:w-96 lg:w-[28rem] xl:w-[32rem] bg-white z-50 flex flex-col max-h-[32rem] overflow-hidden -mr-4 sm:-mr-5 lg:-mr-6 xl:-mr-8 border border-gray-200"
+                      className="absolute right-0 top-full mt-1 w-80 sm:w-96 lg:w-[28rem] xl:w-[32rem] bg-white z-50 flex flex-col max-h-[32rem] overflow-hidden -mr-4 sm:-mr-5 lg:-mr-6 xl:-mr-8 border border-gray-200"
                       style={{
                         willChange: 'transform',
                         contain: 'layout style paint',
@@ -4799,14 +4901,19 @@ export default function DashboardOverview() {
                       {/* Header */}
                       <div className="px-4 py-3 flex items-center justify-between flex-shrink-0 bg-white">
                         <h3 className="font-medium text-sm" style={{color: '#1f2937'}}>Notifications</h3>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-4 sm:gap-3">
                           {notifications.length > 0 && notifications.some(n => !readNotificationIds.has(n.id)) && (
                             <button
                               onClick={() => {
                                 const allIds = new Set(notifications.map(n => n.id));
+                                // CRITICAL FIX: Set state first, then save to localStorage
+                                // This ensures state is updated immediately
                                 setReadNotificationIds(allIds);
                                 if (typeof window !== 'undefined') {
+                                  // Save to localStorage immediately to persist across refetches
                                   localStorage.setItem('readNotificationIds', JSON.stringify([...allIds]));
+                                  // Also mark a timestamp to prevent sync from overwriting this action
+                                  localStorage.setItem('readNotificationIdsTimestamp', Date.now().toString());
                                 }
                               }}
                               className="text-xs font-normal"
@@ -4849,6 +4956,8 @@ export default function DashboardOverview() {
                                       setReadNotificationIds(newReadIds);
                                       if (typeof window !== 'undefined') {
                                         localStorage.setItem('readNotificationIds', JSON.stringify([...newReadIds]));
+                                        // Update timestamp to prevent sync from overwriting
+                                        localStorage.setItem('readNotificationIdsTimestamp', Date.now().toString());
                                       }
                                     }
                                     if (invoice) {
@@ -4864,6 +4973,10 @@ export default function DashboardOverview() {
                                     }
                                   }}
                                 >
+                                  {/* Icon */}
+                                  <div className="flex-shrink-0 mt-0.5">
+                                    {getNotificationIcon(notification.type)}
+                                  </div>
                                   {/* Content */}
                                   <div className="flex-1 min-w-0">
                                     <p className={`text-sm ${isRead ? 'font-normal' : 'font-medium'}`} style={{color: '#1f2937'}}>
@@ -5238,14 +5351,14 @@ export default function DashboardOverview() {
                         {/* Total Write-off */}
                         <button 
                           onClick={handleWriteOffInvoicesClick}
-                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 cursor-pointer bg-white border border-gray-200 hover:border-slate-500 h-full transition-colors"
+                          className="group relative p-3 sm:p-4 lg:p-5 transition-all duration-300 cursor-pointer bg-white border border-gray-200 hover:border-red-500 h-full transition-colors"
                         >
                   <div className="flex items-start justify-between h-full">
                     <div className="flex-1 min-w-0 pr-1.5 sm:pr-3 flex flex-col justify-between h-full">
                       <div className="space-y-1 sm:space-y-1.5">
                         <p className="text-xs sm:text-sm font-medium text-left truncate" style={{color: '#374151'}}>Total Write-off</p>
                         <div className="min-h-[40px] sm:min-h-[52px] lg:min-h-[56px] flex flex-col justify-start">
-                          <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-slate-600 text-left break-words" style={{ display: 'block' }}>
+                          <div className="font-heading text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-red-600 text-left break-words" style={{ display: 'block' }}>
                             {formatMoney(totalWriteOff)}
                           </div>
                           {/* Fixed height placeholder to match late fees line spacing - ensures alignment */}
@@ -5253,8 +5366,8 @@ export default function DashboardOverview() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-0.5 sm:space-x-1.5 justify-start leading-tight mt-auto">
-                          <XCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-slate-600 flex-shrink-0" />
-                          <span className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-slate-600 truncate">
+                          <XCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 lg:h-3.5 lg:w-3.5 text-red-600 flex-shrink-0" />
+                          <span className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-red-600 truncate">
                             Written off invoices
                           </span>
                         </div>
@@ -5632,7 +5745,7 @@ export default function DashboardOverview() {
                    setShowReminderDates(false);
                    setShowPaymentForm(false);
                  }}
-                 className="p-1 sm:p-2 transition-colors hover:bg-gray-100 cursor-pointer"
+                 className="p-1 sm:p-2 rounded-none transition-colors hover:bg-gray-100 cursor-pointer"
                >
                  <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
                </button>
@@ -6067,10 +6180,10 @@ export default function DashboardOverview() {
                              </tr>
                            ) : isPaid ? (
                              <tr>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}></td>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}></td>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}>Amount Paid:</td>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2" style={{ borderBottom: '2px solid #f97316', display: 'inline-block', paddingBottom: '1px' }}>${actualTotalPaid.toFixed(2)}</td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">Amount Paid:</td>
+                               <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">${actualTotalPaid.toFixed(2)}</td>
                              </tr>
                            ) : null}
                          </>

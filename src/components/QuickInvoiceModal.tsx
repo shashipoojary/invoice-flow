@@ -1533,21 +1533,6 @@ export default function QuickInvoiceModal({
       e.stopPropagation();
     }
     
-    // If premium unlocked, allow unlimited reminders
-    if (isPremiumUnlocked) {
-      const newRule: ReminderRule = {
-        id: Date.now().toString(),
-        type: 'before',
-        days: 1,
-        enabled: true
-      }
-      setReminders({
-        ...reminders,
-        rules: [...reminders.rules, newRule]
-      })
-      return
-    }
-    
     // Simple check: For free plan, only allow 4 reminder rules per invoice
     // Check if user is trying to add a 5th rule
     const currentRulesCount = reminders.rules.length;
@@ -1568,6 +1553,36 @@ export default function QuickInvoiceModal({
       } catch (error) {
         console.error('Error fetching subscription usage:', error);
       }
+    }
+    
+    // CRITICAL FIX: Monthly plan users have unlimited reminders - skip all checks
+    if (usageData && usageData.plan === 'monthly') {
+      const newRule: ReminderRule = {
+        id: Date.now().toString(),
+        type: 'before',
+        days: 1,
+        enabled: true
+      }
+      setReminders({
+        ...reminders,
+        rules: [...reminders.rules, newRule]
+      })
+      return
+    }
+    
+    // If premium unlocked, allow unlimited reminders
+    if (isPremiumUnlocked) {
+      const newRule: ReminderRule = {
+        id: Date.now().toString(),
+        type: 'before',
+        days: 1,
+        enabled: true
+      }
+      setReminders({
+        ...reminders,
+        rules: [...reminders.rules, newRule]
+      })
+      return
     }
     
     // For free plan: Block adding 5th rule (max 4 reminders per invoice)
@@ -2346,7 +2361,18 @@ export default function QuickInvoiceModal({
                   <TemplateSelector
                     selectedTemplate={theme.template}
                     onTemplateSelect={(template) => {
-                      // CRITICAL: If premium unlocked, only allow the unlocked template (not both 2 & 3)
+                      // Get plan info - default to 'free' if not loaded yet
+                      const userPlan = subscriptionUsage?.plan || 'free';
+                      const isPremiumTemplate = template !== 1;
+                      
+                      // CRITICAL FIX: Monthly plan users have unlimited access to all templates
+                      // Skip all premium unlock checks for monthly plan users
+                      if (userPlan === 'monthly') {
+                        setTheme(prevTheme => ({...prevTheme, template}))
+                        return
+                      }
+                      
+                      // For pay-per-invoice users: If premium unlocked, only allow the unlocked template (not both 2 & 3)
                       if (isPremiumUnlocked && unlockedTemplate) {
                         // Only allow switching to the template that was unlocked OR template 1 (free)
                         if (template === unlockedTemplate || template === 1) {
@@ -2357,8 +2383,9 @@ export default function QuickInvoiceModal({
                           showError(`Only Template ${unlockedTemplate} is unlocked for this invoice. You can switch to Template 1 (free) or keep Template ${unlockedTemplate}. To use Template ${template}, you would need to purchase it separately.`);
                           return
                         }
-                      } else if (isPremiumUnlocked && !unlockedTemplate) {
+                      } else if (isPremiumUnlocked && !unlockedTemplate && userPlan === 'pay_per_invoice') {
                         // Fallback: if premium is unlocked but no specific template tracked, check current theme
+                        // This only applies to pay-per-invoice users, not monthly plan users
                         // If current theme has premium template, lock the other one
                         if (theme.template === 2 && template === 3) {
                           showError('Only Template 2 is unlocked for this invoice. You can switch to Template 1 (free) or keep Template 2.');
@@ -2370,10 +2397,6 @@ export default function QuickInvoiceModal({
                         setTheme(prevTheme => ({...prevTheme, template}))
                         return
                       }
-                      
-                      // Get plan info - default to 'free' if not loaded yet
-                      const userPlan = subscriptionUsage?.plan || 'free';
-                      const isPremiumTemplate = template !== 1;
                       
                       // Check if template is locked for free plan (or if plan data not loaded yet, treat as free)
                       if (userPlan === 'free' && isPremiumTemplate) {
@@ -2398,14 +2421,20 @@ export default function QuickInvoiceModal({
                     }}
                     primaryColor={theme.primaryColor}
                     onPrimaryColorChange={(color) => {
+                      // Check user plan first
+                      const userPlan = subscriptionUsage?.plan || 'free';
+                      
+                      // CRITICAL FIX: Monthly plan users have unlimited access to all colors
+                      if (userPlan === 'monthly') {
+                        setTheme(prevTheme => ({...prevTheme, primaryColor: color}))
+                        return
+                      }
+                      
                       // If premium unlocked, allow all colors
                       if (isPremiumUnlocked) {
                         setTheme(prevTheme => ({...prevTheme, primaryColor: color}))
                         return
                       }
-                      
-                      // Check if Pay Per Invoice user trying to use premium color
-                      const userPlan = subscriptionUsage?.plan || 'free';
                       
                       // For pay-per-invoice users: If premium is unlocked, allow all colors without confirmation
                       // If premium not unlocked, only allow first 4 color presets (free colors)
@@ -2450,14 +2479,20 @@ export default function QuickInvoiceModal({
                     }}
                     secondaryColor={theme.secondaryColor}
                     onSecondaryColorChange={(color) => {
+                      // Check user plan first
+                      const userPlan = subscriptionUsage?.plan || 'free';
+                      
+                      // CRITICAL FIX: Monthly plan users have unlimited access to all colors
+                      if (userPlan === 'monthly') {
+                        setTheme(prevTheme => ({...prevTheme, secondaryColor: color}))
+                        return
+                      }
+                      
                       // If premium unlocked, allow all colors
                       if (isPremiumUnlocked) {
                         setTheme(prevTheme => ({...prevTheme, secondaryColor: color}))
                         return
                       }
-                      
-                      // Check if Pay Per Invoice user trying to use premium color
-                      const userPlan = subscriptionUsage?.plan || 'free';
                       
                       // For pay-per-invoice users: If premium is unlocked, allow all colors without confirmation
                       // If premium not unlocked, only allow first 4 color presets (free colors)

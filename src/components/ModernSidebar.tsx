@@ -273,6 +273,9 @@ const ModernSidebar = ({
 
   // Ultra-fast navigation handler with advanced optimizations
   const handleNavigation = useCallback((route: string) => {
+    // Ensure we're on the client side
+    if (typeof window === 'undefined') return;
+    
     const now = Date.now();
     
     // Debounce rapid clicks (prevent spam clicking)
@@ -306,7 +309,14 @@ const ModernSidebar = ({
     }
     
     // Navigate with priority (prefetching is handled automatically by Next.js)
-    router.push(route, { scroll: false });
+    // In Next.js 16, ensure router.push is only called on client side
+    try {
+      router.push(route);
+    } catch (error) {
+      // Fallback to window.location if router.push fails
+      console.error('Navigation error:', error);
+      window.location.href = route;
+    }
     
     // Close mobile menu if open
     if (window.innerWidth < 1024) {

@@ -14,6 +14,24 @@ export async function GET(
 
     const { id } = await params
     
+    // CRITICAL FIX: Check user's subscription plan first
+    // Monthly plan users have unlimited access to all premium features
+    const { data: userData } = await supabaseAdmin
+      .from('users')
+      .select('subscription_plan')
+      .eq('id', user.id)
+      .single()
+    
+    const userPlan = userData?.subscription_plan || 'free'
+    
+    // Monthly plan users: Always unlock all templates (no restrictions)
+    if (userPlan === 'monthly') {
+      return NextResponse.json({
+        isPremiumUnlocked: true,
+        unlockedTemplate: null // null means all templates unlocked
+      })
+    }
+    
     // First, check invoice metadata for premium_unlocked flag
     const { data: invoice } = await supabaseAdmin
       .from('invoices')
