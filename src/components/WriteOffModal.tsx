@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, DollarSign, FileText, AlertCircle } from 'lucide-react';
 import type { Invoice } from '@/types';
+import { formatCurrency } from '@/lib/currency';
 
 interface WriteOffModalProps {
   invoice: Invoice;
@@ -56,7 +57,7 @@ export default function WriteOffModal({
     }
 
     if (parseFloat(writeOffAmount) > totalOwed) {
-      alert(`Write-off amount cannot exceed total owed of $${totalOwed.toFixed(2)}`);
+      alert(`Write-off amount cannot exceed total owed of ${formatCurrency(totalOwed, invoice.currency || 'USD')}`);
       return;
     }
 
@@ -182,7 +183,7 @@ export default function WriteOffModal({
                 placeholder="0.00"
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">Max: ${maxWriteOff.toFixed(2)}</p>
+              <p className="text-xs text-gray-500 mt-1">Max: {formatCurrency(maxWriteOff, invoice.currency || 'USD')}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

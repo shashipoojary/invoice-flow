@@ -1,6 +1,7 @@
 import React from 'react'
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import { Invoice, BusinessSettings } from '@/types'
+import { formatCurrency } from '@/lib/currency'
 
 interface Template1Props {
   invoice: Invoice
@@ -229,13 +230,11 @@ export default function Template1({ invoice, businessSettings }: Template1Props)
   // Fixed colors for fast invoice - purple theme to match site
   const primaryColor = '#5C2D91'   // Purple
   const secondaryColor = '#8B5CF6' // Light Purple
-  const formatCurrency = (amount: number) => {
+  const invoiceCurrency = invoice.currency || 'USD'
+  const formatCurrencyAmount = (amount: number) => {
     // Ensure amount is a valid number
     const validAmount = isNaN(amount) ? 0 : amount
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(validAmount)
+    return formatCurrency(validAmount, invoiceCurrency)
   }
 
   const formatDate = (dateString: string) => {
@@ -332,9 +331,9 @@ export default function Template1({ invoice, businessSettings }: Template1Props)
           {invoice.items.map((item, index) => (
             <View key={index} style={styles.tableRow}>
               <Text style={[styles.tableCell, { flex: 4 }]}>{item.description}</Text>
-              <Text style={[styles.tableCell, { flex: 1, textAlign: 'center' }]}>1</Text>
-              <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'right' }]}>{formatCurrency(parseFloat(item.amount?.toString() || '0') || 0)}</Text>
-              <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'right' }]}>{formatCurrency(parseFloat(item.amount?.toString() || '0') || 0)}</Text>
+              <Text style={[styles.tableCell, { flex: 1, textAlign: 'center' }]}>{item.qty || 1}</Text>
+              <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'right' }]}>{formatCurrencyAmount(parseFloat(item.rate?.toString() || item.amount?.toString() || '0') || 0)}</Text>
+              <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'right' }]}>{formatCurrencyAmount(parseFloat(item.amount?.toString() || '0') || 0)}</Text>
             </View>
           ))}
         </View>
@@ -343,22 +342,22 @@ export default function Template1({ invoice, businessSettings }: Template1Props)
         <View style={styles.totalSection}>
           <View style={[styles.totalRow, { marginBottom: 0 }]}>
             <Text style={styles.totalLabel}>Subtotal:</Text>
-            <Text style={styles.totalValue}>{formatCurrency(calculateSubtotal())}</Text>
+            <Text style={styles.totalValue}>{formatCurrencyAmount(calculateSubtotal())}</Text>
           </View>
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Discount:</Text>
-            <Text style={styles.totalValue}>-{formatCurrency(invoice.discount || 0)}</Text>
+            <Text style={styles.totalValue}>-{formatCurrencyAmount(invoice.discount || 0)}</Text>
             </View>
             <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Tax ({invoice.taxRate || 0}%):</Text>
-              <Text style={styles.totalValue}>{formatCurrency(calculateTax())}</Text>
+              <Text style={styles.totalValue}>{formatCurrencyAmount(calculateTax())}</Text>
             </View>
           <View style={styles.finalTotalContainer}>
             <View style={styles.separatorLineContainer}>
               <View style={styles.separatorLine} />
             </View>
             <View style={styles.finalTotalRow}>
-              <Text style={styles.finalTotal}>{formatCurrency(calculateTotal())}</Text>
+              <Text style={styles.finalTotal}>{formatCurrencyAmount(calculateTotal())}</Text>
             </View>
           </View>
         </View>

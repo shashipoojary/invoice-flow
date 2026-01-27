@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useData } from '@/contexts/DataContext';
+import { formatCurrency } from '@/lib/currency';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
 import UnifiedInvoiceCard from '@/components/UnifiedInvoiceCard';
@@ -1562,16 +1563,16 @@ function InvoicesContent(): React.JSX.Element {
                   invoice.status === 'draft' ? ('text-gray-600') :
                   ('text-red-600')
               }`}>
-                ${dueCharges.totalPayable.toFixed(2)}
+                {formatCurrency(dueCharges.totalPayable, invoice.currency || settings.baseCurrency || 'USD')}
                   </div>
                   {dueCharges.isPartiallyPaid ? (
                     <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500">
-                      Paid: ${dueCharges.totalPaid.toFixed(2)} • Remaining: ${dueCharges.remainingBalance.toFixed(2)}
-                      {dueCharges.hasLateFees && ` • Late fee: ${dueCharges.lateFeeAmount.toFixed(2)}`}
+                      Paid: {formatCurrency(dueCharges.totalPaid, invoice.currency || settings.baseCurrency || 'USD')} • Remaining: {formatCurrency(dueCharges.remainingBalance, invoice.currency || settings.baseCurrency || 'USD')}
+                      {dueCharges.hasLateFees && ` • Late fee: ${formatCurrency(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}`}
                     </div>
                   ) : dueCharges.hasLateFees ? (
                     <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500">
-                      Base ${invoice.total.toLocaleString()} • Late fee ${dueCharges.lateFeeAmount.toLocaleString()}
+                      Base {formatCurrency(invoice.total, invoice.currency || settings.baseCurrency || 'USD')} • Late fee {formatCurrency(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}
                     </div>
                   ) : (
                     <div className="mt-0 mb-0.5 min-h-[12px]"></div>
@@ -1696,12 +1697,12 @@ function InvoicesContent(): React.JSX.Element {
                 </div>
               {dueCharges.isPartiallyPaid ? (
                 <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500">
-                  Paid: ${dueCharges.totalPaid.toFixed(2)} • Remaining: ${dueCharges.remainingBalance.toFixed(2)}
-                  {dueCharges.hasLateFees && ` • Late fee: ${dueCharges.lateFeeAmount.toFixed(2)}`}
+                  Paid: {formatCurrency(dueCharges.totalPaid, invoice.currency || settings.baseCurrency || 'USD')} • Remaining: {formatCurrency(dueCharges.remainingBalance, invoice.currency || settings.baseCurrency || 'USD')}
+                  {dueCharges.hasLateFees && ` • Late fee: ${formatCurrency(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}`}
             </div>
               ) : dueCharges.hasLateFees ? (
                 <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500">
-                  Base ${invoice.total.toLocaleString()} • Late fee ${dueCharges.lateFeeAmount.toLocaleString()}
+                  Base {formatCurrency(invoice.total, invoice.currency || settings.baseCurrency || 'USD')} • Late fee {formatCurrency(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}
             </div>
               ) : (
                 <div className="mt-0 mb-0.5 min-h-[12px]"></div>
@@ -3198,8 +3199,8 @@ function InvoicesContent(): React.JSX.Element {
                       <tr className="border-t border-gray-200">
                         <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-900'}`}>Service</td>
                         <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-600'}`}>1</td>
-                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right ${'text-gray-900'}`}>$0.00</td>
-                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium ${'text-gray-900'}`}>$0.00</td>
+                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right ${'text-gray-900'}`}>{formatCurrency(0, settings.baseCurrency || 'USD')}</td>
+                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium ${'text-gray-900'}`}>{formatCurrency(0, settings.baseCurrency || 'USD')}</td>
                       </tr>
                     )}
                     {(() => {

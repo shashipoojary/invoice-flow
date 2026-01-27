@@ -7,6 +7,8 @@ import InvoiceActivityDrawer from '@/components/InvoiceActivityDrawer';
 import type { Invoice } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
 import { RotatingBadges, RotatingAmountBreakdown, useSynchronizedRotation } from '@/components/RotatingComponents';
+import { formatCurrency } from '@/lib/currency';
+import { useSettings } from '@/contexts/SettingsContext';
 
 type DueStatus = { status: string; days: number; color: string };
 
@@ -148,11 +150,10 @@ export function UnifiedInvoiceCard({
     if (shouldShowPartialPayment) {
       // Pre-compute all values before creating string to ensure atomic rendering
       // Use baseAmount (not remainingBalance) to show correct remaining balance before late fees
-      const totalPaidStr = dueCharges.totalPaid.toFixed(2);
-      const remainingStr = baseAmount.toFixed(2);
+      const invoiceCurrency = invoice.currency || 'USD';
       // Create complete string atomically - render as single text node to prevent partial rendering
       // Use inline-block and nowrap to prevent layout shift
-      const partialText = `Paid: $${totalPaidStr} • Remaining: $${remainingStr}`;
+      const partialText = `Paid: ${formatCurrency(dueCharges.totalPaid, invoiceCurrency)} • Remaining: ${formatCurrency(baseAmount, invoiceCurrency)}`;
       items.push(<div key="partial" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>{partialText}</div>);
     }
     

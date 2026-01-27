@@ -94,6 +94,10 @@ export async function GET(
           description: item.description,
           amount: item.line_total
         })),
+        // Multi-currency support
+        currency: invoice.currency || 'USD',
+        exchange_rate: invoice.exchange_rate || 1.0,
+        base_currency_amount: invoice.base_currency_amount || invoice.total,
         // Parse JSON fields with fallbacks for existing invoices (only for detailed invoices)
         paymentTerms: invoice.type === 'fast' ? undefined : 
           (invoice.payment_terms ? 

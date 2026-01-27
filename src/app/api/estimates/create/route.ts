@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     const estimateData = await request.json();
-    const { clientId, items, discount = 0, notes, issueDate, expiryDate, paymentTerms, theme } = estimateData;
+    const { clientId, items, discount = 0, notes, issueDate, expiryDate, paymentTerms, theme, currency } = estimateData;
 
     // Validate required fields
     if (!clientId || !items || items.length === 0) {
@@ -75,12 +75,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to generate public token' }, { status: 500 });
     }
 
+    // Get user's base currency from settings
+    const { data: userSettings } = await supabase
+      .from('user_settings')
+      .select('base_currency')
+      .eq('user_id', user.id)
+      .single();
+    
+    const baseCurrency = userSettings?.base_currency || 'USD';
+    const estimateCurrency = currency || baseCurrency;
+
     // Prepare estimate data
     const estimate = {
       user_id: user.id,
       client_id: clientId,
       estimate_number: estimateNumberData,
       public_token: publicTokenData,
+      currency: estimateCurrency,
       subtotal,
       discount,
       tax: taxAmount,
@@ -210,6 +221,7 @@ export async function POST(request: NextRequest) {
       issueDate: completeEstimate.issue_date,
       paymentTerms: completeEstimate.payment_terms ? JSON.parse(completeEstimate.payment_terms) : null,
       theme: completeEstimate.theme ? JSON.parse(completeEstimate.theme) : null,
+      currency: completeEstimate.currency || baseCurrency,
     };
 
     return NextResponse.json({ estimate: mappedEstimate }, { status: 201 });

@@ -42,7 +42,8 @@ export async function PUT(
       taxRate = 0,
       notes = '',
       issueDate,
-      expiryDate
+      expiryDate,
+      currency
     } = body;
 
     if (!clientId || !items || !Array.isArray(items) || items.length === 0) {
@@ -56,11 +57,22 @@ export async function PUT(
     const taxAmount = afterDiscount * (taxRate / 100);
     const total = afterDiscount + taxAmount;
 
+    // Get user's base currency from settings
+    const { data: userSettings } = await supabaseAdmin
+      .from('user_settings')
+      .select('base_currency')
+      .eq('user_id', user.id)
+      .single();
+    
+    const baseCurrency = userSettings?.base_currency || 'USD';
+    const estimateCurrency = currency || baseCurrency;
+
     // Update estimate
     const { data: updatedEstimate, error: updateError } = await supabaseAdmin
       .from('estimates')
       .update({
         client_id: clientId,
+        currency: estimateCurrency,
         subtotal: subtotal,
         discount: discount,
         tax: taxAmount,

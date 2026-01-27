@@ -141,6 +141,10 @@ export async function GET(request: NextRequest) {
         // Write-off fields
         writeOffAmount: invoice.write_off_amount || 0,
         writeOffNotes: invoice.write_off_notes || undefined,
+        // Multi-currency support
+        currency: invoice.currency || 'USD',
+        exchange_rate: invoice.exchange_rate || 1.0,
+        base_currency_amount: invoice.base_currency_amount || invoice.total,
         // Parse JSON fields with fallbacks for existing invoices (only for detailed invoices)
         paymentTerms: invoice.type === 'fast' ? undefined : 
           (invoice.payment_terms ? 

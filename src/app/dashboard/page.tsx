@@ -8,9 +8,10 @@ import {
   Eye, Download, Send, Edit, X, Bell, CreditCard, DollarSign, Trash2, ArrowRight, ChevronDown, ChevronUp,
   ArrowUp, ArrowDown, ClipboardCheck, Copy, Calendar, Ban, FileCheck, FileX, ArrowLeft, Info, ChevronLeft, ChevronRight, Plus, XCircle
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth'
+import { useSettings } from '@/contexts/SettingsContext'
+import { formatCurrency } from '@/lib/currency';
 import { useToast } from '@/hooks/useToast';
-import { useSettings } from '@/contexts/SettingsContext';
 import { useData } from '@/contexts/DataContext';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
@@ -62,7 +63,7 @@ const EstimateModal = dynamic(() => import('@/components/EstimateModal'), {
 });
 
 // Invoice Performance Chart Component with simple donut charts
-const InvoicePerformanceChart = ({ invoices, paymentDataMap }: { invoices: Invoice[], paymentDataMap: Record<string, { totalPaid: number; remainingBalance: number }> }) => {
+const InvoicePerformanceChart = ({ invoices, paymentDataMap, baseCurrency = 'USD' }: { invoices: Invoice[], paymentDataMap: Record<string, { totalPaid: number; remainingBalance: number }>, baseCurrency?: string }) => {
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   
   // Calculate revenue metrics
@@ -147,13 +148,16 @@ const InvoicePerformanceChart = ({ invoices, paymentDataMap }: { invoices: Invoi
   // Helper function to format large numbers with k, M, B suffixes
   const formatLargeNumber = (value: number): string => {
     if (value >= 1000000000) {
-      return `$${(value / 1000000000).toFixed(1)}B`;
+      const formatted = formatCurrency(value / 1000000000, baseCurrency);
+      return formatted.replace(/\.00$/, '') + 'B';
     } else if (value >= 1000000) {
-      return `$${(value / 1000000).toFixed(1)}M`;
+      const formatted = formatCurrency(value / 1000000, baseCurrency);
+      return formatted.replace(/\.00$/, '') + 'M';
     } else if (value >= 1000) {
-      return `$${(value / 1000).toFixed(1)}k`;
+      const formatted = formatCurrency(value / 1000, baseCurrency);
+      return formatted.replace(/\.00$/, '') + 'k';
     } else {
-      return `$${value.toFixed(2)}`;
+      return formatCurrency(value, baseCurrency);
     }
   };
 
@@ -1144,11 +1148,12 @@ export default function DashboardOverview() {
   }, []);
 
   // Helper function to format late fees
-  const formatLateFees = useCallback((lateFees?: { enabled: boolean; type: 'fixed' | 'percentage'; amount: number; gracePeriod: number }) => {
+  const formatLateFees = useCallback((lateFees?: { enabled: boolean; type: 'fixed' | 'percentage'; amount: number; gracePeriod: number }, invoiceCurrency?: string) => {
     if (!lateFees?.enabled) return null;
-    const amount = lateFees.type === 'fixed' ? `$${lateFees.amount}` : `${lateFees.amount}%`;
+    const currency = invoiceCurrency || settings?.baseCurrency || 'USD';
+    const amount = lateFees.type === 'fixed' ? formatCurrency(lateFees.amount, currency) : `${lateFees.amount}%`;
     return `${amount} after ${lateFees.gracePeriod} days`;
-  }, []);
+  }, [settings]);
 
   // Helper function to format reminders
   const formatReminders = useCallback((reminders?: { enabled: boolean; useSystemDefaults: boolean; rules?: Array<{ enabled: boolean }>; customRules?: Array<{ enabled: boolean }> }) => {
@@ -1269,7 +1274,8 @@ export default function DashboardOverview() {
     }
 
     if (parseFloat(paymentAmount) > remainingBalance) {
-      showError(`Payment amount cannot exceed remaining balance of $${remainingBalance.toFixed(2)}`);
+      const invoiceCurrency = selectedInvoice.currency || settings.baseCurrency || 'USD';
+      showError(`Payment amount cannot exceed remaining balance of ${formatCurrency(remainingBalance, invoiceCurrency)}`);
       return;
     }
 
@@ -1328,7 +1334,8 @@ export default function DashboardOverview() {
 
     // Find the payment to get its details for the confirmation message
     const payment = payments.find(p => p.id === paymentId);
-    const paymentAmount = payment ? `$${parseFloat(payment.amount.toString()).toFixed(2)}` : 'this payment';
+    const invoiceCurrency = selectedInvoice.currency || settings.baseCurrency || 'USD';
+    const paymentAmount = payment ? formatCurrency(parseFloat(payment.amount.toString()), invoiceCurrency) : 'this payment';
 
     // Calculate what will happen after deletion
     const remainingAfterDelete = totalPaid - (payment ? parseFloat(payment.amount.toString()) : 0);
@@ -1827,7 +1834,7 @@ export default function DashboardOverview() {
             // Update modal with charge warning
             setConfirmationModal(prev => ({
               ...prev,
-              message: `${prev.message}\n\n⚠️ Note: You've used all 5 free invoices. This duplicated invoice will be charged $0.50 when sent.`,
+              message: `${prev.message}\n\n⚠️ Note: You've used all 5 free invoices. This duplicated invoice will be charged ${formatCurrency(0.50, settings.baseCurrency || 'USD')} when sent.`,
               type: 'warning'
             }));
           }
@@ -1968,7 +1975,7 @@ export default function DashboardOverview() {
     getStatusColor: (status: string) => string;
     getDueDateStatus: (dueDate: string, invoiceStatus: string, paymentTerms?: { enabled: boolean; terms: string }, updatedAt?: string) => { status: string; days: number; color: string };
     formatPaymentTerms: (paymentTerms?: { enabled: boolean; terms: string }) => string | null;
-    formatLateFees: (lateFees?: { enabled: boolean; type: 'fixed' | 'percentage'; amount: number; gracePeriod: number }) => string | null;
+    formatLateFees: (lateFees?: { enabled: boolean; type: 'fixed' | 'percentage'; amount: number; gracePeriod: number }, invoiceCurrency?: string) => string | null;
     formatReminders: (reminders?: { enabled: boolean; useSystemDefaults: boolean; rules?: Array<{ enabled: boolean }>; customRules?: Array<{ enabled: boolean }> }) => string | null;
     calculateDueCharges: (invoice: Invoice, paymentData?: { totalPaid: number; remainingBalance: number } | null) => { hasLateFees: boolean; lateFeeAmount: number; totalPayable: number; overdueDays: number; totalPaid: number; remainingBalance: number; isPartiallyPaid: boolean };
     loadingActions: { [key: string]: boolean };
@@ -2005,11 +2012,11 @@ export default function DashboardOverview() {
                   invoice.status === 'draft' ? 'text-gray-600' :
                   'text-red-600'
                 }`}>
-                  ${(((invoice as any)._displayTotal) || dueCharges.totalPayable).toLocaleString()}
+                  {formatCurrency(((invoice as any)._displayTotal) || dueCharges.totalPayable, invoice.currency || settings.baseCurrency || 'USD')}
                 </div>
                 {(invoice as any)._lateFeeShow ? (
                   <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
-                    Base ${invoice.total.toLocaleString()} • Late fee {((invoice as any)._lateFeeAmount as number).toLocaleString()}
+                    Base {formatCurrency(invoice.total, invoice.currency || settings.baseCurrency || 'USD')} • Late fee {formatCurrency(((invoice as any)._lateFeeAmount as number), invoice.currency || settings.baseCurrency || 'USD')}
                   </div>
                 ) : (
                   <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
@@ -2240,7 +2247,7 @@ export default function DashboardOverview() {
     getStatusColor: (status: string) => string;
     getDueDateStatus: (dueDate: string, invoiceStatus: string, paymentTerms?: { enabled: boolean; terms: string }, updatedAt?: string) => { status: string; days: number; color: string };
     formatPaymentTerms: (paymentTerms?: { enabled: boolean; terms: string }) => string | null;
-    formatLateFees: (lateFees?: { enabled: boolean; type: 'fixed' | 'percentage'; amount: number; gracePeriod: number }) => string | null;
+    formatLateFees: (lateFees?: { enabled: boolean; type: 'fixed' | 'percentage'; amount: number; gracePeriod: number }, invoiceCurrency?: string) => string | null;
     formatReminders: (reminders?: { enabled: boolean; useSystemDefaults: boolean; rules?: Array<{ enabled: boolean }>; customRules?: Array<{ enabled: boolean }> }) => string | null;
     calculateDueCharges: (invoice: Invoice, paymentData?: { totalPaid: number; remainingBalance: number } | null) => { hasLateFees: boolean; lateFeeAmount: number; totalPayable: number; overdueDays: number; totalPaid: number; remainingBalance: number; isPartiallyPaid: boolean };
     loadingActions: { [key: string]: boolean };
@@ -2252,7 +2259,7 @@ export default function DashboardOverview() {
     
     // Show enhanced features for all invoice statuses
     const paymentTerms = formatPaymentTerms(invoice.paymentTerms);
-    const lateFees = formatLateFees(invoice.lateFees);
+    const lateFees = formatLateFees(invoice.lateFees, invoice.currency);
     const reminders = formatReminders(invoice.reminders);
     
     return (
@@ -2293,7 +2300,7 @@ export default function DashboardOverview() {
                   </div>
                 ) : dueCharges.hasLateFees ? (
                   <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
-                    Base ${invoice.total.toLocaleString()} • Late fee ${dueCharges.lateFeeAmount.toLocaleString()}
+                    Base {formatCurrency(invoice.total, invoice.currency || settings.baseCurrency || 'USD')} • Late fee {formatCurrency(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}
                   </div>
                 ) : (
                   <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
@@ -2367,16 +2374,16 @@ export default function DashboardOverview() {
                   dueDateStatus.status === 'overdue' ? 'text-red-600' :
                   'text-gray-700'
             }`}>
-              ${dueCharges.totalPayable.toFixed(2)}
+              {formatCurrency(dueCharges.totalPayable, invoice.currency || settings.baseCurrency || 'USD')}
                 </div>
               {dueCharges.isPartiallyPaid ? (
                 <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
-                  Paid: ${dueCharges.totalPaid.toFixed(2)} • Remaining: ${dueCharges.remainingBalance.toFixed(2)}
-                  {dueCharges.hasLateFees && ` • Late fee: ${dueCharges.lateFeeAmount.toFixed(2)}`}
+                  Paid: {formatCurrency(dueCharges.totalPaid, invoice.currency || settings.baseCurrency || 'USD')} • Remaining: {formatCurrency(dueCharges.remainingBalance, invoice.currency || settings.baseCurrency || 'USD')}
+                  {dueCharges.hasLateFees && ` • Late fee: ${formatCurrency(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}`}
             </div>
               ) : dueCharges.hasLateFees ? (
                 <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
-                  Base ${invoice.total.toLocaleString()} • Late fee ${dueCharges.lateFeeAmount.toLocaleString()}
+                  Base {formatCurrency(invoice.total, invoice.currency || settings.baseCurrency || 'USD')} • Late fee {formatCurrency(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}
             </div>
               ) : (
                 <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
@@ -2590,6 +2597,9 @@ export default function DashboardOverview() {
       };
     }
 
+    // Get base currency for conversion
+    const baseCurrency = settings?.baseCurrency || 'USD';
+
     // Pre-calculate today's start time once
     const today = new Date();
     const todayStart = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
@@ -2601,26 +2611,35 @@ export default function DashboardOverview() {
     
     // Use for...of for better performance than forEach
     for (const invoice of invoices) {
-      const { status, total, dueDate } = invoice;
+      const { status, total, dueDate, currency, exchange_rate, base_currency_amount } = invoice;
       
-      // Total revenue calculation - includes fully paid invoices and partial payments
+      // Convert invoice amounts to base currency for metrics
+      const invoiceExchangeRate = exchange_rate || 1.0;
+      const invoiceBaseAmount = base_currency_amount || (currency === baseCurrency ? total : (total * invoiceExchangeRate));
+      const invoiceCurrency = currency || baseCurrency;
+      
+      // Total revenue calculation - includes fully paid invoices and partial payments (convert to base currency)
       if (status === 'paid') {
-        // Fully paid invoice - add full total
-        totalRevenue += total;
+        // Fully paid invoice - add converted amount
+        totalRevenue += invoiceBaseAmount;
       } else {
         // Check for partial payments on non-paid invoices
         const paymentData = paymentDataMap[invoice.id];
         if (paymentData && paymentData.totalPaid > 0) {
-          // Add partial payments to revenue
-          totalRevenue += paymentData.totalPaid;
+          // Convert partial payments to base currency
+          const convertedPaid = invoiceCurrency === baseCurrency ? paymentData.totalPaid : (paymentData.totalPaid * invoiceExchangeRate);
+          totalRevenue += convertedPaid;
         }
       }
       
-      // Total payable and overdue count (pending/sent invoices only)
+      // Total payable and overdue count (pending/sent invoices only) - convert to base currency
       if (status === 'pending' || status === 'sent') {
       const charges = calculateDueCharges(invoice, paymentDataMap[invoice.id] || null);
-        totalPayableAmount += charges.totalPayable;
-        totalLateFees += charges.lateFeeAmount;
+        // Convert charges to base currency
+        const convertedTotalPayable = invoiceCurrency === baseCurrency ? charges.totalPayable : (charges.totalPayable * invoiceExchangeRate);
+        const convertedLateFees = invoiceCurrency === baseCurrency ? charges.lateFeeAmount : (charges.lateFeeAmount * invoiceExchangeRate);
+        totalPayableAmount += convertedTotalPayable;
+        totalLateFees += convertedLateFees;
         
         // Check if overdue - optimized date comparison
         const effectiveDueDate = parseDateOnly(dueDate);
@@ -2641,11 +2660,18 @@ export default function DashboardOverview() {
     let totalWriteOff = 0;
     
     for (const invoice of invoices) {
+      const invoiceCurrency = invoice.currency || baseCurrency;
+      const invoiceExchangeRate = invoice.exchange_rate || 1.0;
+      
       if (invoice.status === 'draft') {
-        draftAmount += invoice.total;
+        // Convert draft amount to base currency
+        const convertedDraft = invoiceCurrency === baseCurrency ? invoice.total : (invoice.total * invoiceExchangeRate);
+        draftAmount += convertedDraft;
       }
       if (invoice.writeOffAmount && invoice.writeOffAmount > 0) {
-        totalWriteOff += invoice.writeOffAmount;
+        // Convert write-off amount to base currency
+        const convertedWriteOff = invoiceCurrency === baseCurrency ? invoice.writeOffAmount : (invoice.writeOffAmount * invoiceExchangeRate);
+        totalWriteOff += convertedWriteOff;
       }
     }
     
@@ -3881,7 +3907,7 @@ export default function DashboardOverview() {
                     <div className="bg-white border border-gray-200 pt-6 px-6 pb-6 w-full flex flex-col">
                       <h3 className="text-sm font-semibold text-gray-900 mb-4">Invoice Performance</h3>
                       
-                      <InvoicePerformanceChart invoices={invoices} paymentDataMap={paymentDataMap} />
+                      <InvoicePerformanceChart invoices={invoices} paymentDataMap={paymentDataMap} baseCurrency={settings.baseCurrency || 'USD'} />
                     </div>
                   </div>
                       );
@@ -4841,11 +4867,11 @@ export default function DashboardOverview() {
     router.push('/dashboard/invoices?status=writeoff');
   }, [router]);
 
-  // Consistent money formatter for stats
+  // Consistent money formatter for stats (uses base currency)
   const formatMoney = useCallback((value: number | undefined | null) => {
-    const n = Number(value || 0);
-    return `$${n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
-  }, []);
+    const baseCurrency = settings?.baseCurrency || 'USD';
+    return formatCurrency(value || 0, baseCurrency);
+  }, [settings]);
 
   const handleClientsClick = useCallback(() => {
     router.push('/dashboard/clients');

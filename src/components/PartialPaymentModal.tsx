@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, DollarSign, Calendar, CreditCard, FileText, Trash2 } from 'lucide-react';
 import type { Invoice } from '@/types';
+import { formatCurrency } from '@/lib/currency';
 
 interface Payment {
   id: string;
@@ -84,7 +85,7 @@ export default function PartialPaymentModal({
     // Check against total payable (including late fees), not just remaining balance
     const maxPayment = totalPayable - totalPaid;
     if (parseFloat(amount) > maxPayment) {
-      alert(`Payment amount cannot exceed total payable (including late fees) of $${maxPayment.toFixed(2)}`);
+      alert(`Payment amount cannot exceed total payable (including late fees) of ${formatCurrency(maxPayment, invoice.currency || 'USD')}`);
       return;
     }
 

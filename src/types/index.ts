@@ -15,6 +15,7 @@ export interface InvoiceItem {
   description: string;
   rate: number;
   amount: number | string;
+  qty?: number;
 }
 
 export interface Invoice {
@@ -85,6 +86,10 @@ export interface Invoice {
   // Write-off fields
   writeOffAmount?: number;
   writeOffNotes?: string;
+  // Multi-currency support
+  currency?: string;
+  exchange_rate?: number;
+  base_currency_amount?: number;
 }
 
 export interface FreelancerSettings {
@@ -170,4 +175,8 @@ export interface Estimate {
   converted_to_invoice_id?: string;
   created_at?: string;
   updated_at?: string;
+  // Multi-currency support
+  currency?: string;
+  exchange_rate?: number;
+  base_currency_amount?: number;
 }

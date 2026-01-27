@@ -283,6 +283,9 @@ export async function GET(
           return invoice.theme;
         })(),
         type: invoice.type,
+        currency: invoice.currency || 'USD',
+        exchange_rate: invoice.exchange_rate || 1.0,
+        base_currency_amount: invoice.base_currency_amount || invoice.total,
         lateFeesSettings: lateFeesSettings,
         freelancerSettings: {
           businessName: businessSettings.business_name || 'Your Business',

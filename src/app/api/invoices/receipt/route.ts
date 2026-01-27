@@ -203,6 +203,9 @@ export async function GET(request: NextRequest) {
       totalWithLateFees: invoice.total_with_late_fees || invoice.total || 0,
       status: invoice.status,
       notes: invoice.notes || '',
+      currency: invoice.currency || 'USD',
+      exchange_rate: invoice.exchange_rate || 1.0,
+      base_currency_amount: invoice.base_currency_amount || invoice.total,
     };
 
     // Map business settings (already set above from snapshot or current settings)

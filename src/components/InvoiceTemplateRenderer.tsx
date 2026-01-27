@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import Image from 'next/image'
 import { CheckCircle, Clock, AlertCircle, Mail, MapPin, Building2, CreditCard, Smartphone, DollarSign, Shield, Copy, Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { formatCurrency } from '@/lib/currency'
 
 interface InvoiceItem {
   id: string
@@ -48,6 +49,9 @@ interface Invoice {
     accent_color?: string
   }
   type?: string
+  currency?: string
+  exchange_rate?: number
+  base_currency_amount?: number
   lateFeesSettings?: {
     enabled: boolean
     type: 'fixed' | 'percentage'
@@ -207,11 +211,9 @@ function FastInvoiceTemplate({ invoice, getAmountColor }: { invoice: Invoice, ge
     }
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount || 0)
+  const invoiceCurrency = invoice.currency || 'USD'
+  const formatCurrencyAmount = (amount: number) => {
+    return formatCurrency(amount, invoiceCurrency)
   }
 
   const formatDate = (dateString: string) => {
@@ -311,7 +313,7 @@ function FastInvoiceTemplate({ invoice, getAmountColor }: { invoice: Invoice, ge
               </div>
               {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
                 <div className="text-xs text-gray-500 mt-1">
-                  Paid: ${invoice.totalPaid.toFixed(2)} • Remaining: ${invoice.remainingBalance.toFixed(2)}
+                  Paid: {formatCurrencyAmount(invoice.totalPaid)} • Remaining: {formatCurrencyAmount(invoice.remainingBalance)}
                 </div>
               )}
               {/* Status Badge */}
@@ -374,16 +376,16 @@ function FastInvoiceTemplate({ invoice, getAmountColor }: { invoice: Invoice, ge
                       <div className="text-sm text-black font-medium">{item.description}</div>
                       <div className="flex justify-between text-xs text-gray-600">
                         <span>Qty: {(item.qty || 1).toFixed(2)}</span>
-                        <span>Rate: ${typeof item.rate === 'number' ? item.rate.toFixed(2) : parseFloat(String(item.rate || 0)).toFixed(2)}</span>
-                        <span className="text-black font-medium">${typeof item.amount === 'number' ? item.amount.toFixed(2) : parseFloat(String(item.amount || 0)).toFixed(2)}</span>
+                        <span>Rate: {formatCurrencyAmount(typeof item.rate === 'number' ? item.rate : parseFloat(String(item.rate || 0)))}</span>
+                        <span className="text-black font-medium">{formatCurrencyAmount(typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount || 0)))}</span>
                       </div>
                     </div>
                     {/* Desktop Layout */}
                     <div className="hidden sm:grid grid-cols-12 gap-4 text-sm">
                       <div className="col-span-5 text-black">{item.description}</div>
                       <div className="col-span-2 text-black text-right">{(item.qty || 1).toFixed(2)}</div>
-                      <div className="col-span-2 text-black text-right">${typeof item.rate === 'number' ? item.rate.toFixed(2) : parseFloat(String(item.rate || 0)).toFixed(2)}</div>
-                      <div className="col-span-3 text-black text-right">${typeof item.amount === 'number' ? item.amount.toFixed(2) : parseFloat(String(item.amount || 0)).toFixed(2)}</div>
+                      <div className="col-span-2 text-black text-right">{formatCurrencyAmount(typeof item.rate === 'number' ? item.rate : parseFloat(String(item.rate || 0)))}</div>
+                      <div className="col-span-3 text-black text-right">{formatCurrencyAmount(typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount || 0)))}</div>
                     </div>
                   </div>
                 ))}
@@ -397,32 +399,32 @@ function FastInvoiceTemplate({ invoice, getAmountColor }: { invoice: Invoice, ge
               <div className="w-full sm:w-1/2 lg:w-2/5 max-w-md">
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-gray-900" style={{ color: '#1F2937' }}>Subtotal</span>
-                  <span className="text-black">${(invoice.subtotal || calculateSubtotal()).toFixed(2)}</span>
+                  <span className="text-black">{formatCurrencyAmount(invoice.subtotal || calculateSubtotal())}</span>
                 </div>
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
-                  <span className="text-black">-${(invoice.discount || 0).toFixed(2)}</span>
+                  <span className="text-black">-{formatCurrencyAmount(invoice.discount || 0)}</span>
                 </div>
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
-                  <span className="text-black">${(invoice.taxAmount || 0).toFixed(2)}</span>
+                  <span className="text-black">{formatCurrencyAmount(invoice.taxAmount || 0)}</span>
                 </div>
                 <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                   <span className="font-bold text-black">Total</span>
                   <span className="font-bold text-black" style={{ color: primaryColor }}>
-                    ${calculateTotal().toFixed(2)}
+                    {formatCurrencyAmount(calculateTotal())}
                   </span>
                 </div>
                 {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
                   <>
                     <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
                       <span className="text-gray-900" style={{ color: '#1F2937' }}>Amount Paid</span>
-                      <span className="text-emerald-600">-${invoice.totalPaid.toFixed(2)}</span>
+                      <span className="text-emerald-600">-{formatCurrencyAmount(invoice.totalPaid)}</span>
                     </div>
                     {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
                       <div className="flex justify-between text-sm mb-2">
                         <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                        <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                        <span className="text-red-600">{formatCurrencyAmount(invoice.lateFees)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
@@ -430,7 +432,7 @@ function FastInvoiceTemplate({ invoice, getAmountColor }: { invoice: Invoice, ge
                         {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Remaining Balance'}
                       </span>
                       <span className={`font-bold ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`} style={invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? {} : { color: primaryColor }}>
-                        ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2)}
+                        {formatCurrencyAmount(invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)) : invoice.remainingBalance)}
                       </span>
                     </div>
                   </>
@@ -443,7 +445,7 @@ function FastInvoiceTemplate({ invoice, getAmountColor }: { invoice: Invoice, ge
                     </div>
                     <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                       <span className="font-bold text-red-600">Total Payable</span>
-                      <span className="font-bold text-red-600">${invoice.totalWithLateFees.toFixed(2)}</span>
+                      <span className="font-bold text-red-600">{formatCurrencyAmount(invoice.totalWithLateFees)}</span>
                     </div>
                   </>
                 )}
@@ -773,6 +775,10 @@ function FastInvoiceTemplate({ invoice, getAmountColor }: { invoice: Invoice, ge
 
 // Modern Template (Template 4) - Modern Design with Clean Aesthetics
 function ModernTemplate({ invoice, primaryColor, secondaryColor, getAmountColor }: { invoice: Invoice, primaryColor: string, secondaryColor: string, getAmountColor: () => string }) {
+  const invoiceCurrency = invoice.currency || 'USD'
+  const formatCurrencyAmount = (amount: number) => {
+    return formatCurrency(amount, invoiceCurrency)
+  }
   const [copiedMethod, setCopiedMethod] = useState<string | null>(null)
 
   const handleCopyPaymentMethod = async (methodType: string, details: string) => {
@@ -929,13 +935,13 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor, getAmountColor 
                 Due: {new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
               <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: getAmountColor(), letterSpacing: '-0.5px' }}>
-                ${invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0
-                  ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2))
-                  : (invoice.isOverdue ? (invoice.totalWithLateFees || invoice.total).toFixed(2) : invoice.total.toFixed(2))}
+                {formatCurrencyAmount(invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0
+                  ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)) : invoice.remainingBalance)
+                  : (invoice.isOverdue ? (invoice.totalWithLateFees || invoice.total) : invoice.total))}
               </div>
               {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
                 <div className="text-xs text-gray-500 mt-1">
-                  Paid: ${invoice.totalPaid.toFixed(2)} • Remaining: ${invoice.remainingBalance.toFixed(2)}
+                  Paid: {formatCurrencyAmount(invoice.totalPaid)} • Remaining: {formatCurrencyAmount(invoice.remainingBalance)}
                 </div>
               )}
               {/* Status Badge */}
@@ -998,16 +1004,16 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor, getAmountColor 
                       <div className="text-sm text-black font-medium">{item.description}</div>
                       <div className="flex justify-between text-xs text-gray-600">
                         <span>Qty: {(item.qty || 1).toFixed(2)}</span>
-                        <span>Rate: ${typeof item.rate === 'number' ? item.rate.toFixed(2) : parseFloat(String(item.rate || 0)).toFixed(2)}</span>
-                        <span className="text-black font-medium">${typeof item.amount === 'number' ? item.amount.toFixed(2) : parseFloat(String(item.amount || 0)).toFixed(2)}</span>
+                        <span>Rate: {formatCurrencyAmount(typeof item.rate === 'number' ? item.rate : parseFloat(String(item.rate || 0)))}</span>
+                        <span className="text-black font-medium">{formatCurrencyAmount(typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount || 0)))}</span>
                       </div>
                     </div>
                     {/* Desktop Layout */}
                     <div className="hidden sm:grid grid-cols-12 gap-4 text-sm">
                       <div className="col-span-5 text-black">{item.description}</div>
                       <div className="col-span-2 text-black text-right">{(item.qty || 1).toFixed(2)}</div>
-                      <div className="col-span-2 text-black text-right">${typeof item.rate === 'number' ? item.rate.toFixed(2) : parseFloat(String(item.rate || 0)).toFixed(2)}</div>
-                      <div className="col-span-3 text-black text-right">${typeof item.amount === 'number' ? item.amount.toFixed(2) : parseFloat(String(item.amount || 0)).toFixed(2)}</div>
+                      <div className="col-span-2 text-black text-right">{formatCurrencyAmount(typeof item.rate === 'number' ? item.rate : parseFloat(String(item.rate || 0)))}</div>
+                      <div className="col-span-3 text-black text-right">{formatCurrencyAmount(typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount || 0)))}</div>
                     </div>
                   </div>
                 ))}
@@ -1021,7 +1027,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor, getAmountColor 
               <div className="w-full sm:w-1/2 lg:w-2/5 max-w-md">
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-gray-900" style={{ color: '#1F2937' }}>Subtotal</span>
-                  <span className="text-black">${invoice.subtotal.toFixed(2)}</span>
+                  <span className="text-black">{formatCurrencyAmount(invoice.subtotal)}</span>
                 </div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
@@ -1033,18 +1039,18 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor, getAmountColor 
                   </div>
                 <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                   <span className="font-bold text-black">Total</span>
-                  <span className="font-bold text-black">${invoice.total.toFixed(2)}</span>
+                  <span className="font-bold text-black">{formatCurrencyAmount(invoice.total)}</span>
                 </div>
                 {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
                   <>
                     <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
                       <span className="text-gray-900" style={{ color: '#1F2937' }}>Amount Paid</span>
-                      <span className="text-emerald-600">-${invoice.totalPaid.toFixed(2)}</span>
+                      <span className="text-emerald-600">-{formatCurrencyAmount(invoice.totalPaid)}</span>
                     </div>
                     {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
                       <div className="flex justify-between text-sm mb-2">
                         <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                        <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                        <span className="text-red-600">{formatCurrencyAmount(invoice.lateFees)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
@@ -1052,7 +1058,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor, getAmountColor 
                         {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Remaining Balance'}
                       </span>
                       <span className={`font-bold ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`}>
-                        ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2)}
+                        {formatCurrencyAmount(invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)) : invoice.remainingBalance)}
                       </span>
                     </div>
                   </>
@@ -1065,7 +1071,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor, getAmountColor 
                     </div>
                     <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                       <span className="font-bold text-red-600">Total Payable</span>
-                      <span className="font-bold text-red-600">${invoice.totalWithLateFees.toFixed(2)}</span>
+                      <span className="font-bold text-red-600">{formatCurrencyAmount(invoice.totalWithLateFees)}</span>
                     </div>
                   </>
                 )}
@@ -1396,6 +1402,10 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor, getAmountColor 
 
 // Creative Template (Template 5) - Senior Graphic Designer Style
 function CreativeTemplate({ invoice, primaryColor, secondaryColor, getAmountColor }: { invoice: Invoice, primaryColor: string, secondaryColor: string, getAmountColor: () => string }) {
+  const invoiceCurrency = invoice.currency || 'USD'
+  const formatCurrencyAmount = (amount: number) => {
+    return formatCurrency(amount, invoiceCurrency)
+  }
   const [copiedMethod, setCopiedMethod] = useState<string | null>(null)
 
   const handleCopyPaymentMethod = async (methodType: string, details: string) => {
@@ -1552,13 +1562,13 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor, getAmountColo
                 Due: {new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
               <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: getAmountColor(), letterSpacing: '-0.5px' }}>
-                ${invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0
-                  ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2))
-                  : (invoice.isOverdue ? (invoice.totalWithLateFees || invoice.total).toFixed(2) : invoice.total.toFixed(2))}
+                {formatCurrencyAmount(invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0
+                  ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)) : invoice.remainingBalance)
+                  : (invoice.isOverdue ? (invoice.totalWithLateFees || invoice.total) : invoice.total))}
               </div>
               {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
                 <div className="text-xs text-gray-500 mt-1">
-                  Paid: ${invoice.totalPaid.toFixed(2)} • Remaining: ${invoice.remainingBalance.toFixed(2)}
+                  Paid: {formatCurrencyAmount(invoice.totalPaid)} • Remaining: {formatCurrencyAmount(invoice.remainingBalance)}
                 </div>
               )}
               {/* Status Badge */}
@@ -1621,16 +1631,16 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor, getAmountColo
                       <div className="text-sm text-black font-medium">{item.description}</div>
                       <div className="flex justify-between text-xs text-gray-600">
                         <span>Qty: {(item.qty || 1).toFixed(2)}</span>
-                        <span>Rate: ${typeof item.rate === 'number' ? item.rate.toFixed(2) : parseFloat(String(item.rate || 0)).toFixed(2)}</span>
-                        <span className="text-black font-medium">${typeof item.amount === 'number' ? item.amount.toFixed(2) : parseFloat(String(item.amount || 0)).toFixed(2)}</span>
+                        <span>Rate: {formatCurrencyAmount(typeof item.rate === 'number' ? item.rate : parseFloat(String(item.rate || 0)))}</span>
+                        <span className="text-black font-medium">{formatCurrencyAmount(typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount || 0)))}</span>
                       </div>
                     </div>
                     {/* Desktop Layout */}
                     <div className="hidden sm:grid grid-cols-12 gap-4 text-sm">
                       <div className="col-span-5 text-black">{item.description}</div>
                       <div className="col-span-2 text-black text-right">{(item.qty || 1).toFixed(2)}</div>
-                      <div className="col-span-2 text-black text-right">${typeof item.rate === 'number' ? item.rate.toFixed(2) : parseFloat(String(item.rate || 0)).toFixed(2)}</div>
-                      <div className="col-span-3 text-black text-right">${typeof item.amount === 'number' ? item.amount.toFixed(2) : parseFloat(String(item.amount || 0)).toFixed(2)}</div>
+                      <div className="col-span-2 text-black text-right">{formatCurrencyAmount(typeof item.rate === 'number' ? item.rate : parseFloat(String(item.rate || 0)))}</div>
+                      <div className="col-span-3 text-black text-right">{formatCurrencyAmount(typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount || 0)))}</div>
                     </div>
                   </div>
                 ))}
@@ -1644,7 +1654,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor, getAmountColo
               <div className="w-full sm:w-1/2 lg:w-2/5 max-w-md">
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-gray-900" style={{ color: '#1F2937' }}>Subtotal</span>
-                  <span className="text-black">${invoice.subtotal.toFixed(2)}</span>
+                  <span className="text-black">{formatCurrencyAmount(invoice.subtotal)}</span>
                 </div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
@@ -1656,18 +1666,18 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor, getAmountColo
                   </div>
                 <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                   <span className="font-bold text-black">Total</span>
-                  <span className="font-bold text-black">${invoice.total.toFixed(2)}</span>
+                  <span className="font-bold text-black">{formatCurrencyAmount(invoice.total)}</span>
                 </div>
                 {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
                   <>
                     <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
                       <span className="text-gray-900" style={{ color: '#1F2937' }}>Amount Paid</span>
-                      <span className="text-emerald-600">-${invoice.totalPaid.toFixed(2)}</span>
+                      <span className="text-emerald-600">-{formatCurrencyAmount(invoice.totalPaid)}</span>
                     </div>
                     {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
                       <div className="flex justify-between text-sm mb-2">
                         <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                        <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                        <span className="text-red-600">{formatCurrencyAmount(invoice.lateFees)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
@@ -1675,7 +1685,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor, getAmountColo
                         {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Remaining Balance'}
                       </span>
                       <span className={`font-bold ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`}>
-                        ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2)}
+                        {formatCurrencyAmount(invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)) : invoice.remainingBalance)}
                       </span>
                     </div>
                   </>
@@ -1688,7 +1698,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor, getAmountColo
                     </div>
                     <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                       <span className="font-bold text-red-600">Total Payable</span>
-                      <span className="font-bold text-red-600">${invoice.totalWithLateFees.toFixed(2)}</span>
+                      <span className="font-bold text-red-600">{formatCurrencyAmount(invoice.totalWithLateFees)}</span>
                     </div>
                   </>
                 )}
@@ -2019,6 +2029,10 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor, getAmountColo
 
 // Minimal Template (Template 6) - Copy of 60-second invoice with Dynamic Colors
 function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor, getAmountColor }: { invoice: Invoice, primaryColor: string, secondaryColor: string, accentColor: string, getAmountColor: () => string }) {
+  const invoiceCurrency = invoice.currency || 'USD'
+  const formatCurrencyAmount = (amount: number) => {
+    return formatCurrency(amount, invoiceCurrency)
+  }
   const [copiedMethod, setCopiedMethod] = useState<string | null>(null)
 
   const handleCopyPaymentMethod = async (methodType: string, details: string) => {
@@ -2175,13 +2189,13 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor, g
                 Due: {new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
               <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: getAmountColor(), letterSpacing: '-0.5px' }}>
-                ${invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0
-                  ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2))
-                  : (invoice.isOverdue ? (invoice.totalWithLateFees || invoice.total).toFixed(2) : invoice.total.toFixed(2))}
+                {formatCurrencyAmount(invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0
+                  ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)) : invoice.remainingBalance)
+                  : (invoice.isOverdue ? (invoice.totalWithLateFees || invoice.total) : invoice.total))}
               </div>
               {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
                 <div className="text-xs text-gray-500 mt-1">
-                  Paid: ${invoice.totalPaid.toFixed(2)} • Remaining: ${invoice.remainingBalance.toFixed(2)}
+                  Paid: {formatCurrencyAmount(invoice.totalPaid)} • Remaining: {formatCurrencyAmount(invoice.remainingBalance)}
                 </div>
               )}
               {/* Status Badge */}
@@ -2244,16 +2258,16 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor, g
                       <div className="text-sm text-black font-medium">{item.description}</div>
                       <div className="flex justify-between text-xs text-gray-600">
                         <span>Qty: {(item.qty || 1).toFixed(2)}</span>
-                        <span>Rate: ${typeof item.rate === 'number' ? item.rate.toFixed(2) : parseFloat(String(item.rate || 0)).toFixed(2)}</span>
-                        <span className="text-black font-medium">${typeof item.amount === 'number' ? item.amount.toFixed(2) : parseFloat(String(item.amount || 0)).toFixed(2)}</span>
+                        <span>Rate: {formatCurrencyAmount(typeof item.rate === 'number' ? item.rate : parseFloat(String(item.rate || 0)))}</span>
+                        <span className="text-black font-medium">{formatCurrencyAmount(typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount || 0)))}</span>
                       </div>
                     </div>
                     {/* Desktop Layout */}
                     <div className="hidden sm:grid grid-cols-12 gap-4 text-sm">
                       <div className="col-span-5 text-black">{item.description}</div>
                       <div className="col-span-2 text-black text-right">{(item.qty || 1).toFixed(2)}</div>
-                      <div className="col-span-2 text-black text-right">${typeof item.rate === 'number' ? item.rate.toFixed(2) : parseFloat(String(item.rate || 0)).toFixed(2)}</div>
-                      <div className="col-span-3 text-black text-right">${typeof item.amount === 'number' ? item.amount.toFixed(2) : parseFloat(String(item.amount || 0)).toFixed(2)}</div>
+                      <div className="col-span-2 text-black text-right">{formatCurrencyAmount(typeof item.rate === 'number' ? item.rate : parseFloat(String(item.rate || 0)))}</div>
+                      <div className="col-span-3 text-black text-right">{formatCurrencyAmount(typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount || 0)))}</div>
                     </div>
                   </div>
                 ))}
@@ -2267,7 +2281,7 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor, g
               <div className="w-full sm:w-1/2 lg:w-2/5 max-w-md">
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-gray-900" style={{ color: '#1F2937' }}>Subtotal</span>
-                  <span className="text-black">${invoice.subtotal.toFixed(2)}</span>
+                  <span className="text-black">{formatCurrencyAmount(invoice.subtotal)}</span>
                 </div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
@@ -2279,18 +2293,18 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor, g
                   </div>
                 <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                   <span className="font-bold text-black">Total</span>
-                  <span className="font-bold text-black">${invoice.total.toFixed(2)}</span>
+                  <span className="font-bold text-black">{formatCurrencyAmount(invoice.total)}</span>
                 </div>
                 {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
                   <>
                     <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
                       <span className="text-gray-900" style={{ color: '#1F2937' }}>Amount Paid</span>
-                      <span className="text-emerald-600">-${invoice.totalPaid.toFixed(2)}</span>
+                      <span className="text-emerald-600">-{formatCurrencyAmount(invoice.totalPaid)}</span>
                     </div>
                     {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled && (
                       <div className="flex justify-between text-sm mb-2">
                         <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                        <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                        <span className="text-red-600">{formatCurrencyAmount(invoice.lateFees)}</span>
                       </div>
                     )}
                     <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
@@ -2298,7 +2312,7 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor, g
                         {invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'Total Payable' : 'Remaining Balance'}
                       </span>
                       <span className={`font-bold ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? 'text-red-600' : 'text-black'}`}>
-                        ${invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2)}
+                        {formatCurrencyAmount(invoice.isOverdue && invoice.lateFees > 0 && invoice.lateFeesSettings && invoice.lateFeesSettings.enabled ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)) : invoice.remainingBalance)}
                       </span>
                     </div>
                   </>
@@ -2311,7 +2325,7 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor, g
                     </div>
                     <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                       <span className="font-bold text-red-600">Total Payable</span>
-                      <span className="font-bold text-red-600">${invoice.totalWithLateFees.toFixed(2)}</span>
+                      <span className="font-bold text-red-600">{formatCurrencyAmount(invoice.totalWithLateFees)}</span>
                     </div>
                   </>
                 )}

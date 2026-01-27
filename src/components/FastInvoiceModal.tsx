@@ -14,6 +14,7 @@ import UpgradeModal from './UpgradeModal'
 import ConfirmationModal from './ConfirmationModal'
 import ToastContainer from './Toast'
 import { checkMissingBusinessDetails } from '@/lib/utils'
+import { CURRENCIES, formatCurrency, getCurrencySymbol } from '@/lib/currency'
 
 interface Client {
   id: string
@@ -132,6 +133,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   const [dueDate, setDueDate] = useState('')
   const [notes, setNotes] = useState('')
   const [markAsPaid, setMarkAsPaid] = useState(false)
+  const [currency, setCurrency] = useState<string>(settings?.baseCurrency || 'USD')
   
   // Validation errors
   const [errors, setErrors] = useState<{
@@ -181,6 +183,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         setAmount(editingInvoice.items?.[0]?.rate?.toString() || editingInvoice.items?.[0]?.amount?.toString() || '')
         setDueDate(editingInvoice.dueDate || '')
         setNotes(editingInvoice.notes || '')
+        setCurrency((editingInvoice as any)?.currency || settings?.baseCurrency || 'USD')
         
         // If the client doesn't exist in the clients list, add it
         const clientId = editingInvoice.clientId || editingInvoice.client_id;
@@ -199,9 +202,10 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         const defaultDueDate = new Date()
         defaultDueDate.setDate(defaultDueDate.getDate() + 30)
         setDueDate(defaultDueDate.toISOString().split('T')[0])
+        setCurrency(settings?.baseCurrency || 'USD')
       }
     }
-  }, [isOpen, editingInvoice, addClient, globalClients])
+  }, [isOpen, editingInvoice, addClient, globalClients, settings])
 
   // Save form state to localStorage before redirecting to payment
   const saveFormState = () => {
@@ -286,6 +290,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
     setDueDate('')
     setNotes('')
     setMarkAsPaid(false)
+    setCurrency(settings?.baseCurrency || 'USD')
     setErrors({})
   }
   
@@ -567,6 +572,8 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         notes: notes,
         billing_choice: 'per_invoice',
         type: 'fast', // Mark as fast invoice
+        currency: currency,
+        exchange_rate: currency === (settings?.baseCurrency || 'USD') ? 1.0 : ((editingInvoice as any)?.exchange_rate || 1.0),
         status: isEditing ? editingInvoice.status : (markAsPaid ? 'paid' : 'draft') // Allow marking as paid during creation
       }
       
@@ -1132,6 +1139,11 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
+                    <label className={`block text-xs font-medium mb-1 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Amount ({getCurrencySymbol(currency)})
+                    </label>
                     <div className="relative">
                       <DollarSign className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
                         isDarkMode 
@@ -1204,6 +1216,35 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                       </p>
                     )}
                   </div>
+                </div>
+
+                {/* Currency Selection */}
+                <div>
+                  <label className={`block text-xs font-medium mb-1 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Currency
+                  </label>
+                  <CustomDropdown
+                    value={currency}
+                    onChange={(value) => {
+                      setCurrency(value)
+                    }}
+                    options={CURRENCIES.map((curr) => ({
+                      value: curr.code,
+                      label: `${curr.code} - ${curr.symbol}`
+                    }))}
+                    placeholder="Select currency"
+                    isDarkMode={isDarkMode}
+                    searchable={true}
+                  />
+                  {currency !== (settings?.baseCurrency || 'USD') && (
+                    <p className={`text-xs mt-1 ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      Base currency: {settings?.baseCurrency || 'USD'}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -1422,7 +1463,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
             }
           }}
           title="Invoice Charge Confirmation"
-          message="You've used all 5 free invoices. This invoice will be charged $0.50 when sent. Do you want to continue?"
+          message={`You've used all 5 free invoices. This invoice will be charged ${formatCurrency(0.50, 'USD')} when sent. Do you want to continue?`}
           type="warning"
           confirmText="Continue & Create Invoice"
           cancelText="Cancel"

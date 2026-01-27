@@ -42,6 +42,9 @@ interface Invoice {
     accent_color?: string
   }
   type?: string
+  currency?: string
+  exchange_rate?: number
+  base_currency_amount?: number
   freelancerSettings?: {
     businessName: string
     logo: string

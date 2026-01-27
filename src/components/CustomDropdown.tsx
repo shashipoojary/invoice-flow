@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronDown, Check } from 'lucide-react'
 
 interface DropdownOption {
@@ -35,11 +36,39 @@ export default function CustomDropdown({
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const [position, setPosition] = useState({ top: 0, left: 0, width: 0 })
+
+  // Calculate position when dropdown opens
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      setPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      })
+    }
+  }, [isOpen])
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(event.target as Node) &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false)
+        setSearchQuery('')
+      }
+    }
+
+    const handleScroll = (e: Event) => {
+      // Only close if scrolling outside the dropdown menu
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setIsOpen(false)
         setSearchQuery('')
       }
@@ -47,10 +76,13 @@ export default function CustomDropdown({
 
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside)
+      // Also close on scroll (but not when scrolling inside dropdown)
+      window.addEventListener('scroll', handleScroll, true)
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
+      window.removeEventListener('scroll', handleScroll, true)
     }
   }, [isOpen])
 
@@ -71,47 +103,60 @@ export default function CustomDropdown({
   }
 
   return (
-    <div ref={dropdownRef} className={`relative ${className}`}>
-      {/* Trigger Button */}
-      <button
-        type="button"
-        onClick={() => !disabled && setIsOpen(!isOpen)}
-        disabled={disabled}
-        className={`w-full px-3 py-2.5 text-sm border transition-colors text-left flex items-center justify-between ${
-          error
-            ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-            : isDarkMode
-            ? 'border-gray-700 bg-gray-800 text-white hover:border-gray-600'
-            : 'border-gray-300 bg-white text-gray-900 hover:border-gray-400'
-        } ${
-          disabled
-            ? 'cursor-not-allowed opacity-60'
-            : 'cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500'
-        }`}
-      >
-        <span className={selectedOption ? '' : 'text-gray-500'}>
-          {selectedOption ? selectedOption.label : placeholder}
-        </span>
-        <ChevronDown
-          className={`h-4 w-4 text-gray-400 transition-transform ${
-            isOpen ? 'transform rotate-180' : ''
+    <>
+      <div ref={dropdownRef} className={`relative ${className}`}>
+        {/* Trigger Button */}
+        <button
+          ref={buttonRef}
+          type="button"
+          onClick={() => !disabled && setIsOpen(!isOpen)}
+          disabled={disabled}
+          className={`w-full px-3 py-2.5 text-sm border transition-colors text-left flex items-center justify-between ${
+            error
+              ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+              : isDarkMode
+              ? 'border-gray-700 bg-gray-800 text-white hover:border-gray-600'
+              : 'border-gray-300 bg-white text-gray-900 hover:border-gray-400'
+          } ${
+            disabled
+              ? 'cursor-not-allowed opacity-60'
+              : 'cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500'
           }`}
-        />
-      </button>
+        >
+          <span className={selectedOption ? '' : 'text-gray-500'}>
+            {selectedOption ? selectedOption.label : placeholder}
+          </span>
+          <ChevronDown
+            className={`h-4 w-4 text-gray-400 transition-transform ${
+              isOpen ? 'transform rotate-180' : ''
+            }`}
+          />
+        </button>
+      </div>
 
-      {/* Dropdown Menu */}
-      {isOpen && !disabled && (
+      {/* Dropdown Menu - Portal to body */}
+      {isOpen && !disabled && typeof window !== 'undefined' && createPortal(
         <div
-          className={`absolute z-50 w-full mt-1 border shadow-lg ${
+          ref={menuRef}
+          className={`fixed border shadow-lg ${
             isDarkMode
               ? 'bg-gray-800 border-gray-700'
               : 'bg-white border-gray-200'
           }`}
-          style={{ maxHeight: '240px', overflow: 'hidden' }}
+          style={{
+            top: `${position.top}px`,
+            left: `${position.left}px`,
+            width: `${position.width}px`,
+            maxHeight: searchable ? '320px' : '300px',
+            zIndex: 99999,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}
         >
           {/* Search Input (if searchable) */}
           {searchable && (
-            <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+            <div className="p-2 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
               <input
                 type="text"
                 value={searchQuery}
@@ -127,8 +172,30 @@ export default function CustomDropdown({
             </div>
           )}
 
-          {/* Options List */}
-          <div className="overflow-y-auto" style={{ maxHeight: '200px' }}>
+          {/* Options List - Fully scrollable */}
+          <div 
+            className="overflow-y-auto overflow-x-hidden"
+            style={{ 
+              maxHeight: searchable ? '260px' : '300px',
+              minHeight: 0,
+              WebkitOverflowScrolling: 'touch',
+              overscrollBehavior: 'contain',
+              scrollbarWidth: 'thin',
+              scrollbarColor: isDarkMode ? '#4B5563 #1F2937' : '#CBD5E1 #F3F4F6'
+            }}
+            onWheel={(e) => {
+              // Prevent parent scroll when scrolling dropdown
+              e.stopPropagation()
+            }}
+            onTouchMove={(e) => {
+              // Prevent parent scroll when scrolling dropdown on touch devices
+              e.stopPropagation()
+            }}
+            onScroll={(e) => {
+              // Prevent scroll event from bubbling up
+              e.stopPropagation()
+            }}
+          >
             {filteredOptions.length === 0 ? (
               <div className={`px-3 py-2 text-sm ${
                 isDarkMode ? 'text-gray-400' : 'text-gray-500'
@@ -169,9 +236,10 @@ export default function CustomDropdown({
               })
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   )
 }
 

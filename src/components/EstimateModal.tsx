@@ -17,6 +17,7 @@ import { useAuth } from '@/hooks/useAuth'
 import CustomDropdown from './CustomDropdown'
 import UpgradeModal from './UpgradeModal'
 import ToastContainer from './Toast'
+import { CURRENCIES, formatCurrency, getCurrencySymbol } from '@/lib/currency'
 
 interface EstimateModalProps {
   isOpen: boolean
@@ -119,6 +120,7 @@ export default function EstimateModal({
   const [discount, setDiscount] = useState(estimate?.discount || 0)
   const [taxRate, setTaxRate] = useState(estimate?.taxRate || 0)
   const [notes, setNotes] = useState(estimate?.notes || '')
+  const [currency, setCurrency] = useState<string>((estimate as any)?.currency || settings?.baseCurrency || 'USD')
   const [issueDate, setIssueDate] = useState(
     estimate?.issueDate || new Date().toISOString().split('T')[0]
   )
@@ -162,6 +164,7 @@ export default function EstimateModal({
       setDiscount(estimate.discount || 0)
       setTaxRate(estimate.taxRate || 0)
       setNotes(estimate.notes || '')
+      setCurrency((estimate as any)?.currency || settings?.baseCurrency || 'USD')
       setIssueDate(estimate.issueDate || new Date().toISOString().split('T')[0])
       setExpiryDate(estimate.expiryDate || (() => {
         const date = new Date()
@@ -177,6 +180,7 @@ export default function EstimateModal({
       setDiscount(0)
       setTaxRate(0)
       setNotes('')
+      setCurrency(settings?.baseCurrency || 'USD')
       setIssueDate(new Date().toISOString().split('T')[0])
       const date = new Date()
       date.setDate(date.getDate() + 30)
@@ -197,10 +201,12 @@ export default function EstimateModal({
       setDiscount(0)
       setTaxRate(0)
       setNotes('')
+      setCurrency(settings?.baseCurrency || 'USD')
       setStep(1)
     }
     setTaxRate(0)
     setNotes('')
+    setCurrency(settings?.baseCurrency || 'USD')
     setStep(1)
     onClose()
   }
@@ -387,6 +393,7 @@ export default function EstimateModal({
         notes,
         issueDate,
         expiryDate,
+        currency: currency,
       }
 
       const url = isEditMode && estimate?.id 
@@ -766,6 +773,35 @@ export default function EstimateModal({
                 </div>
               </div>
 
+              {/* Currency Selection */}
+              <div className="p-4">
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Currency
+                </label>
+                <CustomDropdown
+                  value={currency}
+                  onChange={(value) => {
+                    setCurrency(value)
+                  }}
+                  options={CURRENCIES.map((curr) => ({
+                    value: curr.code,
+                    label: `${curr.code} - ${curr.symbol}`
+                  }))}
+                  placeholder="Select currency"
+                  isDarkMode={isDarkMode}
+                  searchable={true}
+                />
+                {currency !== (settings?.baseCurrency || 'USD') && (
+                  <p className={`text-xs mt-1 ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                  }`}>
+                    Base currency: {settings?.baseCurrency || 'USD'}
+                  </p>
+                )}
+              </div>
+
               {/* Items */}
               <div className="p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -879,7 +915,7 @@ export default function EstimateModal({
                         <div className={`flex-1 sm:flex-none sm:w-24 text-right ${
                           isDarkMode ? 'text-gray-300' : 'text-gray-700'
                         }`}>
-                          <span className="text-sm font-medium">${(item.rate * item.qty).toFixed(2)}</span>
+                          <span className="text-sm font-medium">{formatCurrency(item.rate * item.qty, currency)}</span>
                         </div>
                         {items.length > 1 && (
                           <button
@@ -934,7 +970,7 @@ export default function EstimateModal({
                   <label className={`block text-sm font-medium mb-2 ${
                     isDarkMode ? 'text-gray-300' : 'text-gray-700'
                   }`}>
-                    Discount ($)
+                    Discount ({getCurrencySymbol(currency)})
                   </label>
                   <input
                     type="number"
@@ -997,25 +1033,25 @@ export default function EstimateModal({
               }`}>
                 <div className="flex justify-between">
                   <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Subtotal:</span>
-                  <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>${subtotal.toFixed(2)}</span>
+                  <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{formatCurrency(subtotal, currency)}</span>
                 </div>
                 {discount > 0 && (
                   <div className="flex justify-between">
                     <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Discount:</span>
-                    <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>-${discount.toFixed(2)}</span>
+                    <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>-{formatCurrency(discount, currency)}</span>
                   </div>
                 )}
                 {taxRate > 0 && (
                   <div className="flex justify-between">
                     <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Tax:</span>
-                    <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>${((subtotal - discount) * (taxRate / 100)).toFixed(2)}</span>
+                    <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{formatCurrency((subtotal - discount) * (taxRate / 100), currency)}</span>
                   </div>
                 )}
                 <div className={`flex justify-between pt-2 border-t ${
                   isDarkMode ? 'border-gray-700' : 'border-gray-200'
                 }`}>
                   <span className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Total:</span>
-                  <span className="font-bold text-lg text-indigo-600">${total.toFixed(2)}</span>
+                  <span className="font-bold text-lg text-indigo-600">{formatCurrency(total, currency)}</span>
                 </div>
               </div>
 

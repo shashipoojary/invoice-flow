@@ -3,13 +3,15 @@
 import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { 
   Save, Building2, Upload, CreditCard, 
-  Loader2, Trash2, Sparkles, FileText
+  Loader2, Trash2, Sparkles, FileText, Globe
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { useSettings } from '@/contexts/SettingsContext';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
+import CustomDropdown from '@/components/CustomDropdown';
+import { CURRENCIES } from '@/lib/currency';
 import LazyLogo from '@/components/LazyLogo';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { FreelancerSettings, Client } from '@/types';
@@ -585,6 +587,58 @@ export default function SettingsPage() {
                         </div>
                       )}
                     </div>
+                  </div>
+                </div>
+              </div>
+              )}
+
+              {/* Currency Settings */}
+              {isLoadingSettings ? (
+                <div className={`p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
+                  <div className="animate-pulse">
+                    <div className="flex items-center space-x-3 mb-6">
+                      <div className="w-9 h-9 bg-gray-300"></div>
+                      <div className="h-6 bg-gray-300 rounded w-40"></div>
+                    </div>
+                    <div className="h-10 bg-gray-300 rounded w-full"></div>
+                  </div>
+                </div>
+              ) : (
+              <div className={`p-4 sm:p-6 bg-white/70 border border-gray-200 backdrop-blur-sm`}>
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className={`p-2 bg-purple-100`}>
+                    <Globe className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold" style={{color: '#1f2937'}}>
+                      Currency Settings
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Set your base currency for metrics and reporting. This affects how revenue is calculated across your dashboard.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
+                      Base Currency *
+                    </label>
+                    <CustomDropdown
+                      value={settings.baseCurrency || 'USD'}
+                      onChange={(value) => updateSettings({ ...settings, baseCurrency: value })}
+                      options={CURRENCIES.map((currency) => ({
+                        value: currency.code,
+                        label: `${currency.code} - ${currency.name} (${currency.symbol})`
+                      }))}
+                      placeholder="Select base currency"
+                      isDarkMode={false}
+                      searchable={true}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      All dashboard metrics will be converted to this currency
+                    </p>
                   </div>
                 </div>
               </div>

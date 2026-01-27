@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { Save, Upload, Building2, CreditCard } from 'lucide-react'
+import { Save, Upload, Building2, CreditCard, Globe } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { CURRENCIES } from '@/lib/currency'
+import CustomDropdown from '@/components/CustomDropdown'
 
 interface FreelancerSettings {
   businessName: string
@@ -22,6 +24,7 @@ interface FreelancerSettings {
   bankIban: string
   stripeAccount: string
   paymentNotes: string
+  baseCurrency: string
 }
 
 export default function SettingsPage() {
@@ -45,7 +48,8 @@ export default function SettingsPage() {
     bankIfscSwift: '',
     bankIban: '',
     stripeAccount: '',
-    paymentNotes: ''
+    paymentNotes: '',
+    baseCurrency: 'USD'
   })
 
   useEffect(() => {
@@ -78,22 +82,23 @@ export default function SettingsPage() {
       
       if (data.settings) {
         setSettings({
-          businessName: data.settings.business_name || '',
+          businessName: data.settings.businessName || '',
           logo: data.settings.logo || '',
           address: data.settings.address || '',
-          email: data.settings.email || '',
-          phone: data.settings.phone || '',
+          email: data.settings.businessEmail || '',
+          phone: data.settings.businessPhone || '',
           website: data.settings.website || '',
-          paypalEmail: data.settings.paypal_email || '',
-          cashappId: data.settings.cashapp_id || '',
-          venmoId: data.settings.venmo_id || '',
-          googlePayUpi: data.settings.google_pay_upi || '',
-          applePayId: data.settings.apple_pay_id || '',
-          bankAccount: data.settings.bank_account || '',
-          bankIfscSwift: data.settings.bank_ifsc_swift || '',
-          bankIban: data.settings.bank_iban || '',
-          stripeAccount: data.settings.stripe_account || '',
-          paymentNotes: data.settings.payment_notes || ''
+          paypalEmail: data.settings.paypalEmail || '',
+          cashappId: data.settings.cashappId || '',
+          venmoId: data.settings.venmoId || '',
+          googlePayUpi: data.settings.googlePayUpi || '',
+          applePayId: data.settings.applePayId || '',
+          bankAccount: data.settings.bankAccount || '',
+          bankIfscSwift: data.settings.bankIfscSwift || '',
+          bankIban: data.settings.bankIban || '',
+          stripeAccount: data.settings.stripeAccount || '',
+          paymentNotes: data.settings.paymentNotes || '',
+          baseCurrency: data.settings.baseCurrency || 'USD'
         })
       }
     } catch (error) {
@@ -124,7 +129,25 @@ export default function SettingsPage() {
       const response = await fetch('/api/settings', {
         method: 'POST',
         headers,
-        body: JSON.stringify(settings)
+        body: JSON.stringify({
+          businessName: settings.businessName,
+          businessEmail: settings.email,
+          businessPhone: settings.phone,
+          address: settings.address,
+          website: settings.website,
+          logo: settings.logo,
+          paypalEmail: settings.paypalEmail,
+          cashappId: settings.cashappId,
+          venmoId: settings.venmoId,
+          googlePayUpi: settings.googlePayUpi,
+          applePayId: settings.applePayId,
+          bankAccount: settings.bankAccount,
+          bankIfscSwift: settings.bankIfscSwift,
+          bankIban: settings.bankIban,
+          stripeAccount: settings.stripeAccount,
+          paymentNotes: settings.paymentNotes,
+          baseCurrency: settings.baseCurrency
+        })
       })
       
       const data = await response.json()
@@ -302,6 +325,46 @@ export default function SettingsPage() {
                     </div>
                   </label>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Currency Settings */}
+          <div className={`rounded-lg p-4 ${isDarkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white/70 border border-slate-200'} backdrop-blur-sm`}>
+            <div className="flex items-center space-x-3 mb-6">
+              <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-purple-500/20' : 'bg-purple-100'}`}>
+                <Globe className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold" style={{color: isDarkMode ? '#f3f4f6' : '#1f2937'}}>
+                  Currency Settings
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Set your base currency for metrics and reporting. This affects how revenue is calculated across your dashboard.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{color: isDarkMode ? '#e5e7eb' : '#374151'}}>
+                  Base Currency *
+                </label>
+                <CustomDropdown
+                  value={settings.baseCurrency || 'USD'}
+                  onChange={(value) => setSettings(prev => ({ ...prev, baseCurrency: value }))}
+                  options={CURRENCIES.map((currency) => ({
+                    value: currency.code,
+                    label: `${currency.code} - ${currency.name} (${currency.symbol})`
+                  }))}
+                  placeholder="Select base currency"
+                  isDarkMode={isDarkMode}
+                  searchable={true}
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  All dashboard metrics will be converted to this currency
+                </p>
               </div>
             </div>
           </div>

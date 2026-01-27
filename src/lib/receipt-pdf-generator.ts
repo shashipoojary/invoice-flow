@@ -15,12 +15,24 @@ export async function generateReceiptPDF(
     // Use a subtle primary color (similar to minimal template)
     const primaryRgb = { r: 0.2, g: 0.2, b: 0.2 }; // Dark gray for minimal look
   
+    const invoiceCurrency = invoice.currency || 'USD';
     const formatCurrency = (amount: number): string => {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-      }).format(amount);
+      try {
+        return new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: invoiceCurrency.toUpperCase(),
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(amount);
+      } catch (error) {
+        // Fallback to USD if currency is invalid
+        return new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(amount);
+      }
     };
 
     const formatDate = (dateString: string | undefined | null): string => {

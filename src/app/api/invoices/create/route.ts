@@ -535,6 +535,8 @@ export async function POST(request: NextRequest) {
           lateFees: invoiceData.type === 'fast' ? undefined : (invoiceData.late_fees || { enabled: false, type: 'fixed', amount: 0, gracePeriod: 0 }),
           reminders: invoiceData.type === 'fast' ? undefined : (invoiceData.reminders || { enabled: false, useSystemDefaults: true, rules: [] }),
           theme: invoiceData.theme || undefined,
+          currency: invoiceData.currency || 'USD',
+          exchange_rate: invoiceData.exchange_rate || 1.0,
         };
 
         try {
@@ -585,7 +587,49 @@ export async function POST(request: NextRequest) {
     // Calculate totals for database save
     const subtotal = invoiceData.items.reduce((sum: number, item: { rate: number }) => sum + item.rate, 0);
     const discount = invoiceData.discount || 0;
-    const total = subtotal - discount;
+    
+    // Handle tax calculation - support both old format (tax/taxRate) and new format (tax_breakdown)
+    let taxAmount = 0;
+    let taxBreakdown: any[] = [];
+    
+    if (invoiceData.tax_breakdown && Array.isArray(invoiceData.tax_breakdown) && invoiceData.tax_breakdown.length > 0) {
+      // New format: tax_breakdown array
+      taxBreakdown = invoiceData.tax_breakdown;
+      taxAmount = taxBreakdown.reduce((sum: number, tax: any) => {
+        if (tax.amount !== undefined) {
+          return sum + parseFloat(tax.amount.toString());
+        } else if (tax.rate !== undefined) {
+          return sum + (subtotal * (parseFloat(tax.rate.toString()) / 100));
+        }
+        return sum;
+      }, 0);
+    } else if (invoiceData.tax !== undefined && invoiceData.tax !== null) {
+      // Old format: single tax amount
+      taxAmount = parseFloat(invoiceData.tax.toString()) || 0;
+      if (taxAmount > 0) {
+        const taxRate = subtotal > 0 ? (taxAmount / subtotal * 100) : 0;
+        taxBreakdown = [{
+          name: 'Tax',
+          rate: Math.round(taxRate * 100) / 100,
+          amount: taxAmount,
+          type: 'percentage'
+        }];
+      }
+    } else if (invoiceData.taxRate !== undefined && invoiceData.taxRate !== null) {
+      // Old format: tax rate percentage
+      const taxRate = parseFloat(invoiceData.taxRate.toString()) || 0;
+      taxAmount = subtotal * (taxRate / 100);
+      if (taxAmount > 0) {
+        taxBreakdown = [{
+          name: 'Tax',
+          rate: taxRate,
+          amount: Math.round(taxAmount * 100) / 100,
+          type: 'percentage'
+        }];
+      }
+    }
+    
+    const total = subtotal - discount + taxAmount;
 
     // Generate invoice number using database function
     const { data: invoiceNumberData, error: invoiceNumberError } = await supabase
@@ -625,14 +669,38 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Get user's base currency from settings
+    const { data: userSettings } = await supabase
+      .from('user_settings')
+      .select('base_currency')
+      .eq('user_id', user.id)
+      .single();
+    
+    const baseCurrency = userSettings?.base_currency || 'USD';
+    const invoiceCurrency = invoiceData.currency || baseCurrency;
+    const exchangeRate = invoiceData.exchange_rate || (invoiceCurrency === baseCurrency ? 1.0 : null);
+    
+    // Calculate base currency amount
+    let baseCurrencyAmount: number | null = null;
+    if (exchangeRate !== null && exchangeRate > 0) {
+      baseCurrencyAmount = Math.round((total * exchangeRate) * 100) / 100;
+    } else if (invoiceCurrency === baseCurrency) {
+      baseCurrencyAmount = total;
+    }
+
     // Prepare invoice data
     const invoice = {
       user_id: user.id,
       client_id: clientId,
       invoice_number: invoiceNumberData,
       public_token: publicTokenData,
+      currency: invoiceCurrency,
+      exchange_rate: exchangeRate || 1.0,
+      base_currency_amount: baseCurrencyAmount,
       subtotal,
       discount,
+      tax: taxAmount,
+      tax_breakdown: taxBreakdown.length > 0 ? JSON.stringify(taxBreakdown) : null,
       total,
       // IMPORTANT: Allow 'paid' status if user marked invoice as paid during creation
       // This is for the use case where client already paid, but asks for invoice later
@@ -792,6 +860,9 @@ export async function POST(request: NextRequest) {
         { enabled: false, useSystemDefaults: true, rules: [] }),
       theme: completeInvoice.type === 'fast' ? undefined : 
         (completeInvoice.theme ? JSON.parse(completeInvoice.theme) : undefined),
+      currency: completeInvoice.currency || 'USD',
+      exchange_rate: completeInvoice.exchange_rate || 1.0,
+      base_currency_amount: completeInvoice.base_currency_amount || completeInvoice.total,
     };
 
     // Create scheduled reminders if reminder settings are enabled

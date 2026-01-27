@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useData } from '@/contexts/DataContext';
+import { formatCurrency } from '@/lib/currency';
 import { useRouter } from 'next/navigation';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
@@ -934,7 +935,7 @@ function EstimatesContent(): React.JSX.Element {
                             </div>
                             <div className="text-right flex flex-col items-end">
                               <div className="font-semibold text-base text-gray-900">
-                                ${estimate.total.toLocaleString()}
+                                {formatCurrency(estimate.total, estimate.currency || settings.baseCurrency || 'USD')}
                               </div>
                               <div className="mt-0 mb-0.5 min-h-[12px]"></div>
                               <div className="text-xs" style={{ color: '#6b7280' }}>{new Date(estimate.issueDate || estimate.createdAt).toLocaleDateString()}</div>
@@ -1016,7 +1017,7 @@ function EstimatesContent(): React.JSX.Element {
                             </div>
                             <div className="text-right">
                               <div className="font-semibold text-base text-gray-900">
-                                ${estimate.total.toLocaleString()}
+                                {formatCurrency(estimate.total, estimate.currency || settings.baseCurrency || 'USD')}
                               </div>
                               <div className="mt-0 mb-0.5 min-h-[12px]"></div>
                               <div className="text-xs" style={{ color: '#6b7280' }}>{new Date(estimate.issueDate || estimate.createdAt).toLocaleDateString()}</div>
@@ -1420,7 +1421,7 @@ function EstimatesContent(): React.JSX.Element {
             }
           }}
           title="Confirm Charge"
-          message={`You've used all 5 free invoices this month. This conversion will be charged $0.50 when the invoice is sent. Do you want to proceed?`}
+          message={`You've used all 5 free invoices this month. This conversion will be charged ${formatCurrency(0.50, settings.baseCurrency || 'USD')} when the invoice is sent. Do you want to proceed?`}
           type="warning"
           isLoading={false}
           confirmText="Proceed with Charge"
