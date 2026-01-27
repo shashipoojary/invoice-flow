@@ -942,7 +942,7 @@ export default function ReminderHistoryPage() {
                       onClick={() => setStatusFilter('')}
                       className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         !statusFilter 
-                          ? 'text-gray-900' 
+                          ? 'text-indigo-600' 
                           : 'text-gray-700 hover:text-gray-900'
                       }`}
                     >
@@ -1019,7 +1019,7 @@ export default function ReminderHistoryPage() {
                       onClick={() => setTypeFilter('')}
                       className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         !typeFilter 
-                          ? 'text-gray-900' 
+                          ? 'text-indigo-600' 
                           : 'text-gray-700 hover:text-gray-900'
                       }`}
                     >

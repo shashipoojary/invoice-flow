@@ -1982,7 +1982,7 @@ function InvoicesContent(): React.JSX.Element {
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           !statusFilter 
-                            ? 'text-gray-900' 
+                            ? 'text-indigo-600' 
                             : 'text-gray-700 hover:text-gray-900'
                         }`}
                       >
@@ -2038,7 +2038,7 @@ function InvoicesContent(): React.JSX.Element {
                         }}
                         className={`px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-medium transition-colors flex items-center justify-center cursor-pointer ${
                           statusFilter === 'draft' 
-                            ? 'text-gray-900' 
+                            ? 'text-indigo-600' 
                             : 'text-gray-700 hover:text-gray-900'
                         }`}
                       >
