@@ -203,6 +203,52 @@ export async function POST(
     const estimateExchangeRate = estimate.exchange_rate || 1.0;
     const estimateBaseCurrencyAmount = estimate.base_currency_amount || estimate.total * estimateExchangeRate;
 
+    // Calculate tax amount - use estimate.tax if available, otherwise calculate from subtotal and discount
+    // Parse tax as float to handle string/number conversion
+    let taxAmount = 0;
+    if (estimate.tax !== null && estimate.tax !== undefined && estimate.tax !== 0) {
+      taxAmount = parseFloat(estimate.tax.toString()) || 0;
+    } else {
+      // If tax is missing or 0, try to calculate from tax_breakdown if available
+      let taxBreakdown = estimate.tax_breakdown;
+      // Parse tax_breakdown if it's a string
+      if (typeof taxBreakdown === 'string') {
+        try {
+          taxBreakdown = JSON.parse(taxBreakdown);
+        } catch (e) {
+          console.error('Error parsing tax_breakdown:', e);
+          taxBreakdown = null;
+        }
+      }
+      
+      if (taxBreakdown && Array.isArray(taxBreakdown) && taxBreakdown.length > 0) {
+        taxAmount = taxBreakdown.reduce((sum: number, item: any) => {
+          const itemAmount = item.amount ? parseFloat(item.amount.toString()) : 0;
+          return sum + itemAmount;
+        }, 0);
+      } else {
+        // Fallback: calculate from total - subtotal + discount
+        // This ensures we preserve the tax that was in the original estimate
+        const afterDiscount = (estimate.subtotal || 0) - (estimate.discount || 0);
+        const calculatedTax = (estimate.total || 0) - afterDiscount;
+        taxAmount = calculatedTax > 0 ? calculatedTax : 0;
+      }
+    }
+    
+    // Ensure tax_breakdown is properly formatted for invoice
+    let invoiceTaxBreakdown = null;
+    if (estimate.tax_breakdown) {
+      if (typeof estimate.tax_breakdown === 'string') {
+        try {
+          invoiceTaxBreakdown = estimate.tax_breakdown;
+        } catch (e) {
+          invoiceTaxBreakdown = JSON.stringify(estimate.tax_breakdown);
+        }
+      } else {
+        invoiceTaxBreakdown = JSON.stringify(estimate.tax_breakdown);
+      }
+    }
+
     // Create invoice from estimate
     const invoice = {
       user_id: user.id,
@@ -214,7 +260,8 @@ export async function POST(
       base_currency_amount: estimateBaseCurrencyAmount,
       subtotal: estimate.subtotal,
       discount: estimate.discount || 0,
-      tax: estimate.tax || 0,
+      tax: taxAmount,
+      tax_breakdown: invoiceTaxBreakdown,
       total: estimate.total,
       status: 'draft',
       issue_date: estimate.issue_date || new Date().toISOString().split('T')[0],
