@@ -94,6 +94,9 @@ export async function GET(
           description: item.description,
           amount: item.line_total
         })),
+        // Tax mapping - map database field 'tax' to frontend 'taxAmount'
+        taxAmount: invoice.tax || 0,
+        taxRate: invoice.tax && invoice.subtotal ? (invoice.tax / (invoice.subtotal - (invoice.discount || 0))) * 100 : 0,
         // Multi-currency support
         currency: invoice.currency || 'USD',
         exchange_rate: invoice.exchange_rate || 1.0,

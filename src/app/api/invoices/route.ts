@@ -128,6 +128,9 @@ export async function GET(request: NextRequest) {
         clientPhone: clientPhone,
         clientAddress: clientAddress,
         discount: invoice.discount || 0,
+        // Tax mapping - map database field 'tax' to frontend 'taxAmount'
+        taxAmount: invoice.tax || 0,
+        taxRate: invoice.tax && invoice.subtotal ? (invoice.tax / (invoice.subtotal - (invoice.discount || 0))) * 100 : 0,
         items: itemsData.map(item => ({
           id: item.id,
           description: item.description,
