@@ -133,8 +133,23 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   const [dueDate, setDueDate] = useState('')
   const [notes, setNotes] = useState('')
   const [markAsPaid, setMarkAsPaid] = useState(false)
-  const [currency, setCurrency] = useState<string>(settings?.baseCurrency || 'USD')
-  const [exchangeRate, setExchangeRate] = useState<string>('1.0')
+  const [currency, setCurrency] = useState<string>(() => {
+    // Use invoice currency if available, otherwise use baseCurrency
+    if (editingInvoice && (editingInvoice.currency || (editingInvoice as any)?.currency)) {
+      return editingInvoice.currency || (editingInvoice as any).currency;
+    }
+    return settings?.baseCurrency || 'USD';
+  })
+  const [exchangeRate, setExchangeRate] = useState<string>(() => {
+    // Use invoice exchange rate if available
+    if (editingInvoice) {
+      const invoiceExchangeRate = (editingInvoice as any)?.exchange_rate;
+      if (invoiceExchangeRate !== undefined && invoiceExchangeRate !== null) {
+        return invoiceExchangeRate.toString();
+      }
+    }
+    return '1.0';
+  })
   const [fetchingExchangeRate, setFetchingExchangeRate] = useState(false)
   
   // Validation errors
@@ -193,8 +208,12 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         setAmount(editingInvoice.items?.[0]?.rate?.toString() || editingInvoice.items?.[0]?.amount?.toString() || '')
         setDueDate(editingInvoice.dueDate || '')
         setNotes(editingInvoice.notes || '')
-        setCurrency((editingInvoice as any)?.currency || settings?.baseCurrency || 'USD')
-        setExchangeRate((editingInvoice as any)?.exchange_rate?.toString() || '1.0')
+        // Prioritize invoice's currency - only fallback to baseCurrency if invoice currency is missing
+        const invoiceCurrency = editingInvoice.currency || (editingInvoice as any)?.currency;
+        setCurrency(invoiceCurrency || settings?.baseCurrency || 'USD')
+        // Set exchange rate from invoice, default to 1.0 if missing
+        const invoiceExchangeRate = (editingInvoice as any)?.exchange_rate;
+        setExchangeRate(invoiceExchangeRate !== undefined && invoiceExchangeRate !== null ? invoiceExchangeRate.toString() : '1.0')
         
         // If the client doesn't exist in the clients list, add it
         const clientId = editingInvoice.clientId || editingInvoice.client_id;

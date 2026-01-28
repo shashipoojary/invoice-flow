@@ -224,7 +224,9 @@ export async function PUT(request: NextRequest) {
       payment_terms,
       theme,
       premium_unlocked,
-      unlocked_template
+      unlocked_template,
+      currency,
+      exchange_rate
     } = body
 
     if (!invoiceId) {
@@ -251,11 +253,28 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // Get user's base currency from settings
+    const { data: userSettings } = await supabaseAdmin
+      .from('user_settings')
+      .select('base_currency')
+      .eq('user_id', user.id)
+      .single();
+    
+    const baseCurrency = userSettings?.base_currency || 'USD';
+    const invoiceCurrency = currency || baseCurrency;
+    
+    // Calculate exchange rate
+    const exchangeRateValue = invoiceCurrency === baseCurrency 
+      ? 1.0 
+      : (exchange_rate ? parseFloat(exchange_rate.toString()) : 1.0);
+
     // Start a transaction to update invoice and items
     const { data: invoice, error: invoiceError } = await supabaseAdmin
       .from('invoices')
       .update({
         client_id: client_id || null,
+        currency: invoiceCurrency,
+        exchange_rate: exchangeRateValue,
         due_date,
         discount: discount || 0,
         notes,
@@ -343,13 +362,19 @@ export async function PUT(request: NextRequest) {
       total = subtotal - discountAmount;
     }
 
-    // Update invoice with calculated totals
+    // Update invoice with calculated totals and currency info
     if (items && items.length > 0) {
+      // Calculate base currency amount based on the new total
+      const baseCurrencyAmount = total * exchangeRateValue;
+      
       const { error: updateTotalsError } = await supabaseAdmin
         .from('invoices')
         .update({
           subtotal,
           total,
+          currency: invoiceCurrency,
+          exchange_rate: exchangeRateValue,
+          base_currency_amount: baseCurrencyAmount,
           updated_at: new Date().toISOString()
         })
         .eq('id', invoiceId)
@@ -358,6 +383,32 @@ export async function PUT(request: NextRequest) {
       if (updateTotalsError) {
         console.error('Error updating invoice totals:', updateTotalsError)
         return NextResponse.json({ error: 'Failed to update invoice totals' }, { status: 500 })
+      }
+    } else {
+      // Even if no items, update currency and exchange rate if provided
+      const { data: currentInvoice } = await supabaseAdmin
+        .from('invoices')
+        .select('total')
+        .eq('id', invoiceId)
+        .single();
+      
+      const currentTotal = currentInvoice?.total || 0;
+      const baseCurrencyAmount = currentTotal * exchangeRateValue;
+      
+      const { error: updateCurrencyError } = await supabaseAdmin
+        .from('invoices')
+        .update({
+          currency: invoiceCurrency,
+          exchange_rate: exchangeRateValue,
+          base_currency_amount: baseCurrencyAmount,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', invoiceId)
+        .eq('user_id', user.id)
+
+      if (updateCurrencyError) {
+        console.error('Error updating invoice currency:', updateCurrencyError)
+        return NextResponse.json({ error: 'Failed to update invoice currency' }, { status: 500 })
       }
     }
 

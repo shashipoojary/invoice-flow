@@ -342,8 +342,23 @@ export default function QuickInvoiceModal({
   const createButtonRef = useRef<HTMLButtonElement>(null) // Ref to track Create button for stability
   const [discount, setDiscount] = useState('')
   const [markAsPaid, setMarkAsPaid] = useState(false)
-  const [currency, setCurrency] = useState<string>(settings?.baseCurrency || 'USD')
-  const [exchangeRate, setExchangeRate] = useState<string>('1.0')
+  const [currency, setCurrency] = useState<string>(() => {
+    // Use invoice currency if available, otherwise use baseCurrency
+    if (editingInvoice && (editingInvoice.currency || (editingInvoice as any)?.currency)) {
+      return editingInvoice.currency || (editingInvoice as any).currency;
+    }
+    return settings?.baseCurrency || 'USD';
+  })
+  const [exchangeRate, setExchangeRate] = useState<string>(() => {
+    // Use invoice exchange rate if available
+    if (editingInvoice) {
+      const invoiceExchangeRate = (editingInvoice as any)?.exchange_rate;
+      if (invoiceExchangeRate !== undefined && invoiceExchangeRate !== null) {
+        return invoiceExchangeRate.toString();
+      }
+    }
+    return '1.0';
+  })
   
   // Initialize currency from settings when available
   useEffect(() => {
@@ -505,8 +520,12 @@ export default function QuickInvoiceModal({
         setDueDate(editingInvoice.dueDate || '')
         setNotes(editingInvoice.notes || 'Thank you for your business!')
         setDiscount(editingInvoice.discount?.toString() || '')
-        setCurrency((editingInvoice as any).currency || settings.baseCurrency || 'USD')
-        setExchangeRate((editingInvoice as any).exchange_rate?.toString() || '1.0')
+        // Prioritize invoice's currency - only fallback to baseCurrency if invoice currency is missing
+        const invoiceCurrency = editingInvoice.currency || (editingInvoice as any)?.currency;
+        setCurrency(invoiceCurrency || settings.baseCurrency || 'USD')
+        // Set exchange rate from invoice, default to 1.0 if missing
+        const invoiceExchangeRate = (editingInvoice as any)?.exchange_rate;
+        setExchangeRate(invoiceExchangeRate !== undefined && invoiceExchangeRate !== null ? invoiceExchangeRate.toString() : '1.0')
         
         // Set client information immediately (don't wait for clients to load)
         const clientId = editingInvoice.clientId || editingInvoice.client_id;

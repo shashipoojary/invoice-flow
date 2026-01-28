@@ -43,7 +43,8 @@ export async function PUT(
       notes = '',
       issueDate,
       expiryDate,
-      currency
+      currency,
+      exchange_rate
     } = body;
 
     if (!clientId || !items || !Array.isArray(items) || items.length === 0) {
@@ -66,6 +67,12 @@ export async function PUT(
     
     const baseCurrency = userSettings?.base_currency || 'USD';
     const estimateCurrency = currency || baseCurrency;
+    
+    // Calculate exchange rate and base currency amount
+    const exchangeRateValue = estimateCurrency === baseCurrency 
+      ? 1.0 
+      : (exchange_rate ? parseFloat(exchange_rate.toString()) : 1.0);
+    const baseCurrencyAmount = total * exchangeRateValue;
 
     // Update estimate
     const { data: updatedEstimate, error: updateError } = await supabaseAdmin
@@ -73,6 +80,8 @@ export async function PUT(
       .update({
         client_id: clientId,
         currency: estimateCurrency,
+        exchange_rate: exchangeRateValue,
+        base_currency_amount: baseCurrencyAmount,
         subtotal: subtotal,
         discount: discount,
         tax: taxAmount,

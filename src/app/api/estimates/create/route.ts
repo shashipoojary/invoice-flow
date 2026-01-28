@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     const estimateData = await request.json();
-    const { clientId, items, discount = 0, notes, issueDate, expiryDate, paymentTerms, theme, currency } = estimateData;
+    const { clientId, items, discount = 0, notes, issueDate, expiryDate, paymentTerms, theme, currency, exchange_rate } = estimateData;
 
     // Validate required fields
     if (!clientId || !items || items.length === 0) {
@@ -84,6 +84,12 @@ export async function POST(request: NextRequest) {
     
     const baseCurrency = userSettings?.base_currency || 'USD';
     const estimateCurrency = currency || baseCurrency;
+    
+    // Calculate exchange rate and base currency amount
+    const exchangeRateValue = estimateCurrency === baseCurrency 
+      ? 1.0 
+      : (exchange_rate ? parseFloat(exchange_rate.toString()) : 1.0);
+    const baseCurrencyAmount = total * exchangeRateValue;
 
     // Prepare estimate data
     const estimate = {
@@ -92,6 +98,8 @@ export async function POST(request: NextRequest) {
       estimate_number: estimateNumberData,
       public_token: publicTokenData,
       currency: estimateCurrency,
+      exchange_rate: exchangeRateValue,
+      base_currency_amount: baseCurrencyAmount,
       subtotal,
       discount,
       tax: taxAmount,

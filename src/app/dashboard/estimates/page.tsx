@@ -1376,7 +1376,10 @@ function EstimatesContent(): React.JSX.Element {
           taxAmount: editingEstimate.taxAmount,
           notes: editingEstimate.notes,
           issueDate: editingEstimate.issueDate,
-          expiryDate: editingEstimate.expiryDate
+          expiryDate: editingEstimate.expiryDate,
+          currency: (editingEstimate as any).currency,
+          exchange_rate: (editingEstimate as any).exchange_rate,
+          base_currency_amount: (editingEstimate as any).base_currency_amount
         } : null}
       />
 

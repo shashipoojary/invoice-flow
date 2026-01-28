@@ -34,6 +34,9 @@ interface EstimateModalProps {
     notes?: string
     issueDate?: string
     expiryDate?: string
+    currency?: string
+    exchange_rate?: number
+    base_currency_amount?: number
   } | null
 }
 
@@ -120,7 +123,13 @@ export default function EstimateModal({
   const [discount, setDiscount] = useState(estimate?.discount || 0)
   const [taxRate, setTaxRate] = useState(estimate?.taxRate || 0)
   const [notes, setNotes] = useState(estimate?.notes || '')
-  const [currency, setCurrency] = useState<string>((estimate as any)?.currency || settings?.baseCurrency || 'USD')
+  const [currency, setCurrency] = useState<string>(() => {
+    // Use estimate currency if available, otherwise use baseCurrency
+    if (estimate && (estimate.currency || (estimate as any)?.currency)) {
+      return estimate.currency || (estimate as any).currency;
+    }
+    return settings?.baseCurrency || 'USD';
+  })
   const [issueDate, setIssueDate] = useState(
     estimate?.issueDate || new Date().toISOString().split('T')[0]
   )
@@ -133,7 +142,16 @@ export default function EstimateModal({
   )
   
   // Exchange rate state
-  const [exchangeRate, setExchangeRate] = useState<string>('1.0')
+  const [exchangeRate, setExchangeRate] = useState<string>(() => {
+    // Use estimate exchange rate if available
+    if (estimate) {
+      const estimateExchangeRate = (estimate as any)?.exchange_rate;
+      if (estimateExchangeRate !== undefined && estimateExchangeRate !== null) {
+        return estimateExchangeRate.toString();
+      }
+    }
+    return '1.0';
+  })
   const [fetchingExchangeRate, setFetchingExchangeRate] = useState(false)
   
   // Validation errors
@@ -144,12 +162,12 @@ export default function EstimateModal({
     exchangeRate?: string
   }>({})
   
-  // Sync currency with settings when they become available
+  // Sync currency with settings when they become available (only for new estimates)
   useEffect(() => {
     if (settings?.baseCurrency && !estimate && isOpen) {
       setCurrency(settings.baseCurrency)
     }
-  }, [settings?.baseCurrency, estimate, isOpen])
+  }, [settings?.baseCurrency, isOpen])
 
   // Update form when estimate prop changes
   useEffect(() => {
@@ -176,8 +194,12 @@ export default function EstimateModal({
       setDiscount(estimate.discount || 0)
       setTaxRate(estimate.taxRate || 0)
       setNotes(estimate.notes || '')
-      setCurrency((estimate as any)?.currency || settings?.baseCurrency || 'USD')
-      setExchangeRate((estimate as any)?.exchange_rate?.toString() || '1.0')
+      // Prioritize estimate's currency - only fallback to baseCurrency if estimate currency is missing
+      const estimateCurrency = estimate.currency || (estimate as any)?.currency;
+      setCurrency(estimateCurrency || settings?.baseCurrency || 'USD')
+      // Set exchange rate from estimate, default to 1.0 if missing
+      const estimateExchangeRate = (estimate as any)?.exchange_rate;
+      setExchangeRate(estimateExchangeRate !== undefined && estimateExchangeRate !== null ? estimateExchangeRate.toString() : '1.0')
       setIssueDate(estimate.issueDate || new Date().toISOString().split('T')[0])
       setExpiryDate(estimate.expiryDate || (() => {
         const date = new Date()
