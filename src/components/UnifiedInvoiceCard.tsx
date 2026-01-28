@@ -160,22 +160,20 @@ export function UnifiedInvoiceCard({
     if (hasWriteOff && invoice.status === 'paid') {
       // Show paid amount and write-off amount for written-off invoices
       // Paid amount = total - write-off amount (what was actually received)
+      const invoiceCurrency = invoice.currency || 'USD';
       const writeOffAmount = invoice.writeOffAmount || 0;
       const totalAmount = invoice.total || 0;
       const paidAmount = Math.max(0, totalAmount - writeOffAmount);
-      const paidStr = paidAmount.toFixed(2);
-      const writeOffStr = writeOffAmount.toFixed(2);
-      const writeOffText = `Paid: $${paidStr} • Write-off: $${writeOffStr}`;
+      const writeOffText = `Paid: ${formatCurrency(paidAmount, invoiceCurrency)} • Write-off: ${formatCurrency(writeOffAmount, invoiceCurrency)}`;
       items.push(<div key="writeoff" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>{writeOffText}</div>);
     }
     
     if (dueCharges.hasLateFees) {
       // Pre-compute all values before creating string to ensure atomic rendering
-      const baseStr = baseAmount.toFixed(2);
-      const lateFeeStr = dueCharges.lateFeeAmount.toFixed(2);
+      const invoiceCurrency = invoice.currency || 'USD';
       // Create complete string atomically - render as single text node to prevent partial rendering
       // Use inline-block and nowrap to prevent layout shift
-      const lateFeesText = `Base $${baseStr} • Late fee $${lateFeeStr}`;
+      const lateFeesText = `Base ${formatCurrency(baseAmount, invoiceCurrency)} • Late fee ${formatCurrency(dueCharges.lateFeeAmount, invoiceCurrency)}`;
       items.push(<div key="latefees" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>{lateFeesText}</div>);
     }
     
@@ -274,7 +272,7 @@ export function UnifiedInvoiceCard({
                     : 'text-red-600'
                 }`}
               >
-                ${displayTotal.toLocaleString()}
+                {formatCurrency(displayTotal, invoice.currency || 'USD')}
               </div>
               <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500" style={{ minHeight: '12px' }}>
                 <RotatingAmountBreakdown
@@ -447,7 +445,7 @@ export function UnifiedInvoiceCard({
                     : 'text-red-600'
                 }`}
               >
-                ${displayTotal.toLocaleString()}
+                {formatCurrency(displayTotal, invoice.currency || 'USD')}
               </div>
               <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500" style={{ minHeight: '12px' }}>
                 <RotatingAmountBreakdown

@@ -170,3 +170,4 @@ $$ LANGUAGE plpgsql;
 -- 5. Existing invoices/estimates are migrated with exchange_rate = 1.0 and base_currency_amount = total
 -- 6. Existing tax values are migrated to tax_breakdown format
 
+

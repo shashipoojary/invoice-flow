@@ -70,7 +70,14 @@ const InvoicePerformanceChart = ({ invoices, paymentDataMap, baseCurrency = 'USD
   const totalRevenue = invoices.reduce((sum, inv) => {
     if (inv.status === 'paid') {
       const paymentData = paymentDataMap[inv.id];
-      return sum + (paymentData?.totalPaid || inv.total);
+      const paidAmount = paymentData?.totalPaid || inv.total;
+      // Convert to base currency
+      const invoiceCurrency = inv.currency || baseCurrency;
+      const invoiceExchangeRate = inv.exchange_rate || 1.0;
+      const invoiceBaseAmount = inv.base_currency_amount || (invoiceCurrency === baseCurrency ? inv.total : (inv.total * invoiceExchangeRate));
+      // For partial payments, convert the paid amount proportionally
+      const convertedPaid = invoiceCurrency === baseCurrency ? paidAmount : (paidAmount * invoiceExchangeRate);
+      return sum + convertedPaid;
     }
     return sum;
   }, 0);
@@ -78,7 +85,12 @@ const InvoicePerformanceChart = ({ invoices, paymentDataMap, baseCurrency = 'USD
   const pendingRevenue = invoices.reduce((sum, inv) => {
     if (inv.status === 'sent' || inv.status === 'pending') {
       const paymentData = paymentDataMap[inv.id];
-      return sum + (paymentData?.remainingBalance || inv.total);
+      const remainingBalance = paymentData?.remainingBalance || inv.total;
+      // Convert to base currency
+      const invoiceCurrency = inv.currency || baseCurrency;
+      const invoiceExchangeRate = inv.exchange_rate || 1.0;
+      const convertedRemaining = invoiceCurrency === baseCurrency ? remainingBalance : (remainingBalance * invoiceExchangeRate);
+      return sum + convertedRemaining;
     }
     return sum;
   }, 0);
@@ -86,7 +98,12 @@ const InvoicePerformanceChart = ({ invoices, paymentDataMap, baseCurrency = 'USD
   const overdueRevenue = invoices.reduce((sum, inv) => {
     if (inv.status === 'overdue') {
       const paymentData = paymentDataMap[inv.id];
-      return sum + (paymentData?.remainingBalance || inv.total);
+      const remainingBalance = paymentData?.remainingBalance || inv.total;
+      // Convert to base currency
+      const invoiceCurrency = inv.currency || baseCurrency;
+      const invoiceExchangeRate = inv.exchange_rate || 1.0;
+      const convertedRemaining = invoiceCurrency === baseCurrency ? remainingBalance : (remainingBalance * invoiceExchangeRate);
+      return sum + convertedRemaining;
     }
     return sum;
   }, 0);
@@ -2660,17 +2677,35 @@ export default function DashboardOverview() {
     let totalWriteOff = 0;
     
     for (const invoice of invoices) {
-      const invoiceCurrency = invoice.currency || baseCurrency;
-      const invoiceExchangeRate = invoice.exchange_rate || 1.0;
+      const { currency, exchange_rate, base_currency_amount, total, writeOffAmount } = invoice;
+      const invoiceCurrency = currency || baseCurrency;
+      const invoiceExchangeRate = exchange_rate || 1.0;
       
       if (invoice.status === 'draft') {
         // Convert draft amount to base currency
-        const convertedDraft = invoiceCurrency === baseCurrency ? invoice.total : (invoice.total * invoiceExchangeRate);
-        draftAmount += convertedDraft;
+        // Priority: 1) base_currency_amount (most accurate), 2) check if exchange_rate is valid (not 1.0 when currencies differ), 3) use total if same currency
+        let invoiceBaseAmount: number;
+        if (base_currency_amount !== null && base_currency_amount !== undefined) {
+          // Use stored base_currency_amount (most accurate)
+          invoiceBaseAmount = base_currency_amount;
+        } else if (invoiceCurrency === baseCurrency) {
+          // Same currency, no conversion needed
+          invoiceBaseAmount = total;
+        } else if (invoiceExchangeRate && invoiceExchangeRate !== 1.0) {
+          // Valid exchange rate provided
+          invoiceBaseAmount = total * invoiceExchangeRate;
+        } else {
+          // Exchange rate is 1.0 but currencies differ - this is invalid data
+          // Log warning and use total (will be incorrect, but better than crashing)
+          console.warn(`Invoice ${invoice.id} has invalid exchange rate: currency=${invoiceCurrency}, baseCurrency=${baseCurrency}, exchange_rate=${invoiceExchangeRate}`);
+          invoiceBaseAmount = total; // Fallback - user needs to update invoice with correct exchange rate
+        }
+        draftAmount += invoiceBaseAmount;
       }
-      if (invoice.writeOffAmount && invoice.writeOffAmount > 0) {
+      if (writeOffAmount && writeOffAmount > 0) {
         // Convert write-off amount to base currency
-        const convertedWriteOff = invoiceCurrency === baseCurrency ? invoice.writeOffAmount : (invoice.writeOffAmount * invoiceExchangeRate);
+        // Write-off is in invoice currency, so convert it using the same exchange rate
+        const convertedWriteOff = invoiceCurrency === baseCurrency ? writeOffAmount : (writeOffAmount * invoiceExchangeRate);
         totalWriteOff += convertedWriteOff;
       }
     }
@@ -5843,20 +5878,27 @@ export default function DashboardOverview() {
                <div className="space-y-6">
                  {/* Summary */}
                  <div className="bg-gray-50 p-4">
-                   <div className="flex items-center justify-between mb-2">
-                     <span className="text-sm font-medium text-gray-700">Invoice Total</span>
-                     <span className="text-lg font-semibold text-gray-900">${selectedInvoice.total.toFixed(2)}</span>
-                   </div>
-                   <div className="flex items-center justify-between mb-2">
-                     <span className="text-sm font-medium text-gray-700">Total Paid</span>
-                     <span className="text-lg font-semibold text-emerald-600">${totalPaid.toFixed(2)}</span>
-                   </div>
-                   <div className="flex items-center justify-between mb-3">
-                     <span className="text-sm font-medium text-gray-700">Remaining Balance</span>
-                     <span className={`text-lg font-semibold ${remainingBalance > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
-                       ${remainingBalance.toFixed(2)}
-                     </span>
-                   </div>
+                   {(() => {
+                     const invoiceCurrency = selectedInvoice.currency || settings.baseCurrency || 'USD';
+                     return (
+                       <>
+                         <div className="flex items-center justify-between mb-2">
+                           <span className="text-sm font-medium text-gray-700">Invoice Total</span>
+                           <span className="text-lg font-semibold text-gray-900">{formatCurrency(selectedInvoice.total, invoiceCurrency)}</span>
+                         </div>
+                         <div className="flex items-center justify-between mb-2">
+                           <span className="text-sm font-medium text-gray-700">Total Paid</span>
+                           <span className="text-lg font-semibold text-emerald-600">{formatCurrency(totalPaid, invoiceCurrency)}</span>
+                         </div>
+                         <div className="flex items-center justify-between mb-3">
+                           <span className="text-sm font-medium text-gray-700">Remaining Balance</span>
+                           <span className={`text-lg font-semibold ${remainingBalance > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
+                             {formatCurrency(remainingBalance, invoiceCurrency)}
+                           </span>
+                         </div>
+                       </>
+                     );
+                   })()}
                    {/* Progress bar */}
                    <div className="w-full bg-gray-200 h-2">
                      <div
@@ -5888,7 +5930,7 @@ export default function DashboardOverview() {
                          placeholder="0.00"
                          required
                        />
-                       <p className="text-xs text-gray-500 mt-1">Max: ${remainingBalance.toFixed(2)}</p>
+                       <p className="text-xs text-gray-500 mt-1">Max: {formatCurrency(remainingBalance, selectedInvoice.currency || settings.baseCurrency || 'USD')}</p>
                      </div>
                      <div>
                        <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -5955,7 +5997,7 @@ export default function DashboardOverview() {
                          >
                            <div className="flex-1">
                              <div className="flex items-center gap-2">
-                               <span className="font-semibold text-gray-900">${parseFloat(payment.amount.toString()).toFixed(2)}</span>
+                               <span className="font-semibold text-gray-900">{formatCurrency(parseFloat(payment.amount.toString()), selectedInvoice.currency || settings.baseCurrency || 'USD')}</span>
                                {payment.payment_method && (
                                  <span className="text-xs text-gray-500">• {payment.payment_method}</span>
                                )}
@@ -6120,18 +6162,18 @@ export default function DashboardOverview() {
                          </td>
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-700">1</td>
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right text-gray-900">
-                            ${(parseFloat(item.amount?.toString() || '0') || 0).toFixed(2)}
+                            {formatCurrency(parseFloat(item.amount?.toString() || '0') || 0, selectedInvoice.currency || settings.baseCurrency || 'USD')}
                          </td>
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium text-gray-900">
-                            ${(parseFloat(item.amount?.toString() || '0') || 0).toFixed(2)}
+                            {formatCurrency(parseFloat(item.amount?.toString() || '0') || 0, selectedInvoice.currency || settings.baseCurrency || 'USD')}
                          </td>
                        </tr>
                      )) || (
                        <tr className="border-t border-gray-200">
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">Service</td>
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-700">1</td>
-                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right text-gray-900">$0.00</td>
-                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium text-gray-900">$0.00</td>
+                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right text-gray-900">{formatCurrency(0, selectedInvoice.currency || settings.baseCurrency || 'USD')}</td>
+                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium text-gray-900">{formatCurrency(0, selectedInvoice.currency || settings.baseCurrency || 'USD')}</td>
                        </tr>
                      )}
                      {(() => {
@@ -6181,6 +6223,7 @@ export default function DashboardOverview() {
                          totalStatusColor = 'text-amber-700'; // Pending/Sent/Due Today - amber/orange
                        }
                        
+                       const invoiceCurrency = selectedInvoice.currency || settings.baseCurrency || 'USD';
                        return (
                          <>
                            <tr>
@@ -6190,32 +6233,61 @@ export default function DashboardOverview() {
                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Subtotal:</td>
-                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>${(selectedInvoice.subtotal || 0).toFixed(2)}</td>
+                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrency(selectedInvoice.subtotal || 0, invoiceCurrency)}</td>
                            </tr>
                            <tr>
                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Discount:</td>
-                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>${(selectedInvoice.discount || 0).toFixed(2)}</td>
+                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrency(selectedInvoice.discount || 0, invoiceCurrency)}</td>
                            </tr>
                            <tr>
                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Tax ({(selectedInvoice.taxRate || 0) * 100}%):</td>
-                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>${(selectedInvoice.taxAmount || 0).toFixed(2)}</td>
+                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrency(selectedInvoice.taxAmount || 0, invoiceCurrency)}</td>
                            </tr>
                            <tr>
                              <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm border-t border-gray-200 pt-2 ${totalStatusColor}`}></td>
                              <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm border-t border-gray-200 pt-2 ${totalStatusColor}`}></td>
                              <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>Total:</td>
-                             <td className={`px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>${(selectedInvoice.total || 0).toFixed(2)}</td>
+                             <td className={`px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>{formatCurrency(selectedInvoice.total || 0, invoiceCurrency)}</td>
                            </tr>
+                           {/* Exchange Rate Information */}
+                           {(() => {
+                             const invoiceCurrencyLocal = selectedInvoice.currency || settings.baseCurrency || 'USD';
+                             const baseCurrencyLocal = settings.baseCurrency || 'USD';
+                             const exchangeRate = (selectedInvoice as any).exchange_rate;
+                             const baseCurrencyAmount = (selectedInvoice as any).base_currency_amount;
+                             
+                             if (invoiceCurrencyLocal !== baseCurrencyLocal && exchangeRate && exchangeRate !== 1.0 && baseCurrencyAmount) {
+                               return (
+                                 <>
+                                   <tr>
+                                     <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-500" style={{ borderTop: 'none' }} colSpan={2}></td>
+                                     <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-500 text-right" style={{ borderTop: 'none' }}>Exchange Rate:</td>
+                                     <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-500 text-right" style={{ borderTop: 'none' }}>
+                                       1 {invoiceCurrencyLocal} = {exchangeRate.toFixed(4)} {baseCurrencyLocal}
+                                     </td>
+                                   </tr>
+                                   <tr>
+                                     <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-500" style={{ borderTop: 'none' }} colSpan={2}></td>
+                                     <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-500 text-right" style={{ borderTop: 'none' }}>Equivalent in {baseCurrencyLocal}:</td>
+                                     <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-500 text-right" style={{ borderTop: 'none' }}>
+                                       {formatCurrency(baseCurrencyAmount, baseCurrencyLocal)}
+                                     </td>
+                                   </tr>
+                                 </>
+                               );
+                             }
+                             return null;
+                           })()}
                            {hasWriteOff ? (
                              <tr>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700" style={{ borderTop: 'none' }}></td>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700" style={{ borderTop: 'none' }}></td>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 text-right" style={{ borderTop: 'none' }}>Write-off Amount:</td>
-                               <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 font-semibold text-right" style={{ borderTop: 'none' }}>-${(selectedInvoice.writeOffAmount || 0).toFixed(2)}</td>
+                               <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 font-semibold text-right" style={{ borderTop: 'none' }}>-{formatCurrency(selectedInvoice.writeOffAmount || 0, invoiceCurrency)}</td>
                              </tr>
                            ) : null}
                            {/* Only show Total Paid/Partial Paid for NON-PAID invoices with partial payments - NEVER show for paid invoices */}
@@ -6234,7 +6306,7 @@ export default function DashboardOverview() {
                                      {isPartialPayment ? "Partial Paid:" : "Total Paid:"}
                                    </td>
                                    <td className={`px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}>
-                                     ${actualTotalPaid.toFixed(2)}
+                                     {formatCurrency(actualTotalPaid, selectedInvoice.currency || settings.baseCurrency || 'USD')}
                                    </td>
                                  </tr>
                                );
@@ -6246,7 +6318,7 @@ export default function DashboardOverview() {
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 text-right" style={{ borderTop: 'none' }}>Remaining Balance:</td>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 font-semibold text-right" style={{ borderTop: 'none' }}>${actualRemainingBalance.toFixed(2)}</td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 font-semibold text-right" style={{ borderTop: 'none' }}>{formatCurrency(actualRemainingBalance, invoiceCurrency)}</td>
                              </tr>
                            ) : null}
                            {dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 ? (
@@ -6254,7 +6326,7 @@ export default function DashboardOverview() {
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 text-right" style={{ borderTop: 'none' }}>Late Fees:</td>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 font-semibold text-right" style={{ borderTop: 'none' }}>${dueCharges.lateFeeAmount.toFixed(2)}</td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 font-semibold text-right" style={{ borderTop: 'none' }}>{formatCurrency(dueCharges.lateFeeAmount, invoiceCurrency)}</td>
                              </tr>
                            ) : null}
                            {(dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0) ? (
@@ -6262,14 +6334,14 @@ export default function DashboardOverview() {
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">Total Payable:</td>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">${dueCharges.totalPayable.toFixed(2)}</td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">{formatCurrency(dueCharges.totalPayable, invoiceCurrency)}</td>
                              </tr>
                            ) : isPaid ? (
                              <tr>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">Amount Paid:</td>
-                               <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">${actualTotalPaid.toFixed(2)}</td>
+                               <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">{formatCurrency(actualTotalPaid, invoiceCurrency)}</td>
                              </tr>
                            ) : null}
                          </>
@@ -6304,7 +6376,7 @@ export default function DashboardOverview() {
                    <div className="space-y-2">
                      <div className="flex justify-between text-xs sm:text-sm">
                        <span className="text-gray-700">Write-off Amount:</span>
-                       <span className="text-slate-700 font-semibold">${(selectedInvoice.writeOffAmount || 0).toFixed(2)}</span>
+                       <span className="text-slate-700 font-semibold">{formatCurrency(selectedInvoice.writeOffAmount || 0, selectedInvoice.currency || settings.baseCurrency || 'USD')}</span>
                      </div>
                      {(() => {
                        const writeOffNotes = selectedInvoice.writeOffNotes;
@@ -6340,7 +6412,7 @@ export default function DashboardOverview() {
                          >
                            <div className="flex-1">
                              <div className="flex items-center gap-2">
-                               <span className="font-semibold text-gray-900 text-xs sm:text-sm">${parseFloat(payment.amount.toString()).toFixed(2)}</span>
+                               <span className="font-semibold text-gray-900 text-xs sm:text-sm">{formatCurrency(parseFloat(payment.amount.toString()), selectedInvoice.currency || settings.baseCurrency || 'USD')}</span>
                                {payment.payment_method && (
                                  <span className="text-xs text-gray-500">• {payment.payment_method}</span>
                                )}

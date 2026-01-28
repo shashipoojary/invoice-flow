@@ -414,9 +414,13 @@ export async function POST(request: NextRequest) {
 
     // Send email with Resend
     // Use "Receipt" in subject for paid invoices, "Invoice" for others
+    // Format currency for subject line using invoice currency
+    const invoiceCurrency = invoice.currency || 'USD';
+    const { formatCurrency } = require('@/lib/currency');
+    const formattedTotal = formatCurrency(invoice.total || 0, invoiceCurrency);
     const emailSubject = invoice.status === 'paid' 
-      ? `Receipt #${invoice.invoice_number} - $${invoice.total.toFixed(2)}`
-      : `Invoice #${invoice.invoice_number} - $${invoice.total.toFixed(2)}`;
+      ? `Receipt #${invoice.invoice_number} - ${formattedTotal}`
+      : `Invoice #${invoice.invoice_number} - ${formattedTotal}`;
     
     const { data, error } = await resend.emails.send({
       from: fromAddress,

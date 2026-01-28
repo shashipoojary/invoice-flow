@@ -12,3 +12,4 @@ WHERE write_off_amount > 0;
 
 
 
+

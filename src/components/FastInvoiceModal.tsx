@@ -14,7 +14,7 @@ import UpgradeModal from './UpgradeModal'
 import ConfirmationModal from './ConfirmationModal'
 import ToastContainer from './Toast'
 import { checkMissingBusinessDetails } from '@/lib/utils'
-import { CURRENCIES, formatCurrency, getCurrencySymbol } from '@/lib/currency'
+import { CURRENCIES, formatCurrency, getCurrencySymbol, fetchExchangeRate } from '@/lib/currency'
 
 interface Client {
   id: string
@@ -134,6 +134,8 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   const [notes, setNotes] = useState('')
   const [markAsPaid, setMarkAsPaid] = useState(false)
   const [currency, setCurrency] = useState<string>(settings?.baseCurrency || 'USD')
+  const [exchangeRate, setExchangeRate] = useState<string>('1.0')
+  const [fetchingExchangeRate, setFetchingExchangeRate] = useState(false)
   
   // Validation errors
   const [errors, setErrors] = useState<{
@@ -144,6 +146,13 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
     amount?: string
     dueDate?: string
   }>({})
+
+  // Sync currency with settings when they become available
+  useEffect(() => {
+    if (settings?.baseCurrency && !editingInvoice && isOpen) {
+      setCurrency(settings.baseCurrency)
+    }
+  }, [settings?.baseCurrency, editingInvoice, isOpen])
 
   // IMPORTANT: When "Mark as Paid" is selected, set due date to today (Due on Receipt)
   useEffect(() => {
@@ -184,6 +193,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         setDueDate(editingInvoice.dueDate || '')
         setNotes(editingInvoice.notes || '')
         setCurrency((editingInvoice as any)?.currency || settings?.baseCurrency || 'USD')
+        setExchangeRate((editingInvoice as any)?.exchange_rate?.toString() || '1.0')
         
         // If the client doesn't exist in the clients list, add it
         const clientId = editingInvoice.clientId || editingInvoice.client_id;
@@ -291,6 +301,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
     setNotes('')
     setMarkAsPaid(false)
     setCurrency(settings?.baseCurrency || 'USD')
+    setExchangeRate('1.0')
     setErrors({})
   }
   
@@ -573,7 +584,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         billing_choice: 'per_invoice',
         type: 'fast', // Mark as fast invoice
         currency: currency,
-        exchange_rate: currency === (settings?.baseCurrency || 'USD') ? 1.0 : ((editingInvoice as any)?.exchange_rate || 1.0),
+        exchange_rate: currency === (settings?.baseCurrency || 'USD') ? 1.0 : (parseFloat(exchangeRate) || null),
         status: isEditing ? editingInvoice.status : (markAsPaid ? 'paid' : 'draft') // Allow marking as paid during creation
       }
       
@@ -1145,11 +1156,13 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                       Amount ({getCurrencySymbol(currency)})
                     </label>
                     <div className="relative">
-                      <DollarSign className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+                      <span className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-sm font-medium ${
                         isDarkMode 
-                          ? 'text-gray-500' 
-                          : 'text-gray-400'
-                      }`} />
+                          ? 'text-gray-400' 
+                          : 'text-gray-500'
+                      }`}>
+                        {getCurrencySymbol(currency)}
+                      </span>
                       <input
                         type="number"
                         value={amount}
@@ -1159,7 +1172,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                             setErrors(prev => ({ ...prev, amount: undefined }))
                           }
                         }}
-                        className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        className={`w-full pl-8 pr-3 py-2.5 text-sm border rounded-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                           errors.amount
                             ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                             : isDarkMode 
@@ -1227,8 +1240,29 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                   </label>
                   <CustomDropdown
                     value={currency}
-                    onChange={(value) => {
+                    onChange={async (value) => {
                       setCurrency(value)
+                      // Auto-fetch exchange rate when currency changes
+                      const baseCurrency = settings?.baseCurrency || 'USD'
+                      if (value !== baseCurrency) {
+                        setFetchingExchangeRate(true)
+                        try {
+                          const rate = await fetchExchangeRate(value, baseCurrency)
+                          if (rate !== null) {
+                            setExchangeRate(rate.toFixed(4))
+                          } else {
+                            // If fetch fails, keep current rate or default to 1.0
+                            setExchangeRate('1.0')
+                          }
+                        } catch (error) {
+                          console.error('Error fetching exchange rate:', error)
+                          setExchangeRate('1.0')
+                        } finally {
+                          setFetchingExchangeRate(false)
+                        }
+                      } else {
+                        setExchangeRate('1.0')
+                      }
                     }}
                     options={CURRENCIES.map((curr) => ({
                       value: curr.code,
@@ -1239,11 +1273,34 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                     searchable={true}
                   />
                   {currency !== (settings?.baseCurrency || 'USD') && (
-                    <p className={`text-xs mt-1 ${
-                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                    }`}>
-                      Base currency: {settings?.baseCurrency || 'USD'}
-                    </p>
+                    <div className="mt-2">
+                      <label className={`block text-xs font-medium mb-1 ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
+                        Exchange Rate ({currency} to {settings?.baseCurrency || 'USD'})
+                        {fetchingExchangeRate && (
+                          <span className="ml-2 text-xs text-gray-500">(Fetching...)</span>
+                        )}
+                      </label>
+                      <input
+                        type="number"
+                        step="0.0001"
+                        min="0.0001"
+                        placeholder="1.0"
+                        value={exchangeRate}
+                        onChange={(e) => setExchangeRate(e.target.value)}
+                        className={`w-full px-3 py-2 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                          isDarkMode 
+                            ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                            : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                        }`}
+                      />
+                      <p className={`text-xs mt-1 ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        Base currency: {settings?.baseCurrency || 'USD'}
+                      </p>
+                    </div>
                   )}
                 </div>
 

@@ -134,30 +134,58 @@ export async function POST(request: NextRequest) {
     // Check if settings exist
     const { data: existingSettings } = await supabase
       .from('user_settings')
-      .select('id')
+      .select('id, base_currency')
       .eq('user_id', user.id)
       .single();
 
-    let result;
+    // Check if user has created any invoices/estimates
+    const { count: invoiceCount } = await supabase
+      .from('invoices')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id);
+    
+    const { count: estimateCount } = await supabase
+      .from('estimates')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id);
+    
+    const hasCreatedInvoices = (invoiceCount || 0) > 0 || (estimateCount || 0) > 0;
+
+    // If user has created invoices and is trying to change base currency, allow it
+    // If user hasn't created invoices yet, allow setting it once
     if (existingSettings) {
+      // Check if base currency is being changed
+      const isChangingCurrency = existingSettings.base_currency && 
+                                  existingSettings.base_currency !== settings.base_currency;
+      
+      if (isChangingCurrency && !hasCreatedInvoices) {
+        // User hasn't created invoices yet, but trying to change currency - allow it (first time setup)
+        // This is fine, they can set it once
+      } else if (isChangingCurrency && hasCreatedInvoices) {
+        // User has created invoices, allow currency change (they can change after first invoice)
+        // This is the expected behavior
+      }
+      
       // Update existing settings
-      result = await supabase
+      const result = await supabase
         .from('user_settings')
         .update(settings)
         .eq('user_id', user.id);
+      
+      if (result.error) {
+        console.error('Database error:', result.error);
+        return NextResponse.json({ error: 'Failed to save settings', details: result.error }, { status: 500 });
+      }
     } else {
-      // Insert new settings
-      result = await supabase
+      // Insert new settings (first time setup)
+      const result = await supabase
         .from('user_settings')
         .insert(settings);
-    }
-
-    if (result.error) {
-      console.error('Database error:', result.error);
-      console.error('Error code:', result.error.code);
-      console.error('Error message:', result.error.message);
-      console.error('Error details:', result.error.details);
-      return NextResponse.json({ error: 'Failed to save settings', details: result.error }, { status: 500 });
+      
+      if (result.error) {
+        console.error('Database error:', result.error);
+        return NextResponse.json({ error: 'Failed to save settings', details: result.error }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ success: true, message: 'Settings saved successfully' });

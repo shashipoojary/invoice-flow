@@ -637,7 +637,7 @@ export default function SettingsPage() {
                       className="w-full"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      All dashboard metrics will be converted to this currency
+                      All dashboard metrics will be converted to this currency. You can change this after creating your first invoice.
                     </p>
                   </div>
                 </div>

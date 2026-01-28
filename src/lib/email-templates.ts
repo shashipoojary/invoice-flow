@@ -8,6 +8,7 @@ interface InvoiceData {
   issue_date: string;
   notes?: string;
   type?: string;
+  currency?: string;
   clients: {
     name: string;
     email: string;
@@ -52,11 +53,24 @@ export function generateMinimalEmailTemplate(
   publicUrl: string,
   hidePaymentMethods: boolean = false
 ): string {
+  const invoiceCurrency = invoice.currency || 'USD';
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: invoiceCurrency.toUpperCase(),
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount);
+    } catch (error) {
+      // Fallback to USD if currency is invalid
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -722,11 +736,24 @@ export function generateModernEmailTemplate(
   publicUrl: string,
   hidePaymentMethods: boolean = false
 ): string {
+  const invoiceCurrency = invoice.currency || 'USD';
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: invoiceCurrency.toUpperCase(),
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount);
+    } catch (error) {
+      // Fallback to USD if currency is invalid
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -1255,11 +1282,24 @@ export function generateCreativeEmailTemplate(
   publicUrl: string,
   hidePaymentMethods: boolean = false
 ): string {
+  const invoiceCurrency = invoice.currency || 'USD';
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: invoiceCurrency.toUpperCase(),
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount);
+    } catch (error) {
+      // Fallback to USD if currency is invalid
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -1802,11 +1842,24 @@ export function generateOriginalFastInvoiceEmailTemplate(
   publicUrl: string,
   hidePaymentMethods: boolean = false
 ): string {
+  const invoiceCurrency = invoice.currency || 'USD';
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: invoiceCurrency.toUpperCase(),
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount);
+    } catch (error) {
+      // Fallback to USD if currency is invalid
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -2297,6 +2350,7 @@ export function generateEstimateEmailTemplate(
     issue_date: string;
     expiry_date?: string;
     notes?: string;
+    currency?: string;
     clients: {
       name: string;
       email: string;
@@ -2312,11 +2366,24 @@ export function generateEstimateEmailTemplate(
   businessSettings: BusinessSettings,
   publicUrl: string
 ): string {
+  const invoiceCurrency = estimate.currency || 'USD';
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: invoiceCurrency.toUpperCase(),
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount);
+    } catch (error) {
+      // Fallback to USD if currency is invalid
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount);
+    }
   };
 
   const formatDate = (dateString: string) => {

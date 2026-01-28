@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft, Loader2, Building2, Mail, Phone, MapPin, Globe, Upload, X, Image as ImageIcon, CreditCard, Info, AlertCircle } from 'lucide-react';
 import { optimizeLogo, validateLogoFile } from '@/lib/logo-optimizer';
+import { CURRENCIES } from '@/lib/currency';
+import CustomDropdown from '@/components/CustomDropdown';
 
 export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
@@ -21,6 +23,7 @@ export default function OnboardingPage() {
     businessPhone: '',
     businessAddress: '',
     website: '',
+    baseCurrency: 'USD',
     // Payment Methods
     paypalEmail: '',
     cashappId: '',
@@ -213,6 +216,7 @@ export default function OnboardingPage() {
           address: formData.businessAddress,
           website: formData.website,
           logo: logoUrl || '',
+          baseCurrency: formData.baseCurrency,
           paypalEmail: formData.paypalEmail,
           cashappId: formData.cashappId,
           venmoId: formData.venmoId,
@@ -510,6 +514,27 @@ export default function OnboardingPage() {
                       />
                     </div>
                     <p className="mt-2 text-xs text-gray-500">We'll use your account email if left empty</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Base Currency <span className="text-red-500">*</span>
+                    </label>
+                    <CustomDropdown
+                      value={formData.baseCurrency}
+                      onChange={(value) => setFormData(prev => ({ ...prev, baseCurrency: value }))}
+                      options={CURRENCIES.map((currency) => ({
+                        value: currency.code,
+                        label: `${currency.code} - ${currency.name} (${currency.symbol})`
+                      }))}
+                      placeholder="Select base currency"
+                      isDarkMode={false}
+                      searchable={true}
+                      className="w-full"
+                    />
+                    <p className="mt-2 text-xs text-gray-500">
+                      All dashboard metrics will be converted to this currency. You can change this after creating your first invoice.
+                    </p>
                   </div>
                 </>
               )}
@@ -812,6 +837,7 @@ export default function OnboardingPage() {
                             address: formData.businessAddress,
                             website: formData.website,
                             logo: logoUrl || '',
+                            baseCurrency: formData.baseCurrency,
                             paypalEmail: formData.paypalEmail,
                             cashappId: formData.cashappId,
                             venmoId: formData.venmoId,

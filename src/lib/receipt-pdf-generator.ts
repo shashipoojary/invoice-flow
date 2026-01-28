@@ -16,23 +16,11 @@ export async function generateReceiptPDF(
     const primaryRgb = { r: 0.2, g: 0.2, b: 0.2 }; // Dark gray for minimal look
   
     const invoiceCurrency = invoice.currency || 'USD';
+    // Use formatCurrencyForPDF for proper PDF currency formatting
     const formatCurrency = (amount: number): string => {
-      try {
-        return new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: invoiceCurrency.toUpperCase(),
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }).format(amount);
-      } catch (error) {
-        // Fallback to USD if currency is invalid
-        return new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }).format(amount);
-      }
+      // Import dynamically to avoid circular dependencies
+      const { formatCurrencyForPDF } = require('@/lib/currency');
+      return formatCurrencyForPDF(amount, invoiceCurrency);
     };
 
     const formatDate = (dateString: string | undefined | null): string => {

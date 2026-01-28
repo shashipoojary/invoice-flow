@@ -307,9 +307,9 @@ function FastInvoiceTemplate({ invoice, getAmountColor }: { invoice: Invoice, ge
                 Due: {new Date(invoice.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
               <div className="text-2xl sm:text-3xl font-bold mt-4" style={{ color: getAmountColor(), letterSpacing: '-0.5px' }}>
-                ${invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0
-                  ? (invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)).toFixed(2) : invoice.remainingBalance.toFixed(2))
-                  : (invoice.isOverdue ? (invoice.totalWithLateFees || calculateTotal()).toFixed(2) : calculateTotal().toFixed(2))}
+                {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0
+                  ? formatCurrencyAmount(invoice.isOverdue ? ((invoice.remainingBalance || invoice.total) + (invoice.lateFees || 0)) : invoice.remainingBalance)
+                  : formatCurrencyAmount(invoice.isOverdue ? (invoice.totalWithLateFees || calculateTotal()) : calculateTotal())}
               </div>
               {invoice.totalPaid && invoice.totalPaid > 0 && invoice.remainingBalance !== undefined && invoice.remainingBalance > 0 && (
                 <div className="text-xs text-gray-500 mt-1">
@@ -441,7 +441,7 @@ function FastInvoiceTemplate({ invoice, getAmountColor }: { invoice: Invoice, ge
                   <>
                     <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
                       <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                      <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                      <span className="text-red-600">{formatCurrencyAmount(invoice.lateFees)}</span>
                     </div>
                     <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                       <span className="font-bold text-red-600">Total Payable</span>
@@ -1031,11 +1031,11 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor, getAmountColor 
                 </div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
-                  <span className="text-black">-${(invoice.discount || 0).toFixed(2)}</span>
+                  <span className="text-black">-{formatCurrencyAmount(invoice.discount || 0)}</span>
                   </div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
-                  <span className="text-black">${(invoice.taxAmount || 0).toFixed(2)}</span>
+                  <span className="text-black">{formatCurrencyAmount(invoice.taxAmount || 0)}</span>
                   </div>
                 <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                   <span className="font-bold text-black">Total</span>
@@ -1067,7 +1067,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor, getAmountColor 
                   <>
                     <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
                       <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                      <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                      <span className="text-red-600">{formatCurrencyAmount(invoice.lateFees)}</span>
                     </div>
                     <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                       <span className="font-bold text-red-600">Total Payable</span>
@@ -1658,11 +1658,11 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor, getAmountColo
                 </div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
-                  <span className="text-black">-${(invoice.discount || 0).toFixed(2)}</span>
+                  <span className="text-black">-{formatCurrencyAmount(invoice.discount || 0)}</span>
                   </div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
-                  <span className="text-black">${(invoice.taxAmount || 0).toFixed(2)}</span>
+                  <span className="text-black">{formatCurrencyAmount(invoice.taxAmount || 0)}</span>
                   </div>
                 <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                   <span className="font-bold text-black">Total</span>
@@ -1694,7 +1694,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor, getAmountColo
                   <>
                     <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
                       <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                      <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                      <span className="text-red-600">{formatCurrencyAmount(invoice.lateFees)}</span>
                     </div>
                     <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                       <span className="font-bold text-red-600">Total Payable</span>
@@ -2285,11 +2285,11 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor, g
                 </div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
-                  <span className="text-black">-${(invoice.discount || 0).toFixed(2)}</span>
+                  <span className="text-black">-{formatCurrencyAmount(invoice.discount || 0)}</span>
                   </div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
-                  <span className="text-black">${(invoice.taxAmount || 0).toFixed(2)}</span>
+                  <span className="text-black">{formatCurrencyAmount(invoice.taxAmount || 0)}</span>
                   </div>
                 <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                   <span className="font-bold text-black">Total</span>
@@ -2321,7 +2321,7 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor, g
                   <>
                     <div className="flex justify-between text-sm mb-2 pt-2 mt-2 border-t border-gray-200">
                       <span className="text-red-600">Late Fees ({invoice.daysOverdue} days)</span>
-                      <span className="text-red-600">${invoice.lateFees.toFixed(2)}</span>
+                      <span className="text-red-600">{formatCurrencyAmount(invoice.lateFees)}</span>
                     </div>
                     <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                       <span className="font-bold text-red-600">Total Payable</span>

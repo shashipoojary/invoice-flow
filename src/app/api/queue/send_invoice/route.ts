@@ -209,9 +209,13 @@ async function handler(request: NextRequest) {
 
     // Send email
     const fromAddress = `${businessSettings.businessName || 'FlowInvoicer'} <onboarding@resend.dev>`;
+    // Format currency for subject line using invoice currency
+    const invoiceCurrency = invoice.currency || 'USD';
+    const { formatCurrency } = require('@/lib/currency');
+    const formattedTotal = formatCurrency(invoice.total || 0, invoiceCurrency);
     const emailSubject = invoice.status === 'paid' 
-      ? `Receipt #${invoice.invoice_number} - $${invoice.total.toFixed(2)}`
-      : `Invoice #${invoice.invoice_number} - $${invoice.total.toFixed(2)}`;
+      ? `Receipt #${invoice.invoice_number} - ${formattedTotal}`
+      : `Invoice #${invoice.invoice_number} - ${formattedTotal}`;
     
     const { data, error } = await resend.emails.send({
       from: fromAddress,

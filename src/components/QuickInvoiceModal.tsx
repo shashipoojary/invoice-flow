@@ -341,15 +341,15 @@ export default function QuickInvoiceModal({
   const createButtonRef = useRef<HTMLButtonElement>(null) // Ref to track Create button for stability
   const [discount, setDiscount] = useState('')
   const [markAsPaid, setMarkAsPaid] = useState(false)
-  const [currency, setCurrency] = useState<string>('USD')
+  const [currency, setCurrency] = useState<string>(settings?.baseCurrency || 'USD')
   const [exchangeRate, setExchangeRate] = useState<string>('1.0')
   
   // Initialize currency from settings when available
   useEffect(() => {
-    if (settings.baseCurrency && !editingInvoice) {
+    if (settings?.baseCurrency && !editingInvoice && isOpen) {
       setCurrency(settings.baseCurrency)
     }
-  }, [settings.baseCurrency, editingInvoice])
+  }, [settings?.baseCurrency, editingInvoice, isOpen])
   
   // Reminder settings
   const [reminders, setReminders] = useState<ReminderSettings>({
@@ -2335,15 +2335,17 @@ export default function QuickInvoiceModal({
                   </div>
                   <div className="w-32">
                     <div className="relative">
-                      <DollarSign className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
-                        isDarkMode ? 'text-gray-500' : 'text-gray-400'
-                      }`} />
+                      <span className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-sm font-medium ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        {getCurrencySymbol(currency)}
+                      </span>
                       <input
                         type="text"
                         placeholder="0"
                         value={discount}
                         onChange={(e) => setDiscount(e.target.value)}
-                        className={`w-full pl-10 pr-3 py-2 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        className={`w-full pl-8 pr-3 py-2 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                           isDarkMode 
                             ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                             : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
@@ -3101,7 +3103,7 @@ export default function QuickInvoiceModal({
                       <p className={`text-xs ${
                         isDarkMode ? 'text-orange-300' : 'text-orange-700'
                       }`}>
-                        💡 <strong>Late fees</strong> are automatically added to overdue invoices. Choose between a fixed dollar amount or a percentage of the invoice total.
+                        💡 <strong>Late fees</strong> are automatically added to overdue invoices. Choose between a fixed amount ({getCurrencySymbol(currency)}) or a percentage of the invoice total.
                       </p>
                     </div>
 
@@ -3126,7 +3128,7 @@ export default function QuickInvoiceModal({
                         <p className={`text-xs mt-1 ${
                           isDarkMode ? 'text-gray-400' : 'text-gray-500'
                         }`}>
-                          {lateFees.type === 'fixed' ? 'Fixed dollar amount' : 'Percentage of invoice total'}
+                          {lateFees.type === 'fixed' ? `Fixed amount (${getCurrencySymbol(currency)})` : 'Percentage of invoice total'}
                         </p>
                       </div>
                       <div>

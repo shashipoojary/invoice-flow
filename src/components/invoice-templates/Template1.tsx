@@ -1,6 +1,7 @@
 import React from 'react'
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import { Invoice, BusinessSettings } from '@/types'
+import { formatCurrencyForPDF } from '@/lib/currency'
 
 interface Template1Props {
   invoice: Invoice
@@ -309,11 +310,9 @@ const styles = StyleSheet.create({
 })
 
 export default function Template1({ invoice, businessSettings, primaryColor = '#5C2D91', secondaryColor = '#8B5CF6' }: Template1Props) {
+  const invoiceCurrency = invoice.currency || 'USD'
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount)
+    return formatCurrencyForPDF(amount, invoiceCurrency)
   }
 
   const formatDate = (dateString: string) => {

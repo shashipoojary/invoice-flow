@@ -1,7 +1,7 @@
 import React from 'react'
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import { Invoice, BusinessSettings } from '@/types'
-import { formatCurrency } from '@/lib/currency'
+import { formatCurrencyForPDF } from '@/lib/currency'
 
 interface Template1Props {
   invoice: Invoice
@@ -234,7 +234,8 @@ export default function Template1({ invoice, businessSettings }: Template1Props)
   const formatCurrencyAmount = (amount: number) => {
     // Ensure amount is a valid number
     const validAmount = isNaN(amount) ? 0 : amount
-    return formatCurrency(validAmount, invoiceCurrency)
+    // Use formatCurrencyForPDF for PDF-safe currency formatting (handles Unicode symbols like ₹)
+    return formatCurrencyForPDF(validAmount, invoiceCurrency)
   }
 
   const formatDate = (dateString: string) => {

@@ -1182,16 +1182,17 @@ function EstimatesContent(): React.JSX.Element {
                         const qty = (item as any).qty || 1;
                         const rate = item.rate || 0;
                         const amount = (item as any).amount || (rate * qty);
+                        const estimateCurrency = (selectedEstimate as any).currency || settings.baseCurrency || 'USD';
                         return (
                           <div key={item.id || index} className="flex justify-between items-start p-3 bg-gray-50">
                             <div className="flex-1">
                               <p className="text-sm font-medium text-gray-900">{item.description}</p>
                               <p className="text-xs text-gray-500 mt-1">
-                                Qty: {qty} × ${rate.toFixed(2)}
+                                Qty: {qty} × {formatCurrency(rate, estimateCurrency)}
                               </p>
                             </div>
                             <p className="text-sm font-semibold text-gray-900 ml-4">
-                              ${typeof amount === 'number' ? amount.toFixed(2) : parseFloat(amount.toString()).toFixed(2)}
+                              {formatCurrency(typeof amount === 'number' ? amount : parseFloat(amount.toString()), estimateCurrency)}
                             </p>
                           </div>
                         );
@@ -1201,26 +1202,56 @@ function EstimatesContent(): React.JSX.Element {
 
                   {/* Summary */}
                   <div className="border-t border-gray-200 pt-4 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Subtotal:</span>
-                      <span className="font-medium text-gray-900">${selectedEstimate.subtotal.toFixed(2)}</span>
-                    </div>
-                    {selectedEstimate.discount && selectedEstimate.discount > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Discount:</span>
-                        <span className="font-medium text-gray-900">-${selectedEstimate.discount.toFixed(2)}</span>
-                      </div>
-                    )}
-                    {selectedEstimate.taxAmount && selectedEstimate.taxAmount > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Tax:</span>
-                        <span className="font-medium text-gray-900">${selectedEstimate.taxAmount.toFixed(2)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between pt-2 border-t border-gray-200">
-                      <span className="text-base font-semibold text-gray-900">Total:</span>
-                      <span className="text-lg font-bold text-indigo-600">${selectedEstimate.total.toFixed(2)}</span>
-                    </div>
+                    {(() => {
+                      const estimateCurrency = (selectedEstimate as any).currency || settings.baseCurrency || 'USD';
+                      return (
+                        <>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Subtotal:</span>
+                            <span className="font-medium text-gray-900">{formatCurrency(selectedEstimate.subtotal, estimateCurrency)}</span>
+                          </div>
+                          {selectedEstimate.discount && selectedEstimate.discount > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Discount:</span>
+                              <span className="font-medium text-gray-900">-{formatCurrency(selectedEstimate.discount, estimateCurrency)}</span>
+                            </div>
+                          )}
+                          {selectedEstimate.taxAmount && selectedEstimate.taxAmount > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Tax:</span>
+                              <span className="font-medium text-gray-900">{formatCurrency(selectedEstimate.taxAmount, estimateCurrency)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between pt-2 border-t border-gray-200">
+                            <span className="text-base font-semibold text-gray-900">Total:</span>
+                            <span className="text-lg font-bold text-indigo-600">{formatCurrency(selectedEstimate.total, estimateCurrency)}</span>
+                          </div>
+                          {/* Exchange Rate Information */}
+                          {(() => {
+                            const estimateCurrencyLocal = (selectedEstimate as any).currency || settings.baseCurrency || 'USD';
+                            const baseCurrencyLocal = settings.baseCurrency || 'USD';
+                            const exchangeRate = (selectedEstimate as any).exchange_rate;
+                            const baseCurrencyAmount = (selectedEstimate as any).base_currency_amount;
+                            
+                            if (estimateCurrencyLocal !== baseCurrencyLocal && exchangeRate && exchangeRate !== 1.0 && baseCurrencyAmount) {
+                              return (
+                                <>
+                                  <div className="flex justify-between pt-1 text-xs text-gray-500">
+                                    <span>Exchange Rate:</span>
+                                    <span>1 {estimateCurrencyLocal} = {exchangeRate.toFixed(4)} {baseCurrencyLocal}</span>
+                                  </div>
+                                  <div className="flex justify-between text-xs text-gray-500">
+                                    <span>Equivalent in {baseCurrencyLocal}:</span>
+                                    <span>{formatCurrency(baseCurrencyAmount, baseCurrencyLocal)}</span>
+                                  </div>
+                                </>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </>
+                      );
+                    })()}
                   </div>
 
                   {/* Notes */}

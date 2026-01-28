@@ -93,6 +93,9 @@ export async function GET(request: NextRequest) {
       issueDate: estimate.issue_date,
       paymentTerms: estimate.payment_terms ? JSON.parse(estimate.payment_terms) : null,
       theme: estimate.theme ? JSON.parse(estimate.theme) : null,
+      currency: estimate.currency,
+      exchange_rate: estimate.exchange_rate,
+      base_currency_amount: estimate.base_currency_amount,
     }));
 
     return NextResponse.json({ estimates: mappedEstimates }, { status: 200 });

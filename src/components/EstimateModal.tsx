@@ -139,6 +139,13 @@ export default function EstimateModal({
     items?: { [key: string]: { description?: string; rate?: string } }
   }>({})
   
+  // Sync currency with settings when they become available
+  useEffect(() => {
+    if (settings?.baseCurrency && !estimate && isOpen) {
+      setCurrency(settings.baseCurrency)
+    }
+  }, [settings?.baseCurrency, estimate, isOpen])
+
   // Update form when estimate prop changes
   useEffect(() => {
     if (estimate) {

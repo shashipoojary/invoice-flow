@@ -223,6 +223,53 @@ function formatAddressForPDF(address: string, businessSettings?: BusinessSetting
   return formattedLines;
 }
 
+/**
+ * Helper function to draw exchange rate information in PDFs
+ * Shows exchange rate and base currency equivalent when invoice currency differs from base
+ */
+function drawExchangeRateInfo(
+  page: PDFPage,
+  invoice: Invoice,
+  businessSettings: BusinessSettings,
+  font: PDFFont,
+  startY: number,
+  xPosition: number = 400
+): number {
+  const invoiceCurrency = invoice.currency || 'USD';
+  const baseCurrency = (businessSettings as any)?.baseCurrency || 'USD';
+  const exchangeRate = invoice.exchange_rate;
+  const baseCurrencyAmount = invoice.base_currency_amount;
+  
+  // Only show if currency differs and exchange rate is available
+  if (invoiceCurrency === baseCurrency || !exchangeRate || exchangeRate === 1.0 || !baseCurrencyAmount) {
+    return startY;
+  }
+  
+  const { formatCurrencyForPDF } = require('@/lib/currency');
+  let currentY = startY - 20;
+  
+  // Exchange rate note
+  page.drawText(`Exchange Rate: 1 ${invoiceCurrency} = ${exchangeRate.toFixed(4)} ${baseCurrency}`, {
+    x: xPosition,
+    y: currentY,
+    size: 8,
+    font: font,
+    color: rgb(0.5, 0.5, 0.5),
+  });
+  
+  currentY -= 12;
+  // Base currency equivalent
+  page.drawText(`Equivalent in ${baseCurrency}: ${formatCurrencyForPDF(baseCurrencyAmount, baseCurrency)}`, {
+    x: xPosition,
+    y: currentY,
+    size: 8,
+    font: font,
+    color: rgb(0.5, 0.5, 0.5),
+  });
+  
+  return currentY - 5; // Return new Y position
+}
+
 export async function generateDetailedPDF(
   invoice: Invoice,
   businessSettings: BusinessSettings,
@@ -253,23 +300,11 @@ export async function generateDetailedPDF(
 
   // Helper functions - use invoice currency
   const invoiceCurrency = invoice.currency || 'USD';
+  // Use formatCurrencyForPDF for proper PDF currency formatting
   const formatCurrency = (amount: number) => {
-    try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: invoiceCurrency.toUpperCase(),
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(amount);
-    } catch (error) {
-      // Fallback to USD if currency is invalid
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(amount);
-    }
+    // Import dynamically to avoid circular dependencies
+    const { formatCurrencyForPDF } = require('@/lib/currency');
+    return formatCurrencyForPDF(amount, invoiceCurrency);
   };
 
   const formatDate = (dateString: string) => {
@@ -311,6 +346,10 @@ async function generateTemplate1DetailedPDF(
   formatCurrency: (amount: number) => string,
   formatDate: (dateString: string) => string
 ): Promise<Uint8Array> {
+  // Make drawExchangeRateInfo available in this scope
+  const drawExchangeRateInfoLocal = (page: PDFPage, invoice: Invoice, businessSettings: BusinessSettings, font: PDFFont, startY: number, xPosition: number = 400): number => {
+    return drawExchangeRateInfo(page, invoice, businessSettings, font, startY, xPosition);
+  };
   const { width, height } = page.getSize();
 
   // Template 1 - Classic/Professional design with logo support
