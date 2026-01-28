@@ -112,8 +112,14 @@ export async function POST(request: NextRequest) {
       client_id: originalInvoice.client_id,
       invoice_number: invoiceNumberData,
       public_token: publicTokenData,
+      // Preserve currency information from original invoice
+      currency: originalInvoice.currency || 'USD',
+      exchange_rate: originalInvoice.exchange_rate || 1.0,
+      base_currency_amount: originalInvoice.base_currency_amount || originalInvoice.total,
       subtotal: originalInvoice.subtotal,
       discount: originalInvoice.discount || 0,
+      tax: originalInvoice.tax || 0,
+      tax_breakdown: originalInvoice.tax_breakdown || null,
       total: originalInvoice.total,
       status: 'draft', // Always start as draft
       issue_date: issueDate,

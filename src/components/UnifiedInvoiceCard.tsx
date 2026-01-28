@@ -7,7 +7,7 @@ import InvoiceActivityDrawer from '@/components/InvoiceActivityDrawer';
 import type { Invoice } from '@/types';
 import { useAuth } from '@/hooks/useAuth';
 import { RotatingBadges, RotatingAmountBreakdown, useSynchronizedRotation } from '@/components/RotatingComponents';
-import { formatCurrency } from '@/lib/currency';
+import { formatCurrency, formatCurrencyForCards } from '@/lib/currency';
 import { useSettings } from '@/contexts/SettingsContext';
 
 type DueStatus = { status: string; days: number; color: string };
@@ -153,7 +153,7 @@ export function UnifiedInvoiceCard({
       const invoiceCurrency = invoice.currency || 'USD';
       // Create complete string atomically - render as single text node to prevent partial rendering
       // Use inline-block and nowrap to prevent layout shift
-      const partialText = `Paid: ${formatCurrency(dueCharges.totalPaid, invoiceCurrency)} • Remaining: ${formatCurrency(baseAmount, invoiceCurrency)}`;
+      const partialText = `Paid: ${formatCurrencyForCards(dueCharges.totalPaid, invoiceCurrency)} • Remaining: ${formatCurrencyForCards(baseAmount, invoiceCurrency)}`;
       items.push(<div key="partial" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>{partialText}</div>);
     }
     
@@ -164,7 +164,7 @@ export function UnifiedInvoiceCard({
       const writeOffAmount = invoice.writeOffAmount || 0;
       const totalAmount = invoice.total || 0;
       const paidAmount = Math.max(0, totalAmount - writeOffAmount);
-      const writeOffText = `Paid: ${formatCurrency(paidAmount, invoiceCurrency)} • Write-off: ${formatCurrency(writeOffAmount, invoiceCurrency)}`;
+      const writeOffText = `Paid: ${formatCurrencyForCards(paidAmount, invoiceCurrency)} • Write-off: ${formatCurrencyForCards(writeOffAmount, invoiceCurrency)}`;
       items.push(<div key="writeoff" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>{writeOffText}</div>);
     }
     
@@ -173,7 +173,7 @@ export function UnifiedInvoiceCard({
       const invoiceCurrency = invoice.currency || 'USD';
       // Create complete string atomically - render as single text node to prevent partial rendering
       // Use inline-block and nowrap to prevent layout shift
-      const lateFeesText = `Base ${formatCurrency(baseAmount, invoiceCurrency)} • Late fee ${formatCurrency(dueCharges.lateFeeAmount, invoiceCurrency)}`;
+      const lateFeesText = `Base ${formatCurrencyForCards(baseAmount, invoiceCurrency)} • Late fee ${formatCurrencyForCards(dueCharges.lateFeeAmount, invoiceCurrency)}`;
       items.push(<div key="latefees" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>{lateFeesText}</div>);
     }
     
@@ -272,7 +272,7 @@ export function UnifiedInvoiceCard({
                     : 'text-red-600'
                 }`}
               >
-                {formatCurrency(displayTotal, invoice.currency || 'USD')}
+                {formatCurrencyForCards(displayTotal, invoice.currency || 'USD')}
               </div>
               <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500" style={{ minHeight: '12px' }}>
                 <RotatingAmountBreakdown
@@ -445,7 +445,7 @@ export function UnifiedInvoiceCard({
                     : 'text-red-600'
                 }`}
               >
-                {formatCurrency(displayTotal, invoice.currency || 'USD')}
+                {formatCurrencyForCards(displayTotal, invoice.currency || 'USD')}
               </div>
               <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500" style={{ minHeight: '12px' }}>
                 <RotatingAmountBreakdown

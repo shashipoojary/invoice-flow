@@ -3,6 +3,7 @@ import { pdf } from '@react-pdf/renderer';
 import ProfessionalInvoicePDF from '@/components/ProfessionalInvoicePDF';
 import QRCode from 'qrcode';
 import { Invoice, BusinessSettings } from '@/types';
+import { formatCurrencyForPDF } from '@/lib/currency';
 
 // Generate QR code data based on user's payment methods and invoice
 const generateQRCodeData = (invoice: Invoice, businessSettings?: BusinessSettings) => {
@@ -39,9 +40,10 @@ const generateQRCodeData = (invoice: Invoice, businessSettings?: BusinessSetting
   }
   
   // Ultra simple format for maximum scannability
+  const invoiceCurrency = invoice.currency || 'USD';
   const simpleData = [
     `Invoice: ${invoice.invoiceNumber}`,
-    `Amount: $${(invoice.total || 0).toFixed(2)}`,
+    `Amount: ${formatCurrencyForPDF(invoice.total || 0, invoiceCurrency)}`,
     `Business: ${businessSettings?.businessName || 'Your Business'}`,
     '',
     ...paymentMethods.slice(0, 3) // Top 3 payment methods for better scanning
@@ -278,14 +280,10 @@ const createFallbackInvoiceHTML = (invoice: Invoice, businessSettings?: Business
   
   console.log('HTML Fallback - Processed Business Info:', { businessName, businessEmail, businessPhone, businessAddress });
   
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
-};
+  const invoiceCurrency = invoice.currency || 'USD';
+  const formatCurrency = (amount: number) => {
+    return formatCurrencyForPDF(amount, invoiceCurrency);
+  };
   
   return `
     <!DOCTYPE html>

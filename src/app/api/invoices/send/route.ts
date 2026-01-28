@@ -370,7 +370,48 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Ensure invoice status is set to 'sent' immediately for drafts
+    // Use Resend free plan default email address
+    const fromAddress = `${businessSettings.businessName || 'FlowInvoicer'} <onboarding@resend.dev>`;
+
+    // Send email with Resend FIRST - only update status if email succeeds
+    // Use "Receipt" in subject for paid invoices, "Invoice" for others
+    // Format currency for subject line using invoice currency
+    const invoiceCurrency = invoice.currency || 'USD';
+    const { formatCurrency } = require('@/lib/currency');
+    const formattedTotal = formatCurrency(invoice.total || 0, invoiceCurrency);
+    const emailSubject = invoice.status === 'paid' 
+      ? `Receipt #${invoice.invoice_number} - ${formattedTotal}`
+      : `Invoice #${invoice.invoice_number} - ${formattedTotal}`;
+    
+    const { data, error } = await resend.emails.send({
+      from: fromAddress,
+      to: [clientEmail],
+      subject: emailSubject,
+      html: emailHtml,
+      attachments: [
+        {
+          filename: invoice.status === 'paid' 
+            ? `Receipt-${invoice.invoice_number}.pdf`
+            : `Invoice-${invoice.invoice_number}.pdf`,
+          content: Buffer.from(pdfBuffer),
+        },
+      ],
+    });
+
+    // CRITICAL: Only update invoice status if email send succeeds
+    // If email fails, return error without changing status
+    if (error) {
+      console.error('Resend email error:', error);
+      // Return detailed error message for better debugging
+      const errorMessage = error.message || 'Failed to send email';
+      return NextResponse.json({ 
+        error: errorMessage,
+        details: error
+      }, { status: 500 });
+    }
+
+    // Email sent successfully - NOW update invoice status
+    // Ensure invoice status is set to 'sent' for drafts
     // But preserve 'paid' status if invoice was already marked as paid
     // CRITICAL: Store snapshots when sending (only if not already stored)
     if (invoice.status === 'draft') {
@@ -407,41 +448,6 @@ export async function POST(request: NextRequest) {
         .update({ updated_at: new Date().toISOString() })
         .eq('id', invoiceId)
         .eq('user_id', user.id);
-    }
-
-    // Use Resend free plan default email address
-    const fromAddress = `${businessSettings.businessName || 'FlowInvoicer'} <onboarding@resend.dev>`;
-
-    // Send email with Resend
-    // Use "Receipt" in subject for paid invoices, "Invoice" for others
-    // Format currency for subject line using invoice currency
-    const invoiceCurrency = invoice.currency || 'USD';
-    const { formatCurrency } = require('@/lib/currency');
-    const formattedTotal = formatCurrency(invoice.total || 0, invoiceCurrency);
-    const emailSubject = invoice.status === 'paid' 
-      ? `Receipt #${invoice.invoice_number} - ${formattedTotal}`
-      : `Invoice #${invoice.invoice_number} - ${formattedTotal}`;
-    
-    const { data, error } = await resend.emails.send({
-      from: fromAddress,
-      to: [clientEmail],
-      subject: emailSubject,
-      html: emailHtml,
-      attachments: [
-        {
-          filename: invoice.status === 'paid' 
-            ? `Receipt-${invoice.invoice_number}.pdf`
-            : `Invoice-${invoice.invoice_number}.pdf`,
-          content: Buffer.from(pdfBuffer),
-        },
-      ],
-    });
-
-    if (error) {
-      console.error('Resend email error:', error);
-      return NextResponse.json({ 
-        error: 'Failed to send email' 
-      }, { status: 500 });
     }
 
     // Fetch the latest invoice after sending to return up-to-date status

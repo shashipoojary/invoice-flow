@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth'
 import { useSettings } from '@/contexts/SettingsContext'
-import { formatCurrency } from '@/lib/currency';
+import { formatCurrency, formatCurrencyForCards } from '@/lib/currency';
 import { useToast } from '@/hooks/useToast';
 import { useData } from '@/contexts/DataContext';
 import ToastContainer from '@/components/Toast';
@@ -180,18 +180,18 @@ const InvoicePerformanceChart = ({ invoices, paymentDataMap, baseCurrency = 'USD
 
   const revenueCenterContent = hoveredRevenueSegment ? (
     <div className="flex flex-col items-center justify-center">
-      <span className="text-2xl font-semibold tabular-nums">
+      <span className="text-lg font-semibold tabular-nums">
         {formatLargeNumber(hoveredRevenueSegment.value)}
       </span>
-      <span className="text-xs text-gray-500">{hoveredRevenueSegment.label}</span>
+      <span className="text-[10px] text-gray-500">{hoveredRevenueSegment.label}</span>
     </div>
   ) : (
     <div className="flex flex-col items-center justify-center">
-      <span className="text-lg font-semibold text-gray-400">Total</span>
-      <span className="text-2xl font-semibold tabular-nums">
+      <span className="text-sm font-semibold text-gray-400">Total</span>
+      <span className="text-xl font-semibold tabular-nums">
         {formatLargeNumber(totalRevenueAmount)}
       </span>
-      <span className="text-xs text-gray-500">Revenue</span>
+      <span className="text-[10px] text-gray-500">Revenue</span>
     </div>
   );
   
@@ -522,6 +522,8 @@ export default function DashboardOverview() {
   const [totalPaid, setTotalPaid] = useState(0);
   const [remainingBalance, setRemainingBalance] = useState(0);
   const [loadingPayments, setLoadingPayments] = useState(false);
+  // Cache payments by invoice ID to avoid refetching
+  const [paymentsCache, setPaymentsCache] = useState<Record<string, { payments: any[]; totalPaid: number; remainingBalance: number }>>({});
   const [submittingPayment, setSubmittingPayment] = useState(false);
   const [deletingPayment, setDeletingPayment] = useState<string | null>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -1255,6 +1257,16 @@ export default function DashboardOverview() {
   const fetchPayments = useCallback(async () => {
     if (!selectedInvoice?.id) return;
     
+    // Check cache first - if we already have payments for this invoice, use them
+    const cached = paymentsCache[selectedInvoice.id];
+    if (cached) {
+      setPayments(cached.payments);
+      setTotalPaid(cached.totalPaid);
+      setRemainingBalance(cached.remainingBalance);
+      setLoadingPayments(false);
+      return;
+    }
+    
     setLoadingPayments(true);
     try {
       const headers = await getAuthHeaders();
@@ -1264,21 +1276,41 @@ export default function DashboardOverview() {
 
       if (response.ok) {
         const data = await response.json();
-        setPayments(data.payments || []);
-        setTotalPaid(data.totalPaid || 0);
-        setRemainingBalance(data.remainingBalance || selectedInvoice.total);
+        const paymentsData = data.payments || [];
+        const totalPaidData = data.totalPaid || 0;
+        const remainingBalanceData = data.remainingBalance || selectedInvoice.total;
+        
+        // Cache the payments data
+        setPaymentsCache(prev => ({
+          ...prev,
+          [selectedInvoice.id]: {
+            payments: paymentsData,
+            totalPaid: totalPaidData,
+            remainingBalance: remainingBalanceData
+          }
+        }));
+        
+        setPayments(paymentsData);
+        setTotalPaid(totalPaidData);
+        setRemainingBalance(remainingBalanceData);
       }
     } catch (error) {
       console.error('Error fetching payments:', error);
     } finally {
       setLoadingPayments(false);
     }
-  }, [selectedInvoice?.id, getAuthHeaders, selectedInvoice?.total]);
+  }, [selectedInvoice?.id, getAuthHeaders, selectedInvoice?.total, paymentsCache]);
 
-  // Fetch payments when showing payment form or viewing invoice
+  // Only fetch payments when modal is actually opened, not just when invoice is selected
+  // Use cache to avoid refetching if we already have the data
   useEffect(() => {
     if ((showPaymentForm || showViewInvoice) && selectedInvoice?.id) {
       fetchPayments();
+    } else {
+      // Clear payments when modal closes
+      setPayments([]);
+      setTotalPaid(0);
+      setRemainingBalance(0);
     }
   }, [showPaymentForm, showViewInvoice, selectedInvoice?.id, fetchPayments]);
 
@@ -1321,7 +1353,12 @@ export default function DashboardOverview() {
         setPaymentNotes('');
         setPaymentDate(new Date().toISOString().split('T')[0]);
         
-        // Refresh payments
+        // Clear cache and refetch to get updated data
+        setPaymentsCache(prev => {
+          const updated = { ...prev };
+          delete updated[selectedInvoice.id];
+          return updated;
+        });
         await fetchPayments();
         
         // Refresh invoices
@@ -1387,6 +1424,12 @@ export default function DashboardOverview() {
           });
 
           if (response.ok) {
+            // Clear cache and refetch to get updated data
+            setPaymentsCache(prev => {
+              const updated = { ...prev };
+              delete updated[selectedInvoice.id];
+              return updated;
+            });
             await fetchPayments();
             await refreshInvoices();
             showSuccess('Payment deleted successfully');
@@ -2029,11 +2072,11 @@ export default function DashboardOverview() {
                   invoice.status === 'draft' ? 'text-gray-600' :
                   'text-red-600'
                 }`}>
-                  {formatCurrency(((invoice as any)._displayTotal) || dueCharges.totalPayable, invoice.currency || settings.baseCurrency || 'USD')}
+                  {formatCurrencyForCards(((invoice as any)._displayTotal) || dueCharges.totalPayable, invoice.currency || settings.baseCurrency || 'USD')}
                 </div>
                 {(invoice as any)._lateFeeShow ? (
                   <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
-                    Base {formatCurrency(invoice.total, invoice.currency || settings.baseCurrency || 'USD')} • Late fee {formatCurrency(((invoice as any)._lateFeeAmount as number), invoice.currency || settings.baseCurrency || 'USD')}
+                    Base {formatCurrencyForCards(invoice.total, invoice.currency || settings.baseCurrency || 'USD')} • Late fee {formatCurrencyForCards(((invoice as any)._lateFeeAmount as number), invoice.currency || settings.baseCurrency || 'USD')}
                   </div>
                 ) : (
                   <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
@@ -2317,7 +2360,7 @@ export default function DashboardOverview() {
                   </div>
                 ) : dueCharges.hasLateFees ? (
                   <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
-                    Base {formatCurrency(invoice.total, invoice.currency || settings.baseCurrency || 'USD')} • Late fee {formatCurrency(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}
+                    Base {formatCurrencyForCards(invoice.total, invoice.currency || settings.baseCurrency || 'USD')} • Late fee {formatCurrencyForCards(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}
                   </div>
                 ) : (
                   <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
@@ -2391,16 +2434,16 @@ export default function DashboardOverview() {
                   dueDateStatus.status === 'overdue' ? 'text-red-600' :
                   'text-gray-700'
             }`}>
-              {formatCurrency(dueCharges.totalPayable, invoice.currency || settings.baseCurrency || 'USD')}
+              {formatCurrencyForCards(dueCharges.totalPayable, invoice.currency || settings.baseCurrency || 'USD')}
                 </div>
               {dueCharges.isPartiallyPaid ? (
                 <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
-                  Paid: {formatCurrency(dueCharges.totalPaid, invoice.currency || settings.baseCurrency || 'USD')} • Remaining: {formatCurrency(dueCharges.remainingBalance, invoice.currency || settings.baseCurrency || 'USD')}
-                  {dueCharges.hasLateFees && ` • Late fee: ${formatCurrency(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}`}
+                  Paid: {formatCurrencyForCards(dueCharges.totalPaid, invoice.currency || settings.baseCurrency || 'USD')} • Remaining: {formatCurrencyForCards(dueCharges.remainingBalance, invoice.currency || settings.baseCurrency || 'USD')}
+                  {dueCharges.hasLateFees && ` • Late fee: ${formatCurrencyForCards(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}`}
             </div>
               ) : dueCharges.hasLateFees ? (
                 <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
-                  Base {formatCurrency(invoice.total, invoice.currency || settings.baseCurrency || 'USD')} • Late fee {formatCurrency(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}
+                  Base {formatCurrencyForCards(invoice.total, invoice.currency || settings.baseCurrency || 'USD')} • Late fee {formatCurrencyForCards(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}
             </div>
               ) : (
                 <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
@@ -5884,16 +5927,16 @@ export default function DashboardOverview() {
                        <>
                          <div className="flex items-center justify-between mb-2">
                            <span className="text-sm font-medium text-gray-700">Invoice Total</span>
-                           <span className="text-lg font-semibold text-gray-900">{formatCurrency(selectedInvoice.total, invoiceCurrency)}</span>
+                           <span className="text-lg font-semibold text-gray-900">{formatCurrencyForCards(selectedInvoice.total, invoiceCurrency)}</span>
                          </div>
                          <div className="flex items-center justify-between mb-2">
                            <span className="text-sm font-medium text-gray-700">Total Paid</span>
-                           <span className="text-lg font-semibold text-emerald-600">{formatCurrency(totalPaid, invoiceCurrency)}</span>
+                           <span className="text-lg font-semibold text-emerald-600">{formatCurrencyForCards(totalPaid, invoiceCurrency)}</span>
                          </div>
                          <div className="flex items-center justify-between mb-3">
                            <span className="text-sm font-medium text-gray-700">Remaining Balance</span>
                            <span className={`text-lg font-semibold ${remainingBalance > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
-                             {formatCurrency(remainingBalance, invoiceCurrency)}
+                             {formatCurrencyForCards(remainingBalance, invoiceCurrency)}
                            </span>
                          </div>
                        </>
@@ -5930,7 +5973,7 @@ export default function DashboardOverview() {
                          placeholder="0.00"
                          required
                        />
-                       <p className="text-xs text-gray-500 mt-1">Max: {formatCurrency(remainingBalance, selectedInvoice.currency || settings.baseCurrency || 'USD')}</p>
+                       <p className="text-xs text-gray-500 mt-1">Max: {formatCurrencyForCards(remainingBalance, selectedInvoice.currency || settings.baseCurrency || 'USD')}</p>
                      </div>
                      <div>
                        <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -5997,7 +6040,7 @@ export default function DashboardOverview() {
                          >
                            <div className="flex-1">
                              <div className="flex items-center gap-2">
-                               <span className="font-semibold text-gray-900">{formatCurrency(parseFloat(payment.amount.toString()), selectedInvoice.currency || settings.baseCurrency || 'USD')}</span>
+                               <span className="font-semibold text-gray-900">{formatCurrencyForCards(parseFloat(payment.amount.toString()), selectedInvoice.currency || settings.baseCurrency || 'USD')}</span>
                                {payment.payment_method && (
                                  <span className="text-xs text-gray-500">• {payment.payment_method}</span>
                                )}
@@ -6162,18 +6205,18 @@ export default function DashboardOverview() {
                          </td>
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-700">1</td>
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right text-gray-900">
-                            {formatCurrency(parseFloat(item.amount?.toString() || '0') || 0, selectedInvoice.currency || settings.baseCurrency || 'USD')}
+                            {formatCurrencyForCards(parseFloat(item.amount?.toString() || '0') || 0, selectedInvoice.currency || settings.baseCurrency || 'USD')}
                          </td>
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium text-gray-900">
-                            {formatCurrency(parseFloat(item.amount?.toString() || '0') || 0, selectedInvoice.currency || settings.baseCurrency || 'USD')}
+                            {formatCurrencyForCards(parseFloat(item.amount?.toString() || '0') || 0, selectedInvoice.currency || settings.baseCurrency || 'USD')}
                          </td>
                        </tr>
                      )) || (
                        <tr className="border-t border-gray-200">
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900">Service</td>
                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-700">1</td>
-                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right text-gray-900">{formatCurrency(0, selectedInvoice.currency || settings.baseCurrency || 'USD')}</td>
-                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium text-gray-900">{formatCurrency(0, selectedInvoice.currency || settings.baseCurrency || 'USD')}</td>
+                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right text-gray-900">{formatCurrencyForCards(0, selectedInvoice.currency || settings.baseCurrency || 'USD')}</td>
+                         <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium text-gray-900">{formatCurrencyForCards(0, selectedInvoice.currency || settings.baseCurrency || 'USD')}</td>
                        </tr>
                      )}
                      {(() => {
@@ -6183,13 +6226,15 @@ export default function DashboardOverview() {
                        // If invoice has write-off, treat it as paid
                        const isPaid = selectedInvoice.status === 'paid' || hasWriteOff;
                        
-                       // Calculate actual paid amount: if write-off exists, paid = total - write-off
-                       // For fully paid invoices without write-off, amount paid = total
+                       // Check if there are actual payment records (from database)
+                       // Only show payment info after loading is complete to prevent flash of incorrect content
+                       const hasActualPaymentRecords = !loadingPayments && payments.length > 0;
+                       
+                       // Calculate actual paid amount: Always use payment records if available, otherwise use calculated values
+                       // This preserves partial payment history even when invoice is marked as paid
                        const actualTotalPaid = hasWriteOff 
                          ? Math.max(0, (selectedInvoice.total || 0) - (selectedInvoice.writeOffAmount || 0))
-                         : isPaid 
-                           ? (selectedInvoice.total || 0) // Fully paid invoice, amount paid = total
-                           : (paymentData?.totalPaid || dueCharges.totalPaid || 0);
+                         : (paymentData?.totalPaid || dueCharges.totalPaid || (isPaid ? (selectedInvoice.total || 0) : 0));
                        
                        const actualRemainingBalance = hasWriteOff 
                          ? 0 // If written off, no remaining balance
@@ -6198,8 +6243,9 @@ export default function DashboardOverview() {
                        // If invoice has write-off, treat it as paid
                        const isPaidWithWriteOff = isPaid && hasWriteOff;
                        
-                       // Only show partial payments if invoice is not fully paid and no write-off
-                       const hasPartialPayments = !isPaid && !hasWriteOff && actualTotalPaid > 0 && actualRemainingBalance > 0;
+                       // Show partial payments ONLY if payments are loaded AND there are actual payment records AND remaining balance
+                       // Keep showing even when invoice is marked as paid to preserve payment history
+                       const hasPartialPayments = hasActualPaymentRecords && !hasWriteOff && actualTotalPaid > 0 && actualRemainingBalance > 0;
                        // Determine if it's a partial payment (has both paid and remaining)
                        const isPartialPayment = hasPartialPayments;
                        
@@ -6233,71 +6279,40 @@ export default function DashboardOverview() {
                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Subtotal:</td>
-                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrency(selectedInvoice.subtotal || 0, invoiceCurrency)}</td>
+                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(selectedInvoice.subtotal || 0, invoiceCurrency)}</td>
                            </tr>
                            <tr>
                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Discount:</td>
-                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrency(selectedInvoice.discount || 0, invoiceCurrency)}</td>
+                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(selectedInvoice.discount || 0, invoiceCurrency)}</td>
                            </tr>
                            <tr>
                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Tax ({(selectedInvoice.taxRate || 0) * 100}%):</td>
-                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrency(selectedInvoice.taxAmount || 0, invoiceCurrency)}</td>
+                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(selectedInvoice.taxAmount || 0, invoiceCurrency)}</td>
                            </tr>
-                           <tr>
-                             <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm border-t border-gray-200 pt-2 ${totalStatusColor}`}></td>
-                             <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm border-t border-gray-200 pt-2 ${totalStatusColor}`}></td>
-                             <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>Total:</td>
-                             <td className={`px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>{formatCurrency(selectedInvoice.total || 0, invoiceCurrency)}</td>
-                           </tr>
-                           {/* Exchange Rate Information */}
-                           {(() => {
-                             const invoiceCurrencyLocal = selectedInvoice.currency || settings.baseCurrency || 'USD';
-                             const baseCurrencyLocal = settings.baseCurrency || 'USD';
-                             const exchangeRate = (selectedInvoice as any).exchange_rate;
-                             const baseCurrencyAmount = (selectedInvoice as any).base_currency_amount;
-                             
-                             if (invoiceCurrencyLocal !== baseCurrencyLocal && exchangeRate && exchangeRate !== 1.0 && baseCurrencyAmount) {
-                               return (
-                                 <>
-                                   <tr>
-                                     <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-500" style={{ borderTop: 'none' }} colSpan={2}></td>
-                                     <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-500 text-right" style={{ borderTop: 'none' }}>Exchange Rate:</td>
-                                     <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-500 text-right" style={{ borderTop: 'none' }}>
-                                       1 {invoiceCurrencyLocal} = {exchangeRate.toFixed(4)} {baseCurrencyLocal}
-                                     </td>
-                                   </tr>
-                                   <tr>
-                                     <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-500" style={{ borderTop: 'none' }} colSpan={2}></td>
-                                     <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-500 text-right" style={{ borderTop: 'none' }}>Equivalent in {baseCurrencyLocal}:</td>
-                                     <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-500 text-right" style={{ borderTop: 'none' }}>
-                                       {formatCurrency(baseCurrencyAmount, baseCurrencyLocal)}
-                                     </td>
-                                   </tr>
-                                 </>
-                               );
-                             }
-                             return null;
-                           })()}
-                           {hasWriteOff ? (
+                          <tr>
+                            <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm border-t border-gray-200 pt-2 ${totalStatusColor}`}></td>
+                            <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm border-t border-gray-200 pt-2 ${totalStatusColor}`}></td>
+                            <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>Total:</td>
+                            <td className={`px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>{formatCurrencyForCards(selectedInvoice.total || 0, invoiceCurrency)}</td>
+                          </tr>
+                          {hasWriteOff ? (
                              <tr>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700" style={{ borderTop: 'none' }}></td>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700" style={{ borderTop: 'none' }}></td>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 text-right" style={{ borderTop: 'none' }}>Write-off Amount:</td>
-                               <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 font-semibold text-right" style={{ borderTop: 'none' }}>-{formatCurrency(selectedInvoice.writeOffAmount || 0, invoiceCurrency)}</td>
+                               <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 font-semibold text-right" style={{ borderTop: 'none' }}>-{formatCurrencyForCards(selectedInvoice.writeOffAmount || 0, invoiceCurrency)}</td>
                              </tr>
                            ) : null}
-                           {/* Only show Total Paid/Partial Paid for NON-PAID invoices with partial payments - NEVER show for paid invoices */}
+                           {/* Show Total Paid/Partial Paid ONLY if payments are loaded AND there are actual payment records - keep showing even when invoice is marked as paid */}
                            {(() => {
-                             // CRITICAL: Double-check isPaid to ensure this NEVER renders for paid invoices
-                             const invoiceIsPaid = selectedInvoice.status === 'paid' || hasWriteOff;
-                             if (invoiceIsPaid) return null;
-                             
-                             // Only show for non-paid invoices with actual payments
-                             if (!hasWriteOff && actualTotalPaid > 0) {
+                             // Show payment breakdown ONLY if payments are loaded AND there are actual payment records from database
+                             // Don't show during loading to prevent flash of incorrect content
+                             // Keep showing even when invoice is marked as paid to preserve payment history visibility
+                             if (!loadingPayments && hasActualPaymentRecords && !hasWriteOff && actualTotalPaid > 0) {
                                return (
                                  <tr>
                                    <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}></td>
@@ -6306,19 +6321,20 @@ export default function DashboardOverview() {
                                      {isPartialPayment ? "Partial Paid:" : "Total Paid:"}
                                    </td>
                                    <td className={`px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}>
-                                     {formatCurrency(actualTotalPaid, selectedInvoice.currency || settings.baseCurrency || 'USD')}
+                                     {formatCurrencyForCards(actualTotalPaid, selectedInvoice.currency || settings.baseCurrency || 'USD')}
                                    </td>
                                  </tr>
                                );
                              }
                              return null;
                            })()}
-                           {hasPartialPayments === true ? (
+                           {/* Show Remaining Balance only if there's actually a remaining balance */}
+                           {hasPartialPayments && actualRemainingBalance > 0 ? (
                              <tr>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 text-right" style={{ borderTop: 'none' }}>Remaining Balance:</td>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 font-semibold text-right" style={{ borderTop: 'none' }}>{formatCurrency(actualRemainingBalance, invoiceCurrency)}</td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 font-semibold text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(actualRemainingBalance, invoiceCurrency)}</td>
                              </tr>
                            ) : null}
                            {dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 ? (
@@ -6326,7 +6342,7 @@ export default function DashboardOverview() {
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 text-right" style={{ borderTop: 'none' }}>Late Fees:</td>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 font-semibold text-right" style={{ borderTop: 'none' }}>{formatCurrency(dueCharges.lateFeeAmount, invoiceCurrency)}</td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 font-semibold text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(dueCharges.lateFeeAmount, invoiceCurrency)}</td>
                              </tr>
                            ) : null}
                            {(dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0) ? (
@@ -6336,17 +6352,46 @@ export default function DashboardOverview() {
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">Total Payable:</td>
                                <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">{formatCurrency(dueCharges.totalPayable, invoiceCurrency)}</td>
                              </tr>
-                           ) : isPaid ? (
-                             <tr>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">Amount Paid:</td>
-                               <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">{formatCurrency(actualTotalPaid, invoiceCurrency)}</td>
-                             </tr>
-                           ) : null}
-                         </>
-                       );
-                     })()}
+                          ) : isPaid ? (
+                            <tr>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">Amount Paid:</td>
+                              <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">{formatCurrencyForCards(actualTotalPaid, invoiceCurrency)}</td>
+                            </tr>
+                          ) : null}
+                          {/* Exchange Rate Information - Always shown at the end, after all other rows */}
+                          {(() => {
+                            const invoiceCurrencyLocal = selectedInvoice.currency || settings.baseCurrency || 'USD';
+                            const baseCurrencyLocal = settings.baseCurrency || 'USD';
+                            const exchangeRate = (selectedInvoice as any).exchange_rate;
+                            const baseCurrencyAmount = (selectedInvoice as any).base_currency_amount;
+                            
+                            if (invoiceCurrencyLocal !== baseCurrencyLocal && exchangeRate && exchangeRate !== 1.0 && baseCurrencyAmount) {
+                              return (
+                                <>
+                                  <tr>
+                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-500" style={{ borderTop: 'none' }} colSpan={2}></td>
+                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-500 text-right" style={{ borderTop: 'none' }}>Exchange Rate:</td>
+                                    <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-500 text-right" style={{ borderTop: 'none' }}>
+                                      1 {invoiceCurrencyLocal} = {exchangeRate.toFixed(4)} {baseCurrencyLocal}
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-500" style={{ borderTop: 'none' }} colSpan={2}></td>
+                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-500 text-right" style={{ borderTop: 'none' }}>Equivalent in {baseCurrencyLocal}:</td>
+                                    <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-500 text-right" style={{ borderTop: 'none' }}>
+                                      {formatCurrencyForCards(baseCurrencyAmount, baseCurrencyLocal)}
+                                    </td>
+                                  </tr>
+                                </>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </>
+                      );
+                    })()}
                    </tbody>
                  </table>
                </div>
@@ -6376,7 +6421,7 @@ export default function DashboardOverview() {
                    <div className="space-y-2">
                      <div className="flex justify-between text-xs sm:text-sm">
                        <span className="text-gray-700">Write-off Amount:</span>
-                       <span className="text-slate-700 font-semibold">{formatCurrency(selectedInvoice.writeOffAmount || 0, selectedInvoice.currency || settings.baseCurrency || 'USD')}</span>
+                       <span className="text-slate-700 font-semibold">{formatCurrencyForCards(selectedInvoice.writeOffAmount || 0, selectedInvoice.currency || settings.baseCurrency || 'USD')}</span>
                      </div>
                      {(() => {
                        const writeOffNotes = selectedInvoice.writeOffNotes;
@@ -6395,8 +6440,8 @@ export default function DashboardOverview() {
                  </div>
                ) : null}
 
-               {/* Payment History - Show if there are partial payments */}
-               {totalPaid > 0 && (
+               {/* Payment History - Always show if there are payment records */}
+               {payments.length > 0 && (
                  <div className="p-3 sm:p-6 border-t border-gray-200">
                    <h3 className="text-sm sm:text-base font-semibold mb-3 text-gray-900">Payment History</h3>
                    {loadingPayments ? (
@@ -6412,7 +6457,7 @@ export default function DashboardOverview() {
                          >
                            <div className="flex-1">
                              <div className="flex items-center gap-2">
-                               <span className="font-semibold text-gray-900 text-xs sm:text-sm">{formatCurrency(parseFloat(payment.amount.toString()), selectedInvoice.currency || settings.baseCurrency || 'USD')}</span>
+                               <span className="font-semibold text-gray-900 text-xs sm:text-sm">{formatCurrencyForCards(parseFloat(payment.amount.toString()), selectedInvoice.currency || settings.baseCurrency || 'USD')}</span>
                                {payment.payment_method && (
                                  <span className="text-xs text-gray-500">• {payment.payment_method}</span>
                                )}

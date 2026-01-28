@@ -261,6 +261,7 @@ export default function QuickInvoiceModal({
     items?: { [key: string]: { description?: string; amount?: string } }
     dueDate?: string
     issueDate?: string
+    exchangeRate?: string
   }>({})
   
   // Invoice basic details
@@ -890,6 +891,14 @@ export default function QuickInvoiceModal({
     // Issue date validation
     if (!issueDate || !issueDate.trim()) {
       newErrors.issueDate = 'Issue date is required'
+    }
+    
+    // Exchange rate validation - required when currency differs from base currency
+    const baseCurrency = settings?.baseCurrency || 'USD'
+    if (currency !== baseCurrency) {
+      if (!exchangeRate || !exchangeRate.trim() || exchangeRate === '1.0' || parseFloat(exchangeRate) <= 0 || isNaN(parseFloat(exchangeRate))) {
+        newErrors.exchangeRate = 'Exchange rate is required when currency differs from base currency'
+      }
     }
     
     setErrors(newErrors)
@@ -2335,7 +2344,7 @@ export default function QuickInvoiceModal({
                   </div>
                   <div className="w-32">
                     <div className="relative">
-                      <span className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-sm font-medium ${
+                      <span className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-sm font-medium whitespace-nowrap ${
                         isDarkMode ? 'text-gray-400' : 'text-gray-500'
                       }`}>
                         {getCurrencySymbol(currency)}
@@ -2345,7 +2354,8 @@ export default function QuickInvoiceModal({
                         placeholder="0"
                         value={discount}
                         onChange={(e) => setDiscount(e.target.value)}
-                        className={`w-full pl-8 pr-3 py-2 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        style={{ paddingLeft: getCurrencySymbol(currency).length > 2 ? '3.5rem' : '2.75rem' }}
+                        className={`w-full pr-3 py-2 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                           isDarkMode 
                             ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
                             : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'

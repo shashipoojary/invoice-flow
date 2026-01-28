@@ -192,22 +192,7 @@ async function handler(request: NextRequest) {
     
     const emailHtml = getEmailTemplate(template, invoice, businessSettings, publicUrl, invoice.status);
 
-    // Update invoice status if draft
-    if (invoice.status === 'draft') {
-      await supabaseAdmin
-        .from('invoices')
-        .update({ status: 'sent', updated_at: new Date().toISOString() })
-        .eq('id', invoiceId)
-        .eq('user_id', userId);
-    } else if (invoice.status === 'paid') {
-      await supabaseAdmin
-        .from('invoices')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', invoiceId)
-        .eq('user_id', userId);
-    }
-
-    // Send email
+    // Send email FIRST - only update status if email succeeds
     const fromAddress = `${businessSettings.businessName || 'FlowInvoicer'} <onboarding@resend.dev>`;
     // Format currency for subject line using invoice currency
     const invoiceCurrency = invoice.currency || 'USD';
@@ -232,8 +217,25 @@ async function handler(request: NextRequest) {
       ],
     });
 
+    // CRITICAL: Only update invoice status if email send succeeds
+    // If email fails, throw error without changing status
     if (error) {
       throw new Error(`Failed to send email: ${error.message}`);
+    }
+
+    // Email sent successfully - NOW update invoice status
+    if (invoice.status === 'draft') {
+      await supabaseAdmin
+        .from('invoices')
+        .update({ status: 'sent', updated_at: new Date().toISOString() })
+        .eq('id', invoiceId)
+        .eq('user_id', userId);
+    } else if (invoice.status === 'paid') {
+      await supabaseAdmin
+        .from('invoices')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', invoiceId)
+        .eq('user_id', userId);
     }
 
     // Log sent event

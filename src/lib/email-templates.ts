@@ -1,6 +1,8 @@
 // Email templates for different invoice designs
 // Clean, professional designs like Google/Wave
 
+import { formatCurrencyForCards, CURRENCIES } from './currency';
+
 interface InvoiceData {
   invoice_number: string;
   total: number;
@@ -54,23 +56,9 @@ export function generateMinimalEmailTemplate(
   hidePaymentMethods: boolean = false
 ): string {
   const invoiceCurrency = invoice.currency || 'USD';
+  // Use formatCurrencyForCards to show symbols (R for ZAR, S$ for SGD, etc.) instead of text codes
   const formatCurrency = (amount: number) => {
-    try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: invoiceCurrency.toUpperCase(),
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(amount);
-    } catch (error) {
-      // Fallback to USD if currency is invalid
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(amount);
-    }
+    return formatCurrencyForCards(amount, invoiceCurrency);
   };
 
   const formatDate = (dateString: string) => {
@@ -737,23 +725,9 @@ export function generateModernEmailTemplate(
   hidePaymentMethods: boolean = false
 ): string {
   const invoiceCurrency = invoice.currency || 'USD';
+  // Use formatCurrencyForCards to show symbols (R for ZAR, S$ for SGD, etc.) instead of text codes
   const formatCurrency = (amount: number) => {
-    try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: invoiceCurrency.toUpperCase(),
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(amount);
-    } catch (error) {
-      // Fallback to USD if currency is invalid
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(amount);
-    }
+    return formatCurrencyForCards(amount, invoiceCurrency);
   };
 
   const formatDate = (dateString: string) => {
@@ -1283,23 +1257,9 @@ export function generateCreativeEmailTemplate(
   hidePaymentMethods: boolean = false
 ): string {
   const invoiceCurrency = invoice.currency || 'USD';
+  // Use formatCurrencyForCards to show symbols (R for ZAR, S$ for SGD, etc.) instead of text codes
   const formatCurrency = (amount: number) => {
-    try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: invoiceCurrency.toUpperCase(),
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(amount);
-    } catch (error) {
-      // Fallback to USD if currency is invalid
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(amount);
-    }
+    return formatCurrencyForCards(amount, invoiceCurrency);
   };
 
   const formatDate = (dateString: string) => {
@@ -1843,23 +1803,9 @@ export function generateOriginalFastInvoiceEmailTemplate(
   hidePaymentMethods: boolean = false
 ): string {
   const invoiceCurrency = invoice.currency || 'USD';
+  // Use formatCurrencyForCards to show symbols (R for ZAR, S$ for SGD, etc.) instead of text codes
   const formatCurrency = (amount: number) => {
-    try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: invoiceCurrency.toUpperCase(),
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(amount);
-    } catch (error) {
-      // Fallback to USD if currency is invalid
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(amount);
-    }
+    return formatCurrencyForCards(amount, invoiceCurrency);
   };
 
   const formatDate = (dateString: string) => {

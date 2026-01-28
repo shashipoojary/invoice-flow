@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useData } from '@/contexts/DataContext';
-import { formatCurrency } from '@/lib/currency';
+import { formatCurrency, formatCurrencyForCards, getCurrencySymbol } from '@/lib/currency';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
 import UnifiedInvoiceCard from '@/components/UnifiedInvoiceCard';
@@ -86,6 +86,8 @@ function InvoicesContent(): React.JSX.Element {
   const [totalPaid, setTotalPaid] = useState(0);
   const [remainingBalance, setRemainingBalance] = useState(0);
   const [loadingPayments, setLoadingPayments] = useState(false);
+  // Cache payments by invoice ID to avoid refetching
+  const [paymentsCache, setPaymentsCache] = useState<Record<string, { payments: any[]; totalPaid: number; remainingBalance: number }>>({});
   const [submittingPayment, setSubmittingPayment] = useState(false);
   const [deletingPayment, setDeletingPayment] = useState<string | null>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -642,6 +644,16 @@ function InvoicesContent(): React.JSX.Element {
   const fetchPayments = useCallback(async () => {
     if (!selectedInvoice?.id) return;
     
+    // Check cache first - if we already have payments for this invoice, use them
+    const cached = paymentsCache[selectedInvoice.id];
+    if (cached) {
+      setPayments(cached.payments);
+      setTotalPaid(cached.totalPaid);
+      setRemainingBalance(cached.remainingBalance);
+      setLoadingPayments(false);
+      return;
+    }
+    
     setLoadingPayments(true);
     try {
       const headers = await getAuthHeaders();
@@ -651,21 +663,41 @@ function InvoicesContent(): React.JSX.Element {
 
       if (response.ok) {
         const data = await response.json();
-        setPayments(data.payments || []);
-        setTotalPaid(data.totalPaid || 0);
-        setRemainingBalance(data.remainingBalance || selectedInvoice.total);
+        const paymentsData = data.payments || [];
+        const totalPaidData = data.totalPaid || 0;
+        const remainingBalanceData = data.remainingBalance || selectedInvoice.total;
+        
+        // Cache the payments data
+        setPaymentsCache(prev => ({
+          ...prev,
+          [selectedInvoice.id]: {
+            payments: paymentsData,
+            totalPaid: totalPaidData,
+            remainingBalance: remainingBalanceData
+          }
+        }));
+        
+        setPayments(paymentsData);
+        setTotalPaid(totalPaidData);
+        setRemainingBalance(remainingBalanceData);
       }
     } catch (error) {
       console.error('Error fetching payments:', error);
     } finally {
       setLoadingPayments(false);
     }
-  }, [selectedInvoice?.id, getAuthHeaders, selectedInvoice?.total]);
+  }, [selectedInvoice?.id, getAuthHeaders, selectedInvoice?.total, paymentsCache]);
 
-  // Fetch payments when showing payment form or viewing invoice
+  // Only fetch payments when modal is actually opened, not just when invoice is selected
+  // Use cache to avoid refetching if we already have the data
   useEffect(() => {
     if ((showPaymentForm || showViewInvoice) && selectedInvoice?.id) {
       fetchPayments();
+    } else {
+      // Clear payments when modal closes
+      setPayments([]);
+      setTotalPaid(0);
+      setRemainingBalance(0);
     }
   }, [showPaymentForm, showViewInvoice, selectedInvoice?.id, fetchPayments]);
 
@@ -678,7 +710,8 @@ function InvoicesContent(): React.JSX.Element {
     }
 
     if (parseFloat(paymentAmount) > remainingBalance) {
-      showError(`Payment amount cannot exceed remaining balance of $${remainingBalance.toFixed(2)}`);
+      const invoiceCurrency = selectedInvoice.currency || settings.baseCurrency || 'USD';
+      showError(`Payment amount cannot exceed remaining balance of ${formatCurrency(remainingBalance, invoiceCurrency)}`);
       return;
     }
 
@@ -707,7 +740,12 @@ function InvoicesContent(): React.JSX.Element {
         setPaymentNotes('');
         setPaymentDate(new Date().toISOString().split('T')[0]);
         
-        // Refresh payments
+        // Clear cache and refetch to get updated data
+        setPaymentsCache(prev => {
+          const updated = { ...prev };
+          delete updated[selectedInvoice.id];
+          return updated;
+        });
         await fetchPayments();
         
         // Refresh invoices
@@ -737,7 +775,8 @@ function InvoicesContent(): React.JSX.Element {
 
     // Find the payment to get its details for the confirmation message
     const payment = payments.find(p => p.id === paymentId);
-    const paymentAmount = payment ? `$${parseFloat(payment.amount.toString()).toFixed(2)}` : 'this payment';
+    const invoiceCurrency = selectedInvoice.currency || settings.baseCurrency || 'USD';
+    const paymentAmount = payment ? formatCurrency(parseFloat(payment.amount.toString()), invoiceCurrency) : 'this payment';
 
     // Calculate what will happen after deletion
     const remainingAfterDelete = totalPaid - (payment ? parseFloat(payment.amount.toString()) : 0);
@@ -772,6 +811,12 @@ function InvoicesContent(): React.JSX.Element {
           });
 
           if (response.ok) {
+            // Clear cache and refetch to get updated data
+            setPaymentsCache(prev => {
+              const updated = { ...prev };
+              delete updated[selectedInvoice.id];
+              return updated;
+            });
             await fetchPayments();
             await refreshInvoices();
             showSuccess('Payment deleted successfully');
@@ -1563,16 +1608,16 @@ function InvoicesContent(): React.JSX.Element {
                   invoice.status === 'draft' ? ('text-gray-600') :
                   ('text-red-600')
               }`}>
-                {formatCurrency(dueCharges.totalPayable, invoice.currency || settings.baseCurrency || 'USD')}
+                {formatCurrencyForCards(dueCharges.totalPayable, invoice.currency || settings.baseCurrency || 'USD')}
                   </div>
                   {dueCharges.isPartiallyPaid ? (
                     <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500">
-                      Paid: {formatCurrency(dueCharges.totalPaid, invoice.currency || settings.baseCurrency || 'USD')} • Remaining: {formatCurrency(dueCharges.remainingBalance, invoice.currency || settings.baseCurrency || 'USD')}
-                      {dueCharges.hasLateFees && ` • Late fee: ${formatCurrency(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}`}
+                      Paid: {formatCurrencyForCards(dueCharges.totalPaid, invoice.currency || settings.baseCurrency || 'USD')} • Remaining: {formatCurrencyForCards(dueCharges.remainingBalance, invoice.currency || settings.baseCurrency || 'USD')}
+                      {dueCharges.hasLateFees && ` • Late fee: ${formatCurrencyForCards(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}`}
                     </div>
                   ) : dueCharges.hasLateFees ? (
                     <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500">
-                      Base {formatCurrency(invoice.total, invoice.currency || settings.baseCurrency || 'USD')} • Late fee {formatCurrency(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}
+                      Base {formatCurrencyForCards(invoice.total, invoice.currency || settings.baseCurrency || 'USD')} • Late fee {formatCurrencyForCards(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}
                     </div>
                   ) : (
                     <div className="mt-0 mb-0.5 min-h-[12px]"></div>
@@ -1697,12 +1742,12 @@ function InvoicesContent(): React.JSX.Element {
                 </div>
               {dueCharges.isPartiallyPaid ? (
                 <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500">
-                  Paid: {formatCurrency(dueCharges.totalPaid, invoice.currency || settings.baseCurrency || 'USD')} • Remaining: {formatCurrency(dueCharges.remainingBalance, invoice.currency || settings.baseCurrency || 'USD')}
-                  {dueCharges.hasLateFees && ` • Late fee: ${formatCurrency(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}`}
+                  Paid: {formatCurrencyForCards(dueCharges.totalPaid, invoice.currency || settings.baseCurrency || 'USD')} • Remaining: {formatCurrencyForCards(dueCharges.remainingBalance, invoice.currency || settings.baseCurrency || 'USD')}
+                  {dueCharges.hasLateFees && ` • Late fee: ${formatCurrencyForCards(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}`}
             </div>
               ) : dueCharges.hasLateFees ? (
                 <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500">
-                  Base {formatCurrency(invoice.total, invoice.currency || settings.baseCurrency || 'USD')} • Late fee {formatCurrency(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}
+                  Base {formatCurrencyForCards(invoice.total, invoice.currency || settings.baseCurrency || 'USD')} • Late fee {formatCurrencyForCards(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}
             </div>
               ) : (
                 <div className="mt-0 mb-0.5 min-h-[12px]"></div>
@@ -2922,16 +2967,16 @@ function InvoicesContent(): React.JSX.Element {
                       <>
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium text-gray-700">Invoice Total</span>
-                          <span className="text-lg font-semibold text-gray-900">{formatCurrency(selectedInvoice.total || 0, invoiceCurrency)}</span>
+                          <span className="text-lg font-semibold text-gray-900">{formatCurrencyForCards(selectedInvoice.total || 0, invoiceCurrency)}</span>
                         </div>
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium text-gray-700">Total Paid</span>
-                          <span className="text-lg font-semibold text-emerald-600">{formatCurrency(totalPaid, invoiceCurrency)}</span>
+                          <span className="text-lg font-semibold text-emerald-600">{formatCurrencyForCards(totalPaid, invoiceCurrency)}</span>
                         </div>
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-sm font-medium text-gray-700">Remaining Balance</span>
                           <span className={`text-lg font-semibold ${remainingBalance > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
-                            {formatCurrency(remainingBalance, invoiceCurrency)}
+                            {formatCurrencyForCards(remainingBalance, invoiceCurrency)}
                           </span>
                         </div>
                       </>
@@ -2954,7 +2999,7 @@ function InvoicesContent(): React.JSX.Element {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        <DollarSign className="h-4 w-4 inline mr-1" />
+                        <span className="inline mr-1">{getCurrencySymbol(selectedInvoice.currency || settings.baseCurrency || 'USD')}</span>
                         Amount *
                       </label>
                       <input
@@ -2968,7 +3013,7 @@ function InvoicesContent(): React.JSX.Element {
                         placeholder="0.00"
                         required
                       />
-                      <p className="text-xs text-gray-500 mt-1">Max: {formatCurrency(remainingBalance, selectedInvoice.currency || settings.baseCurrency || 'USD')}</p>
+                      <p className="text-xs text-gray-500 mt-1">Max: {formatCurrencyForCards(remainingBalance, selectedInvoice.currency || settings.baseCurrency || 'USD')}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -3035,7 +3080,7 @@ function InvoicesContent(): React.JSX.Element {
                         >
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-gray-900">{formatCurrency(parseFloat(payment.amount.toString()), selectedInvoice.currency || settings.baseCurrency || 'USD')}</span>
+                              <span className="font-semibold text-gray-900">{formatCurrencyForCards(parseFloat(payment.amount.toString()), selectedInvoice.currency || settings.baseCurrency || 'USD')}</span>
                               {payment.payment_method && (
                                 <span className="text-xs text-gray-500">• {payment.payment_method}</span>
                               )}
@@ -3200,18 +3245,18 @@ function InvoicesContent(): React.JSX.Element {
                               </td>
                               <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-600'}`}>1</td>
                               <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right ${'text-gray-900'}`}>
-                                {formatCurrency(parseFloat(item.amount?.toString() || '0') || 0, invoiceCurrency)}
+                                {formatCurrencyForCards(parseFloat(item.amount?.toString() || '0') || 0, invoiceCurrency)}
                               </td>
                               <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium ${'text-gray-900'}`}>
-                                {formatCurrency(parseFloat(item.amount?.toString() || '0') || 0, invoiceCurrency)}
+                                {formatCurrencyForCards(parseFloat(item.amount?.toString() || '0') || 0, invoiceCurrency)}
                               </td>
                             </tr>
                           )) || (
                             <tr className="border-t border-gray-200">
                               <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-900'}`}>Service</td>
                               <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-600'}`}>1</td>
-                              <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right ${'text-gray-900'}`}>{formatCurrency(0, invoiceCurrency)}</td>
-                              <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium ${'text-gray-900'}`}>{formatCurrency(0, invoiceCurrency)}</td>
+                              <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right ${'text-gray-900'}`}>{formatCurrencyForCards(0, invoiceCurrency)}</td>
+                              <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium ${'text-gray-900'}`}>{formatCurrencyForCards(0, invoiceCurrency)}</td>
                             </tr>
                           )}
                         </>
@@ -3224,13 +3269,17 @@ function InvoicesContent(): React.JSX.Element {
                       // If invoice has write-off, treat it as paid
                       const isPaid = selectedInvoice.status === 'paid' || hasWriteOff;
                       
-                      // Calculate actual paid amount: if write-off exists, paid = total - write-off
-                      // For fully paid invoices without write-off, amount paid = total
+                      // Check if there are actual payment records (from database)
+                      // Use paymentDataMap for immediate check, but only show after payments array is loaded to prevent flash
+                      // paymentDataMap has totals but payments array has individual records - we need both
+                      const hasPaymentDataFromMap = paymentData && paymentData.totalPaid > 0;
+                      const hasActualPaymentRecords = !loadingPayments && payments.length > 0;
+                      
+                      // Calculate actual paid amount: Always use payment records if available, otherwise use calculated values
+                      // This preserves partial payment history even when invoice is marked as paid
                       const actualTotalPaid = hasWriteOff 
                         ? Math.max(0, (selectedInvoice.total || 0) - (selectedInvoice.writeOffAmount || 0))
-                        : isPaid 
-                          ? (selectedInvoice.total || 0) // Fully paid invoice, amount paid = total
-                          : (paymentData?.totalPaid || dueCharges.totalPaid || 0);
+                        : (paymentData?.totalPaid || dueCharges.totalPaid || (isPaid ? (selectedInvoice.total || 0) : 0));
                       
                       const actualRemainingBalance = hasWriteOff 
                         ? 0 // If written off, no remaining balance
@@ -3239,8 +3288,10 @@ function InvoicesContent(): React.JSX.Element {
                       // If invoice has write-off, treat it as paid
                       const isPaidWithWriteOff = isPaid && hasWriteOff;
                       
-                      // Only show partial payments if invoice is not fully paid and no write-off
-                      const hasPartialPayments = !isPaid && !hasWriteOff && actualTotalPaid > 0 && actualRemainingBalance > 0;
+                      // Show partial payments ONLY if payments are loaded AND there are actual payment records AND remaining balance
+                      // Keep showing even when invoice is marked as paid to preserve payment history
+                      // Only show if we have actual payment records (not just paymentDataMap) to ensure accuracy
+                      const hasPartialPayments = hasActualPaymentRecords && !hasWriteOff && actualTotalPaid > 0 && actualRemainingBalance > 0;
                       // Determine if it's a partial payment (has both paid and remaining)
                       const isPartialPayment = hasPartialPayments;
                       
@@ -3275,27 +3326,88 @@ function InvoicesContent(): React.JSX.Element {
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Subtotal:</td>
-                            <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrency(selectedInvoice.subtotal || 0, invoiceCurrency)}</td>
+                            <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(selectedInvoice.subtotal || 0, invoiceCurrency)}</td>
                           </tr>
                           <tr>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Discount:</td>
-                            <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrency(selectedInvoice.discount || 0, invoiceCurrency)}</td>
+                            <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(selectedInvoice.discount || 0, invoiceCurrency)}</td>
                           </tr>
                           <tr>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Tax ({(selectedInvoice.taxRate || 0) * 100}%):</td>
-                            <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrency(selectedInvoice.taxAmount || 0, invoiceCurrency)}</td>
+                            <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(selectedInvoice.taxAmount || 0, invoiceCurrency)}</td>
                           </tr>
                           <tr>
                             <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm border-t border-gray-200 pt-2 ${totalStatusColor}`}></td>
                             <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm border-t border-gray-200 pt-2 ${totalStatusColor}`}></td>
                             <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>Total:</td>
-                            <td className={`px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>{formatCurrency(selectedInvoice.total || 0, invoiceCurrency)}</td>
+                            <td className={`px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>{formatCurrencyForCards(selectedInvoice.total || 0, invoiceCurrency)}</td>
                           </tr>
-                          {/* Exchange Rate Information */}
+                          {hasWriteOff ? (
+                            <tr>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700" style={{ borderTop: 'none' }}></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700" style={{ borderTop: 'none' }}></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 text-right" style={{ borderTop: 'none' }}>Write-off Amount:</td>
+                              <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 font-semibold text-right" style={{ borderTop: 'none' }}>-{formatCurrencyForCards(selectedInvoice.writeOffAmount || 0, invoiceCurrency)}</td>
+                            </tr>
+                          ) : null}
+                          {/* Show Total Paid/Partial Paid if there are payment records - keep showing even when invoice is marked as paid */}
+                          {(() => {
+                            // Show payment breakdown ONLY if payments are loaded AND there are actual payment records from database
+                            // Don't show during loading to prevent flash of incorrect content
+                            // Keep showing even when invoice is marked as paid to preserve payment history visibility
+                            if (!loadingPayments && hasActualPaymentRecords && !hasWriteOff && actualTotalPaid > 0) {
+                              return (
+                                <tr>
+                                  <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}></td>
+                                  <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}></td>
+                                  <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm text-right no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}>
+                                    {isPartialPayment ? "Partial Paid:" : "Total Paid:"}
+                                  </td>
+                                  <td className={`px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}>
+                                    {formatCurrencyForCards(actualTotalPaid, invoiceCurrency)}
+                                  </td>
+                                </tr>
+                              );
+                            }
+                            return null;
+                          })()}
+                          {/* Show Remaining Balance only if there's actually a remaining balance */}
+                          {hasPartialPayments && actualRemainingBalance > 0 ? (
+                            <tr>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 text-right" style={{ borderTop: 'none' }}>Remaining Balance:</td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 font-semibold text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(actualRemainingBalance, invoiceCurrency)}</td>
+                            </tr>
+                          ) : null}
+                          {dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 ? (
+                            <tr>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 text-right" style={{ borderTop: 'none' }}>Late Fees:</td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 font-semibold text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(dueCharges.lateFeeAmount, invoiceCurrency)}</td>
+                            </tr>
+                          ) : null}
+                          {(dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0) ? (
+                            <tr>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">Total Payable:</td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">{formatCurrencyForCards(dueCharges.totalPayable, invoiceCurrency)}</td>
+                            </tr>
+                          ) : isPaid ? (
+                            <tr>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">Amount Paid:</td>
+                              <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">{formatCurrencyForCards(actualTotalPaid, invoiceCurrency)}</td>
+                            </tr>
+                          ) : null}
+                          {/* Exchange Rate Information - Always shown at the end, after all other rows */}
                           {(() => {
                             const invoiceCurrencyLocal = selectedInvoice.currency || settings.baseCurrency || 'USD';
                             const baseCurrencyLocal = settings.baseCurrency || 'USD';
@@ -3316,7 +3428,7 @@ function InvoicesContent(): React.JSX.Element {
                                     <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-500" style={{ borderTop: 'none' }} colSpan={2}></td>
                                     <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-500 text-right" style={{ borderTop: 'none' }}>Equivalent in {baseCurrencyLocal}:</td>
                                     <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-500 text-right" style={{ borderTop: 'none' }}>
-                                      {formatCurrency(baseCurrencyAmount, baseCurrencyLocal)}
+                                      {formatCurrencyForCards(baseCurrencyAmount, baseCurrencyLocal)}
                                     </td>
                                   </tr>
                                 </>
@@ -3324,68 +3436,6 @@ function InvoicesContent(): React.JSX.Element {
                             }
                             return null;
                           })()}
-                          {hasWriteOff ? (
-                            <tr>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700" style={{ borderTop: 'none' }}></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700" style={{ borderTop: 'none' }}></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 text-right" style={{ borderTop: 'none' }}>Write-off Amount:</td>
-                              <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 font-semibold text-right" style={{ borderTop: 'none' }}>-{formatCurrency(selectedInvoice.writeOffAmount || 0, invoiceCurrency)}</td>
-                            </tr>
-                          ) : null}
-                          {/* Only show Total Paid/Partial Paid for NON-PAID invoices with partial payments - NEVER show for paid invoices */}
-                          {(() => {
-                            // CRITICAL: Double-check isPaid to ensure this NEVER renders for paid invoices
-                            const invoiceIsPaid = selectedInvoice.status === 'paid' || hasWriteOff;
-                            if (invoiceIsPaid) return null;
-                            
-                            // Only show for non-paid invoices with actual payments
-                            if (!hasWriteOff && actualTotalPaid > 0) {
-                              return (
-                                <tr>
-                                  <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}></td>
-                                  <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}></td>
-                                  <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm text-right no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}>
-                                    {isPartialPayment ? "Partial Paid:" : "Total Paid:"}
-                                  </td>
-                                  <td className={`px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}>
-                                    {formatCurrency(actualTotalPaid, invoiceCurrency)}
-                                  </td>
-                                </tr>
-                              );
-                            }
-                            return null;
-                          })()}
-                          {hasPartialPayments ? (
-                            <tr>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 text-right" style={{ borderTop: 'none' }}>Remaining Balance:</td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 font-semibold text-right" style={{ borderTop: 'none' }}>{formatCurrency(actualRemainingBalance, invoiceCurrency)}</td>
-                            </tr>
-                          ) : null}
-                          {dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 ? (
-                            <tr>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 text-right" style={{ borderTop: 'none' }}>Late Fees:</td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 font-semibold text-right" style={{ borderTop: 'none' }}>{formatCurrency(dueCharges.lateFeeAmount, invoiceCurrency)}</td>
-                            </tr>
-                          ) : null}
-                          {(dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0) ? (
-                            <tr>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">Total Payable:</td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">{formatCurrency(dueCharges.totalPayable, invoiceCurrency)}</td>
-                            </tr>
-                          ) : isPaid ? (
-                            <tr>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">Amount Paid:</td>
-                              <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">{formatCurrency(actualTotalPaid, invoiceCurrency)}</td>
-                            </tr>
-                          ) : null}
                         </>
                       );
                     })()}
@@ -3420,7 +3470,7 @@ function InvoicesContent(): React.JSX.Element {
                   <div className="space-y-2">
                     <div className="flex justify-between text-xs sm:text-sm">
                       <span className="text-gray-700">Write-off Amount:</span>
-                      <span className="text-slate-700 font-semibold">${(selectedInvoice.writeOffAmount || 0).toFixed(2)}</span>
+                      <span className="text-slate-700 font-semibold">{formatCurrencyForCards(selectedInvoice.writeOffAmount || 0, selectedInvoice.currency || settings.baseCurrency || 'USD')}</span>
                     </div>
                     {(() => {
                       const writeOffNotes = selectedInvoice.writeOffNotes;
@@ -3439,8 +3489,8 @@ function InvoicesContent(): React.JSX.Element {
                 </div>
               ) : null}
 
-              {/* Payment History - Show if there are partial payments */}
-              {totalPaid > 0 ? (
+              {/* Payment History - Always show if there are payment records */}
+              {payments.length > 0 ? (
                 <div className={`p-3 sm:p-6 border-t ${'border-gray-200'}`}>
                   <h3 className={`text-sm sm:text-base font-semibold mb-3 ${'text-gray-900'}`}>Payment History</h3>
                   {loadingPayments ? (
@@ -3456,7 +3506,7 @@ function InvoicesContent(): React.JSX.Element {
                         >
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-gray-900 text-xs sm:text-sm">${parseFloat(payment.amount.toString()).toFixed(2)}</span>
+                              <span className="font-semibold text-gray-900 text-xs sm:text-sm">{formatCurrencyForCards(parseFloat(payment.amount.toString()), selectedInvoice.currency || settings.baseCurrency || 'USD')}</span>
                               {payment.payment_method ? (
                                 <span className="text-xs text-gray-500">• {payment.payment_method}</span>
                               ) : null}

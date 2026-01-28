@@ -145,6 +145,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
     description?: string
     amount?: string
     dueDate?: string
+    exchangeRate?: string
   }>({})
 
   // Sync currency with settings when they become available
@@ -404,6 +405,14 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
     // Due date validation
     if (!dueDate || !dueDate.trim()) {
       validationErrors.dueDate = 'Due date is required'
+    }
+    
+    // Exchange rate validation - required when currency differs from base currency
+    const baseCurrency = settings?.baseCurrency || 'USD'
+    if (currency !== baseCurrency) {
+      if (!exchangeRate || !exchangeRate.trim() || exchangeRate === '1.0' || parseFloat(exchangeRate) <= 0 || isNaN(parseFloat(exchangeRate))) {
+        validationErrors.exchangeRate = 'Exchange rate is required when currency differs from base currency'
+      }
     }
     
     // Defer setErrors to next tick to prevent blocking render
@@ -1207,11 +1216,16 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                         value={exchangeRate}
                         onChange={(e) => setExchangeRate(e.target.value)}
                         className={`w-full px-3 py-2 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                          isDarkMode 
-                            ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
-                            : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                          errors.exchangeRate 
+                            ? 'border-red-500' 
+                            : isDarkMode 
+                              ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                              : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                         }`}
                       />
+                      {errors.exchangeRate && (
+                        <p className="mt-1 text-xs text-red-600">{errors.exchangeRate}</p>
+                      )}
                       <p className={`text-xs mt-1 ${
                         isDarkMode ? 'text-gray-400' : 'text-gray-500'
                       }`}>
@@ -1230,7 +1244,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                       Amount ({getCurrencySymbol(currency)})
                     </label>
                     <div className="relative">
-                      <span className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-sm font-medium ${
+                      <span className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-sm font-medium whitespace-nowrap ${
                         isDarkMode 
                           ? 'text-gray-400' 
                           : 'text-gray-500'
@@ -1246,7 +1260,8 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                             setErrors(prev => ({ ...prev, amount: undefined }))
                           }
                         }}
-                        className={`w-full pl-8 pr-3 py-2.5 text-sm border rounded-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        style={{ paddingLeft: getCurrencySymbol(currency).length > 2 ? '3.5rem' : '2.75rem' }}
+                        className={`w-full pr-3 py-2.5 text-sm border rounded-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                           errors.amount
                             ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
                             : isDarkMode 

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { AlertCircle, Loader2, CheckCircle, X as XIcon, FileText } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { formatCurrencyForCards } from '@/lib/currency'
 
 interface EstimateItem {
   id: string
@@ -35,6 +36,7 @@ interface Estimate {
   rejectionReason?: string
   isExpired: boolean
   notes?: string
+  currency?: string
   theme?: {
     primary_color?: string
     secondary_color?: string
@@ -396,7 +398,7 @@ export default function PublicEstimatePage() {
                 </div>
               )}
               <div className="text-2xl sm:text-3xl font-bold text-orange-500 mt-4" style={{ color: '#FF6B35', letterSpacing: '-0.5px' }}>
-                ${estimate.total.toFixed(2)}
+                {formatCurrencyForCards(estimate.total, estimate.currency || 'USD')}
               </div>
             </div>
           </div>
@@ -634,16 +636,16 @@ export default function PublicEstimatePage() {
                       <div className="text-sm text-black font-medium">{item.description}</div>
                       <div className="flex justify-between text-xs text-gray-600">
                         <span>Qty: {(item.qty || 1).toFixed(2)}</span>
-                        <span>Rate: ${typeof item.rate === 'number' ? item.rate.toFixed(2) : parseFloat(String(item.rate || 0)).toFixed(2)}</span>
-                        <span className="text-black font-medium">${item.amount.toFixed(2)}</span>
+                        <span>Rate: {formatCurrencyForCards(typeof item.rate === 'number' ? item.rate : parseFloat(String(item.rate || 0)), estimate.currency || 'USD')}</span>
+                        <span className="text-black font-medium">{formatCurrencyForCards(item.amount, estimate.currency || 'USD')}</span>
                       </div>
                     </div>
                     {/* Desktop Layout */}
                     <div className="hidden sm:grid grid-cols-12 gap-4 text-sm">
                       <div className="col-span-5 text-black">{item.description}</div>
                       <div className="col-span-2 text-black text-right">{(item.qty || 1).toFixed(2)}</div>
-                      <div className="col-span-2 text-black text-right">${typeof item.rate === 'number' ? item.rate.toFixed(2) : parseFloat(String(item.rate || 0)).toFixed(2)}</div>
-                      <div className="col-span-3 text-black text-right">${item.amount.toFixed(2)}</div>
+                      <div className="col-span-2 text-black text-right">{formatCurrencyForCards(typeof item.rate === 'number' ? item.rate : parseFloat(String(item.rate || 0)), estimate.currency || 'USD')}</div>
+                      <div className="col-span-3 text-black text-right">{formatCurrencyForCards(item.amount, estimate.currency || 'USD')}</div>
                     </div>
                   </div>
                 ))}
@@ -657,19 +659,19 @@ export default function PublicEstimatePage() {
               <div className="w-full sm:w-1/2 lg:w-2/5 max-w-md">
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-gray-900" style={{ color: '#1F2937' }}>Subtotal</span>
-                  <span className="text-black">${estimate.subtotal.toFixed(2)}</span>
+                  <span className="text-black">{formatCurrencyForCards(estimate.subtotal, estimate.currency || 'USD')}</span>
                 </div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-900" style={{ color: '#1F2937' }}>Discount</span>
-                  <span className="text-black">-${(estimate.discount || 0).toFixed(2)}</span>
+                  <span className="text-black">-{formatCurrencyForCards(estimate.discount || 0, estimate.currency || 'USD')}</span>
                   </div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-900" style={{ color: '#1F2937' }}>Tax</span>
-                  <span className="text-black">${(estimate.taxAmount || 0).toFixed(2)}</span>
+                  <span className="text-black">{formatCurrencyForCards(estimate.taxAmount || 0, estimate.currency || 'USD')}</span>
                   </div>
                 <div className="flex justify-between text-sm pt-2 mt-2 border-t border-gray-200">
                   <span className="font-bold text-black">Total</span>
-                  <span className="font-bold text-black">${estimate.total.toFixed(2)}</span>
+                  <span className="font-bold text-black">{formatCurrencyForCards(estimate.total, estimate.currency || 'USD')}</span>
                 </div>
               </div>
             </div>

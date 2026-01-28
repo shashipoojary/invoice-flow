@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import Image from 'next/image'
 import { CheckCircle, Clock, AlertCircle, Mail, MapPin, Building2, CreditCard, Smartphone, DollarSign, Shield, Copy, Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { formatCurrency } from '@/lib/currency'
+import { formatCurrencyForCards } from '@/lib/currency'
 
 interface InvoiceItem {
   id: string
@@ -213,7 +213,7 @@ function FastInvoiceTemplate({ invoice, getAmountColor }: { invoice: Invoice, ge
 
   const invoiceCurrency = invoice.currency || 'USD'
   const formatCurrencyAmount = (amount: number) => {
-    return formatCurrency(amount, invoiceCurrency)
+    return formatCurrencyForCards(amount, invoiceCurrency)
   }
 
   const formatDate = (dateString: string) => {
@@ -777,7 +777,7 @@ function FastInvoiceTemplate({ invoice, getAmountColor }: { invoice: Invoice, ge
 function ModernTemplate({ invoice, primaryColor, secondaryColor, getAmountColor }: { invoice: Invoice, primaryColor: string, secondaryColor: string, getAmountColor: () => string }) {
   const invoiceCurrency = invoice.currency || 'USD'
   const formatCurrencyAmount = (amount: number) => {
-    return formatCurrency(amount, invoiceCurrency)
+    return formatCurrencyForCards(amount, invoiceCurrency)
   }
   const [copiedMethod, setCopiedMethod] = useState<string | null>(null)
 
@@ -1404,7 +1404,7 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor, getAmountColor 
 function CreativeTemplate({ invoice, primaryColor, secondaryColor, getAmountColor }: { invoice: Invoice, primaryColor: string, secondaryColor: string, getAmountColor: () => string }) {
   const invoiceCurrency = invoice.currency || 'USD'
   const formatCurrencyAmount = (amount: number) => {
-    return formatCurrency(amount, invoiceCurrency)
+    return formatCurrencyForCards(amount, invoiceCurrency)
   }
   const [copiedMethod, setCopiedMethod] = useState<string | null>(null)
 
@@ -2031,7 +2031,7 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor, getAmountColo
 function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor, getAmountColor }: { invoice: Invoice, primaryColor: string, secondaryColor: string, accentColor: string, getAmountColor: () => string }) {
   const invoiceCurrency = invoice.currency || 'USD'
   const formatCurrencyAmount = (amount: number) => {
-    return formatCurrency(amount, invoiceCurrency)
+    return formatCurrencyForCards(amount, invoiceCurrency)
   }
   const [copiedMethod, setCopiedMethod] = useState<string | null>(null)
 

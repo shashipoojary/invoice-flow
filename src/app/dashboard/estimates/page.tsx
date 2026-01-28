@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useData } from '@/contexts/DataContext';
-import { formatCurrency } from '@/lib/currency';
+import { formatCurrency, formatCurrencyForCards } from '@/lib/currency';
 import { useRouter } from 'next/navigation';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';

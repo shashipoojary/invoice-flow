@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, DollarSign, FileText, AlertCircle } from 'lucide-react';
 import type { Invoice } from '@/types';
-import { formatCurrency } from '@/lib/currency';
+import { formatCurrency, getCurrencySymbol } from '@/lib/currency';
 
 interface WriteOffModalProps {
   invoice: Invoice;
@@ -130,26 +130,33 @@ export default function WriteOffModal({
         <div className="px-6 py-4">
           {/* Summary */}
           <div className="bg-gray-50 p-4 mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">Invoice Total</span>
-              <span className="text-lg font-semibold text-gray-900">${invoice.total.toFixed(2)}</span>
-            </div>
-            {charges.totalPaid > 0 && (
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700">Total Paid</span>
-                <span className="text-lg font-semibold text-emerald-600">${charges.totalPaid.toFixed(2)}</span>
-              </div>
-            )}
-            {lateFeesAmount > 0 && (
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-red-700">Late Fees</span>
-                <span className="text-lg font-semibold text-red-700">${lateFeesAmount.toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex items-center justify-between mb-3 border-t border-gray-300 pt-2">
-              <span className="text-sm font-medium text-gray-700">Total Owed</span>
-              <span className="text-lg font-semibold text-orange-600">${totalOwed.toFixed(2)}</span>
-            </div>
+            {(() => {
+              const invoiceCurrency = invoice.currency || 'USD';
+              return (
+                <>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700">Invoice Total</span>
+                    <span className="text-lg font-semibold text-gray-900">{formatCurrency(invoice.total || 0, invoiceCurrency)}</span>
+                  </div>
+                  {charges.totalPaid > 0 && (
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700">Total Paid</span>
+                      <span className="text-lg font-semibold text-emerald-600">{formatCurrency(charges.totalPaid, invoiceCurrency)}</span>
+                    </div>
+                  )}
+                  {lateFeesAmount > 0 && (
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-red-700">Late Fees</span>
+                      <span className="text-lg font-semibold text-red-700">{formatCurrency(lateFeesAmount, invoiceCurrency)}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between mb-3 border-t border-gray-300 pt-2">
+                    <span className="text-sm font-medium text-gray-700">Total Owed</span>
+                    <span className="text-lg font-semibold text-orange-600">{formatCurrency(totalOwed, invoiceCurrency)}</span>
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           {/* Warning */}
@@ -169,7 +176,7 @@ export default function WriteOffModal({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                <DollarSign className="h-4 w-4 inline mr-1" />
+                <span className="inline mr-1">{getCurrencySymbol(invoice.currency || 'USD')}</span>
                 Write-off Amount *
               </label>
               <input
