@@ -257,7 +257,8 @@ export async function GET(
         })),
         subtotal: invoice.subtotal || 0,
         discount: invoice.discount || 0,
-        taxAmount: invoice.tax_amount || 0,
+        taxAmount: invoice.tax || 0,
+        taxRate: invoice.tax && invoice.subtotal ? (invoice.tax / (invoice.subtotal - (invoice.discount || 0))) * 100 : 0,
         total: invoice.total || 0,
         // Only include payment data if there are actual partial payments
         ...(totalPaid !== undefined && totalPaid > 0 && remainingBalance !== undefined && remainingBalance > 0 ? {
