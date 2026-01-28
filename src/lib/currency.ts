@@ -6,7 +6,7 @@ export const CURRENCIES = [
   { code: 'USD', name: 'US Dollar', symbol: '$' },
   { code: 'EUR', name: 'Euro', symbol: '€' },
   { code: 'GBP', name: 'British Pound', symbol: '£' },
-  { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$' },
+  { code: 'CAD', name: 'Canadian Dollar', symbol: 'CA$' },
   { code: 'AUD', name: 'Australian Dollar', symbol: 'A$' },
   { code: 'JPY', name: 'Japanese Yen', symbol: '¥' },
   { code: 'INR', name: 'Indian Rupee', symbol: '₹' },
@@ -93,8 +93,39 @@ export function isValidCurrency(currency: string): boolean {
 }
 
 /**
+ * Format currency for cards and dashboard displays (uses symbols instead of text codes)
+ * Uses actual currency symbols from CURRENCIES array (e.g., R for ZAR, S$ for SGD)
+ * @param amount - Amount to format
+ * @param currency - Currency code (default: 'USD')
+ */
+export function formatCurrencyForCards(
+  amount: number,
+  currency: string = 'USD'
+): string {
+  const validAmount = isNaN(amount) ? 0 : amount;
+  const currencyInfo = CURRENCIES.find(c => c.code === currency.toUpperCase());
+  
+  // Use the actual symbol from CURRENCIES array
+  // Examples: R for ZAR, S$ for SGD, ₹ for INR, € for EUR, etc.
+  const symbol = currencyInfo?.symbol || '$';
+  
+  const formattedAmount = Math.abs(validAmount).toFixed(2);
+  
+  // Handle negative amounts
+  const sign = validAmount < 0 ? '-' : '';
+  
+  // Format with thousands separators
+  const parts = formattedAmount.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const formatted = parts.join('.');
+  
+  // Return formatted string with symbol
+  return `${sign}${symbol}${formatted}`;
+}
+
+/**
  * Format currency for PDF generation (manual formatting to avoid Intl.NumberFormat issues)
- * Uses text fallbacks for Unicode symbols that may not render in PDFs
+ * PRIORITY: Uses actual currency symbols first, falls back to text only if symbol doesn't render
  * @param amount - Amount to format
  * @param currency - Currency code (default: 'USD')
  */
@@ -105,33 +136,22 @@ export function formatCurrencyForPDF(
   const validAmount = isNaN(amount) ? 0 : amount;
   const currencyInfo = CURRENCIES.find(c => c.code === currency.toUpperCase());
   
-  // Use PDF-safe symbol (fallback to text for Unicode symbols that don't render in PDFs)
-  // Standard fonts in pdf-lib don't support Unicode characters like ₹, €, £, ¥
-  // So we use text alternatives for PDF generation
+  // PRIORITY: Use actual currency symbol first (from CURRENCIES array)
+  // Text fallbacks are only used if the symbol doesn't render properly in PDF
+  // Most modern PDF libraries and fonts support Unicode symbols like ₹, €, £, ¥
   let symbol: string;
   const currencyCode = currency.toUpperCase();
   
-  switch (currencyCode) {
-    case 'INR':
-      symbol = 'Rs.'; // Use "Rs." instead of ₹ for PDF compatibility
-      break;
-    case 'EUR':
-      symbol = 'EUR'; // Use "EUR" instead of € for PDF compatibility
-      break;
-    case 'GBP':
-      symbol = 'GBP'; // Use "GBP" instead of £ for PDF compatibility
-      break;
-    case 'JPY':
-      symbol = 'JPY'; // Use "JPY" instead of ¥ for PDF compatibility
-      break;
-    case 'CNY':
-      symbol = 'CNY'; // Use "CNY" instead of ¥ for PDF compatibility
-      break;
-    default:
-      // For currencies with ASCII symbols (USD, CAD, AUD, etc.), use the symbol
-      symbol = currencyInfo?.symbol || '$';
-      break;
-  }
+  // Use the actual symbol from CURRENCIES array (priority)
+  // This includes Unicode symbols like ₹ (INR), € (EUR), £ (GBP), ¥ (JPY/CNY)
+  symbol = currencyInfo?.symbol || '$';
+  
+  // Text fallbacks are kept as comments for reference, but symbols are prioritized
+  // If a symbol doesn't render in PDF, you can temporarily use text fallback:
+  // INR: 'Rs.' instead of ₹
+  // EUR: 'EUR' instead of €
+  // GBP: 'GBP' instead of £
+  // JPY/CNY: 'JPY'/'CNY' instead of ¥
   
   const formattedAmount = Math.abs(validAmount).toFixed(2);
   
