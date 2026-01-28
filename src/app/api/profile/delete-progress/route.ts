@@ -79,9 +79,10 @@ export async function DELETE(request: NextRequest) {
     const errors = results.filter(result => {
       if (!result.error) return false;
       // Ignore errors for tables that don't exist (404) - these are not critical
+      const errorAny = result.error as any;
       const isNotFoundError = result.error.code === 'PGRST205' || 
                                result.error.message?.includes('Could not find the table') ||
-                               result.error.status === 404;
+                               errorAny.status === 404;
       if (isNotFoundError) {
         console.log('Ignoring non-existent table error:', result.error.message);
         return false;
