@@ -162,12 +162,24 @@ export default function CustomDropdown({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search..."
+                inputMode="none"
+                autoComplete="off"
                 className={`w-full px-2 py-1.5 text-sm border focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 ${
                   isDarkMode
                     ? 'bg-gray-700 border-gray-600 text-white'
                     : 'bg-white border-gray-300 text-gray-900'
                 }`}
                 autoFocus
+                onFocus={(e) => {
+                  // Prevent mobile keyboard by blurring and refocusing
+                  // This allows selection but prevents keyboard popup
+                  if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                    e.target.blur()
+                    setTimeout(() => {
+                      e.target.focus()
+                    }, 0)
+                  }
+                }}
               />
             </div>
           )}

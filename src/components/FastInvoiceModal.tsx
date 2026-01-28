@@ -1148,91 +1148,8 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={`block text-xs font-medium mb-1 ${
-                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
-                      Amount ({getCurrencySymbol(currency)})
-                    </label>
-                    <div className="relative">
-                      <span className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-sm font-medium ${
-                        isDarkMode 
-                          ? 'text-gray-400' 
-                          : 'text-gray-500'
-                      }`}>
-                        {getCurrencySymbol(currency)}
-                      </span>
-                      <input
-                        type="number"
-                        value={amount}
-                        onChange={(e) => {
-                          setAmount(e.target.value)
-                          if (errors.amount) {
-                            setErrors(prev => ({ ...prev, amount: undefined }))
-                          }
-                        }}
-                        className={`w-full pl-8 pr-3 py-2.5 text-sm border rounded-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                          errors.amount
-                            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                            : isDarkMode 
-                              ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
-                              : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
-                        }`}
-                        placeholder="0.00"
-                        step="0.01"
-                        required
-                      />
-                    </div>
-                    {errors.amount && (
-                      <p className="mt-1 text-xs text-red-600">{errors.amount}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <div className="relative">
-                      <Calendar className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
-                        isDarkMode 
-                          ? 'text-gray-500' 
-                          : 'text-gray-400'
-                      }`} />
-                      <input
-                        type="date"
-                        value={dueDate}
-                        onChange={(e) => {
-                          if (!markAsPaid) {
-                            setDueDate(e.target.value)
-                            if (errors.dueDate) {
-                              setErrors(prev => ({ ...prev, dueDate: undefined }))
-                            }
-                          }
-                        }}
-                        disabled={markAsPaid}
-                        className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                          markAsPaid ? 'cursor-not-allowed opacity-60' : ''
-                        } ${
-                          errors.dueDate
-                            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                            : isDarkMode 
-                              ? 'border-gray-700 bg-gray-800 text-white' 
-                              : 'border-gray-300 bg-white text-gray-900'
-                        }`}
-                      />
-                    </div>
-                    {errors.dueDate ? (
-                      <p className="text-xs mt-1 text-red-600">{errors.dueDate}</p>
-                    ) : (
-                      <p className={`text-xs mt-1 ${
-                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                      }`}>
-                        Due Date {markAsPaid && <span className="text-orange-600">(Locked - Due on Receipt)</span>}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Currency Selection */}
-                <div>
+                {/* Currency Selection - Moved before Amount */}
+                <div className="mb-4">
                   <label className={`block text-xs font-medium mb-1 ${
                     isDarkMode ? 'text-gray-300' : 'text-gray-700'
                   }`}>
@@ -1302,6 +1219,95 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
                       </p>
                     </div>
                   )}
+                </div>
+
+                {/* Amount and Due Date - Properly aligned in grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={`block text-xs font-medium mb-1 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Amount ({getCurrencySymbol(currency)})
+                    </label>
+                    <div className="relative">
+                      <span className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-sm font-medium ${
+                        isDarkMode 
+                          ? 'text-gray-400' 
+                          : 'text-gray-500'
+                      }`}>
+                        {getCurrencySymbol(currency)}
+                      </span>
+                      <input
+                        type="number"
+                        value={amount}
+                        onChange={(e) => {
+                          setAmount(e.target.value)
+                          if (errors.amount) {
+                            setErrors(prev => ({ ...prev, amount: undefined }))
+                          }
+                        }}
+                        className={`w-full pl-8 pr-3 py-2.5 text-sm border rounded-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                          errors.amount
+                            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                            : isDarkMode 
+                              ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                              : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                        }`}
+                        placeholder="0.00"
+                        step="0.01"
+                        required
+                      />
+                    </div>
+                    {errors.amount && (
+                      <p className="mt-1 text-xs text-red-600">{errors.amount}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className={`block text-xs font-medium mb-1 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Due Date {markAsPaid && <span className="text-orange-600">(Locked)</span>}
+                    </label>
+                    <div className="relative">
+                      <Calendar className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+                        isDarkMode 
+                          ? 'text-gray-500' 
+                          : 'text-gray-400'
+                      }`} />
+                      <input
+                        type="date"
+                        value={dueDate}
+                        onChange={(e) => {
+                          if (!markAsPaid) {
+                            setDueDate(e.target.value)
+                            if (errors.dueDate) {
+                              setErrors(prev => ({ ...prev, dueDate: undefined }))
+                            }
+                          }
+                        }}
+                        disabled={markAsPaid}
+                        className={`w-full pl-10 pr-3 py-2.5 text-sm border rounded-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                          markAsPaid ? 'cursor-not-allowed opacity-60' : ''
+                        } ${
+                          errors.dueDate
+                            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                            : isDarkMode 
+                              ? 'border-gray-700 bg-gray-800 text-white' 
+                              : 'border-gray-300 bg-white text-gray-900'
+                        }`}
+                      />
+                    </div>
+                    {errors.dueDate ? (
+                      <p className="text-xs mt-1 text-red-600">{errors.dueDate}</p>
+                    ) : (
+                      <p className={`text-xs mt-1 ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        {markAsPaid ? 'Due on Receipt' : 'Select due date'}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 <div>
