@@ -2961,7 +2961,7 @@ function InvoicesContent(): React.JSX.Element {
                         placeholder="0.00"
                         required
                       />
-                      <p className="text-xs text-gray-500 mt-1">Max: ${remainingBalance.toFixed(2)}</p>
+                      <p className="text-xs text-gray-500 mt-1">Max: {formatCurrency(remainingBalance, selectedInvoice.currency || settings.baseCurrency || 'USD')}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -3028,7 +3028,7 @@ function InvoicesContent(): React.JSX.Element {
                         >
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-semibold text-gray-900">${parseFloat(payment.amount.toString()).toFixed(2)}</span>
+                              <span className="font-semibold text-gray-900">{formatCurrency(parseFloat(payment.amount.toString()), selectedInvoice.currency || settings.baseCurrency || 'USD')}</span>
                               {payment.payment_method && (
                                 <span className="text-xs text-gray-500">• {payment.payment_method}</span>
                               )}
@@ -3182,27 +3182,34 @@ function InvoicesContent(): React.JSX.Element {
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedInvoice.items?.map((item, index) => (
-                      <tr key={item.id || index} className={'hover:bg-gray-50 border-t border-gray-200'}>
-                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-900'}`}>
-                          {item.description || 'Service'}
-                        </td>
-                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-600'}`}>1</td>
-                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right ${'text-gray-900'}`}>
-                          ${(parseFloat(item.amount?.toString() || '0') || 0).toFixed(2)}
-                        </td>
-                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium ${'text-gray-900'}`}>
-                          ${(parseFloat(item.amount?.toString() || '0') || 0).toFixed(2)}
-                        </td>
-                      </tr>
-                    )) || (
-                      <tr className="border-t border-gray-200">
-                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-900'}`}>Service</td>
-                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-600'}`}>1</td>
-                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right ${'text-gray-900'}`}>{formatCurrency(0, settings.baseCurrency || 'USD')}</td>
-                        <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium ${'text-gray-900'}`}>{formatCurrency(0, settings.baseCurrency || 'USD')}</td>
-                      </tr>
-                    )}
+                    {(() => {
+                      const invoiceCurrency = selectedInvoice.currency || settings.baseCurrency || 'USD';
+                      return (
+                        <>
+                          {selectedInvoice.items?.map((item, index) => (
+                            <tr key={item.id || index} className={'hover:bg-gray-50 border-t border-gray-200'}>
+                              <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-900'}`}>
+                                {item.description || 'Service'}
+                              </td>
+                              <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-600'}`}>1</td>
+                              <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right ${'text-gray-900'}`}>
+                                {formatCurrency(parseFloat(item.amount?.toString() || '0') || 0, invoiceCurrency)}
+                              </td>
+                              <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium ${'text-gray-900'}`}>
+                                {formatCurrency(parseFloat(item.amount?.toString() || '0') || 0, invoiceCurrency)}
+                              </td>
+                            </tr>
+                          )) || (
+                            <tr className="border-t border-gray-200">
+                              <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-900'}`}>Service</td>
+                              <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm ${'text-gray-600'}`}>1</td>
+                              <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right ${'text-gray-900'}`}>{formatCurrency(0, invoiceCurrency)}</td>
+                              <td className={`px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-medium ${'text-gray-900'}`}>{formatCurrency(0, invoiceCurrency)}</td>
+                            </tr>
+                          )}
+                        </>
+                      );
+                    })()}
                     {(() => {
                       const paymentData = paymentDataMap[selectedInvoice.id] || null;
                       const dueCharges = calculateDueCharges(selectedInvoice, paymentData);
@@ -3250,6 +3257,8 @@ function InvoicesContent(): React.JSX.Element {
                         totalStatusColor = 'text-amber-700'; // Pending/Sent/Due Today - amber/orange
                       }
                       
+                      const invoiceCurrency = selectedInvoice.currency || settings.baseCurrency || 'USD';
+                      
                       return (
                         <>
                           <tr>
@@ -3259,32 +3268,61 @@ function InvoicesContent(): React.JSX.Element {
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Subtotal:</td>
-                            <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>${(selectedInvoice.subtotal || 0).toFixed(2)}</td>
+                            <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrency(selectedInvoice.subtotal || 0, invoiceCurrency)}</td>
                           </tr>
                           <tr>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Discount:</td>
-                            <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>${(selectedInvoice.discount || 0).toFixed(2)}</td>
+                            <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrency(selectedInvoice.discount || 0, invoiceCurrency)}</td>
                           </tr>
                           <tr>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Tax ({(selectedInvoice.taxRate || 0) * 100}%):</td>
-                            <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>${(selectedInvoice.taxAmount || 0).toFixed(2)}</td>
+                            <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrency(selectedInvoice.taxAmount || 0, invoiceCurrency)}</td>
                           </tr>
                           <tr>
                             <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm border-t border-gray-200 pt-2 ${totalStatusColor}`}></td>
                             <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm border-t border-gray-200 pt-2 ${totalStatusColor}`}></td>
                             <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>Total:</td>
-                            <td className={`px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>${(selectedInvoice.total || 0).toFixed(2)}</td>
+                            <td className={`px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>{formatCurrency(selectedInvoice.total || 0, invoiceCurrency)}</td>
                           </tr>
+                          {/* Exchange Rate Information */}
+                          {(() => {
+                            const invoiceCurrencyLocal = selectedInvoice.currency || settings.baseCurrency || 'USD';
+                            const baseCurrencyLocal = settings.baseCurrency || 'USD';
+                            const exchangeRate = (selectedInvoice as any).exchange_rate;
+                            const baseCurrencyAmount = (selectedInvoice as any).base_currency_amount;
+                            
+                            if (invoiceCurrencyLocal !== baseCurrencyLocal && exchangeRate && exchangeRate !== 1.0 && baseCurrencyAmount) {
+                              return (
+                                <>
+                                  <tr>
+                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-500" style={{ borderTop: 'none' }} colSpan={2}></td>
+                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-500 text-right" style={{ borderTop: 'none' }}>Exchange Rate:</td>
+                                    <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-500 text-right" style={{ borderTop: 'none' }}>
+                                      1 {invoiceCurrencyLocal} = {exchangeRate.toFixed(4)} {baseCurrencyLocal}
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-500" style={{ borderTop: 'none' }} colSpan={2}></td>
+                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-500 text-right" style={{ borderTop: 'none' }}>Equivalent in {baseCurrencyLocal}:</td>
+                                    <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-500 text-right" style={{ borderTop: 'none' }}>
+                                      {formatCurrency(baseCurrencyAmount, baseCurrencyLocal)}
+                                    </td>
+                                  </tr>
+                                </>
+                              );
+                            }
+                            return null;
+                          })()}
                           {hasWriteOff ? (
                             <tr>
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700" style={{ borderTop: 'none' }}></td>
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700" style={{ borderTop: 'none' }}></td>
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 text-right" style={{ borderTop: 'none' }}>Write-off Amount:</td>
-                              <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 font-semibold text-right" style={{ borderTop: 'none' }}>-${(selectedInvoice.writeOffAmount || 0).toFixed(2)}</td>
+                              <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 font-semibold text-right" style={{ borderTop: 'none' }}>-{formatCurrency(selectedInvoice.writeOffAmount || 0, invoiceCurrency)}</td>
                             </tr>
                           ) : null}
                           {/* Only show Total Paid/Partial Paid for NON-PAID invoices with partial payments - NEVER show for paid invoices */}
@@ -3303,7 +3341,7 @@ function InvoicesContent(): React.JSX.Element {
                                     {isPartialPayment ? "Partial Paid:" : "Total Paid:"}
                                   </td>
                                   <td className={`px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right no-underline-invoice-amount ${isPartialPayment ? "text-blue-600" : "text-emerald-700"}`} style={{ textDecoration: 'none', borderBottom: 'none', borderTop: 'none' }}>
-                                    ${actualTotalPaid.toFixed(2)}
+                                    {formatCurrency(actualTotalPaid, invoiceCurrency)}
                                   </td>
                                 </tr>
                               );
@@ -3315,7 +3353,7 @@ function InvoicesContent(): React.JSX.Element {
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 text-right" style={{ borderTop: 'none' }}>Remaining Balance:</td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 font-semibold text-right" style={{ borderTop: 'none' }}>${actualRemainingBalance.toFixed(2)}</td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 font-semibold text-right" style={{ borderTop: 'none' }}>{formatCurrency(actualRemainingBalance, invoiceCurrency)}</td>
                             </tr>
                           ) : null}
                           {dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 ? (
@@ -3323,7 +3361,7 @@ function InvoicesContent(): React.JSX.Element {
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 text-right" style={{ borderTop: 'none' }}>Late Fees:</td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 font-semibold text-right" style={{ borderTop: 'none' }}>${dueCharges.lateFeeAmount.toFixed(2)}</td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 font-semibold text-right" style={{ borderTop: 'none' }}>{formatCurrency(dueCharges.lateFeeAmount, invoiceCurrency)}</td>
                             </tr>
                           ) : null}
                           {(dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0) ? (
@@ -3331,14 +3369,14 @@ function InvoicesContent(): React.JSX.Element {
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">Total Payable:</td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">${dueCharges.totalPayable.toFixed(2)}</td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">{formatCurrency(dueCharges.totalPayable, invoiceCurrency)}</td>
                             </tr>
                           ) : isPaid ? (
                             <tr>
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">Amount Paid:</td>
-                              <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">${actualTotalPaid.toFixed(2)}</td>
+                              <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">{formatCurrency(actualTotalPaid, invoiceCurrency)}</td>
                             </tr>
                           ) : null}
                         </>
