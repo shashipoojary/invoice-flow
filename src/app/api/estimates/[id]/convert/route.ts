@@ -203,18 +203,8 @@ export async function POST(
     const estimateExchangeRate = estimate.exchange_rate || 1.0;
     const estimateBaseCurrencyAmount = estimate.base_currency_amount || estimate.total * estimateExchangeRate;
 
-    // Copy tax from estimate - parse as float to handle string/number conversion
-    const taxAmount = estimate.tax !== null && estimate.tax !== undefined 
-      ? parseFloat(estimate.tax.toString()) || 0 
-      : 0;
-    
-    // Copy tax_breakdown if available
-    let invoiceTaxBreakdown = null;
-    if (estimate.tax_breakdown) {
-      invoiceTaxBreakdown = typeof estimate.tax_breakdown === 'string' 
-        ? estimate.tax_breakdown 
-        : JSON.stringify(estimate.tax_breakdown);
-    }
+    // Copy tax from estimate
+    const taxAmount = estimate.tax || 0;
 
     // Create invoice from estimate
     const invoice = {
@@ -228,7 +218,7 @@ export async function POST(
       subtotal: estimate.subtotal,
       discount: estimate.discount || 0,
       tax: taxAmount,
-      tax_breakdown: invoiceTaxBreakdown,
+      tax_breakdown: estimate.tax_breakdown || null,
       total: estimate.total,
       status: 'draft',
       issue_date: estimate.issue_date || new Date().toISOString().split('T')[0],
