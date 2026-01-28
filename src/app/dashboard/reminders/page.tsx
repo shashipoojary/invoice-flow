@@ -17,12 +17,14 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
 import { useData } from '@/contexts/DataContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
 import { supabase } from '@/lib/supabase';
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 import { RotatingAmountBreakdown, useSynchronizedRotation } from '@/components/RotatingComponents';
+import { formatCurrencyForCards } from '@/lib/currency';
 
 // Lazy load heavy components
 const FastInvoiceModal = dynamic(() => import('@/components/FastInvoiceModal'), {
@@ -53,6 +55,7 @@ interface ReminderHistory {
     due_date: string;
     status: string;
     late_fees?: string | any; // JSON string or parsed object
+    currency?: string;
     clients: {
       name: string;
       email: string;
@@ -65,6 +68,7 @@ export default function ReminderHistoryPage() {
   const { user, loading: authLoading, getAuthHeaders } = useAuth();
   const { toasts, removeToast, showSuccess, showError } = useToast();
   const { clients } = useData();
+  const { settings } = useSettings();
   const [reminders, setReminders] = useState<ReminderHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -133,6 +137,7 @@ export default function ReminderHistoryPage() {
               due_date,
               status,
               late_fees,
+              currency,
               user_id,
               clients (
                 name,
@@ -233,6 +238,7 @@ export default function ReminderHistoryPage() {
               due_date: reminder.invoices.due_date,
               status: reminder.invoices.status || 'sent',
               late_fees: reminder.invoices.late_fees || null,
+              currency: reminder.invoices.currency || null,
               clients: {
                 name: clientsData.name || 'N/A',
                 email: clientsData.email || 'N/A',
@@ -455,6 +461,9 @@ export default function ReminderHistoryPage() {
     sendingReminders: Set<string>;
     handleViewReminder: (reminder: ReminderHistory) => void;
   }) => {
+    // Get currency for this reminder
+    const invoiceCurrency = reminder.invoice.currency || 'USD';
+    
     // Prepare breakdowns for rotation (only amount breakdowns rotate, badges stay static)
     // Memoize to prevent recreation on every render
     // Create complete strings atomically to prevent staggered rendering
@@ -463,21 +472,21 @@ export default function ReminderHistoryPage() {
       
       if (totals.isPartiallyPaid) {
         // Pre-compute all values before creating string to ensure atomic rendering
-        const totalPaidStr = totals.totalPaid.toFixed(2);
-        const remainingStr = totals.baseAmount.toFixed(2);
+        const totalPaidFormatted = formatCurrencyForCards(totals.totalPaid, invoiceCurrency);
+        const remainingFormatted = formatCurrencyForCards(totals.baseAmount, invoiceCurrency);
         // Create complete string atomically - render as single text node to prevent partial rendering
         // Use inline-block and nowrap to prevent layout shift
-        const partialText = `Paid: $${totalPaidStr} • Remaining: $${remainingStr}`;
+        const partialText = `Paid: ${totalPaidFormatted} • Remaining: ${remainingFormatted}`;
         items.push(<div key="partial" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>{partialText}</div>);
       }
       
       if (totals.hasLateFees) {
         // Pre-compute all values before creating string to ensure atomic rendering
-        const baseStr = totals.baseAmount.toFixed(2);
-        const lateFeeStr = totals.lateFeesAmount.toFixed(2);
+        const baseFormatted = formatCurrencyForCards(totals.baseAmount, invoiceCurrency);
+        const lateFeeFormatted = formatCurrencyForCards(totals.lateFeesAmount, invoiceCurrency);
         // Create complete string atomically - render as single text node to prevent partial rendering
         // Use inline-block and nowrap to prevent layout shift
-        const lateFeesText = `Base $${baseStr} • Late fee $${lateFeeStr}`;
+        const lateFeesText = `Base ${baseFormatted} • Late fee ${lateFeeFormatted}`;
         items.push(<div key="latefees" style={{ whiteSpace: 'nowrap', display: 'inline-block' }}>{lateFeesText}</div>);
       }
       
@@ -486,7 +495,7 @@ export default function ReminderHistoryPage() {
       }
       
       return items;
-    }, [totals.isPartiallyPaid, totals.hasLateFees, totals.totalPaid, totals.baseAmount, totals.lateFeesAmount]);
+    }, [totals.isPartiallyPaid, totals.hasLateFees, totals.totalPaid, totals.baseAmount, totals.lateFeesAmount, invoiceCurrency]);
 
     // Use Intersection Observer to only enable rotation when card is visible
     const [isVisible, setIsVisible] = React.useState(false);
@@ -540,7 +549,7 @@ export default function ReminderHistoryPage() {
                   totals.hasLateFees ? 'text-red-600' :
                   'text-green-600'
                 }`}>
-                  ${totals.totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {formatCurrencyForCards(totals.totalPayable, reminder.invoice.currency || 'USD')}
                 </div>
                 <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500" style={{ minHeight: '12px' }}>
                   <RotatingAmountBreakdown
@@ -630,7 +639,7 @@ export default function ReminderHistoryPage() {
                   totals.hasLateFees ? 'text-red-600' :
                   'text-green-600'
                 }`}>
-                  ${totals.totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {formatCurrencyForCards(totals.totalPayable, reminder.invoice.currency || 'USD')}
                 </div>
                 <div className="mt-0 mb-0.5 text-[10px] sm:text-xs text-gray-500" style={{ minHeight: '12px' }}>
                   <RotatingAmountBreakdown
@@ -1188,98 +1197,38 @@ export default function ReminderHistoryPage() {
                         <span className="text-xs sm:text-sm font-medium text-gray-900 break-words">{selectedReminder.invoice.invoice_number}</span>
                       </div>
                       {(() => {
-                        // Check if we should ignore partial payments for this reminder:
-                        // 1. Reminder has already been sent/delivered (already sent to client, can't modify)
-                        // 2. Invoice status is 'cancelled' (invoice is cancelled, use original total)
-                        // NOTE: Invoice status 'sent' should NOT prevent scheduled reminders from using partial payments
-                        const shouldIgnorePartialPayments = 
-                          selectedReminder.reminder_status === 'sent' || 
-                          selectedReminder.reminder_status === 'delivered' ||
-                          selectedReminder.invoice.status === 'cancelled';
-                        
-                        // Use partial payments for scheduled reminders (regardless of invoice status being 'sent' or 'pending')
-                        // Only sent/delivered reminders or cancelled invoices should ignore partial payments
-                        const baseAmount = (shouldIgnorePartialPayments || selectedReminder.reminder_status !== 'scheduled')
-                          ? selectedReminder.invoice.total || 0  // Use original total if reminder sent/delivered or invoice cancelled
-                          : (selectedReminder.paymentData?.remainingBalance || selectedReminder.invoice.total || 0); // Use remaining balance for scheduled reminders
-                        
-                        const totalPaid = selectedReminder.paymentData?.totalPaid || 0;
-                        const remainingBalance = selectedReminder.paymentData?.remainingBalance || selectedReminder.invoice.total || 0;
-                        
-                        // Show partial payment if reminder is scheduled (regardless of invoice status being 'sent' or 'pending')
-                        // Only sent/delivered reminders or cancelled invoices should not show partial payments
-                        const isPartiallyPaid = !shouldIgnorePartialPayments && 
-                          selectedReminder.reminder_status === 'scheduled' && 
-                          totalPaid > 0 && 
-                          remainingBalance > 0;
-                        
-                        let lateFeesAmount = 0;
-                        let totalPayable = baseAmount;
-                        
-                        // Parse late fees settings
-                        let lateFeesSettings = null;
-                        if (selectedReminder.invoice.late_fees) {
-                          try {
-                            lateFeesSettings = typeof selectedReminder.invoice.late_fees === 'string' 
-                              ? JSON.parse(selectedReminder.invoice.late_fees) 
-                              : selectedReminder.invoice.late_fees;
-                          } catch (e) {
-                            console.log('Failed to parse late_fees JSON:', e);
-                            lateFeesSettings = null;
-                          }
-                        }
-                        
-                        // Calculate late fees if invoice is overdue and late fees are enabled
-                        const currentDate = new Date();
-                        const dueDate = new Date(selectedReminder.invoice.due_date);
-                        const todayStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-                        const dueDateStart = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-                        const isOverdue = dueDateStart < todayStart && selectedReminder.invoice.status !== 'paid';
-                        
-                        if (isOverdue && selectedReminder.invoice.status !== 'paid' && lateFeesSettings && lateFeesSettings.enabled) {
-                          const daysOverdue = Math.round((todayStart.getTime() - dueDateStart.getTime()) / (1000 * 60 * 60 * 24));
-                          const gracePeriod = lateFeesSettings.gracePeriod || 0;
-                          const chargeableDays = Math.max(0, daysOverdue - gracePeriod);
-                          
-                          if (chargeableDays > 0) {
-                            if (lateFeesSettings.type === 'percentage') {
-                              // Calculate late fee on base amount
-                              lateFeesAmount = baseAmount * ((lateFeesSettings.amount || 0) / 100);
-                            } else if (lateFeesSettings.type === 'fixed') {
-                              lateFeesAmount = lateFeesSettings.amount || 0;
-                            }
-                            totalPayable = baseAmount + lateFeesAmount;
-                          }
-                        }
+                        // Use the same calculation function as cards to ensure consistency
+                        const totals = calculateReminderTotal(selectedReminder);
+                        const invoiceCurrency = selectedReminder.invoice.currency || 'USD';
                         
                         return (
                           <>
                             <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
                               <span className="text-xs sm:text-sm text-gray-600">Base Amount:</span>
                               <span className="text-xs sm:text-sm font-medium text-gray-900 break-words">
-                                ${baseAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                {formatCurrencyForCards(totals.baseAmount, invoiceCurrency)}
                               </span>
                             </div>
-                            {isPartiallyPaid && (
+                            {totals.isPartiallyPaid && (
                               <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
                                 <span className="text-xs sm:text-sm text-gray-600">Partial Paid:</span>
                                 <span className="text-xs sm:text-sm font-medium text-blue-600 break-words">
-                                  -${totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  -{formatCurrencyForCards(totals.totalPaid, invoiceCurrency)}
                                 </span>
                               </div>
                             )}
-                            {lateFeesAmount > 0 && (
+                            {totals.hasLateFees && (
                               <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
                                 <span className="text-xs sm:text-sm text-gray-600">Late Fees ({selectedReminder.overdue_days} days):</span>
                                 <span className="text-xs sm:text-sm font-medium text-red-600 break-words">
-                                  +${lateFeesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  +{formatCurrencyForCards(totals.lateFeesAmount, invoiceCurrency)}
                                 </span>
                               </div>
                             )}
                             <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 pt-1 border-t border-gray-200">
                               <span className="text-xs sm:text-sm font-semibold text-gray-700">Total Amount Due:</span>
                               <span className="text-xs sm:text-sm font-bold text-green-600 break-words">
-                                ${totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                {formatCurrencyForCards(totals.totalPayable, invoiceCurrency)}
                               </span>
                             </div>
                           </>

@@ -17,7 +17,7 @@ import { useAuth } from '@/hooks/useAuth'
 import CustomDropdown from './CustomDropdown'
 import UpgradeModal from './UpgradeModal'
 import ToastContainer from './Toast'
-import { CURRENCIES, formatCurrency, getCurrencySymbol } from '@/lib/currency'
+import { CURRENCIES, formatCurrency, getCurrencySymbol, fetchExchangeRate } from '@/lib/currency'
 
 interface EstimateModalProps {
   isOpen: boolean
@@ -132,11 +132,16 @@ export default function EstimateModal({
     })()
   )
   
+  // Exchange rate state
+  const [exchangeRate, setExchangeRate] = useState<string>('1.0')
+  const [fetchingExchangeRate, setFetchingExchangeRate] = useState(false)
+  
   // Validation errors
   const [errors, setErrors] = useState<{
     clientName?: string
     clientEmail?: string
     items?: { [key: string]: { description?: string; rate?: string } }
+    exchangeRate?: string
   }>({})
   
   // Sync currency with settings when they become available
@@ -172,6 +177,7 @@ export default function EstimateModal({
       setTaxRate(estimate.taxRate || 0)
       setNotes(estimate.notes || '')
       setCurrency((estimate as any)?.currency || settings?.baseCurrency || 'USD')
+      setExchangeRate((estimate as any)?.exchange_rate?.toString() || '1.0')
       setIssueDate(estimate.issueDate || new Date().toISOString().split('T')[0])
       setExpiryDate(estimate.expiryDate || (() => {
         const date = new Date()
@@ -188,6 +194,7 @@ export default function EstimateModal({
       setTaxRate(0)
       setNotes('')
       setCurrency(settings?.baseCurrency || 'USD')
+      setExchangeRate('1.0')
       setIssueDate(new Date().toISOString().split('T')[0])
       const date = new Date()
       date.setDate(date.getDate() + 30)
@@ -209,6 +216,7 @@ export default function EstimateModal({
       setTaxRate(0)
       setNotes('')
       setCurrency(settings?.baseCurrency || 'USD')
+      setExchangeRate('1.0')
       setStep(1)
     }
     setTaxRate(0)
@@ -401,6 +409,7 @@ export default function EstimateModal({
         issueDate,
         expiryDate,
         currency: currency,
+        exchange_rate: currency === (settings?.baseCurrency || 'USD') ? 1.0 : (parseFloat(exchangeRate) || null),
       }
 
       const url = isEditMode && estimate?.id 
@@ -782,26 +791,79 @@ export default function EstimateModal({
 
               {/* Currency Selection */}
               <div className="p-4">
-                <label className={`block text-sm font-medium mb-2 ${
-                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Currency
-                </label>
-                <CustomDropdown
-                  value={currency}
-                  onChange={(value) => {
-                    setCurrency(value)
-                  }}
-                  options={CURRENCIES.map((curr) => ({
-                    value: curr.code,
-                    label: `${curr.code} - ${curr.symbol}`
-                  }))}
-                  placeholder="Select currency"
-                  isDarkMode={isDarkMode}
-                  searchable={true}
-                />
+                <div className="flex items-end gap-4">
+                  <div className="flex-1">
+                    <label className={`block text-sm font-medium mb-2 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Currency
+                    </label>
+                    <CustomDropdown
+                      value={currency}
+                      onChange={(value) => {
+                        setCurrency(value)
+                      }}
+                      options={CURRENCIES.map((curr) => ({
+                        value: curr.code,
+                        label: `${curr.code} - ${curr.symbol}`
+                      }))}
+                      placeholder="Select currency"
+                      isDarkMode={isDarkMode}
+                      searchable={true}
+                    />
+                  </div>
+                  {currency !== (settings?.baseCurrency || 'USD') && (
+                    <div className="flex-1">
+                      <label className={`block text-sm font-medium mb-2 ${
+                        isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                      }`}>
+                        Exchange Rate ({currency} to {settings?.baseCurrency || 'USD'})
+                        {fetchingExchangeRate && (
+                          <span className="ml-2 text-xs text-gray-500">(Fetching...)</span>
+                        )}
+                      </label>
+                      <input
+                        type="number"
+                        step="0.0001"
+                        min="0.0001"
+                        placeholder="1.0"
+                        value={exchangeRate}
+                        onChange={(e) => setExchangeRate(e.target.value)}
+                        onFocus={async () => {
+                          const baseCurrency = settings?.baseCurrency || 'USD'
+                          if (currency !== baseCurrency && (!exchangeRate || exchangeRate === '1.0')) {
+                            try {
+                              setFetchingExchangeRate(true)
+                              const rate = await fetchExchangeRate(currency, baseCurrency)
+                              if (rate) {
+                                setExchangeRate(rate.toFixed(4))
+                              } else {
+                                setExchangeRate('1.0')
+                              }
+                            } catch (error) {
+                              console.error('Error fetching exchange rate:', error)
+                              setExchangeRate('1.0')
+                            } finally {
+                              setFetchingExchangeRate(false)
+                            }
+                          }
+                        }}
+                        className={`w-full px-3 py-2 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                          errors.exchangeRate 
+                            ? 'border-red-500' 
+                            : isDarkMode 
+                              ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                              : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                        }`}
+                      />
+                      {errors.exchangeRate && (
+                        <p className="mt-1 text-xs text-red-600">{errors.exchangeRate}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
                 {currency !== (settings?.baseCurrency || 'USD') && (
-                  <p className={`text-xs mt-1 ${
+                  <p className={`text-xs mt-2 ${
                     isDarkMode ? 'text-gray-400' : 'text-gray-500'
                   }`}>
                     Base currency: {settings?.baseCurrency || 'USD'}
