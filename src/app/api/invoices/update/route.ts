@@ -216,6 +216,7 @@ export async function PUT(request: NextRequest) {
       items,
       due_date,
       discount,
+      taxRate,
       notes,
       invoice_number,
       issue_date,
@@ -268,6 +269,26 @@ export async function PUT(request: NextRequest) {
       ? 1.0 
       : (exchange_rate ? parseFloat(exchange_rate.toString()) : 1.0);
 
+    // Calculate tax amount if taxRate is provided (for initial update)
+    // This will be recalculated after items are updated if items are provided
+    let initialTaxAmount = 0;
+    if (taxRate !== undefined && taxRate !== null) {
+      // Get current invoice subtotal and discount for tax calculation
+      const { data: currentInvoiceForTax } = await supabaseAdmin
+        .from('invoices')
+        .select('subtotal, discount')
+        .eq('id', invoiceId)
+        .single();
+      
+      if (currentInvoiceForTax) {
+        const currentSubtotal = currentInvoiceForTax.subtotal || 0;
+        const currentDiscount = currentInvoiceForTax.discount || 0;
+        const afterDiscount = currentSubtotal - currentDiscount;
+        const taxRateValue = parseFloat(taxRate.toString()) || 0;
+        initialTaxAmount = afterDiscount * (taxRateValue / 100);
+      }
+    }
+
     // Start a transaction to update invoice and items
     const { data: invoice, error: invoiceError } = await supabaseAdmin
       .from('invoices')
@@ -277,6 +298,7 @@ export async function PUT(request: NextRequest) {
         exchange_rate: exchangeRateValue,
         due_date,
         discount: discount || 0,
+        tax: initialTaxAmount || 0,
         notes,
         invoice_number,
         issue_date,
@@ -336,6 +358,7 @@ export async function PUT(request: NextRequest) {
     // Insert new invoice items and calculate totals
     let subtotal = 0;
     let total = 0;
+    let calculatedTaxAmount = initialTaxAmount;
     
     if (items && items.length > 0) {
       const itemsToInsert = items.map((item: any) => ({
@@ -357,9 +380,12 @@ export async function PUT(request: NextRequest) {
       // Calculate subtotal from items
       subtotal = items.reduce((sum: number, item: any) => sum + (item.line_total || 0), 0);
       
-      // Calculate total with discount
-      const discountAmount = discount || 0;
-      total = subtotal - discountAmount;
+      // Calculate total with discount and tax
+      const discountAmount = discount !== undefined ? discount : 0;
+      const afterDiscount = subtotal - discountAmount;
+      const taxRateValue = taxRate ? parseFloat(taxRate.toString()) : 0;
+      calculatedTaxAmount = afterDiscount * (taxRateValue / 100);
+      total = afterDiscount + calculatedTaxAmount;
     }
 
     // Update invoice with calculated totals and currency info
@@ -372,6 +398,7 @@ export async function PUT(request: NextRequest) {
         .update({
           subtotal,
           total,
+          tax: calculatedTaxAmount || 0,
           currency: invoiceCurrency,
           exchange_rate: exchangeRateValue,
           base_currency_amount: baseCurrencyAmount,
@@ -385,21 +412,35 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to update invoice totals' }, { status: 500 })
       }
     } else {
-      // Even if no items, update currency and exchange rate if provided
+      // Even if no items, update currency, exchange rate, and tax if provided
       const { data: currentInvoice } = await supabaseAdmin
         .from('invoices')
-        .select('total')
+        .select('subtotal, discount, total')
         .eq('id', invoiceId)
         .single();
       
-      const currentTotal = currentInvoice?.total || 0;
-      const baseCurrencyAmount = currentTotal * exchangeRateValue;
+      // Recalculate tax if taxRate is provided
+      if (taxRate !== undefined && taxRate !== null && currentInvoice) {
+        const currentSubtotal = currentInvoice.subtotal || 0;
+        const currentDiscount = discount !== undefined ? discount : (currentInvoice.discount || 0);
+        const afterDiscount = currentSubtotal - currentDiscount;
+        const taxRateValue = parseFloat(taxRate.toString()) || 0;
+        calculatedTaxAmount = afterDiscount * (taxRateValue / 100);
+        total = afterDiscount + calculatedTaxAmount;
+      } else {
+        total = currentInvoice?.total || 0;
+      }
+      
+      const baseCurrencyAmount = total * exchangeRateValue;
       
       const { error: updateCurrencyError } = await supabaseAdmin
         .from('invoices')
         .update({
           currency: invoiceCurrency,
           exchange_rate: exchangeRateValue,
+          discount: discount !== undefined ? discount : currentInvoice?.discount || 0,
+          tax: calculatedTaxAmount || 0,
+          total: total,
           base_currency_amount: baseCurrencyAmount,
           updated_at: new Date().toISOString()
         })

@@ -256,15 +256,18 @@ export default function Template1({ invoice, businessSettings }: Template1Props)
 
   const calculateTax = () => {
     const subtotal = calculateSubtotal()
+    const discount = invoice.discount || 0
+    const afterDiscount = subtotal - discount
     const taxRate = invoice.taxRate || 0
-    return subtotal * (taxRate / 100)
+    return afterDiscount * (taxRate / 100)
   }
 
   const calculateTotal = () => {
     const subtotal = calculateSubtotal()
-    const tax = calculateTax()
     const discount = invoice.discount || 0
-    return subtotal + tax - discount
+    const afterDiscount = subtotal - discount
+    const tax = calculateTax()
+    return afterDiscount + tax
   }
 
   return (

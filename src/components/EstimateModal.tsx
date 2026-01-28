@@ -1085,8 +1085,11 @@ export default function EstimateModal({
                   </label>
                   <input
                     type="number"
-                    value={taxRate || ''}
-                    onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
+                    value={taxRate ? Math.round(taxRate * 100) / 100 : ''}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value) || 0;
+                      setTaxRate(Math.round(value * 100) / 100);
+                    }}
                     min="0"
                     step="0.01"
                     className={`w-full px-4 py-2.5 border transition-colors ${

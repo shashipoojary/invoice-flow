@@ -340,7 +340,8 @@ export default function QuickInvoiceModal({
   const shouldSendRef = useRef(false) // Use ref to track send intent immediately
   const [pdfLoading, setPdfLoading] = useState(false)
   const createButtonRef = useRef<HTMLButtonElement>(null) // Ref to track Create button for stability
-  const [discount, setDiscount] = useState('')
+  const [discount, setDiscount] = useState(0)
+  const [taxRate, setTaxRate] = useState('')
   const [markAsPaid, setMarkAsPaid] = useState(false)
   const [currency, setCurrency] = useState<string>(() => {
     // Use invoice currency if available, otherwise use baseCurrency
@@ -519,7 +520,15 @@ export default function QuickInvoiceModal({
         setIssueDate(formattedIssueDate)
         setDueDate(editingInvoice.dueDate || '')
         setNotes(editingInvoice.notes || 'Thank you for your business!')
-        setDiscount(editingInvoice.discount?.toString() || '')
+        setDiscount(editingInvoice.discount || 0)
+        // Calculate tax rate from taxAmount if available
+        if (editingInvoice.taxAmount && editingInvoice.subtotal) {
+          const afterDiscount = (editingInvoice.subtotal || 0) - (editingInvoice.discount || 0);
+          const calculatedTaxRate = afterDiscount > 0 ? ((editingInvoice.taxAmount / afterDiscount) * 100) : 0;
+          setTaxRate(Math.round(calculatedTaxRate * 100) / 100 + '');
+        } else {
+          setTaxRate('')
+        }
         // Prioritize invoice's currency - only fallback to baseCurrency if invoice currency is missing
         const invoiceCurrency = editingInvoice.currency || (editingInvoice as any)?.currency;
         setCurrency(invoiceCurrency || settings.baseCurrency || 'USD')
@@ -613,7 +622,7 @@ export default function QuickInvoiceModal({
           company: '',
           address: ''
         })
-        setDiscount('')
+        setDiscount(0)
         setMarkAsPaid(false)
         setNotes('Thank you for your business!')
         setCurrency(settings.baseCurrency || 'USD')
@@ -848,12 +857,17 @@ export default function QuickInvoiceModal({
 
   const calculateTotals = () => {
     const subtotal = items.reduce((sum, item) => sum + (parseFloat(item.amount.toString()) || 0), 0)
-    const discountAmount = parseFloat(discount.toString()) || 0
-    const total = subtotal - discountAmount
+    const discountAmount = discount || 0
+    const afterDiscount = subtotal - discountAmount
+    const taxRateValue = parseFloat(taxRate.toString()) || 0
+    const taxAmount = afterDiscount * (taxRateValue / 100)
+    const total = afterDiscount + taxAmount
     
     return { 
       subtotal, 
       discount: discountAmount,
+      taxRate: taxRateValue,
+      taxAmount: taxAmount,
       currency: currency,
       exchange_rate: parseFloat(exchangeRate) || 1.0,
       total
@@ -972,7 +986,8 @@ export default function QuickInvoiceModal({
           line_total: parseFloat(item.amount.toString()) || 0
         })),
         due_date: dueDate,
-        discount: parseFloat(discount.toString()) || 0,
+        discount: discount || 0,
+        taxRate: parseFloat(taxRate.toString()) || 0,
         currency: currency,
         exchange_rate: parseFloat(exchangeRate) || 1.0,
         notes: notes,
@@ -1141,7 +1156,8 @@ export default function QuickInvoiceModal({
           line_total: parseFloat(item.amount.toString()) || 0
         })),
         due_date: dueDate,
-        discount: parseFloat(discount.toString()) || 0,
+        discount: discount || 0,
+        taxRate: parseFloat(taxRate.toString()) || 0,
         currency: currency,
         exchange_rate: parseFloat(exchangeRate) || 1.0,
         notes: notes,
@@ -1349,7 +1365,7 @@ export default function QuickInvoiceModal({
     }
   }
 
-  const { subtotal, discount: totalDiscount, total } = calculateTotals()
+  const { subtotal, discount: totalDiscount, taxAmount: totalTax, total } = calculateTotals()
 
   const resetForm = () => {
     setCurrentStep(1)
@@ -1358,7 +1374,8 @@ export default function QuickInvoiceModal({
     setNewClient({ name: '', email: '', company: '', address: '' })
     setItems([{ id: '1', description: '', amount: '' }])
     setNotes('Thank you for your business!')
-    setDiscount('')
+      setDiscount(0)
+      setTaxRate('')
   }
 
   const handleClose = () => {
@@ -1440,7 +1457,8 @@ export default function QuickInvoiceModal({
           line_total: parseFloat(item.amount.toString()) || 0
         })),
         due_date: dueDate,
-        discount: parseFloat(discount.toString()) || 0,
+        discount: discount || 0,
+        taxRate: parseFloat(taxRate.toString()) || 0,
         currency: currency,
         exchange_rate: parseFloat(exchangeRate) || 1.0,
         notes: notes,
@@ -2369,10 +2387,12 @@ export default function QuickInvoiceModal({
                         {getCurrencySymbol(currency)}
                       </span>
                       <input
-                        type="text"
+                        type="number"
                         placeholder="0"
-                        value={discount}
-                        onChange={(e) => setDiscount(e.target.value)}
+                        value={discount || ''}
+                        onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                        min="0"
+                        step="0.01"
                         style={{ paddingLeft: getCurrencySymbol(currency).length > 2 ? '3.5rem' : '2.75rem' }}
                         className={`w-full pr-3 py-2 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
                           isDarkMode 
@@ -2381,6 +2401,42 @@ export default function QuickInvoiceModal({
                         }`}
                       />
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tax Rate */}
+              <div className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className={`block text-sm font-medium mb-1 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Tax Rate (%)
+                    </label>
+                    <p className={`text-xs ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      Enter tax rate percentage
+                    </p>
+                  </div>
+                  <div className="w-32">
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={taxRate}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value) || 0;
+                        setTaxRate(Math.round(value * 100) / 100 + '');
+                      }}
+                      min="0"
+                      step="0.01"
+                      className={`w-full px-3 py-2 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        isDarkMode 
+                          ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                          : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                      }`}
+                    />
                   </div>
                 </div>
               </div>
@@ -2423,6 +2479,14 @@ export default function QuickInvoiceModal({
                     <div className="flex justify-between text-sm">
                       <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Discount</span>
                       <span className={`font-semibold text-green-600`}>-{formatCurrency(totalDiscount, currency)}</span>
+                    </div>
+                  )}
+                  {totalTax > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Tax</span>
+                      <span className={`font-semibold ${
+                        isDarkMode ? 'text-white' : 'text-gray-900'
+                      }`}>{formatCurrency(totalTax, currency)}</span>
                     </div>
                   )}
                   <div className={`flex justify-between text-lg font-bold border-t pt-3 ${
@@ -3385,6 +3449,14 @@ export default function QuickInvoiceModal({
                         <span className="font-semibold text-green-600">-{formatCurrency(totalDiscount, currency)}</span>
                       </div>
                     )}
+                    {totalTax > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Tax</span>
+                        <span className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          {formatCurrency(totalTax, currency)}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-lg font-bold mt-2 pt-2 border-t border-gray-300 dark:border-gray-600">
                       <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>Total</span>
                       <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>{formatCurrency(total, currency)}</span>
@@ -3654,7 +3726,7 @@ export default function QuickInvoiceModal({
               dueDate,
               notes,
               discount: discount,
-              taxRate: '',
+              taxRate: taxRate,
               theme: {
                 template: theme.template,
                 primaryColor: theme.primaryColor,

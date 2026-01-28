@@ -127,16 +127,28 @@ export async function POST(
     let invoiceTheme = null;
     if (invoiceType === 'detailed' && template) {
       const userPlan = await getUserPlan(user.id);
+      
+      // Convert PDF template number to UI template number for storage
+      // PDF templates: 6=Minimal (UI 1), 4=Modern (UI 2), 5=Creative (UI 3)
+      const pdfToUiTemplate = (pdfTemplate: number): number => {
+        if (pdfTemplate === 6) return 1; // Minimal
+        if (pdfTemplate === 4) return 2; // Modern
+        if (pdfTemplate === 5) return 3; // Creative
+        return 1; // Default to Minimal
+      };
+      
       if (userPlan === 'free') {
         // Free plan: Only template 1, no customization
         invoiceTheme = {
-          template: 1, // Force template 1
+          template: 1, // Force template 1 (UI template number)
           // No custom colors allowed
         };
       } else {
         // Paid plans: Allow selected template and customization
+        // Convert PDF template to UI template number for consistent storage
+        const uiTemplateNumber = pdfToUiTemplate(template);
         invoiceTheme = {
-          template: template, // PDF template number (4, 5, or 6)
+          template: uiTemplateNumber, // Store UI template number (1, 2, or 3)
           primary_color: parsedEstimateTheme?.primary_color || '#5C2D91',
           secondary_color: parsedEstimateTheme?.secondary_color || '#8B5CF6',
           accent_color: parsedEstimateTheme?.accent_color || '#3B82F6'

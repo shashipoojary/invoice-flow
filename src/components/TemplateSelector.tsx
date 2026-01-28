@@ -94,6 +94,14 @@ export default function TemplateSelector({
   }
 
   const handleColorPreset = (primary: string, secondary: string, presetName: string) => {
+    // Monthly plan users have unlimited access - allow all colors without restrictions
+    if (userPlan === 'monthly') {
+      onPrimaryColorChange(primary)
+      onSecondaryColorChange(secondary)
+      setSelectedPreset(presetName)
+      return
+    }
+    
     // If premium is already unlocked, allow all colors without confirmation
     if (isPremiumUnlocked) {
       onPrimaryColorChange(primary)
@@ -102,7 +110,7 @@ export default function TemplateSelector({
       return
     }
     
-    // Check if this is a premium color and user has free invoices
+    // Check if this is a premium color and user has free invoices (pay_per_invoice plan only)
     if (onPremiumColorSelect && userPlan === 'pay_per_invoice' && freeInvoicesRemaining > 0) {
       // Check if this preset is premium (index >= 4)
       const presetIndex = colorPresets.findIndex(p => p.primary === primary && p.secondary === secondary)
@@ -135,13 +143,16 @@ export default function TemplateSelector({
             const isSelected = selectedTemplate === template.id;
             // For free plan: lock templates 2/3
             // For Pay Per Invoice: lock templates 2/3 if no free invoices remaining, show premium symbol if has free invoices
+            // Monthly plan: all templates unlocked (never locked)
             // If premium unlocked, only the unlocked template is available (not both 2 & 3)
             // Default to 'free' if plan is undefined (data not loaded yet)
             const effectivePlan = userPlan || 'free';
-            const isLocked = !isPremiumUnlocked && (effectivePlan === 'free' || (effectivePlan === 'pay_per_invoice' && freeInvoicesRemaining === 0)) && template.id !== 1;
-            // Show premium lock if: not premium unlocked, OR premium unlocked but this is not the unlocked template
-            const isPremium = !isPremiumUnlocked && effectivePlan === 'pay_per_invoice' && freeInvoicesRemaining > 0 && template.id !== 1;
-            const isLockedEvenWithPremium = isPremiumUnlocked && unlockedTemplate && template.id !== 1 && template.id !== unlockedTemplate && template.id !== 1;
+            // Monthly plan users have unlimited access - never lock templates
+            const isLocked = effectivePlan !== 'monthly' && !isPremiumUnlocked && (effectivePlan === 'free' || (effectivePlan === 'pay_per_invoice' && freeInvoicesRemaining === 0)) && template.id !== 1;
+            // Show premium lock if: not monthly plan, not premium unlocked, AND pay_per_invoice with free invoices remaining
+            const isPremium = effectivePlan !== 'monthly' && !isPremiumUnlocked && effectivePlan === 'pay_per_invoice' && freeInvoicesRemaining > 0 && template.id !== 1;
+            // Lock other premium templates if one is unlocked (only for pay_per_invoice plan)
+            const isLockedEvenWithPremium = effectivePlan === 'pay_per_invoice' && isPremiumUnlocked && unlockedTemplate && template.id !== 1 && template.id !== unlockedTemplate && template.id !== 1;
             
             return (
               <div

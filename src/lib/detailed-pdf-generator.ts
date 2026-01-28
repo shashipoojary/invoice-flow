@@ -1643,21 +1643,21 @@ async function generateTemplate3PDF(
     });
 
   // Tax (always shown)
-  page.drawText('TAX', {
-    x: 360,
-    y: totalsY - 60,
-    size: 9,
-    font: font,
-    color: rgb(0, 0, 0),
-  });
+    page.drawText('TAX', {
+      x: 360,
+      y: totalsY - 60,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
 
-  page.drawText(formatCurrency(taxAmount), {
-    x: 480,
-    y: totalsY - 60,
-    size: 9,
-    font: font,
-    color: rgb(0, 0, 0),
-  });
+    page.drawText(formatCurrency(taxAmount), {
+      x: 480,
+      y: totalsY - 60,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
 
   // Total with creative emphasis
   page.drawText('TOTAL', {
@@ -2688,7 +2688,7 @@ async function generateSimpleCleanTemplatePDF(
   lineY -= 18;
 
   // Discount (always shown)
-    page.drawText('Discount', {
+  page.drawText('Discount', {
       x: 360,
       y: lineY,
       size: 9,
@@ -3175,7 +3175,7 @@ async function generateMinimalTemplatePDF(
   totalY -= 18;
 
   // Discount (always shown)
-    page.drawText('Discount:', {
+  page.drawText('Discount:', {
       x: 400,
       y: totalY,
       size: 9,
@@ -3226,6 +3226,7 @@ async function generateMinimalTemplatePDF(
   
   totalY -= 5;
   
+  // Total
   page.drawText('Total:', {
     x: 400,
     y: totalY,

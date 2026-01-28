@@ -433,7 +433,11 @@ export async function POST(request: NextRequest) {
         // Calculate totals for PDF
         const subtotal = invoiceData.items.reduce((sum: number, item: { rate: number }) => sum + item.rate, 0);
         const discount = invoiceData.discount || 0;
-        const total = subtotal - discount;
+        const afterDiscount = subtotal - discount;
+        // Calculate tax from taxRate
+        const taxRate = invoiceData.taxRate ? parseFloat(invoiceData.taxRate.toString()) : 0;
+        const taxAmount = afterDiscount * (taxRate / 100);
+        const total = afterDiscount + taxAmount;
 
         // Generate invoice number for PDF (without saving)
         const { data: invoiceNumberData, error: invoiceNumberError } = await supabase
@@ -462,6 +466,7 @@ export async function POST(request: NextRequest) {
           public_token: publicTokenData,
           subtotal,
           discount,
+          tax: taxAmount,
           total,
           status: 'draft' as const,
           issue_date: invoiceData.issue_date || new Date().toISOString().split('T')[0],
@@ -528,8 +533,8 @@ export async function POST(request: NextRequest) {
             description: item.description,
             amount: item.line_total
           })),
-          taxRate: 0,
-          taxAmount: 0,
+          taxRate: taxRate,
+          taxAmount: taxAmount,
           // Only set advanced features for detailed invoices, not fast invoices
           paymentTerms: invoiceData.type === 'fast' ? undefined : (invoiceData.payment_terms || { enabled: false, terms: 'Net 30' }),
           lateFees: invoiceData.type === 'fast' ? undefined : (invoiceData.late_fees || { enabled: false, type: 'fixed', amount: 0, gracePeriod: 0 }),
@@ -616,9 +621,10 @@ export async function POST(request: NextRequest) {
         }];
       }
     } else if (invoiceData.taxRate !== undefined && invoiceData.taxRate !== null) {
-      // Old format: tax rate percentage
+      // Old format: tax rate percentage - calculate tax on amount after discount
       const taxRate = parseFloat(invoiceData.taxRate.toString()) || 0;
-      taxAmount = subtotal * (taxRate / 100);
+      const afterDiscount = subtotal - discount;
+      taxAmount = afterDiscount * (taxRate / 100);
       if (taxAmount > 0) {
         taxBreakdown = [{
           name: 'Tax',

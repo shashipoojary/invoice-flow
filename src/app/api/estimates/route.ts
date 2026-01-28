@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       })),
       subtotal: parseFloat(estimate.subtotal),
       discount: parseFloat(estimate.discount || 0),
-      taxRate: estimate.tax ? (parseFloat(estimate.tax) / (parseFloat(estimate.subtotal) - parseFloat(estimate.discount || 0))) * 100 : 0,
+      taxRate: estimate.tax ? Math.round(((parseFloat(estimate.tax) / (parseFloat(estimate.subtotal) - parseFloat(estimate.discount || 0))) * 100) * 100) / 100 : 0,
       taxAmount: parseFloat(estimate.tax || 0),
       total: parseFloat(estimate.total),
       status: estimate.status,
