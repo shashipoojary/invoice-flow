@@ -191,12 +191,27 @@ export async function POST(
     // Ensure notes is properly handled (convert empty string to null if needed)
     const invoiceNotes = estimate.notes && estimate.notes.trim() !== '' ? estimate.notes.trim() : null;
 
+    // Get user's base currency from settings
+    const { data: userSettings } = await supabaseAdmin
+      .from('user_settings')
+      .select('base_currency')
+      .eq('user_id', user.id)
+      .single();
+    
+    const baseCurrency = userSettings?.base_currency || 'USD';
+    const estimateCurrency = estimate.currency || baseCurrency;
+    const estimateExchangeRate = estimate.exchange_rate || 1.0;
+    const estimateBaseCurrencyAmount = estimate.base_currency_amount || estimate.total * estimateExchangeRate;
+
     // Create invoice from estimate
     const invoice = {
       user_id: user.id,
       client_id: estimate.client_id,
       invoice_number: invoiceNumberData,
       public_token: publicTokenData,
+      currency: estimateCurrency,
+      exchange_rate: estimateExchangeRate,
+      base_currency_amount: estimateBaseCurrencyAmount,
       subtotal: estimate.subtotal,
       discount: estimate.discount || 0,
       tax: estimate.tax || 0,
