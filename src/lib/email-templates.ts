@@ -2313,23 +2313,9 @@ export function generateEstimateEmailTemplate(
   publicUrl: string
 ): string {
   const invoiceCurrency = estimate.currency || 'USD';
+  // Use formatCurrencyForCards to show symbols (R for ZAR, S$ for SGD, etc.) instead of text codes
   const formatCurrency = (amount: number) => {
-    try {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: invoiceCurrency.toUpperCase(),
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(amount);
-    } catch (error) {
-      // Fallback to USD if currency is invalid
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(amount);
-    }
+    return formatCurrencyForCards(amount, invoiceCurrency);
   };
 
   const formatDate = (dateString: string) => {

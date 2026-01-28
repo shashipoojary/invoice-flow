@@ -17,7 +17,7 @@ import { useAuth } from '@/hooks/useAuth'
 import CustomDropdown from './CustomDropdown'
 import UpgradeModal from './UpgradeModal'
 import ToastContainer from './Toast'
-import { CURRENCIES, formatCurrency, getCurrencySymbol, fetchExchangeRate } from '@/lib/currency'
+import { CURRENCIES, formatCurrencyForCards, getCurrencySymbol, fetchExchangeRate } from '@/lib/currency'
 
 interface EstimateModalProps {
   isOpen: boolean
@@ -984,7 +984,7 @@ export default function EstimateModal({
                         <div className={`flex-1 sm:flex-none sm:w-24 text-right ${
                           isDarkMode ? 'text-gray-300' : 'text-gray-700'
                         }`}>
-                          <span className="text-sm font-medium">{formatCurrency(item.rate * item.qty, currency)}</span>
+                          <span className="text-sm font-medium">{formatCurrencyForCards(item.rate * item.qty, currency)}</span>
                         </div>
                         {items.length > 1 && (
                           <button
@@ -1102,25 +1102,25 @@ export default function EstimateModal({
               }`}>
                 <div className="flex justify-between">
                   <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Subtotal:</span>
-                  <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{formatCurrency(subtotal, currency)}</span>
+                  <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{formatCurrencyForCards(subtotal, currency)}</span>
                 </div>
                 {discount > 0 && (
                   <div className="flex justify-between">
                     <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Discount:</span>
-                    <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>-{formatCurrency(discount, currency)}</span>
+                    <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>-{formatCurrencyForCards(discount, currency)}</span>
                   </div>
                 )}
                 {taxRate > 0 && (
                   <div className="flex justify-between">
                     <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Tax:</span>
-                    <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{formatCurrency((subtotal - discount) * (taxRate / 100), currency)}</span>
+                    <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>{formatCurrencyForCards((subtotal - discount) * (taxRate / 100), currency)}</span>
                   </div>
                 )}
                 <div className={`flex justify-between pt-2 border-t ${
                   isDarkMode ? 'border-gray-700' : 'border-gray-200'
                 }`}>
                   <span className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Total:</span>
-                  <span className="font-bold text-lg text-indigo-600">{formatCurrency(total, currency)}</span>
+                  <span className="font-bold text-lg text-indigo-600">{formatCurrencyForCards(total, currency)}</span>
                 </div>
               </div>
 

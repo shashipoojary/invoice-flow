@@ -196,6 +196,7 @@ export async function GET(
         discount: parseFloat(estimate.discount || 0),
         taxAmount: parseFloat(estimate.tax || 0),
         total: parseFloat(estimate.total || 0),
+        currency: estimate.currency || 'USD',
         status: estimate.status,
         approvalStatus: estimate.approval_status,
         rejectionReason: estimate.rejection_reason,

@@ -211,6 +211,7 @@ export default function ProfilePage() {
   const [isDeletingProgress, setIsDeletingProgress] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState('pdf');
+  const [isMobile, setIsMobile] = useState(false);
   const [subscriptionUsage, setSubscriptionUsage] = useState<{
     plan: string;
     limit: number | null;
@@ -333,6 +334,17 @@ export default function ProfilePage() {
   const lastUrlRef = useRef<string>('');
 
   // Handle payment success/failure redirect from Dodo Payment
+  // Detect mobile device to prevent auto-focus keyboard
+  useEffect(() => {
+    const checkMobile = () => {
+      const isMobileDevice = window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      setIsMobile(isMobileDevice);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   useEffect(() => {
     // Don't run if user is not loaded yet
     if (!user || loading) {
@@ -1351,7 +1363,7 @@ export default function ProfilePage() {
                 onChange={(e) => setDeleteProgressConfirmation(e.target.value)}
                 placeholder="Type DELETE to confirm"
                 className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-colors"
-                autoFocus
+                autoFocus={!isMobile}
               />
             </div>
 
@@ -1410,7 +1422,7 @@ export default function ProfilePage() {
                 onChange={(e) => setDeleteAccountConfirmation(e.target.value)}
                 placeholder="Type DELETE to confirm"
                 className="w-full px-3 py-2 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
-                autoFocus
+                autoFocus={!isMobile}
               />
             </div>
 

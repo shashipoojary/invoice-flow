@@ -159,6 +159,7 @@ export async function POST(request: NextRequest) {
       issue_date: estimate.issue_date || new Date().toISOString().split('T')[0],
       expiry_date: estimate.expiry_date || undefined,
       notes: estimate.notes || undefined,
+      currency: estimate.currency || 'USD',
       clients: {
         name: estimate.clients.name,
         email: estimate.clients.email,

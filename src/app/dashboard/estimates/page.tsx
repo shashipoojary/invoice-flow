@@ -935,7 +935,7 @@ function EstimatesContent(): React.JSX.Element {
                             </div>
                             <div className="text-right flex flex-col items-end">
                               <div className="font-semibold text-base text-gray-900">
-                                {formatCurrency(estimate.total, estimate.currency || settings.baseCurrency || 'USD')}
+                                {formatCurrencyForCards(estimate.total, estimate.currency || settings.baseCurrency || 'USD')}
                               </div>
                               <div className="mt-0 mb-0.5 min-h-[12px]"></div>
                               <div className="text-xs" style={{ color: '#6b7280' }}>{new Date(estimate.issueDate || estimate.createdAt).toLocaleDateString()}</div>
@@ -1017,7 +1017,7 @@ function EstimatesContent(): React.JSX.Element {
                             </div>
                             <div className="text-right">
                               <div className="font-semibold text-base text-gray-900">
-                                {formatCurrency(estimate.total, estimate.currency || settings.baseCurrency || 'USD')}
+                                {formatCurrencyForCards(estimate.total, estimate.currency || settings.baseCurrency || 'USD')}
                               </div>
                               <div className="mt-0 mb-0.5 min-h-[12px]"></div>
                               <div className="text-xs" style={{ color: '#6b7280' }}>{new Date(estimate.issueDate || estimate.createdAt).toLocaleDateString()}</div>
@@ -1188,11 +1188,11 @@ function EstimatesContent(): React.JSX.Element {
                             <div className="flex-1">
                               <p className="text-sm font-medium text-gray-900">{item.description}</p>
                               <p className="text-xs text-gray-500 mt-1">
-                                Qty: {qty} × {formatCurrency(rate, estimateCurrency)}
+                                Qty: {qty} × {formatCurrencyForCards(rate, estimateCurrency)}
                               </p>
                             </div>
                             <p className="text-sm font-semibold text-gray-900 ml-4">
-                              {formatCurrency(typeof amount === 'number' ? amount : parseFloat(amount.toString()), estimateCurrency)}
+                              {formatCurrencyForCards(typeof amount === 'number' ? amount : parseFloat(amount.toString()), estimateCurrency)}
                             </p>
                           </div>
                         );
@@ -1208,23 +1208,23 @@ function EstimatesContent(): React.JSX.Element {
                         <>
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-600">Subtotal:</span>
-                            <span className="font-medium text-gray-900">{formatCurrency(selectedEstimate.subtotal, estimateCurrency)}</span>
+                            <span className="font-medium text-gray-900">{formatCurrencyForCards(selectedEstimate.subtotal, estimateCurrency)}</span>
                           </div>
                           {selectedEstimate.discount && selectedEstimate.discount > 0 && (
                             <div className="flex justify-between text-sm">
                               <span className="text-gray-600">Discount:</span>
-                              <span className="font-medium text-gray-900">-{formatCurrency(selectedEstimate.discount, estimateCurrency)}</span>
+                              <span className="font-medium text-gray-900">-{formatCurrencyForCards(selectedEstimate.discount, estimateCurrency)}</span>
                             </div>
                           )}
                           {selectedEstimate.taxAmount && selectedEstimate.taxAmount > 0 && (
                             <div className="flex justify-between text-sm">
                               <span className="text-gray-600">Tax:</span>
-                              <span className="font-medium text-gray-900">{formatCurrency(selectedEstimate.taxAmount, estimateCurrency)}</span>
+                              <span className="font-medium text-gray-900">{formatCurrencyForCards(selectedEstimate.taxAmount, estimateCurrency)}</span>
                             </div>
                           )}
                           <div className="flex justify-between pt-2 border-t border-gray-200">
                             <span className="text-base font-semibold text-gray-900">Total:</span>
-                            <span className="text-lg font-bold text-indigo-600">{formatCurrency(selectedEstimate.total, estimateCurrency)}</span>
+                            <span className="text-lg font-bold text-indigo-600">{formatCurrencyForCards(selectedEstimate.total, estimateCurrency)}</span>
                           </div>
                           {/* Exchange Rate Information */}
                           {(() => {
@@ -1242,7 +1242,7 @@ function EstimatesContent(): React.JSX.Element {
                                   </div>
                                   <div className="flex justify-between text-xs text-gray-500">
                                     <span>Equivalent in {baseCurrencyLocal}:</span>
-                                    <span>{formatCurrency(baseCurrencyAmount, baseCurrencyLocal)}</span>
+                                    <span>{formatCurrencyForCards(baseCurrencyAmount, baseCurrencyLocal)}</span>
                                   </div>
                                 </>
                               );
