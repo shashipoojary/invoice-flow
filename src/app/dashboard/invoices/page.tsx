@@ -2916,20 +2916,27 @@ function InvoicesContent(): React.JSX.Element {
               <div className="space-y-6">
                 {/* Summary */}
                 <div className="bg-gray-50 p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Invoice Total</span>
-                    <span className="text-lg font-semibold text-gray-900">${selectedInvoice.total.toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Total Paid</span>
-                    <span className="text-lg font-semibold text-emerald-600">${totalPaid.toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-gray-700">Remaining Balance</span>
-                    <span className={`text-lg font-semibold ${remainingBalance > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
-                      ${remainingBalance.toFixed(2)}
-                    </span>
-                  </div>
+                  {(() => {
+                    const invoiceCurrency = selectedInvoice.currency || settings.baseCurrency || 'USD';
+                    return (
+                      <>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-gray-700">Invoice Total</span>
+                          <span className="text-lg font-semibold text-gray-900">{formatCurrency(selectedInvoice.total || 0, invoiceCurrency)}</span>
+                        </div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-gray-700">Total Paid</span>
+                          <span className="text-lg font-semibold text-emerald-600">{formatCurrency(totalPaid, invoiceCurrency)}</span>
+                        </div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm font-medium text-gray-700">Remaining Balance</span>
+                          <span className={`text-lg font-semibold ${remainingBalance > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
+                            {formatCurrency(remainingBalance, invoiceCurrency)}
+                          </span>
+                        </div>
+                      </>
+                    );
+                  })()}
                   {/* Progress bar */}
                   <div className="w-full bg-gray-200 h-2">
                     <div
