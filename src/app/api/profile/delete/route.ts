@@ -45,10 +45,10 @@ export async function DELETE(request: NextRequest) {
       deleteOperations.push(
         // Delete invoice items
         supabase.from('invoice_items').delete().in('invoice_id', invoiceIds),
+        // Delete invoice payments
+        supabase.from('invoice_payments').delete().in('invoice_id', invoiceIds),
         // Delete invoice reminders
-        supabase.from('invoice_reminders').delete().in('invoice_id', invoiceIds),
-        // Delete reminder tracking
-        supabase.from('reminder_tracking').delete().in('invoice_id', invoiceIds)
+        supabase.from('invoice_reminders').delete().in('invoice_id', invoiceIds)
       );
     }
     
@@ -81,8 +81,19 @@ export async function DELETE(request: NextRequest) {
     // Execute all delete operations
     const results = await Promise.all(deleteOperations);
     
-    // Check for errors in data deletion
-    const dataErrors = results.slice(0, -1).filter(result => result.error);
+    // Check for errors in data deletion (ignore 404 errors for non-existent tables)
+    const dataErrors = results.slice(0, -1).filter(result => {
+      if (!result.error) return false;
+      // Ignore errors for tables that don't exist (404) - these are not critical
+      const isNotFoundError = result.error.code === 'PGRST205' || 
+                               result.error.message?.includes('Could not find the table') ||
+                               result.error.status === 404;
+      if (isNotFoundError) {
+        console.log('Ignoring non-existent table error:', result.error.message);
+        return false;
+      }
+      return true;
+    });
     if (dataErrors.length > 0) {
       console.warn('Some data deletion operations failed:', dataErrors);
     }
