@@ -3337,7 +3337,7 @@ function InvoicesContent(): React.JSX.Element {
                           <tr>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
-                            <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Tax ({(selectedInvoice.taxRate || 0) * 100}%):</td>
+                            <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Tax ({selectedInvoice.taxRate ? selectedInvoice.taxRate.toFixed(2) : '0'}%):</td>
                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(selectedInvoice.taxAmount || 0, invoiceCurrency)}</td>
                           </tr>
                           <tr>

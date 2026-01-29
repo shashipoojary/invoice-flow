@@ -115,7 +115,7 @@ async function handler(request: NextRequest) {
         amount: item.line_total
       })),
       taxAmount: invoice.tax || 0,
-      taxRate: invoice.tax && invoice.subtotal ? (invoice.tax / (invoice.subtotal - (invoice.discount || 0))) * 100 : 0,
+      taxRate: invoice.tax && invoice.subtotal ? Math.round(((invoice.tax / (invoice.subtotal - (invoice.discount || 0))) * 100) * 100) / 100 : 0,
       notes: invoice.notes,
       paymentTerms,
       lateFees,

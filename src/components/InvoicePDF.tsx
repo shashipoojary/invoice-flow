@@ -354,7 +354,7 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, businessInfo }) => {
               <Text style={styles.totalValue}>{formatCurrency(invoice.subtotal)}</Text>
             </View>
             <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Tax ({(invoice.taxRate * 100).toFixed(1)}%):</Text>
+              <Text style={styles.totalLabel}>Tax ({(invoice.taxRate || 0).toFixed(2)}%):</Text>
               <Text style={styles.totalValue}>{formatCurrency(invoice.taxAmount)}</Text>
             </View>
             <View style={styles.grandTotalRow}>

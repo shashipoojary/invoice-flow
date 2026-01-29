@@ -198,7 +198,7 @@ export async function GET(request: NextRequest) {
       subtotal: invoice.subtotal || 0,
       discount: invoice.discount || 0,
       taxAmount: invoice.tax || 0,
-      taxRate: invoice.tax && invoice.subtotal ? (invoice.tax / (invoice.subtotal - (invoice.discount || 0))) * 100 : 0,
+      taxRate: invoice.tax && invoice.subtotal ? Math.round(((invoice.tax / (invoice.subtotal - (invoice.discount || 0))) * 100) * 100) / 100 : 0,
       total: invoice.total || 0,
       lateFees: invoice.late_fees || 0,
       totalWithLateFees: invoice.total_with_late_fees || invoice.total || 0,

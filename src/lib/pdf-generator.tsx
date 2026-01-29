@@ -589,7 +589,7 @@ const createFallbackInvoiceHTML = (invoice: Invoice, businessSettings?: Business
               <span class="total-value">${formatCurrency(invoice.subtotal || 0)}</span>
             </div>
             <div class="total-row">
-              <span class="total-label">Tax (${((invoice.taxRate || 0) * 100).toFixed(1)}%):</span>
+              <span class="total-label">Tax (${(invoice.taxRate || 0).toFixed(2)}%):</span>
               <span class="total-value">${formatCurrency(invoice.taxAmount || 0)}</span>
             </div>
           </div>

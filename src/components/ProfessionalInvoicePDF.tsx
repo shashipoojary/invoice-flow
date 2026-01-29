@@ -558,7 +558,7 @@ const formatCurrency = (amount: number) => {
             
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>
-                Tax ({((invoice.taxRate || 0) * 100).toFixed(1)}%):
+                Tax ({(invoice.taxRate || 0).toFixed(2)}%):
               </Text>
               <Text style={styles.totalValue}>{formatCurrency(invoice.taxAmount || 0)}</Text>
             </View>

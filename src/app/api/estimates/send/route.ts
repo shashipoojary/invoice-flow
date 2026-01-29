@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
     const taxAmount = parseFloat(estimate.tax || 0); // Database stores tax as amount, not rate
     const afterDiscount = subtotal - discount;
     // Calculate tax rate from stored tax amount
-    const taxRate = afterDiscount > 0 ? (taxAmount / afterDiscount) * 100 : 0;
+    const taxRate = afterDiscount > 0 ? Math.round(((taxAmount / afterDiscount) * 100) * 100) / 100 : 0;
 
     const estimateData = {
       estimate_number: estimate.estimate_number,
