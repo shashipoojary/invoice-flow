@@ -815,81 +815,81 @@ export default function EstimateModal({
               <div className="p-4">
                 <div className="flex items-end gap-4">
                   <div className="flex-1">
-                    <label className={`block text-sm font-medium mb-2 ${
-                      isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                    }`}>
-                      Currency
-                    </label>
-                    <CustomDropdown
-                      value={currency}
-                      onChange={(value) => {
-                        setCurrency(value)
-                      }}
-                      options={CURRENCIES.map((curr) => ({
-                        value: curr.code,
-                        label: `${curr.code} - ${curr.symbol}`
-                      }))}
-                      placeholder="Select currency"
-                      isDarkMode={isDarkMode}
-                      searchable={true}
-                    />
+                <label className={`block text-sm font-medium mb-2 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Currency
+                </label>
+                <CustomDropdown
+                  value={currency}
+                  onChange={(value) => {
+                    setCurrency(value)
+                  }}
+                  options={CURRENCIES.map((curr) => ({
+                    value: curr.code,
+                    label: `${curr.code} - ${curr.symbol}`
+                  }))}
+                  placeholder="Select currency"
+                  isDarkMode={isDarkMode}
+                  searchable={true}
+                />
                   </div>
-                  {currency !== (settings?.baseCurrency || 'USD') && (
+                {currency !== (settings?.baseCurrency || 'USD') && (
                     <div className="flex-1">
                       <label className={`block text-sm font-medium mb-2 ${
                         isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                      }`}>
-                        Exchange Rate ({currency} to {settings?.baseCurrency || 'USD'})
-                        {fetchingExchangeRate && (
-                          <span className="ml-2 text-xs text-gray-500">(Fetching...)</span>
-                        )}
-                      </label>
-                      <input
-                        type="number"
-                        step="0.0001"
-                        min="0.0001"
-                        placeholder="1.0"
-                        value={exchangeRate}
-                        onChange={(e) => setExchangeRate(e.target.value)}
-                        onFocus={async () => {
-                          const baseCurrency = settings?.baseCurrency || 'USD'
-                          if (currency !== baseCurrency && (!exchangeRate || exchangeRate === '1.0')) {
-                            try {
-                              setFetchingExchangeRate(true)
-                              const rate = await fetchExchangeRate(currency, baseCurrency)
-                              if (rate) {
-                                setExchangeRate(rate.toFixed(4))
-                              } else {
-                                setExchangeRate('1.0')
-                              }
-                            } catch (error) {
-                              console.error('Error fetching exchange rate:', error)
-                              setExchangeRate('1.0')
-                            } finally {
-                              setFetchingExchangeRate(false)
-                            }
-                          }
-                        }}
-                        className={`w-full px-3 py-2 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                          errors.exchangeRate 
-                            ? 'border-red-500' 
-                            : isDarkMode 
-                              ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
-                              : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
-                        }`}
-                      />
-                      {errors.exchangeRate && (
-                        <p className="mt-1 text-xs text-red-600">{errors.exchangeRate}</p>
+                    }`}>
+                      Exchange Rate ({currency} to {settings?.baseCurrency || 'USD'})
+                      {fetchingExchangeRate && (
+                        <span className="ml-2 text-xs text-gray-500">(Fetching...)</span>
                       )}
+                    </label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      min="0.0001"
+                      placeholder="1.0"
+                      value={exchangeRate}
+                      onChange={(e) => setExchangeRate(e.target.value)}
+                      onFocus={async () => {
+                        const baseCurrency = settings?.baseCurrency || 'USD'
+                        if (currency !== baseCurrency && (!exchangeRate || exchangeRate === '1.0')) {
+                          try {
+                            setFetchingExchangeRate(true)
+                            const rate = await fetchExchangeRate(currency, baseCurrency)
+                            if (rate) {
+                              setExchangeRate(rate.toFixed(4))
+                            } else {
+                              setExchangeRate('1.0')
+                            }
+                          } catch (error) {
+                            console.error('Error fetching exchange rate:', error)
+                            setExchangeRate('1.0')
+                          } finally {
+                            setFetchingExchangeRate(false)
+                          }
+                        }
+                      }}
+                      className={`w-full px-3 py-2 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        errors.exchangeRate 
+                          ? 'border-red-500' 
+                          : isDarkMode 
+                            ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                            : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                      }`}
+                    />
+                    {errors.exchangeRate && (
+                      <p className="mt-1 text-xs text-red-600">{errors.exchangeRate}</p>
+                    )}
                     </div>
                   )}
                 </div>
                 {currency !== (settings?.baseCurrency || 'USD') && (
                   <p className={`text-xs mt-2 ${
-                    isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                  }`}>
-                    Base currency: {settings?.baseCurrency || 'USD'}
-                  </p>
+                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      Base currency: {settings?.baseCurrency || 'USD'}
+                    </p>
                 )}
               </div>
 

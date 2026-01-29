@@ -1201,36 +1201,36 @@ export default function ReminderHistoryPage() {
                         const totals = calculateReminderTotal(selectedReminder);
                         const invoiceCurrency = selectedReminder.invoice.currency || 'USD';
                         
-                        return (
-                          <>
-                            <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
-                              <span className="text-xs sm:text-sm text-gray-600">Base Amount:</span>
-                              <span className="text-xs sm:text-sm font-medium text-gray-900 break-words">
+                              return (
+                                <>
+                                  <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                                    <span className="text-xs sm:text-sm text-gray-600">Base Amount:</span>
+                                    <span className="text-xs sm:text-sm font-medium text-gray-900 break-words">
                                 {formatCurrencyForCards(totals.baseAmount, invoiceCurrency)}
-                              </span>
-                            </div>
+                                    </span>
+                                  </div>
                             {totals.isPartiallyPaid && (
-                              <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
-                                <span className="text-xs sm:text-sm text-gray-600">Partial Paid:</span>
-                                <span className="text-xs sm:text-sm font-medium text-blue-600 break-words">
+                                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                                      <span className="text-xs sm:text-sm text-gray-600">Partial Paid:</span>
+                                      <span className="text-xs sm:text-sm font-medium text-blue-600 break-words">
                                   -{formatCurrencyForCards(totals.totalPaid, invoiceCurrency)}
-                                </span>
-                              </div>
-                            )}
+                                      </span>
+                                    </div>
+                                  )}
                             {totals.hasLateFees && (
-                              <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
-                                <span className="text-xs sm:text-sm text-gray-600">Late Fees ({selectedReminder.overdue_days} days):</span>
-                                <span className="text-xs sm:text-sm font-medium text-red-600 break-words">
+                                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                                      <span className="text-xs sm:text-sm text-gray-600">Late Fees ({selectedReminder.overdue_days} days):</span>
+                                      <span className="text-xs sm:text-sm font-medium text-red-600 break-words">
                                   +{formatCurrencyForCards(totals.lateFeesAmount, invoiceCurrency)}
-                                </span>
-                              </div>
-                            )}
-                            <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 pt-1 border-t border-gray-200">
-                              <span className="text-xs sm:text-sm font-semibold text-gray-700">Total Amount Due:</span>
-                              <span className="text-xs sm:text-sm font-bold text-green-600 break-words">
+                                      </span>
+                                    </div>
+                                  )}
+                                  <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 pt-1 border-t border-gray-200">
+                                    <span className="text-xs sm:text-sm font-semibold text-gray-700">Total Amount Due:</span>
+                                    <span className="text-xs sm:text-sm font-bold text-green-600 break-words">
                                 {formatCurrencyForCards(totals.totalPayable, invoiceCurrency)}
-                              </span>
-                            </div>
+                                    </span>
+                                  </div>
                           </>
                         );
                       })()}
