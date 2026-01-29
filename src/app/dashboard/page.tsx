@@ -6316,7 +6316,7 @@ export default function DashboardOverview() {
                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-blue-600" style={{ borderTop: 'none' }}></td>
                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-blue-600" style={{ borderTop: 'none' }}></td>
                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-blue-600 text-right" style={{ borderTop: 'none' }}>
-                                     {isPaid ? "Total Paid:" : "Partial Paid:"}
+                                     Partial Paid:
                                    </td>
                                    <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-blue-600 text-right" style={{ borderTop: 'none' }}>
                                      {formatCurrencyForCards(actualTotalPaid, invoiceCurrency)}
@@ -6383,7 +6383,7 @@ export default function DashboardOverview() {
                             <tr>
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">Final Amount Paid:</td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">Final Amount Settled:</td>
                               <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">
                                 {formatCurrencyForCards(selectedInvoice.total || 0, invoiceCurrency)}
                               </td>
