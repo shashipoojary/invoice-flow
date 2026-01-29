@@ -3354,10 +3354,45 @@ function InvoicesContent(): React.JSX.Element {
                               <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 font-semibold text-right" style={{ borderTop: 'none' }}>-{formatCurrencyForCards(selectedInvoice.writeOffAmount || 0, invoiceCurrency)}</td>
                             </tr>
                           ) : null}
-                          {/* Show payment information based on invoice status */}
+                          {/* Show complete payment history for audit trail - always show partial payments and charges if they exist */}
                           {(() => {
-                            // If invoice is marked as paid, show "Amount Paid" with full total
-                            if (isPaid && !hasWriteOff) {
+                            // Show partial payments if they exist (for audit trail and tracking)
+                            if (!loadingPayments && hasActualPaymentRecords && !hasWriteOff && actualTotalPaid > 0) {
+                              return (
+                                <tr>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-blue-600" style={{ borderTop: 'none' }}></td>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-blue-600" style={{ borderTop: 'none' }}></td>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-blue-600 text-right" style={{ borderTop: 'none' }}>
+                                    {isPaid ? "Total Paid:" : "Partial Paid:"}
+                                  </td>
+                                  <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-blue-600 text-right" style={{ borderTop: 'none' }}>
+                                    {formatCurrencyForCards(actualTotalPaid, invoiceCurrency)}
+                                  </td>
+                                </tr>
+                              );
+                            }
+                            
+                            // Show remaining balance only for unpaid invoices (sent/overdue status)
+                            if (!isPaid && !loadingPayments && hasActualPaymentRecords && !hasWriteOff && actualRemainingBalance > 0) {
+                              const invoiceStatus = selectedInvoice.status || 'draft';
+                              const showRemainingBalance = (invoiceStatus === 'sent' || invoiceStatus === 'overdue');
+                              
+                              if (showRemainingBalance) {
+                                return (
+                                  <tr>
+                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
+                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
+                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 text-right" style={{ borderTop: 'none' }}>Remaining Balance:</td>
+                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 font-semibold text-right" style={{ borderTop: 'none' }}>
+                                      {formatCurrencyForCards(actualRemainingBalance, invoiceCurrency)}
+                                    </td>
+                                  </tr>
+                                );
+                              }
+                            }
+                            
+                            // If invoice is fully paid and no partial payments recorded, show Amount Paid
+                            if (isPaid && !hasWriteOff && (!hasActualPaymentRecords || actualTotalPaid === 0)) {
                               return (
                                 <tr>
                                   <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-emerald-700 border-t border-gray-200 pt-2"></td>
@@ -3370,37 +3405,9 @@ function InvoicesContent(): React.JSX.Element {
                               );
                             }
                             
-                            // If invoice has partial payments and status is "sent" or "overdue", show partial payment info
-                            if (!loadingPayments && hasActualPaymentRecords && !hasWriteOff && actualTotalPaid > 0 && !isPaid) {
-                              const invoiceStatus = selectedInvoice.status || 'draft';
-                              const showRemainingBalance = (invoiceStatus === 'sent' || invoiceStatus === 'overdue') && actualRemainingBalance > 0;
-                              
-                              return (
-                                <>
-                                  <tr>
-                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-blue-600" style={{ borderTop: 'none' }}></td>
-                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-blue-600" style={{ borderTop: 'none' }}></td>
-                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-blue-600 text-right" style={{ borderTop: 'none' }}>Partial Paid:</td>
-                                    <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-blue-600 text-right" style={{ borderTop: 'none' }}>
-                                      {formatCurrencyForCards(actualTotalPaid, invoiceCurrency)}
-                                    </td>
-                                  </tr>
-                                  {showRemainingBalance && (
-                                    <tr>
-                                      <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
-                                      <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
-                                      <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 text-right" style={{ borderTop: 'none' }}>Remaining Balance:</td>
-                                      <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 font-semibold text-right" style={{ borderTop: 'none' }}>
-                                        {formatCurrencyForCards(actualRemainingBalance, invoiceCurrency)}
-                                      </td>
-                                    </tr>
-                                  )}
-                                </>
-                              );
-                            }
-                            
                             return null;
                           })()}
+                          {/* Always show late fees if they were applied (for audit trail and tracking) */}
                           {dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 ? (
                             <tr>
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
@@ -3409,13 +3416,24 @@ function InvoicesContent(): React.JSX.Element {
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 font-semibold text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(dueCharges.lateFeeAmount, invoiceCurrency)}</td>
                             </tr>
                           ) : null}
-                          {/* Show Total Payable only if late fees exist */}
-                          {(dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0) ? (
+                          {/* Show Total Payable only if late fees exist and invoice is not fully paid */}
+                          {(dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 && !isPaid) ? (
                             <tr>
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">Total Payable:</td>
                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">{formatCurrencyForCards(dueCharges.totalPayable, invoiceCurrency)}</td>
+                            </tr>
+                          ) : null}
+                          {/* Show final settled amount if invoice is paid */}
+                          {isPaid && !hasWriteOff && (dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 || hasActualPaymentRecords) ? (
+                            <tr>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
+                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">Final Amount Paid:</td>
+                              <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">
+                                {formatCurrencyForCards(selectedInvoice.total || 0, invoiceCurrency)}
+                              </td>
                             </tr>
                           ) : null}
                           {/* Exchange Rate Information - Always shown at the end, after all other rows */}
