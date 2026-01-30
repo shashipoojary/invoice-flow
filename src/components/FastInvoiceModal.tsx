@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo, useTransition } from 'react'
 import { createPortal } from 'react-dom'
-import { X, DollarSign, Calendar, FileText, User, Mail, ArrowRight, ArrowLeft, Clock, CheckCircle, Send, Settings } from 'lucide-react'
+import { X, DollarSign, Calendar, FileText, User, Mail, ArrowRight, ArrowLeft, Clock, CheckCircle, Send, Settings, AlertTriangle } from 'lucide-react'
 import { Invoice } from '@/types'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/useToast'
@@ -382,6 +382,12 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
   }
 
   const handleCreateInvoice = async (showToast = true, isSending = false) => {
+    // Block Fast Invoice if user is tax-registered
+    if (settings?.isTaxRegistered === true) {
+      showError('Fast Invoice Not Available', 'You are registered to charge tax. Fast Invoice does not support tax calculations. Please use Detailed Invoice instead.')
+      return
+    }
+
     // Set loading state IMMEDIATELY - this is critical to prevent fade
     if (!isSending) {
       setLoading(true)
@@ -918,6 +924,47 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 pb-6">
+          {/* Tax Registration Check - Block Fast Invoice if user is tax-registered */}
+          {settings?.isTaxRegistered === true && (
+            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500">
+              <div className="flex items-start">
+                <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-red-900 mb-1">
+                    Fast Invoice Not Available
+                  </p>
+                  <p className="text-xs text-red-700">
+                    You are registered to charge tax. Fast Invoice does not support tax calculations. Please use Detailed Invoice instead, which includes full tax support.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleClose}
+                    className="mt-3 text-xs font-medium text-red-700 hover:text-red-900 underline"
+                  >
+                    Close and use Detailed Invoice
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tax Disclaimer - Show if user is NOT tax-registered */}
+          {settings?.isTaxRegistered === false && (
+            <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500">
+              <div className="flex items-start">
+                <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" />
+                <div>
+                  <p className="text-xs font-medium text-amber-900 mb-1">
+                    Tax Notice
+                  </p>
+                  <p className="text-xs text-amber-700">
+                    This invoice does not include tax and should only be used if you are not required to charge tax.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {step === 1 && (
             <div className="space-y-5">
               {/* Step indicator */}

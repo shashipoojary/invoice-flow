@@ -97,7 +97,9 @@ export interface FreelancerSettings {
   businessEmail: string;
   businessPhone: string;
   address: string;
-  website: string;
+  taxId: string;
+  isTaxRegistered: boolean;
+  website?: string; // Deprecated - kept for backward compatibility
   logo: string;
   paypalEmail: string;
   cashappId: string;

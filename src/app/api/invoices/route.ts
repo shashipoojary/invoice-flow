@@ -147,7 +147,13 @@ export async function GET(request: NextRequest) {
         // Multi-currency support
         currency: invoice.currency || 'USD',
         exchange_rate: invoice.exchange_rate || 1.0,
-        base_currency_amount: invoice.base_currency_amount || invoice.total,
+        // Use base_currency_amount if it exists (not null/undefined)
+        // If null/undefined, calculate from total and exchange_rate as fallback
+        // Note: This fallback is only for invoices created before currency conversion feature
+        // After currency conversion, base_currency_amount should always be set
+        base_currency_amount: (invoice.base_currency_amount !== null && invoice.base_currency_amount !== undefined)
+          ? invoice.base_currency_amount
+          : (invoice.total * (invoice.exchange_rate || 1.0)),
         // Parse JSON fields with fallbacks for existing invoices (only for detailed invoices)
         paymentTerms: invoice.type === 'fast' ? undefined : 
           (invoice.payment_terms ? 

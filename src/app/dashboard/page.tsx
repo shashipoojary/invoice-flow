@@ -17,6 +17,7 @@ import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
 import UnifiedInvoiceCard from '@/components/UnifiedInvoiceCard';
 import PartialPaymentModal from '@/components/PartialPaymentModal';
+import MarkAsPaidModal from '@/components/MarkAsPaidModal';
 import { Client, Invoice } from '@/types';
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
@@ -422,6 +423,44 @@ export default function DashboardOverview() {
   // Track if sidebar is transitioning to prevent unnecessary re-renders
   const sidebarTransitioningRef = useRef(false);
   
+  // Track previous base currency to detect changes
+  const previousBaseCurrencyRef = useRef<string | null>(null);
+  const isRefreshingRef = useRef(false);
+  
+  // Refresh invoices when base currency changes (after currency conversion)
+  useEffect(() => {
+    if (settings?.baseCurrency && previousBaseCurrencyRef.current !== null && previousBaseCurrencyRef.current !== settings.baseCurrency) {
+      // Base currency changed - refresh invoices to get updated base_currency_amount values
+      if (!isRefreshingRef.current) {
+        isRefreshingRef.current = true;
+        refreshInvoices().finally(() => {
+          isRefreshingRef.current = false;
+        });
+      }
+    }
+    previousBaseCurrencyRef.current = settings?.baseCurrency || null;
+  }, [settings?.baseCurrency, refreshInvoices]);
+  
+  // Also listen for currencyChanged event from settings page
+  useEffect(() => {
+    const handleCurrencyChange = () => {
+      // Refresh invoices when currency changes (debounce to prevent multiple refreshes)
+      if (!isRefreshingRef.current) {
+        isRefreshingRef.current = true;
+        refreshInvoices().finally(() => {
+          isRefreshingRef.current = false;
+        });
+      }
+    };
+    
+    if (typeof window !== 'undefined') {
+      window.addEventListener('currencyChanged', handleCurrencyChange);
+      return () => {
+        window.removeEventListener('currencyChanged', handleCurrencyChange);
+      };
+    }
+  }, [refreshInvoices]);
+  
   // Local state for UI
   // Initialize loading state to false to prevent flash - stats are calculated from invoices which are already loaded
   const [isLoadingStats, setIsLoadingStats] = useState(false);
@@ -439,6 +478,8 @@ export default function DashboardOverview() {
   const [showCreateEstimate, setShowCreateEstimate] = useState(false);
   const [showPartialPayment, setShowPartialPayment] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [showMarkAsPaid, setShowMarkAsPaid] = useState(false);
+  const [invoiceToMarkPaid, setInvoiceToMarkPaid] = useState<Invoice | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(() => {
     // Load read notifications from localStorage
@@ -521,9 +562,10 @@ export default function DashboardOverview() {
   const [payments, setPayments] = useState<any[]>([]);
   const [totalPaid, setTotalPaid] = useState(0);
   const [remainingBalance, setRemainingBalance] = useState(0);
+  const [lateFeesAmount, setLateFeesAmount] = useState(0);
   const [loadingPayments, setLoadingPayments] = useState(false);
   // Cache payments by invoice ID to avoid refetching
-  const [paymentsCache, setPaymentsCache] = useState<Record<string, { payments: any[]; totalPaid: number; remainingBalance: number }>>({});
+  const [paymentsCache, setPaymentsCache] = useState<Record<string, { payments: any[]; totalPaid: number; remainingBalance: number; lateFeesAmount: number }>>({});
   const [submittingPayment, setSubmittingPayment] = useState(false);
   const [deletingPayment, setDeletingPayment] = useState<string | null>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -1229,16 +1271,19 @@ export default function DashboardOverview() {
           lateFeeAmount = (baseAmount * invoice.lateFees.amount) / 100;
         }
         
-        const totalPayable = baseAmount + lateFeeAmount;
-        return {
-          hasLateFees: true,
-          lateFeeAmount,
-          totalPayable,
-          overdueDays: chargeableDays,
-          totalPaid: paymentData?.totalPaid || 0,
-          remainingBalance: totalPayable,
-          isPartiallyPaid: (paymentData?.totalPaid || 0) > 0 && totalPayable > 0
-        };
+        // Only set hasLateFees to true if lateFeeAmount is actually greater than 0
+        if (lateFeeAmount > 0) {
+          const totalPayable = baseAmount + lateFeeAmount;
+          return {
+            hasLateFees: true,
+            lateFeeAmount,
+            totalPayable,
+            overdueDays: chargeableDays,
+            totalPaid: paymentData?.totalPaid || 0,
+            remainingBalance: totalPayable,
+            isPartiallyPaid: (paymentData?.totalPaid || 0) > 0 && totalPayable > 0
+          };
+        }
       }
     }
     
@@ -1263,6 +1308,7 @@ export default function DashboardOverview() {
       setPayments(cached.payments);
       setTotalPaid(cached.totalPaid);
       setRemainingBalance(cached.remainingBalance);
+      setLateFeesAmount(cached.lateFeesAmount || 0);
       setLoadingPayments(false);
       return;
     }
@@ -1279,6 +1325,7 @@ export default function DashboardOverview() {
         const paymentsData = data.payments || [];
         const totalPaidData = data.totalPaid || 0;
         const remainingBalanceData = data.remainingBalance || selectedInvoice.total;
+        const lateFeesData = data.lateFeesAmount || 0;
         
         // Cache the payments data
         setPaymentsCache(prev => ({
@@ -1286,13 +1333,15 @@ export default function DashboardOverview() {
           [selectedInvoice.id]: {
             payments: paymentsData,
             totalPaid: totalPaidData,
-            remainingBalance: remainingBalanceData
+            remainingBalance: remainingBalanceData,
+            lateFeesAmount: lateFeesData
           }
         }));
         
         setPayments(paymentsData);
         setTotalPaid(totalPaidData);
         setRemainingBalance(remainingBalanceData);
+        setLateFeesAmount(lateFeesData);
       }
     } catch (error) {
       console.error('Error fetching payments:', error);
@@ -1311,6 +1360,7 @@ export default function DashboardOverview() {
       setPayments([]);
       setTotalPaid(0);
       setRemainingBalance(0);
+      setLateFeesAmount(0);
     }
   }, [showPaymentForm, showViewInvoice, selectedInvoice?.id, fetchPayments]);
 
@@ -1805,26 +1855,61 @@ export default function DashboardOverview() {
   }, []);
 
   const handleMarkAsPaid = useCallback((invoice: Invoice) => {
-    setConfirmationModal({
-      isOpen: true,
-      title: 'Mark Invoice as Paid',
-      message: `Are you sure you want to mark invoice ${invoice.invoiceNumber} as paid? This will update the invoice status and cannot be easily undone.`,
-      type: 'success',
-      onConfirm: () => performMarkAsPaid(invoice),
-      isLoading: false,
-      confirmText: 'Mark as Paid',
-      cancelText: 'Cancel',
-      infoBanner: undefined
-    });
+    setInvoiceToMarkPaid(invoice);
+    setShowMarkAsPaid(true);
   }, []);
 
-  const performMarkAsPaid = useCallback(async (invoice: Invoice) => {
+  const performMarkAsPaid = useCallback(async (invoice: Invoice, paymentMethod: string) => {
     const actionKey = `paid-${invoice.id}`;
     setLoadingActions(prev => ({ ...prev, [actionKey]: true }));
-    setConfirmationModal(prev => ({ ...prev, isLoading: true }));
     
     try {
       const headers = await getAuthHeaders();
+      
+      // First, fetch current payment data to get remaining balance and late fees
+      const paymentDataResponse = await fetch(`/api/invoices/${invoice.id}/payments`, {
+        headers
+      });
+
+      if (!paymentDataResponse.ok) {
+        showError('Payment Failed', 'Failed to fetch payment data. Please try again.');
+        return;
+      }
+
+      const paymentData = await paymentDataResponse.json();
+      const remainingBalance = paymentData.remainingBalance || 0;
+      const lateFeesAmount = paymentData.lateFeesAmount || 0;
+      
+      // Calculate the amount needed to fully pay: remaining balance + late fees
+      const amountToPay = remainingBalance + lateFeesAmount;
+
+      if (amountToPay <= 0) {
+        showError('Payment Failed', 'Invoice is already fully paid.');
+        return;
+      }
+
+      // Record the payment for the remaining balance + late fees
+      const paymentResponse = await fetch(`/api/invoices/${invoice.id}/payments`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: amountToPay, // Remaining balance + late fees
+          paymentDate: new Date().toISOString().split('T')[0],
+          paymentMethod: paymentMethod,
+          notes: 'Marked as paid'
+        })
+      });
+
+      if (!paymentResponse.ok) {
+        const error = await paymentResponse.json();
+        showError('Payment Failed', error.error || 'Failed to record payment. Please try again.');
+        return;
+      }
+
+      // Then mark invoice as paid
       const response = await fetch(`/api/invoices/${invoice.id}`, {
         method: 'PUT',
         headers: {
@@ -1841,26 +1926,25 @@ export default function DashboardOverview() {
         if (payload?.invoice) {
           updateInvoice(payload.invoice);
         } else {
-        updateInvoice({ ...invoice, status: 'paid' as const });
+          updateInvoice({ ...invoice, status: 'paid' as const });
         }
         
         // Refresh list to keep filters/pagination in sync
         try { await refreshInvoices(); } catch {}
         
-        showSuccess('Invoice Updated', `Invoice ${invoice.invoiceNumber} has been marked as paid.`);
-        setConfirmationModal(prev => ({ ...prev, isOpen: false, isLoading: false }));
+        showSuccess('Invoice Updated', `Invoice ${invoice.invoiceNumber} has been marked as paid and payment recorded.`);
+        setShowMarkAsPaid(false);
+        setInvoiceToMarkPaid(null);
       } else {
-        showError('Update Failed', 'Failed to mark invoice as paid. Please try again.');
-        setConfirmationModal(prev => ({ ...prev, isLoading: false }));
+        showError('Update Failed', 'Payment recorded but failed to mark invoice as paid. Please try again.');
       }
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
       showError('Update Failed', 'Failed to mark invoice as paid. Please try again.');
-      setConfirmationModal(prev => ({ ...prev, isLoading: false }));
     } finally {
       setLoadingActions(prev => ({ ...prev, [actionKey]: false }));
     }
-  }, [getAuthHeaders, showSuccess, showError]);
+  }, [getAuthHeaders, showSuccess, showError, updateInvoice, refreshInvoices]);
 
   const handleDuplicateInvoice = useCallback((invoice: Invoice) => {
     // Show modal instantly for better UX
@@ -2356,9 +2440,9 @@ export default function DashboardOverview() {
                 {dueCharges.isPartiallyPaid ? (
                   <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
                     Paid: ${dueCharges.totalPaid.toFixed(2)} • Remaining: ${dueCharges.remainingBalance.toFixed(2)}
-                    {dueCharges.hasLateFees && ` • Late fee: ${dueCharges.lateFeeAmount.toFixed(2)}`}
+                    {dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 && ` • Late fee: ${dueCharges.lateFeeAmount.toFixed(2)}`}
                   </div>
-                ) : dueCharges.hasLateFees ? (
+                ) : dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 ? (
                   <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
                     Base {formatCurrencyForCards(invoice.total, invoice.currency || settings.baseCurrency || 'USD')} • Late fee {formatCurrencyForCards(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}
                   </div>
@@ -2439,9 +2523,9 @@ export default function DashboardOverview() {
               {dueCharges.isPartiallyPaid ? (
                 <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
                   Paid: {formatCurrencyForCards(dueCharges.totalPaid, invoice.currency || settings.baseCurrency || 'USD')} • Remaining: {formatCurrencyForCards(dueCharges.remainingBalance, invoice.currency || settings.baseCurrency || 'USD')}
-                  {dueCharges.hasLateFees && ` • Late fee: ${formatCurrencyForCards(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}`}
+                  {dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 && ` • Late fee: ${formatCurrencyForCards(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}`}
             </div>
-              ) : dueCharges.hasLateFees ? (
+              ) : dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 ? (
                 <div className="mt-0.5 mb-1 text-[10px] sm:text-xs text-gray-500">
                   Base {formatCurrencyForCards(invoice.total, invoice.currency || settings.baseCurrency || 'USD')} • Late fee {formatCurrencyForCards(dueCharges.lateFeeAmount, invoice.currency || settings.baseCurrency || 'USD')}
             </div>
@@ -2675,31 +2759,96 @@ export default function DashboardOverview() {
       
       // Convert invoice amounts to base currency for metrics
       const invoiceExchangeRate = exchange_rate || 1.0;
-      const invoiceBaseAmount = base_currency_amount || (currency === baseCurrency ? total : (total * invoiceExchangeRate));
       const invoiceCurrency = currency || baseCurrency;
+      
+      // Check if base_currency_amount exists (not null/undefined, but can be 0)
+      // This is the most accurate value as it's stored after currency conversion
+      let invoiceBaseAmount: number;
+      if (base_currency_amount !== null && base_currency_amount !== undefined) {
+        // Use stored base_currency_amount (most accurate - updated after currency conversion)
+        invoiceBaseAmount = base_currency_amount;
+      } else if (invoiceCurrency === baseCurrency) {
+        // Same currency, no conversion needed
+        invoiceBaseAmount = total;
+      } else if (invoiceExchangeRate && invoiceExchangeRate !== 1.0) {
+        // Calculate from exchange rate
+        invoiceBaseAmount = total * invoiceExchangeRate;
+      } else {
+        // No conversion info available - use total (will be incorrect but won't crash)
+        console.warn(`Invoice ${invoice.id} missing base_currency_amount: currency=${invoiceCurrency}, baseCurrency=${baseCurrency}, exchange_rate=${invoiceExchangeRate}`);
+        invoiceBaseAmount = total;
+      }
       
       // Total revenue calculation - includes fully paid invoices and partial payments (convert to base currency)
       if (status === 'paid') {
-        // Fully paid invoice - add converted amount
+        // Fully paid invoice - use base_currency_amount (most accurate)
         totalRevenue += invoiceBaseAmount;
       } else {
         // Check for partial payments on non-paid invoices
         const paymentData = paymentDataMap[invoice.id];
         if (paymentData && paymentData.totalPaid > 0) {
-          // Convert partial payments to base currency
-          const convertedPaid = invoiceCurrency === baseCurrency ? paymentData.totalPaid : (paymentData.totalPaid * invoiceExchangeRate);
-          totalRevenue += convertedPaid;
+          // Convert partial payments to base currency using proportional conversion
+          // This ensures accuracy even if exchange rates have changed
+          if (invoiceCurrency === baseCurrency) {
+            // Same currency, no conversion needed
+            totalRevenue += paymentData.totalPaid;
+          } else if (invoiceBaseAmount !== null && invoiceBaseAmount !== undefined && total > 0) {
+            // Use proportional conversion: (paid / total) * base_currency_amount
+            // This is more accurate than using exchange rate directly
+            const paidProportion = paymentData.totalPaid / total;
+            const convertedPaid = paidProportion * invoiceBaseAmount;
+            totalRevenue += convertedPaid;
+          } else {
+            // Fallback: use exchange rate if base_currency_amount not available
+            const convertedPaid = paymentData.totalPaid * invoiceExchangeRate;
+            totalRevenue += convertedPaid;
+          }
         }
       }
       
       // Total payable and overdue count (pending/sent invoices only) - convert to base currency
       if (status === 'pending' || status === 'sent') {
-      const charges = calculateDueCharges(invoice, paymentDataMap[invoice.id] || null);
-        // Convert charges to base currency
-        const convertedTotalPayable = invoiceCurrency === baseCurrency ? charges.totalPayable : (charges.totalPayable * invoiceExchangeRate);
-        const convertedLateFees = invoiceCurrency === baseCurrency ? charges.lateFeeAmount : (charges.lateFeeAmount * invoiceExchangeRate);
-        totalPayableAmount += convertedTotalPayable;
-        totalLateFees += convertedLateFees;
+        const charges = calculateDueCharges(invoice, paymentDataMap[invoice.id] || null);
+        
+        // Get base amount in base currency (use base_currency_amount if available, otherwise convert)
+        const baseAmountInBaseCurrency = invoiceBaseAmount;
+        
+        // Calculate remaining balance in base currency using proportional conversion
+        const paymentData = paymentDataMap[invoice.id];
+        let remainingBalanceInBaseCurrency = baseAmountInBaseCurrency;
+        if (paymentData && paymentData.totalPaid > 0) {
+          // Use proportional conversion for accuracy: (remaining / total) * base_currency_amount
+          if (invoiceCurrency === baseCurrency) {
+            // Same currency, no conversion needed
+            remainingBalanceInBaseCurrency = paymentData.remainingBalance;
+          } else if (invoiceBaseAmount !== null && invoiceBaseAmount !== undefined && total > 0) {
+            // Proportional conversion: (remaining / total) * base_currency_amount
+            const remainingProportion = paymentData.remainingBalance / total;
+            remainingBalanceInBaseCurrency = remainingProportion * invoiceBaseAmount;
+          } else {
+            // Fallback: use exchange rate
+            const convertedPaid = paymentData.totalPaid * invoiceExchangeRate;
+            remainingBalanceInBaseCurrency = baseAmountInBaseCurrency - convertedPaid;
+          }
+        }
+        
+        // Calculate late fees in base currency
+        let lateFeesInBaseCurrency = 0;
+        if (charges.hasLateFees && charges.lateFeeAmount > 0) {
+          // Convert late fees from invoice currency to base currency
+          if (invoiceCurrency === baseCurrency) {
+            lateFeesInBaseCurrency = charges.lateFeeAmount;
+          } else {
+            // Use exchange rate to convert late fees
+            lateFeesInBaseCurrency = charges.lateFeeAmount * invoiceExchangeRate;
+          }
+        }
+        
+        // Total payable = remaining balance + late fees (both in base currency)
+        const totalPayableInBaseCurrency = remainingBalanceInBaseCurrency + lateFeesInBaseCurrency;
+        
+        totalPayableAmount += totalPayableInBaseCurrency;
+        totalLateFees += lateFeesInBaseCurrency;
         
         // Check if overdue - optimized date comparison
         const effectiveDueDate = parseDateOnly(dueDate);
@@ -2724,32 +2873,44 @@ export default function DashboardOverview() {
       const invoiceCurrency = currency || baseCurrency;
       const invoiceExchangeRate = exchange_rate || 1.0;
       
+      // Calculate invoice base amount (used for both draft and write-off calculations)
+      // Priority: 1) base_currency_amount (most accurate), 2) check if exchange_rate is valid (not 1.0 when currencies differ), 3) use total if same currency
+      let invoiceBaseAmount: number;
+      if (base_currency_amount !== null && base_currency_amount !== undefined) {
+        // Use stored base_currency_amount (most accurate)
+        invoiceBaseAmount = base_currency_amount;
+      } else if (invoiceCurrency === baseCurrency) {
+        // Same currency, no conversion needed
+        invoiceBaseAmount = total;
+      } else if (invoiceExchangeRate && invoiceExchangeRate !== 1.0) {
+        // Valid exchange rate provided
+        invoiceBaseAmount = total * invoiceExchangeRate;
+        } else {
+          // Exchange rate is 1.0 but currencies differ - use total as fallback
+          invoiceBaseAmount = total;
+        }
+      
       if (invoice.status === 'draft') {
         // Convert draft amount to base currency
-        // Priority: 1) base_currency_amount (most accurate), 2) check if exchange_rate is valid (not 1.0 when currencies differ), 3) use total if same currency
-        let invoiceBaseAmount: number;
-        if (base_currency_amount !== null && base_currency_amount !== undefined) {
-          // Use stored base_currency_amount (most accurate)
-          invoiceBaseAmount = base_currency_amount;
-        } else if (invoiceCurrency === baseCurrency) {
-          // Same currency, no conversion needed
-          invoiceBaseAmount = total;
-        } else if (invoiceExchangeRate && invoiceExchangeRate !== 1.0) {
-          // Valid exchange rate provided
-          invoiceBaseAmount = total * invoiceExchangeRate;
-        } else {
-          // Exchange rate is 1.0 but currencies differ - this is invalid data
-          // Log warning and use total (will be incorrect, but better than crashing)
-          console.warn(`Invoice ${invoice.id} has invalid exchange rate: currency=${invoiceCurrency}, baseCurrency=${baseCurrency}, exchange_rate=${invoiceExchangeRate}`);
-          invoiceBaseAmount = total; // Fallback - user needs to update invoice with correct exchange rate
-        }
         draftAmount += invoiceBaseAmount;
       }
       if (writeOffAmount && writeOffAmount > 0) {
         // Convert write-off amount to base currency
-        // Write-off is in invoice currency, so convert it using the same exchange rate
-        const convertedWriteOff = invoiceCurrency === baseCurrency ? writeOffAmount : (writeOffAmount * invoiceExchangeRate);
-        totalWriteOff += convertedWriteOff;
+        // Write-off is in invoice currency, so we need to convert it
+        if (invoiceCurrency === baseCurrency) {
+          // Same currency, no conversion needed
+          totalWriteOff += writeOffAmount;
+        } else if (invoiceBaseAmount !== null && invoiceBaseAmount !== undefined && total > 0) {
+          // Use proportional conversion: (writeOff / total) * base_currency_amount
+          // This ensures accuracy using the stored base_currency_amount
+          const writeOffProportion = writeOffAmount / total;
+          const convertedWriteOff = writeOffProportion * invoiceBaseAmount;
+          totalWriteOff += convertedWriteOff;
+        } else {
+          // Fallback: use exchange rate if base_currency_amount not available
+          const convertedWriteOff = writeOffAmount * invoiceExchangeRate;
+          totalWriteOff += convertedWriteOff;
+        }
       }
     }
     
@@ -2762,7 +2923,7 @@ export default function DashboardOverview() {
       draftAmount,
       totalWriteOff
     };
-  }, [invoices, calculateDueCharges, parseDateOnly, paymentDataMap]);
+  }, [invoices, calculateDueCharges, parseDateOnly, paymentDataMap, settings?.baseCurrency]);
   
   // Extract individual values for easier access
   const { recentInvoices, totalRevenue, totalPayableAmount, overdueCount, totalLateFees, draftAmount, totalWriteOff } = dashboardStats;
@@ -5376,7 +5537,7 @@ export default function DashboardOverview() {
                           </div>
                           {/* Fixed height container for late fees - always reserves space for alignment */}
                           <div className="text-[9px] sm:text-[10px] lg:text-xs font-medium text-amber-600 text-left mt-0.5" style={{ display: 'block', height: '14px', minHeight: '14px', lineHeight: '14px' }}>
-                            {totalLateFees > 0 ? `(+$${totalLateFees.toFixed(2)} late fees)` : ''}
+                            {totalLateFees > 0 ? `(+${formatCurrencyForCards(totalLateFees, settings?.baseCurrency || 'USD')} late fees)` : ''}
                           </div>
                         </div>
                         <div className="flex items-center space-x-0.5 sm:space-x-1.5 justify-start leading-tight mt-auto">
@@ -5923,18 +6084,32 @@ export default function DashboardOverview() {
                  <div className="bg-gray-50 p-4">
                    {(() => {
                      const invoiceCurrency = selectedInvoice.currency || settings.baseCurrency || 'USD';
+                     // Calculate base remaining balance (without late fees) for display
+                     const baseRemainingBalance = Math.max(0, remainingBalance - lateFeesAmount);
                      return (
                        <>
                          <div className="flex items-center justify-between mb-2">
                            <span className="text-sm font-medium text-gray-700">Invoice Total</span>
                            <span className="text-lg font-semibold text-gray-900">{formatCurrencyForCards(selectedInvoice.total, invoiceCurrency)}</span>
                          </div>
+                         {lateFeesAmount > 0 && (
+                           <div className="flex items-center justify-between mb-2">
+                             <span className="text-sm font-medium text-red-700">Late Fees</span>
+                             <span className="text-lg font-semibold text-red-700">{formatCurrencyForCards(lateFeesAmount, invoiceCurrency)}</span>
+                           </div>
+                         )}
                          <div className="flex items-center justify-between mb-2">
                            <span className="text-sm font-medium text-gray-700">Total Paid</span>
                            <span className="text-lg font-semibold text-emerald-600">{formatCurrencyForCards(totalPaid, invoiceCurrency)}</span>
                          </div>
+                         {lateFeesAmount > 0 && (
+                           <div className="flex items-center justify-between mb-2">
+                             <span className="text-sm font-medium text-gray-700">Remaining Balance (Base)</span>
+                             <span className="text-lg font-semibold text-gray-900">{formatCurrencyForCards(baseRemainingBalance, invoiceCurrency)}</span>
+                           </div>
+                         )}
                          <div className="flex items-center justify-between mb-3">
-                           <span className="text-sm font-medium text-gray-700">Remaining Balance</span>
+                           <span className="text-sm font-medium text-gray-700">Total Payable</span>
                            <span className={`text-lg font-semibold ${remainingBalance > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
                              {formatCurrencyForCards(remainingBalance, invoiceCurrency)}
                            </span>
@@ -5973,7 +6148,10 @@ export default function DashboardOverview() {
                          placeholder="0.00"
                          required
                        />
-                       <p className="text-xs text-gray-500 mt-1">Max: {formatCurrencyForCards(remainingBalance, selectedInvoice.currency || settings.baseCurrency || 'USD')}</p>
+                       <p className="text-xs text-gray-500 mt-1">
+                         Max: {formatCurrencyForCards(remainingBalance, selectedInvoice.currency || settings.baseCurrency || 'USD')}
+                         {lateFeesAmount > 0 && ` (includes ${formatCurrencyForCards(lateFeesAmount, selectedInvoice.currency || settings.baseCurrency || 'USD')} late fees)`}
+                       </p>
                      </div>
                      <div>
                        <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -6243,10 +6421,13 @@ export default function DashboardOverview() {
                        // If invoice has write-off, treat it as paid
                        const isPaidWithWriteOff = isPaid && hasWriteOff;
                        
-                       // Show partial payments ONLY if payments are loaded AND there are actual payment records AND remaining balance
-                       // Keep showing even when invoice is marked as paid to preserve payment history
-                       const hasPartialPayments = hasActualPaymentRecords && !hasWriteOff && actualTotalPaid > 0 && actualRemainingBalance > 0;
-                       // Determine if it's a partial payment (has both paid and remaining)
+                       // Show partial payments ONLY if:
+                       // 1. Invoice is NOT marked as paid (status !== 'paid')
+                       // 2. Payments are loaded AND there are actual payment records
+                       // 3. There's a remaining balance > 0
+                       // When invoice is marked as paid, it's fully paid, not partial - even if payment history exists
+                       const hasPartialPayments = !isPaid && hasActualPaymentRecords && !hasWriteOff && actualTotalPaid > 0 && actualRemainingBalance > 0;
+                       // Determine if it's a partial payment (has both paid and remaining, AND status is not 'paid')
                        const isPartialPayment = hasPartialPayments;
                        
                        // Determine status for color coding
@@ -6281,23 +6462,30 @@ export default function DashboardOverview() {
                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Subtotal:</td>
                              <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(selectedInvoice.subtotal || 0, invoiceCurrency)}</td>
                            </tr>
-                           <tr>
-                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
-                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
-                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Discount:</td>
-                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(selectedInvoice.discount || 0, invoiceCurrency)}</td>
-                           </tr>
-                           <tr>
-                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
-                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
-                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Tax ({selectedInvoice.taxRate ? selectedInvoice.taxRate.toFixed(2) : '0'}%):</td>
-                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(selectedInvoice.taxAmount || 0, invoiceCurrency)}</td>
-                           </tr>
+                           {(selectedInvoice.discount || 0) > 0 && (
+                             <tr>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Discount:</td>
+                               <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(selectedInvoice.discount || 0, invoiceCurrency)}</td>
+                             </tr>
+                           )}
+                           {(selectedInvoice.taxAmount || 0) > 0 && (
+                             <tr>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
+                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Tax ({selectedInvoice.taxRate ? selectedInvoice.taxRate.toFixed(2) : '0'}%):</td>
+                               <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(selectedInvoice.taxAmount || 0, invoiceCurrency)}</td>
+                             </tr>
+                           )}
                           <tr>
                             <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm border-t border-gray-200 pt-2 ${totalStatusColor}`}></td>
                             <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm border-t border-gray-200 pt-2 ${totalStatusColor}`}></td>
                             <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>Total:</td>
                             <td className={`px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>{formatCurrencyForCards(selectedInvoice.total || 0, invoiceCurrency)}</td>
+                          </tr>
+                          <tr>
+                            <td colSpan={4} className="px-2 sm:px-4 py-1" style={{ borderBottom: '1px solid #e5e7eb' }}></td>
                           </tr>
                           {hasWriteOff ? (
                              <tr>
@@ -6307,88 +6495,129 @@ export default function DashboardOverview() {
                                <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 font-semibold text-right" style={{ borderTop: 'none' }}>-{formatCurrencyForCards(selectedInvoice.writeOffAmount || 0, invoiceCurrency)}</td>
                              </tr>
                            ) : null}
-                           {/* Show complete payment history for audit trail - always show partial payments and charges if they exist */}
+                          {/* Show Partial Paid ONLY when invoice is NOT fully paid (status !== 'paid') */}
+                          {/* When invoice is marked as paid, it's fully paid - don't show as partial */}
+                          {(() => {
+                            if (!isPaid && !loadingPayments && hasActualPaymentRecords && !hasWriteOff && actualTotalPaid > 0 && actualRemainingBalance > 0) {
+                              return (
+                                <tr>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-blue-600" style={{ borderTop: 'none' }}></td>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-blue-600" style={{ borderTop: 'none' }}></td>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-blue-600 text-right" style={{ borderTop: 'none' }}>
+                                    Partial Paid:
+                                  </td>
+                                  <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-blue-600 text-right" style={{ borderTop: 'none' }}>
+                                    {formatCurrencyForCards(actualTotalPaid, invoiceCurrency)}
+                                  </td>
+                                </tr>
+                              );
+                            }
+                            return null;
+                          })()}
+                          {/* Show Amount Paid ONLY for fully paid invoices WITHOUT partial payment history */}
+                          {(() => {
+                            if (isPaid && !hasWriteOff && (!hasActualPaymentRecords || actualTotalPaid === 0)) {
+                              return (
+                                <tr>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-emerald-700 border-t border-gray-200 pt-2"></td>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-emerald-700 border-t border-gray-200 pt-2"></td>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-emerald-700 text-right border-t border-gray-200 pt-2">Amount Paid:</td>
+                                  <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-emerald-700 text-right border-t border-gray-200 pt-2">
+                                    {formatCurrencyForCards(selectedInvoice.total || 0, invoiceCurrency)}
+                                  </td>
+                                </tr>
+                              );
+                            }
+                            return null;
+                          })()}
+                           {/* Always show late fees if they were applied (for audit trail and tracking) - ONLY when amount > 0 */}
                            {(() => {
-                             // Show partial payments if they exist (for audit trail and tracking)
-                             if (!loadingPayments && hasActualPaymentRecords && !hasWriteOff && actualTotalPaid > 0) {
+                             if (dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0) {
                                return (
                                  <tr>
-                                   <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-blue-600" style={{ borderTop: 'none' }}></td>
-                                   <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-blue-600" style={{ borderTop: 'none' }}></td>
-                                   <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-blue-600 text-right" style={{ borderTop: 'none' }}>
-                                     Partial Paid:
-                                   </td>
-                                   <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-blue-600 text-right" style={{ borderTop: 'none' }}>
-                                     {formatCurrencyForCards(actualTotalPaid, invoiceCurrency)}
-                                   </td>
+                                   <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
+                                   <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
+                                   <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 text-right" style={{ borderTop: 'none' }}>Late Fees:</td>
+                                   <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 font-semibold text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(dueCharges.lateFeeAmount, invoiceCurrency)}</td>
                                  </tr>
                                );
                              }
-                             
-                             // Show remaining balance only for unpaid invoices (sent/overdue status)
-                             if (!isPaid && !loadingPayments && hasActualPaymentRecords && !hasWriteOff && actualRemainingBalance > 0) {
-                               const invoiceStatus = selectedInvoice.status || 'draft';
-                               const showRemainingBalance = (invoiceStatus === 'sent' || invoiceStatus === 'overdue');
-                               
-                               if (showRemainingBalance) {
-                                 return (
-                                   <tr>
-                                     <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
-                                     <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
-                                     <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 text-right" style={{ borderTop: 'none' }}>Remaining Balance:</td>
-                                     <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 font-semibold text-right" style={{ borderTop: 'none' }}>
-                                       {formatCurrencyForCards(actualRemainingBalance, invoiceCurrency)}
-                                     </td>
-                                   </tr>
-                                 );
-                               }
-                             }
-                             
-                             // If invoice is fully paid and no partial payments recorded, show Amount Paid
-                             if (isPaid && !hasWriteOff && (!hasActualPaymentRecords || actualTotalPaid === 0)) {
-                               return (
-                                 <tr>
-                                   <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-emerald-700 border-t border-gray-200 pt-2"></td>
-                                   <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-emerald-700 border-t border-gray-200 pt-2"></td>
-                                   <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-emerald-700 text-right border-t border-gray-200 pt-2">Amount Paid:</td>
-                                   <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-emerald-700 text-right border-t border-gray-200 pt-2">
-                                     {formatCurrencyForCards(selectedInvoice.total || 0, invoiceCurrency)}
-                                   </td>
-                                 </tr>
-                               );
-                             }
-                             
                              return null;
                            })()}
-                           {/* Always show late fees if they were applied (for audit trail and tracking) */}
-                           {dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 ? (
-                             <tr>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 text-right" style={{ borderTop: 'none' }}>Late Fees:</td>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 font-semibold text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(dueCharges.lateFeeAmount, invoiceCurrency)}</td>
-                             </tr>
-                           ) : null}
                            {/* Show Total Payable only if late fees exist and invoice is not fully paid */}
-                           {(dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 && !isPaid) ? (
-                             <tr>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">Total Payable:</td>
-                               <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">{formatCurrency(dueCharges.totalPayable, invoiceCurrency)}</td>
-                             </tr>
-                          ) : null}
+                           {(() => {
+                             if (dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 && !isPaid) {
+                               return (
+                                 <tr>
+                                   <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
+                                   <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
+                                   <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">Total Payable:</td>
+                                   <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">{formatCurrency(dueCharges.totalPayable, invoiceCurrency)}</td>
+                                 </tr>
+                               );
+                             }
+                             return null;
+                           })()}
+                          {/* Show Remaining Balance or Amount Due for sent invoices with partial payments */}
+                          {(() => {
+                            if (!isPaid && !hasWriteOff && hasActualPaymentRecords && actualTotalPaid > 0 && (selectedInvoice.status === 'sent' || selectedInvoice.status === 'overdue')) {
+                              // Calculate remaining amount: if late fees exist, use totalPayable (partial payment already deducted in remaining balance),
+                              // otherwise use invoice total - partial paid
+                              const hasLateFees = dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0;
+                              const remainingAmount = hasLateFees
+                                ? dueCharges.totalPayable  // Total Payable already accounts for partial payment in remaining balance calculation
+                                : (selectedInvoice.total || 0) - actualTotalPaid;
+                              
+                              if (remainingAmount > 0) {
+                                // Check if invoice is overdue
+                                const dueDateStatus = getDueDateStatus(
+                                  selectedInvoice.dueDate || '', 
+                                  selectedInvoice.status, 
+                                  selectedInvoice.paymentTerms,
+                                  (selectedInvoice as any).updatedAt
+                                );
+                                const isOverdue = dueDateStatus.status === 'overdue';
+                                
+                                return (
+                                  <tr>
+                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
+                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
+                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-orange-700 text-right" style={{ borderTop: 'none' }}>
+                                      {isOverdue ? 'Amount Due:' : 'Remaining Balance:'}
+                                    </td>
+                                    <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-orange-700 text-right" style={{ borderTop: 'none' }}>
+                                      {formatCurrencyForCards(remainingAmount, invoiceCurrency)}
+                                    </td>
+                                  </tr>
+                                );
+                              }
+                            }
+                            return null;
+                          })()}
                           {/* Show final settled amount if invoice is paid */}
-                          {isPaid && !hasWriteOff && (dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 || hasActualPaymentRecords) ? (
-                            <tr>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">Final Amount Settled:</td>
-                              <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">
-                                {formatCurrencyForCards(selectedInvoice.total || 0, invoiceCurrency)}
-                              </td>
-                            </tr>
-                          ) : null}
+                          {(() => {
+                            if (isPaid && !hasWriteOff && ((dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0) || hasActualPaymentRecords)) {
+                              // Calculate final settled amount: invoice total + late fees (if any)
+                              // Check for stored late fee amount first, then check if totalPaid > invoice.total (indicating late fees were paid)
+                              const lateFeeAmount = (selectedInvoice as any).lateFeeAmount || dueCharges.lateFeeAmount || 
+                                (hasActualPaymentRecords && actualTotalPaid > (selectedInvoice.total || 0) 
+                                  ? actualTotalPaid - (selectedInvoice.total || 0) 
+                                  : 0);
+                              const finalSettledAmount = (selectedInvoice.total || 0) + lateFeeAmount;
+                              
+                              return (
+                                <tr>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">Final Amount Settled:</td>
+                                  <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">
+                                    {formatCurrencyForCards(finalSettledAmount, invoiceCurrency)}
+                                  </td>
+                                </tr>
+                              );
+                            }
+                            return null;
+                          })()}
                           {/* Exchange Rate Information - Always shown at the end, after all other rows */}
                           {(() => {
                             const invoiceCurrencyLocal = selectedInvoice.currency || settings.baseCurrency || 'USD';
@@ -6736,6 +6965,22 @@ export default function DashboardOverview() {
              await refreshInvoices();
            }}
            getAuthHeaders={getAuthHeaders}
+         />
+       )}
+
+       {/* Mark as Paid Modal */}
+       {invoiceToMarkPaid && (
+         <MarkAsPaidModal
+           invoice={invoiceToMarkPaid}
+           isOpen={showMarkAsPaid}
+           onClose={() => {
+             setShowMarkAsPaid(false);
+             setInvoiceToMarkPaid(null);
+           }}
+           onConfirm={async (paymentMethod) => {
+             await performMarkAsPaid(invoiceToMarkPaid, paymentMethod);
+           }}
+           isLoading={loadingActions[`paid-${invoiceToMarkPaid.id}`]}
          />
        )}
 

@@ -18,6 +18,8 @@ import ModernSidebar from '@/components/ModernSidebar';
 import UnifiedInvoiceCard from '@/components/UnifiedInvoiceCard';
 import PartialPaymentModal from '@/components/PartialPaymentModal';
 import WriteOffModal from '@/components/WriteOffModal';
+import MarkAsPaidModal from '@/components/MarkAsPaidModal';
+import BulkMarkAsPaidModal from '@/components/BulkMarkAsPaidModal';
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -69,6 +71,10 @@ function InvoicesContent(): React.JSX.Element {
   const [showReminderDates, setShowReminderDates] = useState(false);
   const [showPartialPayment, setShowPartialPayment] = useState(false);
   const [showWriteOff, setShowWriteOff] = useState(false);
+  const [showMarkAsPaid, setShowMarkAsPaid] = useState(false);
+  const [invoiceToMarkPaid, setInvoiceToMarkPaid] = useState<Invoice | null>(null);
+  const [showBulkMarkAsPaid, setShowBulkMarkAsPaid] = useState(false);
+  const [invoicesToMarkPaid, setInvoicesToMarkPaid] = useState<Invoice[]>([]);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set());
   const [bulkActionMode, setBulkActionMode] = useState<'none' | 'send' | 'mark-paid'>('none');
@@ -616,16 +622,19 @@ function InvoicesContent(): React.JSX.Element {
           lateFeeAmount = (baseAmount * invoice.lateFees.amount) / 100;
         }
         
-        const totalPayable = baseAmount + lateFeeAmount;
-        return {
-          hasLateFees: true,
-          lateFeeAmount,
-          totalPayable,
-          overdueDays: chargeableDays,
-          totalPaid: paymentData?.totalPaid || 0,
-          remainingBalance: totalPayable,
-          isPartiallyPaid: (paymentData?.totalPaid || 0) > 0 && totalPayable > 0
-        };
+        // Only set hasLateFees to true if lateFeeAmount is actually greater than 0
+        if (lateFeeAmount > 0) {
+          const totalPayable = baseAmount + lateFeeAmount;
+          return {
+            hasLateFees: true,
+            lateFeeAmount,
+            totalPayable,
+            overdueDays: chargeableDays,
+            totalPaid: paymentData?.totalPaid || 0,
+            remainingBalance: totalPayable,
+            isPartiallyPaid: (paymentData?.totalPaid || 0) > 0 && totalPayable > 0
+          };
+        }
       }
     }
     
@@ -1192,26 +1201,61 @@ function InvoicesContent(): React.JSX.Element {
   }, []);
 
   const handleMarkAsPaid = useCallback((invoice: Invoice) => {
-    setConfirmationModal({
-      isOpen: true,
-      title: 'Mark Invoice as Paid',
-      message: `Are you sure you want to mark invoice ${invoice.invoiceNumber} as paid? This will update the invoice status and cannot be easily undone.`,
-      type: 'success',
-      onConfirm: () => performMarkAsPaid(invoice),
-      isLoading: false,
-      confirmText: 'Mark as Paid',
-      cancelText: 'Cancel',
-      infoBanner: undefined
-    });
+    setInvoiceToMarkPaid(invoice);
+    setShowMarkAsPaid(true);
   }, []);
 
-  const performMarkAsPaid = useCallback(async (invoice: Invoice) => {
+  const performMarkAsPaid = useCallback(async (invoice: Invoice, paymentMethod: string) => {
     const actionKey = `paid-${invoice.id}`;
     setLoadingActions(prev => ({ ...prev, [actionKey]: true }));
-    setConfirmationModal(prev => ({ ...prev, isLoading: true }));
     
     try {
       const headers = await getAuthHeaders();
+      
+      // First, fetch current payment data to get remaining balance and late fees
+      const paymentDataResponse = await fetch(`/api/invoices/${invoice.id}/payments`, {
+        headers
+      });
+
+      if (!paymentDataResponse.ok) {
+        showError('Payment Failed', 'Failed to fetch payment data. Please try again.');
+        return;
+      }
+
+      const paymentData = await paymentDataResponse.json();
+      const remainingBalance = paymentData.remainingBalance || 0;
+      const lateFeesAmount = paymentData.lateFeesAmount || 0;
+      
+      // Calculate the amount needed to fully pay: remaining balance + late fees
+      const amountToPay = remainingBalance + lateFeesAmount;
+
+      if (amountToPay <= 0) {
+        showError('Payment Failed', 'Invoice is already fully paid.');
+        return;
+      }
+
+      // Record the payment for the remaining balance + late fees
+      const paymentResponse = await fetch(`/api/invoices/${invoice.id}/payments`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: amountToPay, // Remaining balance + late fees
+          paymentDate: new Date().toISOString().split('T')[0],
+          paymentMethod: paymentMethod,
+          notes: 'Marked as paid'
+        })
+      });
+
+      if (!paymentResponse.ok) {
+        const error = await paymentResponse.json();
+        showError('Payment Failed', error.error || 'Failed to record payment. Please try again.');
+        return;
+      }
+
+      // Then mark invoice as paid
       const response = await fetch(`/api/invoices/${invoice.id}`, {
         method: 'PUT',
         headers: {
@@ -1234,20 +1278,19 @@ function InvoicesContent(): React.JSX.Element {
         // Refresh list to keep filters/pagination in sync
         try { await refreshInvoices(); } catch {}
         
-        showSuccess('Invoice Updated', `Invoice ${invoice.invoiceNumber} has been marked as paid.`);
-        setConfirmationModal(prev => ({ ...prev, isOpen: false, isLoading: false }));
+        showSuccess('Invoice Updated', `Invoice ${invoice.invoiceNumber} has been marked as paid and payment recorded.`);
+        setShowMarkAsPaid(false);
+        setInvoiceToMarkPaid(null);
       } else {
-        showError('Update Failed', 'Failed to mark invoice as paid. Please try again.');
-        setConfirmationModal(prev => ({ ...prev, isLoading: false }));
+        showError('Update Failed', 'Payment recorded but failed to mark invoice as paid. Please try again.');
       }
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
       showError('Update Failed', 'Failed to mark invoice as paid. Please try again.');
-      setConfirmationModal(prev => ({ ...prev, isLoading: false }));
     } finally {
       setLoadingActions(prev => ({ ...prev, [actionKey]: false }));
     }
-  }, [getAuthHeaders, showSuccess, showError]);
+  }, [getAuthHeaders, showSuccess, showError, updateInvoice, refreshInvoices]);
 
   const handleDeleteInvoice = useCallback((invoice: Invoice) => {
     setConfirmationModal({
@@ -1444,35 +1487,16 @@ function InvoicesContent(): React.JSX.Element {
       return;
     }
     
-    const invoiceNumbers = selectedInvoiceList.map(inv => inv.invoiceNumber);
-    const count = selectedInvoiceList.length;
-    const displayNumbers = count <= 10 
-      ? invoiceNumbers.join(', ')
-      : `${invoiceNumbers.slice(0, 10).join(', ')} and ${count - 10} more`;
-    
-    setConfirmationModal({
-      isOpen: true,
-      title: 'Mark Invoices as Paid',
-      message: `Are you sure you want to mark ${count} invoice${count !== 1 ? 's' : ''} as paid? This will update the invoice status and cannot be easily undone.`,
-      type: 'success',
-      onConfirm: () => performBulkMarkPaid(),
-      isLoading: false,
-      confirmText: 'Mark as Paid',
-      cancelText: 'Cancel',
-      infoBanner: (
-        <div className="mt-2 text-sm text-gray-600">
-          <strong>Invoices to mark as paid:</strong> {displayNumbers}
-        </div>
-      )
-    });
+    setInvoicesToMarkPaid(selectedInvoiceList);
+    setShowBulkMarkAsPaid(true);
   }, [selectedInvoices, invoices, showError]);
 
-  const performBulkMarkPaid = useCallback(async () => {
+  const performBulkMarkPaid = useCallback(async (paymentMethods: Record<string, string>) => {
     if (selectedInvoices.size === 0) return;
     
     setBulkActionLoading(true);
     setBulkActionMode('mark-paid');
-    setConfirmationModal(prev => ({ ...prev, isLoading: true }));
+    setShowBulkMarkAsPaid(false);
     
     try {
       const headers = await getAuthHeaders();
@@ -1482,7 +1506,10 @@ function InvoicesContent(): React.JSX.Element {
           ...headers,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ invoiceIds: Array.from(selectedInvoices) }),
+        body: JSON.stringify({ 
+          invoiceIds: Array.from(selectedInvoices),
+          paymentMethods: paymentMethods
+        }),
       });
 
       if (response.ok) {
@@ -1491,17 +1518,17 @@ function InvoicesContent(): React.JSX.Element {
         setSelectedInvoices(new Set());
         setBulkActionMode('none');
         setBulkSelectionMode(false);
-        setConfirmationModal(prev => ({ ...prev, isOpen: false, isLoading: false }));
+        setInvoicesToMarkPaid([]);
         await refreshInvoices();
       } else {
         const error = await response.json();
         showError('Bulk Mark Paid Failed', error.error || 'Failed to mark invoices as paid');
-        setConfirmationModal(prev => ({ ...prev, isLoading: false }));
+        setShowBulkMarkAsPaid(true);
       }
     } catch (error) {
       console.error('Error in bulk mark paid:', error);
       showError('Bulk Mark Paid Failed', 'Failed to mark invoices as paid. Please try again.');
-      setConfirmationModal(prev => ({ ...prev, isLoading: false }));
+      setShowBulkMarkAsPaid(true);
     } finally {
       setBulkActionLoading(false);
     }
@@ -3288,11 +3315,13 @@ function InvoicesContent(): React.JSX.Element {
                       // If invoice has write-off, treat it as paid
                       const isPaidWithWriteOff = isPaid && hasWriteOff;
                       
-                      // Show partial payments ONLY if payments are loaded AND there are actual payment records AND remaining balance
-                      // Keep showing even when invoice is marked as paid to preserve payment history
-                      // Only show if we have actual payment records (not just paymentDataMap) to ensure accuracy
-                      const hasPartialPayments = hasActualPaymentRecords && !hasWriteOff && actualTotalPaid > 0 && actualRemainingBalance > 0;
-                      // Determine if it's a partial payment (has both paid and remaining)
+                      // Show partial payments ONLY if:
+                      // 1. Invoice is NOT marked as paid (status !== 'paid')
+                      // 2. Payments are loaded AND there are actual payment records
+                      // 3. There's a remaining balance > 0
+                      // When invoice is marked as paid, it's fully paid, not partial - even if payment history exists
+                      const hasPartialPayments = !isPaid && hasActualPaymentRecords && !hasWriteOff && actualTotalPaid > 0 && actualRemainingBalance > 0;
+                      // Determine if it's a partial payment (has both paid and remaining, AND status is not 'paid')
                       const isPartialPayment = hasPartialPayments;
                       
                       // Determine status for color coding
@@ -3328,23 +3357,30 @@ function InvoicesContent(): React.JSX.Element {
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Subtotal:</td>
                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(selectedInvoice.subtotal || 0, invoiceCurrency)}</td>
                           </tr>
+                          {(selectedInvoice.discount || 0) > 0 && (
                           <tr>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Discount:</td>
                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(selectedInvoice.discount || 0, invoiceCurrency)}</td>
                           </tr>
+                          )}
+                          {(selectedInvoice.taxAmount || 0) > 0 && (
                           <tr>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700" style={{ borderTop: 'none' }}></td>
                             <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-gray-700 text-right" style={{ borderTop: 'none' }}>Tax ({selectedInvoice.taxRate ? selectedInvoice.taxRate.toFixed(2) : '0'}%):</td>
                             <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-gray-900 text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(selectedInvoice.taxAmount || 0, invoiceCurrency)}</td>
                           </tr>
+                          )}
                           <tr>
                             <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm border-t border-gray-200 pt-2 ${totalStatusColor}`}></td>
                             <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm border-t border-gray-200 pt-2 ${totalStatusColor}`}></td>
                             <td className={`px-2 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>Total:</td>
                             <td className={`px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-right border-t border-gray-200 pt-2 ${totalStatusColor}`}>{formatCurrencyForCards(selectedInvoice.total || 0, invoiceCurrency)}</td>
+                          </tr>
+                          <tr>
+                            <td colSpan={4} className="px-2 sm:px-4 py-1" style={{ borderBottom: '1px solid #e5e7eb' }}></td>
                           </tr>
                           {hasWriteOff ? (
                             <tr>
@@ -3354,10 +3390,10 @@ function InvoicesContent(): React.JSX.Element {
                               <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm text-slate-700 font-semibold text-right" style={{ borderTop: 'none' }}>-{formatCurrencyForCards(selectedInvoice.writeOffAmount || 0, invoiceCurrency)}</td>
                             </tr>
                           ) : null}
-                          {/* Show complete payment history for audit trail - always show partial payments and charges if they exist */}
+                          {/* Show Partial Paid ONLY when invoice is NOT fully paid (status !== 'paid') */}
+                          {/* When invoice is marked as paid, it's fully paid - don't show as partial */}
                           {(() => {
-                            // Show partial payments if they exist (for audit trail and tracking)
-                            if (!loadingPayments && hasActualPaymentRecords && !hasWriteOff && actualTotalPaid > 0) {
+                            if (!isPaid && !loadingPayments && hasActualPaymentRecords && !hasWriteOff && actualTotalPaid > 0 && actualRemainingBalance > 0) {
                               return (
                                 <tr>
                                   <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-blue-600" style={{ borderTop: 'none' }}></td>
@@ -3371,27 +3407,10 @@ function InvoicesContent(): React.JSX.Element {
                                 </tr>
                               );
                             }
-                            
-                            // Show remaining balance only for unpaid invoices (sent/overdue status)
-                            if (!isPaid && !loadingPayments && hasActualPaymentRecords && !hasWriteOff && actualRemainingBalance > 0) {
-                              const invoiceStatus = selectedInvoice.status || 'draft';
-                              const showRemainingBalance = (invoiceStatus === 'sent' || invoiceStatus === 'overdue');
-                              
-                              if (showRemainingBalance) {
-                                return (
-                                  <tr>
-                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
-                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
-                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 text-right" style={{ borderTop: 'none' }}>Remaining Balance:</td>
-                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700 font-semibold text-right" style={{ borderTop: 'none' }}>
-                                      {formatCurrencyForCards(actualRemainingBalance, invoiceCurrency)}
-                                    </td>
-                                  </tr>
-                                );
-                              }
-                            }
-                            
-                            // If invoice is fully paid and no partial payments recorded, show Amount Paid
+                            return null;
+                          })()}
+                          {/* Show Amount Paid ONLY for fully paid invoices WITHOUT partial payment history */}
+                          {(() => {
                             if (isPaid && !hasWriteOff && (!hasActualPaymentRecords || actualTotalPaid === 0)) {
                               return (
                                 <tr>
@@ -3404,38 +3423,90 @@ function InvoicesContent(): React.JSX.Element {
                                 </tr>
                               );
                             }
-                            
                             return null;
                           })()}
-                          {/* Always show late fees if they were applied (for audit trail and tracking) */}
-                          {dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 ? (
-                            <tr>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 text-right" style={{ borderTop: 'none' }}>Late Fees:</td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 font-semibold text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(dueCharges.lateFeeAmount, invoiceCurrency)}</td>
-                            </tr>
-                          ) : null}
+                          {/* Always show late fees if they were applied (for audit trail and tracking) - ONLY when amount > 0 */}
+                          {(() => {
+                            if (dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0) {
+                              return (
+                                <tr>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700" style={{ borderTop: 'none' }}></td>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 text-right" style={{ borderTop: 'none' }}>Late Fees:</td>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-red-700 font-semibold text-right" style={{ borderTop: 'none' }}>{formatCurrencyForCards(dueCharges.lateFeeAmount, invoiceCurrency)}</td>
+                                </tr>
+                              );
+                            }
+                            return null;
+                          })()}
                           {/* Show Total Payable only if late fees exist and invoice is not fully paid */}
-                          {(dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 && !isPaid) ? (
-                            <tr>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">Total Payable:</td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">{formatCurrencyForCards(dueCharges.totalPayable, invoiceCurrency)}</td>
-                            </tr>
-                          ) : null}
+                          {(() => {
+                            if (dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 && !isPaid) {
+                              return (
+                                <tr>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 border-t border-gray-200 pt-2"></td>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">Total Payable:</td>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-red-900 text-right border-t border-gray-200 pt-2">{formatCurrencyForCards(dueCharges.totalPayable, invoiceCurrency)}</td>
+                                </tr>
+                              );
+                            }
+                            return null;
+                          })()}
+                          {/* Show Remaining Balance or Amount Due for sent invoices with partial payments */}
+                          {(() => {
+                            if (!isPaid && !hasWriteOff && hasActualPaymentRecords && actualTotalPaid > 0 && (selectedInvoice.status === 'sent' || selectedInvoice.status === 'overdue')) {
+                              // Calculate remaining amount: if late fees exist, use totalPayable (partial payment already deducted in remaining balance),
+                              // otherwise use invoice total - partial paid
+                              const hasLateFees = dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0;
+                              const remainingAmount = hasLateFees
+                                ? dueCharges.totalPayable  // Total Payable already accounts for partial payment in remaining balance calculation
+                                : (selectedInvoice.total || 0) - actualTotalPaid;
+                              
+                              if (remainingAmount > 0) {
+                                // Check if invoice is overdue
+                                const isOverdue = dueDateStatus.status === 'overdue';
+                                
+                                return (
+                                  <tr>
+                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
+                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm text-orange-700" style={{ borderTop: 'none' }}></td>
+                                    <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-orange-700 text-right" style={{ borderTop: 'none' }}>
+                                      {isOverdue ? 'Amount Due:' : 'Remaining Balance:'}
+                                    </td>
+                                    <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-orange-700 text-right" style={{ borderTop: 'none' }}>
+                                      {formatCurrencyForCards(remainingAmount, invoiceCurrency)}
+                                    </td>
+                                  </tr>
+                                );
+                              }
+                            }
+                            return null;
+                          })()}
                           {/* Show final settled amount if invoice is paid */}
-                          {isPaid && !hasWriteOff && (dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0 || hasActualPaymentRecords) ? (
-                            <tr>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
-                              <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">Final Amount Settled:</td>
-                              <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">
-                                {formatCurrencyForCards(selectedInvoice.total || 0, invoiceCurrency)}
-                              </td>
-                            </tr>
-                          ) : null}
+                          {(() => {
+                            if (isPaid && !hasWriteOff && ((dueCharges.hasLateFees && dueCharges.lateFeeAmount > 0) || hasActualPaymentRecords)) {
+                              // Calculate final settled amount: invoice total + late fees (if any)
+                              // Check for stored late fee amount first, then check if totalPaid > invoice.total (indicating late fees were paid)
+                              const lateFeeAmount = (selectedInvoice as any).lateFeeAmount || dueCharges.lateFeeAmount || 
+                                (hasActualPaymentRecords && actualTotalPaid > (selectedInvoice.total || 0) 
+                                  ? actualTotalPaid - (selectedInvoice.total || 0) 
+                                  : 0);
+                              const finalSettledAmount = (selectedInvoice.total || 0) + lateFeeAmount;
+                              
+                              return (
+                                <tr>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 border-t border-gray-200 pt-2"></td>
+                                  <td className="px-2 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">Final Amount Settled:</td>
+                                  <td className="px-2 pl-4 sm:px-4 py-1 text-xs sm:text-sm font-bold text-emerald-700 text-right border-t border-gray-200 pt-2">
+                                    {formatCurrencyForCards(finalSettledAmount, invoiceCurrency)}
+                                  </td>
+                                </tr>
+                              );
+                            }
+                            return null;
+                          })()}
                           {/* Exchange Rate Information - Always shown at the end, after all other rows */}
                           {(() => {
                             const invoiceCurrencyLocal = selectedInvoice.currency || settings.baseCurrency || 'USD';
@@ -3825,6 +3896,38 @@ function InvoicesContent(): React.JSX.Element {
             await refreshInvoices();
           }}
           getAuthHeaders={getAuthHeaders}
+        />
+      )}
+
+      {/* Mark as Paid Modal */}
+      {invoiceToMarkPaid && (
+        <MarkAsPaidModal
+          invoice={invoiceToMarkPaid}
+          isOpen={showMarkAsPaid}
+          onClose={() => {
+            setShowMarkAsPaid(false);
+            setInvoiceToMarkPaid(null);
+          }}
+          onConfirm={async (paymentMethod) => {
+            await performMarkAsPaid(invoiceToMarkPaid, paymentMethod);
+          }}
+          isLoading={loadingActions[`paid-${invoiceToMarkPaid.id}`]}
+        />
+      )}
+
+      {/* Bulk Mark as Paid Modal */}
+      {invoicesToMarkPaid.length > 0 && (
+        <BulkMarkAsPaidModal
+          invoices={invoicesToMarkPaid}
+          isOpen={showBulkMarkAsPaid}
+          onClose={() => {
+            setShowBulkMarkAsPaid(false);
+            setInvoicesToMarkPaid([]);
+          }}
+          onConfirm={async (paymentMethods) => {
+            await performBulkMarkPaid(paymentMethods);
+          }}
+          isLoading={bulkActionLoading}
         />
       )}
 

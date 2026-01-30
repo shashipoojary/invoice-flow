@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { fetchExchangeRate } from '@/lib/currency';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -40,7 +41,8 @@ export async function GET(request: NextRequest) {
       businessEmail: settings.business_email || '',
       businessPhone: settings.business_phone || '',
       address: settings.business_address || '',
-      website: settings.website || '',
+      taxId: settings.tax_id || '',
+      isTaxRegistered: settings.is_tax_registered || false,
       logo: settings.logo || settings.logo_url || '', // Only use logo_url as fallback if logo is null/empty
       paypalEmail: settings.paypal_email || '',
       cashappId: settings.cashapp_id || '',
@@ -58,7 +60,8 @@ export async function GET(request: NextRequest) {
       businessEmail: '',
       businessPhone: '',
       address: '',
-      website: '',
+      taxId: '',
+      isTaxRegistered: false,
       logo: '',
       paypalEmail: '',
       cashappId: '',
@@ -113,7 +116,8 @@ export async function POST(request: NextRequest) {
       business_email: settingsData.businessEmail || user.email || '',
       business_phone: settingsData.businessPhone || '',
       business_address: settingsData.address || '',
-      website: settingsData.website || '',
+      tax_id: settingsData.taxId || '',
+      is_tax_registered: settingsData.isTaxRegistered || false,
       logo: settingsData.logo && settingsData.logo.trim() !== '' ? settingsData.logo : null, // Set to null if empty
       logo_url: settingsData.logo && settingsData.logo.trim() !== '' ? settingsData.logo : null, // Also clear logo_url to prevent fallback
       paypal_email: settingsData.paypalEmail || '',
@@ -164,6 +168,196 @@ export async function POST(request: NextRequest) {
       } else if (isChangingCurrency && hasCreatedInvoices) {
         // User has created invoices, allow currency change (they can change after first invoice)
         // This is the expected behavior
+        
+        // Convert all existing invoices and estimates to the new base currency
+        // IMPORTANT: We do NOT change the invoice/estimate currency itself - that stays as-is
+        // We only update exchange_rate and base_currency_amount to reflect the new base currency
+        const oldBaseCurrency = existingSettings.base_currency;
+        const newBaseCurrency = settings.base_currency;
+        
+        // Get the exchange rate provided by user (from old base to new base)
+        const userProvidedExchangeRate = settingsData.exchangeRate ? parseFloat(settingsData.exchangeRate.toString()) : null;
+        
+        // Fetch all invoices
+        const { data: invoices, error: invoicesError } = await supabase
+          .from('invoices')
+          .select('id, currency, total, exchange_rate, base_currency_amount')
+          .eq('user_id', user.id);
+        
+        if (invoicesError) {
+          console.error('Error fetching invoices for conversion:', invoicesError);
+        } else if (invoices && invoices.length > 0) {
+          // Process each invoice
+          for (const invoice of invoices) {
+            // Get invoice currency - this NEVER changes, it's what the invoice was sent in
+            const invoiceCurrency = invoice.currency || oldBaseCurrency;
+            let newExchangeRate = 1.0;
+            let newBaseCurrencyAmount = invoice.total;
+            
+            if (invoiceCurrency === newBaseCurrency) {
+              // Invoice currency matches new base currency - no conversion needed
+              newExchangeRate = 1.0;
+              newBaseCurrencyAmount = invoice.total;
+            } else {
+              // Invoice currency differs from new base currency - need to recalculate conversion
+              
+              // First, check if invoice was in the old base currency
+              if (invoiceCurrency === oldBaseCurrency) {
+                // Invoice was in old base currency - use user-provided exchange rate
+                if (userProvidedExchangeRate && userProvidedExchangeRate > 0) {
+                  newExchangeRate = userProvidedExchangeRate;
+                  newBaseCurrencyAmount = Math.round((invoice.total * userProvidedExchangeRate) * 100) / 100;
+                  } else {
+                    // Fallback: try to fetch exchange rate
+                    const oldToNewRate = await fetchExchangeRate(oldBaseCurrency, newBaseCurrency);
+                    if (oldToNewRate && oldToNewRate > 0) {
+                      newExchangeRate = oldToNewRate;
+                      newBaseCurrencyAmount = Math.round((invoice.total * oldToNewRate) * 100) / 100;
+                    } else {
+                      // Skip this invoice if we can't get exchange rate
+                      continue;
+                    }
+                  }
+              } else {
+                // Invoice was in a different currency - need to convert via old base currency
+                // Example: Invoice in EUR, old base USD, new base INR
+                // We know EUR -> USD (old exchange_rate), need USD -> INR (user-provided rate)
+                const oldExchangeRate = invoice.exchange_rate || 1.0;
+                const oldBaseAmount = invoice.base_currency_amount || (invoice.total * oldExchangeRate);
+                
+                // Use user-provided rate from old base to new base
+                if (userProvidedExchangeRate && userProvidedExchangeRate > 0) {
+                  // Calculate new exchange rate: invoice currency -> old base -> new base
+                  // newExchangeRate = (invoice -> old base) * (old base -> new base)
+                  newExchangeRate = oldExchangeRate * userProvidedExchangeRate;
+                  // Convert old base amount to new base amount
+                  newBaseCurrencyAmount = Math.round((oldBaseAmount * userProvidedExchangeRate) * 100) / 100;
+                } else {
+                  // Fallback: try to fetch exchange rate
+                  const oldToNewRate = await fetchExchangeRate(oldBaseCurrency, newBaseCurrency);
+                  if (oldToNewRate && oldToNewRate > 0) {
+                    newExchangeRate = oldExchangeRate * oldToNewRate;
+                    newBaseCurrencyAmount = Math.round((oldBaseAmount * oldToNewRate) * 100) / 100;
+                  } else {
+                    // Try direct conversion as last resort
+                    const directRate = await fetchExchangeRate(invoiceCurrency, newBaseCurrency);
+                    if (directRate && directRate > 0) {
+                      newExchangeRate = directRate;
+                      newBaseCurrencyAmount = Math.round((invoice.total * directRate) * 100) / 100;
+                    } else {
+                      // Skip this invoice if we can't get exchange rate
+                      continue;
+                    }
+                  }
+                }
+              }
+            }
+            
+            // Update ONLY exchange_rate and base_currency_amount - currency field stays unchanged
+            const { error: updateError } = await supabase
+              .from('invoices')
+              .update({
+                exchange_rate: newExchangeRate,
+                base_currency_amount: newBaseCurrencyAmount,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', invoice.id)
+              .eq('user_id', user.id);
+            
+            if (updateError) {
+              console.error(`Error updating invoice ${invoice.id}:`, updateError);
+            }
+          }
+        }
+        
+        // Fetch all estimates
+        const { data: estimates, error: estimatesError } = await supabase
+          .from('estimates')
+          .select('id, currency, total, exchange_rate, base_currency_amount')
+          .eq('user_id', user.id);
+        
+        if (estimatesError) {
+          console.error('Error fetching estimates for conversion:', estimatesError);
+        } else if (estimates && estimates.length > 0) {
+          // Process each estimate
+          for (const estimate of estimates) {
+            // Get estimate currency - this NEVER changes, it's what the estimate was sent in
+            const estimateCurrency = estimate.currency || oldBaseCurrency;
+            let newExchangeRate = 1.0;
+            let newBaseCurrencyAmount = estimate.total;
+            
+            if (estimateCurrency === newBaseCurrency) {
+              // Estimate currency matches new base currency - no conversion needed
+              newExchangeRate = 1.0;
+              newBaseCurrencyAmount = estimate.total;
+            } else {
+              // Estimate currency differs from new base currency - need to recalculate conversion
+              
+              // First, check if estimate was in the old base currency
+              if (estimateCurrency === oldBaseCurrency) {
+                // Estimate was in old base currency - use user-provided exchange rate
+                if (userProvidedExchangeRate && userProvidedExchangeRate > 0) {
+                  newExchangeRate = userProvidedExchangeRate;
+                  newBaseCurrencyAmount = Math.round((estimate.total * userProvidedExchangeRate) * 100) / 100;
+                  } else {
+                    // Fallback: try to fetch exchange rate
+                    const oldToNewRate = await fetchExchangeRate(oldBaseCurrency, newBaseCurrency);
+                    if (oldToNewRate && oldToNewRate > 0) {
+                      newExchangeRate = oldToNewRate;
+                      newBaseCurrencyAmount = Math.round((estimate.total * oldToNewRate) * 100) / 100;
+                    } else {
+                      // Skip this estimate if we can't get exchange rate
+                      continue;
+                    }
+                  }
+              } else {
+                // Estimate was in a different currency - need to convert via old base currency
+                const oldExchangeRate = estimate.exchange_rate || 1.0;
+                const oldBaseAmount = estimate.base_currency_amount || (estimate.total * oldExchangeRate);
+                
+                // Use user-provided rate from old base to new base
+                if (userProvidedExchangeRate && userProvidedExchangeRate > 0) {
+                  // Calculate new exchange rate: estimate currency -> old base -> new base
+                  newExchangeRate = oldExchangeRate * userProvidedExchangeRate;
+                  // Convert old base amount to new base amount
+                  newBaseCurrencyAmount = Math.round((oldBaseAmount * userProvidedExchangeRate) * 100) / 100;
+                } else {
+                  // Fallback: try to fetch exchange rate
+                  const oldToNewRate = await fetchExchangeRate(oldBaseCurrency, newBaseCurrency);
+                  if (oldToNewRate && oldToNewRate > 0) {
+                    newExchangeRate = oldExchangeRate * oldToNewRate;
+                    newBaseCurrencyAmount = Math.round((oldBaseAmount * oldToNewRate) * 100) / 100;
+                  } else {
+                    // Try direct conversion as last resort
+                    const directRate = await fetchExchangeRate(estimateCurrency, newBaseCurrency);
+                    if (directRate && directRate > 0) {
+                      newExchangeRate = directRate;
+                      newBaseCurrencyAmount = Math.round((estimate.total * directRate) * 100) / 100;
+                    } else {
+                      // Skip this estimate if we can't get exchange rate
+                      continue;
+                    }
+                  }
+                }
+              }
+            }
+            
+            // Update ONLY exchange_rate and base_currency_amount - currency field stays unchanged
+            const { error: updateError } = await supabase
+              .from('estimates')
+              .update({
+                exchange_rate: newExchangeRate,
+                base_currency_amount: newBaseCurrencyAmount,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', estimate.id)
+              .eq('user_id', user.id);
+            
+            if (updateError) {
+              console.error(`Error updating estimate ${estimate.id}:`, updateError);
+            }
+          }
+        }
       }
       
       // Update existing settings

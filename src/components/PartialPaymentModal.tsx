@@ -82,10 +82,14 @@ export default function PartialPaymentModal({
       return;
     }
 
-    // Check against total payable (including late fees), not just remaining balance
-    const maxPayment = totalPayable - totalPaid;
-    if (parseFloat(amount) > maxPayment) {
-      alert(`Payment amount cannot exceed total payable (including late fees) of ${formatCurrency(maxPayment, invoice.currency || 'USD')}`);
+    // Calculate what's actually owed now: remaining balance + late fees
+    // The API returns totalPayable which is invoice.total + lateFeesAmount
+    // But what's actually owed = remainingBalance + lateFeesAmount
+    const actualTotalPayable = remainingBalance + lateFeesAmount;
+    
+    // Check against what's actually owed (remaining balance + late fees)
+    if (parseFloat(amount) > actualTotalPayable) {
+      alert(`Payment amount cannot exceed total payable (including late fees) of ${formatCurrency(actualTotalPayable, invoice.currency || 'USD')}`);
       return;
     }
 
@@ -247,14 +251,14 @@ export default function PartialPaymentModal({
                   type="number"
                   step="0.01"
                   min="0.01"
-                  max={totalPayable - totalPaid}
+                  max={remainingBalance + lateFeesAmount}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="0.00"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">Max: ${(totalPayable - totalPaid).toFixed(2)} {lateFeesAmount > 0 ? '(including late fees)' : ''}</p>
+                <p className="text-xs text-gray-500 mt-1">Max: ${(remainingBalance + lateFeesAmount).toFixed(2)} {lateFeesAmount > 0 ? '(remaining balance + late fees)' : ''}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">

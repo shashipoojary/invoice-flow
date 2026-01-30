@@ -262,6 +262,7 @@ export default function QuickInvoiceModal({
     dueDate?: string
     issueDate?: string
     exchangeRate?: string
+    taxRate?: string
   }>({})
   
   // Invoice basic details
@@ -294,7 +295,7 @@ export default function QuickInvoiceModal({
         address: settings.address || '',
         phone: settings.businessPhone || '',
         email: settings.businessEmail || '',
-        website: settings.website || '',
+        website: undefined, // Deprecated - replaced with taxId
         paymentDetails: {
           paypal: settings.paypalEmail || '',
           bankAccount: settings.bankAccount || '',
@@ -315,7 +316,7 @@ export default function QuickInvoiceModal({
         address: settings.address || '',
         phone: settings.businessPhone || '',
         email: settings.businessEmail || '',
-        website: settings.website || '',
+        website: undefined, // Deprecated - replaced with taxId
         paymentDetails: {
           paypal: settings.paypalEmail || '',
           bankAccount: settings.bankAccount || '',
@@ -451,8 +452,9 @@ export default function QuickInvoiceModal({
   }, [markAsPaid, issueDate])
 
   // Auto-calculate due date when payment terms are enabled or issue date changes
+  // Skip auto-update if "Custom" is selected - allow manual due date entry
   useEffect(() => {
-    if (paymentTerms.enabled) {
+    if (paymentTerms.enabled && paymentTerms.defaultOption !== 'Custom') {
       const selectedTerm = paymentTerms.defaultOption
       const baseDate = issueDate || new Date().toISOString().split('T')[0]
       
@@ -931,6 +933,14 @@ export default function QuickInvoiceModal({
     if (currency !== baseCurrency) {
       if (!exchangeRate || !exchangeRate.trim() || exchangeRate === '1.0' || parseFloat(exchangeRate) <= 0 || isNaN(parseFloat(exchangeRate))) {
         newErrors.exchangeRate = 'Exchange rate is required when currency differs from base currency'
+      }
+    }
+    
+    // Tax rate validation - required when user is tax-registered
+    if (settings?.isTaxRegistered === true) {
+      const taxRateValue = parseFloat(taxRate.toString()) || 0
+      if (taxRateValue <= 0) {
+        newErrors.taxRate = 'Tax rate is required when you are registered to charge tax'
       }
     }
     
@@ -2102,11 +2112,18 @@ export default function QuickInvoiceModal({
                   }`}>
                         Due Date {markAsPaid && <span className="text-orange-600">(Locked - Due on Receipt)</span>}
                   </p>
-                  {paymentTerms.enabled && (
+                  {paymentTerms.enabled && paymentTerms.defaultOption !== 'Custom' && (
                     <p className={`text-xs mt-1 ${
                       isDarkMode ? 'text-orange-400' : 'text-orange-600'
                     }`}>
                       Auto-updated to match the payment terms
+                    </p>
+                      )}
+                  {paymentTerms.enabled && paymentTerms.defaultOption === 'Custom' && (
+                    <p className={`text-xs mt-1 ${
+                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}>
+                      Set your custom due date manually
                     </p>
                       )}
                     </>
@@ -2413,12 +2430,20 @@ export default function QuickInvoiceModal({
                       isDarkMode ? 'text-gray-300' : 'text-gray-700'
                     }`}>
                       Tax Rate (%)
+                      {settings?.isTaxRegistered === true && (
+                        <span className="ml-1 text-red-500">*</span>
+                      )}
                     </label>
                     <p className={`text-xs ${
                       isDarkMode ? 'text-gray-400' : 'text-gray-500'
                     }`}>
-                      Enter tax rate percentage
+                      {settings?.isTaxRegistered === true 
+                        ? 'Tax rate is required when you are registered to charge tax'
+                        : 'Enter tax rate percentage'}
                     </p>
+                    {errors.taxRate && (
+                      <p className="text-xs text-red-500 mt-1">{errors.taxRate}</p>
+                    )}
                   </div>
                   <div className="w-32">
                     <input
@@ -2428,13 +2453,24 @@ export default function QuickInvoiceModal({
                       onChange={(e) => {
                         const value = parseFloat(e.target.value) || 0;
                         setTaxRate(Math.round(value * 100) / 100 + '');
+                        // Clear error when user starts typing
+                        if (errors.taxRate) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.taxRate;
+                            return newErrors;
+                          });
+                        }
                       }}
+                      required={settings?.isTaxRegistered === true}
                       min="0"
                       step="0.01"
                       className={`w-full px-3 py-2 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                        isDarkMode 
-                          ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
-                          : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+                        errors.taxRate 
+                          ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                          : isDarkMode 
+                            ? 'border-gray-700 bg-gray-800 text-white placeholder-gray-500' 
+                            : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
                       }`}
                     />
                   </div>
@@ -2804,7 +2840,11 @@ export default function QuickInvoiceModal({
                           setPaymentTerms({...paymentTerms, defaultOption: selectedTerm})
                           
                           // Smart due date adjustment based on payment terms
-                          if (selectedTerm === 'Due on Receipt') {
+                          // Skip auto-update if "Custom" is selected - allow manual due date entry
+                          if (selectedTerm === 'Custom') {
+                            // Don't auto-update - let user set custom due date manually
+                            return
+                          } else if (selectedTerm === 'Due on Receipt') {
                             setDueDate(issueDate) // Set due date to issue date (today)
                           } else if (selectedTerm === 'Net 15') {
                             const newDueDate = new Date(issueDate)

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import { useState, useEffect, useCallback, useMemo, memo, useRef } from 'react';
 import { 
   Save, Building2, Upload, CreditCard, 
-  Loader2, Trash2, Sparkles, FileText, Globe
+  Loader2, Trash2, Sparkles, FileText, Globe, AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -11,7 +11,7 @@ import { useSettings } from '@/contexts/SettingsContext';
 import ToastContainer from '@/components/Toast';
 import ModernSidebar from '@/components/ModernSidebar';
 import CustomDropdown from '@/components/CustomDropdown';
-import { CURRENCIES } from '@/lib/currency';
+import { CURRENCIES, fetchExchangeRate } from '@/lib/currency';
 import LazyLogo from '@/components/LazyLogo';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { FreelancerSettings, Client } from '@/types';
@@ -77,18 +77,27 @@ const BusinessInfoSection = memo(({ settings, updateSettings, isLoadingSettings 
             placeholder="+1 (555) 123-4567"
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-3" style={{color: '#374151'}}>
-            Website
-          </label>
-          <input
-            type="url"
-            value={settings.website}
-            onChange={(e) => handleInputChange('website', e.target.value)}
-            className="w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black"
-            placeholder="https://yourwebsite.com"
-          />
-        </div>
+        {(settings.isTaxRegistered !== undefined) && (
+          <div>
+            <label className="block text-sm font-medium mb-3" style={{color: '#374151'}}>
+              Tax ID / GST Number
+              {settings.isTaxRegistered && <span className="ml-2 text-xs text-red-500 font-normal">*</span>}
+            </label>
+            <input
+              type="text"
+              value={settings.taxId || ''}
+              onChange={(e) => handleInputChange('taxId', e.target.value)}
+              required={settings.isTaxRegistered}
+              className="w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black"
+              placeholder="Enter your Tax ID or GST Number"
+            />
+            {settings.isTaxRegistered && (
+              <p className="mt-1.5 text-xs text-gray-500">
+                Required when you are tax-registered. This will appear on your invoices.
+              </p>
+            )}
+          </div>
+        )}
       </div>
       <div>
         <label className="block text-sm font-medium mb-3" style={{color: '#374151'}}>
@@ -125,6 +134,11 @@ export default function SettingsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isRemovingLogo, setIsRemovingLogo] = useState(false);
+  const [hasInvoices, setHasInvoices] = useState(false);
+  const [originalBaseCurrency, setOriginalBaseCurrency] = useState<string>('');
+  const originalCurrencySetRef = useRef(false);
+  const [exchangeRate, setExchangeRate] = useState<string>('');
+  const [fetchingExchangeRate, setFetchingExchangeRate] = useState(false);
   const [confirmationModal, setConfirmationModal] = useState({
     isOpen: false,
     title: '',
@@ -159,8 +173,31 @@ export default function SettingsPage() {
     if (user && !loading && !hasLoadedData) {
       setHasLoadedData(true);
       loadClients();
+      checkHasInvoices();
     }
   }, [user, loading, hasLoadedData]);
+
+  // Track original base currency when settings first load (only once)
+  // Use ref to ensure we only set it once on initial load, not when user changes currency
+  useEffect(() => {
+    if (!isLoadingSettings && settings?.baseCurrency && !originalCurrencySetRef.current) {
+      setOriginalBaseCurrency(settings.baseCurrency);
+      originalCurrencySetRef.current = true;
+    }
+  }, [isLoadingSettings, settings?.baseCurrency]);
+
+  const checkHasInvoices = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/invoices?limit=1', { headers });
+      const data = await response.json();
+      const hasInvoicesResult = (data.invoices?.length || 0) > 0;
+      setHasInvoices(hasInvoicesResult);
+    } catch (error) {
+      console.error('Error checking invoices:', error);
+      setHasInvoices(false);
+    }
+  };
 
   const loadClients = async () => {
     try {
@@ -201,25 +238,59 @@ export default function SettingsPage() {
   }, [user, loading]);
 
   const handleSave = async () => {
+    // Validate exchange rate if base currency has changed
+    if (originalBaseCurrency && settings.baseCurrency && settings.baseCurrency !== originalBaseCurrency) {
+      // Check if exchange rate is provided and valid
+      const rateValue = parseFloat(exchangeRate);
+      if (!exchangeRate || exchangeRate.trim() === '' || isNaN(rateValue) || rateValue <= 0) {
+        showError('Exchange Rate Required', `Please enter a valid exchange rate to convert from ${originalBaseCurrency} to ${settings.baseCurrency}.`);
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const headers = await getAuthHeaders();
       
+      // Include exchange rate if currency is changing
+      const requestBody: any = { ...settings };
+      if (originalBaseCurrency && settings.baseCurrency && settings.baseCurrency !== originalBaseCurrency && exchangeRate) {
+        requestBody.exchangeRate = parseFloat(exchangeRate);
+        requestBody.oldBaseCurrency = originalBaseCurrency;
+      }
+      
       const response = await fetch('/api/settings', {
         method: 'POST',
         headers,
-        body: JSON.stringify(settings)
+        body: JSON.stringify(requestBody)
       });
       
       const data = await response.json();
       
       if (response.ok) {
         showSuccess('Settings saved successfully!');
+        // Refresh settings from server to get latest values
+        await refreshSettings();
         // Update global settings context
         updateSettings(settings);
         // Also save to localStorage as backup
         if (typeof window !== 'undefined') {
           localStorage.setItem('freelancerSettings', JSON.stringify(settings));
+        }
+        // Reset exchange rate after successful save
+        setExchangeRate('');
+        // Update originalBaseCurrency to match new currency to hide warning banner and exchange rate field
+        if (originalBaseCurrency && settings.baseCurrency && settings.baseCurrency !== originalBaseCurrency) {
+          // Update originalBaseCurrency immediately to hide the field
+          setOriginalBaseCurrency(settings.baseCurrency);
+          
+          // Navigate to dashboard after conversion completes
+          // The dashboard will automatically refresh invoices when it detects the currency change
+          setTimeout(() => {
+            if (typeof window !== 'undefined') {
+              window.location.href = '/dashboard';
+            }
+          }, 800);
         }
       } else {
         throw new Error(data.error || 'Failed to save settings');
@@ -468,18 +539,27 @@ export default function SettingsPage() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
-                      Website
-                    </label>
-                    <input
-                      type="url"
-                      value={settings.website}
-                      onChange={(e) => updateSettings({ ...settings, website: e.target.value })}
-                      className={`w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
-                      placeholder="https://yourwebsite.com"
-                    />
-                  </div>
+                  {(settings.isTaxRegistered !== undefined) && (
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
+                        Tax ID / GST Number
+                        {settings.isTaxRegistered && <span className="ml-2 text-xs text-red-500 font-normal">*</span>}
+                      </label>
+                      <input
+                        type="text"
+                        value={settings.taxId || ''}
+                        onChange={(e) => updateSettings({ ...settings, taxId: e.target.value })}
+                        required={settings.isTaxRegistered}
+                        className={`w-full px-3 py-2 border focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 transition-colors border-gray-300 bg-white text-black`}
+                        placeholder="Enter your Tax ID or GST Number"
+                      />
+                      {settings.isTaxRegistered && (
+                        <p className="mt-1.5 text-xs text-gray-500">
+                          Required when you are tax-registered. This will appear on your invoices.
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
@@ -619,6 +699,25 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
+                {/* Warning Banner - Show when currency is changed */}
+                {originalBaseCurrency && settings.baseCurrency && settings.baseCurrency !== originalBaseCurrency && (
+                  <div className="mb-4 bg-amber-50 border-l-4 border-amber-400 p-4">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <AlertTriangle className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-amber-800">
+                          <strong>Warning:</strong> Changing your base currency from <strong>{originalBaseCurrency}</strong> to <strong>{settings.baseCurrency}</strong> will affect how revenue is calculated across your dashboard.
+                          {hasInvoices && (
+                            <span> Existing invoices will be converted to the new base currency for metrics and reporting, which may show different amounts.</span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
@@ -626,7 +725,21 @@ export default function SettingsPage() {
                     </label>
                     <CustomDropdown
                       value={settings.baseCurrency || 'USD'}
-                      onChange={(value) => updateSettings({ ...settings, baseCurrency: value })}
+                      onChange={(value) => {
+                        // Ensure originalBaseCurrency is set if not already set
+                        if (!originalCurrencySetRef.current && settings.baseCurrency) {
+                          setOriginalBaseCurrency(settings.baseCurrency);
+                          originalCurrencySetRef.current = true;
+                        }
+                        // Reset exchange rate when currency changes
+                        if (value === originalBaseCurrency) {
+                          setExchangeRate('');
+                        } else {
+                          // Start with blank, not "1.0" - exchange rates can be less than 1
+                          setExchangeRate('');
+                        }
+                        updateSettings({ ...settings, baseCurrency: value });
+                      }}
                       options={CURRENCIES.map((currency) => ({
                         value: currency.code,
                         label: `${currency.code} - ${currency.name} (${currency.symbol})`
@@ -639,6 +752,58 @@ export default function SettingsPage() {
                     <p className="text-xs text-gray-500 mt-1">
                       All dashboard metrics will be converted to this currency. You can change this after creating your first invoice.
                     </p>
+                    {/* Exchange Rate Input - Only show when currency differs from original */}
+                    {originalBaseCurrency && settings.baseCurrency && settings.baseCurrency !== originalBaseCurrency && (
+                      <div className="mt-3">
+                        <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
+                          Exchange Rate ({originalBaseCurrency} to {settings.baseCurrency}) *
+                          {fetchingExchangeRate && (
+                            <span className="ml-2 text-xs text-gray-500">(Fetching...)</span>
+                          )}
+                        </label>
+                        <input
+                          type="number"
+                          step="0.0001"
+                          min="0.0001"
+                          placeholder="Enter rate (e.g., 0.84)"
+                          value={exchangeRate}
+                          onChange={(e) => setExchangeRate(e.target.value)}
+                          onFocus={async () => {
+                            if (!exchangeRate || exchangeRate.trim() === '') {
+                              try {
+                                setFetchingExchangeRate(true);
+                                const rate = await fetchExchangeRate(originalBaseCurrency, settings.baseCurrency);
+                                if (rate) {
+                                  setExchangeRate(rate.toFixed(4));
+                                } else {
+                                  setExchangeRate('');
+                                }
+                              } catch (error) {
+                                console.error('Error fetching exchange rate:', error);
+                                setExchangeRate('');
+                              } finally {
+                                setFetchingExchangeRate(false);
+                              }
+                            }
+                          }}
+                          className={`w-full px-3 py-2 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                            (!exchangeRate || exchangeRate.trim() === '' || parseFloat(exchangeRate) <= 0 || isNaN(parseFloat(exchangeRate)))
+                              ? 'border-red-300 bg-red-50'
+                              : 'border-gray-300 bg-white'
+                          } text-gray-900 placeholder-gray-400`}
+                        />
+                        {(!exchangeRate || exchangeRate.trim() === '' || parseFloat(exchangeRate) <= 0 || isNaN(parseFloat(exchangeRate))) && (
+                          <p className="text-xs text-red-600 mt-1">
+                            Exchange rate is required when changing base currency. Please enter a valid exchange rate (can be less than 1).
+                          </p>
+                        )}
+                        {exchangeRate && parseFloat(exchangeRate) > 0 && !isNaN(parseFloat(exchangeRate)) && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            This rate will be used to convert existing invoices and estimates to the new base currency. Click the field to auto-fetch current rate or enter manually.
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

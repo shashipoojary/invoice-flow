@@ -7,7 +7,8 @@ interface BusinessSettings {
   businessName: string;
   businessEmail: string;
   businessPhone: string;
-  website: string;
+  taxId: string;
+  isTaxRegistered: boolean;
   address: string;
   logo: string;
   paypalEmail: string;
@@ -36,7 +37,8 @@ const defaultSettings: BusinessSettings = {
   businessName: '',
   businessEmail: '',
   businessPhone: '',
-  website: '',
+  taxId: '',
+  isTaxRegistered: false,
   address: '',
   logo: '',
   paypalEmail: '',

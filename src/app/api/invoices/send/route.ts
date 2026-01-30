@@ -225,8 +225,31 @@ export async function POST(request: NextRequest) {
         description: item.description,
         amount: item.line_total
       })),
-      taxRate: invoice.tax_rate || 0,
-      taxAmount: invoice.tax_amount || 0,
+      // Calculate tax from tax field or tax_breakdown
+      // First try tax_breakdown (new format), then fall back to tax field (old format)
+      taxAmount: (() => {
+        if (invoice.tax_breakdown && Array.isArray(invoice.tax_breakdown) && invoice.tax_breakdown.length > 0) {
+          return invoice.tax_breakdown.reduce((sum: number, tax: any) => {
+            if (tax.amount !== undefined) {
+              return sum + parseFloat(tax.amount.toString());
+            } else if (tax.rate !== undefined && invoice.subtotal) {
+              const afterDiscount = invoice.subtotal - (invoice.discount || 0);
+              return sum + (afterDiscount * (parseFloat(tax.rate.toString()) / 100));
+            }
+            return sum;
+          }, 0);
+        }
+        return invoice.tax || 0;
+      })(),
+      taxRate: (() => {
+        if (invoice.tax_breakdown && Array.isArray(invoice.tax_breakdown) && invoice.tax_breakdown.length > 0 && invoice.tax_breakdown[0]?.rate) {
+          return parseFloat(invoice.tax_breakdown[0].rate.toString());
+        }
+        if (invoice.tax && invoice.subtotal && (invoice.subtotal - (invoice.discount || 0)) > 0) {
+          return Math.round(((invoice.tax / (invoice.subtotal - (invoice.discount || 0))) * 100) * 100) / 100;
+        }
+        return 0;
+      })(),
       notes: invoice.notes,
       paymentTerms,
       lateFees,

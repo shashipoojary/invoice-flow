@@ -22,8 +22,10 @@ export default function OnboardingPage() {
     businessEmail: '',
     businessPhone: '',
     businessAddress: '',
-    website: '',
+    taxId: '',
     baseCurrency: 'USD',
+    // Tax Registration
+    isTaxRegistered: false,
     // Payment Methods
     paypalEmail: '',
     cashappId: '',
@@ -38,7 +40,7 @@ export default function OnboardingPage() {
   });
 
   const router = useRouter();
-  const totalSteps = 3; // Business Info, Contact Details, Payment Methods
+  const totalSteps = 4; // Business Info, Tax Registration, Contact Details, Payment Methods
 
   useEffect(() => {
     // Check if user is authenticated and hasn't completed onboarding
@@ -178,7 +180,15 @@ export default function OnboardingPage() {
       setStep(2);
       setError('');
     } else if (step === 2) {
+      // Tax registration step - validate taxId if isTaxRegistered is true
+      if (formData.isTaxRegistered && !formData.taxId.trim()) {
+        setError('Tax ID / GST Number is required when you are tax-registered');
+        return;
+      }
       setStep(3);
+      setError('');
+    } else if (step === 3) {
+      setStep(4);
       setError('');
     }
   };
@@ -214,7 +224,8 @@ export default function OnboardingPage() {
           businessEmail: formData.businessEmail || session.user.email || '',
           businessPhone: formData.businessPhone,
           address: formData.businessAddress,
-          website: formData.website,
+          taxId: formData.taxId,
+          isTaxRegistered: formData.isTaxRegistered,
           logo: logoUrl || '',
           baseCurrency: formData.baseCurrency,
           paypalEmail: formData.paypalEmail,
@@ -247,8 +258,9 @@ export default function OnboardingPage() {
   const getStepTitle = () => {
     switch (step) {
       case 1: return 'Business Information';
-      case 2: return 'Contact Details';
-      case 3: return 'Payment Methods';
+      case 2: return 'Tax Registration';
+      case 3: return 'Contact Details';
+      case 4: return 'Payment Methods';
       default: return 'Setup';
     }
   };
@@ -256,195 +268,105 @@ export default function OnboardingPage() {
   const getStepDescription = () => {
     switch (step) {
       case 1: return 'Let\'s start with your basic business information. This will appear on all your invoices.';
-      case 2: return 'Add your contact details so clients can reach you easily.';
-      case 3: return 'Set up payment methods to get paid faster. You can add multiple options for your clients.';
+      case 2: return 'Tell us if you are registered to charge tax. This helps us configure your invoice settings correctly.';
+      case 3: return 'Add your contact details so clients can reach you easily.';
+      case 4: return 'Set up payment methods to get paid faster. You can add multiple options for your clients.';
       default: return '';
     }
   };
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6">
-      <div className="flex flex-col lg:flex-row w-full max-w-6xl bg-white overflow-hidden relative">
-        {/* Left Panel - Desktop Only */}
-        <div className="flex-1 relative lg:block hidden lg:sticky lg:top-0 lg:self-start lg:h-screen bg-white">
-          <div className="relative z-10 lg:h-full lg:flex lg:items-center">
-            <div className="absolute top-6 left-6 z-20">
-              <button
-                onClick={() => router.push('/')}
-                className="w-10 h-10 bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white active:scale-95 transition-all shadow-md cursor-pointer touch-manipulation"
-              >
-                <ArrowLeft className="w-5 h-5 text-gray-700" />
-              </button>
-            </div>
-
-            <div className="flex items-center justify-center w-full h-full p-8">
-              <div className="w-full max-w-lg">
-              {/* Modern Illustration */}
-              <div className="relative">
-                {/* Background Elements */}
-                <div className="absolute inset-0">
-                  <div className="w-32 h-32 bg-indigo-100 rounded-full absolute -top-8 -right-8 opacity-60"></div>
-                  <div className="w-24 h-24 bg-purple-100 rounded-full absolute -bottom-4 -left-4 opacity-40"></div>
-                  <div className="w-16 h-16 bg-blue-100 rounded-full absolute top-1/2 -right-2 opacity-50"></div>
-                </div>
-
-                {/* Main Illustration */}
-                <div className="relative z-10">
-                  {/* Setup/Onboarding Illustration */}
-                  <div className="bg-white shadow-lg p-6 mb-6 transform rotate-2">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-8 h-8 bg-indigo-100 flex items-center justify-center">
-                        <Building2 className="w-4 h-4 text-indigo-600" />
-                      </div>
-                      <div className="text-xs text-gray-500">Step {step}/{totalSteps}</div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="h-2 bg-gray-200 rounded w-3/4"></div>
-                      <div className="h-2 bg-gray-200 rounded w-1/2"></div>
-                      <div className="h-2 bg-indigo-200 rounded w-2/3"></div>
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Progress</span>
-                        <span className="font-semibold text-gray-900">{Math.round((step / totalSteps) * 100)}%</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Success Checkmark */}
-                  <div className="bg-emerald-50 p-4 transform -rotate-1">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <div>
-                        <div className="font-medium text-emerald-900">Almost Done!</div>
-                        <div className="text-sm text-emerald-700">Complete setup to get started</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Floating Elements */}
-                  <div className="absolute -top-4 -right-4 w-6 h-6 bg-indigo-400 rounded-full flex items-center justify-center">
-                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-
-                  <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-indigo-500 rounded-full flex items-center justify-center">
-                    <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* Brand Text */}
-              <div className="text-center mt-8">
-                <h2 className="font-heading text-2xl font-semibold text-gray-900 mb-2">FlowInvoicer</h2>
-                <p className="text-gray-600">Create • Send • Get Paid</p>
-              </div>
+    <div className="w-full min-h-screen bg-gray-50">
+      {/* Header - Clean and Responsive */}
+      <div className="border-b border-gray-200 bg-white sticky top-0 z-10">
+        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-4 sm:py-5">
+            <button
+              onClick={() => router.push('/')}
+              className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Back</span>
+            </button>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-gray-500 font-medium hidden sm:inline">Step {step} of {totalSteps}</span>
+              <div className="w-24 h-1.5 bg-gray-200 overflow-hidden">
+                <div
+                  className="bg-indigo-600 h-1.5 transition-all duration-300"
+                  style={{ width: `${(step / totalSteps) * 100}%` }}
+                ></div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Right Panel */}
-        <div className="flex-1 p-6 lg:p-16 flex flex-col max-w-lg mx-auto w-full lg:justify-start lg:py-16 lg:min-h-screen">
-          {/* Back Button - Mobile Only */}
-          <div className="mb-6 lg:hidden">
-          <button
-            onClick={() => router.push('/')}
-              className="flex items-center text-gray-600 hover:text-gray-900 active:scale-95 transition-all cursor-pointer touch-manipulation"
-          >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            <span className="text-sm font-medium">Back</span>
-          </button>
+      {/* Main Content Area - Scrollable */}
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
+        {/* Welcome Message - Matching Auth Page */}
+        <div className="text-center mb-8 sm:mb-10">
+          <div className="text-sm text-indigo-600 font-medium mb-3">Welcome to FlowInvoicer</div>
+          <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-900 mb-4 tracking-tight">
+            {getStepTitle()}
+          </h1>
+          <p className="text-base text-gray-600 leading-relaxed">
+            {getStepDescription()}
+          </p>
         </div>
 
-        {/* Main Content */}
-          <div className="w-full">
-          {/* Welcome Message */}
-            <div className="text-center mb-10">
-              <div className="text-sm text-indigo-600 font-medium mb-3">Welcome to FlowInvoicer</div>
-              <h1 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-900 mb-4 tracking-tight">
-                {getStepTitle()}
-              </h1>
-              <p className="text-base text-gray-600 leading-relaxed">
-                {getStepDescription()}
-              </p>
-            </div>
+        {/* Disclaimer Banner */}
+        <div className="mb-6 bg-gray-50 border-l-4 border-indigo-600 p-4">
+          <p className="text-xs uppercase tracking-wide text-gray-500 mb-1.5">
+            IMPORTANT INFORMATION
+          </p>
+          <p className="text-sm font-medium text-gray-900">
+            All information you provide here will be saved to your account settings and can be updated anytime from the Settings page. 
+            {step === 4 && ' Payment methods are optional - add as many as you accept. This information will appear on your invoices.'}
+          </p>
+        </div>
 
-          {/* Progress Indicator */}
-            <div className="mb-8">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">Step {step} of {totalSteps}</span>
-                <span className="text-sm text-gray-500">{Math.round((step / totalSteps) * 100)}%</span>
-            </div>
-              <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
-              <div
-                  className="bg-indigo-600 h-2 transition-all duration-300 rounded-full"
-                style={{ width: `${(step / totalSteps) * 100}%` }}
-              ></div>
-            </div>
+        {error && (
+          <div className="bg-red-50 text-red-600 px-4 py-3 text-sm mb-6 flex items-start space-x-2 border-l-4 border-red-600">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <span>{error}</span>
           </div>
+        )}
 
-          {/* Disclaimer Banner */}
-            <div className="mb-6 bg-gray-50 border-l-4 border-indigo-600 p-4">
-              <p className="text-xs uppercase tracking-wide text-gray-500 mb-1.5">
-                IMPORTANT INFORMATION
-              </p>
-              <p className="text-sm font-medium text-gray-900">
-                All information you provide here will be saved to your account settings and can be updated anytime from the Settings page. 
-                {step === 3 && ' Payment methods are optional - add as many as you accept. This information will appear on your invoices.'}
-              </p>
-          </div>
-
-          {error && (
-            <div className="bg-red-50 text-red-600 px-4 py-3 text-sm mb-6 flex items-start space-x-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
-
-            <form onSubmit={step < totalSteps ? (e) => { e.preventDefault(); handleNext(); } : handleSubmit} className="space-y-8">
+        <form onSubmit={step < totalSteps ? (e) => { e.preventDefault(); handleNext(); } : handleSubmit} className="space-y-8">
               {/* Step 1: Business Information */}
               {step === 1 && (
-                <>
-                  {/* Logo Upload */}
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Logo Upload - Full Width */}
+                  <div className="sm:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Business Logo
                       <span className="ml-2 text-xs text-gray-500 font-normal">(Optional)</span>
                     </label>
-                    <div className="flex items-center gap-4 mb-4">
+                    <div className="flex items-center gap-3">
                       {logoPreview ? (
                         <div className="relative">
                           <img
                             src={logoPreview}
                             alt="Logo preview"
-                            className="w-20 h-20 object-contain bg-gray-50"
+                            className="w-16 h-16 object-contain bg-gray-50 border border-gray-200"
                           />
                           <button
                             type="button"
                             onClick={handleRemoveLogo}
-                            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white flex items-center justify-center hover:bg-red-600 active:bg-red-700 active:scale-90 transition-all cursor-pointer shadow-md touch-manipulation"
+                            className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white flex items-center justify-center hover:bg-red-600 active:bg-red-700 active:scale-90 transition-all cursor-pointer shadow-sm touch-manipulation"
                           >
-                            <X className="w-3 h-3" />
+                            <X className="w-2.5 h-2.5" />
                           </button>
                         </div>
                       ) : (
-                        <div className="w-20 h-20 flex items-center justify-center bg-gray-50">
-                          <ImageIcon className="w-8 h-8 text-gray-400" />
+                        <div className="w-16 h-16 flex items-center justify-center bg-gray-50 border border-gray-200">
+                          <ImageIcon className="w-6 h-6 text-gray-400" />
                         </div>
                       )}
                       <div className="flex-1">
                         <label
                           htmlFor="logo-upload"
-                          className={`flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 cursor-pointer hover:bg-gray-200 active:bg-gray-300 active:scale-95 transition-all text-sm touch-manipulation ${isUploadingLogo ? 'opacity-50 cursor-not-allowed active:scale-100' : ''}`}
+                          className={`flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 cursor-pointer hover:bg-gray-200 active:bg-gray-300 active:scale-95 transition-all text-sm font-medium touch-manipulation ${isUploadingLogo ? 'opacity-50 cursor-not-allowed active:scale-100' : ''}`}
                         >
                           {isUploadingLogo ? (
                             <>
@@ -473,6 +395,7 @@ export default function OnboardingPage() {
                     </div>
                   </div>
 
+                  {/* Business Name */}
                   <div>
                     <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 mb-2">
                       Business Name <span className="text-red-500">*</span>
@@ -488,13 +411,14 @@ export default function OnboardingPage() {
                         value={formData.businessName}
                         onChange={handleInputChange}
                         placeholder="Your Business Name"
-                        className="w-full pl-12 pr-4 py-4 text-base bg-gray-50 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
+                        className="w-full pl-12 pr-4 py-4 text-base bg-gray-50 border border-gray-200 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
                         required
                       />
                     </div>
                     <p className="mt-2 text-xs text-gray-500">This will appear on all your invoices</p>
                   </div>
 
+                  {/* Business Email */}
                   <div>
                     <label htmlFor="businessEmail" className="block text-sm font-medium text-gray-700 mb-2">
                       Business Email
@@ -510,13 +434,14 @@ export default function OnboardingPage() {
                         value={formData.businessEmail}
                         onChange={handleInputChange}
                         placeholder="business@example.com"
-                        className="w-full pl-12 pr-4 py-4 text-base bg-gray-50 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
+                        className="w-full pl-12 pr-4 py-4 text-base bg-gray-50 border border-gray-200 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
                       />
                     </div>
                     <p className="mt-2 text-xs text-gray-500">We'll use your account email if left empty</p>
                   </div>
 
-                  <div>
+                  {/* Base Currency */}
+                  <div className="sm:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Base Currency <span className="text-red-500">*</span>
                     </label>
@@ -536,12 +461,95 @@ export default function OnboardingPage() {
                       All dashboard metrics will be converted to this currency. You can change this after creating your first invoice.
                     </p>
                   </div>
+                </div>
+              )}
+
+              {/* Step 2: Tax Registration */}
+              {step === 2 && (
+                <>
+                  <div className="bg-blue-50 border-l-4 border-blue-600 p-4 mb-6">
+                    <div className="flex items-start">
+                      <Info className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-900 mb-1">
+                          Tax Registration Information
+                        </p>
+                        <p className="text-xs text-blue-700">
+                          This helps us configure your invoice settings correctly. If you're not registered to charge tax, you can use our Fast Invoice feature.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-4">
+                      Are you registered to charge tax (VAT / GST / Sales Tax)?
+                      <span className="ml-2 text-red-500">*</span>
+                    </label>
+                    <div className="space-y-3">
+                      <label className="flex items-center p-4 border-2 cursor-pointer transition-all hover:bg-gray-50"
+                        style={{
+                          borderColor: formData.isTaxRegistered ? '#4F46E5' : '#E5E7EB',
+                          backgroundColor: formData.isTaxRegistered ? '#EEF2FF' : 'transparent'
+                        }}>
+                        <input
+                          type="radio"
+                          name="isTaxRegistered"
+                          checked={formData.isTaxRegistered === true}
+                          onChange={() => setFormData(prev => ({ ...prev, isTaxRegistered: true }))}
+                          className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                        />
+                        <span className="ml-3 text-sm font-medium text-gray-900">Yes, I am registered to charge tax</span>
+                      </label>
+                      <label className="flex items-center p-4 border-2 cursor-pointer transition-all hover:bg-gray-50"
+                        style={{
+                          borderColor: formData.isTaxRegistered === false ? '#4F46E5' : '#E5E7EB',
+                          backgroundColor: formData.isTaxRegistered === false ? '#EEF2FF' : 'transparent'
+                        }}>
+                        <input
+                          type="radio"
+                          name="isTaxRegistered"
+                          checked={formData.isTaxRegistered === false}
+                          onChange={() => setFormData(prev => ({ ...prev, isTaxRegistered: false, taxId: '' }))}
+                          className="w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                        />
+                        <span className="ml-3 text-sm font-medium text-gray-900">No, I am not registered to charge tax</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {formData.isTaxRegistered && (
+                    <div className="mt-6">
+                      <label htmlFor="taxId" className="block text-sm font-medium text-gray-700 mb-2">
+                        Tax ID / GST Number
+                        <span className="ml-2 text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                          <Building2 className="w-5 h-5 text-gray-400" />
+                        </div>
+                        <input
+                          type="text"
+                          id="taxId"
+                          name="taxId"
+                          value={formData.taxId}
+                          onChange={handleInputChange}
+                          placeholder="Enter your Tax ID or GST Number"
+                          required={formData.isTaxRegistered}
+                          className="w-full pl-12 pr-4 py-4 text-base bg-gray-50 border border-gray-200 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
+                        />
+                      </div>
+                      <p className="mt-2 text-xs text-gray-500">
+                        This will appear on your invoices when required by law.
+                      </p>
+                    </div>
+                  )}
                 </>
               )}
 
-              {/* Step 2: Contact Details */}
-              {step === 2 && (
-                <>
+              {/* Step 3: Contact Details */}
+              {step === 3 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="businessPhone" className="block text-sm font-medium text-gray-700 mb-2">
                       Business Phone
@@ -558,12 +566,12 @@ export default function OnboardingPage() {
                         value={formData.businessPhone}
                         onChange={handleInputChange}
                         placeholder="+1 (555) 123-4567"
-                        className="w-full pl-12 pr-4 py-4 text-base bg-gray-50 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
+                        className="w-full pl-12 pr-4 py-4 text-base bg-gray-50 border border-gray-200 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
                       />
                     </div>
                   </div>
 
-                  <div>
+                  <div className="sm:col-span-2">
                     <label htmlFor="businessAddress" className="block text-sm font-medium text-gray-700 mb-2">
                       Business Address
                       <span className="ml-2 text-xs text-gray-500 font-normal">(Optional)</span>
@@ -579,39 +587,18 @@ export default function OnboardingPage() {
                         onChange={handleInputChange}
                         placeholder="123 Business St, City, State 12345"
                         rows={4}
-                        className="w-full pl-12 pr-4 py-4 text-base bg-gray-50 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all resize-none"
+                        className="w-full pl-12 pr-4 py-4 text-base bg-gray-50 border border-gray-200 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all resize-none active:bg-gray-100 touch-manipulation"
                       />
                     </div>
-                    <p className="mt-1.5 text-xs text-gray-500">
-                      Don't include email or phone number here - we have dedicated fields for those below.
+                    <p className="mt-2 text-xs text-gray-500">
+                      Don't include email or phone number here - we have dedicated fields for those.
                     </p>
                   </div>
-
-                  <div>
-                    <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-2">
-                      Website
-                      <span className="ml-2 text-xs text-gray-500 font-normal">(Optional)</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Globe className="w-5 h-5 text-gray-400" />
-                      </div>
-                      <input
-                        type="url"
-                        id="website"
-                        name="website"
-                        value={formData.website}
-                        onChange={handleInputChange}
-                        placeholder="https://yourwebsite.com"
-                        className="w-full pl-12 pr-4 py-4 text-base bg-gray-50 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
-                      />
-                    </div>
-                  </div>
-                </>
+                </div>
               )}
 
-              {/* Step 3: Payment Methods */}
-              {step === 3 && (
+              {/* Step 4: Payment Methods */}
+              {step === 4 && (
                 <>
                   <div className="bg-gray-50 border-l-4 border-indigo-600 p-4 mb-6">
                     <p className="text-xs uppercase tracking-wide text-gray-500 mb-1.5">
@@ -639,7 +626,7 @@ export default function OnboardingPage() {
                           value={formData.paypalEmail}
                           onChange={handleInputChange}
                           placeholder="paypal@example.com"
-                          className="w-full pl-12 pr-4 py-4 text-base bg-gray-50 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
+                          className="w-full pl-12 pr-4 py-4 text-base bg-gray-50 border border-gray-200 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
                         />
                       </div>
                     </div>
@@ -655,7 +642,7 @@ export default function OnboardingPage() {
                         value={formData.cashappId}
                         onChange={handleInputChange}
                         placeholder="$yourcashappid"
-                        className="w-full px-4 py-4 text-base bg-gray-50 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
+                        className="w-full px-4 py-4 text-base bg-gray-50 border border-gray-200 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
                       />
                     </div>
 
@@ -670,7 +657,7 @@ export default function OnboardingPage() {
                         value={formData.venmoId}
                         onChange={handleInputChange}
                         placeholder="@yourvenmoid"
-                        className="w-full px-4 py-4 text-base bg-gray-50 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
+                        className="w-full px-4 py-4 text-base bg-gray-50 border border-gray-200 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
                       />
                     </div>
 
@@ -685,7 +672,7 @@ export default function OnboardingPage() {
                         value={formData.googlePayUpi}
                         onChange={handleInputChange}
                         placeholder="yourname@paytm"
-                        className="w-full px-4 py-4 text-base bg-gray-50 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
+                        className="w-full px-4 py-4 text-base bg-gray-50 border border-gray-200 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
                       />
                     </div>
 
@@ -700,7 +687,7 @@ export default function OnboardingPage() {
                         value={formData.applePayId}
                         onChange={handleInputChange}
                         placeholder="your-apple-pay-id"
-                        className="w-full px-4 py-4 text-base bg-gray-50 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
+                        className="w-full px-4 py-4 text-base bg-gray-50 border border-gray-200 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
                       />
                     </div>
 
@@ -715,7 +702,7 @@ export default function OnboardingPage() {
                         value={formData.stripeAccount}
                         onChange={handleInputChange}
                         placeholder="acct_xxxxxxxxx"
-                        className="w-full px-4 py-4 text-base bg-gray-50 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
+                        className="w-full px-4 py-4 text-base bg-gray-50 border border-gray-200 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
                       />
                     </div>
 
@@ -730,7 +717,7 @@ export default function OnboardingPage() {
                         value={formData.bankAccount}
                         onChange={handleInputChange}
                         placeholder="Account Number"
-                        className="w-full px-4 py-4 text-base bg-gray-50 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
+                        className="w-full px-4 py-4 text-base bg-gray-50 border border-gray-200 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
                       />
                     </div>
 
@@ -745,11 +732,11 @@ export default function OnboardingPage() {
                         value={formData.bankIfscSwift}
                         onChange={handleInputChange}
                         placeholder="IFSC/SWIFT Code"
-                        className="w-full px-4 py-4 text-base bg-gray-50 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
+                        className="w-full px-4 py-4 text-base bg-gray-50 border border-gray-200 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
                       />
                     </div>
 
-                    <div className="sm:col-span-2">
+                    <div className="sm:col-span-2 lg:col-span-3">
                       <label htmlFor="bankIban" className="block text-sm font-medium text-gray-700 mb-2">
                         Bank IBAN
                       </label>
@@ -760,11 +747,11 @@ export default function OnboardingPage() {
                         value={formData.bankIban}
                         onChange={handleInputChange}
                         placeholder="IBAN Number"
-                        className="w-full px-4 py-4 text-base bg-gray-50 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
+                        className="w-full px-4 py-4 text-base bg-gray-50 border border-gray-200 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all active:bg-gray-100 touch-manipulation"
                       />
                     </div>
 
-                    <div className="sm:col-span-2">
+                    <div className="sm:col-span-2 lg:col-span-3">
                       <label htmlFor="paymentNotes" className="block text-sm font-medium text-gray-700 mb-2">
                         Payment Notes
                         <span className="ml-2 text-xs text-gray-500 font-normal">(Optional)</span>
@@ -776,103 +763,102 @@ export default function OnboardingPage() {
                         onChange={handleInputChange}
                         placeholder="e.g., Please include invoice number in payment notes, Wire transfers take 2-3 business days..."
                         rows={4}
-                        className="w-full px-4 py-4 text-base bg-gray-50 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all resize-none active:bg-gray-100 touch-manipulation"
+                        className="w-full px-4 py-4 text-base bg-gray-50 border border-gray-200 focus:ring-1 focus:ring-indigo-400 focus:bg-white outline-none transition-all resize-none active:bg-gray-100 touch-manipulation"
                       />
                     </div>
                   </div>
                 </>
               )}
 
-            {/* Navigation Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
-                {step > 1 && (
-                  <button
-                    type="button"
-                    onClick={handleBack}
-                  className="flex-1 bg-gray-100 text-gray-700 py-4 px-6 text-base font-medium hover:bg-gray-200 active:bg-gray-300 active:scale-[0.98] transition-all cursor-pointer touch-manipulation"
-                  >
-                    Back
-                  </button>
-                )}
-                <button
-                  type="submit"
-                  disabled={loading}
-                className={`${step > 1 ? 'flex-1' : 'w-full'} bg-indigo-600 text-white py-4 px-6 text-base font-medium hover:bg-indigo-700 active:bg-indigo-800 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex items-center justify-center touch-manipulation`}
-                >
-                  {loading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    step < totalSteps ? 'Continue' : 'Complete Setup'
-                  )}
-                </button>
-              </div>
-
-            {/* Skip Option - Only on last step */}
-            {step === totalSteps && (
-              <div className="text-center mt-6">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setLoading(true);
-                      setError('');
-
-                      try {
-                        // Get current session
-                        const { data: { session } } = await supabase.auth.getSession();
-                        if (!session) {
-                          throw new Error('Not authenticated');
-                        }
-
-                        // Save all data (even if some fields are empty)
-                        const response = await fetch('/api/settings', {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${session.access_token}`,
-                          },
-                          body: JSON.stringify({
-                            businessName: formData.businessName || 'My Business',
-                            businessEmail: formData.businessEmail || session.user.email || '',
-                            businessPhone: formData.businessPhone,
-                            address: formData.businessAddress,
-                            website: formData.website,
-                            logo: logoUrl || '',
-                            baseCurrency: formData.baseCurrency,
-                            paypalEmail: formData.paypalEmail,
-                            cashappId: formData.cashappId,
-                            venmoId: formData.venmoId,
-                            googlePayUpi: formData.googlePayUpi,
-                            applePayId: formData.applePayId,
-                            stripeAccount: formData.stripeAccount,
-                            bankAccount: formData.bankAccount,
-                            bankIfscSwift: formData.bankIfscSwift,
-                            bankIban: formData.bankIban,
-                            paymentNotes: formData.paymentNotes,
-                          }),
-                        });
-
-                        if (!response.ok) {
-                          const errorData = await response.json();
-                          throw new Error(errorData.error || 'Failed to save settings');
-                        }
-
-                        // Redirect to dashboard
-                        router.push('/dashboard');
-                      } catch (error: any) {
-                        setError(error.message || 'Something went wrong. Please try again.');
-                        setLoading(false);
-                      }
-                    }}
-                    disabled={loading}
-                  className="text-indigo-600 hover:text-indigo-700 active:text-indigo-800 active:scale-95 font-medium text-sm cursor-pointer disabled:opacity-50 disabled:active:scale-100 transition-all touch-manipulation"
-                  >
-                    Skip payment methods for now
-                  </button>
-              </div>
+        {/* Navigation Buttons */}
+        <div className="flex flex-col sm:flex-row gap-3 mt-8 pt-6 border-t border-gray-200">
+            {step > 1 && (
+              <button
+                type="button"
+                onClick={handleBack}
+              className="flex-1 bg-white text-gray-700 py-3 px-6 text-sm font-medium hover:bg-gray-50 active:bg-gray-100 transition-all cursor-pointer touch-manipulation border border-gray-300"
+              >
+                Back
+              </button>
             )}
-          </form>
+            <button
+              type="submit"
+              disabled={loading}
+            className={`${step > 1 ? 'flex-1' : 'w-full'} bg-indigo-600 text-white py-3 px-6 text-sm font-semibold hover:bg-indigo-700 active:bg-indigo-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center touch-manipulation shadow-sm hover:shadow-md`}
+            >
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                step < totalSteps ? 'Continue' : 'Complete Setup'
+              )}
+            </button>
           </div>
-        </div>
+
+        {/* Skip Option - Only on last step */}
+        {step === totalSteps && (
+          <div className="text-center mt-6">
+              <button
+                type="button"
+                onClick={async () => {
+                  setLoading(true);
+                  setError('');
+
+                  try {
+                    // Get current session
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session) {
+                      throw new Error('Not authenticated');
+                    }
+
+                    // Save all data (even if some fields are empty)
+                    const response = await fetch('/api/settings', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`,
+                      },
+                      body: JSON.stringify({
+                        businessName: formData.businessName || 'My Business',
+                        businessEmail: formData.businessEmail || session.user.email || '',
+                        businessPhone: formData.businessPhone,
+                        address: formData.businessAddress,
+                        taxId: formData.taxId,
+                        isTaxRegistered: formData.isTaxRegistered,
+                        logo: logoUrl || '',
+                        baseCurrency: formData.baseCurrency,
+                        paypalEmail: formData.paypalEmail,
+                        cashappId: formData.cashappId,
+                        venmoId: formData.venmoId,
+                        googlePayUpi: formData.googlePayUpi,
+                        applePayId: formData.applePayId,
+                        stripeAccount: formData.stripeAccount,
+                        bankAccount: formData.bankAccount,
+                        bankIfscSwift: formData.bankIfscSwift,
+                        bankIban: formData.bankIban,
+                        paymentNotes: formData.paymentNotes,
+                      }),
+                    });
+
+                    if (!response.ok) {
+                      const errorData = await response.json();
+                      throw new Error(errorData.error || 'Failed to save settings');
+                    }
+
+                    // Redirect to dashboard
+                    router.push('/dashboard');
+                  } catch (error: any) {
+                    setError(error.message || 'Something went wrong. Please try again.');
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+              className="text-indigo-600 hover:text-indigo-700 active:text-indigo-800 active:scale-95 font-medium text-sm cursor-pointer disabled:opacity-50 disabled:active:scale-100 transition-all touch-manipulation"
+              >
+                Skip payment methods for now
+              </button>
+          </div>
+        )}
+      </form>
       </div>
     </div>
   );

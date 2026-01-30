@@ -73,10 +73,13 @@ export async function GET(
             
             if (daysOverdue > gracePeriod) {
               if (lateFeesSettings.type === 'percentage') {
+                // Calculate late fee on remaining balance (after partial payments)
                 lateFeesAmount = remainingBalance * ((lateFeesSettings.amount || 0) / 100);
               } else if (lateFeesSettings.type === 'fixed') {
                 lateFeesAmount = lateFeesSettings.amount || 0;
               }
+              // Total payable = invoice.total + late fees (for reference)
+              // But what's actually owed = remainingBalance + lateFeesAmount
               totalPayable = invoice.total + lateFeesAmount;
             }
           }
@@ -86,7 +89,8 @@ export async function GET(
       }
     }
     
-    const finalRemainingBalance = Math.max(0, totalPayable - totalPaid);
+    // What's actually remaining = remaining balance + late fees
+    const finalRemainingBalance = Math.max(0, remainingBalance + lateFeesAmount);
 
     return NextResponse.json({
       payments: payments || [],
@@ -186,20 +190,17 @@ export async function POST(
       }
     }
     
-    // Calculate total payable: invoice total + late fees
+    // Calculate total payable: remaining balance + late fees (what's actually owed now)
     // For fixed late fees: lateFeesAmount is fixed
     // For percentage late fees: lateFeesAmount is calculated on remaining balance
-    totalPayable = invoice.total + lateFeesAmount;
-    
-    // What customer actually owes now = remaining balance on invoice + late fees
     const actualTotalPayable = remainingBalance + lateFeesAmount;
     
     const newTotalPaid = totalPaid + parseFloat(amount.toString());
 
-    // Check if payment would exceed total payable (including late fees)
-    if (newTotalPaid > totalPayable) {
+    // Check if payment would exceed what's actually owed (remaining balance + late fees)
+    if (parseFloat(amount.toString()) > actualTotalPayable) {
       return NextResponse.json({ 
-        error: `Payment amount exceeds total payable (including late fees). Maximum payment allowed: $${(actualTotalPayable).toFixed(2)}` 
+        error: `Payment amount exceeds total payable (including late fees). Maximum payment allowed: $${actualTotalPayable.toFixed(2)}` 
       }, { status: 400 });
     }
 
@@ -256,14 +257,16 @@ export async function POST(
         }
       }
       
-      // Total payable = invoice.total + late fees
-      // But what's actually remaining = new remaining balance + recalculated late fees
-      const finalTotalPayable = invoice.total + finalLateFees;
+      // What's actually remaining = new remaining balance + recalculated late fees
       const finalRemainingBalance = Math.max(0, newRemainingBalance + finalLateFees);
+      // Total payable = what was originally owed (invoice.total + late fees at that time)
+      // But for checking if fully paid, we check if remaining balance + late fees = 0
+      const finalTotalPayable = invoice.total + finalLateFees;
 
       // Check if invoice is now fully paid (including late fees)
-      // Invoice is fully paid when: totalPaid >= (invoice.total + late fees)
-      if (newTotalPaid >= finalTotalPayable) {
+      // Invoice is fully paid when: remaining balance + late fees = 0 (i.e., finalRemainingBalance = 0)
+      // OR when totalPaid >= (invoice.total + late fees)
+      if (finalRemainingBalance <= 0 || newTotalPaid >= finalTotalPayable) {
         // Auto-mark invoice as paid if fully paid
         await supabaseAdmin
           .from('invoices')
@@ -341,7 +344,7 @@ export async function POST(
       remainingBalance: finalRemainingBalance,
       lateFeesAmount: finalLateFees,
       totalPayable: finalTotalPayable,
-      isFullyPaid: newTotalPaid >= finalTotalPayable
+      isFullyPaid: finalRemainingBalance <= 0 || newTotalPaid >= finalTotalPayable
     });
 
   } catch (error) {

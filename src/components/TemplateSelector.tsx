@@ -86,11 +86,10 @@ export default function TemplateSelector({
 
   const handleTemplateSelect = (templateId: number) => {
     onTemplateSelect(templateId)
-    const template = templatePreviews.find(t => t.id === templateId)
-    if (template) {
-      onPrimaryColorChange(template.defaultPrimary)
-      onSecondaryColorChange(template.defaultSecondary)
-    }
+    // Don't reset colors when changing templates - preserve user's selected colors
+    // This allows users to customize colors and then change templates without losing their color choices
+    // Clear selected preset when template changes to avoid duplicate highlights
+    setSelectedPreset(null)
   }
 
   const handleColorPreset = (primary: string, secondary: string, presetName: string) => {
