@@ -1996,7 +1996,7 @@ export default function QuickInvoiceModal({
 
                 {/* Invoice Details */}
                 <div className="p-4 w-full">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" style={{ maxWidth: '100%' }}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" style={{ maxWidth: '100%' }}>
                   <div>
                     <div className="relative">
                       <Hash className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
@@ -2066,69 +2066,6 @@ export default function QuickInvoiceModal({
                     </p>
                     )}
                   </div>
-
-                  <div>
-                  <div className="relative">
-                    <Calendar className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
-                      isDarkMode ? 'text-gray-500' : 'text-gray-400'
-                    }`} />
-                    <input
-                      type="date"
-                      value={dueDate}
-                      onChange={(e) => {
-                        if (!markAsPaid) {
-                          setDueDate(e.target.value)
-                          if (errors.dueDate) {
-                            setErrors(prev => ({ ...prev, dueDate: undefined }))
-                          }
-                        }
-                      }}
-                      disabled={markAsPaid}
-                      className={`w-full pl-10 pr-3 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
-                        markAsPaid ? 'cursor-not-allowed opacity-60' : ''
-                      } ${
-                        errors.dueDate
-                          ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                          : isDarkMode 
-                          ? 'border-gray-700 bg-gray-800 text-white' 
-                          : 'border-gray-300 bg-white text-gray-900'
-                      }`}
-                      required
-                    />
-                    {paymentTerms.enabled && paymentTerms.defaultOption === 'Due on Receipt' && (
-                      <div className="absolute right-8 top-1/2 transform -translate-y-1/2">
-                        <div className={`w-2 h-2 rounded-full ${
-                          isDarkMode ? 'bg-orange-400' : 'bg-orange-500'
-                        }`} title="Auto-updated by payment terms"></div>
-                  </div>
-                    )}
-                  </div>
-                  {errors.dueDate ? (
-                    <p className="text-xs mt-1 text-red-600">{errors.dueDate}</p>
-                  ) : (
-                    <>
-                  <p className={`text-xs mt-1 ${
-                    isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                  }`}>
-                        Due Date {markAsPaid && <span className="text-orange-600">(Locked - Due on Receipt)</span>}
-                  </p>
-                  {paymentTerms.enabled && paymentTerms.defaultOption !== 'Custom' && (
-                    <p className={`text-xs mt-1 ${
-                      isDarkMode ? 'text-orange-400' : 'text-orange-600'
-                    }`}>
-                      Auto-updated to match the payment terms
-                    </p>
-                      )}
-                  {paymentTerms.enabled && paymentTerms.defaultOption === 'Custom' && (
-                    <p className={`text-xs mt-1 ${
-                      isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                    }`}>
-                      Set your custom due date manually
-                    </p>
-                      )}
-                    </>
-                  )}
-                </div>
                   </div>
                 </div>
 
@@ -2804,8 +2741,79 @@ export default function QuickInvoiceModal({
                   </label>
                 </div>
 
+                {/* Due Date Field - Always visible in Payment Terms tab */}
+                <div className="mt-4">
+                  <label className={`block text-xs font-medium mb-2 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    Due Date {markAsPaid && <span className="text-orange-600">(Locked - Due on Receipt)</span>}
+                  </label>
+                  <div className="relative">
+                    <Calendar className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${
+                      isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                    }`} />
+                    <input
+                      type="date"
+                      value={dueDate}
+                      onChange={(e) => {
+                        if (!markAsPaid) {
+                          setDueDate(e.target.value)
+                          if (errors.dueDate) {
+                            setErrors(prev => ({ ...prev, dueDate: undefined }))
+                          }
+                        }
+                      }}
+                      disabled={markAsPaid || (paymentTerms.enabled && paymentTerms.defaultOption !== 'Custom')}
+                      className={`w-full pl-10 pr-3 py-2.5 text-sm border focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                        markAsPaid || (paymentTerms.enabled && paymentTerms.defaultOption !== 'Custom') ? 'cursor-not-allowed opacity-60' : ''
+                      } ${
+                        errors.dueDate
+                          ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                          : isDarkMode 
+                          ? 'border-gray-700 bg-gray-800 text-white' 
+                          : 'border-gray-300 bg-white text-gray-900'
+                      }`}
+                      required
+                    />
+                    {paymentTerms.enabled && paymentTerms.defaultOption !== 'Custom' && (
+                      <div className="absolute right-8 top-1/2 transform -translate-y-1/2">
+                        <div className={`w-2 h-2 rounded-full ${
+                          isDarkMode ? 'bg-orange-400' : 'bg-orange-500'
+                        }`} title="Auto-updated by payment terms"></div>
+                      </div>
+                    )}
+                  </div>
+                  {errors.dueDate ? (
+                    <p className="text-xs mt-1 text-red-600">{errors.dueDate}</p>
+                  ) : (
+                    <>
+                      {paymentTerms.enabled && paymentTerms.defaultOption !== 'Custom' && (
+                        <p className={`text-xs mt-1 ${
+                          isDarkMode ? 'text-orange-400' : 'text-orange-600'
+                        }`}>
+                          Auto-calculated based on payment terms
+                        </p>
+                      )}
+                      {paymentTerms.enabled && paymentTerms.defaultOption === 'Custom' && (
+                        <p className={`text-xs mt-1 ${
+                          isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                        }`}>
+                          Set your custom due date manually
+                        </p>
+                      )}
+                      {!paymentTerms.enabled && (
+                        <p className={`text-xs mt-1 ${
+                          isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                        }`}>
+                          Select due date for this invoice
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+
                 {paymentTerms.enabled && (
-                  <div className="space-y-4">
+                  <div className="space-y-4 mt-4">
                     {/* Payment Terms Info */}
                     <div className={`flex items-start space-x-3 p-3 ${
                       isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50'
@@ -2960,34 +2968,46 @@ export default function QuickInvoiceModal({
                 {reminders.enabled && (
                   <div className="space-y-4">
                     {/* Smart Reminder Logic Based on Payment Terms */}
-                    {paymentTerms.enabled && (
-                      <div className={`p-3 border ${
-                        isDarkMode 
-                          ? 'bg-amber-900/20 border-amber-800' 
-                          : 'bg-amber-50 border-amber-200'
-                      }`}>
-                        <div className="flex items-start space-x-2">
-                          <AlertCircle className={`h-4 w-4 mt-0.5 ${
-                            isDarkMode ? 'text-amber-400' : 'text-amber-600'
-                          }`} />
-                          <div>
-                            <p className={`text-xs font-medium ${
-                              isDarkMode ? 'text-amber-300' : 'text-amber-700'
-                            }`}>
-                              Smart Reminder System
-                            </p>
-                            <p className={`text-xs mt-1 ${
+                    {paymentTerms.enabled && (() => {
+                      // Calculate days between issue date and due date for custom payment terms
+                      let customDays = 0;
+                      if (paymentTerms.defaultOption === 'Custom' && issueDate && dueDate) {
+                        const issue = new Date(issueDate);
+                        const due = new Date(dueDate);
+                        customDays = Math.ceil((due.getTime() - issue.getTime()) / (1000 * 60 * 60 * 24));
+                      }
+                      
+                      return (
+                        <div className={`p-3 border ${
+                          isDarkMode 
+                            ? 'bg-amber-900/20 border-amber-800' 
+                            : 'bg-amber-50 border-amber-200'
+                        }`}>
+                          <div className="flex items-start space-x-2">
+                            <AlertCircle className={`h-4 w-4 mt-0.5 ${
                               isDarkMode ? 'text-amber-400' : 'text-amber-600'
-                            }`}>
-                              {paymentTerms.defaultOption === 'Due on Receipt' 
-                                ? 'For "Due on Receipt" invoices, reminders will be sent immediately after due date to encourage quick payment.'
-                                : `For "${paymentTerms.defaultOption}" invoices, reminders will be sent before and after the due date for optimal collection.`
-                              }
-                            </p>
+                            }`} />
+                            <div>
+                              <p className={`text-xs font-medium ${
+                                isDarkMode ? 'text-amber-300' : 'text-amber-700'
+                              }`}>
+                                Smart Reminder System
+                              </p>
+                              <p className={`text-xs mt-1 ${
+                                isDarkMode ? 'text-amber-400' : 'text-amber-600'
+                              }`}>
+                                {paymentTerms.defaultOption === 'Due on Receipt' 
+                                  ? 'For "Due on Receipt" invoices, reminders will be sent immediately after due date to encourage quick payment.'
+                                  : paymentTerms.defaultOption === 'Custom' && customDays > 0
+                                  ? `For your custom ${customDays}-day payment terms, reminders will be automatically optimized based on the payment period.`
+                                  : `For "${paymentTerms.defaultOption}" invoices, reminders will be sent before and after the due date for optimal collection.`
+                                }
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {/* System vs Custom Choice */}
                     <div className="flex items-center justify-between">
@@ -3042,73 +3062,226 @@ export default function QuickInvoiceModal({
                             Smart Reminders
                           </span>
                         </div>
-                        <p className={`text-xs mb-3 ${
-                          isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                        }`}>
-                          {paymentTerms.enabled 
-                            ? `System will automatically send reminders optimized for "${paymentTerms.defaultOption}" payment terms`
-                            : 'System will automatically send reminders at optimal times'
+                        {(() => {
+                          // Calculate days between issue date and due date for custom payment terms
+                          let customDays = 0;
+                          if (paymentTerms.enabled && paymentTerms.defaultOption === 'Custom' && issueDate && dueDate) {
+                            const issue = new Date(issueDate);
+                            const due = new Date(dueDate);
+                            customDays = Math.ceil((due.getTime() - issue.getTime()) / (1000 * 60 * 60 * 24));
                           }
-                        </p>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          {paymentTerms.enabled && paymentTerms.defaultOption === 'Due on Receipt' ? (
-                            // Special logic for "Due on Receipt"
+                          
+                          return (
                             <>
-                              <div className={`flex items-center space-x-2 ${
-                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              <p className={`text-xs mb-3 ${
+                                isDarkMode ? 'text-gray-400' : 'text-gray-600'
                               }`}>
-                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                                <span>1 day after</span>
-                              </div>
-                              <div className={`flex items-center space-x-2 ${
-                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                              }`}>
-                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                                <span>3 days after</span>
-                              </div>
-                              <div className={`flex items-center space-x-2 ${
-                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                              }`}>
-                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                                <span>7 days after</span>
-                              </div>
-                              <div className={`flex items-center space-x-2 ${
-                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                              }`}>
-                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                                <span>14 days after</span>
+                                {paymentTerms.enabled 
+                                  ? paymentTerms.defaultOption === 'Custom' && customDays > 0
+                                    ? `System will automatically send reminders optimized for your custom ${customDays}-day payment terms`
+                                    : `System will automatically send reminders optimized for "${paymentTerms.defaultOption}" payment terms`
+                                  : 'System will automatically send reminders at optimal times'
+                                }
+                              </p>
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                {(() => {
+                                  // Determine which reminder schedule to use
+                                  if (paymentTerms.enabled && paymentTerms.defaultOption === 'Due on Receipt') {
+                                    // Special logic for "Due on Receipt"
+                                    return (
+                                      <>
+                                        <div className={`flex items-center space-x-2 ${
+                                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                        }`}>
+                                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                          <span>1 day after</span>
+                                        </div>
+                                        <div className={`flex items-center space-x-2 ${
+                                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                        }`}>
+                                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                          <span>3 days after</span>
+                                        </div>
+                                        <div className={`flex items-center space-x-2 ${
+                                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                        }`}>
+                                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                          <span>7 days after</span>
+                                        </div>
+                                        <div className={`flex items-center space-x-2 ${
+                                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                        }`}>
+                                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                          <span>14 days after</span>
+                                        </div>
+                                      </>
+                                    );
+                                  } else if (paymentTerms.enabled && paymentTerms.defaultOption === 'Custom' && customDays > 0) {
+                                    // Custom payment terms - adapt based on duration
+                                    if (customDays <= 3) {
+                                      // Very short period (0-3 days) - use "Due on Receipt" logic
+                                      return (
+                                        <>
+                                          <div className={`flex items-center space-x-2 ${
+                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                          }`}>
+                                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                            <span>1 day after</span>
+                                          </div>
+                                          <div className={`flex items-center space-x-2 ${
+                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                          }`}>
+                                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                            <span>3 days after</span>
+                                          </div>
+                                          <div className={`flex items-center space-x-2 ${
+                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                          }`}>
+                                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                            <span>7 days after</span>
+                                          </div>
+                                          <div className={`flex items-center space-x-2 ${
+                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                          }`}>
+                                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                            <span>14 days after</span>
+                                          </div>
+                                        </>
+                                      );
+                                    } else if (customDays <= 14) {
+                                      // Short period (4-14 days) - shorter before/after schedule
+                                      const beforeDays = Math.max(1, Math.floor(customDays * 0.3));
+                                      const afterDays1 = Math.max(1, Math.floor(customDays * 0.2));
+                                      const afterDays2 = Math.max(3, Math.floor(customDays * 0.5));
+                                      return (
+                                        <>
+                                          <div className={`flex items-center space-x-2 ${
+                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                          }`}>
+                                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                            <span>{beforeDays} day{beforeDays !== 1 ? 's' : ''} before</span>
+                                          </div>
+                                          <div className={`flex items-center space-x-2 ${
+                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                          }`}>
+                                            <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                                            <span>On due date</span>
+                                          </div>
+                                          <div className={`flex items-center space-x-2 ${
+                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                          }`}>
+                                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                            <span>{afterDays1} day{afterDays1 !== 1 ? 's' : ''} after</span>
+                                          </div>
+                                          <div className={`flex items-center space-x-2 ${
+                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                          }`}>
+                                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                            <span>{afterDays2} day{afterDays2 !== 1 ? 's' : ''} after</span>
+                                          </div>
+                                        </>
+                                      );
+                                    } else if (customDays <= 30) {
+                                      // Medium period (15-30 days) - standard before/after schedule
+                                      return (
+                                        <>
+                                          <div className={`flex items-center space-x-2 ${
+                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                          }`}>
+                                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                            <span>7 days before</span>
+                                          </div>
+                                          <div className={`flex items-center space-x-2 ${
+                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                          }`}>
+                                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                            <span>3 days before</span>
+                                          </div>
+                                          <div className={`flex items-center space-x-2 ${
+                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                          }`}>
+                                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                            <span>1 day after</span>
+                                          </div>
+                                          <div className={`flex items-center space-x-2 ${
+                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                          }`}>
+                                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                            <span>7 days after</span>
+                                          </div>
+                                        </>
+                                      );
+                                    } else {
+                                      // Long period (31+ days) - longer before/after schedule
+                                      const beforeDays1 = Math.floor(customDays * 0.2);
+                                      const beforeDays2 = Math.floor(customDays * 0.1);
+                                      const afterDays1 = Math.max(1, Math.floor(customDays * 0.05));
+                                      const afterDays2 = Math.max(7, Math.floor(customDays * 0.1));
+                                      return (
+                                        <>
+                                          <div className={`flex items-center space-x-2 ${
+                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                          }`}>
+                                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                            <span>{beforeDays1} days before</span>
+                                          </div>
+                                          <div className={`flex items-center space-x-2 ${
+                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                          }`}>
+                                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                            <span>{beforeDays2} days before</span>
+                                          </div>
+                                          <div className={`flex items-center space-x-2 ${
+                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                          }`}>
+                                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                            <span>{afterDays1} day{afterDays1 !== 1 ? 's' : ''} after</span>
+                                          </div>
+                                          <div className={`flex items-center space-x-2 ${
+                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                          }`}>
+                                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                            <span>{afterDays2} days after</span>
+                                          </div>
+                                        </>
+                                      );
+                                    }
+                                  } else {
+                                    // Standard logic for other payment terms (Net 15, Net 30, 2/10 Net 30) or no payment terms
+                                    return (
+                                      <>
+                                        <div className={`flex items-center space-x-2 ${
+                                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                        }`}>
+                                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                          <span>7 days before</span>
+                                        </div>
+                                        <div className={`flex items-center space-x-2 ${
+                                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                        }`}>
+                                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                          <span>3 days before</span>
+                                        </div>
+                                        <div className={`flex items-center space-x-2 ${
+                                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                        }`}>
+                                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                          <span>1 day after</span>
+                                        </div>
+                                        <div className={`flex items-center space-x-2 ${
+                                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                                        }`}>
+                                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                          <span>7 days after</span>
+                                        </div>
+                                      </>
+                                    );
+                                  }
+                                })()}
                               </div>
                             </>
-                          ) : (
-                            // Standard logic for other payment terms
-                            <>
-                              <div className={`flex items-center space-x-2 ${
-                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                              }`}>
-                                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                <span>7 days before</span>
-                              </div>
-                              <div className={`flex items-center space-x-2 ${
-                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                              }`}>
-                                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                <span>3 days before</span>
-                              </div>
-                              <div className={`flex items-center space-x-2 ${
-                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                              }`}>
-                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                                <span>1 day after</span>
-                              </div>
-                              <div className={`flex items-center space-x-2 ${
-                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                              }`}>
-                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                                <span>7 days after</span>
-                              </div>
-                            </>
-                          )}
-                        </div>
+                          );
+                        })()}
                       </div>
                     ) : (
                       /* Custom Reminders - Simplified */

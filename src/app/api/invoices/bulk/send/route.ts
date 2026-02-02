@@ -95,21 +95,44 @@ export async function POST(request: NextRequest) {
         console.warn(`Queue failed for invoice ${invoice.invoice_number}, falling back to sync:`, queueResult.error);
       }
 
-      // Fallback: Update invoice status synchronously (for when queue is disabled or fails)
-      const { error: updateError } = await supabaseAdmin
-        .from('invoices')
-        .update({ 
-          status: 'sent',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', invoice.id)
-        .eq('user_id', user.id);
+      // Fallback: Send invoice synchronously (for when queue is disabled or fails)
+      // Use HTTP fetch to call the send endpoint (avoids routing issues)
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+          (request.url ? new URL(request.url).origin : 'http://localhost:3000');
+        
+        const authHeader = request.headers.get('Authorization');
+        const sendResponse = await fetch(`${baseUrl}/api/invoices/send`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(authHeader ? { 'Authorization': authHeader } : {}),
+          },
+          body: JSON.stringify({
+            invoiceId: invoice.id,
+            clientEmail,
+            clientName,
+          }),
+        });
 
-      if (updateError) {
-        console.error(`Error updating invoice ${invoice.invoice_number}:`, updateError);
+        if (!sendResponse.ok) {
+          const errorData = await sendResponse.json().catch(() => ({ error: 'Unknown error' }));
+          console.error(`Error sending invoice ${invoice.invoice_number}:`, errorData);
+          failedInvoices.push(invoice.id);
+          continue;
+        }
+
+        const sendResult = await sendResponse.json();
+        if (sendResult.success) {
+          queuedInvoices.push(invoice.id);
+          console.log(`✅ Invoice ${invoice.invoice_number} sent successfully (sync mode)`);
+        } else {
+          console.error(`Failed to send invoice ${invoice.invoice_number}:`, sendResult.error || 'Unknown error');
+          failedInvoices.push(invoice.id);
+        }
+      } catch (sendError: any) {
+        console.error(`Error sending invoice ${invoice.invoice_number}:`, sendError?.message || sendError);
         failedInvoices.push(invoice.id);
-      } else {
-        queuedInvoices.push(invoice.id);
       }
     }
 

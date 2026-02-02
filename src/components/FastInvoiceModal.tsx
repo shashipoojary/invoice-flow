@@ -875,13 +875,13 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
     <>
       {/* Main Invoice Modal - Hide when upgrade modal is shown */}
       <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50 ${showUpgradeModal ? 'hidden' : ''}`}>
-      <div className={`shadow-2xl max-w-md w-full overflow-hidden ${
+      <div className={`shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden overflow-y-auto scroll-smooth ${
         isDarkMode 
           ? 'bg-gray-900' 
           : 'bg-white'
       }`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6">
+        <div className="flex items-center justify-between p-4 sm:p-6">
           <div className="flex items-center space-x-3">
             <div className={`p-2.5 ${
               isDarkMode 
@@ -895,14 +895,14 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
               }`} />
             </div>
             <div>
-              <h2 className={`text-lg font-semibold ${
+              <h2 className={`text-base sm:text-lg font-semibold ${
                 isDarkMode 
                   ? 'text-white' 
                   : 'text-gray-900'
               }`}>
                 Quick Invoice
               </h2>
-              <p className={`text-xs ${
+              <p className={`text-xs sm:text-sm ${
                 isDarkMode 
                   ? 'text-gray-400' 
                   : 'text-gray-500'
@@ -923,7 +923,7 @@ export default function FastInvoiceModal({ isOpen, onClose, onSuccess, getAuthHe
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 pb-6">
+        <form onSubmit={handleSubmit} className="px-4 sm:px-6 pb-4 sm:pb-6">
           {/* Tax Registration Check - Block Fast Invoice if user is tax-registered */}
           {settings?.isTaxRegistered === true && (
             <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500">

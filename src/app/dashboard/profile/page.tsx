@@ -224,6 +224,7 @@ export default function ProfilePage() {
       freeInvoicesRemaining: number;
       chargedInvoices: number;
       totalCharged: string;
+      template1DetailedInvoices?: number;
     };
   } | null>(null);
   
@@ -1554,6 +1555,17 @@ export default function ProfilePage() {
                               )}
                             </span>
                           </div>
+                          {(subscriptionUsage.payPerInvoice.template1DetailedInvoices || 0) > 0 && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-600">Template 1 Invoices:</span>
+                              <span className="text-sm font-medium text-gray-900">
+                                {subscriptionUsage.payPerInvoice.template1DetailedInvoices} invoice{subscriptionUsage.payPerInvoice.template1DetailedInvoices !== 1 ? 's' : ''}
+                                <span className="text-gray-600 ml-1 text-xs">
+                                  (free within limit, then $0.50)
+                                </span>
+                              </span>
+                            </div>
+                          )}
                             {subscriptionUsage.payPerInvoice.chargedInvoices > 0 && (
                             <div className="flex items-center justify-between">
                               <span className="text-sm text-gray-600">Paid Invoices:</span>
@@ -2064,10 +2076,12 @@ export default function ProfilePage() {
             setSelectedInvoice(null);
           }}
           user={user!}
-          onSuccess={() => {
+          onSuccess={async () => {
             setShowFastInvoice(false);
             setSelectedInvoice(null);
             showSuccess('Invoice created successfully!');
+            // Refresh subscription usage to update counts
+            await loadSubscriptionUsage();
           }}
           getAuthHeaders={getAuthHeaders}
           editingInvoice={selectedInvoice}
@@ -2085,10 +2099,12 @@ export default function ProfilePage() {
             setShowCreateInvoice(false);
             setSelectedInvoice(null);
           }}
-          onSuccess={() => {
+          onSuccess={async () => {
             setShowCreateInvoice(false);
             setSelectedInvoice(null);
             showSuccess('Invoice created successfully!');
+            // Refresh subscription usage to update counts
+            await loadSubscriptionUsage();
           }}
           getAuthHeaders={getAuthHeaders}
           editingInvoice={selectedInvoice}

@@ -913,7 +913,8 @@ export async function POST(request: NextRequest) {
             template: invoiceTheme?.template || 1,
             reminderCount: reminderCount,
             primaryColor: invoiceTheme?.primary_color || invoiceTheme?.primaryColor,
-            secondaryColor: invoiceTheme?.secondary_color || invoiceTheme?.secondaryColor
+            secondaryColor: invoiceTheme?.secondary_color || invoiceTheme?.secondaryColor,
+            invoiceType: completeInvoice.type || 'detailed'
           }
         );
         // Don't fail invoice creation if billing fails - just log it

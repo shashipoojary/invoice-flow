@@ -544,7 +544,8 @@ export async function POST(request: NextRequest) {
           template: invoiceTheme?.template || 1,
           reminderCount: reminderCount,
           primaryColor: invoiceTheme?.primary_color,
-          secondaryColor: invoiceTheme?.secondary_color
+          secondaryColor: invoiceTheme?.secondary_color,
+          invoiceType: invoice.type || 'detailed'
         }
       );
       if (chargeResult.success) {

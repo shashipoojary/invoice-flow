@@ -19,6 +19,7 @@ interface UpgradeModalProps {
       freeInvoicesRemaining: number;
       chargedInvoices: number;
       totalCharged: string;
+      template1DetailedInvoices?: number;
     };
   };
   reason?: string;
@@ -188,7 +189,7 @@ export default function UpgradeModal({
                   )}
                 </span>
               </div>
-              {usage.payPerInvoice.freeInvoicesRemaining > 0 && (
+              {(usage.payPerInvoice.freeInvoicesRemaining > 0 || (usage.payPerInvoice.template1DetailedInvoices || 0) > 0) && (
                 <>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs text-gray-600">Free invoices remaining</span>
@@ -196,6 +197,15 @@ export default function UpgradeModal({
                       {usage.payPerInvoice.freeInvoicesRemaining} / 5
                     </span>
                   </div>
+                  {(usage.payPerInvoice.template1DetailedInvoices || 0) > 0 && (
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-gray-600">Template 1 invoices</span>
+                      <span className="text-xs font-medium text-gray-700">
+                        {usage.payPerInvoice.template1DetailedInvoices} invoice{usage.payPerInvoice.template1DetailedInvoices !== 1 ? 's' : ''}
+                        <span className="text-gray-600 ml-1">(free within limit, then $0.50)</span>
+                      </span>
+                    </div>
+                  )}
                   <div className="w-full bg-gray-200 h-2 overflow-hidden">
                     <div 
                       className="h-2 bg-green-500 transition-all"
@@ -203,7 +213,7 @@ export default function UpgradeModal({
                     />
                   </div>
                   <p className="text-xs text-green-600 mt-2">
-                    🎁 First 5 invoices are free! {usage.payPerInvoice.freeInvoicesRemaining} free invoice{usage.payPerInvoice.freeInvoicesRemaining !== 1 ? 's' : ''} remaining.
+                    🎁 First 5 invoices (fast + template 1 detailed) are free! After that, each invoice costs $0.50. {usage.payPerInvoice.freeInvoicesRemaining} free invoice{usage.payPerInvoice.freeInvoicesRemaining !== 1 ? 's' : ''} remaining.
                   </p>
                 </>
               )}
