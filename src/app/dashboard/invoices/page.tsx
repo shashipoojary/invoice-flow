@@ -1553,59 +1553,39 @@ function InvoicesContent(): React.JSX.Element {
     loadingActions: { [key: string]: boolean };
   }) => {
     const [paymentData, setPaymentData] = useState<{ totalPaid: number; remainingBalance: number } | null>(null);
+    const [isMounted, setIsMounted] = useState(false);
     const [showTooltip, setShowTooltip] = useState<string | null>(null);
+    const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
     const tooltipTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-    
-    // Clear timeout helper
-    const clearTooltipTimeout = () => {
-      if (tooltipTimeoutRef.current) {
-        clearTimeout(tooltipTimeoutRef.current);
-        tooltipTimeoutRef.current = null;
-      }
+
+    const clearTipTimeout = () => {
+      if (tooltipTimeoutRef.current) { clearTimeout(tooltipTimeoutRef.current); tooltipTimeoutRef.current = null; }
     };
-    
-    // Toggle tooltip on click (for mobile)
-    const toggleTooltip = (tooltipId: string) => {
-      clearTooltipTimeout();
-      if (showTooltip === tooltipId) {
-        setShowTooltip(null);
-      } else {
-        setShowTooltip(tooltipId);
-      }
+    const openTipFromEl = (id: string, el: HTMLElement) => {
+      clearTipTimeout();
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) return;
+      setTooltipPos({ top: r.top, left: r.left + r.width / 2 });
+      setShowTooltip(id);
     };
-    
-    // Cleanup timeout on unmount
+    const closeTipDelayed = () => { clearTipTimeout(); tooltipTimeoutRef.current = setTimeout(() => { setShowTooltip(null); setTooltipPos(null); }, 120); };
+    const closeTipNow = () => { clearTipTimeout(); setShowTooltip(null); setTooltipPos(null); };
+
     React.useEffect(() => {
-      return () => {
-        if (tooltipTimeoutRef.current) {
-          clearTimeout(tooltipTimeoutRef.current);
-        }
-      };
+      setIsMounted(true);
+      return () => { clearTipTimeout(); };
     }, []);
-    
-    // Close tooltip when clicking outside (for mobile)
+
     React.useEffect(() => {
       if (!showTooltip) return;
-      
-      const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-        const target = e.target as Node;
-        const cardElement = document.querySelector(`[data-invoice-card="${invoice.id}"]`);
-        
-        if (cardElement && !cardElement.contains(target)) {
-          setShowTooltip(null);
-          clearTooltipTimeout();
-        }
+      const onOutside = (e: PointerEvent) => {
+        const t = e.target as HTMLElement;
+        if (t.closest('[data-dot-tooltip]') || t.closest('[data-dot-btn]')) return;
+        closeTipNow();
       };
-      
-      // Use capture phase to catch clicks early
-      document.addEventListener('mousedown', handleClickOutside, true);
-      document.addEventListener('touchstart', handleClickOutside, true);
-      
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside, true);
-        document.removeEventListener('touchstart', handleClickOutside, true);
-      };
-    }, [showTooltip, invoice.id]);
+      const tid = setTimeout(() => { document.addEventListener('pointerdown', onOutside, true); }, 150);
+      return () => { clearTimeout(tid); document.removeEventListener('pointerdown', onOutside, true); };
+    }, [showTooltip]);
     // Only enable on small screens (mobile phones < 640px)
     const [useCompactBadges, setUseCompactBadges] = useState(() => {
       if (typeof window !== 'undefined') {
@@ -1759,110 +1739,50 @@ function InvoicesContent(): React.JSX.Element {
                   <span className="capitalize">{invoice.status}</span>
                 </span>
                 {dueCharges.isPartiallyPaid && invoice.status !== 'paid' && (
-                  <div className="relative">
-                    {/* Compact mode: Dot only */}
-                    {useCompactBadges ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            toggleTooltip(`partial-${invoice.id}`);
-                          }}
-                          onTouchStart={(e) => {
-                            e.stopPropagation();
-                            toggleTooltip(`partial-${invoice.id}`);
-                          }}
-                          className="w-2 h-2 rounded-full bg-blue-600 cursor-pointer relative flex-shrink-0 border-0 p-0 hover:ring-2 hover:ring-blue-300 transition-all"
-                          title="Partial Paid"
-                          aria-label="Partial Paid"
-                          style={{ lineHeight: 0, fontSize: 0 }}
-                        />
-                        {/* Tooltip */}
-                        {showTooltip === `partial-${invoice.id}` && (
-                          <div 
-                            className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-white border border-gray-200 text-gray-800 text-xs font-medium whitespace-nowrap z-50 shadow-lg rounded-md"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              clearTooltipTimeout();
-                            }}
-                            onTouchStart={(e) => {
-                              e.stopPropagation();
-                              clearTooltipTimeout();
-                            }}
-                          >
-                            Partial Paid
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
-                              <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-transparent border-t-gray-200"></div>
-                            </div>
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-[1px]">
-                              <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-white"></div>
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      /* Full badge */
-                      <span className="inline-flex items-center gap-0.5 px-1 py-0.5 text-[8px] font-medium text-blue-600 whitespace-nowrap">
-                        <DollarSign className="h-2 w-2" />
-                        <span>Partial</span>
-                      </span>
-                    )}
-                  </div>
+                  useCompactBadges ? (
+                    <button
+                      data-dot-btn=""
+                      type="button"
+                      onMouseEnter={(e) => openTipFromEl(`partial-${invoice.id}`, e.currentTarget)}
+                      onMouseLeave={closeTipDelayed}
+                      onClick={(e) => {
+                        e.stopPropagation(); e.preventDefault();
+                        if (showTooltip === `partial-${invoice.id}`) { closeTipNow(); }
+                        else { openTipFromEl(`partial-${invoice.id}`, e.currentTarget); }
+                      }}
+                      className="w-2 h-2 rounded-full bg-blue-600 cursor-pointer flex-shrink-0 border-0 p-0 hover:ring-2 hover:ring-blue-300 transition-all"
+                      aria-label="Partial Paid"
+                      style={{ lineHeight: 0, fontSize: 0 }}
+                    />
+                  ) : (
+                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 text-[8px] font-medium text-blue-600 whitespace-nowrap">
+                      <DollarSign className="h-2 w-2" />
+                      <span>Partial</span>
+                    </span>
+                  )
                 )}
                 {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
-                  <div className="relative">
-                    {/* Compact mode: Dot only */}
-                    {useCompactBadges ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            toggleTooltip(`overdue-${invoice.id}`);
-                          }}
-                          onTouchStart={(e) => {
-                            e.stopPropagation();
-                            toggleTooltip(`overdue-${invoice.id}`);
-                          }}
-                          className="w-2 h-2 rounded-full bg-red-600 cursor-pointer relative flex-shrink-0 border-0 p-0 hover:ring-2 hover:ring-red-300 transition-all"
-                          title={dueDateStatus.days > 0 ? `${dueDateStatus.days} days overdue` : 'Overdue'}
-                          aria-label={dueDateStatus.days > 0 ? `${dueDateStatus.days} days overdue` : 'Overdue'}
-                          style={{ lineHeight: 0, fontSize: 0 }}
-                        />
-                        {/* Tooltip */}
-                        {showTooltip === `overdue-${invoice.id}` && (
-                          <div 
-                            className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1.5 px-2.5 py-1.5 bg-white border border-gray-200 text-gray-800 text-xs font-medium whitespace-nowrap z-50 shadow-lg rounded-md"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              clearTooltipTimeout();
-                            }}
-                            onTouchStart={(e) => {
-                              e.stopPropagation();
-                              clearTooltipTimeout();
-                            }}
-                          >
-                            {dueDateStatus.days > 0 ? `${dueDateStatus.days}d overdue` : 'Overdue'}
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
-                              <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-transparent border-t-gray-200"></div>
-                            </div>
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-[1px]">
-                              <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-white"></div>
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      /* Full badge */
-                      <span className={`inline-flex items-center gap-0.5 px-1 py-0.5 text-[8px] font-medium whitespace-nowrap ${'text-red-600'}`}>
-                        <AlertTriangle className="h-2 w-2" />
-                        <span>{dueDateStatus.days > 0 ? `${dueDateStatus.days}d` : 'Overdue'}</span>
-                      </span>
-                    )}
-                  </div>
+                  useCompactBadges ? (
+                    <button
+                      data-dot-btn=""
+                      type="button"
+                      onMouseEnter={(e) => openTipFromEl(`overdue-${invoice.id}`, e.currentTarget)}
+                      onMouseLeave={closeTipDelayed}
+                      onClick={(e) => {
+                        e.stopPropagation(); e.preventDefault();
+                        if (showTooltip === `overdue-${invoice.id}`) { closeTipNow(); }
+                        else { openTipFromEl(`overdue-${invoice.id}`, e.currentTarget); }
+                      }}
+                      className="w-2 h-2 rounded-full bg-red-600 cursor-pointer flex-shrink-0 border-0 p-0 hover:ring-2 hover:ring-red-300 transition-all"
+                      aria-label={dueDateStatus.days > 0 ? `${dueDateStatus.days}d overdue` : 'Overdue'}
+                      style={{ lineHeight: 0, fontSize: 0 }}
+                    />
+                  ) : (
+                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 text-[8px] font-medium text-red-600 whitespace-nowrap">
+                      <AlertTriangle className="h-2 w-2" />
+                      <span>{dueDateStatus.days > 0 ? `${dueDateStatus.days}d` : 'Overdue'}</span>
+                    </span>
+                  )
                 )}
               </div>
           
@@ -2069,6 +1989,40 @@ function InvoicesContent(): React.JSX.Element {
           </div>
         </div>
       </div>
+
+      {/* Single tooltip portal — fixed position above the tapped dot */}
+      {isMounted && showTooltip && tooltipPos && typeof window !== 'undefined' && createPortal(
+        (() => {
+          const tipMap: Record<string, string> = {
+            [`partial-${invoice.id}`]: 'Partial Paid',
+            [`overdue-${invoice.id}`]: dueDateStatus.days > 0 ? `${dueDateStatus.days}d overdue` : 'Overdue',
+          };
+          const label = tipMap[showTooltip];
+          if (!label) return null;
+          return (
+            <div
+              data-dot-tooltip=""
+              onMouseEnter={clearTipTimeout}
+              onMouseLeave={closeTipDelayed}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: 'fixed',
+                top: tooltipPos.top,
+                left: tooltipPos.left,
+                transform: 'translate(-50%, calc(-100% - 8px))',
+                zIndex: 9999,
+                pointerEvents: 'auto',
+              }}
+              className="px-2.5 py-1.5 bg-white border border-gray-200 text-gray-800 text-xs font-medium whitespace-nowrap shadow-lg rounded-md"
+            >
+              {label}
+              <span style={{ position:'absolute', top:'100%', left:'50%', transform:'translateX(-50%)', display:'block', width:0, height:0, borderLeft:'5px solid transparent', borderRight:'5px solid transparent', borderTop:'5px solid #e5e7eb' }} />
+              <span style={{ position:'absolute', top:'calc(100% - 1px)', left:'50%', transform:'translateX(-50%)', display:'block', width:0, height:0, borderLeft:'4px solid transparent', borderRight:'4px solid transparent', borderTop:'4px solid white' }} />
+            </div>
+          );
+        })(),
+        document.body
+      )}
     </div>
     );
   });

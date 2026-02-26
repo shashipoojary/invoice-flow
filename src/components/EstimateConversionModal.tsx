@@ -68,7 +68,7 @@ export default function EstimateConversionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -76,61 +76,61 @@ export default function EstimateConversionModal({
       />
       
       {/* Modal */}
-      <div className="relative bg-white shadow-2xl border border-gray-200 max-w-lg w-full max-h-[90vh] sm:max-h-[85vh] transform transition-all duration-300 scale-100 overflow-hidden flex flex-col">
+      <div className="relative bg-white shadow-2xl border border-gray-200 max-w-lg w-full max-h-[90vh] transform transition-all duration-300 scale-100 overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-3 sm:p-4 md:p-6 border-b border-gray-200 flex-shrink-0">
-          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-            <div className="p-1.5 sm:p-2 bg-blue-50 flex-shrink-0">
-              <FileText className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-blue-500" />
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center space-x-3 min-w-0 flex-1">
+            <div className="p-2 rounded-full bg-blue-50 flex-shrink-0">
+              <FileText className="h-6 w-6 text-blue-500" />
             </div>
-            <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 truncate">
+            <h3 className="text-lg font-semibold text-gray-900 truncate">
               Convert Estimate to Invoice
             </h3>
           </div>
           <button
             onClick={handleClose}
-            className="p-1.5 sm:p-2 hover:bg-gray-100 transition-colors cursor-pointer flex-shrink-0 ml-2"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer flex-shrink-0 ml-3"
             disabled={isLoading}
           >
-            <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
+            <X className="h-5 w-5 text-gray-500" />
           </button>
         </div>
 
         {/* Content - Scrollable */}
-        <div className="p-3 sm:p-4 md:p-6 bg-white overflow-y-auto flex-1">
-          <p className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6">
+        <div className="p-6 bg-white overflow-y-auto flex-1">
+          <p className="text-sm text-gray-600 mb-6">
             Choose the invoice type and template for estimate <span className="font-semibold">#{estimate?.estimateNumber}</span>
           </p>
 
           {/* Invoice Type Selection */}
-          <div className="mb-4 sm:mb-6">
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
               Invoice Type
             </label>
-            <div className={`grid gap-2 sm:gap-3 ${canConvertToFast ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+            <div className={`grid gap-3 ${canConvertToFast ? 'grid-cols-2' : 'grid-cols-1'}`}>
               {/* Fast Invoice Option - Only show if estimate has 1 item */}
               {canConvertToFast && (
                 <button
                   type="button"
                   onClick={() => setInvoiceType('fast')}
                   disabled={isLoading}
-                  className={`p-3 sm:p-4 border-2 transition-all cursor-pointer ${
+                  className={`p-4 border-2 transition-all cursor-pointer text-left ${
                     invoiceType === 'fast'
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
                   } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <div className="flex items-center space-x-2 mb-1.5 sm:mb-2">
-                    <Zap className={`h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 ${invoiceType === 'fast' ? 'text-blue-500' : 'text-gray-400'}`} />
-                    <span className={`text-sm sm:text-base font-medium ${invoiceType === 'fast' ? 'text-blue-700' : 'text-gray-700'}`}>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Zap className={`h-5 w-5 flex-shrink-0 ${invoiceType === 'fast' ? 'text-blue-500' : 'text-gray-400'}`} />
+                    <span className={`text-sm font-medium ${invoiceType === 'fast' ? 'text-blue-700' : 'text-gray-700'}`}>
                       Fast Invoice
                     </span>
                   </div>
-                  <p className="text-[10px] sm:text-xs text-gray-500 text-left">
+                  <p className="text-xs text-gray-500">
                     Quick 60-second invoice with minimal details
                   </p>
                   <div className="mt-2 pt-2 border-t border-gray-200">
-                    <p className="text-[9px] sm:text-[10px] text-gray-500 text-left">
+                    <p className="text-xs text-gray-500">
                       • Single item only<br/>
                       • No auto reminders<br/>
                       • No late fees
@@ -144,23 +144,23 @@ export default function EstimateConversionModal({
                 type="button"
                 onClick={() => setInvoiceType('detailed')}
                 disabled={isLoading}
-                className={`p-3 sm:p-4 border-2 transition-all cursor-pointer ${
+                className={`p-4 border-2 transition-all cursor-pointer text-left ${
                   invoiceType === 'detailed'
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 hover:border-gray-300'
                 } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                <div className="flex items-center space-x-2 mb-1.5 sm:mb-2">
-                  <FileText className={`h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 ${invoiceType === 'detailed' ? 'text-blue-500' : 'text-gray-400'}`} />
-                  <span className={`text-sm sm:text-base font-medium ${invoiceType === 'detailed' ? 'text-blue-700' : 'text-gray-700'}`}>
+                <div className="flex items-center space-x-2 mb-2">
+                  <FileText className={`h-5 w-5 flex-shrink-0 ${invoiceType === 'detailed' ? 'text-blue-500' : 'text-gray-400'}`} />
+                  <span className={`text-sm font-medium ${invoiceType === 'detailed' ? 'text-blue-700' : 'text-gray-700'}`}>
                     Detailed Invoice
                   </span>
                 </div>
-                <p className="text-[10px] sm:text-xs text-gray-500 text-left">
+                <p className="text-xs text-gray-500">
                   Full-featured invoice with customizable templates
                 </p>
                 <div className="mt-2 pt-2 border-t border-gray-200">
-                  <p className="text-[9px] sm:text-[10px] text-gray-500 text-left">
+                  <p className="text-xs text-gray-500">
                     • Multiple items<br/>
                     • Auto reminders<br/>
                     • Late fees & custom templates
@@ -172,80 +172,79 @@ export default function EstimateConversionModal({
 
           {/* Template Selection (only for detailed) */}
           {invoiceType === 'detailed' && (
-            <div className="mb-4 sm:mb-6">
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
                 Choose Template
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <button
                   type="button"
                   onClick={() => setSelectedTemplate(1)}
                   disabled={isLoading}
-                  className={`p-2.5 sm:p-3 border-2 transition-all cursor-pointer ${
+                  className={`p-3 border-2 transition-all cursor-pointer ${
                     selectedTemplate === 1
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
                   } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <div className={`text-xs sm:text-sm font-medium mb-1 ${selectedTemplate === 1 ? 'text-blue-700' : 'text-gray-700'}`}>
+                  <div className={`text-sm font-medium mb-1 ${selectedTemplate === 1 ? 'text-blue-700' : 'text-gray-700'}`}>
                     Minimal
                   </div>
-                  <div className="h-8 sm:h-12 bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300"></div>
-                  <p className="text-[9px] sm:text-[10px] text-gray-500 mt-1">Clean & simple</p>
+                  <div className="h-12 bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300"></div>
+                  <p className="text-xs text-gray-500 mt-1">Clean & simple</p>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setSelectedTemplate(2)}
                   disabled={isLoading}
-                  className={`p-2.5 sm:p-3 border-2 transition-all cursor-pointer ${
+                  className={`p-3 border-2 transition-all cursor-pointer ${
                     selectedTemplate === 2
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
                   } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <div className={`text-xs sm:text-sm font-medium mb-1 ${selectedTemplate === 2 ? 'text-blue-700' : 'text-gray-700'}`}>
+                  <div className={`text-sm font-medium mb-1 ${selectedTemplate === 2 ? 'text-blue-700' : 'text-gray-700'}`}>
                     Modern
                   </div>
-                  <div className="h-8 sm:h-12 bg-gradient-to-br from-blue-100 to-purple-100 border border-blue-300"></div>
-                  <p className="text-[9px] sm:text-[10px] text-gray-500 mt-1">Professional</p>
+                  <div className="h-12 bg-gradient-to-br from-blue-100 to-purple-100 border border-blue-300"></div>
+                  <p className="text-xs text-gray-500 mt-1">Professional</p>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setSelectedTemplate(3)}
                   disabled={isLoading}
-                  className={`p-2.5 sm:p-3 border-2 transition-all cursor-pointer ${
+                  className={`p-3 border-2 transition-all cursor-pointer ${
                     selectedTemplate === 3
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
                   } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <div className={`text-xs sm:text-sm font-medium mb-1 ${selectedTemplate === 3 ? 'text-blue-700' : 'text-gray-700'}`}>
+                  <div className={`text-sm font-medium mb-1 ${selectedTemplate === 3 ? 'text-blue-700' : 'text-gray-700'}`}>
                     Creative
                   </div>
-                  <div className="h-8 sm:h-12 bg-gradient-to-br from-purple-100 to-pink-100 border border-purple-300"></div>
-                  <p className="text-[9px] sm:text-[10px] text-gray-500 mt-1">Bold & vibrant</p>
+                  <div className="h-12 bg-gradient-to-br from-purple-100 to-pink-100 border border-purple-300"></div>
+                  <p className="text-xs text-gray-500 mt-1">Bold & vibrant</p>
                 </button>
               </div>
             </div>
           )}
-
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 p-3 sm:p-4 md:p-6 border-t border-gray-200 bg-white flex-shrink-0">
+        <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-white flex-shrink-0">
           <button
             onClick={handleClose}
             disabled={isLoading}
-            className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="px-6 py-3 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
             disabled={isLoading}
-            className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center space-x-2"
+            className="px-6 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center space-x-2"
           >
             {isLoading ? (
               <>
@@ -261,4 +260,3 @@ export default function EstimateConversionModal({
     </div>
   );
 }
-

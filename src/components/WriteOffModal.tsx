@@ -100,10 +100,11 @@ export default function WriteOffModal({
   if (!isOpen) return null;
 
   const charges = calculateDueCharges(invoice, paymentData);
+  const invoiceCurrency = invoice.currency || 'USD';
   const maxWriteOff = charges.totalPayable;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -111,61 +112,59 @@ export default function WriteOffModal({
       />
       
       {/* Modal */}
-      <div className="relative bg-white shadow-2xl border border-gray-200 w-full max-w-md max-h-[90vh] sm:max-h-[85vh] overflow-hidden flex flex-col">
+      <div className="relative bg-white shadow-2xl border border-gray-200 w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-3 sm:p-4 md:px-6 md:py-4 border-b border-gray-200 flex-shrink-0">
-          <div className="min-w-0 flex-1">
-            <h2 className="text-base sm:text-lg md:text-xl font-semibold text-gray-900 truncate">Write Off Invoice</h2>
-            <p className="text-xs sm:text-sm text-gray-500 mt-1 truncate">Invoice #{invoice.invoiceNumber}</p>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center space-x-3 min-w-0 flex-1">
+            <div className="p-2 rounded-full bg-orange-50 flex-shrink-0">
+              <DollarSign className="h-6 w-6 text-orange-500" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-gray-900 truncate">Write Off Invoice</h2>
+              <p className="text-sm text-gray-500 truncate">Invoice #{invoice.invoiceNumber}</p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 sm:p-2 hover:bg-gray-100 transition-colors cursor-pointer flex-shrink-0 ml-2"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer flex-shrink-0 ml-3"
           >
-            <X className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500" />
+            <X className="h-5 w-5 text-gray-500" />
           </button>
         </div>
 
         {/* Content - Scrollable */}
-        <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 overflow-y-auto flex-1">
+        <div className="p-6 overflow-y-auto flex-1">
           {/* Summary */}
-          <div className="bg-gray-50 p-3 sm:p-4 mb-4 sm:mb-6">
-            {(() => {
-              const invoiceCurrency = invoice.currency || 'USD';
-              return (
-                <>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs sm:text-sm font-medium text-gray-700">Invoice Total</span>
-                    <span className="text-sm sm:text-base md:text-lg font-semibold text-gray-900">{formatCurrency(invoice.total || 0, invoiceCurrency)}</span>
-                  </div>
-                  {charges.totalPaid > 0 && (
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs sm:text-sm font-medium text-gray-700">Total Paid</span>
-                      <span className="text-sm sm:text-base md:text-lg font-semibold text-emerald-600">{formatCurrency(charges.totalPaid, invoiceCurrency)}</span>
-                    </div>
-                  )}
-                  {lateFeesAmount > 0 && (
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs sm:text-sm font-medium text-red-700">Late Fees</span>
-                      <span className="text-sm sm:text-base md:text-lg font-semibold text-red-700">{formatCurrency(lateFeesAmount, invoiceCurrency)}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between mb-3 border-t border-gray-300 pt-2">
-                    <span className="text-xs sm:text-sm font-medium text-gray-700">Total Owed</span>
-                    <span className="text-sm sm:text-base md:text-lg font-semibold text-orange-600">{formatCurrency(totalOwed, invoiceCurrency)}</span>
-                  </div>
-                </>
-              );
-            })()}
+          <div className="bg-gray-50 p-4 mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">Invoice Total</span>
+              <span className="text-sm font-semibold text-gray-900">{formatCurrency(invoice.total || 0, invoiceCurrency)}</span>
+            </div>
+            {charges.totalPaid > 0 && (
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700">Total Paid</span>
+                <span className="text-sm font-semibold text-emerald-600">{formatCurrency(charges.totalPaid, invoiceCurrency)}</span>
+              </div>
+            )}
+            {lateFeesAmount > 0 && (
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-red-700">Late Fees</span>
+                <span className="text-sm font-semibold text-red-700">{formatCurrency(lateFeesAmount, invoiceCurrency)}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between border-t border-gray-300 pt-2">
+              <span className="text-sm font-medium text-gray-700">Total Owed</span>
+              <span className="text-sm font-semibold text-orange-600">{formatCurrency(totalOwed, invoiceCurrency)}</span>
+            </div>
           </div>
 
           {/* Warning */}
-          <div className="bg-amber-50 border-l-4 border-amber-500 p-2.5 sm:p-3 mb-4 sm:mb-6">
+          <div className="bg-amber-50 border-l-4 border-amber-500 p-3 mb-6">
             <div className="flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm font-medium text-amber-900">Write-off Warning</p>
-                <p className="text-[10px] sm:text-xs text-amber-700 mt-1">
+              <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-amber-900">Write-off Warning</p>
+                <p className="text-xs text-amber-700 mt-1">
                   Writing off an amount will mark this invoice as paid. This action cannot be undone.
                 </p>
               </div>
@@ -173,9 +172,9 @@ export default function WriteOffModal({
           </div>
 
           {/* Form */}
-          <form id="writeoff-form" onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+          <form id="writeoff-form" onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 <span className="inline mr-1">{getCurrencySymbol(invoice.currency || 'USD')}</span>
                 Write-off Amount *
               </label>
@@ -186,22 +185,22 @@ export default function WriteOffModal({
                 max={maxWriteOff}
                 value={writeOffAmount}
                 onChange={(e) => setWriteOffAmount(e.target.value)}
-                className="w-full px-2.5 sm:px-3 py-2 text-sm border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="0.00"
                 required
               />
-              <p className="text-[10px] sm:text-xs text-gray-500 mt-1">Max: {formatCurrency(maxWriteOff, invoice.currency || 'USD')}</p>
+              <p className="text-xs text-gray-500 mt-1">Max: {formatCurrency(maxWriteOff, invoice.currency || 'USD')}</p>
             </div>
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                <FileText className="h-3 w-3 sm:h-4 sm:w-4 inline mr-1" />
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <FileText className="h-4 w-4 inline mr-1" />
                 Notes (Optional)
               </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
-                className="w-full px-2.5 sm:px-3 py-2 text-sm border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                className="w-full px-3 py-2 border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
                 placeholder="Reason for write-off (e.g., Client dispute, Discount agreement, etc.)"
               />
             </div>
@@ -209,11 +208,11 @@ export default function WriteOffModal({
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 p-3 sm:p-4 md:px-6 md:py-4 border-t border-gray-200 bg-white flex-shrink-0">
+        <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-white flex-shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="w-full sm:w-auto sm:flex-1 px-4 py-2 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
+            className="px-6 py-3 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
           >
             Cancel
           </button>
@@ -221,7 +220,7 @@ export default function WriteOffModal({
             type="submit"
             form="writeoff-form"
             disabled={submitting || !writeOffAmount || parseFloat(writeOffAmount) <= 0}
-            className="w-full sm:w-auto sm:flex-1 px-4 py-2 text-xs sm:text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-3 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? 'Processing...' : 'Write Off & Mark Paid'}
           </button>
@@ -230,6 +229,5 @@ export default function WriteOffModal({
     </div>
   );
 }
-
 
 

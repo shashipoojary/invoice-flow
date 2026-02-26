@@ -3830,29 +3830,29 @@ export default function DashboardOverview() {
                                     onClick={() => handleViewInvoice(invoice)}
                                     className="p-2 sm:p-4 hover:bg-gray-50 transition-colors cursor-pointer overflow-hidden w-full max-w-full"
                                   >
-                                    <div className="flex items-start justify-between gap-1 w-full max-w-full min-w-0">
-                                      <div className="flex-1 min-w-0 overflow-hidden max-w-[calc(100%-80px)]">
-                                        <div className="flex items-center gap-1 mb-0.5 min-w-0 overflow-hidden">
+                                    <div className="flex items-center justify-between w-full min-w-0">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1 min-w-0">
                                           <span className="flex-shrink-0">{statusInfo.icon}</span>
-                                          <span className="text-[11px] sm:text-sm font-medium text-gray-900 truncate whitespace-nowrap block min-w-0">
+                                          <span className="text-sm font-medium text-gray-900 truncate">
                                             {invoice.invoiceNumber}
                                           </span>
-                                          <span className="text-[9px] sm:text-xs text-gray-500 truncate whitespace-nowrap block min-w-0">
+                                          <span className="text-xs text-gray-500 truncate">
                                             {invoice.client?.name || 'Unknown Client'}
                                           </span>
                                         </div>
-                                        <div className="flex items-center gap-0.5 text-[8px] sm:text-[10px] text-gray-500 ml-4 sm:ml-5 min-w-0 overflow-hidden">
-                                          <span className="whitespace-nowrap truncate block">{statusInfo.label}</span>
-                                          <span className="flex-shrink-0">•</span>
-                                          <span className="whitespace-nowrap truncate block">{new Date(invoice.dueDate).toLocaleDateString()}</span>
+                                        <div className="flex items-center gap-3 text-xs text-gray-500 ml-5">
+                                          <span>{statusInfo.label}</span>
+                                          <span>•</span>
+                                          <span>{new Date(invoice.dueDate).toLocaleDateString()}</span>
                                         </div>
                                       </div>
-                                      <div className="ml-0.5 text-right flex-shrink-0 w-auto">
-                                        <div className={`text-[11px] sm:text-sm font-semibold whitespace-nowrap leading-tight ${statusInfo.amountColor}`}>
+                                      <div className="ml-4 text-right flex-shrink-0">
+                                        <div className={`text-sm font-semibold whitespace-nowrap ${statusInfo.amountColor}`}>
                                           ${dueCharges.totalPayable.toFixed(2)}
                                         </div>
                                         {dueCharges.isPartiallyPaid && (
-                                          <div className="text-[8px] sm:text-[10px] text-gray-500 whitespace-nowrap truncate mt-0.5 max-w-[70px]">
+                                          <div className="text-xs text-gray-500 whitespace-nowrap mt-0.5">
                                             ${dueCharges.totalPaid.toFixed(2)} paid
                                           </div>
                                         )}
@@ -4308,7 +4308,7 @@ export default function DashboardOverview() {
                                   <div className="flex items-center justify-between w-full">
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-sm font-medium text-gray-900 truncate">
+                                        <span className="text-xs font-medium text-gray-900 truncate">
                                           {reminder.invoiceNumber}
                                         </span>
                                         <span className="text-xs text-gray-500 truncate">
@@ -4328,7 +4328,7 @@ export default function DashboardOverview() {
                                       </div>
                                     </div>
                                     <div className="ml-4 text-right">
-                                      <div className="text-sm font-semibold text-indigo-600">
+                                      <div className="text-xs font-semibold text-indigo-600">
                                         ${reminder.amount.toFixed(2)}
                                       </div>
                                     </div>
