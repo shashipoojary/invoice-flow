@@ -3828,7 +3828,7 @@ export default function DashboardOverview() {
                                   <div
                                     key={invoice.id}
                                     onClick={() => handleViewInvoice(invoice)}
-                                    className="p-2 sm:p-4 hover:bg-gray-50 transition-colors cursor-pointer overflow-hidden w-full max-w-full"
+                                    className="p-3 sm:p-4 hover:bg-gray-50 transition-colors cursor-pointer overflow-hidden w-full max-w-full"
                                   >
                                     <div className="flex items-center justify-between w-full min-w-0">
                                       <div className="flex-1 min-w-0">
@@ -4305,10 +4305,10 @@ export default function DashboardOverview() {
                                   }}
                                   className="p-3 sm:p-4 hover:bg-gray-50 transition-colors cursor-pointer w-full"
                                 >
-                                  <div className="flex items-center justify-between w-full">
+                                  <div className="flex items-center justify-between">
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-xs font-medium text-gray-900 truncate">
+                                        <span className="text-sm font-medium text-gray-900 truncate">
                                           {reminder.invoiceNumber}
                                         </span>
                                         <span className="text-xs text-gray-500 truncate">
@@ -4328,7 +4328,7 @@ export default function DashboardOverview() {
                                       </div>
                                     </div>
                                     <div className="ml-4 text-right">
-                                      <div className="text-xs font-semibold text-indigo-600">
+                                      <div className="text-sm font-semibold text-indigo-600">
                                         ${reminder.amount.toFixed(2)}
                                       </div>
                                     </div>
