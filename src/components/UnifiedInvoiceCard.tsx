@@ -70,10 +70,138 @@ export function UnifiedInvoiceCard({
   const { getAuthHeaders } = useAuth();
   const [showActivity, setShowActivity] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [useCompactBadges, setUseCompactBadges] = useState(() => {
+    // Only enable on small screens (mobile phones < 640px)
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 640; // sm breakpoint
+    }
+    return false;
+  });
+  const [showTooltip, setShowTooltip] = useState<string | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<{ top: number; left: number } | null>(null);
+  const tooltipTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const buttonRefs = React.useRef<{ [key: string]: HTMLButtonElement | null }>({});
+  const badgesContainerRef = React.useRef<HTMLDivElement>(null);
+  const buttonsContainerRef = React.useRef<HTMLDivElement>(null);
+  
+  // Clear timeout helper
+  const clearTooltipTimeout = () => {
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current);
+      tooltipTimeoutRef.current = null;
+    }
+  };
+  
+  // Calculate tooltip position
+  const calculateTooltipPosition = (buttonId: string) => {
+    const button = buttonRefs.current[buttonId];
+    if (!button) return;
+    
+    const rect = button.getBoundingClientRect();
+    setTooltipPosition({
+      top: rect.top - 8, // Position above the button
+      left: rect.left + rect.width / 2 // Center horizontally
+    });
+  };
+  
+  // Show tooltip with delay prevention
+  const showTooltipWithDelay = (tooltipId: string) => {
+    clearTooltipTimeout();
+    calculateTooltipPosition(tooltipId);
+    setShowTooltip(tooltipId);
+  };
+  
+  // Hide tooltip with delay
+  const hideTooltipWithDelay = () => {
+    clearTooltipTimeout();
+    tooltipTimeoutRef.current = setTimeout(() => {
+      setShowTooltip(null);
+      setTooltipPosition(null);
+    }, 100); // Small delay to allow moving from button to tooltip
+  };
+  
+  // Toggle tooltip on click (for mobile)
+  const toggleTooltip = (tooltipId: string) => {
+    clearTooltipTimeout();
+    if (showTooltip === tooltipId) {
+      setShowTooltip(null);
+      setTooltipPosition(null);
+    } else {
+      calculateTooltipPosition(tooltipId);
+      setShowTooltip(tooltipId);
+    }
+  };
 
   useEffect(() => {
     setIsMounted(true);
+    return () => {
+      if (tooltipTimeoutRef.current) {
+        clearTimeout(tooltipTimeoutRef.current);
+        tooltipTimeoutRef.current = null;
+      }
+    };
   }, []);
+
+  // Update tooltip position on scroll/resize when tooltip is visible
+  useEffect(() => {
+    if (!showTooltip) return;
+    
+    const updatePosition = () => {
+      if (showTooltip) {
+        calculateTooltipPosition(showTooltip);
+      }
+    };
+    
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+    
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [showTooltip]);
+
+  // Close tooltip when clicking outside (for mobile)
+  useEffect(() => {
+    if (!showTooltip) return;
+    
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      
+      // Check if click is outside all tooltip buttons and tooltip divs
+      let clickedInside = false;
+      
+      // Check if clicked on any badge button
+      Object.values(buttonRefs.current).forEach((button) => {
+        if (button && button.contains(target)) {
+          clickedInside = true;
+        }
+      });
+      
+      // Check if clicked on tooltip itself (tooltips are portaled to body)
+      const tooltipElements = document.querySelectorAll('[data-tooltip]');
+      tooltipElements.forEach((tooltip) => {
+        if (tooltip.contains(target)) {
+          clickedInside = true;
+        }
+      });
+      
+      if (!clickedInside) {
+        setShowTooltip(null);
+        setTooltipPosition(null);
+        clearTooltipTimeout();
+      }
+    };
+    
+    // Use capture phase to catch clicks early
+    document.addEventListener('mousedown', handleClickOutside, true);
+    document.addEventListener('touchstart', handleClickOutside, true);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside, true);
+      document.removeEventListener('touchstart', handleClickOutside, true);
+    };
+  }, [showTooltip]);
   
   // Use payment data from props (fetched in bulk) instead of individual fetch
   const paymentData = propPaymentData || null;
@@ -114,7 +242,7 @@ export function UnifiedInvoiceCard({
     ...(dueDateStatus.status === 'overdue' && invoice.status !== 'paid' ? [
       <span key="overdue" className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600">
         <AlertTriangle className="h-3 w-3" />
-        <span>{dueDateStatus.days}d overdue</span>
+        <span>{dueDateStatus.days > 0 ? `${dueDateStatus.days}d overdue` : 'Overdue'}</span>
       </span>
     ] : []),
     ...(dueDateStatus.status === 'due-today' && invoice.status !== 'paid' ? [
@@ -207,6 +335,28 @@ export function UnifiedInvoiceCard({
     };
   }, []);
 
+  // Set compact badges based on screen size
+  // Desktop/Tablet (>= 640px): Always show text badges
+  // Mobile (< 640px): Always show dots
+  React.useEffect(() => {
+    const updateBadgeMode = () => {
+      if (typeof window !== 'undefined') {
+        const isSmallScreen = window.innerWidth < 640; // sm breakpoint
+        setUseCompactBadges(isSmallScreen);
+      }
+    };
+    
+    // Initial check
+    updateBadgeMode();
+    
+    // Update on window resize
+    window.addEventListener('resize', updateBadgeMode);
+    
+    return () => {
+      window.removeEventListener('resize', updateBadgeMode);
+    };
+  }, []);
+
   // Use shared rotation state for synchronization - use max length to ensure both rotate together
   // Only enable rotation when card is visible to improve performance
   const maxItems = Math.max(badges.length, breakdowns.length);
@@ -284,8 +434,8 @@ export function UnifiedInvoiceCard({
             </div>
             </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
+          <div className="flex items-center justify-between gap-1 sm:gap-0.5 w-full max-w-full min-w-0">
+            <div ref={badgesContainerRef} className="flex items-center space-x-2 min-w-0 flex-1 overflow-hidden">
               <span
                 className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
                   invoice.status === 'paid'
@@ -300,13 +450,287 @@ export function UnifiedInvoiceCard({
                 {getStatusIcon(invoice.status)}
                 <span className="capitalize">{invoice.status}</span>
               </span>
-              <RotatingBadges
-                badges={badges}
-                rotationState={rotationState}
-              />
+              {useCompactBadges ? (
+                (dueCharges.isPartiallyPaid && invoice.status !== 'paid') ||
+                (dueDateStatus.status === 'overdue' && invoice.status !== 'paid') ||
+                (dueDateStatus.status === 'due-today' && invoice.status !== 'paid') ||
+                (invoice.writeOffAmount && invoice.writeOffAmount > 0) ? (
+                  <div className="flex items-center space-x-1" style={{ fontSize: 0, lineHeight: 0 }}>
+                    {dueCharges.isPartiallyPaid && invoice.status !== 'paid' && (
+                      <div className="relative">
+                        <button
+                          ref={(el) => { buttonRefs.current[`partial-${invoice.id}`] = el; }}
+                          type="button"
+                          onMouseEnter={(e) => {
+                            e.stopPropagation();
+                            showTooltipWithDelay(`partial-${invoice.id}`);
+                          }}
+                          onMouseLeave={(e) => {
+                            e.stopPropagation();
+                            hideTooltipWithDelay();
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            toggleTooltip(`partial-${invoice.id}`);
+                          }}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            toggleTooltip(`partial-${invoice.id}`);
+                          }}
+                          className="w-2 h-2 rounded-full bg-blue-600 cursor-pointer relative flex-shrink-0 border-0 p-0 hover:ring-2 hover:ring-blue-300 transition-all"
+                          aria-label="Partial Paid"
+                          style={{ lineHeight: 0, fontSize: 0 }}
+                        />
+                        {showTooltip === `partial-${invoice.id}` && tooltipPosition && isMounted && typeof window !== 'undefined' && createPortal(
+                          <div 
+                            data-tooltip={`partial-${invoice.id}`}
+                            className="fixed px-2.5 py-1.5 bg-white border border-gray-200 text-gray-800 text-xs font-medium whitespace-nowrap z-[9999] shadow-lg rounded-md"
+                            style={{
+                              top: `${tooltipPosition.top}px`,
+                              left: `${tooltipPosition.left}px`,
+                              transform: 'translate(-50%, -100%)',
+                              marginBottom: '8px'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                              setShowTooltip(`partial-${invoice.id}`);
+                            }}
+                            onMouseLeave={(e) => {
+                              e.stopPropagation();
+                              hideTooltipWithDelay();
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                            }}
+                            onTouchStart={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                            }}
+                          >
+                            Partial Paid
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
+                              <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-transparent border-t-gray-200"></div>
+                            </div>
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-[1px]">
+                              <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-white"></div>
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                      </div>
+                    )}
+                    {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
+                      <div className="relative">
+                        <button
+                          ref={(el) => { buttonRefs.current[`overdue-${invoice.id}`] = el; }}
+                          type="button"
+                          onMouseEnter={(e) => {
+                            e.stopPropagation();
+                            showTooltipWithDelay(`overdue-${invoice.id}`);
+                          }}
+                          onMouseLeave={(e) => {
+                            e.stopPropagation();
+                            hideTooltipWithDelay();
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            toggleTooltip(`overdue-${invoice.id}`);
+                          }}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            toggleTooltip(`overdue-${invoice.id}`);
+                          }}
+                          className="w-2 h-2 rounded-full bg-red-600 cursor-pointer relative flex-shrink-0 border-0 p-0 hover:ring-2 hover:ring-red-300 transition-all"
+                          aria-label={dueDateStatus.days > 0 ? `${dueDateStatus.days} days overdue` : 'Overdue'}
+                          style={{ lineHeight: 0, fontSize: 0 }}
+                        />
+                        {showTooltip === `overdue-${invoice.id}` && tooltipPosition && isMounted && typeof window !== 'undefined' && createPortal(
+                          <div 
+                            data-tooltip={`overdue-${invoice.id}`}
+                            className="fixed px-2.5 py-1.5 bg-white border border-gray-200 text-gray-800 text-xs font-medium whitespace-nowrap z-[9999] shadow-lg rounded-md"
+                            style={{
+                              top: `${tooltipPosition.top}px`,
+                              left: `${tooltipPosition.left}px`,
+                              transform: 'translate(-50%, -100%)',
+                              marginBottom: '8px'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                              setShowTooltip(`overdue-${invoice.id}`);
+                            }}
+                            onMouseLeave={(e) => {
+                              e.stopPropagation();
+                              hideTooltipWithDelay();
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                            }}
+                            onTouchStart={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                            }}
+                          >
+                            {dueDateStatus.days > 0 ? `${dueDateStatus.days}d overdue` : 'Overdue'}
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
+                              <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-transparent border-t-gray-200"></div>
+                            </div>
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-[1px]">
+                              <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-white"></div>
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                      </div>
+                    )}
+                    {dueDateStatus.status === 'due-today' && invoice.status !== 'paid' && (
+                      <div className="relative">
+                        <button
+                          ref={(el) => { buttonRefs.current[`due-today-${invoice.id}`] = el; }}
+                          type="button"
+                          onMouseEnter={(e) => {
+                            e.stopPropagation();
+                            showTooltipWithDelay(`due-today-${invoice.id}`);
+                          }}
+                          onMouseLeave={(e) => {
+                            e.stopPropagation();
+                            hideTooltipWithDelay();
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            toggleTooltip(`due-today-${invoice.id}`);
+                          }}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            toggleTooltip(`due-today-${invoice.id}`);
+                          }}
+                          className="w-2 h-2 rounded-full bg-orange-600 cursor-pointer relative flex-shrink-0 border-0 p-0 hover:ring-2 hover:ring-orange-300 transition-all"
+                          aria-label="Due today"
+                          style={{ lineHeight: 0, fontSize: 0 }}
+                        />
+                        {showTooltip === `due-today-${invoice.id}` && tooltipPosition && isMounted && typeof window !== 'undefined' && createPortal(
+                          <div 
+                            data-tooltip={`due-today-${invoice.id}`}
+                            className="fixed px-2.5 py-1.5 bg-white border border-gray-200 text-gray-800 text-xs font-medium whitespace-nowrap z-[9999] shadow-lg rounded-md"
+                            style={{
+                              top: `${tooltipPosition.top}px`,
+                              left: `${tooltipPosition.left}px`,
+                              transform: 'translate(-50%, -100%)',
+                              marginBottom: '8px'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                              setShowTooltip(`due-today-${invoice.id}`);
+                            }}
+                            onMouseLeave={(e) => {
+                              e.stopPropagation();
+                              hideTooltipWithDelay();
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                            }}
+                            onTouchStart={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                            }}
+                          >
+                            Due today
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
+                              <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-transparent border-t-gray-200"></div>
+                            </div>
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-[1px]">
+                              <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-white"></div>
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                      </div>
+                    )}
+                    {invoice.writeOffAmount && invoice.writeOffAmount > 0 && (
+                      <div className="relative">
+                        <button
+                          ref={(el) => { buttonRefs.current[`writeoff-${invoice.id}`] = el; }}
+                          type="button"
+                          onMouseEnter={(e) => {
+                            e.stopPropagation();
+                            showTooltipWithDelay(`writeoff-${invoice.id}`);
+                          }}
+                          onMouseLeave={(e) => {
+                            e.stopPropagation();
+                            hideTooltipWithDelay();
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            toggleTooltip(`writeoff-${invoice.id}`);
+                          }}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            toggleTooltip(`writeoff-${invoice.id}`);
+                          }}
+                          className="w-2 h-2 rounded-full bg-slate-600 cursor-pointer relative flex-shrink-0 border-0 p-0 hover:ring-2 hover:ring-slate-300 transition-all"
+                          aria-label="Write Off"
+                          style={{ lineHeight: 0, fontSize: 0 }}
+                        />
+                        {showTooltip === `writeoff-${invoice.id}` && tooltipPosition && isMounted && typeof window !== 'undefined' && createPortal(
+                          <div 
+                            data-tooltip={`writeoff-${invoice.id}`}
+                            className="fixed px-2.5 py-1.5 bg-white border border-gray-200 text-gray-800 text-xs font-medium whitespace-nowrap z-[9999] shadow-lg rounded-md"
+                            style={{
+                              top: `${tooltipPosition.top}px`,
+                              left: `${tooltipPosition.left}px`,
+                              transform: 'translate(-50%, -100%)',
+                              marginBottom: '8px'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                              setShowTooltip(`writeoff-${invoice.id}`);
+                            }}
+                            onMouseLeave={(e) => {
+                              e.stopPropagation();
+                              hideTooltipWithDelay();
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                            }}
+                            onTouchStart={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                            }}
+                          >
+                            Write Off
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
+                              <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-transparent border-t-gray-200"></div>
+                            </div>
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-[1px]">
+                              <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-white"></div>
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : null
+              ) : badges.length > 0 ? (
+                <RotatingBadges
+                  badges={badges}
+                  rotationState={rotationState}
+                />
+              ) : null}
             </div>
 
-            <div className="flex items-center space-x-1">
+            <div ref={buttonsContainerRef} className="flex items-center space-x-1 flex-shrink-0 ml-1 sm:ml-0">
               <button onClick={() => { onView(invoice); logEvent('viewed_by_owner'); }} className="p-1.5 transition-colors hover:bg-gray-100" title="View">
                 <Eye className="h-4 w-4 text-gray-700" />
               </button>
@@ -457,8 +881,8 @@ export function UnifiedInvoiceCard({
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
+          <div className="flex items-center justify-between gap-1 sm:gap-0.5 w-full max-w-full min-w-0">
+            <div ref={badgesContainerRef} className="flex items-center space-x-2 min-w-0 flex-1 overflow-hidden">
               <span
                 className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium ${
                   invoice.status === 'paid'
@@ -473,12 +897,286 @@ export function UnifiedInvoiceCard({
                 {getStatusIcon(invoice.status)}
                 <span className="capitalize">{invoice.status}</span>
               </span>
-              <RotatingBadges
-                badges={badges}
-                rotationState={rotationState}
-              />
+              {useCompactBadges ? (
+                (dueCharges.isPartiallyPaid && invoice.status !== 'paid') ||
+                (dueDateStatus.status === 'overdue' && invoice.status !== 'paid') ||
+                (dueDateStatus.status === 'due-today' && invoice.status !== 'paid') ||
+                (invoice.writeOffAmount && invoice.writeOffAmount > 0) ? (
+                  <div className="flex items-center space-x-1" style={{ fontSize: 0, lineHeight: 0 }}>
+                    {dueCharges.isPartiallyPaid && invoice.status !== 'paid' && (
+                      <div className="relative">
+                        <button
+                          ref={(el) => { buttonRefs.current[`partial-${invoice.id}`] = el; }}
+                          type="button"
+                          onMouseEnter={(e) => {
+                            e.stopPropagation();
+                            showTooltipWithDelay(`partial-${invoice.id}`);
+                          }}
+                          onMouseLeave={(e) => {
+                            e.stopPropagation();
+                            hideTooltipWithDelay();
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            toggleTooltip(`partial-${invoice.id}`);
+                          }}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            toggleTooltip(`partial-${invoice.id}`);
+                          }}
+                          className="w-2 h-2 rounded-full bg-blue-600 cursor-pointer relative flex-shrink-0 border-0 p-0 hover:ring-2 hover:ring-blue-300 transition-all"
+                          aria-label="Partial Paid"
+                          style={{ lineHeight: 0, fontSize: 0 }}
+                        />
+                        {showTooltip === `partial-${invoice.id}` && tooltipPosition && isMounted && typeof window !== 'undefined' && createPortal(
+                          <div 
+                            data-tooltip={`partial-${invoice.id}`}
+                            className="fixed px-2.5 py-1.5 bg-white border border-gray-200 text-gray-800 text-xs font-medium whitespace-nowrap z-[9999] shadow-lg rounded-md"
+                            style={{
+                              top: `${tooltipPosition.top}px`,
+                              left: `${tooltipPosition.left}px`,
+                              transform: 'translate(-50%, -100%)',
+                              marginBottom: '8px'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                              setShowTooltip(`partial-${invoice.id}`);
+                            }}
+                            onMouseLeave={(e) => {
+                              e.stopPropagation();
+                              hideTooltipWithDelay();
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                            }}
+                            onTouchStart={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                            }}
+                          >
+                            Partial Paid
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
+                              <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-transparent border-t-gray-200"></div>
+                            </div>
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-[1px]">
+                              <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-white"></div>
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                      </div>
+                    )}
+                    {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
+                      <div className="relative">
+                        <button
+                          ref={(el) => { buttonRefs.current[`overdue-${invoice.id}`] = el; }}
+                          type="button"
+                          onMouseEnter={(e) => {
+                            e.stopPropagation();
+                            showTooltipWithDelay(`overdue-${invoice.id}`);
+                          }}
+                          onMouseLeave={(e) => {
+                            e.stopPropagation();
+                            hideTooltipWithDelay();
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            toggleTooltip(`overdue-${invoice.id}`);
+                          }}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            toggleTooltip(`overdue-${invoice.id}`);
+                          }}
+                          className="w-2 h-2 rounded-full bg-red-600 cursor-pointer relative flex-shrink-0 border-0 p-0 hover:ring-2 hover:ring-red-300 transition-all"
+                          aria-label={dueDateStatus.days > 0 ? `${dueDateStatus.days} days overdue` : 'Overdue'}
+                          style={{ lineHeight: 0, fontSize: 0 }}
+                        />
+                        {showTooltip === `overdue-${invoice.id}` && tooltipPosition && isMounted && typeof window !== 'undefined' && createPortal(
+                          <div 
+                            data-tooltip={`overdue-${invoice.id}`}
+                            className="fixed px-2.5 py-1.5 bg-white border border-gray-200 text-gray-800 text-xs font-medium whitespace-nowrap z-[9999] shadow-lg rounded-md"
+                            style={{
+                              top: `${tooltipPosition.top}px`,
+                              left: `${tooltipPosition.left}px`,
+                              transform: 'translate(-50%, -100%)',
+                              marginBottom: '8px'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                              setShowTooltip(`overdue-${invoice.id}`);
+                            }}
+                            onMouseLeave={(e) => {
+                              e.stopPropagation();
+                              hideTooltipWithDelay();
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                            }}
+                            onTouchStart={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                            }}
+                          >
+                            {dueDateStatus.days > 0 ? `${dueDateStatus.days}d overdue` : 'Overdue'}
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
+                              <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-transparent border-t-gray-200"></div>
+                            </div>
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-[1px]">
+                              <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-white"></div>
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                      </div>
+                    )}
+                    {dueDateStatus.status === 'due-today' && invoice.status !== 'paid' && (
+                      <div className="relative">
+                        <button
+                          ref={(el) => { buttonRefs.current[`due-today-${invoice.id}`] = el; }}
+                          type="button"
+                          onMouseEnter={(e) => {
+                            e.stopPropagation();
+                            showTooltipWithDelay(`due-today-${invoice.id}`);
+                          }}
+                          onMouseLeave={(e) => {
+                            e.stopPropagation();
+                            hideTooltipWithDelay();
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            toggleTooltip(`due-today-${invoice.id}`);
+                          }}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            toggleTooltip(`due-today-${invoice.id}`);
+                          }}
+                          className="w-2 h-2 rounded-full bg-orange-600 cursor-pointer relative flex-shrink-0 border-0 p-0 hover:ring-2 hover:ring-orange-300 transition-all"
+                          aria-label="Due today"
+                          style={{ lineHeight: 0, fontSize: 0 }}
+                        />
+                        {showTooltip === `due-today-${invoice.id}` && tooltipPosition && isMounted && typeof window !== 'undefined' && createPortal(
+                          <div 
+                            data-tooltip={`due-today-${invoice.id}`}
+                            className="fixed px-2.5 py-1.5 bg-white border border-gray-200 text-gray-800 text-xs font-medium whitespace-nowrap z-[9999] shadow-lg rounded-md"
+                            style={{
+                              top: `${tooltipPosition.top}px`,
+                              left: `${tooltipPosition.left}px`,
+                              transform: 'translate(-50%, -100%)',
+                              marginBottom: '8px'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                              setShowTooltip(`due-today-${invoice.id}`);
+                            }}
+                            onMouseLeave={(e) => {
+                              e.stopPropagation();
+                              hideTooltipWithDelay();
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                            }}
+                            onTouchStart={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                            }}
+                          >
+                            Due today
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
+                              <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-transparent border-t-gray-200"></div>
+                            </div>
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-[1px]">
+                              <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-white"></div>
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                      </div>
+                    )}
+                    {invoice.writeOffAmount && invoice.writeOffAmount > 0 && (
+                      <div className="relative">
+                        <button
+                          ref={(el) => { buttonRefs.current[`writeoff-${invoice.id}`] = el; }}
+                          type="button"
+                          onMouseEnter={(e) => {
+                            e.stopPropagation();
+                            showTooltipWithDelay(`writeoff-${invoice.id}`);
+                          }}
+                          onMouseLeave={(e) => {
+                            e.stopPropagation();
+                            hideTooltipWithDelay();
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            toggleTooltip(`writeoff-${invoice.id}`);
+                          }}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            toggleTooltip(`writeoff-${invoice.id}`);
+                          }}
+                          className="w-2 h-2 rounded-full bg-slate-600 cursor-pointer relative flex-shrink-0 border-0 p-0 hover:ring-2 hover:ring-slate-300 transition-all"
+                          aria-label="Write Off"
+                          style={{ lineHeight: 0, fontSize: 0 }}
+                        />
+                        {showTooltip === `writeoff-${invoice.id}` && tooltipPosition && isMounted && typeof window !== 'undefined' && createPortal(
+                          <div 
+                            data-tooltip={`writeoff-${invoice.id}`}
+                            className="fixed px-2.5 py-1.5 bg-white border border-gray-200 text-gray-800 text-xs font-medium whitespace-nowrap z-[9999] shadow-lg rounded-md"
+                            style={{
+                              top: `${tooltipPosition.top}px`,
+                              left: `${tooltipPosition.left}px`,
+                              transform: 'translate(-50%, -100%)',
+                              marginBottom: '8px'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                              setShowTooltip(`writeoff-${invoice.id}`);
+                            }}
+                            onMouseLeave={(e) => {
+                              e.stopPropagation();
+                              hideTooltipWithDelay();
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                            }}
+                            onTouchStart={(e) => {
+                              e.stopPropagation();
+                              clearTooltipTimeout();
+                            }}
+                          >
+                            Write Off
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-px">
+                              <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-transparent border-t-gray-200"></div>
+                            </div>
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-[1px]">
+                              <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-white"></div>
+                            </div>
+                          </div>,
+                          document.body
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : null
+              ) : badges.length > 0 ? (
+                <RotatingBadges
+                  badges={badges}
+                  rotationState={rotationState}
+                />
+              ) : null}
             </div>
-            <div className="flex items-center space-x-1">
+            <div ref={buttonsContainerRef} className="flex items-center space-x-1 flex-shrink-0 ml-1 sm:ml-0">
               <button onClick={() => onView(invoice)} className="p-1.5 rounded-md transition-colors hover:bg-gray-100" title="View">
                 <Eye className="h-4 w-4 text-gray-700" />
               </button>

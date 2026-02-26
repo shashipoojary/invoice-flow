@@ -2978,34 +2978,34 @@ export default function QuickInvoiceModal({
                       }
                       
                       return (
-                        <div className={`p-3 border ${
-                          isDarkMode 
-                            ? 'bg-amber-900/20 border-amber-800' 
-                            : 'bg-amber-50 border-amber-200'
-                        }`}>
-                          <div className="flex items-start space-x-2">
-                            <AlertCircle className={`h-4 w-4 mt-0.5 ${
+                      <div className={`p-3 border ${
+                        isDarkMode 
+                          ? 'bg-amber-900/20 border-amber-800' 
+                          : 'bg-amber-50 border-amber-200'
+                      }`}>
+                        <div className="flex items-start space-x-2">
+                          <AlertCircle className={`h-4 w-4 mt-0.5 ${
+                            isDarkMode ? 'text-amber-400' : 'text-amber-600'
+                          }`} />
+                          <div>
+                            <p className={`text-xs font-medium ${
+                              isDarkMode ? 'text-amber-300' : 'text-amber-700'
+                            }`}>
+                              Smart Reminder System
+                            </p>
+                            <p className={`text-xs mt-1 ${
                               isDarkMode ? 'text-amber-400' : 'text-amber-600'
-                            }`} />
-                            <div>
-                              <p className={`text-xs font-medium ${
-                                isDarkMode ? 'text-amber-300' : 'text-amber-700'
-                              }`}>
-                                Smart Reminder System
-                              </p>
-                              <p className={`text-xs mt-1 ${
-                                isDarkMode ? 'text-amber-400' : 'text-amber-600'
-                              }`}>
-                                {paymentTerms.defaultOption === 'Due on Receipt' 
-                                  ? 'For "Due on Receipt" invoices, reminders will be sent immediately after due date to encourage quick payment.'
+                            }`}>
+                              {paymentTerms.defaultOption === 'Due on Receipt' 
+                                ? 'For "Due on Receipt" invoices, reminders will be sent immediately after due date to encourage quick payment.'
                                   : paymentTerms.defaultOption === 'Custom' && customDays > 0
                                   ? `For your custom ${customDays}-day payment terms, reminders will be automatically optimized based on the payment period.`
-                                  : `For "${paymentTerms.defaultOption}" invoices, reminders will be sent before and after the due date for optimal collection.`
-                                }
-                              </p>
-                            </div>
+                                : `For "${paymentTerms.defaultOption}" invoices, reminders will be sent before and after the due date for optimal collection.`
+                              }
+                            </p>
                           </div>
                         </div>
+                      </div>
                       );
                     })()}
 
@@ -3073,48 +3073,48 @@ export default function QuickInvoiceModal({
                           
                           return (
                             <>
-                              <p className={`text-xs mb-3 ${
-                                isDarkMode ? 'text-gray-400' : 'text-gray-600'
-                              }`}>
-                                {paymentTerms.enabled 
+                        <p className={`text-xs mb-3 ${
+                          isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
+                          {paymentTerms.enabled 
                                   ? paymentTerms.defaultOption === 'Custom' && customDays > 0
                                     ? `System will automatically send reminders optimized for your custom ${customDays}-day payment terms`
                                     : `System will automatically send reminders optimized for "${paymentTerms.defaultOption}" payment terms`
-                                  : 'System will automatically send reminders at optimal times'
-                                }
-                              </p>
-                              <div className="grid grid-cols-2 gap-2 text-xs">
+                            : 'System will automatically send reminders at optimal times'
+                          }
+                        </p>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
                                 {(() => {
                                   // Determine which reminder schedule to use
                                   if (paymentTerms.enabled && paymentTerms.defaultOption === 'Due on Receipt') {
-                                    // Special logic for "Due on Receipt"
+                            // Special logic for "Due on Receipt"
                                     return (
-                                      <>
-                                        <div className={`flex items-center space-x-2 ${
-                                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                                        }`}>
-                                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                                          <span>1 day after</span>
-                                        </div>
-                                        <div className={`flex items-center space-x-2 ${
-                                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                                        }`}>
-                                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                                          <span>3 days after</span>
-                                        </div>
-                                        <div className={`flex items-center space-x-2 ${
-                                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                                        }`}>
-                                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                                          <span>7 days after</span>
-                                        </div>
-                                        <div className={`flex items-center space-x-2 ${
-                                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                                        }`}>
-                                          <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                                          <span>14 days after</span>
-                                        </div>
-                                      </>
+                            <>
+                              <div className={`flex items-center space-x-2 ${
+                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span>1 day after</span>
+                              </div>
+                              <div className={`flex items-center space-x-2 ${
+                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span>3 days after</span>
+                              </div>
+                              <div className={`flex items-center space-x-2 ${
+                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span>7 days after</span>
+                              </div>
+                              <div className={`flex items-center space-x-2 ${
+                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span>14 days after</span>
+                              </div>
+                            </>
                                     );
                                   } else if (paymentTerms.enabled && paymentTerms.defaultOption === 'Custom' && customDays > 0) {
                                     // Custom payment terms - adapt based on duration
@@ -3184,32 +3184,32 @@ export default function QuickInvoiceModal({
                                     } else if (customDays <= 30) {
                                       // Medium period (15-30 days) - standard before/after schedule
                                       return (
-                                        <>
-                                          <div className={`flex items-center space-x-2 ${
-                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                                          }`}>
-                                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                            <span>7 days before</span>
-                                          </div>
-                                          <div className={`flex items-center space-x-2 ${
-                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                                          }`}>
-                                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                                            <span>3 days before</span>
-                                          </div>
-                                          <div className={`flex items-center space-x-2 ${
-                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                                          }`}>
-                                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                                            <span>1 day after</span>
-                                          </div>
-                                          <div className={`flex items-center space-x-2 ${
-                                            isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                                          }`}>
-                                            <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                                            <span>7 days after</span>
-                                          </div>
-                                        </>
+                            <>
+                              <div className={`flex items-center space-x-2 ${
+                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
+                                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                <span>7 days before</span>
+                              </div>
+                              <div className={`flex items-center space-x-2 ${
+                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
+                                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                                <span>3 days before</span>
+                              </div>
+                              <div className={`flex items-center space-x-2 ${
+                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span>1 day after</span>
+                              </div>
+                              <div className={`flex items-center space-x-2 ${
+                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
+                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                <span>7 days after</span>
+                              </div>
+                            </>
                                       );
                                     } else {
                                       // Long period (31+ days) - longer before/after schedule
@@ -3224,7 +3224,7 @@ export default function QuickInvoiceModal({
                                           }`}>
                                             <div className="w-2 h-2 rounded-full bg-green-500"></div>
                                             <span>{beforeDays1} days before</span>
-                                          </div>
+                        </div>
                                           <div className={`flex items-center space-x-2 ${
                                             isDarkMode ? 'text-gray-300' : 'text-gray-700'
                                           }`}>

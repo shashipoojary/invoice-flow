@@ -2188,7 +2188,7 @@ export default function DashboardOverview() {
                 {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
                   <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600">
                     <AlertTriangle className="h-3 w-3" />
-                    <span>{dueDateStatus.days}d overdue</span>
+                    <span>{dueDateStatus.days > 0 ? `${dueDateStatus.days}d overdue` : 'Overdue'}</span>
                   </span>
                 )}
               </div>
@@ -2305,7 +2305,7 @@ export default function DashboardOverview() {
                 {dueDateStatus.status === 'overdue' && invoice.status !== 'paid' && (
                   <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600">
                     <AlertTriangle className="h-3 w-3" />
-                    <span>{dueDateStatus.days}d overdue</span>
+                    <span>{dueDateStatus.days > 0 ? `${dueDateStatus.days}d overdue` : 'Overdue'}</span>
                   </span>
                 )}
               </div>
@@ -2478,7 +2478,7 @@ export default function DashboardOverview() {
               {(invoice.status === 'pending' || invoice.status === 'sent') && dueDateStatus.status === 'overdue' && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border bg-red-50 text-red-800 border-red-300">
                   <AlertTriangle className="h-3 w-3" />
-                  <span>{dueDateStatus.days}d overdue</span>
+                  <span>{dueDateStatus.days > 0 ? `${dueDateStatus.days}d overdue` : 'Overdue'}</span>
                   </span>
               )}
             </div>
@@ -2562,9 +2562,9 @@ export default function DashboardOverview() {
                 {invoice.status === 'pending' && dueDateStatus.status === 'overdue' && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border bg-red-50 text-red-800 border-red-300">
                     <AlertTriangle className="h-3 w-3" />
-                    <span>{dueDateStatus.days}d overdue</span>
+                    <span>{dueDateStatus.days > 0 ? `${dueDateStatus.days}d overdue` : 'Overdue'}</span>
                   </span>
-              )}
+                )}
             </div>
           </div>
           </div>
@@ -3788,7 +3788,7 @@ export default function DashboardOverview() {
                         {/* Combined Invoices Section */}
                         {combinedInvoices.length > 0 && (
                           <div>
-                            <div className="bg-white border border-gray-200 divide-y divide-gray-100">
+                            <div className="bg-white border border-gray-200 divide-y divide-gray-100 overflow-hidden">
                               {combinedInvoices.map(({ invoice, type }) => {
                                 const paymentData = paymentDataMap[invoice.id] || null;
                                 const dueCharges = calculateDueCharges(invoice, paymentData);
@@ -3828,31 +3828,31 @@ export default function DashboardOverview() {
                                   <div
                                     key={invoice.id}
                                     onClick={() => handleViewInvoice(invoice)}
-                                    className="p-3 sm:p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                                    className="p-2 sm:p-4 hover:bg-gray-50 transition-colors cursor-pointer overflow-hidden w-full max-w-full"
                                   >
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                          {statusInfo.icon}
-                                          <span className="text-sm font-medium text-gray-900 truncate">
+                                    <div className="flex items-start justify-between gap-1 w-full max-w-full min-w-0">
+                                      <div className="flex-1 min-w-0 overflow-hidden max-w-[calc(100%-80px)]">
+                                        <div className="flex items-center gap-1 mb-0.5 min-w-0 overflow-hidden">
+                                          <span className="flex-shrink-0">{statusInfo.icon}</span>
+                                          <span className="text-[11px] sm:text-sm font-medium text-gray-900 truncate whitespace-nowrap block min-w-0">
                                             {invoice.invoiceNumber}
                                           </span>
-                                          <span className="text-xs text-gray-500 truncate">
+                                          <span className="text-[9px] sm:text-xs text-gray-500 truncate whitespace-nowrap block min-w-0">
                                             {invoice.client?.name || 'Unknown Client'}
                                           </span>
                                         </div>
-                                        <div className="flex items-center gap-3 text-xs text-gray-500 ml-6">
-                                          <span>{statusInfo.label}</span>
-                                          <span>•</span>
-                                          <span>{new Date(invoice.dueDate).toLocaleDateString()}</span>
+                                        <div className="flex items-center gap-0.5 text-[8px] sm:text-[10px] text-gray-500 ml-4 sm:ml-5 min-w-0 overflow-hidden">
+                                          <span className="whitespace-nowrap truncate block">{statusInfo.label}</span>
+                                          <span className="flex-shrink-0">•</span>
+                                          <span className="whitespace-nowrap truncate block">{new Date(invoice.dueDate).toLocaleDateString()}</span>
                                         </div>
                                       </div>
-                                      <div className="ml-4 text-right">
-                                        <div className={`text-sm font-semibold ${statusInfo.amountColor}`}>
+                                      <div className="ml-0.5 text-right flex-shrink-0 w-auto">
+                                        <div className={`text-[11px] sm:text-sm font-semibold whitespace-nowrap leading-tight ${statusInfo.amountColor}`}>
                                           ${dueCharges.totalPayable.toFixed(2)}
                                         </div>
                                         {dueCharges.isPartiallyPaid && (
-                                          <div className="text-xs text-gray-500">
+                                          <div className="text-[8px] sm:text-[10px] text-gray-500 whitespace-nowrap truncate mt-0.5 max-w-[70px]">
                                             ${dueCharges.totalPaid.toFixed(2)} paid
                                           </div>
                                         )}

@@ -52,9 +52,9 @@ export async function GET(request: NextRequest) {
         };
       } else {
         // Get all non-draft invoices created after activation (for total count and billing records)
-        const { data: allInvoices } = await supabase
-          .from('invoices')
-          .select('id')
+      const { data: allInvoices } = await supabase
+        .from('invoices')
+        .select('id')
           .eq('user_id', user.id)
           .gte('created_at', userData.pay_per_invoice_activated_at)
           .neq('status', 'draft');
@@ -70,21 +70,21 @@ export async function GET(request: NextRequest) {
           };
         } else {
           const invoiceIds = allInvoices.map(inv => inv.id);
-          
-          // Get all billing records (pending OR paid) for these invoices
+      
+      // Get all billing records (pending OR paid) for these invoices
           // If a billing record exists, it means the invoice was charged
-          const { data: billingRecords } = await supabase
-            .from('billing_records')
-            .select('invoice_id, amount, status')
-            .eq('user_id', user.id)
-            .eq('type', 'per_invoice_fee')
+        const { data: billingRecords } = await supabase
+          .from('billing_records')
+          .select('invoice_id, amount, status')
+          .eq('user_id', user.id)
+          .eq('type', 'per_invoice_fee')
             .in('status', ['pending', 'paid'])
-            .in('invoice_id', invoiceIds);
-          
+          .in('invoice_id', invoiceIds);
+        
           const chargedInvoiceIds = new Set((billingRecords || []).map(br => br.invoice_id));
           const chargedInvoices = chargedInvoiceIds.size;
           const totalCharged = (billingRecords || [])
-            .reduce((sum, record) => sum + parseFloat(record.amount.toString()), 0);
+          .reduce((sum, record) => sum + parseFloat(record.amount.toString()), 0);
           
           // Count free invoices (matching chargeForInvoice logic)
           // The 5 free invoices are shared between:
@@ -165,18 +165,18 @@ export async function GET(request: NextRequest) {
           // Template 1 detailed invoices are free (not charged) but count against the 5 free limit
           const totalFreeInvoicesUsed = fastInvoicesCount + template1DetailedInvoicesCount;
           const freeInvoicesUsed = Math.min(totalFreeInvoicesUsed, 5);
-          const freeInvoicesRemaining = Math.max(0, 5 - freeInvoicesUsed);
+      const freeInvoicesRemaining = Math.max(0, 5 - freeInvoicesUsed);
           
           const totalInvoices = allInvoices.length;
-          
-          payPerInvoiceInfo = {
-            totalInvoices,
-            freeInvoicesUsed,
-            freeInvoicesRemaining,
-            chargedInvoices,
+      
+      payPerInvoiceInfo = {
+        totalInvoices,
+        freeInvoicesUsed,
+        freeInvoicesRemaining,
+        chargedInvoices,
             totalCharged: totalCharged.toFixed(2),
             template1DetailedInvoices: template1DetailedInvoicesCount // Always free, don't count against limit
-          };
+      };
         }
       }
     }

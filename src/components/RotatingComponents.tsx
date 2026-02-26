@@ -123,12 +123,12 @@ export const RotatingBadges = React.memo(({ badges, rotationState }: { badges: R
     };
   }, [isAnimating]);
 
-  // Memoize computed values
-  const nextIndex = React.useMemo(() => (currentIndex + 1) % badges.length, [currentIndex, badges.length]);
+  // Memoize computed values - must be before early returns (Rules of Hooks)
+  const nextIndex = React.useMemo(() => badges.length > 0 ? (currentIndex + 1) % badges.length : 0, [currentIndex, badges.length]);
   const widestBadge = React.useMemo(() => findWidestBadge(badges), [badges]);
 
   // Early returns
-  if (badges.length === 0) return null;
+  if (!badges || badges.length === 0) return null;
   if (badges.length === 1) return <>{badges[0]}</>;
 
   const transitionStyle = isAnimating 
