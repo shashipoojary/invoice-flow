@@ -339,6 +339,11 @@ export default function ReminderHistoryPage() {
         return false;
       }
       
+      // CRITICAL: Exclude paid invoices - once marked as paid, stop tracking activity
+      if (reminder.invoice.status === 'paid') {
+        return false;
+      }
+      
       // Apply search filter (only if search term exists)
       if (debouncedSearchTerm.trim()) {
         const matchesSearch = 

@@ -712,23 +712,28 @@ export default function DashboardOverview() {
             payment_method,
             invoices (
               invoice_number,
+              status,
               clients (name)
             )
           `)
           .order('payment_date', { ascending: false })
-          .limit(10);
+          .limit(20); // Fetch more to account for filtering
         
         if (error) throw error;
         
-        const activity = (payments || []).map((p: any) => ({
-          id: p.id,
-          invoiceId: p.invoice_id,
-          invoiceNumber: p.invoices?.invoice_number || 'N/A',
-          clientName: p.invoices?.clients?.name || 'Unknown Client',
-          amount: parseFloat(p.amount.toString()),
-          date: p.payment_date,
-          method: p.payment_method || 'N/A'
-        }));
+        // CRITICAL: Filter out payments for paid invoices - once invoice is marked as paid, stop tracking activity
+        const activity = (payments || [])
+          .filter((p: any) => p.invoices?.status !== 'paid') // Exclude payments for paid invoices
+          .map((p: any) => ({
+            id: p.id,
+            invoiceId: p.invoice_id,
+            invoiceNumber: p.invoices?.invoice_number || 'N/A',
+            clientName: p.invoices?.clients?.name || 'Unknown Client',
+            amount: parseFloat(p.amount.toString()),
+            date: p.payment_date,
+            method: p.payment_method || 'N/A'
+          }))
+          .slice(0, 10); // Limit to 10 after filtering
         
         setPaymentActivity(activity);
       } catch (error) {
@@ -2864,6 +2869,9 @@ export default function DashboardOverview() {
       index === self.findIndex(i => i.id === invoice.id)
     );
     
+    // CRITICAL: Filter out paid invoices from recent invoices - once marked as paid, stop tracking activity
+    const nonPaidInvoices = uniqueInvoices.filter(invoice => invoice.status !== 'paid');
+    
     // Calculate draft amount and total write-off
     let draftAmount = 0;
     let totalWriteOff = 0;
@@ -2915,7 +2923,7 @@ export default function DashboardOverview() {
     }
     
     return {
-      recentInvoices: uniqueInvoices.slice(0, 8),
+      recentInvoices: nonPaidInvoices.slice(0, 8),
       totalRevenue,
       totalPayableAmount,
       overdueCount,

@@ -487,7 +487,9 @@ export default function ClientsPage() {
         const paidInvoices = clientInvoices.filter(inv => inv.status === 'paid').length;
         const pendingInvoices = clientInvoices.filter(inv => inv.status === 'sent' || inv.status === 'pending').length;
         const totalAmount = clientInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
-        const recentInvoices = clientInvoices.slice(0, 5).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        // CRITICAL: Filter out paid invoices from recent invoices - once marked as paid, stop tracking activity
+        const nonPaidInvoices = clientInvoices.filter(inv => inv.status !== 'paid');
+        const recentInvoices = nonPaidInvoices.slice(0, 5).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
         return (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 z-50">

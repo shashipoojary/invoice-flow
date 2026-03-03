@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { X, FileText, Zap, Loader2 } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { X, FileText, Zap, Loader2, Lock } from 'lucide-react';
 import { Estimate } from '@/types';
+import { useSettings } from '@/contexts/SettingsContext';
+import { useAuth } from '@/hooks/useAuth';
 
 interface EstimateConversionModalProps {
   isOpen: boolean;
@@ -19,11 +21,46 @@ export default function EstimateConversionModal({
   estimate,
   isLoading = false
 }: EstimateConversionModalProps) {
+  const { settings } = useSettings();
+  const { getAuthHeaders } = useAuth();
+  const [subscriptionUsage, setSubscriptionUsage] = useState<{ 
+    plan: string; 
+    templates?: { enabled: number; total: number };
+    used?: number;
+    limit?: number | null;
+  } | null>(null);
+  const [loadingUsage, setLoadingUsage] = useState(false);
+
   // Check if estimate can be converted to fast invoice (only 1 item)
   const canConvertToFast = useMemo(() => {
     if (!estimate || !estimate.items) return false;
+    // CRITICAL: Tax-registered users cannot use fast invoices
+    if (settings?.isTaxRegistered === true) return false;
     return estimate.items.length === 1;
-  }, [estimate]);
+  }, [estimate, settings?.isTaxRegistered]);
+
+  // Get available templates based on plan
+  const availableTemplates = useMemo(() => {
+    if (!subscriptionUsage) return { 1: true, 2: false, 3: false }; // Default to only template 1
+    
+    const plan = subscriptionUsage.plan || 'free';
+    const templatesEnabled = subscriptionUsage.templates?.enabled || 1;
+    
+    if (plan === 'monthly') {
+      // Monthly plan: All templates available
+      return { 1: true, 2: true, 3: true };
+    } else if (plan === 'pay_per_invoice') {
+      // Pay Per Invoice: All templates available (may charge for premium)
+      return { 1: true, 2: true, 3: true };
+    } else {
+      // Free plan: Only template 1
+      return { 
+        1: true, 
+        2: templatesEnabled >= 2, 
+        3: templatesEnabled >= 3 
+      };
+    }
+  }, [subscriptionUsage]);
 
   // Default to detailed if fast is not available
   const [invoiceType, setInvoiceType] = useState<'fast' | 'detailed'>(() => {
@@ -31,21 +68,53 @@ export default function EstimateConversionModal({
   });
   const [selectedTemplate, setSelectedTemplate] = useState<number>(1); // 1=Minimal, 2=Modern, 3=Creative
 
+  // Fetch subscription usage when modal opens
+  useEffect(() => {
+    if (isOpen && !subscriptionUsage && !loadingUsage) {
+      const fetchUsage = async () => {
+        try {
+          setLoadingUsage(true);
+          const headers = await getAuthHeaders();
+          const response = await fetch('/api/subscription/usage', {
+            headers,
+            cache: 'no-store'
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setSubscriptionUsage(data);
+          }
+        } catch (error) {
+          console.error('Error fetching subscription usage:', error);
+        } finally {
+          setLoadingUsage(false);
+        }
+      };
+      fetchUsage();
+    }
+  }, [isOpen, subscriptionUsage, loadingUsage, getAuthHeaders]);
+
   // Update invoice type if fast becomes unavailable
-  React.useEffect(() => {
+  useEffect(() => {
     if (!canConvertToFast && invoiceType === 'fast') {
       setInvoiceType('detailed');
     }
   }, [canConvertToFast, invoiceType]);
 
   // Reset state when modal opens/closes
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       // Set default based on whether fast is available
       setInvoiceType(canConvertToFast ? 'fast' : 'detailed');
       setSelectedTemplate(1);
     }
   }, [isOpen, canConvertToFast]);
+
+  // Ensure selected template is available
+  useEffect(() => {
+    if (invoiceType === 'detailed' && !availableTemplates[selectedTemplate as keyof typeof availableTemplates]) {
+      setSelectedTemplate(1); // Fallback to template 1 if selected template is not available
+    }
+  }, [invoiceType, selectedTemplate, availableTemplates]);
 
   if (!isOpen) return null;
 
@@ -108,13 +177,13 @@ export default function EstimateConversionModal({
               Invoice Type
             </label>
             <div className={`grid gap-3 ${canConvertToFast ? 'grid-cols-2' : 'grid-cols-1'}`}>
-              {/* Fast Invoice Option - Only show if estimate has 1 item */}
+              {/* Fast Invoice Option - Only show if estimate has 1 item and user is not tax-registered */}
               {canConvertToFast && (
                 <button
                   type="button"
                   onClick={() => setInvoiceType('fast')}
                   disabled={isLoading}
-                  className={`p-4 border-2 transition-all cursor-pointer text-left ${
+                  className={`p-4 border-2 transition-all cursor-pointer text-left relative ${
                     invoiceType === 'fast'
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
@@ -137,6 +206,21 @@ export default function EstimateConversionModal({
                     </p>
                   </div>
                 </button>
+              )}
+
+              {/* Show message if fast invoice is blocked due to tax registration */}
+              {!canConvertToFast && estimate?.items && estimate.items.length === 1 && settings?.isTaxRegistered === true && (
+                <div className="p-4 border-2 border-gray-200 bg-gray-50 opacity-60">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Lock className="h-5 w-5 text-gray-400" />
+                    <span className="text-sm font-medium text-gray-500">
+                      Fast Invoice (Not Available)
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Fast invoices are not available for tax-registered users. Please use Detailed Invoice instead.
+                  </p>
+                </div>
               )}
 
               {/* Detailed Invoice Option */}
@@ -180,54 +264,84 @@ export default function EstimateConversionModal({
                 <button
                   type="button"
                   onClick={() => setSelectedTemplate(1)}
-                  disabled={isLoading}
-                  className={`p-3 border-2 transition-all cursor-pointer ${
+                  disabled={isLoading || !availableTemplates[1]}
+                  className={`p-3 border-2 transition-all cursor-pointer relative ${
                     selectedTemplate === 1
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
-                  } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  } ${isLoading || !availableTemplates[1] ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
+                  {!availableTemplates[1] && (
+                    <div className="absolute top-1 right-1">
+                      <Lock className="h-3 w-3 text-gray-400" />
+                    </div>
+                  )}
                   <div className={`text-sm font-medium mb-1 ${selectedTemplate === 1 ? 'text-blue-700' : 'text-gray-700'}`}>
                     Minimal
                   </div>
                   <div className="h-12 bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300"></div>
                   <p className="text-xs text-gray-500 mt-1">Clean & simple</p>
+                  {subscriptionUsage?.plan === 'free' && (
+                    <p className="text-xs text-emerald-600 mt-1 font-medium">Free</p>
+                  )}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setSelectedTemplate(2)}
-                  disabled={isLoading}
-                  className={`p-3 border-2 transition-all cursor-pointer ${
+                  disabled={isLoading || !availableTemplates[2]}
+                  className={`p-3 border-2 transition-all cursor-pointer relative ${
                     selectedTemplate === 2
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
-                  } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  } ${isLoading || !availableTemplates[2] ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
+                  {!availableTemplates[2] && (
+                    <div className="absolute top-1 right-1">
+                      <Lock className="h-3 w-3 text-gray-400" />
+                    </div>
+                  )}
                   <div className={`text-sm font-medium mb-1 ${selectedTemplate === 2 ? 'text-blue-700' : 'text-gray-700'}`}>
                     Modern
                   </div>
                   <div className="h-12 bg-gradient-to-br from-blue-100 to-purple-100 border border-blue-300"></div>
                   <p className="text-xs text-gray-500 mt-1">Professional</p>
+                  {subscriptionUsage?.plan === 'free' && (
+                    <p className="text-xs text-amber-600 mt-1 font-medium">Premium</p>
+                  )}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setSelectedTemplate(3)}
-                  disabled={isLoading}
-                  className={`p-3 border-2 transition-all cursor-pointer ${
+                  disabled={isLoading || !availableTemplates[3]}
+                  className={`p-3 border-2 transition-all cursor-pointer relative ${
                     selectedTemplate === 3
                       ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300'
-                  } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  } ${isLoading || !availableTemplates[3] ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
+                  {!availableTemplates[3] && (
+                    <div className="absolute top-1 right-1">
+                      <Lock className="h-3 w-3 text-gray-400" />
+                    </div>
+                  )}
                   <div className={`text-sm font-medium mb-1 ${selectedTemplate === 3 ? 'text-blue-700' : 'text-gray-700'}`}>
                     Creative
                   </div>
                   <div className="h-12 bg-gradient-to-br from-purple-100 to-pink-100 border border-purple-300"></div>
                   <p className="text-xs text-gray-500 mt-1">Bold & vibrant</p>
+                  {subscriptionUsage?.plan === 'free' && (
+                    <p className="text-xs text-amber-600 mt-1 font-medium">Premium</p>
+                  )}
                 </button>
               </div>
+              {/* Show plan restriction message */}
+              {subscriptionUsage?.plan === 'free' && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Free plan includes Minimal template only. Upgrade to unlock Modern and Creative templates.
+                </p>
+              )}
             </div>
           )}
         </div>
