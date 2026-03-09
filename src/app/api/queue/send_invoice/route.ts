@@ -128,6 +128,7 @@ async function handler(request: NextRequest) {
       businessEmail: settingsData?.business_email || '',
       businessPhone: settingsData?.business_phone || '',
       address: settingsData?.business_address || '',
+      taxId: settingsData?.tax_id || '',
       website: settingsData?.website || '',
       logo: settingsData?.logo || '',
       paypalEmail: settingsData?.paypal_email || '',

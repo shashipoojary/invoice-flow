@@ -37,6 +37,7 @@ export async function generateTemplatePDFBlob(
       businessEmail: businessSettings.businessEmail || 'business@example.com',
       businessPhone: businessSettings.businessPhone || '',
       address: businessSettings.address || '',
+      taxId: businessSettings.taxId || '',
       logo: logoBase64, // Use base64 converted logo
       paypalEmail: businessSettings.paypalEmail || '',
       cashappId: businessSettings.cashappId || '',
@@ -53,6 +54,7 @@ export async function generateTemplatePDFBlob(
       businessEmail: 'business@example.com',
       businessPhone: '',
       address: '',
+      taxId: '',
       logo: '',
       paypalEmail: '',
       cashappId: '',

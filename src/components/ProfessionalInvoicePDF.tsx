@@ -514,6 +514,7 @@ const formatCurrency = (amount: number) => {
               {businessSettings?.businessAddress && <Text>{businessSettings.businessAddress}</Text>}
               {businessSettings?.businessPhone && <Text>{businessSettings.businessPhone}</Text>}
               {businessSettings?.businessEmail && <Text>{businessSettings.businessEmail}</Text>}
+              {/* Tax ID not shown for fast invoices - fast invoices don't support tax */}
             </View>
           </View>
           

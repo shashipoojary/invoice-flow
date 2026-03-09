@@ -480,6 +480,17 @@ async function generateTemplate1DetailedPDF(
     });
   }
 
+  if (businessSettings.taxId) {
+    contactY -= 12;
+    page.drawText(`Tax ID / GST Number: ${businessSettings.taxId}`, {
+      x: 110,
+      y: contactY,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
+  }
+
   // Invoice details
   page.drawText('Invoice Details', {
     x: 450,
@@ -932,6 +943,17 @@ async function generateTemplate2PDF(
     });
   }
 
+  if (businessSettings.taxId) {
+    contactY -= 12;
+    page.drawText(`Tax ID / GST Number: ${businessSettings.taxId}`, {
+      x: 100,
+      y: contactY,
+      size: 9,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
+  }
+
   // Invoice details
   page.drawText('Invoice Details', {
     x: 450,
@@ -1328,6 +1350,22 @@ async function generateTemplate3PDF(
     });
     });
     contactY -= (emailLines.length - 1) * 12;
+  }
+
+  if (businessSettings.taxId) {
+    contactY -= 12;
+    const taxIdText = `Tax ID / GST Number: ${businessSettings.taxId}`;
+    const taxIdLines = wrapTextToWidth(taxIdText, font, 9, maxContactWidth);
+    taxIdLines.forEach((line, index) => {
+      page.drawText(line, {
+        x: 50,
+        y: contactY - (index * 12),
+        size: 9,
+        font: font,
+        color: rgb(0.3, 0.3, 0.3),
+      });
+    });
+    contactY -= (taxIdLines.length - 1) * 12;
   }
 
   // Creative invoice details section with artistic elements
@@ -1826,6 +1864,22 @@ async function generateModernTemplatePDF(
     });
     });
     contactY -= (emailLines.length - 1) * 10;
+  }
+
+  if (businessSettings.taxId) {
+    contactY -= 10;
+    const taxIdText = `Tax ID / GST Number: ${businessSettings.taxId}`;
+    const taxIdLines = wrapTextToWidth(taxIdText, font, 8, maxContactWidth);
+    taxIdLines.forEach((line, index) => {
+      page.drawText(line, {
+        x: 60,
+        y: contactY - (index * 10),
+        size: 8,
+        font: font,
+        color: rgb(1, 1, 1), // White text on purple background
+      });
+    });
+    contactY -= (taxIdLines.length - 1) * 10;
   }
 
   // Modern invoice details card
@@ -2334,6 +2388,17 @@ async function generateSimpleCleanTemplatePDF(
   if (businessSettings.businessEmail) {
     contactY -= 10;
     page.drawText(businessSettings.businessEmail, {
+      x: 50,
+      y: contactY,
+      size: 8,
+      font: font,
+      color: rgb(1, 1, 1),
+    });
+  }
+
+  if (businessSettings.taxId) {
+    contactY -= 10;
+    page.drawText(`Tax ID / GST Number: ${businessSettings.taxId}`, {
       x: 50,
       y: contactY,
       size: 8,
@@ -2913,6 +2978,17 @@ async function generateMinimalTemplatePDF(
   if (businessSettings.businessEmail) {
     contactY -= 11;
     page.drawText(businessSettings.businessEmail, {
+      x: 50,
+      y: contactY,
+      size: 9,
+      font: font,
+      color: rgb(0.5, 0.5, 0.5),
+    });
+  }
+
+  if (businessSettings.taxId) {
+    contactY -= 11;
+    page.drawText(`Tax ID / GST Number: ${businessSettings.taxId}`, {
       x: 50,
       y: contactY,
       size: 9,

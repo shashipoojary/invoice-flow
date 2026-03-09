@@ -294,6 +294,7 @@ export async function GET(
           address: businessSettings.business_address || '',
           email: businessSettings.business_email || '',
           phone: businessSettings.business_phone || '',
+          taxId: businessSettings.tax_id || '',
           paypalEmail: businessSettings.paypal_email || '',
           cashappId: businessSettings.cashapp_id || '',
           venmoId: businessSettings.venmo_id || '',

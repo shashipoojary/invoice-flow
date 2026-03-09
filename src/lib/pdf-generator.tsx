@@ -131,6 +131,7 @@ export const generateProfessionalPDF = async (
       businessEmail: businessSettings?.businessEmail || 'your-email@example.com',
       businessPhone: businessSettings?.businessPhone || '',
       address: businessSettings?.address || '',
+      taxId: businessSettings?.taxId || '',
       logo: businessSettings?.logo || '',
       paypalEmail: businessSettings?.paypalEmail || '',
       cashappId: businessSettings?.cashappId || '',

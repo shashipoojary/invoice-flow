@@ -500,6 +500,7 @@ export async function POST(request: NextRequest) {
           businessEmail: settingsData.business_email,
           businessPhone: settingsData.business_phone,
           address: settingsData.business_address,
+          taxId: settingsData.tax_id || '',
           logo: settingsData.logo || settingsData.logo_url,
           bankAccount: settingsData.bank_account,
           bankIfscSwift: settingsData.bank_ifsc_swift,

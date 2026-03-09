@@ -64,6 +64,7 @@ interface Invoice {
     address: string
     email: string
     phone: string
+    taxId?: string
     paypalEmail: string
     cashappId: string
     venmoId: string
@@ -280,6 +281,9 @@ function FastInvoiceTemplate({ invoice, getAmountColor }: { invoice: Invoice, ge
               )}
               {invoice.freelancerSettings?.email && (
                 <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>{invoice.freelancerSettings.email}</div>
+              )}
+              {invoice.freelancerSettings?.taxId && (
+                <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>Tax ID / GST Number: {invoice.freelancerSettings.taxId}</div>
               )}
               
               {/* Payment Overdue Notice - Status Banner Style */}
@@ -909,6 +913,9 @@ function ModernTemplate({ invoice, primaryColor, secondaryColor, getAmountColor 
               {invoice.freelancerSettings?.email && (
                 <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>{invoice.freelancerSettings.email}</div>
               )}
+              {invoice.freelancerSettings?.taxId && (
+                <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>Tax ID / GST Number: {invoice.freelancerSettings.taxId}</div>
+              )}
               
               {/* Payment Overdue Notice - Status Banner Style */}
               {invoice.isOverdue && (
@@ -1536,6 +1543,9 @@ function CreativeTemplate({ invoice, primaryColor, secondaryColor, getAmountColo
               {invoice.freelancerSettings?.email && (
                 <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>{invoice.freelancerSettings.email}</div>
               )}
+              {invoice.freelancerSettings?.taxId && (
+                <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>Tax ID / GST Number: {invoice.freelancerSettings.taxId}</div>
+              )}
               
               {/* Payment Overdue Notice - Status Banner Style */}
               {invoice.isOverdue && (
@@ -2162,6 +2172,9 @@ function MinimalTemplate({ invoice, primaryColor, secondaryColor, accentColor, g
               )}
               {invoice.freelancerSettings?.email && (
                 <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>{invoice.freelancerSettings.email}</div>
+              )}
+              {invoice.freelancerSettings?.taxId && (
+                <div className="text-sm text-gray-500 mt-1" style={{ paddingLeft: 0, marginLeft: 0 }}>Tax ID / GST Number: {invoice.freelancerSettings.taxId}</div>
               )}
               
               {/* Payment Overdue Notice - Status Banner Style */}

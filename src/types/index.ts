@@ -119,6 +119,7 @@ export interface BusinessSettings {
   address: string;
   businessEmail: string;
   businessPhone: string;
+  taxId?: string;
   paypalEmail: string;
   cashappId: string;
   venmoId: string;
