@@ -116,10 +116,61 @@ export default function LandingPage() {
           0% { opacity: 0; transform: translateY(20px); }
           100% { opacity: 1; transform: translateY(0); }
         }
+        
+        @keyframes slideInFromBottom {
+          0% { opacity: 0; transform: translateY(30px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes scaleIn {
+          0% { opacity: 0; transform: scale(0.95); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        
+        .animate-card-1 {
+          animation: slideInFromBottom 0.6s ease-out 0.1s both;
+        }
+        
+        .animate-card-2 {
+          animation: slideInFromBottom 0.6s ease-out 0.2s both;
+        }
+        
+        .animate-card-3 {
+          animation: slideInFromBottom 0.6s ease-out 0.3s both;
+        }
+        
+        .animate-card-4 {
+          animation: slideInFromBottom 0.6s ease-out 0.4s both;
+        }
+        
+        .animate-card-5 {
+          animation: slideInFromBottom 0.6s ease-out 0.5s both;
+        }
+        
+        .animate-card-6 {
+          animation: slideInFromBottom 0.6s ease-out 0.6s both;
+        }
+        
+        .animate-card-7 {
+          animation: slideInFromBottom 0.6s ease-out 0.7s both;
+        }
+        
+        .animate-card-8 {
+          animation: slideInFromBottom 0.6s ease-out 0.8s both;
+        }
+        
+        .mockup-hover {
+          transition: all 0.3s ease;
+        }
+        
+        .mockup-hover:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
       `}</style>
       <div className="min-h-screen transition-colors duration-200 bg-white overflow-x-hidden">
       {/* Hero Section */}
-      <section className="pt-12 sm:pt-16 lg:pt-20 pb-12 sm:pb-16 lg:pb-20 px-4 sm:px-6 lg:px-8 relative bg-white" ref={heroRef}>
+      <section className="pt-4 pb-12 sm:pb-16 lg:pb-20 px-4 sm:px-6 lg:px-8 relative bg-white" ref={heroRef}>
         <div className="max-w-7xl mx-auto">
           {/* Hero Content */}
           <div className="max-w-3xl mx-auto text-center mb-8 sm:mb-10 lg:mb-8">
@@ -136,14 +187,14 @@ export default function LandingPage() {
             <div className="flex flex-row gap-2 sm:gap-3 justify-center mb-8 sm:mb-12">
                 <button
                   onClick={handleGetStarted}
-                className="inline-flex items-center justify-center px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium text-white bg-black rounded-lg hover:bg-gray-800 transition-colors"
+                className="inline-flex items-center justify-center px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium text-white bg-black hover:bg-gray-800 transition-colors"
                 >
                 Get started free
                 <ArrowRight className="ml-2 w-4 h-4" />
                 </button>
                 <button
                   onClick={handleViewDemo}
-                className="inline-flex items-center justify-center px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="inline-flex items-center justify-center px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
                 >
                 View demo
                 </button>
@@ -177,19 +228,19 @@ export default function LandingPage() {
           {/* Dashboard Screenshot */}
           <div className="relative max-w-6xl mx-auto">
             {/* Glow effect layers - Purple theme */}
-            <div className="absolute inset-0 rounded-2xl opacity-30 blur-3xl" style={{
+            <div className="absolute inset-0 opacity-30 blur-3xl" style={{
               background: 'radial-gradient(ellipse at center, #a855f7, #9333ea, #7c3aed)',
                 transform: 'scale(1.1)',
               zIndex: 0
               }}></div>
-            <div className="absolute inset-0 rounded-2xl opacity-20 blur-2xl" style={{
+            <div className="absolute inset-0 opacity-20 blur-2xl" style={{
               background: 'radial-gradient(ellipse at 30% 70%, #a855f7, #9333ea)',
                 transform: 'scale(1.05)',
               zIndex: 1
               }}></div>
               
             {/* Desktop Image */}
-            <div className="relative z-10 rounded-lg overflow-hidden border border-gray-200 shadow-2xl bg-white hidden md:block">
+            <div className="relative z-10 overflow-hidden border border-gray-200 shadow-2xl bg-white hidden md:block">
                 <Image
                 src="/dashboard-screenshot.png?v=2"
                 alt="FlowInvoicer Dashboard"
@@ -203,7 +254,7 @@ export default function LandingPage() {
               </div>
             
             {/* Mobile Image */}
-            <div className="relative z-10 rounded-lg overflow-hidden border border-gray-200 shadow-2xl bg-white block md:hidden">
+            <div className="relative z-10 overflow-hidden border border-gray-200 shadow-2xl bg-white block md:hidden">
               <Image
                 src="/dashboard-screenshot-mobile.png"
                 alt="FlowInvoicer Dashboard"
@@ -235,8 +286,8 @@ export default function LandingPage() {
           {/* Features Grid */}
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-6 lg:gap-8 font-sans">
             {/* Feature 1 - Professional Templates */}
-            <div className="group p-3 sm:p-6 lg:p-8 rounded-md sm:rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
+            <div className="group p-3 sm:p-6 lg:p-8 border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
+              <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
                 backgroundColor: '#f8f9fa',
                 border: '1px solid #e5e7eb'
               }}>
@@ -251,8 +302,8 @@ export default function LandingPage() {
               </div>
               
             {/* Feature 2 - Client Management */}
-            <div className="group p-3 sm:p-6 lg:p-8 rounded-md sm:rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
+            <div className="group p-3 sm:p-6 lg:p-8 border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
+              <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
                 backgroundColor: '#f8f9fa',
                 border: '1px solid #e5e7eb'
               }}>
@@ -267,8 +318,8 @@ export default function LandingPage() {
               </div>
               
             {/* Feature 3 - Payment Tracking */}
-            <div className="group p-3 sm:p-6 lg:p-8 rounded-md sm:rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
+            <div className="group p-3 sm:p-6 lg:p-8 border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
+              <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
                 backgroundColor: '#f8f9fa',
                 border: '1px solid #e5e7eb'
               }}>
@@ -283,8 +334,8 @@ export default function LandingPage() {
                 </div>
 
             {/* Feature 4 - Automated Reminders */}
-            <div className="group p-3 sm:p-6 lg:p-8 rounded-md sm:rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
+            <div className="group p-3 sm:p-6 lg:p-8 border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
+              <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
                 backgroundColor: '#f8f9fa',
                 border: '1px solid #e5e7eb'
               }}>
@@ -299,8 +350,8 @@ export default function LandingPage() {
           </div>
 
             {/* Feature 5 - Late Fees */}
-            <div className="group p-3 sm:p-6 lg:p-8 rounded-md sm:rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
+            <div className="group p-3 sm:p-6 lg:p-8 border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
+              <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
                 backgroundColor: '#f8f9fa',
                 border: '1px solid #e5e7eb'
               }}>
@@ -315,8 +366,8 @@ export default function LandingPage() {
             </div>
 
             {/* Feature 6 - Multiple Payment Methods */}
-            <div className="group p-3 sm:p-6 lg:p-8 rounded-md sm:rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
+            <div className="group p-3 sm:p-6 lg:p-8 border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
+              <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
                 backgroundColor: '#f8f9fa',
                 border: '1px solid #e5e7eb'
               }}>
@@ -331,8 +382,8 @@ export default function LandingPage() {
             </div>
 
             {/* Feature 7 - PDF Generation */}
-            <div className="group p-3 sm:p-6 lg:p-8 rounded-md sm:rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
+            <div className="group p-3 sm:p-6 lg:p-8 border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
+              <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
                 backgroundColor: '#f8f9fa',
                 border: '1px solid #e5e7eb'
               }}>
@@ -347,8 +398,8 @@ export default function LandingPage() {
             </div>
 
             {/* Feature 8 - Analytics Dashboard */}
-            <div className="group p-3 sm:p-6 lg:p-8 rounded-md sm:rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
+            <div className="group p-3 sm:p-6 lg:p-8 border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
+              <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
                 backgroundColor: '#f8f9fa',
                 border: '1px solid #e5e7eb'
               }}>
@@ -363,8 +414,8 @@ export default function LandingPage() {
             </div>
 
             {/* Feature 9 - Secure & Reliable */}
-            <div className="group p-3 sm:p-6 lg:p-8 rounded-md sm:rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200 col-span-2 md:col-span-1">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
+            <div className="group p-3 sm:p-6 lg:p-8 border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200 col-span-2 md:col-span-1">
+              <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
                 backgroundColor: '#f8f9fa',
                 border: '1px solid #e5e7eb'
               }}>
@@ -394,9 +445,9 @@ export default function LandingPage() {
           {/* Desktop Grid */}
           <div className="hidden sm:grid sm:grid-cols-3 gap-6 lg:gap-8">
             {/* Reddit Review */}
-            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors">
+            <div className="bg-white border border-gray-100 p-6 hover:border-gray-200 transition-colors">
               <div className="flex items-start gap-3 mb-4">
-                <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 bg-orange-500 flex items-center justify-center flex-shrink-0">
                   <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
                 </svg>
@@ -419,9 +470,9 @@ export default function LandingPage() {
             </div>
 
             {/* Indie Hackers Review */}
-            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors">
+            <div className="bg-white border border-gray-100 p-6 hover:border-gray-200 transition-colors">
               <div className="flex items-start gap-3 mb-4">
-                <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 bg-indigo-600 flex items-center justify-center flex-shrink-0">
                   <span className="text-white text-xs font-bold">IH</span>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -440,9 +491,9 @@ export default function LandingPage() {
             </div>
 
             {/* X.com Review */}
-            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors">
+            <div className="bg-white border border-gray-100 p-6 hover:border-gray-200 transition-colors">
               <div className="flex items-start gap-3 mb-4">
-                <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 bg-black flex items-center justify-center flex-shrink-0">
                   <svg className="w-4 h-4 text-white fill-current" viewBox="0 0 24 24">
                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                   </svg>
@@ -476,9 +527,9 @@ export default function LandingPage() {
               }}
             >
               {/* Reddit Review */}
-              <div className="bg-white rounded-xl border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
+              <div className="bg-white border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 bg-orange-500 flex items-center justify-center flex-shrink-0">
                     <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
                     </svg>
@@ -499,9 +550,9 @@ export default function LandingPage() {
               </div>
 
               {/* Indie Hackers Review */}
-              <div className="bg-white rounded-xl border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
+              <div className="bg-white border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 bg-indigo-600 flex items-center justify-center flex-shrink-0">
                     <span className="text-white text-xs font-bold">IH</span>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -516,9 +567,9 @@ export default function LandingPage() {
               </div>
 
               {/* X.com Review */}
-              <div className="bg-white rounded-xl border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
+              <div className="bg-white border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 bg-black flex items-center justify-center flex-shrink-0">
                     <svg className="w-4 h-4 text-white fill-current" viewBox="0 0 24 24">
                       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                     </svg>
@@ -542,9 +593,9 @@ export default function LandingPage() {
               </div>
 
               {/* Reddit Review 2 */}
-              <div className="bg-white rounded-xl border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
+              <div className="bg-white border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 bg-orange-500 flex items-center justify-center flex-shrink-0">
                     <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
                     </svg>
@@ -565,9 +616,9 @@ export default function LandingPage() {
               </div>
 
               {/* X.com Review 2 */}
-              <div className="bg-white rounded-xl border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
+              <div className="bg-white border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 bg-black flex items-center justify-center flex-shrink-0">
                     <svg className="w-4 h-4 text-white fill-current" viewBox="0 0 24 24">
                       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                     </svg>
@@ -592,9 +643,9 @@ export default function LandingPage() {
 
               {/* Duplicate cards for seamless loop */}
               {/* Reddit Review */}
-              <div className="bg-white rounded-xl border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
+              <div className="bg-white border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 bg-orange-500 flex items-center justify-center flex-shrink-0">
                     <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
                     </svg>
@@ -615,9 +666,9 @@ export default function LandingPage() {
               </div>
 
               {/* Indie Hackers Review */}
-              <div className="bg-white rounded-xl border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
+              <div className="bg-white border border-gray-100 p-5 w-[85vw] max-w-[320px] flex-shrink-0">
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 bg-indigo-600 flex items-center justify-center flex-shrink-0">
                     <span className="text-white text-xs font-bold">IH</span>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -636,9 +687,9 @@ export default function LandingPage() {
           {/* Desktop Additional Reviews Row */}
           <div className="hidden sm:grid sm:grid-cols-2 gap-6 lg:gap-8 mt-8 max-w-4xl mx-auto">
             {/* Reddit Review 2 */}
-            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors">
+            <div className="bg-white border border-gray-100 p-6 hover:border-gray-200 transition-colors">
               <div className="flex items-start gap-3 mb-4">
-                <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 bg-orange-500 flex items-center justify-center flex-shrink-0">
                   <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
                   </svg>
@@ -661,9 +712,9 @@ export default function LandingPage() {
             </div>
 
             {/* X.com Review 2 */}
-            <div className="bg-white rounded-xl border border-gray-100 p-6 hover:border-gray-200 transition-colors">
+            <div className="bg-white border border-gray-100 p-6 hover:border-gray-200 transition-colors">
               <div className="flex items-start gap-3 mb-4">
-                <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 bg-black flex items-center justify-center flex-shrink-0">
                   <svg className="w-4 h-4 text-white fill-current" viewBox="0 0 24 24">
                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                   </svg>
@@ -690,670 +741,474 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 sm:py-28 px-4 sm:px-6 lg:px-8 bg-white">
+      <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16 sm:mb-24">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold mb-4 text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
               How it works
             </h2>
+            <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
+              Simple steps to create invoices, manage clients, and get paid.
+            </p>
           </div>
 
-          {/* Main Flow - Modern Animated Design */}
-          <div className="space-y-24">
-            {/* Step 1 - Create Estimate */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-              {/* Left Content */}
-              <div className="lg:col-span-5 order-2 lg:order-1 lg:sticky lg:top-24">
-                <div className="mb-3">
-                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Step 01</span>
-                </div>
-                <h3 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-gray-900 mb-4 leading-tight tracking-tight" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
-                  Create Estimate
-                </h3>
-                <p className="text-lg text-gray-600 leading-relaxed mb-8" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
-                  Start with a professional estimate. Send it to your client for approval. They can approve or reject it, then convert to invoice.
-                </p>
-                
-                {/* Feature Cards - GitHub Copilot Style */}
-                <div className="space-y-4">
-                  <div className="group p-5 bg-white border border-gray-100 rounded-xl hover:border-violet-200 hover:shadow-md transition-all duration-200">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-violet-50 flex items-center justify-center flex-shrink-0 group-hover:bg-violet-100 transition-colors">
-                        <Send className="w-5 h-5 text-violet-500" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-base font-semibold text-gray-800 mb-1.5">Send Estimate</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          Create detailed estimates with itemized services, discounts, and taxes. Send via email for client review.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="group p-5 bg-white border border-gray-100 rounded-xl hover:border-green-200 hover:shadow-md transition-all duration-200">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0 group-hover:bg-green-100 transition-colors">
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-base font-semibold text-gray-800 mb-1.5">Client Approval</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          Clients can approve or reject estimates directly from the email link. You&apos;re notified instantly when they take action.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="group p-5 bg-white border border-gray-100 rounded-xl hover:border-indigo-200 hover:shadow-md transition-all duration-200">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-100 transition-colors">
-                        <FileText className="w-5 h-5 text-indigo-500" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-base font-semibold text-gray-800 mb-1.5">Convert to Invoice</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          Once approved, convert your estimate to an invoice with one click. All details are automatically transferred.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Visual - Placeholder for future mockup */}
-              <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Placeholder space for visual mockup */}
-              </div>
-            </div>
-
-            {/* Step 2 - Setup Invoice */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-              {/* Left Content */}
-              <div className="lg:col-span-5 order-2 lg:order-1 lg:sticky lg:top-24">
-                <div className="mb-3">
-                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Step 02</span>
-                </div>
-                <h3 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-gray-900 mb-4 leading-tight tracking-tight" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
-                  Setup Invoice
-                </h3>
-                <p className="text-lg text-gray-600 leading-relaxed mb-8" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
-                  Edit converted invoices or create new ones. Choose from 3 professional templates, customize colors, add late fees, and send when ready.
-                </p>
-                
-                {/* Feature Cards - GitHub Copilot Style */}
-                <div className="space-y-4">
-                  <div className="group p-5 bg-white border border-gray-100 rounded-xl hover:border-violet-200 hover:shadow-md transition-all duration-200">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-violet-50 flex items-center justify-center flex-shrink-0 group-hover:bg-violet-100 transition-colors">
-                        <Palette className="w-5 h-5 text-violet-500" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-base font-semibold text-gray-800 mb-1.5">3 Professional Templates</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          Choose from Minimal, Modern, or Creative templates. Customize colors, fonts, and layout to match your brand.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="group p-5 bg-white border border-gray-100 rounded-xl hover:border-amber-200 hover:shadow-md transition-all duration-200">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0 group-hover:bg-amber-100 transition-colors">
-                        <DollarSign className="w-5 h-5 text-amber-500" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-base font-semibold text-gray-800 mb-1.5">Add Late Fees</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          Configure automatic late fees that apply when invoices become overdue. Set percentage or fixed amounts.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="group p-5 bg-white border border-gray-100 rounded-xl hover:border-green-200 hover:shadow-md transition-all duration-200">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0 group-hover:bg-green-100 transition-colors">
-                        <Send className="w-5 h-5 text-green-500" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-base font-semibold text-gray-800 mb-1.5">Ready to Send</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          Once your invoice is set up, send it to your client via email with a professional PDF attachment.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Visual - Placeholder for future mockup */}
-              <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Placeholder space for visual mockup */}
-              </div>
-            </div>
-
-            {/* Step 3 - Track & Remind */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-              {/* Left Content */}
-              <div className="lg:col-span-5 order-2 lg:order-1 lg:sticky lg:top-24">
-                <div className="mb-3">
-                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Step 03</span>
-                </div>
-                <h3 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-gray-900 mb-4 leading-tight tracking-tight" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
-                  Track & Remind
-                </h3>
-                <p className="text-lg text-gray-600 leading-relaxed mb-8" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
-                  When invoice is sent, track client activity and engagement. Set up automated reminders that send based on your schedule.
-                </p>
-                
-                {/* Feature Cards - GitHub Copilot Style */}
-                <div className="space-y-4">
-                  <div className="group p-5 bg-white border border-gray-100 rounded-xl hover:border-emerald-200 hover:shadow-md transition-all duration-200">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-100 transition-colors">
-                        <Eye className="w-5 h-5 text-emerald-500" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-base font-semibold text-gray-800 mb-1.5">Invoice Activity</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          Track when clients view your invoices. See exactly who opened what and when in the activity log.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="group p-5 bg-white border border-gray-100 rounded-xl hover:border-amber-200 hover:shadow-md transition-all duration-200">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0 group-hover:bg-amber-100 transition-colors">
-                        <Bell className="w-5 h-5 text-amber-500" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-base font-semibold text-gray-800 mb-1.5">Auto Reminders</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          Set up custom reminder schedules. Our system automatically sends friendly reminders when invoices are due or overdue.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Visual - Placeholder for future mockup */}
-              <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Placeholder space for visual mockup */}
-              </div>
-            </div>
-
-            {/* Step 4 - Get Paid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-              {/* Left Content */}
-              <div className="lg:col-span-5 order-2 lg:order-1 lg:sticky lg:top-24">
-                <div className="mb-3">
-                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Step 04</span>
-                </div>
-                <h3 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-gray-900 mb-4 leading-tight tracking-tight" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
-                  Get Paid
-                </h3>
-                <p className="text-lg text-gray-600 leading-relaxed mb-8" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
-                  Clients pay using your added payment methods directly to your account. No middle man, no extra charges. Mark as paid to complete the invoice process.
-                </p>
-                
-                {/* Feature Cards - GitHub Copilot Style */}
-                <div className="space-y-4">
-                  <div className="group p-5 bg-white border border-gray-100 rounded-xl hover:border-blue-200 hover:shadow-md transition-all duration-200">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-100 transition-colors">
-                        <CreditCard className="w-5 h-5 text-blue-500" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-base font-semibold text-gray-800 mb-1.5">Direct Payment</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          Clients pay through their preferred method (PayPal, Venmo, Bank Transfer, etc.). Payments go directly to your account.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="group p-5 bg-white border border-gray-100 rounded-xl hover:border-emerald-200 hover:shadow-md transition-all duration-200">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-100 transition-colors">
-                        <DollarSign className="w-5 h-5 text-emerald-500" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-base font-semibold text-gray-800 mb-1.5">No Extra Charges</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          No middle man, no transaction fees. Clients pay you directly — you keep 100% of what you earn.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="group p-5 bg-white border border-gray-100 rounded-xl hover:border-green-200 hover:shadow-md transition-all duration-200">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0 group-hover:bg-green-100 transition-colors">
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-base font-semibold text-gray-800 mb-1.5">Mark as Paid</h4>
-                        <p className="text-sm text-gray-600 leading-relaxed">
-                          Once payment is received, mark the invoice as paid to complete the process. Generate receipts for your records.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Visual - Placeholder for future mockup */}
-              <div className="lg:col-span-7 order-1 lg:order-2 relative px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-10">
-                {/* Placeholder space for visual mockup */}
-              </div>
-            </div>
-          </div>
-
-          {/* Everything You Need - Dashboard Screenshot Style */}
-          <div className="mt-24 sm:mt-32 lg:mt-40 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            
+            {/* Step 1 - Create Invoice */}
+            <div className="group animate-card-1">
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 text-gray-900" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
+                Create Invoice
+              </h3>
+              <p className="text-sm sm:text-base text-gray-600 leading-relaxed mb-6">
+                Create quick invoices in 60 seconds or detailed invoices with line items, discounts, and taxes.
+              </p>
               
-              {/* Header */}
-              <div className="text-center mb-12 sm:mb-16">
-                <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-900 mb-3 tracking-tight">Everything you need</h2>
-                <p className="text-base text-gray-500 max-w-xl mx-auto">All the tools to create, send, and track invoices and estimates.</p>
-              </div>
-
-              {/* Features Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
-                
-                {/* Feature 1 - Invoice Management */}
-                <div>
-                  <div className="mb-4 sm:mb-5">
-                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Invoice Management</h3>
-                    <p className="text-sm text-gray-600">Create and manage professional invoices with status tracking.</p>
-                  </div>
-                  
-                  {/* Exact Dashboard Invoice Card Screenshot */}
-                  <div className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
-                    <div className="p-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
-                              <FileText className="h-4 w-4 text-gray-700" />
-                            </div>
-                            <div>
-                              <div className="font-medium text-sm" style={{ color: '#1f2937' }}>INV-001</div>
-                              <div className="text-xs" style={{ color: '#6b7280' }}>Acme Corporation</div>
-                            </div>
-                          </div>
-                          <div className="text-right min-h-[56px] flex flex-col items-end">
-                            <div className="font-semibold text-base text-emerald-600">$2,500</div>
-                            <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
-                            <div className="text-xs" style={{ color: '#6b7280' }}>Dec 15, 2024</div>
-                          </div>
+              {/* Mockup - Invoice Card Draft */}
+              <div className="border transition-all duration-300 hover:shadow-lg bg-white border-gray-200 hover:bg-gray-50/50 mockup-hover">
+                <div className="p-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-7 h-7 flex items-center justify-center bg-gray-100">
+                          <FileText className="h-3.5 w-3.5 text-gray-600" />
                         </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-emerald-600">
-                              <CheckCircle className="h-3 w-3" />
-                              <span className="capitalize">Paid</span>
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <button className="p-1.5 rounded-md transition-colors hover:bg-gray-100">
-                              <Eye className="h-4 w-4 text-gray-700" />
-                            </button>
-                            <button className="p-1.5 rounded-md transition-colors hover:bg-gray-100">
-                              <Download className="h-4 w-4 text-gray-700" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Feature 2 - Client Database */}
-                <div>
-                  <div className="mb-4 sm:mb-5">
-                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Client Database</h3>
-                    <p className="text-sm text-gray-600">Store and organize all your client information.</p>
-                  </div>
-                  
-                  {/* Exact Dashboard Client Card Screenshot */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow duration-200">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Users className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">Acme Corporation</h3>
-                          <p className="text-xs sm:text-sm text-gray-500 truncate">contact@acme.com</p>
-                        </div>
-                      </div>
-                      <div className="flex space-x-1 sm:space-x-2 flex-shrink-0 ml-2">
-                        <button className="p-1.5 sm:p-2 text-gray-400 hover:text-indigo-600 transition-colors cursor-pointer" title="View Details">
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button className="p-1.5 sm:p-2 text-gray-400 hover:text-blue-600 transition-colors cursor-pointer" title="Edit Client">
-                          <Edit className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                        <Building2 className="w-4 h-4 mr-2 flex-shrink-0" />
-                        <span className="truncate">Technology Solutions Inc.</span>
-                      </div>
-                      <div className="flex items-center text-xs sm:text-sm text-gray-600">
-                        <Mail className="w-4 h-4 mr-2 flex-shrink-0" />
-                        <span className="truncate">contact@acme.com</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Feature 3 - Auto Reminders */}
-                <div>
-                  <div className="mb-4 sm:mb-5">
-                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Automated Reminders</h3>
-                    <p className="text-sm text-gray-600">Schedule automatic payment reminders for overdue invoices.</p>
-                  </div>
-                  
-                  {/* Reminder History Card - Exact Dashboard Match */}
-                  <div className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
-                    <div className="p-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
-                              <Mail className="h-4 w-4 text-gray-700" />
-                            </div>
-                            <div>
-                              <div className="font-medium text-sm" style={{ color: '#1f2937' }}>INV-001</div>
-                              <div className="text-xs" style={{ color: '#6b7280' }}>Acme Corporation</div>
-                            </div>
-                          </div>
-                          <div className="text-right min-h-[56px] flex flex-col items-end">
-                            <div className="font-semibold text-base text-green-600">$2,500</div>
-                            <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
-                            <div className="text-xs" style={{ color: '#6b7280' }}>Dec 15, 2024</div>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
-                              <span className="capitalize">Friendly</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600">
-                              <span className="capitalize">Sent</span>
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <button className="p-1.5 rounded-md transition-colors hover:bg-gray-100">
-                              <Eye className="h-4 w-4 text-gray-700" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Feature 4 - Email Delivery */}
-                <div>
-                  <div className="mb-4 sm:mb-5">
-                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Email Delivery</h3>
-                    <p className="text-sm text-gray-600">Send invoices via email with automatic PDF attachment.</p>
-                  </div>
-                  
-                  {/* Email Success Message - Simple Design */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 hover:shadow-md transition-shadow duration-200">
-                    <div className="flex items-start gap-2 sm:gap-3 mb-3 sm:mb-4">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs sm:text-sm font-semibold text-gray-900 mb-1">Invoice sent successfully</div>
-                        <div className="text-xs text-gray-600 break-words">To: client@acme.com</div>
-                        <div className="text-xs text-gray-500 mt-0.5">Dec 8, 2024 at 10:30 AM</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 p-2 sm:p-2.5 bg-gray-50 rounded">
-                      <FileText className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                      <span className="text-xs font-medium text-gray-700 truncate flex-1">invoice-001.pdf</span>
-                      <span className="text-xs text-gray-400 flex-shrink-0">142 KB</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Feature 5 - Client Portal */}
-                <div>
-                  <div className="mb-4 sm:mb-5">
-                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Client Portal</h3>
-                    <p className="text-sm text-gray-600">Clients view and download invoices from their portal.</p>
-                  </div>
-                  
-                  {/* Portal Screenshot */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow duration-200">
-                    <div className="space-y-3 sm:space-y-4">
-                      <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-gray-200">
                         <div>
-                          <div className="text-xs text-gray-500 mb-1 sm:mb-1.5">Invoice Number</div>
-                          <div className="text-sm font-semibold text-gray-900">INV-001</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs text-gray-500 mb-1 sm:mb-1.5">Amount Due</div>
-                          <div className="text-base sm:text-lg font-bold text-gray-900">$2,500.00</div>
+                          <div className="font-medium text-sm" style={{ color: '#1f2937' }}>INV-001</div>
+                          <div className="text-xs" style={{ color: '#6b7280' }}>Acme Corporation</div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between py-1 sm:py-2">
-                        <div>
-                          <div className="text-xs text-gray-500 mb-1 sm:mb-1.5">Status</div>
-                          <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 text-xs font-medium text-orange-600 bg-orange-50 rounded-md border border-orange-100">
-                            <Send className="h-3 w-3 flex-shrink-0" />
-                            <span className="whitespace-nowrap">Pending</span>
-                          </span>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs text-gray-500 mb-1 sm:mb-1.5">Due Date</div>
-                          <div className="text-xs sm:text-sm font-medium text-gray-900 whitespace-nowrap">Dec 15, 2024</div>
-                        </div>
+                      <div className="text-right flex flex-col items-end">
+                        <div className="font-semibold text-base text-gray-600">$2,500</div>
+                        <div className="mt-0 mb-0.5 min-h-[12px]"></div>
+                        <div className="text-xs" style={{ color: '#6b7280' }}>Dec 15, 2024</div>
                       </div>
-                      <div className="pt-3 sm:pt-4 border-t border-gray-200 flex flex-col sm:flex-row gap-2 sm:gap-3">
-                        <button className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 text-gray-700 text-xs sm:text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5 sm:gap-2 shadow-sm">
-                          <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-                          <span className="whitespace-nowrap">Download PDF</span>
-                        </button>
-                        <button className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-900 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm whitespace-nowrap">
-                          View Invoice
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600">
+                          <Clock className="h-3 w-3" />
+                          <span className="capitalize">Draft</span>
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <button className="p-1.5 transition-colors hover:bg-gray-100 cursor-pointer">
+                          <Edit className="h-4 w-4 text-gray-600" />
                         </button>
                       </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Feature 6 - Activity Tracking */}
-                <div>
-                  <div className="mb-4 sm:mb-5">
-                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Activity Tracking</h3>
-                    <p className="text-sm text-gray-600">Track when clients view invoices and payments are received.</p>
-                  </div>
-                  
-                  {/* Activity Timeline - Exact Dashboard Match (No borders on items) */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 hover:shadow-md transition-shadow duration-200">
-                    <div className="space-y-3 sm:space-y-4">
-                      <div className="flex gap-2 sm:gap-3">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
-                          <Send className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        </div>
-                        <div className="flex-1 pt-1 min-w-0">
-                          <p className="text-xs sm:text-sm font-medium text-gray-900">Invoice sent.</p>
-                          <p className="text-xs text-gray-600 mt-0.5 break-words">Sent to client@acme.com</p>
-                          <p className="text-xs text-gray-500 mt-1">2h ago</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 sm:gap-3">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
-                          <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        </div>
-                        <div className="flex-1 pt-1 min-w-0">
-                          <p className="text-xs sm:text-sm font-medium text-gray-900">Invoice viewed by customer.</p>
-                          <p className="text-xs text-gray-500 mt-1">1h ago</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 sm:gap-3">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                          <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        </div>
-                        <div className="flex-1 pt-1 min-w-0">
-                          <p className="text-xs sm:text-sm font-medium text-gray-900">Payment received: $2,500.</p>
-                          <p className="text-xs text-gray-600 mt-0.5">Via bank transfer</p>
-                          <p className="text-xs text-gray-500 mt-1">Just now</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Feature 7 - Estimate Management */}
-                <div>
-                  <div className="mb-4 sm:mb-5">
-                    <h3 className="font-heading text-lg sm:text-xl font-semibold text-gray-900 mb-2">Estimate Management</h3>
-                    <p className="text-sm text-gray-600">Create professional estimates and convert them to invoices when approved.</p>
-                  </div>
-                  
-                  {/* Exact Dashboard Estimate Card Screenshot */}
-                  <div className="rounded-lg border transition-all duration-200 hover:shadow-sm bg-white border-gray-200 hover:bg-gray-50/50">
-                    <div className="p-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-100">
-                              <ClipboardCheck className="h-4 w-4 text-gray-600" />
-                            </div>
-                            <div>
-                              <div className="font-medium text-sm" style={{ color: '#1f2937' }}>EST-001</div>
-                              <div className="text-xs" style={{ color: '#6b7280' }}>Acme Corporation</div>
-                            </div>
-                          </div>
-                          <div className="text-right min-h-[56px] flex flex-col items-end">
-                            <div className="font-semibold text-base text-gray-900">$2,500</div>
-                            <div className="mt-0.5 mb-1 min-h-[14px] sm:min-h-[16px]"></div>
-                            <div className="text-xs" style={{ color: '#6b7280' }}>Dec 15, 2024</div>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-orange-500">
-                              <span className="capitalize">Sent</span>
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <button className="p-1.5 rounded-md transition-colors hover:bg-gray-100">
-                              <Eye className="h-4 w-4 text-gray-600" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
               </div>
-
             </div>
+
+            {/* Step 2 - Send Invoice */}
+            <div className="group animate-card-2">
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 text-gray-900" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
+                Send Invoice
+              </h3>
+              <p className="text-sm sm:text-base text-gray-600 leading-relaxed mb-6">
+                Send invoices via email with PDF attachment. Clients receive a secure link to view and download.
+              </p>
+              
+              {/* Mockup - Invoice Card Sent */}
+              <div className="border transition-all duration-300 hover:shadow-lg bg-white border-gray-200 hover:bg-gray-50/50 mockup-hover">
+                <div className="p-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-7 h-7 flex items-center justify-center bg-gray-100">
+                          <FileText className="h-3.5 w-3.5 text-gray-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm" style={{ color: '#1f2937' }}>INV-001</div>
+                          <div className="text-xs" style={{ color: '#6b7280' }}>Acme Corporation</div>
+                        </div>
+                      </div>
+                      <div className="text-right flex flex-col items-end">
+                        <div className="font-semibold text-base text-gray-900">$2,500</div>
+                        <div className="mt-0 mb-0.5 min-h-[12px]"></div>
+                        <div className="text-xs" style={{ color: '#6b7280' }}>Dec 15, 2024</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-orange-500">
+                          <Send className="h-3 w-3" />
+                          <span className="capitalize">Sent</span>
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <button className="p-1.5 transition-colors hover:bg-gray-100 cursor-pointer">
+                          <Eye className="h-4 w-4 text-gray-600" />
+                        </button>
+                        <button className="p-1.5 transition-colors hover:bg-gray-100 cursor-pointer">
+                          <Download className="h-4 w-4 text-gray-600" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 3 - Track Activity */}
+            <div className="group animate-card-3">
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 text-gray-900" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
+                Track Activity
+              </h3>
+              <p className="text-sm sm:text-base text-gray-600 leading-relaxed mb-6">
+                See when clients view your invoices. View complete activity timeline for each invoice.
+              </p>
+              
+              {/* Mockup - Activity Timeline */}
+              <div className="border transition-all duration-300 hover:shadow-lg bg-white border-gray-200 mockup-hover">
+                <div className="p-3 sm:p-6">
+                  <div className="mb-3 sm:mb-4">
+                    <h4 className="text-sm font-medium text-gray-500 mb-1 sm:mb-2">Invoice</h4>
+                    <p className="text-sm font-medium text-gray-900 break-words">INV-001 • Acme Corporation</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 mb-3 sm:mb-4">Activity Timeline</h4>
+                    <ul className="pl-1 sm:pl-2">
+                      <li className="relative grid grid-cols-[20px_1fr] gap-2 sm:gap-3 pb-4 sm:pb-5">
+                        <div className="absolute bottom-0 w-px bg-gray-200 z-0 left-[10px] top-[16px]"></div>
+                        <div className="relative z-10 flex items-center justify-center h-5 w-5 mt-0.5">
+                          <Send className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div className="py-0.5">
+                          <div className="text-sm text-gray-900 leading-5 break-words">Invoice sent via email</div>
+                          <div className="text-xs text-gray-500 leading-4">2024-12-15 14:30 UTC</div>
+                        </div>
+                      </li>
+                      <li className="relative grid grid-cols-[20px_1fr] gap-2 sm:gap-3 pb-4 sm:pb-5">
+                        <div className="relative z-10 flex items-center justify-center h-5 w-5 mt-0.5">
+                          <Eye className="h-4 w-4 text-indigo-600" />
+                        </div>
+                        <div className="py-0.5">
+                          <div className="text-sm text-gray-900 leading-5 break-words">Invoice opened by client</div>
+                          <div className="text-xs text-gray-500 leading-4">2024-12-15 15:45 UTC</div>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 4 - Set Reminders */}
+            <div className="group animate-card-4">
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 text-gray-900" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
+                Set Reminders
+              </h3>
+              <p className="text-sm sm:text-base text-gray-600 leading-relaxed mb-6">
+                Set up automated email reminders that send based on your schedule. Remind clients about unpaid invoices.
+              </p>
+              
+              {/* Mockup - Reminder Card */}
+              <div className="border transition-all duration-300 hover:shadow-lg bg-white border-gray-200 hover:bg-gray-50/50 mockup-hover">
+                <div className="p-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-7 h-7 flex items-center justify-center bg-gray-100">
+                          <Bell className="h-3.5 w-3.5 text-gray-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm" style={{ color: '#1f2937' }}>INV-001</div>
+                          <div className="text-xs" style={{ color: '#6b7280' }}>Reminder scheduled</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs" style={{ color: '#6b7280' }}>Dec 20, 2024</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-amber-600">
+                          <Mail className="h-3 w-3" />
+                          <span className="capitalize">Scheduled</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 5 - Get Paid */}
+            <div className="group animate-card-5">
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 text-gray-900" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
+                Get Paid
+              </h3>
+              <p className="text-sm sm:text-base text-gray-600 leading-relaxed mb-6">
+                Mark invoices as paid when you receive payment. Add payment methods to invoices for client convenience.
+              </p>
+              
+              {/* Mockup - Paid Invoice Card */}
+              <div className="border transition-all duration-300 hover:shadow-lg bg-white border-gray-200 hover:bg-gray-50/50 mockup-hover">
+                <div className="p-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-7 h-7 flex items-center justify-center bg-gray-100">
+                          <FileText className="h-3.5 w-3.5 text-gray-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm" style={{ color: '#1f2937' }}>INV-001</div>
+                          <div className="text-xs" style={{ color: '#6b7280' }}>Acme Corporation</div>
+                        </div>
+                      </div>
+                      <div className="text-right flex flex-col items-end">
+                        <div className="font-semibold text-base text-emerald-600">$2,500</div>
+                        <div className="mt-0 mb-0.5 min-h-[12px]"></div>
+                        <div className="text-xs" style={{ color: '#6b7280' }}>Dec 15, 2024</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-emerald-600">
+                          <CheckCircle className="h-3 w-3" />
+                          <span className="capitalize">Paid</span>
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <button className="p-1.5 transition-colors hover:bg-gray-100 cursor-pointer">
+                          <Eye className="h-4 w-4 text-gray-600" />
+                        </button>
+                        <button className="p-1.5 transition-colors hover:bg-gray-100 cursor-pointer">
+                          <Download className="h-4 w-4 text-gray-600" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 6 - Create Estimate */}
+            <div className="group animate-card-6">
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 text-gray-900" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
+                Create Estimate
+              </h3>
+              <p className="text-sm sm:text-base text-gray-600 leading-relaxed mb-6">
+                Send estimates to clients for approval. Convert approved estimates to invoices with one click.
+              </p>
+              
+              {/* Mockup - Estimate Card */}
+              <div className="border transition-all duration-300 hover:shadow-lg bg-white border-gray-200 hover:bg-gray-50/50 mockup-hover">
+                <div className="p-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-7 h-7 flex items-center justify-center bg-gray-100">
+                          <ClipboardCheck className="h-3.5 w-3.5 text-gray-700" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm" style={{ color: '#1f2937' }}>EST-001</div>
+                          <div className="text-xs" style={{ color: '#6b7280' }}>Acme Corporation</div>
+                        </div>
+                      </div>
+                      <div className="text-right flex flex-col items-end">
+                        <div className="font-semibold text-base text-gray-900">$2,500</div>
+                        <div className="mt-0 mb-0.5 min-h-[12px]"></div>
+                        <div className="text-xs" style={{ color: '#6b7280' }}>Dec 15, 2024</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-orange-500">
+                          <Send className="h-3 w-3" />
+                          <span className="capitalize">Sent</span>
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <button className="p-1.5 transition-colors hover:bg-gray-100 cursor-pointer">
+                          <Eye className="h-4 w-4 text-gray-600" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 7 - Estimate Approval */}
+            <div className="group animate-card-7">
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 text-gray-900" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
+                Estimate Approval
+              </h3>
+              <p className="text-sm sm:text-base text-gray-600 leading-relaxed mb-6">
+                Clients approve or reject estimates from the email link. Approved estimates can be converted to invoices.
+              </p>
+              
+              {/* Mockup - Approved Estimate Card */}
+              <div className="border transition-all duration-300 hover:shadow-lg bg-white border-gray-200 hover:bg-gray-50/50 mockup-hover">
+                <div className="p-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-7 h-7 flex items-center justify-center bg-gray-100">
+                          <ClipboardCheck className="h-3.5 w-3.5 text-gray-700" />
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm" style={{ color: '#1f2937' }}>EST-001</div>
+                          <div className="text-xs" style={{ color: '#6b7280' }}>Acme Corporation</div>
+                        </div>
+                      </div>
+                      <div className="text-right flex flex-col items-end">
+                        <div className="font-semibold text-base text-gray-900">$2,500</div>
+                        <div className="mt-0 mb-0.5 min-h-[12px]"></div>
+                        <div className="text-xs" style={{ color: '#6b7280' }}>Dec 15, 2024</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-emerald-600">
+                          <CheckCircle className="h-3 w-3" />
+                          <span className="capitalize">Approved</span>
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <button className="p-1.5 transition-colors hover:bg-gray-100 cursor-pointer">
+                          <FileText className="h-4 w-4 text-gray-600" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 8 - Manage Clients */}
+            <div className="group animate-card-8">
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 text-gray-900" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
+                Manage Clients
+              </h3>
+              <p className="text-sm sm:text-base text-gray-600 leading-relaxed mb-6">
+                Store client information and quickly select them when creating invoices or estimates.
+              </p>
+              
+              {/* Mockup - Client Card */}
+              <div className="border transition-all duration-300 hover:shadow-lg bg-white border-gray-200 hover:bg-gray-50/50 mockup-hover">
+                <div className="p-3">
+                  <div className="flex items-center space-x-2.5 mb-3">
+                    <div className="w-8 h-8 flex items-center justify-center bg-gray-100">
+                      <Users className="h-4 w-4 text-gray-600" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm" style={{ color: '#1f2937' }}>John Smith</div>
+                      <div className="text-xs" style={{ color: '#6b7280' }}>Smith Industries</div>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-3 w-3 text-gray-400" />
+                      <span className="text-xs text-gray-600">john.smith@example.com</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-3 w-3 text-gray-400" />
+                      <span className="text-xs text-gray-600">+1 (555) 987-6543</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-3 w-3 text-gray-400" />
+                      <span className="text-xs text-gray-600">Los Angeles, CA</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
 
       {/* Template Showcase Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+      <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-4 text-gray-900 tracking-tight">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 text-gray-900 tracking-tight" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
               Professional Invoice Templates
             </h2>
-            <p className="text-base text-gray-600 max-w-2xl mx-auto">
-              Choose from beautifully designed templates. Customize colors, fonts, and layout to match your brand.
+            <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
+              Choose from beautifully designed templates. Customize colors to match your brand.
             </p>
           </div>
           
-          {/* Template Grid - Exact PDF Replicas */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+          {/* Template Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
             
-            {/* Template 1 - Minimal (Exact PDF Match - INV-0035) */}
+            {/* Template 1 - Minimal */}
             <div className="group">
-              <div className="bg-white rounded-lg shadow-lg overflow-hidden transform transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 border border-gray-200 flex flex-col" style={{ aspectRatio: '8.5/11' }}>
+              <div className="bg-white shadow-lg overflow-hidden transform transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 border border-gray-200 flex flex-col" style={{ aspectRatio: '8.5/11' }}>
                 {/* Header - Business Info Left, INVOICE Right */}
-                <div className="flex justify-between items-start p-3 sm:p-4">
+                <div className="flex justify-between items-start p-4 sm:p-5">
                   <div>
-                    <h3 className="text-xs sm:text-sm font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">Tech Physics</h3>
-                    <p className="text-[6px] sm:text-[7px] text-gray-500 leading-tight mt-0.5">2-192 hebri House beejadi koteshwara road</p>
-                    <p className="text-[6px] sm:text-[7px] text-gray-500">kundapura taluk Udupi 576222</p>
-                    <p className="text-[6px] sm:text-[7px] text-gray-500">+91 8762597688</p>
-                    <p className="text-[6px] sm:text-[7px] text-violet-600">Techphysic@gmail.com</p>
+                    <h3 className="text-sm sm:text-base font-semibold text-violet-600">Acme Corporation</h3>
+                    <p className="text-[8px] sm:text-[9px] text-gray-500 leading-tight mt-1">123 Business Street</p>
+                    <p className="text-[8px] sm:text-[9px] text-gray-500">New York, NY 10001</p>
+                    <p className="text-[8px] sm:text-[9px] text-gray-500">+1 (555) 123-4567</p>
+                    <p className="text-[8px] sm:text-[9px] text-violet-600">contact@acmecorp.com</p>
                   </div>
                   <div className="text-right">
-                    <h2 className="text-base sm:text-lg font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent tracking-wide">INVOICE</h2>
-                    <div className="inline-block bg-gray-800 text-white text-[6px] sm:text-[7px] px-1.5 py-0.5 rounded mt-1">#INV-0035</div>
-                    <p className="text-[5px] sm:text-[6px] text-gray-400 mt-1">Issue: November 21, 2025</p>
-                    <p className="text-[5px] sm:text-[6px] text-gray-400">Due: December 21, 2025</p>
+                    <h2 className="text-base sm:text-lg font-semibold text-violet-600 tracking-wide">INVOICE</h2>
+                    <div className="inline-block bg-gray-900 text-white text-[7px] sm:text-[8px] px-2 py-1 mt-1.5">#INV-001</div>
+                    <p className="text-[6px] sm:text-[7px] text-gray-500 mt-1.5">Issue: Nov 21, 2024</p>
+                    <p className="text-[6px] sm:text-[7px] text-gray-500">Due: Dec 21, 2024</p>
                   </div>
                 </div>
                 
                 {/* Divider Line */}
-                <div className="mx-3 sm:mx-4 border-t border-gray-300"></div>
+                <div className="mx-4 sm:mx-5 border-t border-gray-300"></div>
                 
                 {/* Bill To */}
-                <div className="px-3 sm:px-4 py-2 sm:py-3">
-                  <p className="text-[7px] sm:text-[8px] font-medium text-violet-600 mb-1">Bill To</p>
-                  <p className="text-[8px] sm:text-[9px] font-semibold text-gray-900">Shashi</p>
-                  <p className="text-[6px] sm:text-[7px] text-gray-600">shashikanthpoojary61@gmail.com</p>
-                  <p className="text-[6px] sm:text-[7px] text-gray-600">+918762597688</p>
-                  <p className="text-[6px] sm:text-[7px] text-gray-600">Tech Physics</p>
-                  <p className="text-[6px] sm:text-[7px] text-gray-600">2-192 hebri House beejadi, Kundapura , Udupi Karnataka</p>
+                <div className="px-4 sm:px-5 py-3">
+                  <p className="text-[8px] sm:text-[9px] font-medium text-violet-600 mb-1.5">Bill To</p>
+                  <p className="text-[9px] sm:text-[10px] font-semibold text-gray-900">John Smith</p>
+                  <p className="text-[7px] sm:text-[8px] text-gray-600">john.smith@example.com</p>
+                  <p className="text-[7px] sm:text-[8px] text-gray-600">+1 (555) 987-6543</p>
+                  <p className="text-[7px] sm:text-[8px] text-gray-600">Smith Industries</p>
+                  <p className="text-[7px] sm:text-[8px] text-gray-600">456 Client Avenue, Los Angeles, CA 90001</p>
                 </div>
                 
-                {/* Items Table - Simple with underlines */}
-                <div className="px-3 sm:px-4 py-2 flex-1">
-                  <div className="border-b border-gray-300 pb-1 mb-2">
-                    <div className="grid grid-cols-12 text-[6px] sm:text-[7px] font-medium text-violet-600">
+                {/* Items Table */}
+                <div className="px-4 sm:px-5 py-2 flex-1">
+                  <div className="border-b border-gray-300 pb-1.5 mb-2">
+                    <div className="grid grid-cols-12 text-[7px] sm:text-[8px] font-medium text-violet-600">
                       <span className="col-span-5">Description</span>
                       <span className="col-span-2 text-center">Qty</span>
                       <span className="col-span-2 text-center">Rate</span>
                       <span className="col-span-3 text-right">Amount</span>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-12 text-[6px] sm:text-[7px] border-b border-gray-100 pb-1">
+                  <div className="space-y-1.5">
+                    <div className="grid grid-cols-12 text-[7px] sm:text-[8px] border-b border-gray-100 pb-1.5">
                       <span className="col-span-5 text-gray-900">Web Development Services</span>
-                      <span className="col-span-2 text-center text-violet-600">1</span>
+                      <span className="col-span-2 text-center text-gray-700">1</span>
                       <span className="col-span-2 text-center text-gray-500">$0.00</span>
                       <span className="col-span-3 text-right text-violet-600">$1,500.00</span>
                     </div>
-                    <div className="grid grid-cols-12 text-[6px] sm:text-[7px] border-b border-gray-100 pb-1">
+                    <div className="grid grid-cols-12 text-[7px] sm:text-[8px] border-b border-gray-100 pb-1.5">
                       <span className="col-span-5 text-gray-900">UI/UX Design</span>
-                      <span className="col-span-2 text-center text-violet-600">1</span>
+                      <span className="col-span-2 text-center text-gray-700">1</span>
                       <span className="col-span-2 text-center text-gray-500">$0.00</span>
                       <span className="col-span-3 text-right text-violet-600">$800.00</span>
                     </div>
-                    <div className="grid grid-cols-12 text-[6px] sm:text-[7px] border-b border-gray-100 pb-1">
+                    <div className="grid grid-cols-12 text-[7px] sm:text-[8px] border-b border-gray-100 pb-1.5">
                       <span className="col-span-5 text-gray-900">Consulting Hours</span>
-                      <span className="col-span-2 text-center text-violet-600">1</span>
+                      <span className="col-span-2 text-center text-gray-700">1</span>
                       <span className="col-span-2 text-center text-gray-500">$0.00</span>
                       <span className="col-span-3 text-right text-violet-600">$250.00</span>
                     </div>
                   </div>
                   
-                  {/* Totals - Right aligned */}
-                  <div className="flex justify-end mt-3">
-                    <div className="text-right w-32">
-                      <div className="flex justify-between text-[6px] sm:text-[7px] mb-1 border-t border-gray-200 pt-1">
+                  {/* Totals */}
+                  <div className="flex justify-end mt-4">
+                    <div className="text-right w-36">
+                      <div className="flex justify-between text-[7px] sm:text-[8px] mb-1 border-t border-gray-200 pt-1">
                         <span className="text-gray-600">Subtotal:</span>
                         <span className="text-violet-600">$2,550.00</span>
                       </div>
-                      <div className="flex justify-between text-[7px] sm:text-[8px] font-bold border-t border-gray-300 pt-1">
+                      <div className="flex justify-between text-[8px] sm:text-[9px] font-bold border-t border-gray-300 pt-1">
                         <span className="text-gray-900">Total:</span>
                         <span className="text-violet-600">$2,550.00</span>
                       </div>
@@ -1361,65 +1216,63 @@ export default function LandingPage() {
                   </div>
                 </div>
                 
-                {/* Bottom Divider */}
-                <div className="mx-3 sm:mx-4 border-t border-gray-300"></div>
-                
                 {/* Footer */}
-                <div className="px-3 sm:px-4 py-2">
-                  <p className="text-[6px] sm:text-[7px] font-medium text-violet-600">Payment Terms:</p>
-                  <p className="text-[5px] sm:text-[6px] text-gray-600 mb-1">Net 30</p>
-                  <p className="text-[6px] sm:text-[7px] font-medium text-violet-600">Notes:</p>
-                  <p className="text-[5px] sm:text-[6px] text-gray-600">This is a test invoice for Minimal template. Created for testing email templates.</p>
+                <div className="px-4 sm:px-5 py-2 border-t border-gray-300">
+                  <p className="text-[7px] sm:text-[8px] font-medium text-violet-600">Payment Terms:</p>
+                  <p className="text-[6px] sm:text-[7px] text-gray-600 mb-1.5">Net 30</p>
+                  <p className="text-[7px] sm:text-[8px] font-medium text-violet-600">Notes:</p>
+                  <p className="text-[6px] sm:text-[7px] text-gray-600">Thank you for your business.</p>
                 </div>
               </div>
               <div className="text-center mt-4">
-                <h3 className="font-bold text-gray-900">Minimal</h3>
+                <h3 className="text-lg font-bold text-gray-900">Minimal</h3>
                 <p className="text-sm text-gray-500">Clean & Simple</p>
               </div>
             </div>
 
-            {/* Template 2 - Modern (Exact PDF Match - INV-0036) */}
+            {/* Template 2 - Modern */}
             <div className="group">
-              <div className="bg-white rounded-lg shadow-lg overflow-hidden transform transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 border border-gray-200 flex flex-col" style={{ aspectRatio: '8.5/11' }}>
+              <div className="bg-white shadow-lg overflow-hidden transform transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 border border-gray-200 flex flex-col" style={{ aspectRatio: '8.5/11' }}>
                 {/* Purple Header Banner */}
-                <div className="bg-[#7C3AED] text-white p-3 sm:p-4">
+                <div className="bg-[#7C3AED] text-white p-4 sm:p-5">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="text-xs sm:text-sm font-bold">Tech Physics</h3>
-                      <p className="text-[5px] sm:text-[6px] opacity-90 leading-tight mt-0.5">2-192 hebri House beejadi koteshwara road kundapura taluk Udupi 576222</p>
-                      <p className="text-[5px] sm:text-[6px] opacity-90">+91 8762597688</p>
-                      <p className="text-[5px] sm:text-[6px] opacity-90">Techphysic@gmail.com</p>
+                      <h3 className="text-sm sm:text-base font-bold">Acme Corporation</h3>
+                      <p className="text-[7px] sm:text-[8px] opacity-90 leading-tight mt-1">123 Business Street</p>
+                      <p className="text-[7px] sm:text-[8px] opacity-90">New York, NY 10001</p>
+                      <p className="text-[7px] sm:text-[8px] opacity-90">+1 (555) 123-4567</p>
+                      <p className="text-[7px] sm:text-[8px] opacity-90">contact@acmecorp.com</p>
                     </div>
                     <div className="text-right">
-                      <h2 className="text-base sm:text-lg font-bold tracking-wide">INVOICE</h2>
+                      <h2 className="text-lg sm:text-xl font-bold tracking-wide">INVOICE</h2>
                     </div>
                   </div>
                 </div>
                 
-                {/* Invoice Details Box - Float Right */}
-                <div className="px-3 sm:px-4 py-2 relative">
-                  <div className="border-2 border-violet-500 rounded p-2 absolute right-3 sm:right-4 top-2 w-28 sm:w-32">
-                    <p className="text-[6px] sm:text-[7px] font-bold text-violet-600 uppercase">Invoice Details</p>
-                    <p className="text-[7px] sm:text-[8px] font-semibold text-gray-900">#INV-0036</p>
-                    <p className="text-[5px] sm:text-[6px] text-orange-500">November 21, 2025</p>
-                    <p className="text-[5px] sm:text-[6px] text-gray-400">Due: December 21, 2025</p>
+                {/* Invoice Details Box + Bill To */}
+                <div className="px-4 sm:px-5 py-3 relative">
+                  <div className="border-2 border-violet-500 p-2.5 absolute right-4 sm:right-5 top-3 w-32 sm:w-36 bg-white">
+                    <p className="text-[7px] sm:text-[8px] font-bold text-violet-600 uppercase">Invoice Details</p>
+                    <p className="text-[8px] sm:text-[9px] font-semibold text-gray-900">#INV-002</p>
+                    <p className="text-[6px] sm:text-[7px] text-orange-500 mt-1">Nov 21, 2024</p>
+                    <p className="text-[6px] sm:text-[7px] text-gray-500">Due: Dec 21, 2024</p>
                   </div>
                   
                   {/* Bill To */}
-                  <div className="pt-1">
-                    <p className="text-[7px] sm:text-[8px] font-bold text-violet-600 mb-1">BILL TO</p>
-                    <p className="text-[8px] sm:text-[9px] font-semibold text-gray-900">Shashi</p>
-                    <p className="text-[6px] sm:text-[7px] text-gray-600">shashikanthpoojary61@gmail.com</p>
-                    <p className="text-[6px] sm:text-[7px] text-gray-600">+918762597688</p>
-                    <p className="text-[6px] sm:text-[7px] text-gray-600">Tech Physics</p>
-                    <p className="text-[6px] sm:text-[7px] text-gray-600">2-192 hebri House beejadi, Kundapura , Udupi Karnataka</p>
+                  <div className="pt-1 pr-36 sm:pr-40">
+                    <p className="text-[8px] sm:text-[9px] font-bold text-violet-600 mb-1.5">BILL TO</p>
+                    <p className="text-[9px] sm:text-[10px] font-semibold text-gray-900">John Smith</p>
+                    <p className="text-[7px] sm:text-[8px] text-gray-600">john.smith@example.com</p>
+                    <p className="text-[7px] sm:text-[8px] text-gray-600">+1 (555) 987-6543</p>
+                    <p className="text-[7px] sm:text-[8px] text-gray-600">Smith Industries</p>
+                    <p className="text-[7px] sm:text-[8px] text-gray-600">456 Client Avenue, Los Angeles, CA 90001</p>
                   </div>
                 </div>
                 
                 {/* Items Table - Purple Header */}
-                <div className="px-3 sm:px-4 py-2 flex-1">
+                <div className="px-4 sm:px-5 py-2 flex-1">
                   <div className="bg-[#7C3AED] text-white">
-                    <div className="grid grid-cols-12 text-[5px] sm:text-[6px] font-medium p-1.5 uppercase">
+                    <div className="grid grid-cols-12 text-[7px] sm:text-[8px] font-medium p-2 uppercase">
                       <span className="col-span-5">Description</span>
                       <span className="col-span-2 text-center">Qty</span>
                       <span className="col-span-2 text-center">Rate</span>
@@ -1427,34 +1280,34 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <div className="border border-t-0 border-gray-200">
-                    <div className="grid grid-cols-12 text-[6px] sm:text-[7px] p-1.5 border-b border-gray-100">
+                    <div className="grid grid-cols-12 text-[7px] sm:text-[8px] p-2 border-b border-gray-100">
                       <span className="col-span-5 text-gray-900">Web Development Services</span>
-                      <span className="col-span-2 text-center">1</span>
+                      <span className="col-span-2 text-center text-gray-700">1</span>
                       <span className="col-span-2 text-center text-gray-500">$0.00</span>
-                      <span className="col-span-3 text-right">$1,500.00</span>
+                      <span className="col-span-3 text-right text-gray-900">$1,500.00</span>
                     </div>
-                    <div className="grid grid-cols-12 text-[6px] sm:text-[7px] p-1.5 bg-gray-50 border-b border-gray-100">
+                    <div className="grid grid-cols-12 text-[7px] sm:text-[8px] p-2 bg-gray-50 border-b border-gray-100">
                       <span className="col-span-5 text-gray-900">UI/UX Design</span>
-                      <span className="col-span-2 text-center">1</span>
+                      <span className="col-span-2 text-center text-gray-700">1</span>
                       <span className="col-span-2 text-center text-gray-500">$0.00</span>
-                      <span className="col-span-3 text-right">$800.00</span>
+                      <span className="col-span-3 text-right text-gray-900">$800.00</span>
                     </div>
-                    <div className="grid grid-cols-12 text-[6px] sm:text-[7px] p-1.5">
+                    <div className="grid grid-cols-12 text-[7px] sm:text-[8px] p-2">
                       <span className="col-span-5 text-gray-900">Consulting Hours</span>
-                      <span className="col-span-2 text-center">1</span>
+                      <span className="col-span-2 text-center text-gray-700">1</span>
                       <span className="col-span-2 text-center text-gray-500">$0.00</span>
-                      <span className="col-span-3 text-right">$250.00</span>
+                      <span className="col-span-3 text-right text-gray-900">$250.00</span>
                     </div>
                   </div>
                   
-                  {/* Totals Box - Purple Border */}
-                  <div className="flex justify-end mt-3">
-                    <div className="border-2 border-violet-500 rounded p-2 w-28 sm:w-32">
-                      <div className="flex justify-between text-[5px] sm:text-[6px] mb-1">
+                  {/* Totals Box */}
+                  <div className="flex justify-end mt-4">
+                    <div className="border-2 border-violet-500 p-2.5 w-36 bg-white">
+                      <div className="flex justify-between text-[7px] sm:text-[8px] mb-1">
                         <span className="text-gray-600 uppercase">Subtotal</span>
                         <span className="text-violet-600">$2,550.00</span>
                       </div>
-                      <div className="flex justify-between text-[7px] sm:text-[8px] font-bold border-t border-violet-200 pt-1">
+                      <div className="flex justify-between text-[8px] sm:text-[9px] font-bold border-t border-violet-200 pt-1">
                         <span className="text-gray-900 uppercase">Total</span>
                         <span className="text-violet-600">$2,550.00</span>
                       </div>
@@ -1463,64 +1316,65 @@ export default function LandingPage() {
                 </div>
                 
                 {/* Footer */}
-                <div className="px-3 sm:px-4 py-2 border-t border-gray-200">
-                  <p className="text-[6px] sm:text-[7px] font-medium text-gray-900">Payment Terms:</p>
-                  <p className="text-[5px] sm:text-[6px] text-gray-600 mb-1">Net 30</p>
-                  <p className="text-[6px] sm:text-[7px] font-medium text-gray-900">Notes:</p>
-                  <p className="text-[5px] sm:text-[6px] text-violet-600">This is a test invoice for Modern template. Created for testing email templates.</p>
+                <div className="px-4 sm:px-5 py-2 border-t border-gray-200">
+                  <p className="text-[7px] sm:text-[8px] font-medium text-gray-900">Payment Terms:</p>
+                  <p className="text-[6px] sm:text-[7px] text-gray-600 mb-1.5">Net 30</p>
+                  <p className="text-[7px] sm:text-[8px] font-medium text-gray-900">Notes:</p>
+                  <p className="text-[6px] sm:text-[7px] text-gray-600">Thank you for your business.</p>
                 </div>
               </div>
               <div className="text-center mt-4">
-                <h3 className="font-bold text-gray-900">Modern</h3>
+                <h3 className="text-lg font-bold text-gray-900">Modern</h3>
                 <p className="text-sm text-gray-500">Sleek & Professional</p>
               </div>
             </div>
 
-            {/* Template 3 - Creative (Gray Theme - INV-0037) */}
+            {/* Template 3 - Creative */}
             <div className="group">
-              <div className="bg-white rounded-lg shadow-lg overflow-hidden transform transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 border border-gray-200 flex flex-col" style={{ aspectRatio: '8.5/11' }}>
+              <div className="bg-white shadow-lg overflow-hidden transform transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 border border-gray-200 flex flex-col" style={{ aspectRatio: '8.5/11' }}>
                 {/* Gray Header Banner */}
-                <div className="bg-gray-800 text-white p-3 sm:p-4">
+                <div className="bg-gray-800 text-white p-4 sm:p-5">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="text-xs sm:text-sm font-bold">Tech Physics</h3>
-                      <p className="text-[5px] sm:text-[6px] opacity-90 leading-tight mt-0.5">2-192 hebri House beejadi koteshwara road kundapura taluk Udupi 576222</p>
-                      <p className="text-[5px] sm:text-[6px] opacity-90">+91 8762597688</p>
-                      <p className="text-[5px] sm:text-[6px] opacity-90">Techphysic@gmail.com</p>
+                      <h3 className="text-sm sm:text-base font-bold">Acme Corporation</h3>
+                      <p className="text-[7px] sm:text-[8px] opacity-90 leading-tight mt-1">123 Business Street</p>
+                      <p className="text-[7px] sm:text-[8px] opacity-90">New York, NY 10001</p>
+                      <p className="text-[7px] sm:text-[8px] opacity-90">+1 (555) 123-4567</p>
+                      <p className="text-[7px] sm:text-[8px] opacity-90">contact@acmecorp.com</p>
                     </div>
                     <div className="text-right">
-                      <h2 className="text-base sm:text-lg font-bold tracking-wide">INVOICE</h2>
+                      <h2 className="text-lg sm:text-xl font-bold tracking-wide">INVOICE</h2>
                     </div>
                   </div>
                 </div>
                 
-                {/* Invoice Details Box on Right + Bill To on Left (side by side) */}
-                <div className="px-3 sm:px-4 py-3 flex justify-between items-start">
+                {/* Bill To + Invoice Details */}
+                <div className="px-4 sm:px-5 py-3 flex justify-between items-start">
                   {/* Bill To - Left Side */}
                   <div className="flex-1">
-                    <p className="text-[7px] sm:text-[8px] font-bold text-gray-700 mb-1">BILL TO</p>
-                    <p className="text-[8px] sm:text-[9px] font-semibold text-gray-900">Shashi</p>
-                    <p className="text-[6px] sm:text-[7px] text-gray-600">shashikanthpoojary61@gmail.com</p>
-                    <p className="text-[6px] sm:text-[7px] text-gray-600">+918762597688</p>
-                    <p className="text-[6px] sm:text-[7px] text-gray-600">Tech Physics</p>
-                    <p className="text-[6px] sm:text-[7px] text-gray-600">2-192 hebri House beejadi, Kundapura , Udupi Karnataka</p>
+                    <p className="text-[8px] sm:text-[9px] font-bold text-gray-700 mb-1.5">BILL TO</p>
+                    <p className="text-[9px] sm:text-[10px] font-semibold text-gray-900">John Smith</p>
+                    <p className="text-[7px] sm:text-[8px] text-gray-600">john.smith@example.com</p>
+                    <p className="text-[7px] sm:text-[8px] text-gray-600">+1 (555) 987-6543</p>
+                    <p className="text-[7px] sm:text-[8px] text-gray-600">Smith Industries</p>
+                    <p className="text-[7px] sm:text-[8px] text-gray-600">456 Client Avenue, Los Angeles, CA 90001</p>
                   </div>
                   
                   {/* Invoice Details Box - Right Side */}
-                  <div className="border border-gray-300 p-2 w-28 sm:w-32 ml-2">
-                    <p className="text-[5px] sm:text-[6px] text-gray-400">Invoice #</p>
-                    <p className="text-[7px] sm:text-[8px] font-semibold text-gray-800">INV-0037</p>
-                    <p className="text-[5px] sm:text-[6px] text-gray-400 mt-1">Date:</p>
-                    <p className="text-[6px] sm:text-[7px] font-medium text-gray-700">November 21, 2025</p>
-                    <p className="text-[5px] sm:text-[6px] text-gray-400 mt-1">Due:</p>
-                    <p className="text-[6px] sm:text-[7px] font-medium text-gray-700">December 21, 2025</p>
+                  <div className="border border-gray-300 p-2.5 w-32 sm:w-36 ml-3 bg-white">
+                    <p className="text-[6px] sm:text-[7px] text-gray-500">Invoice #</p>
+                    <p className="text-[8px] sm:text-[9px] font-semibold text-gray-800">INV-003</p>
+                    <p className="text-[6px] sm:text-[7px] text-gray-500 mt-1">Date:</p>
+                    <p className="text-[7px] sm:text-[8px] font-medium text-gray-700">Nov 21, 2024</p>
+                    <p className="text-[6px] sm:text-[7px] text-gray-500 mt-1">Due:</p>
+                    <p className="text-[7px] sm:text-[8px] font-medium text-gray-700">Dec 21, 2024</p>
                   </div>
                 </div>
                 
                 {/* Items Table - Gray Header */}
-                <div className="px-3 sm:px-4 py-2 flex-1">
+                <div className="px-4 sm:px-5 py-2 flex-1">
                   <div className="bg-gray-700 text-white">
-                    <div className="grid grid-cols-12 text-[5px] sm:text-[6px] font-medium p-1.5 uppercase">
+                    <div className="grid grid-cols-12 text-[7px] sm:text-[8px] font-medium p-2 uppercase">
                       <span className="col-span-5">Description</span>
                       <span className="col-span-2 text-center">Qty</span>
                       <span className="col-span-2 text-center">Rate</span>
@@ -1528,19 +1382,19 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <div className="border-x border-b border-gray-200">
-                    <div className="grid grid-cols-12 text-[6px] sm:text-[7px] p-1.5 border-b border-gray-100">
+                    <div className="grid grid-cols-12 text-[7px] sm:text-[8px] p-2 border-b border-gray-100">
                       <span className="col-span-5 text-gray-900">Web Development Services</span>
                       <span className="col-span-2 text-center text-gray-700">1</span>
                       <span className="col-span-2 text-center text-gray-500">$0.00</span>
                       <span className="col-span-3 text-right text-gray-900 font-medium">$1,500.00</span>
                     </div>
-                    <div className="grid grid-cols-12 text-[6px] sm:text-[7px] p-1.5 bg-gray-50 border-b border-gray-100">
+                    <div className="grid grid-cols-12 text-[7px] sm:text-[8px] p-2 bg-gray-50 border-b border-gray-100">
                       <span className="col-span-5 text-gray-900">UI/UX Design</span>
                       <span className="col-span-2 text-center text-gray-700">1</span>
                       <span className="col-span-2 text-center text-gray-500">$0.00</span>
                       <span className="col-span-3 text-right text-gray-900 font-medium">$800.00</span>
                     </div>
-                    <div className="grid grid-cols-12 text-[6px] sm:text-[7px] p-1.5">
+                    <div className="grid grid-cols-12 text-[7px] sm:text-[8px] p-2">
                       <span className="col-span-5 text-gray-900">Consulting Hours</span>
                       <span className="col-span-2 text-center text-gray-700">1</span>
                       <span className="col-span-2 text-center text-gray-500">$0.00</span>
@@ -1548,14 +1402,14 @@ export default function LandingPage() {
                     </div>
                   </div>
                   
-                  {/* Totals Box - Right aligned */}
-                  <div className="flex justify-end mt-3">
-                    <div className="border border-gray-200 p-2 w-32 sm:w-36">
-                      <div className="flex justify-between text-[6px] sm:text-[7px] mb-1">
+                  {/* Totals Box */}
+                  <div className="flex justify-end mt-4">
+                    <div className="border border-gray-200 p-2.5 w-36 bg-white">
+                      <div className="flex justify-between text-[7px] sm:text-[8px] mb-1">
                         <span className="text-gray-600">Subtotal</span>
                         <span className="text-gray-900">$2,550.00</span>
                       </div>
-                      <div className="flex justify-between text-[7px] sm:text-[8px] font-bold border-t border-gray-200 pt-1 mt-1">
+                      <div className="flex justify-between text-[8px] sm:text-[9px] font-bold border-t border-gray-200 pt-1">
                         <span className="text-gray-800">Total</span>
                         <span className="text-gray-900">$2,550.00</span>
                       </div>
@@ -1563,37 +1417,27 @@ export default function LandingPage() {
                   </div>
                 </div>
                 
-                {/* Footer - Two Columns: Payment Terms Left, Notes Right */}
-                <div className="px-3 sm:px-4 py-2 mt-auto">
+                {/* Footer */}
+                <div className="px-4 sm:px-5 py-2 border-t border-gray-200">
                   <div className="flex justify-between gap-4">
                     <div>
-                      <p className="text-[6px] sm:text-[7px] font-medium text-gray-700">Payment Terms</p>
-                      <p className="text-[5px] sm:text-[6px] text-gray-600">Net 30</p>
+                      <p className="text-[7px] sm:text-[8px] font-medium text-gray-700">Payment Terms</p>
+                      <p className="text-[6px] sm:text-[7px] text-gray-600">Net 30</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[6px] sm:text-[7px] font-medium text-gray-500">Notes</p>
-                      <p className="text-[5px] sm:text-[6px] text-gray-600">This is a test invoice for</p>
-                      <p className="text-[5px] sm:text-[6px] text-gray-600">Creative template. Created for</p>
+                      <p className="text-[7px] sm:text-[8px] font-medium text-gray-500">Notes</p>
+                      <p className="text-[6px] sm:text-[7px] text-gray-600">Thank you for your business.</p>
                     </div>
                   </div>
                 </div>
               </div>
               <div className="text-center mt-4">
-                <h3 className="font-bold text-gray-900">Creative</h3>
+                <h3 className="text-lg font-bold text-gray-900">Creative</h3>
                 <p className="text-sm text-gray-500">Bold & Dynamic</p>
               </div>
             </div>
           </div>
           
-          {/* Color Customization Note */}
-          <div className="text-center mt-10">
-            <p className="text-sm text-gray-500">
-              <span className="inline-flex items-center gap-2">
-                <Zap className="w-4 h-4 text-violet-500" />
-                All templates support custom colors to match your brand
-              </span>
-            </p>
-          </div>
         </div>
       </section>
 
@@ -1611,7 +1455,7 @@ export default function LandingPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
             {/* Free Plan */}
-            <div className="rounded-md border-2 border-gray-200 bg-white p-6 sm:p-8 hover:border-gray-300 transition-all duration-200">
+            <div className="border-2 border-gray-200 bg-white p-6 sm:p-8 hover:border-gray-300 transition-all duration-200">
               <div className="text-center">
                 <h3 className="font-heading text-xl sm:text-2xl font-semibold text-gray-900 mb-2">Free</h3>
                 <div className="mb-6">
@@ -1621,7 +1465,7 @@ export default function LandingPage() {
                 <p className="text-sm text-gray-600 mb-6">Perfect for getting started</p>
               <button
                 onClick={handleGetStarted}
-                  className="w-full px-6 py-3 text-sm sm:text-base font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-md hover:bg-gray-50 transition-colors mb-6"
+                  className="w-full px-6 py-3 text-sm sm:text-base font-medium text-gray-700 bg-white border-2 border-gray-300 hover:bg-gray-50 transition-colors mb-6"
               >
                   Get Started
               </button>
@@ -1651,9 +1495,9 @@ export default function LandingPage() {
             </div>
 
             {/* Monthly Subscription Plan - POPULAR */}
-            <div className="rounded-md border-2 border-[#a855f7] bg-white p-6 sm:p-8 hover:border-[#9333ea] transition-all duration-200 relative">
+            <div className="border-2 border-[#a855f7] bg-white p-6 sm:p-8 hover:border-[#9333ea] transition-all duration-200 relative">
               <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                <span className="bg-[#a855f7] text-white text-xs font-semibold px-3 py-1 rounded-md">POPULAR</span>
+                <span className="bg-[#a855f7] text-white text-xs font-semibold px-3 py-1">POPULAR</span>
               </div>
               <div className="text-center mt-2">
                 <h3 className="font-heading text-xl sm:text-2xl font-semibold text-gray-900 mb-2">Monthly</h3>
@@ -1664,7 +1508,7 @@ export default function LandingPage() {
                 <p className="text-sm text-gray-600 mb-6">Best for regular users</p>
               <button
                 onClick={handleGetStarted}
-                  className="w-full px-6 py-3 text-sm sm:text-base font-medium text-white bg-[#a855f7] rounded-md hover:bg-[#9333ea] transition-colors mb-6"
+                  className="w-full px-6 py-3 text-sm sm:text-base font-medium text-white bg-[#a855f7] hover:bg-[#9333ea] transition-colors mb-6"
               >
                   Get Started
               </button>
@@ -1706,7 +1550,7 @@ export default function LandingPage() {
             </div>
 
             {/* Pay Per Invoice Plan */}
-            <div className="rounded-md border-2 border-gray-200 bg-white p-6 sm:p-8 hover:border-gray-300 transition-all duration-200">
+            <div className="border-2 border-gray-200 bg-white p-6 sm:p-8 hover:border-gray-300 transition-all duration-200">
               <div className="text-center">
                 <h3 className="font-heading text-xl sm:text-2xl font-semibold text-gray-900 mb-2">Pay Per Invoice</h3>
                 <div className="mb-6">
@@ -1716,7 +1560,7 @@ export default function LandingPage() {
                 <p className="text-sm text-gray-600 mb-6">Pay only for what you use</p>
               <button
                 onClick={handleGetStarted}
-                  className="w-full px-6 py-3 text-sm sm:text-base font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-md hover:bg-gray-50 transition-colors mb-6"
+                  className="w-full px-6 py-3 text-sm sm:text-base font-medium text-gray-700 bg-white border-2 border-gray-300 hover:bg-gray-50 transition-colors mb-6"
               >
                   Get Started
               </button>
@@ -1782,10 +1626,10 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Sidebar Navigation */}
             <div className="lg:col-span-1">
-              <div className="sticky top-8 space-y-2 bg-white border-gray-200 rounded-lg border p-4 backdrop-blur-sm">
+              <div className="sticky top-8 space-y-2 bg-white border-gray-200 border p-4 backdrop-blur-sm">
                 <button 
                   onClick={() => setActiveFaqCategory('General')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+                  className={`w-full text-left px-4 py-3 transition-colors cursor-pointer ${
                     activeFaqCategory === 'General'
                       ? 'bg-gray-100 text-gray-900'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -1795,7 +1639,7 @@ export default function LandingPage() {
                 </button>
                 <button 
                   onClick={() => setActiveFaqCategory('Plans & Pricing')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+                  className={`w-full text-left px-4 py-3 transition-colors cursor-pointer ${
                     activeFaqCategory === 'Plans & Pricing'
                       ? 'bg-gray-100 text-gray-900'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -1805,7 +1649,7 @@ export default function LandingPage() {
                 </button>
                 <button 
                   onClick={() => setActiveFaqCategory('Features')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+                  className={`w-full text-left px-4 py-3 transition-colors cursor-pointer ${
                     activeFaqCategory === 'Features'
                       ? 'bg-gray-100 text-gray-900'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -1815,7 +1659,7 @@ export default function LandingPage() {
                 </button>
                 <button 
                   onClick={() => setActiveFaqCategory('Security')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+                  className={`w-full text-left px-4 py-3 transition-colors cursor-pointer ${
                     activeFaqCategory === 'Security'
                       ? 'bg-gray-100 text-gray-900'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -1832,7 +1676,7 @@ export default function LandingPage() {
                 {/* General Category Questions */}
                 {activeFaqCategory === 'General' && (
                   <div className="space-y-4">
-                    <div className="rounded-lg border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
+                    <div className="border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
                       <button className="w-full px-6 py-4 text-left flex items-center justify-between">
                         <h3 className="font-heading text-lg font-semibold text-gray-900">
                           What is FlowInvoicer?
@@ -1846,7 +1690,7 @@ export default function LandingPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-lg border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
+                    <div className="border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
                       <button className="w-full px-6 py-4 text-left flex items-center justify-between">
                         <h3 className="font-heading text-lg font-semibold text-gray-900">
                           Who can use FlowInvoicer?
@@ -1860,7 +1704,7 @@ export default function LandingPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-lg border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
+                    <div className="border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
                       <button className="w-full px-6 py-4 text-left flex items-center justify-between">
                         <h3 className="font-heading text-lg font-semibold text-gray-900">
                           How do I get started?
@@ -1879,7 +1723,7 @@ export default function LandingPage() {
                 {/* Plans & Pricing Category Questions */}
                 {activeFaqCategory === 'Plans & Pricing' && (
                   <div className="space-y-4">
-                    <div className="rounded-lg border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
+                    <div className="border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
                       <button className="w-full px-6 py-4 text-left flex items-center justify-between">
                         <h3 className="font-heading text-lg font-semibold text-gray-900">
                           How does the free plan work?
@@ -1893,7 +1737,7 @@ export default function LandingPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-lg border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
+                    <div className="border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
                       <button className="w-full px-6 py-4 text-left flex items-center justify-between">
                         <h3 className="font-heading text-lg font-semibold text-gray-900">
                           What&apos;s the difference between Pay Per Invoice and Pro?
@@ -1907,7 +1751,7 @@ export default function LandingPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-lg border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
+                    <div className="border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
                       <button className="w-full px-6 py-4 text-left flex items-center justify-between">
                         <h3 className="font-heading text-lg font-semibold text-gray-900">
                           Can I cancel anytime?
@@ -1926,7 +1770,7 @@ export default function LandingPage() {
                 {/* Features Category Questions */}
                 {activeFaqCategory === 'Features' && (
                   <div className="space-y-4">
-                    <div className="rounded-lg border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
+                    <div className="border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
                       <button className="w-full px-6 py-4 text-left flex items-center justify-between">
                         <h3 className="font-heading text-lg font-semibold text-gray-900">
                           How do automated reminders work?
@@ -1940,7 +1784,7 @@ export default function LandingPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-lg border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
+                    <div className="border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
                       <button className="w-full px-6 py-4 text-left flex items-center justify-between">
                         <h3 className="font-heading text-lg font-semibold text-gray-900">
                           Can I customize invoice templates?
@@ -1954,7 +1798,7 @@ export default function LandingPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-lg border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
+                    <div className="border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
                       <button className="w-full px-6 py-4 text-left flex items-center justify-between">
                         <h3 className="font-heading text-lg font-semibold text-gray-900">
                           What payment methods do you support?
@@ -1968,7 +1812,7 @@ export default function LandingPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-lg border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
+                    <div className="border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
                       <button className="w-full px-6 py-4 text-left flex items-center justify-between">
                         <h3 className="font-heading text-lg font-semibold text-gray-900">
                           How do estimates work?
@@ -1982,7 +1826,7 @@ export default function LandingPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-lg border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
+                    <div className="border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
                       <button className="w-full px-6 py-4 text-left flex items-center justify-between">
                         <h3 className="font-heading text-lg font-semibold text-gray-900">
                           Can clients approve or reject estimates?
@@ -2001,7 +1845,7 @@ export default function LandingPage() {
                 {/* Security Category Questions */}
                 {activeFaqCategory === 'Security' && (
                   <div className="space-y-4">
-                    <div className="rounded-lg border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
+                    <div className="border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
                       <button className="w-full px-6 py-4 text-left flex items-center justify-between">
                         <h3 className="font-heading text-lg font-semibold text-gray-900">
                           Is my data secure?
@@ -2015,7 +1859,7 @@ export default function LandingPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-lg border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
+                    <div className="border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
                       <button className="w-full px-6 py-4 text-left flex items-center justify-between">
                         <h3 className="font-heading text-lg font-semibold text-gray-900">
                           Where is my data stored?
@@ -2029,7 +1873,7 @@ export default function LandingPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-lg border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
+                    <div className="border transition-all duration-200 bg-white border-gray-200 hover:border-gray-300 backdrop-blur-sm">
                       <button className="w-full px-6 py-4 text-left flex items-center justify-between">
                         <h3 className="font-heading text-lg font-semibold text-gray-900">
                           Can I export my data?
@@ -2061,7 +1905,7 @@ export default function LandingPage() {
           </p>
             <button
               onClick={handleGetStarted}
-            className="inline-flex items-center justify-center px-8 py-3 text-base font-medium text-white bg-black rounded-lg hover:bg-gray-800 transition-colors"
+            className="inline-flex items-center justify-center px-8 py-3 text-base font-medium text-white bg-black hover:bg-gray-800 transition-colors"
           >
             Get started free
             <ArrowRight className="ml-2 w-4 h-4" />
@@ -2075,6 +1919,8 @@ export default function LandingPage() {
     </>
   );
 }
+
+
 
 
 
