@@ -83,7 +83,7 @@ const Navbar1 = () => {
   }
 
   return (
-    <nav className="w-full bg-white border-b border-gray-100 sticky top-0 z-50">
+    <nav className="w-full bg-white sticky top-0 z-50 [&_*]:!rounded-none">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -128,7 +128,7 @@ const Navbar1 = () => {
                 <ChevronDown className="w-4 h-4 ml-1" />
               </button>
               <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none group-hover:pointer-events-auto">
-                <div className="w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                <div className="w-48 bg-white shadow-lg border border-gray-200 py-2 z-50">
                   <a 
                     href="#"
                     onClick={(e) => {
@@ -190,7 +190,7 @@ const Navbar1 = () => {
                     handleSignIn()
                   }
                 }}
-                className="px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 transition-colors"
               >
                 {user ? 'Dashboard' : 'Sign up'}
               </a>
@@ -315,7 +315,7 @@ const Navbar1 = () => {
                         handleSignIn()
                       }
                     }}
-                    className="block w-full px-4 py-3 text-base font-medium text-center text-white bg-black hover:bg-gray-800 rounded-lg transition-colors"
+                    className="block w-full px-4 py-3 text-base font-medium text-center text-white bg-black hover:bg-gray-800 transition-colors"
                   >
                     {user ? 'Dashboard' : 'Sign up'}
                   </a>

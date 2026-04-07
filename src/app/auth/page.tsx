@@ -172,9 +172,9 @@ export default function AuthPage() {
               <div className="relative">
                 {/* Background Elements */}
                 <div className="absolute inset-0">
-                  <div className="w-32 h-32 bg-indigo-100 rounded-full absolute -top-8 -right-8 opacity-60"></div>
-                  <div className="w-24 h-24 bg-purple-100 rounded-full absolute -bottom-4 -left-4 opacity-40"></div>
-                  <div className="w-16 h-16 bg-blue-100 rounded-full absolute top-1/2 -right-2 opacity-50"></div>
+                  <div className="w-32 h-32 bg-indigo-100 absolute -top-8 -right-8 opacity-60"></div>
+                  <div className="w-24 h-24 bg-purple-100 absolute -bottom-4 -left-4 opacity-40"></div>
+                  <div className="w-16 h-16 bg-blue-100 absolute top-1/2 -right-2 opacity-50"></div>
                 </div>
 
                 {/* Main Illustration */}
@@ -190,9 +190,9 @@ export default function AuthPage() {
                       <div className="text-xs text-gray-500">INV-001</div>
                     </div>
                     <div className="space-y-2">
-                      <div className="h-2 bg-gray-200 rounded w-3/4"></div>
-                      <div className="h-2 bg-gray-200 rounded w-1/2"></div>
-                      <div className="h-2 bg-gray-200 rounded w-2/3"></div>
+                      <div className="h-2 bg-gray-200 w-3/4"></div>
+                      <div className="h-2 bg-gray-200 w-1/2"></div>
+                      <div className="h-2 bg-gray-200 w-2/3"></div>
                     </div>
                     <div className="mt-4 pt-4 border-t border-gray-200">
                       <div className="flex justify-between items-center">
@@ -205,7 +205,7 @@ export default function AuthPage() {
                   {/* Payment Success */}
                   <div className="bg-emerald-50 p-4 transform -rotate-1">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
+                      <div className="w-8 h-8 bg-emerald-500 flex items-center justify-center">
                         <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
@@ -218,14 +218,14 @@ export default function AuthPage() {
                   </div>
 
                   {/* Floating Elements */}
-                  <div className="absolute -top-4 -right-4 w-6 h-6 bg-indigo-400 rounded-full flex items-center justify-center">
+                  <div className="absolute -top-4 -right-4 w-6 h-6 bg-indigo-400 flex items-center justify-center">
                     <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
                     </svg>
                   </div>
 
-                  <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-indigo-500 rounded-full flex items-center justify-center">
+                  <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-indigo-500 flex items-center justify-center">
                     <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
@@ -346,7 +346,7 @@ export default function AuthPage() {
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, email: '' }))}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center cursor-pointer active:scale-90 active:bg-gray-900 transition-all touch-manipulation"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-gray-800 flex items-center justify-center cursor-pointer active:scale-90 active:bg-gray-900 transition-all touch-manipulation"
                   >
                     <X className="w-3 h-3 text-white" />
                   </button>
@@ -374,7 +374,7 @@ export default function AuthPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 active:scale-90 active:bg-gray-200 rounded-full transition-all cursor-pointer touch-manipulation"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 active:scale-90 active:bg-gray-200 transition-all cursor-pointer touch-manipulation"
                   >
                     {showPassword ? (
                       <EyeOff className="w-5 h-5 text-gray-500" />
@@ -442,7 +442,7 @@ export default function AuthPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 active:scale-90 active:bg-gray-200 rounded-full transition-all cursor-pointer touch-manipulation"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 active:scale-90 active:bg-gray-200 transition-all cursor-pointer touch-manipulation"
                   >
                     {showPassword ? (
                       <EyeOff className="w-5 h-5 text-gray-500" />
@@ -463,7 +463,7 @@ export default function AuthPage() {
                   name="agreeToTerms"
                   checked={formData.agreeToTerms}
                   onChange={handleInputChange}
-                  className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                  className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
                   required={!isLogin}
                 />
                 <label htmlFor="agreeToTerms" className="text-sm text-gray-600">

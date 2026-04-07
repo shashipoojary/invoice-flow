@@ -560,7 +560,7 @@ const ModernSidebar = ({
             className={`w-full flex items-center h-14 border transition-colors duration-200 cursor-pointer bg-white border-gray-200 hover:bg-gray-50 ${isCollapsed ? 'justify-center px-2.5' : 'space-x-3 px-3'}`}
             title={isCollapsed ? (user?.name || 'View Profile') : undefined}
           >
-            <div className={`rounded-full flex items-center justify-center bg-indigo-600 flex-shrink-0 ${isCollapsed ? 'w-8 h-8' : 'w-10 h-10'}`}>
+            <div className={`flex items-center justify-center bg-indigo-600 flex-shrink-0 ${isCollapsed ? 'w-8 h-8' : 'w-10 h-10'}`}>
               <User className={`text-white ${isCollapsed ? 'w-4 h-4' : 'w-5 h-5'}`} />
             </div>
             <div className={`flex-1 min-w-0 text-left transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>

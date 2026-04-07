@@ -1,0 +1,302 @@
+================================================================================
+GOOGLE STITCH — LANDING PAGE DESIGN BRIEF
+================================================================================
+Project analyzed from codebase: subscription-pause-tool (npm package name:
+invoice-flow-pro). Public product name in UI and metadata: FlowInvoicer.
+
+Purpose of this file:
+Give Google Stitch (or any design tool) everything needed to design or redesign
+the marketing landing page: positioning, audience, features, pricing, visual
+language, layout structure, and design principles—aligned with the current app.
+
+Generated from: README, src/app/page.tsx (landing), src/app/layout.tsx,
+src/app/globals.css, package.json, and key app areas (dashboard, estimates,
+invoices, reminders).
+
+================================================================================
+1. PRODUCT SUMMARY (WHAT THIS PROJECT IS)
+================================================================================
+
+FlowInvoicer is a web application for professional invoicing aimed at
+freelancers, designers, developers, contractors, consultants, and small
+businesses. The core promise is speed and simplicity: create invoices quickly,
+look professional, automate follow-ups (reminders), and track who owes what.
+
+Tagline used in metadata:
+"The Fastest Way for Freelancers to Get Paid"
+
+Elevator pitch (from live landing hero):
+- Headline idea: Create invoices in seconds. Get paid faster.
+- Subhead: Professional invoicing for freelancers and small businesses.
+  No fees, no hassle. (Marketing tone; actual plans may charge for premium.)
+
+Differentiators to emphasize in design:
+- Fast workflow (60-second / minimal-friction invoicing)
+- Professional PDFs and multiple branded templates
+- Automated email reminders with tone options
+- Estimates with client approval and one-click conversion to invoices
+- Analytics and payment status visibility
+- Transparent pricing (free tier + monthly + pay-per-invoice)
+
+================================================================================
+2. TARGET AUDIENCE & TONE
+================================================================================
+
+Who:
+- Solo freelancers and agencies
+- Creators and indie operators who invoice irregularly or at volume
+- Users who want polish without enterprise complexity
+
+Tone for copy and visuals:
+- Confident, direct, modern SaaS—not corporate stiff
+- Friendly but professional (creators & entrepreneurs, not only CFOs)
+- Trust: security, clarity, no hidden fees (matches pricing section messaging)
+
+Avoid:
+- Overly technical jargon in hero
+- Cluttered "enterprise dashboard" aesthetics unless balanced with whitespace
+
+================================================================================
+3. FEATURES (COMPREHENSIVE — MARKETING + APP CAPABILITIES)
+================================================================================
+
+A. Core invoicing
+- Create invoices quickly; fast mode and detailed line items (discounts, taxes)
+- Multiple professional PDF invoice templates (e.g. Minimal, Modern, Creative);
+  customizable branding, colors, company info, logo upload
+- Invoice statuses: draft, sent, paid, etc.; activity/history
+- Public share links for clients to view invoices
+- PDF download and email sending (Resend integration in stack)
+
+B. Clients
+- Client records: contact info, reuse on new invoices/estimates
+- Payment history visibility (conceptually; UI emphasizes tracking)
+
+C. Payments & money
+- Display payment instructions (PayPal, Stripe, bank transfer, Venmo, Cash App,
+  Google Pay, Apple Pay—as stated on marketing; implementation is user-provided
+  methods + manual mark-as-paid)
+- Partial payments and payment records where implemented
+- Late fees: percentage or fixed, with grace periods
+- Write-off: forgive part or all of balance and close invoice (business logic
+  in app—optional mention for "serious billing" credibility)
+
+D. Estimates
+- Create and send estimates; expiry dates; draft editing
+- Client approve/reject via link from email
+- Convert approved estimate to invoice in one action
+
+E. Reminders & automation
+- Per-invoice reminder schedules
+- Reminder tone types: friendly, polite, firm, urgent (marketing copy)
+- Scheduled email reminders (queue/cron-related infra in project)
+
+F. Dashboard & analytics
+- Revenue-oriented dashboard: pending, overdue, late fees, trends
+- Charts/revenue visualization (Recharts in dependencies)
+
+G. Bulk & efficiency (power users)
+- Bulk send (status transitions for multiple invoices)
+- Bulk mark as paid
+- Bulk payment operations where present in API
+
+H. Account & data
+- Authentication (Supabase Auth)
+- Settings: business profile, payment details, branding
+- Data export (PDF/CSV mentioned in FAQ)
+- Tax-related fields (database migrations exist—business/tax registration context)
+
+I. Security & compliance (messaging)
+- Encrypted storage/transit, no selling client data to third parties
+- GDPR-friendly language in FAQ
+
+================================================================================
+4. PRICING (AS SHOWN ON CURRENT LANDING — USE FOR VISUAL HIERARCHY)
+================================================================================
+
+Section title: "Simple, Transparent Pricing"
+Subtitle: Choose the plan that works best for your business. No hidden fees,
+cancel anytime.
+
+Plan 1 — FREE
+- Price: $0 / forever
+- Tagline: Perfect for getting started
+- Includes: Up to 5 invoices/month, basic templates, client management,
+  PDF generation, email reminders (limited)
+
+Plan 2 — MONTHLY (highlighted as POPULAR)
+- Price: $9 / month
+- Accent: purple border and CTA (#a855f7 family)
+- Tagline: Best for regular users
+- Includes: Unlimited invoices, all premium templates, advanced client
+  management, automated email reminders, late fee management, analytics dashboard,
+  priority support; "Save up to 50% vs pay-per-invoice" callout
+
+Plan 3 — PAY PER INVOICE
+- Price: $0.50 / invoice
+- Tagline: Pay only for what you use
+- Includes: Pay per sent invoice, all premium features listed similarly to
+  monthly, no monthly commitment
+
+Footer note on pricing block:
+"All plans include secure payment processing. No credit card required for free
+plan."
+
+Design note: Make the Monthly card the visual focal point (badge POPULAR,
+purple primary button).
+
+================================================================================
+5. CURRENT LANDING PAGE STRUCTURE (REFERENCE FOR STITCH)
+================================================================================
+
+Order of sections on src/app/page.tsx:
+
+1) Hero
+   - Headline + purple accent word on "paid"
+   - Primary CTA: Get started free (black button) → /auth
+   - Secondary: View demo → /dashboard
+   - Social proof: avatar stack + stats (e.g. 1,000+ users, 10K+ invoices)
+   - Product shot: desktop + mobile dashboard screenshots with soft purple
+     radial glow behind mockup
+
+2) Features grid (#features)
+   - Section title: "Get paid faster"
+   - Nine feature cards (icons in light gray boxes, bordered cards):
+     Professional Templates, Client Management, Payment Tracking,
+     Automated Reminders, Late Fee Management, Multiple Payment Methods,
+     PDF Generation, Analytics Dashboard, Secure & Reliable
+
+3) Testimonials — "Loved by Creators & Entrepreneurs"
+   - Social-style cards (Reddit, Indie Hackers, X-style)
+   - Desktop: grid; Mobile: horizontal marquee
+
+4) How it works — multi-step with small UI mockups
+   Steps include: Create Invoice, Send Invoice, Track Status, Set Reminders,
+   Get Paid, Create Estimate, Estimate Approval, Manage Clients
+
+5) Template showcase — three columns: Minimal, Modern, Creative
+
+6) Pricing (#pricing) — three tiers (see section 4)
+
+7) FAQ — categories: General, Plans & Pricing, Features, Security
+
+8) Final CTA — "Start invoicing today" / No credit card required / black button
+
+9) Footer — links, status, legal
+
+Navigation (marketing site): Home, Features (scroll), Pricing (scroll),
+About, Contact, Sign in / Get started; authenticated users may see Dashboard.
+
+================================================================================
+6. VISUAL & DESIGN SYSTEM (FOLLOW THESE PRINCIPLES)
+================================================================================
+
+Overall aesthetic:
+- Clean, light, modern SaaS: white backgrounds, lots of whitespace
+- Crisp borders (gray-200), subtle hover elevation on cards
+- Purple as the single strong brand accent (hero glow, "paid" highlight,
+  popular plan). Supporting purples in gradients: #a855f7, #9333ea, #7c3aed
+- Primary actions: black buttons for main global CTAs; purple for the
+  highlighted pricing tier
+- Secondary actions: white fill, gray border
+
+Typography:
+- Root layout loads Inter (Google) as --font-inter for body in places
+- globals.css theme references Poppins for --font-sans and Space Grotesk for
+  --font-heading (class .font-heading on landing headings). For Stitch: use a
+  clean geometric or grotesk sans for headlines and a highly readable sans for
+  body—consistent with "fast, professional, product UI"
+
+Spacing & layout:
+- max-w-7xl containers, centered content
+- Responsive: mobile-first; hero stacks; feature grid 2 cols mobile → 3 desktop
+
+Imagery:
+- Prefer real product screenshots (dashboard-screenshot.png desktop,
+  dashboard-screenshot-mobile.png mobile) framed with border + shadow
+- Soft purple radial blur behind hero device mockup for depth (not neon gamer
+  aesthetic—keep it subtle)
+
+Motion (optional):
+- Gentle scroll-in for cards; floating mockup hover lift; mobile testimonial
+  marquee—motion should feel premium, not distracting
+
+Iconography:
+- Simple line icons (Lucide-style) in muted gray on light gray tile
+  backgrounds
+
+Accessibility:
+- Strong contrast for body text (gray-600/900 on white)
+- Buttons large enough for touch on mobile
+- Do not rely on purple alone for critical information
+
+================================================================================
+7. DESIGN PRINCIPLES (CHECKLIST FOR STITCH OUTPUT)
+================================================================================
+
+1. Clarity first: one primary message per section; scannable headlines.
+2. Speed & ease: visuals and copy should reinforce "minutes, not hours."
+3. Trust: social proof, security mentions, transparent pricing table.
+4. Consistent brand accent: purple used with discipline; black for primary CTA.
+5. Professional polish: invoice/template previews should look print-ready.
+6. Mobile parity: hero, pricing, and CTAs must work at small widths.
+7. Hierarchy: Popular plan > Free > Pay per invoice in visual weight.
+8. Avoid clutter: prefer grid + whitespace over dense feature lists in hero.
+
+================================================================================
+8. KEY COPY SNIPPETS (REUSE OR REFINE)
+================================================================================
+
+Hero:
+- Create invoices in seconds. Get paid faster.
+- Professional invoicing for freelancers and small businesses. No fees, no hassle.
+
+Features section header:
+- Get paid faster
+- Professional invoicing tools designed for freelancers, designers, and
+  contractors.
+
+FAQ opener:
+- Everything you need to know about FlowInvoicer
+
+Final CTA:
+- Start invoicing today
+- No credit card required
+- Get started free
+
+================================================================================
+9. TECH CONTEXT (FOR ACCURACY — NOT NECESSARILY ON LANDING)
+================================================================================
+
+- Frontend: Next.js (App Router), React, TypeScript, Tailwind CSS v4
+- Backend: Next.js API routes
+- Database & auth: Supabase (PostgreSQL, Row Level Security expected)
+- Email: Resend; PDF: React PDF and related generators
+- Payments: Stripe present in dependencies (usage may be subscription/checkout);
+  Dodo payment lib also in project—actual billing flows are implementation detail
+- Deployment: Vercel-oriented (vercel.json present)
+
+================================================================================
+10. ASSETS & FILES DESIGNERS MAY REFERENCE
+================================================================================
+
+- public/dashboard-screenshot.png — desktop hero
+- public/dashboard-screenshot-mobile.png — mobile hero
+- public/favicon.png — favicon
+- Logo components: src/components/Logo.tsx, LazyLogo.tsx
+
+================================================================================
+11. NOTES FOR DESIGNERS (CONSISTENCY)
+================================================================================
+
+- Repository folder name "subscription-pause-tool" is legacy; product name in
+  the UI is FlowInvoicer.
+- README mentions "FlowInvoicer" and also "invoice-flow-pro" as package name;
+  customer-facing name should stay FlowInvoicer.
+- One FAQ answer in code references different numbers ($2 and $19/mo) than the
+  visible pricing cards ($0.50 and $9/mo). For any new design or Stitch prompt,
+  align all numbers with the pricing section the business intends to ship.
+
+================================================================================
+END OF BRIEF
+================================================================================

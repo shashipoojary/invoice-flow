@@ -52,8 +52,14 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   return (
     <>
-      {shouldShowNavbar && <Navbar1 />}
-      {children}
+      {shouldShowNavbar ? (
+        <div className="[&_*]:!rounded-none">
+          <Navbar1 />
+          {children}
+        </div>
+      ) : (
+        children
+      )}
     </>
   );
 }
