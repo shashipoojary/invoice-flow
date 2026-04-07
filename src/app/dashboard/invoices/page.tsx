@@ -2911,9 +2911,13 @@ function InvoicesContent(): React.JSX.Element {
                     </div>
                   )}
                   
-                  {/* Add bottom padding on mobile when action bar is visible */}
-                  {bulkSelectionMode && selectedInvoices.size > 0 && (
-                    <div className="sm:hidden h-24"></div>
+                  {/* Add bottom padding on mobile only when the FAB is visible (not during send confirm / bulk mark-paid modal / processing) */}
+                  {bulkSelectionMode &&
+                    selectedInvoices.size > 0 &&
+                    !confirmationModal.isOpen &&
+                    !showBulkMarkAsPaid &&
+                    !bulkActionLoading && (
+                    <div className="sm:hidden h-24" aria-hidden />
                   )}
                 </>
               ) : (
@@ -4117,7 +4121,7 @@ function InvoicesContent(): React.JSX.Element {
       {isMounted && bulkSelectionMode && selectedInvoices.size > 0 && typeof window !== 'undefined' && createPortal(
         <div 
           className={`sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-[9999] transition-transform duration-300 ease-in-out ${
-            confirmationModal.isOpen ? 'translate-y-full' : 'translate-y-0'
+            confirmationModal.isOpen || showBulkMarkAsPaid || bulkActionLoading ? 'translate-y-full pointer-events-none' : 'translate-y-0'
           }`}
           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         >

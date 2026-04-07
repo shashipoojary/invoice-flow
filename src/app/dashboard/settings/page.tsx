@@ -139,6 +139,12 @@ export default function SettingsPage() {
   const originalCurrencySetRef = useRef(false);
   const [exchangeRate, setExchangeRate] = useState<string>('');
   const [fetchingExchangeRate, setFetchingExchangeRate] = useState(false);
+  /** Draft only — do not write to SettingsContext until save succeeds, so navigating away keeps the saved currency. */
+  const [pendingBaseCurrency, setPendingBaseCurrency] = useState<string | null>(null);
+  const effectiveBaseCurrency = useMemo(
+    () => pendingBaseCurrency ?? settings.baseCurrency ?? 'USD',
+    [pendingBaseCurrency, settings.baseCurrency]
+  );
   const [confirmationModal, setConfirmationModal] = useState({
     isOpen: false,
     title: '',
@@ -238,12 +244,12 @@ export default function SettingsPage() {
   }, [user, loading]);
 
   const handleSave = async () => {
-    // Validate exchange rate if base currency has changed
-    if (originalBaseCurrency && settings.baseCurrency && settings.baseCurrency !== originalBaseCurrency) {
+    // Validate exchange rate if base currency has changed (compare to saved original, not context-only draft)
+    if (originalBaseCurrency && effectiveBaseCurrency && effectiveBaseCurrency !== originalBaseCurrency) {
       // Check if exchange rate is provided and valid
       const rateValue = parseFloat(exchangeRate);
       if (!exchangeRate || exchangeRate.trim() === '' || isNaN(rateValue) || rateValue <= 0) {
-        showError('Exchange Rate Required', `Please enter a valid exchange rate to convert from ${originalBaseCurrency} to ${settings.baseCurrency}.`);
+        showError('Exchange Rate Required', `Please enter a valid exchange rate to convert from ${originalBaseCurrency} to ${effectiveBaseCurrency}.`);
         return;
       }
     }
@@ -252,9 +258,9 @@ export default function SettingsPage() {
     try {
       const headers = await getAuthHeaders();
       
-      // Include exchange rate if currency is changing
-      const requestBody: any = { ...settings };
-      if (originalBaseCurrency && settings.baseCurrency && settings.baseCurrency !== originalBaseCurrency && exchangeRate) {
+      // Include exchange rate if currency is changing — use effective (draft + saved), never context alone for base currency
+      const requestBody: any = { ...settings, baseCurrency: effectiveBaseCurrency };
+      if (originalBaseCurrency && effectiveBaseCurrency && effectiveBaseCurrency !== originalBaseCurrency && exchangeRate) {
         requestBody.exchangeRate = parseFloat(exchangeRate);
         requestBody.oldBaseCurrency = originalBaseCurrency;
       }
@@ -269,20 +275,22 @@ export default function SettingsPage() {
       
       if (response.ok) {
         showSuccess('Settings saved successfully!');
-        // Refresh settings from server to get latest values
+        // Refresh settings from server to get latest values (authoritative; do not merge stale closure over this)
         await refreshSettings();
-        // Update global settings context
-        updateSettings(settings);
-        // Also save to localStorage as backup
+        setPendingBaseCurrency(null);
+        // Also save to localStorage as backup (match what we just persisted)
         if (typeof window !== 'undefined') {
-          localStorage.setItem('freelancerSettings', JSON.stringify(settings));
+          localStorage.setItem(
+            'freelancerSettings',
+            JSON.stringify({ ...settings, baseCurrency: effectiveBaseCurrency })
+          );
         }
         // Reset exchange rate after successful save
         setExchangeRate('');
         // Update originalBaseCurrency to match new currency to hide warning banner and exchange rate field
-        if (originalBaseCurrency && settings.baseCurrency && settings.baseCurrency !== originalBaseCurrency) {
+        if (originalBaseCurrency && effectiveBaseCurrency && effectiveBaseCurrency !== originalBaseCurrency) {
           // Update originalBaseCurrency immediately to hide the field
-          setOriginalBaseCurrency(settings.baseCurrency);
+          setOriginalBaseCurrency(effectiveBaseCurrency);
           
           // Navigate to dashboard after conversion completes
           // The dashboard will automatically refresh invoices when it detects the currency change
@@ -700,7 +708,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Warning Banner - Show when currency is changed */}
-                {originalBaseCurrency && settings.baseCurrency && settings.baseCurrency !== originalBaseCurrency && (
+                {originalBaseCurrency && effectiveBaseCurrency && effectiveBaseCurrency !== originalBaseCurrency && (
                   <div className="mb-4 bg-amber-50 border-l-4 border-amber-400 p-4">
                     <div className="flex">
                       <div className="flex-shrink-0">
@@ -708,7 +716,7 @@ export default function SettingsPage() {
                       </div>
                       <div className="ml-3">
                         <p className="text-sm text-amber-800">
-                          <strong>Warning:</strong> Changing your base currency from <strong>{originalBaseCurrency}</strong> to <strong>{settings.baseCurrency}</strong> will affect how revenue is calculated across your dashboard.
+                          <strong>Warning:</strong> Changing your base currency from <strong>{originalBaseCurrency}</strong> to <strong>{effectiveBaseCurrency}</strong> will affect how revenue is calculated across your dashboard.
                           {hasInvoices && (
                             <span> Existing invoices will be converted to the new base currency for metrics and reporting, which may show different amounts.</span>
                           )}
@@ -724,21 +732,20 @@ export default function SettingsPage() {
                       Base Currency *
                     </label>
                     <CustomDropdown
-                      value={settings.baseCurrency || 'USD'}
+                      value={effectiveBaseCurrency}
                       onChange={(value) => {
                         // Ensure originalBaseCurrency is set if not already set
                         if (!originalCurrencySetRef.current && settings.baseCurrency) {
                           setOriginalBaseCurrency(settings.baseCurrency);
                           originalCurrencySetRef.current = true;
                         }
-                        // Reset exchange rate when currency changes
-                        if (value === originalBaseCurrency) {
-                          setExchangeRate('');
+                        setExchangeRate('');
+                        // Keep draft local only — do not update global context until save (avoids wrong currency on dashboard).
+                        if (value === settings.baseCurrency) {
+                          setPendingBaseCurrency(null);
                         } else {
-                          // Start with blank, not "1.0" - exchange rates can be less than 1
-                          setExchangeRate('');
+                          setPendingBaseCurrency(value);
                         }
-                        updateSettings({ ...settings, baseCurrency: value });
                       }}
                       options={CURRENCIES.map((currency) => ({
                         value: currency.code,
@@ -753,10 +760,10 @@ export default function SettingsPage() {
                       All dashboard metrics will be converted to this currency. You can change this after creating your first invoice.
                     </p>
                     {/* Exchange Rate Input - Only show when currency differs from original */}
-                    {originalBaseCurrency && settings.baseCurrency && settings.baseCurrency !== originalBaseCurrency && (
+                    {originalBaseCurrency && effectiveBaseCurrency && effectiveBaseCurrency !== originalBaseCurrency && (
                       <div className="mt-3">
                         <label className="block text-sm font-medium mb-2" style={{color: '#374151'}}>
-                          Exchange Rate ({originalBaseCurrency} to {settings.baseCurrency}) *
+                          Exchange Rate ({originalBaseCurrency} to {effectiveBaseCurrency}) *
                           {fetchingExchangeRate && (
                             <span className="ml-2 text-xs text-gray-500">(Fetching...)</span>
                           )}
@@ -772,7 +779,7 @@ export default function SettingsPage() {
                             if (!exchangeRate || exchangeRate.trim() === '') {
                               try {
                                 setFetchingExchangeRate(true);
-                                const rate = await fetchExchangeRate(originalBaseCurrency, settings.baseCurrency);
+                                const rate = await fetchExchangeRate(originalBaseCurrency, effectiveBaseCurrency);
                                 if (rate) {
                                   setExchangeRate(rate.toFixed(4));
                                 } else {

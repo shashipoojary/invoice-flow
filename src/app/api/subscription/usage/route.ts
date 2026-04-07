@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { getUsageStats } from '@/lib/subscription-validator';
+import { getCurrentMonthBoundaries, getUsageStats } from '@/lib/subscription-validator';
+import { computeIncludedPoolUsed } from '@/lib/pay-per-invoice-display';
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,35 +31,57 @@ export async function GET(request: NextRequest) {
     const usageStats = await getUsageStats(user.id);
     const plan = profile?.subscription_plan || 'free';
 
-    // For Pay Per Invoice: Calculate free vs charged invoices based on actual billing records
+    // Free plan: show pay-per premium charges this month separately (e.g. user paid $0.50 for a template while on free tier)
+    let freePlanPremiumCharges: { count: number; totalCharged: string } | null = null;
+    if (plan === 'free') {
+      const { start, end } = getCurrentMonthBoundaries();
+      const { data: monthBilling } = await supabase
+        .from('billing_records')
+        .select('invoice_id, amount')
+        .eq('user_id', user.id)
+        .eq('type', 'per_invoice_fee')
+        .gte('created_at', start)
+        .lte('created_at', end);
+      if (monthBilling && monthBilling.length > 0) {
+        const byInvoice = new Map<string, number>();
+        for (const row of monthBilling) {
+          const id = row.invoice_id as string;
+          const amt = parseFloat(String(row.amount));
+          byInvoice.set(id, (byInvoice.get(id) || 0) + amt);
+        }
+        const total = Array.from(byInvoice.values()).reduce((a, b) => a + b, 0);
+        freePlanPremiumCharges = {
+          count: byInvoice.size,
+          totalCharged: total.toFixed(2),
+        };
+      }
+    }
+
+    // For Pay Per Invoice: included 5 sends vs premium charges (source of truth: billing_records)
     let payPerInvoiceInfo = null;
     if (plan === 'pay_per_invoice') {
-      // Get activation date to count invoices correctly
       const { data: userData } = await supabase
         .from('users')
         .select('pay_per_invoice_activated_at')
         .eq('id', user.id)
         .single();
-      
+
       if (!userData?.pay_per_invoice_activated_at) {
-        // No activation date - user hasn't created any invoices yet on pay_per_invoice plan
         payPerInvoiceInfo = {
           totalInvoices: 0,
           freeInvoicesUsed: 0,
           freeInvoicesRemaining: 5,
           chargedInvoices: 0,
           totalCharged: '0.00',
-          template1DetailedInvoices: 0
         };
       } else {
-        // Get all non-draft invoices created after activation (for total count and billing records)
-      const { data: allInvoices } = await supabase
-        .from('invoices')
-        .select('id')
+        const { data: allInvoices } = await supabase
+          .from('invoices')
+          .select('id')
           .eq('user_id', user.id)
           .gte('created_at', userData.pay_per_invoice_activated_at)
           .neq('status', 'draft');
-        
+
         if (!allInvoices || allInvoices.length === 0) {
           payPerInvoiceInfo = {
             totalInvoices: 0,
@@ -66,35 +89,25 @@ export async function GET(request: NextRequest) {
             freeInvoicesRemaining: 5,
             chargedInvoices: 0,
             totalCharged: '0.00',
-            template1DetailedInvoices: 0
           };
         } else {
-          const invoiceIds = allInvoices.map(inv => inv.id);
-      
-      // Get all billing records (pending OR paid) for these invoices
-          // If a billing record exists, it means the invoice was charged
-        const { data: billingRecords } = await supabase
-          .from('billing_records')
-          .select('invoice_id, amount, status')
-          .eq('user_id', user.id)
-          .eq('type', 'per_invoice_fee')
+          const invoiceIds = allInvoices.map((inv) => inv.id);
+
+          const { data: billingRecords } = await supabase
+            .from('billing_records')
+            .select('invoice_id, amount, status')
+            .eq('user_id', user.id)
+            .eq('type', 'per_invoice_fee')
             .in('status', ['pending', 'paid'])
-          .in('invoice_id', invoiceIds);
-        
-          const chargedInvoiceIds = new Set((billingRecords || []).map(br => br.invoice_id));
+            .in('invoice_id', invoiceIds);
+
+          const chargedInvoiceIds = new Set((billingRecords || []).map((br) => br.invoice_id));
           const chargedInvoices = chargedInvoiceIds.size;
-          const totalCharged = (billingRecords || [])
-          .reduce((sum, record) => sum + parseFloat(record.amount.toString()), 0);
-          
-          // Count free invoices (matching chargeForInvoice logic)
-          // The 5 free invoices are shared between:
-          // 1. Fast invoices (always use free first)
-          // 2. Detailed invoices that are NOT template 1 and DON'T have premium features
-          // Template 1 detailed invoices are ALWAYS free and don't count against the limit
-          
-          // Get all invoices with their details to check template and premium features
-          // Order by created_at to count in chronological order
-          // Note: type column might not exist in older schemas, so we'll infer it from other fields
+          const totalCharged = (billingRecords || []).reduce(
+            (sum, record) => sum + parseFloat(record.amount.toString()),
+            0
+          );
+
           const { data: allInvoicesWithDetails } = await supabase
             .from('invoices')
             .select('id, type, theme, reminder_count, reminder_settings, created_at')
@@ -102,81 +115,19 @@ export async function GET(request: NextRequest) {
             .gte('created_at', userData.pay_per_invoice_activated_at)
             .neq('status', 'draft')
             .order('created_at', { ascending: true });
-          
-          let fastInvoicesCount = 0;
-          let template1DetailedInvoicesCount = 0;
-          
-          if (allInvoicesWithDetails) {
-            // Count invoices in chronological order (first 5 eligible invoices are free)
-            for (const inv of allInvoicesWithDetails) {
-              // Determine invoice type: if type field exists, use it; otherwise infer from other fields
-              // Fast invoices have no reminder_settings, payment_terms, or late_fees
-              // Detailed invoices have at least one of these fields
-              let invoiceType = inv.type;
-              if (!invoiceType) {
-                // Infer type: if reminder_settings exists and is not null/empty, it's detailed
-                // Otherwise, check if theme exists (detailed invoices have themes)
-                if (inv.reminder_settings) {
-                  invoiceType = 'detailed';
-                } else if (inv.theme) {
-                  // Check if theme is not empty
-                  try {
-                    const theme = typeof inv.theme === 'string' ? JSON.parse(inv.theme) : inv.theme;
-                    if (theme && Object.keys(theme).length > 0) {
-                      invoiceType = 'detailed';
-                    } else {
-                      invoiceType = 'fast'; // Empty theme = fast invoice
-                    }
-                  } catch (e) {
-                    invoiceType = 'fast'; // If theme parsing fails, assume fast
-                  }
-                } else {
-                  invoiceType = 'fast'; // No theme = fast invoice
-                }
-              }
-              
-              if (invoiceType === 'fast') {
-                // Fast invoices count against free limit (up to 5)
-                fastInvoicesCount++;
-              } else if (invoiceType === 'detailed') {
-                // Get template from theme JSONB field
-                let template = 1; // Default to template 1
-                if (inv.theme) {
-                  try {
-                    const theme = typeof inv.theme === 'string' ? JSON.parse(inv.theme) : inv.theme;
-                    template = theme.template || 1;
-                  } catch (e) {
-                    // If parsing fails, default to template 1
-                    template = 1;
-                  }
-                }
-                
-                // Template 1 detailed invoices count against the 5 free limit
-                if (template === 1) {
-                  template1DetailedInvoicesCount++;
-                }
-                // Other templates (2, 3) have premium features and charge immediately
-                // They don't count against the free limit, so we skip them
-              }
-            }
-          }
-          
-          // Count against free limit: fast invoices + template 1 detailed invoices
-          // Template 1 detailed invoices are free (not charged) but count against the 5 free limit
-          const totalFreeInvoicesUsed = fastInvoicesCount + template1DetailedInvoicesCount;
-          const freeInvoicesUsed = Math.min(totalFreeInvoicesUsed, 5);
-      const freeInvoicesRemaining = Math.max(0, 5 - freeInvoicesUsed);
-          
-          const totalInvoices = allInvoices.length;
-      
-      payPerInvoiceInfo = {
-        totalInvoices,
-        freeInvoicesUsed,
-        freeInvoicesRemaining,
-        chargedInvoices,
+
+          const { includedUsed, includedRemaining } = computeIncludedPoolUsed(
+            allInvoicesWithDetails || [],
+            chargedInvoiceIds
+          );
+
+          payPerInvoiceInfo = {
+            totalInvoices: allInvoices.length,
+            freeInvoicesUsed: includedUsed,
+            freeInvoicesRemaining: includedRemaining,
+            chargedInvoices,
             totalCharged: totalCharged.toFixed(2),
-            template1DetailedInvoices: template1DetailedInvoicesCount // Always free, don't count against limit
-      };
+          };
         }
       }
     }
@@ -188,10 +139,11 @@ export async function GET(request: NextRequest) {
       used: usageStats.invoices.used,
       remaining: usageStats.invoices.limit ? Math.max(0, usageStats.invoices.limit - usageStats.invoices.used) : null,
       canCreateInvoice: plan === 'free' ? (usageStats.invoices.limit !== null && usageStats.invoices.used < usageStats.invoices.limit) : true,
+      freePlanPremiumCharges,
       // Pay Per Invoice specific info
       payPerInvoice: payPerInvoiceInfo ? {
         ...payPerInvoiceInfo,
-        freeInvoicesRemaining: payPerInvoiceInfo.freeInvoicesRemaining
+        freeInvoicesRemaining: payPerInvoiceInfo.freeInvoicesRemaining,
       } : null,
       // Additional usage stats
       clients: {

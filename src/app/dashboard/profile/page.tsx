@@ -29,6 +29,14 @@ const QuickInvoiceModal = dynamic(() => import('@/components/QuickInvoiceModal')
   loading: () => null
 });
 
+/** Usage bars: green while used is 0–2, orange from 3 up to (but not including) limit, red at limit */
+function invoiceUsageBarToneClass(used: number, limit: number): string {
+  if (limit <= 0) return 'bg-gray-400';
+  if (used >= limit) return 'bg-red-500';
+  if (used >= 3) return 'bg-orange-500';
+  return 'bg-green-500';
+}
+
 interface UserProfile {
   id: string;
   name: string;
@@ -218,13 +226,13 @@ export default function ProfilePage() {
     used: number;
     remaining: number | null;
     canCreateInvoice: boolean;
+    freePlanPremiumCharges?: { count: number; totalCharged: string } | null;
     payPerInvoice?: {
       totalInvoices: number;
       freeInvoicesUsed: number;
       freeInvoicesRemaining: number;
       chargedInvoices: number;
       totalCharged: string;
-      template1DetailedInvoices?: number;
     };
   } | null>(null);
   
@@ -1518,73 +1526,133 @@ export default function ProfilePage() {
                           Next billing: {new Date(profile.subscription.nextBilling).toLocaleDateString()}
                         </p>
                       )}
-                      {/* Usage Info */}
-                      {subscriptionUsage && subscriptionUsage.plan === 'free' && subscriptionUsage.limit && (
-                        <div className="mt-2">
-                          <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
-                            <span>Invoices this month</span>
-                            <span className="font-medium">{subscriptionUsage.used} / {subscriptionUsage.limit}</span>
-                          </div>
-                          <div className="w-full bg-gray-200 h-1.5">
-                            <div 
-                              className={`h-1.5 transition-all ${
-                                subscriptionUsage.used >= subscriptionUsage.limit 
-                                  ? 'bg-red-500' 
-                                  : subscriptionUsage.used >= subscriptionUsage.limit * 0.8
-                                  ? 'bg-yellow-500'
-                                  : 'bg-indigo-600'
-                              }`}
-                              style={{ width: `${Math.min(100, (subscriptionUsage.used / subscriptionUsage.limit) * 100)}%` }}
-                            />
-                          </div>
-                          {subscriptionUsage.used >= subscriptionUsage.limit && (
-                            <p className="text-xs text-red-600 mt-1">Limit reached. Upgrade to create more invoices.</p>
-                          )}
-                        </div>
-                      )}
-                      {subscriptionUsage && subscriptionUsage.plan === 'pay_per_invoice' && subscriptionUsage.payPerInvoice && (
-                        <div className="mt-2 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">Free Invoices:</span>
-                            <span className="text-sm font-medium text-gray-900">
-                              {subscriptionUsage.payPerInvoice.freeInvoicesUsed}/5 used
-                              {subscriptionUsage.payPerInvoice.freeInvoicesRemaining > 0 && (
-                                <span className="text-green-600 ml-1">
-                                  ({subscriptionUsage.payPerInvoice.freeInvoicesRemaining} remaining)
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                          {(subscriptionUsage.payPerInvoice.template1DetailedInvoices || 0) > 0 && (
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">Template 1 Invoices:</span>
-                              <span className="text-sm font-medium text-gray-900">
-                                {subscriptionUsage.payPerInvoice.template1DetailedInvoices} invoice{subscriptionUsage.payPerInvoice.template1DetailedInvoices !== 1 ? 's' : ''}
-                                <span className="text-gray-600 ml-1 text-xs">
-                                  (free within limit, then $0.50)
-                                </span>
-                              </span>
-                            </div>
-                          )}
-                            {subscriptionUsage.payPerInvoice.chargedInvoices > 0 && (
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">Paid Invoices:</span>
-                              <span className="text-sm font-medium text-gray-900">
-                                {subscriptionUsage.payPerInvoice.chargedInvoices} invoice{subscriptionUsage.payPerInvoice.chargedInvoices !== 1 ? 's' : ''} 
-                                <span className="text-indigo-600 ml-1">
-                                  (${subscriptionUsage.payPerInvoice.totalCharged})
-                                </span>
-                              </span>
-                            </div>
-                          )}
-                          {subscriptionUsage.payPerInvoice.freeInvoicesRemaining > 0 && (
-                            <div className="w-full bg-gray-200 h-1.5">
-                              <div 
-                                className="h-1.5 bg-green-500 transition-all"
-                                style={{ width: `${(subscriptionUsage.payPerInvoice.freeInvoicesUsed / 5) * 100}%` }}
+                      {/* Usage Info — hidden for Monthly (unlimited invoices) */}
+                      {profile.subscription.plan !== 'monthly' &&
+                        subscriptionUsage &&
+                        subscriptionUsage.plan === 'free' &&
+                        subscriptionUsage.limit && (
+                        <div className="mt-3 space-y-4">
+                          {/* Bar 1: monthly free allowance only */}
+                          <div>
+                            <p className="text-xs font-medium text-gray-700 mb-1.5">Free invoices (monthly)</p>
+                            <div className="w-full bg-gray-200 h-2">
+                              <div
+                                className={`h-2 transition-all ${invoiceUsageBarToneClass(
+                                  subscriptionUsage.used,
+                                  subscriptionUsage.limit
+                                )}`}
+                                style={{
+                                  width: `${Math.min(100, (subscriptionUsage.used / subscriptionUsage.limit) * 100)}%`,
+                                }}
                               />
                             </div>
-                          )}
+                            <p className="text-xs text-gray-800 mt-1.5">
+                              <span className="font-semibold text-gray-900">{subscriptionUsage.used}</span>
+                              {' / '}
+                              {subscriptionUsage.limit} used
+                            </p>
+                            {subscriptionUsage.used >= subscriptionUsage.limit && (
+                              <p className="text-xs text-red-600 mt-1">Monthly free limit reached.</p>
+                            )}
+                          </div>
+                          {/* Bar 2: premium pay-per — separate from free allowance */}
+                          <div>
+                            <p className="text-xs font-medium text-gray-700 mb-1.5">Premium (pay per invoice)</p>
+                            <div className="w-full bg-gray-200 h-2">
+                              <div
+                                className={`h-2 transition-all ${
+                                  (subscriptionUsage.freePlanPremiumCharges?.count || 0) === 0
+                                    ? 'bg-transparent'
+                                    : invoiceUsageBarToneClass(
+                                        subscriptionUsage.freePlanPremiumCharges?.count || 0,
+                                        5
+                                      )
+                                }`}
+                                style={{
+                                  width: `${Math.min(
+                                    100,
+                                    ((subscriptionUsage.freePlanPremiumCharges?.count || 0) / 5) * 100
+                                  )}%`,
+                                }}
+                              />
+                            </div>
+                            <p className="text-xs text-gray-800 mt-1.5">
+                              <span className="font-semibold text-gray-900">
+                                {subscriptionUsage.freePlanPremiumCharges?.count ?? 0}
+                              </span>
+                              {' invoice'}
+                              {(subscriptionUsage.freePlanPremiumCharges?.count ?? 0) !== 1 ? 's' : ''} billed this month
+                              {' · '}
+                              <span className="font-semibold text-gray-900">
+                                $
+                                {subscriptionUsage.freePlanPremiumCharges?.totalCharged ?? '0.00'}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      {profile.subscription.plan !== 'monthly' &&
+                        subscriptionUsage &&
+                        subscriptionUsage.plan === 'pay_per_invoice' &&
+                        subscriptionUsage.payPerInvoice && (
+                        <div className="mt-3 space-y-3">
+                          {/*
+                            Only the 5 included sends have a fixed cap — worth a progress bar.
+                            Paid sends are unlimited; show fees as text, not a second bar.
+                          */}
+                          <div>
+                            <p className="text-xs font-medium text-gray-700 mb-1.5">
+                              Included sends (no fee)
+                            </p>
+                            <p className="text-xs text-gray-500 mb-2">
+                              Fast + Template 1 detailed invoices share 5 included sends after you activated this plan.
+                              After that, you can still send unlimited invoices—each may incur a per-invoice fee.
+                            </p>
+                            <div className="w-full bg-gray-200 h-2">
+                              <div
+                                className={`h-2 transition-all ${invoiceUsageBarToneClass(
+                                  subscriptionUsage.payPerInvoice.freeInvoicesUsed,
+                                  5
+                                )}`}
+                                style={{
+                                  width: `${Math.min(
+                                    100,
+                                    (subscriptionUsage.payPerInvoice.freeInvoicesUsed / 5) * 100
+                                  )}%`,
+                                }}
+                              />
+                            </div>
+                            <p className="text-xs text-gray-800 mt-1.5">
+                              <span className="font-semibold text-gray-900">
+                                {subscriptionUsage.payPerInvoice.freeInvoicesUsed}
+                              </span>
+                              {' / 5 used · '}
+                              <span className="text-gray-600">
+                                {subscriptionUsage.payPerInvoice.freeInvoicesRemaining} remaining
+                              </span>
+                            </p>
+                          </div>
+                          <div className="border border-gray-200 bg-white px-3 py-2.5">
+                            <p className="text-xs font-medium text-gray-800 mb-1">
+                              Per-invoice fees (unlimited volume)
+                            </p>
+                            <p className="text-xs text-gray-700">
+                              <span className="font-semibold text-indigo-700 tabular-nums">
+                                {subscriptionUsage.payPerInvoice.chargedInvoices}
+                              </span>
+                              {' invoice'}
+                              {subscriptionUsage.payPerInvoice.chargedInvoices !== 1 ? 's' : ''} with a fee so far
+                              {' · '}
+                              <span className="font-semibold text-emerald-700 tabular-nums">
+                                ${subscriptionUsage.payPerInvoice.totalCharged}
+                              </span>
+                              {' total charged'}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1.5">
+                              There is no cap on how many invoices you can send—this only tracks fees billed
+                              (premium options, or sends after your 5 included).
+                            </p>
+                          </div>
                         </div>
                       )}
                     </div>
