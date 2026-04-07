@@ -1672,7 +1672,7 @@ export default function ProfilePage() {
                           // Keep subscription modal open, show confirmation modal on top
                           setShowCancelSubscriptionModal(true);
                         }}
-                        className="w-full px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer border border-red-200 rounded"
+                        className="w-full px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer border border-red-200 rounded-none"
                       >
                         Cancel Subscription
                       </button>

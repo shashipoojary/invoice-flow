@@ -167,43 +167,72 @@ export default function LandingPage() {
           transform: translateY(-4px);
           box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
+
+        /* Conway-style hero right panel: gradient + visible sand-grain (not full-page) */
+        .hero-panel-gradient {
+          background: linear-gradient(
+            128deg,
+            #faf8ff 0%,
+            #f3e8ff 18%,
+            #e9d5ff 38%,
+            #c084fc 62%,
+            #9333ea 82%,
+            #6b21a8 100%
+          );
+        }
+        .hero-panel-grain {
+          opacity: 0.42;
+          mix-blend-mode: overlay;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.65'/%3E%3C/svg%3E");
+          background-size: 140px 140px;
+        }
+        .hero-panel-grain-fine {
+          opacity: 0.18;
+          mix-blend-mode: soft-light;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)' opacity='0.5'/%3E%3C/svg%3E");
+          background-size: 80px 80px;
+        }
       `}</style>
       <div className="min-h-screen transition-colors duration-200 bg-white overflow-x-hidden [&_*]:!rounded-none">
-      {/* Hero Section */}
-      <section className="pt-4 pb-12 sm:pb-16 lg:pb-20 px-4 sm:px-6 lg:px-8 relative bg-white" ref={heroRef}>
-        <div className="max-w-7xl mx-auto">
-          {/* Hero Content */}
-          <div className="max-w-3xl mx-auto text-center mb-8 sm:mb-10 lg:mb-8">
-            <h1 ref={headingRef} className="font-heading text-4xl sm:text-5xl lg:text-6xl font-semibold mb-4 sm:mb-6 text-gray-900 tracking-tight leading-[1.1] sm:leading-[1.1] lg:leading-[1.05]">
-                Create invoices in seconds.<br className="hidden sm:block" />
-                Get <span className="text-[#a855f7]">paid</span> faster.
+      {/* Hero — Conway-style: flat white copy | textured gradient panel + floating mockup */}
+      <section
+        className="relative overflow-hidden bg-white pb-12 pt-4 sm:pb-16 sm:pt-5 lg:pb-20 lg:pt-5"
+        ref={heroRef}
+      >
+        <div className="relative z-10 flex w-full flex-col lg:min-h-[min(88vh,920px)] lg:flex-row lg:items-stretch">
+          {/* Left: comfortable padding from gradient; copy width capped for readability */}
+          <div className="flex min-w-0 flex-col justify-center px-4 text-center sm:px-6 lg:min-h-0 lg:flex-1 lg:justify-center lg:px-8 lg:py-8 lg:text-left xl:px-10 xl:py-10">
+            <div className="mx-auto w-full max-w-xl lg:mx-0">
+              <h1
+                ref={headingRef}
+                className="font-heading text-4xl sm:text-5xl lg:text-[2.75rem] xl:text-5xl font-semibold mb-4 sm:mb-6 text-gray-900 tracking-tight leading-[1.1] sm:leading-[1.1] lg:leading-[1.08]"
+              >
+                Create invoices in seconds.
+                <br className="hidden sm:block" /> Get <span className="text-[#a855f7]">paid</span> faster.
               </h1>
-            <p className="text-sm sm:text-lg text-gray-500 sm:text-gray-600 mb-8 leading-relaxed max-w-xl mx-auto">
-              <span className="block mb-1">Professional invoicing for freelancers and small businesses.</span>
-              <span className="block">No fees, no hassle.</span>
+              <p className="mx-auto mb-8 max-w-xl text-sm text-gray-600 sm:text-lg lg:mx-0 lg:max-w-md leading-relaxed">
+                <span className="mb-1 block">Professional invoicing for freelancers and small businesses.</span>
+                <span className="block">No fees, no hassle.</span>
               </p>
-              
-              {/* CTA Buttons */}
-            <div className="flex flex-row gap-2 sm:gap-3 justify-center mb-8 sm:mb-12">
+
+              <div className="mb-8 flex flex-row flex-wrap justify-center gap-2 sm:mb-10 sm:gap-3 lg:justify-start">
                 <button
                   onClick={handleGetStarted}
-                className="inline-flex items-center justify-center px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium text-white bg-black hover:bg-gray-800 transition-colors"
+                  className="inline-flex items-center justify-center px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium text-white bg-black hover:bg-gray-800 transition-colors"
                 >
-                Get started free
-                <ArrowRight className="ml-2 w-4 h-4" />
+                  Get started free
+                  <ArrowRight className="ml-2 w-4 h-4" />
                 </button>
                 <button
                   onClick={handleViewDemo}
-                className="inline-flex items-center justify-center px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors"
+                  className="inline-flex items-center justify-center px-4 py-2.5 sm:px-6 sm:py-3 text-sm sm:text-base font-medium text-gray-800 bg-white/90 border border-gray-300/90 hover:bg-white transition-colors"
                 >
-                View demo
+                  View demo
                 </button>
               </div>
 
-              {/* User Profiles Section - Social Proof */}
-              <div className="flex flex-col items-center justify-center text-center mb-8 sm:mb-12">
-                {/* Avatar Circles */}
-                <div className="flex items-center justify-center gap-3 mb-3">
+              <div className="flex flex-col items-center gap-4 lg:items-start">
+                <div className="flex justify-center [&_.avatar-stack_img]:!rounded-full [&_[data-avatar-overflow]]:!rounded-full lg:justify-start">
                   <AvatarCircles
                     avatarUrls={[
                       'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
@@ -214,60 +243,58 @@ export default function LandingPage() {
                     ]}
                     numPeople={995}
                   />
-            </div>
-                
-                {/* Minimal Stats */}
-                <div className="flex items-center justify-center gap-6 text-sm text-gray-500">
-                  <span><span className="font-medium text-gray-900">1,000+</span> users</span>
-                  <span className="text-gray-300">•</span>
-                  <span><span className="font-medium text-gray-900">10K+</span> invoices</span>
-          </div>
-        </div>
-            </div>
-          
-          {/* Dashboard Screenshot */}
-          <div className="relative max-w-6xl mx-auto">
-            {/* Glow effect layers - Purple theme */}
-            <div className="absolute inset-0 opacity-30 blur-3xl" style={{
-              background: 'radial-gradient(ellipse at center, #a855f7, #9333ea, #7c3aed)',
-                transform: 'scale(1.1)',
-              zIndex: 0
-              }}></div>
-            <div className="absolute inset-0 opacity-20 blur-2xl" style={{
-              background: 'radial-gradient(ellipse at 30% 70%, #a855f7, #9333ea)',
-                transform: 'scale(1.05)',
-              zIndex: 1
-              }}></div>
-              
-            {/* Desktop Image */}
-            <div className="relative z-10 overflow-hidden border border-gray-200 shadow-2xl bg-white hidden md:block">
-                <Image
-                src="/dashboard-screenshot.png?v=2"
-                alt="FlowInvoicer Dashboard"
-                  width={1200}
-                  height={800}
-                className="w-full h-auto block"
-                priority
-                quality={85}
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
-                />
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-sm text-gray-600 lg:justify-start">
+                  <span>
+                    <span className="font-medium text-gray-900">1,000+</span> users
+                  </span>
+                  <span className="text-gray-400">•</span>
+                  <span>
+                    <span className="font-medium text-gray-900">10K+</span> invoices
+                  </span>
+                </div>
               </div>
-            
-            {/* Mobile Image */}
-            <div className="relative z-10 overflow-hidden border border-gray-200 shadow-2xl bg-white block md:hidden">
-              <Image
-                src="/dashboard-screenshot-mobile.png"
-                alt="FlowInvoicer Dashboard"
-                width={600}
-                height={800}
-                className="w-full h-auto block"
-                priority
-                quality={85}
-                sizes="100vw"
-              />
             </div>
           </div>
-        </div>
+
+            {/* Right: full-bleed to viewport edge (50vw), gradient + grain — larger panel, tight to nav */}
+            <div className="mt-10 flex w-full min-w-0 flex-1 items-stretch sm:mt-12 lg:mt-0 lg:w-[50vw] lg:min-w-[50vw] lg:flex-none lg:self-stretch">
+              <div className="relative flex min-h-[360px] w-full flex-1 flex-col justify-center sm:min-h-[420px] lg:min-h-full">
+                <div className="hero-visual-panel relative isolate h-full min-h-[360px] overflow-hidden sm:min-h-[420px] lg:min-h-full">
+                  <div
+                    className="hero-panel-gradient absolute inset-0 z-0"
+                    aria-hidden="true"
+                  />
+                  <div
+                    className="hero-panel-grain absolute inset-0 z-[1]"
+                    aria-hidden="true"
+                  />
+                  <div
+                    className="hero-panel-grain-fine absolute inset-0 z-[1]"
+                    aria-hidden="true"
+                  />
+                  <div
+                    className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-br from-white/25 via-transparent to-black/10"
+                    aria-hidden="true"
+                  />
+                  {/* Bottom + right flush only; inset from left so gradient shows (Conway-style) */}
+                  <div className="pointer-events-none absolute inset-0 z-[3] overflow-hidden">
+                    <div className="absolute bottom-0 right-0 left-5 flex items-end justify-end sm:left-7 lg:left-10 xl:left-12">
+                      <Image
+                        src="/dashboard-screenshot1.png"
+                        alt="FlowInvoicer dashboard"
+                        width={1600}
+                        height={1000}
+                        priority
+                        className="hero-dashboard-mock origin-bottom-left h-auto w-full max-w-[min(920px,100%)] translate-x-3 scale-[1.42] shadow-[0_28px_90px_-18px_rgba(0,0,0,0.5)] sm:max-w-[min(880px,100%)] sm:translate-x-4 sm:scale-[1.34] md:translate-x-0 md:scale-[1.26] lg:max-w-[min(960px,100%)] lg:scale-[1.16]"
+                        sizes="(max-width: 1023px) 95vw, 42vw"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
       </section>
 
       {/* Features Section */}
