@@ -5,13 +5,10 @@ import { useRouter } from 'next/navigation';
 import { 
   FileText, 
   CheckCircle, 
-  Zap, 
-  Shield, 
   ArrowRight,
   ArrowLeft,
   Play,
   Smartphone,
-  BarChart3,
   Bell,
   Settings,
   Users,
@@ -50,6 +47,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
+import { Features } from '@/components/blocks/features-10';
 
 // Lazy load components that are below the fold
 const Footer = dynamic(() => import('@/components/Footer'), {
@@ -200,17 +198,17 @@ export default function LandingPage() {
         ref={heroRef}
       >
         <div className="relative z-10 flex w-full flex-col lg:min-h-[min(88vh,920px)] lg:flex-row lg:items-stretch">
-          {/* Left: comfortable padding from gradient; copy width capped for readability */}
-          <div className="flex min-w-0 flex-col justify-center px-4 text-center sm:px-6 lg:min-h-0 lg:flex-1 lg:justify-center lg:px-8 lg:py-8 lg:text-left xl:px-10 xl:py-10">
-            <div className="mx-auto w-full max-w-xl lg:mx-0">
+          {/* Left: pull copy toward the panel (less dead space); image column unchanged */}
+          <div className="flex min-w-0 flex-col justify-center px-4 text-center sm:px-6 lg:min-h-0 lg:flex-1 lg:items-end lg:justify-center lg:pl-8 lg:pr-2 lg:py-8 lg:text-left xl:pl-10 xl:pr-3 xl:py-10">
+            <div className="mx-auto w-full max-w-xl lg:mx-0 lg:max-w-2xl xl:max-w-[42rem]">
               <h1
                 ref={headingRef}
-                className="font-heading text-4xl sm:text-5xl lg:text-[2.75rem] xl:text-5xl font-semibold mb-4 sm:mb-6 text-gray-900 tracking-tight leading-[1.1] sm:leading-[1.1] lg:leading-[1.08]"
+                className="font-heading text-3xl sm:text-5xl lg:text-[2.75rem] xl:text-5xl font-semibold mb-4 sm:mb-6 text-gray-900 tracking-tight leading-[1.12] sm:leading-[1.1] lg:leading-[1.08]"
               >
                 Create invoices in seconds.
                 <br className="hidden sm:block" /> Get <span className="text-[#a855f7]">paid</span> faster.
               </h1>
-              <p className="mx-auto mb-8 max-w-xl text-sm text-gray-600 sm:text-lg lg:mx-0 lg:max-w-md leading-relaxed">
+              <p className="mx-auto mb-8 max-w-xl text-[0.8125rem] text-gray-600 sm:text-lg lg:mx-0 lg:max-w-md leading-relaxed">
                 <span className="mb-1 block">Professional invoicing for freelancers and small businesses.</span>
                 <span className="block">No fees, no hassle.</span>
               </p>
@@ -297,167 +295,7 @@ export default function LandingPage() {
           </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-7xl mx-auto">
-          {/* Section Header */}
-          <div className="text-center mb-8 sm:mb-16">
-                <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-semibold mb-3 sm:mb-6 text-gray-900 tracking-tight">
-              Get paid faster
-                </h2>
-            <p className="text-sm sm:text-lg max-w-2xl mx-auto text-gray-600 px-4 sm:px-0">
-              Professional invoicing tools designed for freelancers, designers, and contractors.
-                </p>
-            </div>
-
-          {/* Features Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-6 lg:gap-8 font-sans">
-            {/* Feature 1 - Professional Templates */}
-            <div className="group p-3 sm:p-6 lg:p-8 border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e5e7eb'
-              }}>
-                <FileText className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600" />
-                </div>
-              <h3 className="font-heading text-sm sm:text-xl font-semibold mb-1.5 sm:mb-3 text-gray-900 leading-tight sm:leading-normal">
-                Professional Templates
-                  </h3>
-              <p className="text-[11px] sm:text-sm leading-relaxed text-gray-600">
-                Choose from multiple professional invoice templates. Customize colors, fonts, and layout to match your brand.
-                  </p>
-              </div>
-              
-            {/* Feature 2 - Client Management */}
-            <div className="group p-3 sm:p-6 lg:p-8 border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e5e7eb'
-              }}>
-                <Users className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600" />
-                </div>
-              <h3 className="font-heading text-sm sm:text-xl font-semibold mb-1.5 sm:mb-3 text-gray-900 leading-tight sm:leading-normal">
-                Client Management
-                  </h3>
-              <p className="text-[11px] sm:text-sm leading-relaxed text-gray-600">
-                Store client information, payment history, and communication logs. Never lose track of important details.
-                  </p>
-              </div>
-              
-            {/* Feature 3 - Payment Tracking */}
-            <div className="group p-3 sm:p-6 lg:p-8 border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e5e7eb'
-              }}>
-                <BarChart3 className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600" />
-                </div>
-              <h3 className="font-heading text-sm sm:text-xl font-semibold mb-1.5 sm:mb-3 text-gray-900 leading-tight sm:leading-normal">
-                Payment Tracking
-                  </h3>
-              <p className="text-[11px] sm:text-sm leading-relaxed text-gray-600">
-                Track when clients view invoices and manually mark payments as received. Get clear visibility into payment status.
-                  </p>
-                </div>
-
-            {/* Feature 4 - Automated Reminders */}
-            <div className="group p-3 sm:p-6 lg:p-8 border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e5e7eb'
-              }}>
-                <Bell className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600" />
-              </div>
-              <h3 className="font-heading text-sm sm:text-xl font-semibold mb-1.5 sm:mb-3 text-gray-900 leading-tight sm:leading-normal">
-                Automated Reminders
-              </h3>
-              <p className="text-[11px] sm:text-sm leading-relaxed text-gray-600">
-                Set up custom reminder schedules for each invoice. Choose from friendly, polite, firm, or urgent reminder types.
-            </p>
-          </div>
-
-            {/* Feature 5 - Late Fees */}
-            <div className="group p-3 sm:p-6 lg:p-8 border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e5e7eb'
-              }}>
-                <Zap className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600" />
-              </div>
-              <h3 className="font-heading text-sm sm:text-xl font-semibold mb-1.5 sm:mb-3 text-gray-900 leading-tight sm:leading-normal">
-                Late Fee Management
-              </h3>
-              <p className="text-[11px] sm:text-sm leading-relaxed text-gray-600">
-                Automatically calculate and apply late fees. Set fixed amounts or percentages with grace periods.
-              </p>
-            </div>
-
-            {/* Feature 6 - Multiple Payment Methods */}
-            <div className="group p-3 sm:p-6 lg:p-8 border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e5e7eb'
-              }}>
-                <CheckCircle className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600" />
-              </div>
-              <h3 className="font-heading text-sm sm:text-xl font-semibold mb-1.5 sm:mb-3 text-gray-900 leading-tight sm:leading-normal">
-                Multiple Payment Methods
-              </h3>
-              <p className="text-[11px] sm:text-sm leading-relaxed text-gray-600">
-                Support PayPal, Stripe, Cash App, Venmo, Google Pay, Apple Pay, and bank transfers.
-              </p>
-            </div>
-
-            {/* Feature 7 - PDF Generation */}
-            <div className="group p-3 sm:p-6 lg:p-8 border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e5e7eb'
-              }}>
-                <FileText className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600" />
-              </div>
-              <h3 className="font-heading text-sm sm:text-xl font-semibold mb-1.5 sm:mb-3 text-gray-900 leading-tight sm:leading-normal">
-                PDF Generation
-              </h3>
-              <p className="text-[11px] sm:text-sm leading-relaxed text-gray-600">
-                Generate professional PDF invoices instantly. Download and share with clients or print for your records.
-              </p>
-            </div>
-
-            {/* Feature 8 - Analytics Dashboard */}
-            <div className="group p-3 sm:p-6 lg:p-8 border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e5e7eb'
-              }}>
-                <BarChart3 className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600" />
-              </div>
-              <h3 className="font-heading text-sm sm:text-xl font-semibold mb-1.5 sm:mb-3 text-gray-900 leading-tight sm:leading-normal">
-                Analytics Dashboard
-              </h3>
-              <p className="text-[11px] sm:text-sm leading-relaxed text-gray-600">
-                Track revenue, pending payments, overdue invoices, and late fees. Get insights into your business performance.
-              </p>
-            </div>
-
-            {/* Feature 9 - Secure & Reliable */}
-            <div className="group p-3 sm:p-6 lg:p-8 border border-gray-200 bg-white hover:border-gray-300 hover:shadow-md transition-all duration-200 col-span-2 md:col-span-1">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center mb-2 sm:mb-5 transition-transform duration-200 group-hover:scale-105" style={{
-                backgroundColor: '#f8f9fa',
-                border: '1px solid #e5e7eb'
-              }}>
-                <Shield className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600" />
-              </div>
-              <h3 className="font-heading text-sm sm:text-xl font-bold mb-1.5 sm:mb-3 text-gray-900 leading-tight sm:leading-normal">
-                Secure & Reliable
-              </h3>
-              <p className="text-[11px] sm:text-sm leading-relaxed text-gray-600">
-                Enterprise-grade security with encrypted data storage and transmission. Your data is never shared with third parties.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <Features />
 
       {/* Reviews Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white overflow-hidden">
